@@ -44,6 +44,7 @@ import { toast } from "sonner"
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
+    product_id: z.string().min(1, "El producto es requerido"),
     description: z.string().min(1, "La descripción es requerida"),
     quantity: z.number().min(0.01, "La cantidad debe ser mayor a 0"),
     unit_price: z.number().min(0, "El precio no puede ser negativo"),
@@ -101,6 +102,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     const [loading, setLoading] = useState(false)
     const [customers, setCustomers] = useState<any[]>([])
+    const [products, setProducts] = useState<any[]>([])
 
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema),
@@ -118,7 +120,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             customer: "",
             payment_method: "CREDIT",
             notes: "",
-            lines: [{ description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
+            lines: [{ product_id: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
         },
     })
 
@@ -136,9 +138,19 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         }
     }
 
+    const fetchProducts = async () => {
+        try {
+            const response = await api.get('/inventory/products/')
+            setProducts(response.data.results || response.data)
+        } catch (error) {
+            console.error("Error fetching products:", error)
+        }
+    }
+
     useEffect(() => {
         if (open) {
             fetchCustomers()
+            fetchProducts()
             if (initialData) {
                 form.reset({
                     ...initialData,
@@ -156,7 +168,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     customer: "",
                     payment_method: "CREDIT",
                     notes: "",
-                    lines: [{ description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
+                    lines: [{ product_id: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
                 })
             }
         }
@@ -255,7 +267,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ description: "", quantity: 1, unit_price: 0, tax_rate: 19 })}
+                                    onClick={() => append({ product_id: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 })}
                                 >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Agregar Línea
@@ -266,10 +278,10 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[40%]">Descripción</TableHead>
+                                            <TableHead className="w-[35%]">Producto</TableHead>
                                             <TableHead className="w-[15%]">Cantidad</TableHead>
                                             <TableHead className="w-[20%]">Precio Unit.</TableHead>
-                                            <TableHead className="w-[15%]">Subtotal</TableHead>
+                                            <TableHead className="w-[20%]">Subtotal</TableHead>
                                             <TableHead className="w-[10%]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -279,9 +291,32 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 <TableCell>
                                                     <FormField
                                                         control={form.control}
-                                                        name={`lines.${index}.description`}
+                                                        name={`lines.${index}.product_id`}
                                                         render={({ field }) => (
-                                                            <Input placeholder="Producto o servicio" {...field} />
+                                                            <Select
+                                                                onValueChange={(value) => {
+                                                                    field.onChange(value)
+                                                                    const product = products.find(p => p.id.toString() === value)
+                                                                    if (product) {
+                                                                        form.setValue(`lines.${index}.description`, product.name)
+                                                                        form.setValue(`lines.${index}.unit_price`, parseFloat(product.sale_price) || 0)
+                                                                    }
+                                                                }}
+                                                                value={field.value}
+                                                            >
+                                                                <FormControl>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Seleccione producto" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {products.filter(p => p.id).map((p) => (
+                                                                        <SelectItem key={p.id} value={p.id.toString()}>
+                                                                            {p.name} - ${parseFloat(p.sale_price).toLocaleString()}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
                                                         )}
                                                     />
                                                 </TableCell>
