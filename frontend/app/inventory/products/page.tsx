@@ -13,6 +13,7 @@ import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { ProductForm } from "@/components/forms/ProductForm"
 import { Pencil, Trash2, MoreHorizontal } from "lucide-react"
+import { DataManagement } from "@/components/shared/DataManagement"
 import {
     DropdownMenu,
     DropdownMenuContent,

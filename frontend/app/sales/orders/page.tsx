@@ -17,7 +17,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "../../../components/ui/progress"
 import { Banknote } from "lucide-react"
 
 interface SaleOrder {
@@ -29,6 +29,7 @@ interface SaleOrder {
     total: string
     total_paid: number
     pending_amount: number
+    channel_display: string
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
@@ -179,6 +180,7 @@ export default function SalesOrdersPage() {
                             <TableHead>Total</TableHead>
                             <TableHead>Pagado</TableHead>
                             <TableHead>Estado</TableHead>
+                            <TableHead>Canal</TableHead>
                             <TableHead className="w-[150px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -201,6 +203,11 @@ export default function SalesOrdersPage() {
                                 <TableCell>
                                     <Badge variant={statusMap[order.status]?.variant || "default"}>
                                         {statusMap[order.status]?.label || order.status}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant="outline" className="text-[10px] uppercase">
+                                        {order.channel_display}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
@@ -261,12 +268,12 @@ export default function SalesOrdersPage() {
                         ))}
                         {loading && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center">Cargando notas de venta...</TableCell>
+                                <TableCell colSpan={8} className="text-center">Cargando notas de venta...</TableCell>
                             </TableRow>
                         )}
                         {!loading && orders.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center">No hay notas de venta registradas.</TableCell>
+                                <TableCell colSpan={8} className="text-center">No hay notas de venta registradas.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

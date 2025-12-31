@@ -3,8 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Account, JournalEntry, AccountingSettings
 from .serializers import AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer
-from .services import JournalEntryService
+from .services import JournalEntryService, AccountingService
 from django.core.exceptions import ValidationError
+from core.mixins import BulkImportMixin
 
 class AccountingSettingsViewSet(viewsets.ModelViewSet):
     queryset = AccountingSettings.objects.all()
@@ -27,7 +28,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
-class AccountViewSet(viewsets.ModelViewSet):
+class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
 
@@ -84,6 +85,11 @@ class AccountViewSet(viewsets.ModelViewSet):
             'account': AccountSerializer(account).data,
             'movements': ledger_data
         })
+
+    @action(detail=False, methods=['post'])
+    def populate_ifrs(self, request):
+        msg = AccountingService.populate_ifrs_coa()
+        return Response({'message': msg})
 
 class JournalEntryViewSet(viewsets.ModelViewSet):
     queryset = JournalEntry.objects.all()

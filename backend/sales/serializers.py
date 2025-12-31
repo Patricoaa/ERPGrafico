@@ -16,6 +16,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
 class SaleOrderSerializer(serializers.ModelSerializer):
     lines = SaleLineSerializer(many=True, read_only=True)
     customer_name = serializers.CharField(source='customer.name', read_only=True)
+    channel_display = serializers.CharField(source='get_channel_display', read_only=True)
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
 

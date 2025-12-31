@@ -6,7 +6,9 @@ from .serializers import ProductSerializer, ProductCategorySerializer, Warehouse
 from .services import StockService
 from decimal import Decimal
 
-class ProductViewSet(viewsets.ModelViewSet):
+from core.mixins import BulkImportMixin
+
+class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 

@@ -77,7 +77,7 @@ class JournalEntry(models.Model):
         POSTED = 'POSTED', _('Publicado')
         CANCELLED = 'CANCELLED', _('Anulado')
 
-    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
+    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False, null=True, blank=True)
     date = models.DateField(_("Fecha"))
     description = models.CharField(_("Descripción"), max_length=255)
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)

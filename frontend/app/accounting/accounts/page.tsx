@@ -16,6 +16,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 
 import { AccountForm } from "@/components/forms/AccountForm"
+import { DataManagement } from "@/components/shared/DataManagement"
 
 interface Account {
     id: number
@@ -78,6 +79,14 @@ export default function AccountsPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Plan de Cuentas</h2>
                 <div className="flex items-center space-x-2">
+                    <DataManagement
+                        endpoint="/accounting/accounts/"
+                        onImportSuccess={fetchAccounts}
+                        exportFilename="plan-de-cuentas.csv"
+                        templateData={[
+                            { code: '1.1.01', name: 'Nombre de Cuenta', account_type: 'ASSET' }
+                        ]}
+                    />
                     <AccountForm accounts={accounts} onSuccess={fetchAccounts} />
                 </div>
             </div>

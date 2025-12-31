@@ -14,6 +14,7 @@ import { SupplierForm } from "@/components/forms/SupplierForm"
 import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { DataManagement } from "@/components/shared/DataManagement"
 
 interface Supplier {
     id: number

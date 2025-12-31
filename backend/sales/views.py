@@ -6,7 +6,9 @@ from .serializers import CustomerSerializer, SaleOrderSerializer, CreateSaleOrde
 from .services import SalesService
 from django.core.exceptions import ValidationError
 
-class CustomerViewSet(viewsets.ModelViewSet):
+from core.mixins import BulkImportMixin
+
+class CustomerViewSet(BulkImportMixin, viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
 

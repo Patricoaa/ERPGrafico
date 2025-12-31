@@ -90,6 +90,20 @@ export default function AccountingSettingsPage() {
         }
     }
 
+    const handlePopulateIFRS = async () => {
+        if (!confirm("¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas básicas si no existen.")) return
+        setSaving(true)
+        try {
+            const res = await api.post('/accounting/accounts/populate_ifrs/')
+            toast.success(res.data.message)
+            window.location.reload() // Reload to fetch new accounts and updated settings
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al poblar plan de cuentas")
+        } finally {
+            setSaving(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex h-[400px] items-center justify-center">
@@ -109,7 +123,7 @@ export default function AccountingSettingsPage() {
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Card className="max-w-5xl">
+                    <Card>
                         <CardHeader>
                             <CardTitle>Cuentas Predeterminadas</CardTitle>
                             <CardDescription>Defina las cuentas que se utilizarán automáticamente en las operaciones del sistema.</CardDescription>
@@ -127,7 +141,7 @@ export default function AccountingSettingsPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="max-w-5xl">
+                    <Card>
                         <CardHeader>
                             <CardTitle>Formato y Jerarquía</CardTitle>
                             <CardDescription>Configure la estructura del plan de cuentas y prefijos por tipo.</CardDescription>
@@ -167,7 +181,10 @@ export default function AccountingSettingsPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="max-w-4xl flex justify-end">
+                    <div className="flex justify-between items-center">
+                        <Button type="button" variant="outline" onClick={handlePopulateIFRS} disabled={saving}>
+                            Cargar Plan de Cuentas IFRS
+                        </Button>
                         <Button type="submit" disabled={saving}>
                             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Guardar Configuración

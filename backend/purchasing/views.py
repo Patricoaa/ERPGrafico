@@ -6,7 +6,9 @@ from .serializers import SupplierSerializer, PurchaseOrderSerializer, CreatePurc
 from .services import PurchasingService
 from django.core.exceptions import ValidationError
 
-class SupplierViewSet(viewsets.ModelViewSet):
+from core.mixins import BulkImportMixin
+
+class SupplierViewSet(BulkImportMixin, viewsets.ModelViewSet):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
 

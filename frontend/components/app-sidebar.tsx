@@ -18,7 +18,7 @@ import {
 // Menu items.
 const items = [
     {
-        title: "Dashboard",
+        title: "Panel de Control",
         url: "/",
         icon: Home,
     },
