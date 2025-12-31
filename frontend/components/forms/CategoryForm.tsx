@@ -115,10 +115,10 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
         try {
             const payload = {
                 ...data,
-                parent: (data.parent && data.parent !== "none") ? data.parent : null,
-                asset_account: (data.asset_account && data.asset_account !== "none") ? data.asset_account : null,
-                income_account: (data.income_account && data.income_account !== "none") ? data.income_account : null,
-                expense_account: (data.expense_account && data.expense_account !== "none") ? data.expense_account : null,
+                parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? data.parent : null,
+                asset_account: (data.asset_account && data.asset_account !== "__none__" && data.asset_account !== "none") ? data.asset_account : null,
+                income_account: (data.income_account && data.income_account !== "__none__" && data.income_account !== "none") ? data.income_account : null,
+                expense_account: (data.expense_account && data.expense_account !== "__none__" && data.expense_account !== "none") ? data.expense_account : null,
             }
 
             if (initialData) {
@@ -143,9 +143,11 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>Nueva Categoría</Button>
-            </DialogTrigger>
+            {!openProp && !initialData && (
+                <DialogTrigger asChild>
+                    <Button>Nueva Categoría</Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Categoría" : "Crear Categoría"}</DialogTitle>
@@ -174,15 +176,15 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Categoría Padre (Opcional)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || "none"}>
+                                    <Select onValueChange={field.onChange} value={field.value || "__none__"}>
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Sin padre" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="none">Sin padre</SelectItem>
-                                            {categories.map((cat) => (
+                                            <SelectItem value="__none__">Sin padre</SelectItem>
+                                            {categories.filter(cat => cat.id).map((cat) => (
                                                 <SelectItem key={cat.id} value={cat.id.toString()}>
                                                     {cat.name}
                                                 </SelectItem>
@@ -206,8 +208,8 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="none">Ninguna</SelectItem>
-                                            {assetAccounts.map((acc) => (
+                                            <SelectItem value="__none__">Ninguna</SelectItem>
+                                            {assetAccounts.filter(acc => acc.id).map((acc) => (
                                                 <SelectItem key={acc.id} value={acc.id.toString()}>
                                                     {acc.code} - {acc.name}
                                                 </SelectItem>
@@ -231,8 +233,8 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="none">Ninguna</SelectItem>
-                                            {incomeAccounts.map((acc) => (
+                                            <SelectItem value="__none__">Ninguna</SelectItem>
+                                            {incomeAccounts.filter(acc => acc.id).map((acc) => (
                                                 <SelectItem key={acc.id} value={acc.id.toString()}>
                                                     {acc.code} - {acc.name}
                                                 </SelectItem>
@@ -256,8 +258,8 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="none">Ninguna</SelectItem>
-                                            {expenseAccounts.map((acc) => (
+                                            <SelectItem value="__none__">Ninguna</SelectItem>
+                                            {expenseAccounts.filter(acc => acc.id).map((acc) => (
                                                 <SelectItem key={acc.id} value={acc.id.toString()}>
                                                     {acc.code} - {acc.name}
                                                 </SelectItem>

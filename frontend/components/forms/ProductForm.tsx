@@ -29,7 +29,9 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 import api from "@/lib/api"
+import { CategoryForm } from "./CategoryForm"
 
 const productSchema = z.object({
     code: z.string().min(1, "El código es requerido"),
@@ -56,16 +58,18 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
 
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
+    const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
+
+    const fetchCategories = async () => {
+        try {
+            const response = await api.get('/inventory/categories/')
+            setCategories(response.data.results || response.data)
+        } catch (error) {
+            console.error("Failed to fetch categories", error)
+        }
+    }
 
     useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const response = await api.get('/inventory/categories/')
-                setCategories(response.data.results || response.data)
-            } catch (error) {
-                console.error("Failed to fetch categories", error)
-            }
-        }
         if (open) fetchCategories()
     }, [open])
 
@@ -170,20 +174,36 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Categoría</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione categoría" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {categories.map((cat) => (
-                                                <SelectItem key={cat.id} value={cat.id.toString()}>
-                                                    {cat.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <div className="flex gap-2">
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className="flex-1">
+                                                    <SelectValue placeholder="Seleccione categoría" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {categories.filter(cat => cat.id).map((cat) => (
+                                                    <SelectItem key={cat.id} value={cat.id.toString()}>
+                                                        {cat.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => setIsCategoryFormOpen(true)}
+                                            title="Nueva Categoría"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <CategoryForm
+                                        open={isCategoryFormOpen}
+                                        onOpenChange={setIsCategoryFormOpen}
+                                        onSuccess={fetchCategories}
+                                    />
                                     <FormMessage />
                                 </FormItem>
                             )}

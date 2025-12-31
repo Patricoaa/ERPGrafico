@@ -1,4 +1,5 @@
 import { Calendar, Home, Inbox, Search, Settings, Calculator, ShoppingCart, Package, Printer, Banknote, FileText, ShoppingBag } from "lucide-react"
+import Link from "next/link"
 
 import {
     Sidebar,
@@ -9,6 +10,9 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubItem,
+    SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 
 // Menu items.
@@ -29,41 +33,49 @@ const items = [
     },
     {
         title: "Ventas",
-        url: "/sales",
+        url: "#",
         icon: ShoppingCart,
         items: [
+            { title: "Notas de Venta", url: "/sales/orders" },
             { title: "POS", url: "/sales/pos" },
             { title: "Clientes", url: "/sales/customers" },
+            { title: "Historial", url: "/sales/history" },
         ]
     },
     {
         title: "Inventario",
-        url: "/inventory",
+        url: "#",
         icon: Package,
         items: [
             { title: "Productos", url: "/inventory/products" },
             { title: "Categorías", url: "/inventory/categories" },
             { title: "Almacenes", url: "/inventory/warehouses" },
+            { title: "Movimientos", url: "/inventory/movements" },
         ]
     },
     {
         title: "Producción",
         url: "/production",
         icon: Printer,
+        items: [
+            { title: "Ordenes de Trabajo", url: "/production/orders" },
+        ]
     },
     {
         title: "Tesorería",
-        url: "/treasury",
+        url: "#",
         icon: Banknote,
         items: [
             { title: "Cajas y Bancos", url: "/treasury/journals" },
+            { title: "Pagos y Cobros", url: "/treasury/payments" },
         ]
     },
     {
         title: "Compras",
-        url: "/purchasing",
+        url: "#",
         icon: ShoppingBag,
         items: [
+            { title: "Ordenes de Compra", url: "/purchasing/orders" },
             { title: "Proveedores", url: "/purchasing/suppliers" },
         ]
     },
@@ -90,11 +102,31 @@ export function AppSidebar() {
                             {items.map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                                        <a href={item.url}>
-                                            <item.icon className="h-4 w-4" />
-                                            <span>{item.title}</span>
-                                        </a>
+                                        {item.items ? (
+                                            <div className="flex items-center gap-2 w-full cursor-default">
+                                                <item.icon className="h-4 w-4" />
+                                                <span className="font-semibold">{item.title}</span>
+                                            </div>
+                                        ) : (
+                                            <Link href={item.url}>
+                                                <item.icon className="h-4 w-4" />
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        )}
                                     </SidebarMenuButton>
+                                    {item.items && (
+                                        <SidebarMenuSub>
+                                            {item.items.map((subItem) => (
+                                                <SidebarMenuSubItem key={subItem.title}>
+                                                    <SidebarMenuSubButton asChild>
+                                                        <Link href={subItem.url}>
+                                                            <span>{subItem.title}</span>
+                                                        </Link>
+                                                    </SidebarMenuSubButton>
+                                                </SidebarMenuSubItem>
+                                            ))}
+                                        </SidebarMenuSub>
+                                    )}
                                 </SidebarMenuItem>
                             ))}
                         </SidebarMenu>

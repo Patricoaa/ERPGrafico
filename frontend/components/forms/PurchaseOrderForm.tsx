@@ -226,7 +226,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {suppliers.map((s) => (
+                                                {suppliers.filter(s => s.id).map((s) => (
                                                     <SelectItem key={s.id} value={s.id.toString()}>
                                                         {s.name}
                                                     </SelectItem>
@@ -250,7 +250,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {warehouses.map((w) => (
+                                                {warehouses.filter(w => w.id).map((w) => (
                                                     <SelectItem key={w.id} value={w.id.toString()}>
                                                         {w.name}
                                                     </SelectItem>
@@ -316,7 +316,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
-                                                                    {products.map((p) => (
+                                                                    {products.filter(p => p.id).map((p) => (
                                                                         <SelectItem key={p.id} value={p.id.toString()}>
                                                                             {p.name}
                                                                         </SelectItem>

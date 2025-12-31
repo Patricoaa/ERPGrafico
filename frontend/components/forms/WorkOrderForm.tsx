@@ -132,7 +132,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             ...data,
             start_date: data.start_date ? format(data.start_date, 'yyyy-MM-dd') : null,
             due_date: data.due_date ? format(data.due_date, 'yyyy-MM-dd') : null,
-            sale_order: data.sale_order === "" ? null : data.sale_order
+            sale_order: (data.sale_order === "" || data.sale_order === "__none__" || data.sale_order === "none") ? null : data.sale_order
         }
 
         try {
@@ -198,8 +198,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="">Sin Nota de Venta</SelectItem>
-                                                {saleOrders.map((so) => (
+                                                <SelectItem value="__none__">Sin Nota de Venta</SelectItem>
+                                                {saleOrders.filter(so => so.id).map((so) => (
                                                     <SelectItem key={so.id} value={so.id.toString()}>
                                                         NV-{so.number} - {so.customer_name}
                                                     </SelectItem>

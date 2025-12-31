@@ -322,7 +322,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
-                                                                    {accounts.map((acc) => (
+                                                                    {accounts.filter(acc => acc.id).map((acc) => (
                                                                         <SelectItem key={acc.id} value={acc.id.toString()}>
                                                                             {acc.code} - {acc.name}
                                                                         </SelectItem>

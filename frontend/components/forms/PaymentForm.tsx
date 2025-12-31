@@ -133,8 +133,15 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
 
     async function onSubmit(data: PaymentFormValues) {
         setLoading(true)
+        const payload = {
+            ...data,
+            customer_id: (data.customer_id === "" || data.customer_id === "__none__") ? null : data.customer_id,
+            supplier_id: (data.supplier_id === "" || data.supplier_id === "__none__") ? null : data.supplier_id,
+            sale_order_id: (data.sale_order_id === "" || data.sale_order_id === "__none__") ? null : data.sale_order_id,
+            purchase_order_id: (data.purchase_order_id === "" || data.purchase_order_id === "__none__") ? null : data.purchase_order_id,
+        }
         try {
-            await api.post('/treasury/payments/register/', data)
+            await api.post('/treasury/payments/register/', payload)
             toast.success("Pago registrado correctamente")
             form.reset()
             setOpen(false)
@@ -224,8 +231,8 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="">Ninguno</SelectItem>
-                                                {partners.map((p) => (
+                                                <SelectItem value="__none__">Ninguno</SelectItem>
+                                                {partners.filter(p => p.id).map((p) => (
                                                     <SelectItem key={p.id} value={p.id.toString()}>
                                                         {p.name}
                                                     </SelectItem>
@@ -250,8 +257,8 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="">Ninguna</SelectItem>
-                                                {orders.map((o) => (
+                                                <SelectItem value="__none__">Ninguna</SelectItem>
+                                                {orders.filter(o => o.id).map((o) => (
                                                     <SelectItem key={o.id} value={o.id.toString()}>
                                                         {paymentType === "INBOUND" ? `NV-${o.number}` : `OC-${o.id}`}
                                                     </SelectItem>

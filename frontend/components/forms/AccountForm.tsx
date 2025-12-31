@@ -89,7 +89,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
         try {
             const payload = {
                 ...data,
-                parent: (data.parent && data.parent !== "none") ? data.parent : null,
+                parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? data.parent : null,
             }
 
             if (initialData?.id) {
@@ -197,8 +197,8 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="none">Sin padre</SelectItem>
-                                            {accounts.map((acc) => (
+                                            <SelectItem value="__none__">Sin padre</SelectItem>
+                                            {accounts.filter(acc => acc.id).map((acc) => (
                                                 <SelectItem key={acc.id} value={acc.id.toString()}>
                                                     {acc.code} - {acc.name}
                                                 </SelectItem>

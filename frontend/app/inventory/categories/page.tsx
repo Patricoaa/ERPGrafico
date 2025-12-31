@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/table"
 import api from "@/lib/api"
 import { CategoryForm } from "@/components/forms/CategoryForm"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface Category {
     id: number
@@ -63,27 +64,32 @@ export default function CategoriesPage() {
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Categorías de Productos</h2>
-                <div className="flex items-center space-x-2">
+                <Button onClick={() => setIsFormOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nueva Categoría
+                </Button>
+            </div>
+
+            <div className="hidden">
+                <CategoryForm
+                    onSuccess={fetchCategories}
+                    open={isFormOpen && !editingCategory}
+                    onOpenChange={(open) => {
+                        setIsFormOpen(open)
+                        if (!open) setEditingCategory(null)
+                    }}
+                />
+                {editingCategory && (
                     <CategoryForm
-                        onSuccess={fetchCategories}
-                        open={isFormOpen && !editingCategory}
+                        initialData={editingCategory}
+                        open={isFormOpen && !!editingCategory}
                         onOpenChange={(open) => {
                             setIsFormOpen(open)
                             if (!open) setEditingCategory(null)
                         }}
+                        onSuccess={fetchCategories}
                     />
-                    {editingCategory && (
-                        <CategoryForm
-                            initialData={editingCategory}
-                            open={isFormOpen && !!editingCategory}
-                            onOpenChange={(open) => {
-                                setIsFormOpen(open)
-                                if (!open) setEditingCategory(null)
-                            }}
-                            onSuccess={fetchCategories}
-                        />
-                    )}
-                </div>
+                )}
             </div>
             <div className="rounded-md border">
                 <Table>

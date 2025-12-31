@@ -210,7 +210,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {customers.map((c) => (
+                                                {customers.filter(c => c.id).map((c) => (
                                                     <SelectItem key={c.id} value={c.id.toString()}>
                                                         {c.name} ({c.tax_id})
                                                     </SelectItem>
