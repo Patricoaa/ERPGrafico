@@ -9,19 +9,10 @@ from decimal import Decimal
 class TreasuryService:
     @staticmethod
     @transaction.atomic
-    def register_payment(journal: BankJournal, amount: Decimal, payment_type, date=None, reference='', partner=None, order=None):
+    def register_payment(journal: BankJournal, amount: Decimal, payment_type, date=None, reference='', partner=None, invoice=None):
         """
         Registers a payment and creates the corresponding Accounting Entry.
-        
-        INBOUND (Cobro Cliente):
-            Debit: Bank/Cash (Asset)
-            Credit: Accounts Receivable (Asset)
-            
-        OUTBOUND (Pago Proveedor):
-            Debit: Accounts Payable (Liability)
-            Credit: Bank/Cash (Asset)
         """
-        
         if amount <= 0:
             raise ValidationError("El monto debe ser mayor a 0.")
             
@@ -34,7 +25,8 @@ class TreasuryService:
             payment_type=payment_type,
             amount=amount,
             date=date,
-            reference=reference
+            reference=reference,
+            invoice=invoice
         )
         
         if partner:
@@ -43,59 +35,61 @@ class TreasuryService:
              else:
                  payment.supplier = partner
         
-        if order:
-             # Logic to link order (not strictly enforced in MVP)
-             pass
-             
         payment.save()
 
-        # 2. Accounting Entry
+        # 2. Update Invoice and Order Status
+        if invoice:
+             from billing.models import Invoice
+             # Simplified: Mark as PAID once a payment is linked
+             invoice.status = Invoice.Status.PAID
+             invoice.save()
+             
+             if invoice.sale_order:
+                 from sales.models import SaleOrder
+                 invoice.sale_order.status = SaleOrder.Status.PAID
+                 invoice.sale_order.save()
+             elif invoice.purchase_order:
+                 from purchasing.models import PurchaseOrder
+                 invoice.purchase_order.status = PurchaseOrder.Status.PAID
+                 invoice.purchase_order.save()
+
+        # 3. Accounting Entry
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
+
         entry = JournalEntry.objects.create(
             date=date,
-            description=f"Pago {payment_type} - {reference}",
+            description=f"Pago {payment.get_payment_type_display()} - {reference}",
             reference=f"PAY-{payment.id}",
             state=JournalEntry.State.DRAFT
         )
 
         bank_account = journal.account
         
-        # Determine Counterpart Account (AR or AP)
         if payment_type == Payment.Type.INBOUND:
-             # Customer Payment
+             # Customer Payment: Debit Bank, Credit AR
+             ar_account = (payment.customer.account_receivable if payment.customer else None) or \
+                          (settings.default_receivable_account if settings else None)
+
+             if not ar_account:
+                 raise ValidationError("No se encontró cuenta para Cobro (AR).")
+
              # Debit Bank
              JournalItem.objects.create(entry=entry, account=bank_account, debit=amount, credit=0)
-             
              # Credit AR
-             # Try to find specific account from Customer or generic AR
-             ar_account = None
-             if payment.customer and payment.customer.account_receivable:
-                 ar_account = payment.customer.account_receivable
-             
-             if not ar_account:
-                 ar_account = Account.objects.filter(account_type=AccountType.ASSET, code__startswith='1.1.02').first() # Hacky lookup
-                 
-             if not ar_account:
-                  # Fallback
-                  ar_account = Account.objects.filter(account_type=AccountType.ASSET).first()
-             
              JournalItem.objects.create(entry=entry, account=ar_account, debit=0, credit=amount, partner=payment.customer.name if payment.customer else '')
 
         else:
-             # Supplier Payment
+             # Supplier Payment: Debit AP, Credit Bank
+             ap_account = (payment.supplier.payable_account if payment.supplier else None) or \
+                          (settings.default_payable_account if settings else None)
+
+             if not ap_account:
+                 raise ValidationError("No se encontró cuenta para Pago (AP).")
+
              # Credit Bank
              JournalItem.objects.create(entry=entry, account=bank_account, debit=0, credit=amount)
-             
              # Debit AP
-             ap_account = None
-             if payment.supplier and payment.supplier.payable_account:
-                 ap_account = payment.supplier.payable_account
-                 
-             if not ap_account:
-                  ap_account = Account.objects.filter(account_type=AccountType.LIABILITY, code__startswith='2.1.01').first()
-             
-             if not ap_account:
-                  ap_account = Account.objects.filter(account_type=AccountType.LIABILITY).first()
-
              JournalItem.objects.create(entry=entry, account=ap_account, debit=amount, credit=0, partner=payment.supplier.name if payment.supplier else '')
              
         JournalEntryService.post_entry(entry)

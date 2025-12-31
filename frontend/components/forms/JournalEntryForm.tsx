@@ -44,6 +44,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 const journalItemSchema = z.object({
     id: z.number().optional(),
@@ -315,20 +316,13 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                                     name={`items.${index}.account`}
                                                     render={({ field }) => (
                                                         <FormItem className="space-y-0">
-                                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                                <FormControl>
-                                                                    <SelectTrigger>
-                                                                        <SelectValue placeholder="Cuenta" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    {accounts.filter(acc => acc.id).map((acc) => (
-                                                                        <SelectItem key={acc.id} value={acc.id.toString()}>
-                                                                            {acc.code} - {acc.name}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
+                                                            <FormControl>
+                                                                <AccountSelector
+                                                                    value={field.value}
+                                                                    onChange={field.onChange}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />

@@ -33,7 +33,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 
 const accountSchema = z.object({
-    code: z.string().min(1, "El código es requerido"),
+    code: z.string().optional(),
     name: z.string().min(1, "El nombre es requerido"),
     account_type: z.enum(["ASSET", "LIABILITY", "EQUITY", "INCOME", "EXPENSE"]),
     parent: z.string().optional(),
@@ -141,7 +141,12 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 <FormItem>
                                     <FormLabel>Código</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="1.1.01" {...field} />
+                                        <Input
+                                            placeholder={initialData ? "" : "Automático"}
+                                            {...field}
+                                            readOnly={!!initialData}
+                                            className={initialData ? "bg-muted" : ""}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -218,7 +223,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Creando..." : "Crear Cuenta"}
+                                {loading ? (initialData ? "Guardando..." : "Creando...") : (initialData ? "Guardar Cambios" : "Crear Cuenta")}
                             </Button>
                         </div>
                     </form>

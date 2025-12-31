@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'production',
     'treasury',
     'reports',
+    'billing',
 ]
 
 MIDDLEWARE = [

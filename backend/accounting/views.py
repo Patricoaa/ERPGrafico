@@ -1,10 +1,31 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Account, JournalEntry
-from .serializers import AccountSerializer, JournalEntrySerializer
+from .models import Account, JournalEntry, AccountingSettings
+from .serializers import AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer
 from .services import JournalEntryService
 from django.core.exceptions import ValidationError
+
+class AccountingSettingsViewSet(viewsets.ModelViewSet):
+    queryset = AccountingSettings.objects.all()
+    serializer_class = AccountingSettingsSerializer
+
+    @action(detail=False, methods=['get', 'put', 'patch'])
+    def current(self, request):
+        obj = AccountingSettings.objects.first()
+        if not obj:
+            if request.method == 'GET':
+                 return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)
+            obj = AccountingSettings.objects.create()
+        
+        if request.method == 'GET':
+            serializer = self.get_serializer(obj)
+            return Response(serializer.data)
+        
+        serializer = self.get_serializer(obj, data=request.data, partial=(request.method == 'PATCH'))
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()

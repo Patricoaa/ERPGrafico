@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Settings, User, Building2, Bell, Shield, Database } from "lucide-react"
+import Link from "next/link"
 
 export default function SettingsPage() {
     return (
@@ -10,35 +11,41 @@ export default function SettingsPage() {
             <h2 className="text-3xl font-bold tracking-tight">Configuración del Sistema</h2>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card className="cursor-pointer hover:border-primary">
-                    <CardHeader className="flex flex-row items-center gap-4">
-                        <Building2 className="h-8 w-8 text-primary" />
-                        <div>
-                            <CardTitle>Empresa</CardTitle>
-                            <CardDescription>Datos fiscales y logotipos.</CardDescription>
-                        </div>
-                    </CardHeader>
-                </Card>
+                <Link href="/settings/company">
+                    <Card className="cursor-pointer hover:border-primary">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <Building2 className="h-8 w-8 text-primary" />
+                            <div>
+                                <CardTitle>Empresa</CardTitle>
+                                <CardDescription>Datos fiscales y logotipos.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
 
-                <Card className="cursor-pointer hover:border-primary">
-                    <CardHeader className="flex flex-row items-center gap-4">
-                        <Database className="h-8 w-8 text-primary" />
-                        <div>
-                            <CardTitle>Contabilidad</CardTitle>
-                            <CardDescription>Cuentas predeterminadas e impuestos.</CardDescription>
-                        </div>
-                    </CardHeader>
-                </Card>
+                <Link href="/settings/accounting">
+                    <Card className="cursor-pointer hover:border-primary">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <Database className="h-8 w-8 text-primary" />
+                            <div>
+                                <CardTitle>Contabilidad</CardTitle>
+                                <CardDescription>Cuentas predeterminadas e impuestos.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
 
-                <Card className="cursor-pointer hover:border-primary">
-                    <CardHeader className="flex flex-row items-center gap-4">
-                        <Shield className="h-8 w-8 text-primary" />
-                        <div>
-                            <CardTitle>Usuarios y Permisos</CardTitle>
-                            <CardDescription>Gestión de accesos y roles.</CardDescription>
-                        </div>
-                    </CardHeader>
-                </Card>
+                <Link href="/settings/users">
+                    <Card className="cursor-pointer hover:border-primary">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <Shield className="h-8 w-8 text-primary" />
+                            <div>
+                                <CardTitle>Usuarios y Permisos</CardTitle>
+                                <CardDescription>Gestión de accesos y roles.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
             </div>
 
             <Card>

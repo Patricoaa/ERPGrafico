@@ -23,10 +23,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { formatRUT, validateRUT } from "@/lib/utils/format"
 
 const customerSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
-    tax_id: z.string().min(1, "El RUT/Tax ID es requerido"),
+    tax_id: z.string().min(1, "El RUT/Tax ID es requerido").refine(validateRUT, "RUT inválido"),
     email: z.string().email("Email inválido").optional().or(z.literal("")),
     phone: z.string().optional(),
     address: z.string().optional(),
@@ -131,7 +132,11 @@ export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenCha
                                 <FormItem>
                                     <FormLabel>RUT / Tax ID</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="12.345.678-9" {...field} />
+                                        <Input
+                                            placeholder="12.345.678-9"
+                                            {...field}
+                                            onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

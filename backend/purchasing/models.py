@@ -36,6 +36,8 @@ class PurchaseOrder(models.Model):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
         RECEIVED = 'RECEIVED', _('Recibido')
+        INVOICED = 'INVOICED', _('Facturado')
+        PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
 
     number = models.CharField(_("Número Interno"), max_length=20, unique=True, editable=False)

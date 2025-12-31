@@ -25,6 +25,36 @@ class Account(models.Model):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
+    def save(self, *args, **kwargs):
+        if not self.code:
+            from .models import AccountingSettings
+            settings = AccountingSettings.objects.first()
+            if settings:
+                prefix = ""
+                if self.parent:
+                    prefix = self.parent.code + "."
+                else:
+                    if self.account_type == AccountType.ASSET: prefix = settings.asset_prefix
+                    elif self.account_type == AccountType.LIABILITY: prefix = settings.liability_prefix
+                    elif self.account_type == AccountType.EQUITY: prefix = settings.equity_prefix
+                    elif self.account_type == AccountType.INCOME: prefix = settings.income_prefix
+                    elif self.account_type == AccountType.EXPENSE: prefix = settings.expense_prefix
+                    prefix += "." if prefix else ""
+
+                # Find next sequence
+                last_account = Account.objects.filter(code__startswith=prefix, parent=self.parent).order_by('-code').first()
+                if last_account:
+                    try:
+                        last_part = last_account.code.split('.')[-1]
+                        next_seq = int(last_part) + 1
+                        self.code = prefix + str(next_seq).zfill(len(last_part))
+                    except (ValueError, IndexError):
+                        self.code = prefix + "1"
+                else:
+                    self.code = prefix + "1"
+        
+        super().save(*args, **kwargs)
+
 class JournalEntry(models.Model):
     class State(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
@@ -70,12 +100,25 @@ class JournalItem(models.Model):
             raise ValidationError(_("Un apunte no puede tener montos en Debe y Haber simultáneamente."))
 
 class AccountingSettings(models.Model):
+    # Default Accounts
     default_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_receivable')
     default_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_payable')
     default_revenue_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_revenue')
     default_expense_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_expense')
-    default_tax_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax')
+    default_tax_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_receivable')
+    default_tax_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_payable')
     default_inventory_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_inventory')
+
+    # Code Format & Hierarchy
+    # Example: "X.X.XX.XXX"
+    code_format = models.CharField(_("Formato de Código"), max_length=50, default="X.X.XX.XXX")
+    
+    # Starting digits for each type
+    asset_prefix = models.CharField(_("Prefijo Activos"), max_length=5, default="1")
+    liability_prefix = models.CharField(_("Prefijo Pasivos"), max_length=5, default="2")
+    equity_prefix = models.CharField(_("Prefijo Patrimonio"), max_length=5, default="3")
+    income_prefix = models.CharField(_("Prefijo Ingresos"), max_length=5, default="4")
+    expense_prefix = models.CharField(_("Prefijo Gastos"), max_length=5, default="5")
 
     class Meta:
         verbose_name = _("Configuración Contable")

@@ -1,9 +1,14 @@
 from rest_framework import serializers
-from .models import Account, JournalEntry, JournalItem
+from .models import Account, JournalEntry, JournalItem, AccountingSettings
 
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
+        fields = '__all__'
+
+class AccountingSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccountingSettings
         fields = '__all__'
 
 class JournalItemSerializer(serializers.ModelSerializer):

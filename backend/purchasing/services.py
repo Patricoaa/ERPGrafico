@@ -89,44 +89,27 @@ class PurchasingService:
             
             total_payable += total_line
 
-        # 4. Accounting Credit (Accounts Payable)
-        payable_account = order.supplier.payable_account
-        if not payable_account:
-             # Fallback
-             payable_account = Account.objects.filter(account_type=AccountType.LIABILITY).first() # TODO: Improve lookup
-
-        if not payable_account:
-             raise ValidationError("No se encontró cuenta por pagar para el proveedor.")
-             
-        # Add Tax if applicable (simplified: PO usually includes Tax, but Inventory Val is Net. 
-        # Assuming Net for Stock, Tax separate.
-        # For this MVP, let's assume `unit_cost` is Net, and we add Tax to Payable.
+        # 4. Accounting Credit (Inventory Clearing / Received Not Billed)
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
         
-        tax_amount = order.total_tax
+        # We use the inventory account as a clearing account for now if not specific clearing defined
+        # In a real ERP there is a specific 'Stock Input' account.
+        clearing_account = settings.default_inventory_account 
+
+        if not clearing_account:
+             raise ValidationError("Debe configurar la cuenta de inventario para la recepción.")
+              
         JournalItem.objects.create(
             entry=entry,
-            account=payable_account,
+            account=clearing_account,
             debit=0,
-            credit=total_payable + tax_amount,
-            partner=order.supplier.name
+            credit=total_payable, # Net amount only for clearing
+            label=f"Provisión Recepción OC-{order.number}"
         )
         
-        # Add Tax Debit (Fiscal Credit)
-        if tax_amount > 0:
-             try:
-                tax_account = Account.objects.get(code='1.1.04') # e.g. IVA Crédito Fiscal
-             except:
-                tax_account = Account.objects.filter(account_type=AccountType.ASSET).last() # Hacky fallback
-
-             JournalItem.objects.create(
-                entry=entry,
-                account=tax_account,
-                debit=tax_amount,
-                credit=0,
-                label="IVA Compras"
-             )
-
-
+        # NOTE: Tax and AP move to BillingService.create_purchase_bill
+        
         # Post
         JournalEntryService.post_entry(entry)
         

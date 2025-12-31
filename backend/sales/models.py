@@ -33,6 +33,7 @@ class SaleOrder(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
+        INVOICED = 'INVOICED', _('Facturado')
         PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
 

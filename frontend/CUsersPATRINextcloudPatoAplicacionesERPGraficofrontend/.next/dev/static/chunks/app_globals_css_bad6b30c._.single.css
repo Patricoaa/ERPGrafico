@@ -31,6 +31,19 @@
       --tw-ring-offset-color: #fff;
       --tw-ring-offset-shadow: 0 0 #0000;
       --tw-outline-style: solid;
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial;
       --tw-duration: initial;
       --tw-ease: initial;
       --tw-content: "";
@@ -55,6 +68,8 @@
     --color-green-500: #00c758;
     --color-green-600: #00a544;
     --color-green-800: #016630;
+    --color-emerald-500: #00bb7f;
+    --color-emerald-600: #009767;
     --color-blue-600: #155dfc;
     --color-slate-50: #f8fafc;
     --color-slate-100: #f1f5f9;
@@ -66,6 +81,9 @@
     --spacing: .25rem;
     --container-sm: 24rem;
     --container-lg: 32rem;
+    --container-2xl: 42rem;
+    --container-3xl: 48rem;
+    --container-4xl: 56rem;
     --text-xs: .75rem;
     --text-xs--line-height: calc(1 / .75);
     --text-sm: .875rem;
@@ -109,6 +127,8 @@
       --color-green-500: lab(70.5521% -66.5147 45.8073);
       --color-green-600: lab(59.0978% -58.6621 41.2579);
       --color-green-800: lab(37.4616% -36.7971 22.9692);
+      --color-emerald-500: lab(66.9756% -58.27 19.5419);
+      --color-emerald-600: lab(55.0481% -49.9246 15.93);
       --color-blue-600: lab(44.0605% 29.0279 -86.0352);
       --color-slate-50: lab(98.1434% -.369519 -1.05966);
       --color-slate-100: lab(96.286% -.852436 -2.46847);
@@ -568,6 +588,10 @@
     margin-bottom: calc(var(--spacing) * 4);
   }
 
+  .ml-2 {
+    margin-left: calc(var(--spacing) * 2);
+  }
+
   .ml-auto {
     margin-left: auto;
   }
@@ -707,6 +731,14 @@
     height: calc(var(--spacing) * 24);
   }
 
+  .h-\[200px\] {
+    height: 200px;
+  }
+
+  .h-\[400px\] {
+    height: 400px;
+  }
+
   .h-\[calc\(100vh-4rem\)\] {
     height: calc(100vh - 4rem);
   }
@@ -747,6 +779,14 @@
     max-height: 90vh;
   }
 
+  .max-h-\[200px\] {
+    max-height: 200px;
+  }
+
+  .max-h-\[400px\] {
+    max-height: 400px;
+  }
+
   .min-h-0 {
     min-height: calc(var(--spacing) * 0);
   }
@@ -765,6 +805,10 @@
 
   .w-\(--sidebar-width\) {
     width: var(--sidebar-width);
+  }
+
+  .w-1\/3 {
+    width: 33.3333%;
   }
 
   .w-3 {
@@ -853,6 +897,18 @@
 
   .max-w-\(--skeleton-width\) {
     max-width: var(--skeleton-width);
+  }
+
+  .max-w-2xl {
+    max-width: var(--container-2xl);
+  }
+
+  .max-w-3xl {
+    max-width: var(--container-3xl);
+  }
+
+  .max-w-4xl {
+    max-width: var(--container-4xl);
   }
 
   .max-w-\[120px\] {
@@ -1278,6 +1334,10 @@
     background-color: var(--destructive);
   }
 
+  .bg-emerald-500 {
+    background-color: var(--color-emerald-500);
+  }
+
   .bg-foreground {
     background-color: var(--foreground);
   }
@@ -1428,6 +1488,14 @@
 
   .py-2 {
     padding-block: calc(var(--spacing) * 2);
+  }
+
+  .py-3 {
+    padding-block: calc(var(--spacing) * 3);
+  }
+
+  .py-4 {
+    padding-block: calc(var(--spacing) * 4);
   }
 
   .py-6 {
@@ -1700,6 +1768,10 @@
     opacity: .7;
   }
 
+  .opacity-100 {
+    opacity: 1;
+  }
+
   .shadow-\[0_0_0_1px_hsl\(var\(--sidebar-border\)\)\] {
     --tw-shadow: 0 0 0 1px var(--tw-shadow-color, hsl(var(--sidebar-border)));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -1753,6 +1825,10 @@
   .outline {
     outline-style: var(--tw-outline-style);
     outline-width: 1px;
+  }
+
+  .filter {
+    filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );
   }
 
   .transition {
@@ -2304,6 +2380,16 @@
     }
   }
 
+  .focus-visible\:ring-emerald-500\/20:focus-visible {
+    --tw-ring-color: #00bb7f33;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .focus-visible\:ring-emerald-500\/20:focus-visible {
+      --tw-ring-color: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
+    }
+  }
+
   .focus-visible\:ring-ring:focus-visible {
     --tw-ring-color: var(--ring);
   }
@@ -2745,6 +2831,12 @@
   }
 
   @media (min-width: 40rem) {
+    .sm\:max-w-\[425px\] {
+      max-width: 425px;
+    }
+  }
+
+  @media (min-width: 40rem) {
     .sm\:max-w-\[500px\] {
       max-width: 500px;
     }
@@ -2825,6 +2917,12 @@
   @media (min-width: 48rem) {
     .md\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .md\:grid-cols-5 {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
 
@@ -3176,6 +3274,12 @@
   }
 
   @media (hover: hover) {
+    a.\[a\&\]\:hover\:bg-emerald-600:hover {
+      background-color: var(--color-emerald-600);
+    }
+  }
+
+  @media (hover: hover) {
     a.\[a\&\]\:hover\:bg-primary\/90:hover {
       background-color: var(--primary);
     }
@@ -3464,6 +3568,72 @@
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+
+@property --tw-blur {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-brightness {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-contrast {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-grayscale {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-hue-rotate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-invert {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-opacity {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-saturate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-sepia {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-drop-shadow-size {
+  syntax: "*";
+  inherits: false
 }
 
 @property --tw-duration {
