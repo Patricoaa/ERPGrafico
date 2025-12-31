@@ -170,7 +170,7 @@ class BillingService:
         order_serializer = CreateSaleOrderSerializer(data=order_data)
         if not order_serializer.is_valid():
             raise ValidationError(order_serializer.errors)
-        order = order_serializer.save()
+        order = order_serializer.save(channel='POS')
         
         # 2. Confirm Order (Inventory deduction happen here if implemented)
         from sales.services import SalesService
@@ -197,7 +197,7 @@ class BillingService:
                 journal=journal,
                 amount=order.total,
                 payment_type='INBOUND',
-                reference=f"POS-{order.number}",
+                reference=f"NV-{order.number}",
                 partner=order.customer,
                 invoice=invoice,
                 account=payment_account

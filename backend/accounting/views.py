@@ -41,21 +41,31 @@ class AccountViewSet(viewsets.ModelViewSet):
             import traceback
             traceback.print_exc()
             raise e
-
+    
+    def destroy(self, request, *args, **kwargs):
+        account = self.get_object()
+        # Check if account has journal items
+        if account.journal_items.filter(entry__state='POSTED').exists():
+            return Response(
+                {"error": "No se puede eliminar una cuenta con movimientos contables asociados."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
+    
     @action(detail=True, methods=['get'])
     def ledger(self, request, pk=None):
         """
         Returns the ledger (libro mayor) for a specific account.
-        Shows all journal items for this account with running balance.
+        Shows all posted journal items with running balance.
         """
         account = self.get_object()
-        items = account.items.filter(entry__state='POSTED').select_related('entry').order_by('entry__date', 'entry__id')
+        items = account.journal_items.filter(entry__state='POSTED').select_related('entry').order_by('entry__date', 'entry__id')
         
+        balance = 0
         ledger_data = []
-        running_balance = 0
         
         for item in items:
-            running_balance += (item.debit - item.credit)
+            balance += (item.debit - item.credit)
             ledger_data.append({
                 'id': item.id,
                 'date': item.entry.date,
@@ -64,27 +74,16 @@ class AccountViewSet(viewsets.ModelViewSet):
                 'description': item.entry.description,
                 'debit': float(item.debit),
                 'credit': float(item.credit),
-                'balance': float(running_balance),
-                'partner': item.partner,
-                'label': item.label
+                'balance': float(balance),
+                'partner': item.partner or '',
+                'label': item.label or '',
+                'source_document': item.entry.get_source_document
             })
         
         return Response({
             'account': AccountSerializer(account).data,
-            'items': ledger_data
+            'movements': ledger_data
         })
-
-    def destroy(self, request, *args, **kwargs):
-        """
-        Only allow deletion if account has no posted movements.
-        """
-        account = self.get_object()
-        if account.items.filter(entry__state='POSTED').exists():
-            return Response(
-                {'error': 'No se puede eliminar una cuenta con movimientos contables asociados.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        return super().destroy(request, *args, **kwargs)
 
 class JournalEntryViewSet(viewsets.ModelViewSet):
     queryset = JournalEntry.objects.all()

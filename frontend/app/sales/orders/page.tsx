@@ -15,6 +15,10 @@ import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { Progress } from "@/components/ui/progress"
+import { Banknote } from "lucide-react"
 
 interface SaleOrder {
     id: number
@@ -23,6 +27,8 @@ interface SaleOrder {
     date: string
     status: string
     total: string
+    total_paid: number
+    pending_amount: number
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
@@ -38,6 +44,8 @@ export default function SalesOrdersPage() {
     const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
+    const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
 
     const fetchOrders = async () => {
         try {
@@ -84,17 +92,50 @@ export default function SalesOrdersPage() {
         }
     }
 
-    const handleInvoice = async (order: SaleOrder) => {
+    const handlePayment = async (data: { paymentMethod: string, amount: number, dteType?: string }) => {
+        if (!payingOrder) return
         try {
-            await api.post('/billing/invoices/create_from_order/', {
-                order_id: order.id,
-                order_type: 'sale',
-                dte_type: 'FACTURA'
+            const res = await api.post('/billing/invoices/pos_checkout/', {
+                order_data: {
+                    id: payingOrder.id,
+                    customer: payingOrder.id, // This is a bit tricky, pos_checkout expected full order_data or ID?
+                },
+                dte_type: data.dteType || 'BOLETA',
+                payment_method: data.paymentMethod,
+                amount: data.amount
             })
-            toast.success("Factura generada correctamente.")
+            // Actually, we should probably have a more direct endpoint for paying an existing order
+            // Let's use a new endpoint or update register_payment
+
+            // For now, let's use the register_payment logic if we have an invoice, 
+            // or create the invoice first if needed.
+
+            // If the order is confirmed but not invoiced, we create the invoice first
+            let invoiceId;
+            if (payingOrder.status === 'CONFIRMED') {
+                const invRes = await api.post('/billing/invoices/create_from_order/', {
+                    order_id: payingOrder.id,
+                    order_type: 'sale',
+                    dte_type: data.dteType || 'BOLETA'
+                })
+                invoiceId = invRes.data.id
+            }
+
+            // Register the payment
+            await api.post('/treasury/payments/', {
+                amount: data.amount,
+                payment_type: 'INBOUND',
+                reference: `NV-${payingOrder.number}`,
+                invoice: invoiceId,
+                sale_order: payingOrder.id,
+                payment_method: data.paymentMethod
+            })
+
+            toast.success("Pago registrado correctamente")
+            setPayingOrder(null)
             fetchOrders()
         } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al facturar.")
+            toast.error(error.response?.data?.error || "Error al procesar el pago")
         }
     }
 
@@ -136,8 +177,9 @@ export default function SalesOrdersPage() {
                             <TableHead>Fecha</TableHead>
                             <TableHead>Cliente</TableHead>
                             <TableHead>Total</TableHead>
+                            <TableHead>Pagado</TableHead>
                             <TableHead>Estado</TableHead>
-                            <TableHead className="w-[100px] text-center">Acciones</TableHead>
+                            <TableHead className="w-[150px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -148,26 +190,43 @@ export default function SalesOrdersPage() {
                                 <TableCell>{order.customer_name}</TableCell>
                                 <TableCell>{parseFloat(order.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</TableCell>
                                 <TableCell>
+                                    <div className="space-y-1 w-32">
+                                        <div className="flex justify-between text-[10px] font-bold">
+                                            <span>{Math.round((order.total_paid / parseFloat(order.total)) * 100)}%</span>
+                                            <span>${order.total_paid.toLocaleString()}</span>
+                                        </div>
+                                        <Progress value={(order.total_paid / parseFloat(order.total)) * 100} className="h-1" />
+                                    </div>
+                                </TableCell>
+                                <TableCell>
                                     <Badge variant={statusMap[order.status]?.variant || "default"}>
                                         {statusMap[order.status]?.label || order.status}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex justify-center space-x-2">
+                                    <div className="flex justify-center space-x-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id })}
+                                            title="Ver Detalles"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleEdit(order)}
                                             title="Editar"
                                         >
-                                            <Pencil className="h-4 w-4" />
+                                            <Pencil className="h-4 w-4 text-orange-500" />
                                         </Button>
 
                                         {order.status === 'DRAFT' && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-emerald-600"
+                                                className="text-blue-600"
                                                 onClick={() => handleConfirm(order.id)}
                                                 title="Confirmar"
                                             >
@@ -175,15 +234,15 @@ export default function SalesOrdersPage() {
                                             </Button>
                                         )}
 
-                                        {order.status === 'CONFIRMED' && (
+                                        {['CONFIRMED', 'INVOICED'].includes(order.status) && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-blue-600"
-                                                onClick={() => handleInvoice(order)}
-                                                title="Facturar"
+                                                className="text-emerald-600"
+                                                onClick={() => setPayingOrder(order)}
+                                                title="Registrar Pago"
                                             >
-                                                <FileText className="h-4 w-4" />
+                                                <Banknote className="h-4 w-4" />
                                             </Button>
                                         )}
 
@@ -213,6 +272,26 @@ export default function SalesOrdersPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {viewingTransaction && (
+                <TransactionViewModal
+                    open={!!viewingTransaction}
+                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    type={viewingTransaction.type}
+                    id={viewingTransaction.id}
+                />
+            )}
+
+            {payingOrder && (
+                <PaymentDialog
+                    open={!!payingOrder}
+                    onOpenChange={(open) => !open && setPayingOrder(null)}
+                    total={parseFloat(payingOrder.total)}
+                    pendingAmount={payingOrder.pending_amount}
+                    showDteSelector={payingOrder.status === 'CONFIRMED'}
+                    onConfirm={handlePayment}
+                />
+            )}
         </div>
     )
 }

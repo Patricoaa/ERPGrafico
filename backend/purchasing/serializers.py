@@ -15,10 +15,18 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseLineSerializer(many=True, read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    total_paid = serializers.SerializerMethodField()
+    pending_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
         fields = '__all__'
+
+    def get_total_paid(self, obj):
+        return sum(p.amount for p in obj.payments.all())
+
+    def get_pending_amount(self, obj):
+        return obj.total - self.get_total_paid(obj)
 
 class CreatePurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseLineSerializer(many=True)

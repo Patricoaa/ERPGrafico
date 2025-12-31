@@ -15,6 +15,10 @@ import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { Progress } from "@/components/ui/progress"
+import { Banknote, Eye } from "lucide-react"
 
 interface PurchaseOrder {
     id: number
@@ -24,6 +28,8 @@ interface PurchaseOrder {
     status: string
     total: string
     warehouse_name: string
+    total_paid: number
+    pending_amount: number
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" }> = {
@@ -40,6 +46,8 @@ export default function PurchaseOrdersPage() {
     const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
+    const [payingOrder, setPayingOrder] = useState<PurchaseOrder | null>(null)
 
     const fetchOrders = async () => {
         try {
@@ -114,6 +122,26 @@ export default function PurchaseOrdersPage() {
         }
     }
 
+    const handlePayment = async (data: { paymentMethod: string, amount: number }) => {
+        if (!payingOrder) return
+        try {
+            // Register the payment
+            await api.post('/treasury/payments/', {
+                amount: data.amount,
+                payment_type: 'OUTBOUND',
+                reference: `OC-${payingOrder.number}`,
+                purchase_order: payingOrder.id,
+                payment_method: data.paymentMethod
+            })
+
+            toast.success("Pago registrado correctamente")
+            setPayingOrder(null)
+            fetchOrders()
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al procesar el pago")
+        }
+    }
+
     useEffect(() => {
         fetchOrders()
     }, [])
@@ -153,8 +181,9 @@ export default function PurchaseOrdersPage() {
                             <TableHead>Proveedor</TableHead>
                             <TableHead>Bodega</TableHead>
                             <TableHead>Total</TableHead>
+                            <TableHead>Pagado</TableHead>
                             <TableHead>Estado</TableHead>
-                            <TableHead className="w-[100px] text-center">Acciones</TableHead>
+                            <TableHead className="w-[150px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -166,26 +195,43 @@ export default function PurchaseOrdersPage() {
                                 <TableCell>{order.warehouse_name}</TableCell>
                                 <TableCell>{parseFloat(order.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</TableCell>
                                 <TableCell>
+                                    <div className="space-y-1 w-32">
+                                        <div className="flex justify-between text-[10px] font-bold">
+                                            <span>{Math.round((order.total_paid / parseFloat(order.total)) * 100)}%</span>
+                                            <span>${order.total_paid.toLocaleString()}</span>
+                                        </div>
+                                        <Progress value={(order.total_paid / parseFloat(order.total)) * 100} className="h-1" />
+                                    </div>
+                                </TableCell>
+                                <TableCell>
                                     <Badge variant={statusMap[order.status]?.variant || "default"}>
                                         {statusMap[order.status]?.label || order.status}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex justify-center space-x-2">
+                                    <div className="flex justify-center space-x-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id })}
+                                            title="Ver Detalles"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleEdit(order)}
                                             title="Editar"
                                         >
-                                            <Pencil className="h-4 w-4" />
+                                            <Pencil className="h-4 w-4 text-orange-500" />
                                         </Button>
 
                                         {order.status === 'DRAFT' && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-emerald-600"
+                                                className="text-blue-600"
                                                 onClick={() => handleConfirm(order.id)}
                                                 title="Confirmar"
                                             >
@@ -205,15 +251,15 @@ export default function PurchaseOrdersPage() {
                                             </Button>
                                         )}
 
-                                        {order.status === 'RECEIVED' && (
+                                        {['RECEIVED', 'INVOICED', 'CONFIRMED'].includes(order.status) && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-blue-600"
-                                                onClick={() => handleInvoice(order)}
-                                                title="Registrar Factura"
+                                                className="text-emerald-600"
+                                                onClick={() => setPayingOrder(order)}
+                                                title="Registrar Pago"
                                             >
-                                                <FileText className="h-4 w-4" />
+                                                <Banknote className="h-4 w-4" />
                                             </Button>
                                         )}
 
@@ -232,17 +278,36 @@ export default function PurchaseOrdersPage() {
                         ))}
                         {loading && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center">Cargando órdenes de compra...</TableCell>
+                                <TableCell colSpan={8} className="text-center">Cargando órdenes de compra...</TableCell>
                             </TableRow>
                         )}
                         {!loading && orders.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center">No hay órdenes de compra registradas.</TableCell>
+                                <TableCell colSpan={8} className="text-center">No hay órdenes de compra registradas.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
             </div>
+
+            {viewingTransaction && (
+                <TransactionViewModal
+                    open={!!viewingTransaction}
+                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    type={viewingTransaction.type}
+                    id={viewingTransaction.id}
+                />
+            )}
+
+            {payingOrder && (
+                <PaymentDialog
+                    open={!!payingOrder}
+                    onOpenChange={(open) => !open && setPayingOrder(null)}
+                    total={parseFloat(payingOrder.total)}
+                    pendingAmount={payingOrder.pending_amount}
+                    onConfirm={handlePayment}
+                />
+            )}
         </div>
     )
 }

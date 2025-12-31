@@ -39,19 +39,26 @@ class TreasuryService:
 
         # 2. Update Invoice and Order Status
         if invoice:
-             from billing.models import Invoice
-             # Simplified: Mark as PAID once a payment is linked
-             invoice.status = Invoice.Status.PAID
-             invoice.save()
-             
-             if invoice.sale_order:
-                 from sales.models import SaleOrder
-                 invoice.sale_order.status = SaleOrder.Status.PAID
-                 invoice.sale_order.save()
-             elif invoice.purchase_order:
-                 from purchasing.models import PurchaseOrder
-                 invoice.purchase_order.status = PurchaseOrder.Status.PAID
-                 invoice.purchase_order.save()
+            from billing.models import Invoice
+            # Calculate total paid for this invoice
+            total_paid = sum(p.amount for p in invoice.payments.all())
+            
+            if total_paid >= invoice.total:
+                invoice.status = Invoice.Status.PAID
+                invoice.save()
+                
+                if invoice.sale_order:
+                    from sales.models import SaleOrder
+                    invoice.sale_order.status = SaleOrder.Status.PAID
+                    invoice.sale_order.save()
+                elif invoice.purchase_order:
+                    from purchasing.models import PurchaseOrder
+                    invoice.purchase_order.status = PurchaseOrder.Status.PAID
+                    invoice.purchase_order.save()
+            else:
+                # Still pending or partial? We could add a PARTIAL status
+                # For now let's just not mark as PAID
+                pass
 
         # 3. Accounting Entry
         from accounting.models import AccountingSettings

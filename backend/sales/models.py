@@ -37,6 +37,10 @@ class SaleOrder(models.Model):
         PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
 
+    class Channel(models.TextChoices):
+        SYSTEM = 'SYSTEM', _('Sistema')
+        POS = 'POS', _('Punto de Venta (POS)')
+
     class PaymentMethod(models.TextChoices):
         CASH = 'CASH', _('Efectivo')
         CARD = 'CARD', _('Tarjeta')
@@ -48,6 +52,7 @@ class SaleOrder(models.Model):
     date = models.DateField(_("Fecha"), auto_now_add=True)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
+    channel = models.CharField(_("Canal"), max_length=20, choices=Channel.choices, default=Channel.SYSTEM)
     
     salesperson = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(_("Notas"), blank=True)
@@ -86,6 +91,7 @@ class SaleOrder(models.Model):
 
 class SaleLine(models.Model):
     order = models.ForeignKey(SaleOrder, on_delete=models.CASCADE, related_name='lines')
+    product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT, related_name='sale_lines', null=True, blank=True)
     description = models.CharField(_("Descripción"), max_length=255)
     quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2, default=1)
     unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=2)
@@ -95,5 +101,8 @@ class SaleLine(models.Model):
 
     def save(self, *args, **kwargs):
         self.subtotal = self.quantity * self.unit_price
+        # Auto-fill description from product if not provided
+        if self.product and not self.description:
+            self.description = self.product.name
         super().save(*args, **kwargs)
         # Trigger total update on parent would be good here

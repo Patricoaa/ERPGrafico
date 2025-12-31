@@ -44,7 +44,7 @@ import { toast } from "sonner"
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
-    product_id: z.string().min(1, "El producto es requerido"),
+    product: z.string().optional(),
     description: z.string().min(1, "La descripción es requerida"),
     quantity: z.number().min(0.01, "La cantidad debe ser mayor a 0"),
     unit_price: z.number().min(0, "El precio no puede ser negativo"),
@@ -111,6 +111,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             customer: initialData.customer?.toString() || "",
             lines: initialData.lines.map((l: any) => ({
                 id: l.id,
+                product: l.product?.toString() || "",
                 description: l.description,
                 quantity: parseFloat(l.quantity) || 0,
                 unit_price: parseFloat(l.unit_price) || 0,
@@ -120,7 +121,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             customer: "",
             payment_method: "CREDIT",
             notes: "",
-            lines: [{ product_id: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
+            lines: [{ product: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
         },
     })
 
@@ -131,32 +132,27 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     const fetchCustomers = async () => {
         try {
-            const response = await api.get('/sales/customers/')
-            setCustomers(response.data.results || response.data)
+            const [customersRes, productsRes] = await Promise.all([
+                api.get('/sales/customers/'),
+                api.get('/inventory/products/')
+            ])
+            setCustomers(customersRes.data.results || customersRes.data)
+            setProducts(productsRes.data.results || productsRes.data)
         } catch (error) {
-            console.error("Error fetching customers:", error)
-        }
-    }
-
-    const fetchProducts = async () => {
-        try {
-            const response = await api.get('/inventory/products/')
-            setProducts(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching products:", error)
+            console.error("Error fetching data:", error)
         }
     }
 
     useEffect(() => {
         if (open) {
             fetchCustomers()
-            fetchProducts()
             if (initialData) {
                 form.reset({
                     ...initialData,
                     customer: initialData.customer?.id?.toString() || initialData.customer?.toString() || "",
                     lines: initialData.lines.map((l: any) => ({
                         id: l.id,
+                        product: l.product?.toString() || "",
                         description: l.description,
                         quantity: parseFloat(l.quantity) || 0,
                         unit_price: parseFloat(l.unit_price) || 0,
@@ -168,7 +164,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     customer: "",
                     payment_method: "CREDIT",
                     notes: "",
-                    lines: [{ product_id: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
+                    lines: [{ product: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
                 })
             }
         }
@@ -267,7 +263,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ product_id: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 })}
+                                    onClick={() => append({ product: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 })}
                                 >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Agregar Línea
@@ -279,9 +275,9 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="w-[35%]">Producto</TableHead>
-                                            <TableHead className="w-[15%]">Cantidad</TableHead>
-                                            <TableHead className="w-[20%]">Precio Unit.</TableHead>
-                                            <TableHead className="w-[20%]">Subtotal</TableHead>
+                                            <TableHead className="w-[10%]">Cantidad</TableHead>
+                                            <TableHead className="w-[15%]">Precio Unit.</TableHead>
+                                            <TableHead className="w-[15%]">Subtotal</TableHead>
                                             <TableHead className="w-[10%]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -291,15 +287,16 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 <TableCell>
                                                     <FormField
                                                         control={form.control}
-                                                        name={`lines.${index}.product_id`}
+                                                        name={`lines.${index}.product`}
                                                         render={({ field }) => (
                                                             <Select
                                                                 onValueChange={(value) => {
                                                                     field.onChange(value)
-                                                                    const product = products.find(p => p.id.toString() === value)
-                                                                    if (product) {
-                                                                        form.setValue(`lines.${index}.description`, product.name)
-                                                                        form.setValue(`lines.${index}.unit_price`, parseFloat(product.sale_price) || 0)
+                                                                    // Auto-populate price and description from product
+                                                                    const selectedProduct = products.find(p => p.id.toString() === value)
+                                                                    if (selectedProduct) {
+                                                                        form.setValue(`lines.${index}.unit_price`, parseFloat(selectedProduct.sale_price))
+                                                                        form.setValue(`lines.${index}.description`, selectedProduct.name)
                                                                     }
                                                                 }}
                                                                 value={field.value}
@@ -312,7 +309,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                 <SelectContent>
                                                                     {products.filter(p => p.id).map((p) => (
                                                                         <SelectItem key={p.id} value={p.id.toString()}>
-                                                                            {p.name} - ${parseFloat(p.sale_price).toLocaleString()}
+                                                                            {p.name}
                                                                         </SelectItem>
                                                                     ))}
                                                                 </SelectContent>

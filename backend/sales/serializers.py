@@ -7,17 +7,27 @@ class CustomerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SaleLineSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
+    
     class Meta:
         model = SaleLine
-        fields = ['id', 'description', 'quantity', 'unit_price', 'tax_rate', 'subtotal']
+        fields = ['id', 'product', 'product_name', 'description', 'quantity', 'unit_price', 'tax_rate', 'subtotal']
 
 class SaleOrderSerializer(serializers.ModelSerializer):
     lines = SaleLineSerializer(many=True, read_only=True)
     customer_name = serializers.CharField(source='customer.name', read_only=True)
+    total_paid = serializers.SerializerMethodField()
+    pending_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
         fields = '__all__'
+
+    def get_total_paid(self, obj):
+        return sum(p.amount for p in obj.payments.all())
+
+    def get_pending_amount(self, obj):
+        return obj.total - self.get_total_paid(obj)
 
 class CreateSaleOrderSerializer(serializers.ModelSerializer):
     """

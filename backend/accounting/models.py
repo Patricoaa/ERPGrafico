@@ -77,6 +77,7 @@ class JournalEntry(models.Model):
         POSTED = 'POSTED', _('Publicado')
         CANCELLED = 'CANCELLED', _('Anulado')
 
+    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
     date = models.DateField(_("Fecha"))
     description = models.CharField(_("Descripción"), max_length=255)
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
@@ -98,6 +99,86 @@ class JournalEntry(models.Model):
         if debit != credit:
             raise ValidationError(_("El asiento no está cuadrado. Debe: %(debit)s, Haber: %(credit)s") % {'debit': debit, 'credit': credit})
         return True
+
+    def save(self, *args, **kwargs):
+        if not self.number:
+            # Simple auto-numbering
+            last_entry = JournalEntry.objects.all().order_by('id').last()
+            if last_entry and last_entry.number:
+                try:
+                    self.number = str(int(last_entry.number) + 1).zfill(6)
+                except ValueError:
+                    self.number = '000001'
+            else:
+                self.number = '000001'
+        super().save(*args, **kwargs)
+
+    @property
+    def get_source_documents(self):
+        docs = []
+        if hasattr(self, 'invoice'):
+            docs.append({
+                'type': 'invoice',
+                'id': self.invoice.id,
+                'name': str(self.invoice),
+                'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}'
+            })
+        if hasattr(self, 'payment'):
+            docs.append({
+                'type': 'payment',
+                'id': self.payment.id,
+                'name': f"Pago {self.payment.id}",
+                'url': '/treasury/payments'
+            })
+        if hasattr(self, 'sale_order'):
+            docs.append({
+                'type': 'sale_order',
+                'id': self.sale_order.id,
+                'name': str(self.sale_order),
+                'url': '/sales/orders'
+            })
+        if hasattr(self, 'purchase_order'):
+            docs.append({
+                'type': 'purchase_order',
+                'id': self.purchase_order.id,
+                'name': str(self.purchase_order),
+                'url': '/purchasing/orders'
+            })
+        if self.stock_moves.exists():
+            for move in self.stock_moves.all():
+                docs.append({
+                    'type': 'inventory',
+                    'id': move.id,
+                    'name': f"Mov. Stock {move.id}",
+                    'url': '/inventory/movements'
+                })
+        return docs
+
+    @property
+    def get_source_document(self):
+        if hasattr(self, 'invoice'):
+            return {
+                'type': 'invoice',
+                'id': self.invoice.id,
+                'name': str(self.invoice),
+                'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}' # Simplified URL
+            }
+        if hasattr(self, 'payment'):
+            return {
+                'type': 'payment',
+                'id': self.payment.id,
+                'name': f"Pago {self.payment.id}",
+                'url': '/treasury/payments'
+            }
+        if self.stock_moves.exists():
+            move = self.stock_moves.first()
+            return {
+                'type': 'inventory',
+                'id': move.id,
+                'name': f"Mov. Stock {move.id}",
+                'url': '/inventory/movements'
+            }
+        return None
 
 class JournalItem(models.Model):
     entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='items')

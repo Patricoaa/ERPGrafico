@@ -8,8 +8,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
     
-    sale_order_number = serializers.CharField(source='sale_order.number', read_only=True)
-    purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True)
+    sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
+    purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
     partner_name = serializers.SerializerMethodField()
 
     class Meta:

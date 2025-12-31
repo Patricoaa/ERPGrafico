@@ -10,11 +10,13 @@ import { Search, Eye } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
 export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
 
     useEffect(() => {
         fetchInvoices()
@@ -84,12 +86,12 @@ export default function SalesInvoicesPage() {
                                     </TableCell>
                                     <TableCell>{inv.partner_name}</TableCell>
                                     <TableCell>
-                                        <Link
-                                            href="/sales/orders"
+                                        <button
+                                            onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order })}
                                             className="text-blue-600 hover:underline text-xs font-medium"
                                         >
                                             NV-{inv.sale_order_number}
-                                        </Link>
+                                        </button>
                                     </TableCell>
                                     <TableCell className="text-right font-medium">
                                         ${Number(inv.total).toLocaleString()}
@@ -100,7 +102,11 @@ export default function SalesInvoicesPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Button variant="ghost" size="icon">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id })}
+                                        >
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                     </TableCell>
@@ -110,6 +116,15 @@ export default function SalesInvoicesPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {viewingTransaction && (
+                <TransactionViewModal
+                    open={!!viewingTransaction}
+                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    type={viewingTransaction.type}
+                    id={viewingTransaction.id}
+                />
+            )}
         </div>
     )
 }

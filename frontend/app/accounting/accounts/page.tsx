@@ -9,8 +9,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { Search, Plus, Book, Trash2 } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { toast } from "sonner"
 
 import { AccountForm } from "@/components/forms/AccountForm"
 
@@ -46,20 +49,22 @@ export default function AccountsPage() {
         }
     }
 
+    const handleDelete = async (id: number) => {
+        if (!confirm("¿Está seguro de eliminar esta cuenta?")) return
+
+        try {
+            await api.delete(`/accounting/accounts/${id}/`)
+            toast.success("Cuenta eliminada correctamente")
+            fetchAccounts()
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.error || "Error al eliminar la cuenta"
+            toast.error(errorMsg)
+        }
+    }
+
     useEffect(() => {
         fetchAccounts()
     }, [])
-
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar esta cuenta?")) return
-        try {
-            await api.delete(`/accounting/accounts/${id}/`)
-            await fetchAccounts()
-        } catch (error) {
-            console.error("Error deleting account:", error)
-            alert("Error al eliminar la cuenta. Verifique que no tenga movimientos asociados.")
-        }
-    }
 
     // Group accounts by type for display
     const groupedAccounts = typeOrder.map(type => ({
@@ -83,9 +88,9 @@ export default function AccountsPage() {
                             <TableHead className="w-[120px]">Código</TableHead>
                             <TableHead>Nombre</TableHead>
                             <TableHead className="text-right w-[150px]">Debe</TableHead>
-                            <TableHead className="text-right w-[150px]">Haber</TableHead>
-                            <TableHead className="text-right w-[150px]">Saldo</TableHead>
-                            <TableHead className="text-right w-[120px]">Acciones</TableHead>
+                            <TableHead className="text-right">Haber</TableHead>
+                            <TableHead className="text-right">Saldo</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -118,12 +123,25 @@ export default function AccountsPage() {
                                             ${Number(account.balance).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-right space-x-1">
+                                            <Link href={`/accounting/accounts/${account.id}/ledger`}>
+                                                <Button variant="ghost" size="sm">
+                                                    <Book className="h-4 w-4 mr-1" />
+                                                    Libro Mayor
+                                                </Button>
+                                            </Link>
                                             <AccountForm
                                                 accounts={accounts}
                                                 initialData={account as any}
                                                 onSuccess={fetchAccounts}
                                                 triggerText="Editar"
                                             />
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDelete(account.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}

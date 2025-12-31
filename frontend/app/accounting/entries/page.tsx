@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { JournalEntryForm } from "@/components/forms/JournalEntryForm"
 import api from "@/lib/api"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
 interface JournalEntry {
     id: number
@@ -22,12 +23,19 @@ interface JournalEntry {
     description: string
     reference: string
     state: string
+    source_documents?: {
+        type: any
+        id: number | string
+        name: string
+        url: string
+    }[]
 }
 
 export default function EntriesPage() {
     const [entries, setEntries] = useState<JournalEntry[]>([])
     const [accounts, setAccounts] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
 
     const fetchEntries = async () => {
         setLoading(true)
@@ -95,6 +103,7 @@ export default function EntriesPage() {
                             <TableHead>Número</TableHead>
                             <TableHead>Descripción</TableHead>
                             <TableHead>Referencia</TableHead>
+                            <TableHead>Documento</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -106,6 +115,26 @@ export default function EntriesPage() {
                                 <TableCell className="font-medium">{entry.number}</TableCell>
                                 <TableCell>{entry.description}</TableCell>
                                 <TableCell>{entry.reference || "-"}</TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col gap-1">
+                                        {entry.source_documents && entry.source_documents.length > 0 ? (
+                                            entry.source_documents.map((doc, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
+                                                    className="text-blue-600 hover:underline text-xs flex flex-col text-left items-start"
+                                                >
+                                                    <span className="font-semibold uppercase text-[9px] text-muted-foreground leading-tight">
+                                                        {doc.type}
+                                                    </span>
+                                                    {doc.name}
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <span className="text-muted-foreground">-</span>
+                                        )}
+                                    </div>
+                                </TableCell>
                                 <TableCell>
                                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${entry.state === 'POSTED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                                         }`}>
@@ -151,6 +180,15 @@ export default function EntriesPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {viewingTransaction && (
+                <TransactionViewModal
+                    open={!!viewingTransaction}
+                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    type={viewingTransaction.type}
+                    id={viewingTransaction.id}
+                />
+            )}
         </div>
     )
 }
