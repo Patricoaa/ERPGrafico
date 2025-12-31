@@ -15,5 +15,18 @@ class User(AbstractUser):
         help_text=_("Rol del usuario en el sistema")
     )
 
+class CompanySettings(models.Model):
+    name = models.CharField(_("Nombre de la Empresa"), max_length=255)
+    tax_id = models.CharField(_("RUT/Tax ID"), max_length=20)
+    address = models.TextField(_("Dirección"), blank=True)
+    phone = models.CharField(_("Teléfono"), max_length=20, blank=True)
+    email = models.EmailField(_("Email"), blank=True)
+    website = models.URLField(_("Sitio Web"), blank=True)
+    logo_url = models.URLField(_("URL del Logo"), blank=True)
+
+    class Meta:
+        verbose_name = _("Configuración de Empresa")
+        verbose_name_plural = _("Configuración de Empresa")
+
     def __str__(self):
-        return f"{self.username} ({self.get_role_display()})"
+        return self.name

@@ -68,3 +68,18 @@ class JournalItem(models.Model):
     def clean(self):
         if self.debit > 0 and self.credit > 0:
             raise ValidationError(_("Un apunte no puede tener montos en Debe y Haber simultáneamente."))
+
+class AccountingSettings(models.Model):
+    default_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_receivable')
+    default_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_payable')
+    default_revenue_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_revenue')
+    default_expense_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_expense')
+    default_tax_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax')
+    default_inventory_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_inventory')
+
+    class Meta:
+        verbose_name = _("Configuración Contable")
+        verbose_name_plural = _("Configuración Contable")
+
+    def __str__(self):
+        return "Configuración Contable Global"

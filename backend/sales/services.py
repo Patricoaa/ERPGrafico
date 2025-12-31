@@ -27,14 +27,13 @@ class SalesService:
         # For simplicity, we get standard accounts. In real apps, these come from settings.
         try:
             # Asset: Cuentas por Cobrar (Receivable)
-            receivable_account = Account.objects.get(code='1.1.02.001') # Example code
+            receivable_account = Account.objects.get(code='1.1.02.001')
         except Account.DoesNotExist:
-            # Fallback or error
-            receivable_account = Account.objects.filter(account_type=AccountType.ASSET).first() # TODO: Fix hardcoding
+            receivable_account = Account.objects.filter(account_type=AccountType.ASSET).first()
 
         try:
             # Income: Ventas (Revenue)
-            revenue_account = Account.objects.get(code='4.1.01') # Example
+            revenue_account = Account.objects.get(code='4.1.01')
         except Account.DoesNotExist:
              revenue_account = Account.objects.filter(account_type=AccountType.INCOME).first()
 
@@ -44,9 +43,13 @@ class SalesService:
         except Account.DoesNotExist:
             tax_account = Account.objects.filter(account_type=AccountType.LIABILITY).first()
 
+        missing = []
+        if not receivable_account: missing.append("Cuentas por Cobrar (Activo)")
+        if not revenue_account: missing.append("Ventas (Ingresos)")
+        if not tax_account: missing.append("IVA Débito (Pasivo)")
 
-        if not all([receivable_account, revenue_account, tax_account]):
-             raise ValidationError("No se encontraron las cuentas contables necesarias (Por Cobrar, Ingresos, Impuestos). Configure el Plan de Cuentas.")
+        if missing:
+             raise ValidationError(f"No se encontraron las cuentas contables necesarias: {', '.join(missing)}. Por favor, créelas en el Plan de Cuentas.")
 
 
         # 3. Create Journal Entry

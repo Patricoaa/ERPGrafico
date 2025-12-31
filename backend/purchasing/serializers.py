@@ -25,7 +25,8 @@ class CreatePurchaseOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseOrder
-        fields = ['supplier', 'warehouse', 'notes', 'lines', 'supplier_reference']
+        fields = ['id', 'supplier', 'warehouse', 'notes', 'lines', 'supplier_reference']
+        read_only_fields = ['id']
 
     def create(self, validated_data):
         lines_data = validated_data.pop('lines')
