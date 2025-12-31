@@ -938,7 +938,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 const accountSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$schemas$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["object"]({
-    code: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$schemas$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["string"]().min(1, "El código es requerido"),
+    code: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$schemas$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["string"]().optional(),
     name: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$schemas$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["string"]().min(1, "El nombre es requerido"),
     account_type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$schemas$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["enum"]([
         "ASSET",
@@ -1084,8 +1084,10 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                 }, void 0),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormControl"], {
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                                        placeholder: "1.1.01",
-                                                        ...field
+                                                        placeholder: initialData ? "" : "Automático",
+                                                        ...field,
+                                                        readOnly: !!initialData,
+                                                        className: initialData ? "bg-muted" : ""
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/forms/AccountForm.tsx",
                                                         lineNumber: 144,
@@ -1098,7 +1100,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                 }, void 0),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormMessage"], {}, void 0, false, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 146,
+                                                    lineNumber: 151,
                                                     columnNumber: 37
                                                 }, void 0)
                                             ]
@@ -1121,7 +1123,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                     children: "Nombre"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 155,
+                                                    lineNumber: 160,
                                                     columnNumber: 37
                                                 }, void 0),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormControl"], {
@@ -1130,28 +1132,28 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                         ...field
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/forms/AccountForm.tsx",
-                                                        lineNumber: 157,
+                                                        lineNumber: 162,
                                                         columnNumber: 41
                                                     }, void 0)
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 156,
+                                                    lineNumber: 161,
                                                     columnNumber: 37
                                                 }, void 0),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormMessage"], {}, void 0, false, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 159,
+                                                    lineNumber: 164,
                                                     columnNumber: 37
                                                 }, void 0)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                            lineNumber: 154,
+                                            lineNumber: 159,
                                             columnNumber: 33
                                         }, void 0)
                                 }, void 0, false, {
                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                    lineNumber: 150,
+                                    lineNumber: 155,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormField"], {
@@ -1163,7 +1165,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                     children: "Tipo"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 168,
+                                                    lineNumber: 173,
                                                     columnNumber: 37
                                                 }, void 0),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1176,17 +1178,17 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                     placeholder: "Seleccione tipo"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                    lineNumber: 172,
+                                                                    lineNumber: 177,
                                                                     columnNumber: 49
                                                                 }, void 0)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                lineNumber: 171,
+                                                                lineNumber: 176,
                                                                 columnNumber: 45
                                                             }, void 0)
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                                            lineNumber: 170,
+                                                            lineNumber: 175,
                                                             columnNumber: 41
                                                         }, void 0),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -1196,7 +1198,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                     children: "Activo"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                    lineNumber: 176,
+                                                                    lineNumber: 181,
                                                                     columnNumber: 45
                                                                 }, void 0),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -1204,7 +1206,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                     children: "Pasivo"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                    lineNumber: 177,
+                                                                    lineNumber: 182,
                                                                     columnNumber: 45
                                                                 }, void 0),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -1212,7 +1214,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                     children: "Patrimonio"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                    lineNumber: 178,
+                                                                    lineNumber: 183,
                                                                     columnNumber: 45
                                                                 }, void 0),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -1220,7 +1222,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                     children: "Ingreso"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                    lineNumber: 179,
+                                                                    lineNumber: 184,
                                                                     columnNumber: 45
                                                                 }, void 0),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -1228,35 +1230,35 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                     children: "Gasto"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                    lineNumber: 180,
+                                                                    lineNumber: 185,
                                                                     columnNumber: 45
                                                                 }, void 0)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                                            lineNumber: 175,
+                                                            lineNumber: 180,
                                                             columnNumber: 41
                                                         }, void 0)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 169,
+                                                    lineNumber: 174,
                                                     columnNumber: 37
                                                 }, void 0),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormMessage"], {}, void 0, false, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 183,
+                                                    lineNumber: 188,
                                                     columnNumber: 37
                                                 }, void 0)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                            lineNumber: 167,
+                                            lineNumber: 172,
                                             columnNumber: 33
                                         }, void 0)
                                 }, void 0, false, {
                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                    lineNumber: 163,
+                                    lineNumber: 168,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormField"], {
@@ -1268,7 +1270,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                     children: "Cuenta Padre (Opcional)"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 192,
+                                                    lineNumber: 197,
                                                     columnNumber: 37
                                                 }, void 0),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1281,17 +1283,17 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                     placeholder: "Sin padre"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                    lineNumber: 196,
+                                                                    lineNumber: 201,
                                                                     columnNumber: 49
                                                                 }, void 0)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                lineNumber: 195,
+                                                                lineNumber: 200,
                                                                 columnNumber: 45
                                                             }, void 0)
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                                            lineNumber: 194,
+                                                            lineNumber: 199,
                                                             columnNumber: 41
                                                         }, void 0),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -1301,7 +1303,7 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                     children: "Sin padre"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                    lineNumber: 200,
+                                                                    lineNumber: 205,
                                                                     columnNumber: 45
                                                                 }, void 0),
                                                                 accounts.filter((acc)=>acc.id).map((acc)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -1313,35 +1315,35 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                                                         ]
                                                                     }, acc.id, true, {
                                                                         fileName: "[project]/components/forms/AccountForm.tsx",
-                                                                        lineNumber: 202,
+                                                                        lineNumber: 207,
                                                                         columnNumber: 49
                                                                     }, void 0))
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                                            lineNumber: 199,
+                                                            lineNumber: 204,
                                                             columnNumber: 41
                                                         }, void 0)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 193,
+                                                    lineNumber: 198,
                                                     columnNumber: 37
                                                 }, void 0),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormMessage"], {}, void 0, false, {
                                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                                    lineNumber: 208,
+                                                    lineNumber: 213,
                                                     columnNumber: 37
                                                 }, void 0)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                            lineNumber: 191,
+                                            lineNumber: 196,
                                             columnNumber: 33
                                         }, void 0)
                                 }, void 0, false, {
                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                    lineNumber: 187,
+                                    lineNumber: 192,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1354,22 +1356,22 @@ function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nue
                                             children: "Cancelar"
                                         }, void 0, false, {
                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                            lineNumber: 213,
+                                            lineNumber: 218,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                             type: "submit",
                                             disabled: loading,
-                                            children: loading ? "Creando..." : "Crear Cuenta"
+                                            children: loading ? initialData ? "Guardando..." : "Creando..." : initialData ? "Guardar Cambios" : "Crear Cuenta"
                                         }, void 0, false, {
                                             fileName: "[project]/components/forms/AccountForm.tsx",
-                                            lineNumber: 220,
+                                            lineNumber: 225,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/forms/AccountForm.tsx",
-                                    lineNumber: 212,
+                                    lineNumber: 217,
                                     columnNumber: 25
                                 }, this)
                             ]

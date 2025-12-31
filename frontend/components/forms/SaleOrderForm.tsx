@@ -52,6 +52,7 @@ const saleLineSchema = z.object({
 
 const saleOrderSchema = z.object({
     customer: z.string().min(1, "El cliente es requerido"),
+    payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
     notes: z.string().optional(),
     lines: z.array(saleLineSchema).min(1, "Debe agregar al menos una línea"),
 })
@@ -115,6 +116,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             }))
         } : {
             customer: "",
+            payment_method: "CREDIT",
             notes: "",
             lines: [{ description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
         },
@@ -152,6 +154,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             } else {
                 form.reset({
                     customer: "",
+                    payment_method: "CREDIT",
                     notes: "",
                     lines: [{ description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
                 })
@@ -215,6 +218,28 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         {c.name} ({c.tax_id})
                                                     </SelectItem>
                                                 ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="payment_method"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Condición de Venta</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione condición" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="CASH">Efectivo</SelectItem>
+                                                <SelectItem value="CARD">Tarjeta</SelectItem>
+                                                <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                                                <SelectItem value="CREDIT">Crédito</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

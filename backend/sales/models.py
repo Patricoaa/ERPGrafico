@@ -37,10 +37,17 @@ class SaleOrder(models.Model):
         PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
 
+    class PaymentMethod(models.TextChoices):
+        CASH = 'CASH', _('Efectivo')
+        CARD = 'CARD', _('Tarjeta')
+        TRANSFER = 'TRANSFER', _('Transferencia')
+        CREDIT = 'CREDIT', _('Crédito')
+
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='orders')
     date = models.DateField(_("Fecha"), auto_now_add=True)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     
     salesperson = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(_("Notas"), blank=True)

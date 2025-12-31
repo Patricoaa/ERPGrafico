@@ -39,8 +39,7 @@ const paymentSchema = z.object({
     amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
     customer_id: z.string().optional().or(z.literal("")),
     supplier_id: z.string().optional().or(z.literal("")),
-    sale_order_id: z.string().optional().or(z.literal("")),
-    purchase_order_id: z.string().optional().or(z.literal("")),
+    invoice_id: z.string().optional().or(z.literal("")),
     reference: z.string().optional(),
 })
 
@@ -71,8 +70,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
             amount: 0,
             customer_id: "",
             supplier_id: "",
-            sale_order_id: "",
-            purchase_order_id: "",
+            invoice_id: "",
             reference: "",
         },
     })
@@ -100,23 +98,23 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
         }
     }
 
-    const fetchOrders = async () => {
-        if (paymentType === "INBOUND" && customerId) {
-            try {
-                const response = await api.get(`/sales/orders/?customer=${customerId}`)
-                setOrders(response.data.results || response.data)
-            } catch (error) {
-                console.error("Error fetching sale orders:", error)
-            }
-        } else if (paymentType === "OUTBOUND" && supplierId) {
-            try {
-                const response = await api.get(`/purchasing/orders/?supplier=${supplierId}`)
-                setOrders(response.data.results || response.data)
-            } catch (error) {
-                console.error("Error fetching purchase orders:", error)
-            }
-        } else {
+    const fetchInvoices = async () => {
+        if (!customerId && !supplierId) {
             setOrders([])
+            return
+        }
+        try {
+            const res = await api.get('/billing/invoices/')
+            let results = res.data.results || res.data
+            // Filter by partner and status posted
+            if (paymentType === "INBOUND" && customerId) {
+                results = results.filter((i: any) => i.sale_order && i.sale_order.customer === parseInt(customerId) && i.status === 'POSTED')
+            } else if (paymentType === "OUTBOUND" && supplierId) {
+                results = results.filter((i: any) => i.purchase_order && i.purchase_order.supplier === parseInt(supplierId) && i.status === 'POSTED')
+            }
+            setOrders(results)
+        } catch (error) {
+            console.error("Error fetching invoices:", error)
         }
     }
 
@@ -128,7 +126,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
     }, [open, paymentType])
 
     useEffect(() => {
-        fetchOrders()
+        fetchInvoices()
     }, [customerId, supplierId, paymentType])
 
     async function onSubmit(data: PaymentFormValues) {
@@ -137,8 +135,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
             ...data,
             customer_id: (data.customer_id === "" || data.customer_id === "__none__") ? null : data.customer_id,
             supplier_id: (data.supplier_id === "" || data.supplier_id === "__none__") ? null : data.supplier_id,
-            sale_order_id: (data.sale_order_id === "" || data.sale_order_id === "__none__") ? null : data.sale_order_id,
-            purchase_order_id: (data.purchase_order_id === "" || data.purchase_order_id === "__none__") ? null : data.purchase_order_id,
+            invoice_id: (data.invoice_id === "" || data.invoice_id === "__none__") ? null : data.invoice_id,
         }
         try {
             await api.post('/treasury/payments/register/', payload)
@@ -246,10 +243,10 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
 
                             <FormField
                                 control={form.control}
-                                name={paymentType === "INBOUND" ? "sale_order_id" : "purchase_order_id"}
+                                name="invoice_id"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Orden (Opcional)</FormLabel>
+                                        <FormLabel>Factura (Opcional)</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
@@ -258,9 +255,9 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="__none__">Ninguna</SelectItem>
-                                                {orders.filter(o => o.id).map((o) => (
+                                                {orders.map((o) => (
                                                     <SelectItem key={o.id} value={o.id.toString()}>
-                                                        {paymentType === "INBOUND" ? `NV-${o.number}` : `OC-${o.id}`}
+                                                        {o.dte_type_display} - {o.number || 'Pendiente'} (${Number(o.total).toLocaleString()})
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>

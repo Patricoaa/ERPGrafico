@@ -10,6 +10,39 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
+    @action(detail=False, methods=['get'])
+    def stock_report(self, request):
+        """
+        Returns a summary of stock per product.
+        """
+        from django.db.models import Sum, Q
+        
+        products = Product.objects.all().select_related('category')
+        report = []
+        
+        for p in products:
+            # Current stock is sum of all moves
+            stock_qty = p.moves.aggregate(total=Sum('quantity'))['total'] or 0
+            
+            # Movements
+            moves_in = p.moves.filter(quantity__gt=0).aggregate(total=Sum('quantity'))['total'] or 0
+            # moves_out should be positive for display, but moves have negative quantity
+            moves_out = abs(p.moves.filter(quantity__lt=0).aggregate(total=Sum('quantity'))['total'] or 0)
+            
+            report.append({
+                'id': p.id,
+                'code': p.code,
+                'name': p.name,
+                'category_name': p.category.name,
+                'stock_qty': float(stock_qty),
+                'unit_cost': float(p.cost_price),
+                'total_value': float(stock_qty * p.cost_price),
+                'moves_in': float(moves_in),
+                'moves_out': float(moves_out)
+            })
+            
+        return Response(report)
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer

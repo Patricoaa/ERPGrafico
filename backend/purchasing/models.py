@@ -40,12 +40,19 @@ class PurchaseOrder(models.Model):
         PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
 
+    class PaymentMethod(models.TextChoices):
+        CASH = 'CASH', _('Efectivo')
+        CARD = 'CARD', _('Tarjeta')
+        TRANSFER = 'TRANSFER', _('Transferencia')
+        CREDIT = 'CREDIT', _('Crédito')
+
     number = models.CharField(_("Número Interno"), max_length=20, unique=True, editable=False)
     supplier_reference = models.CharField(_("Referencia Proveedor"), max_length=50, blank=True, help_text="Ej: Nro Factura Proveedor")
     
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name='orders')
     date = models.DateField(_("Fecha"), auto_now_add=True)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='purchases', help_text="Bodega de recepción")
     notes = models.TextField(_("Notas"), blank=True)

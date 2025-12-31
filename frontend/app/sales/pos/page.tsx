@@ -15,6 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { CheckoutDialog } from "@/components/pos/CheckoutDialog"
 
 interface Product {
     id: number
@@ -40,6 +41,7 @@ export default function POSPage() {
     const [items, setItems] = useState<CartItem[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [loading, setLoading] = useState(false)
+    const [checkoutOpen, setCheckoutOpen] = useState(false)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -93,7 +95,7 @@ export default function POSPage() {
         setItems(items.filter(i => i.id !== id))
     }
 
-    const handleConfirm = async () => {
+    const handleConfirm = () => {
         if (!selectedCustomer) {
             toast.error("Seleccione un cliente")
             return
@@ -102,28 +104,34 @@ export default function POSPage() {
             toast.error("El carrito está vacío")
             return
         }
+        setCheckoutOpen(true)
+    }
 
+    const handleCheckoutConfirm = async (data: { dteType: string, paymentMethod: string, amountReceived: number }) => {
+        setCheckoutOpen(false)
         setLoading(true)
         try {
             const payload = {
-                customer: parseInt(selectedCustomer),
-                lines: items.map(i => ({
-                    description: i.name,
-                    quantity: i.qty,
-                    unit_price: parseFloat(i.sale_price),
-                    tax_rate: 19 // Default tax
-                }))
+                order_data: {
+                    customer: parseInt(selectedCustomer),
+                    lines: items.map(i => ({
+                        description: i.name,
+                        quantity: i.qty,
+                        unit_price: parseFloat(i.sale_price),
+                        tax_rate: 19
+                    }))
+                },
+                dte_type: data.dteType,
+                payment_method: data.paymentMethod
             }
-            const response = await api.post('/sales/orders/', payload)
-            // Optional: Confirm the order immediately in the backend
-            await api.post(`/sales/orders/${response.data.id}/confirm/`)
+            await api.post('/billing/invoices/pos_checkout/', payload)
 
-            toast.success("Venta confirmada correctamente")
+            toast.success("Venta procesada correctamente")
             setItems([])
             setSelectedCustomer("")
         } catch (error) {
-            console.error("Error confirming sale:", error)
-            toast.error("Error al procesar la venta")
+            console.error("Error in POS checkout:", error)
+            toast.error("Error al procesar el pago")
         } finally {
             setLoading(false)
         }
@@ -269,6 +277,13 @@ export default function POSPage() {
                     </Card>
                 </div>
             </div>
+
+            <CheckoutDialog
+                open={checkoutOpen}
+                onOpenChange={setCheckoutOpen}
+                total={total}
+                onConfirm={handleCheckoutConfirm}
+            />
         </div>
     )
 }

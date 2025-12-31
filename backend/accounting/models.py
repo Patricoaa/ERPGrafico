@@ -25,6 +25,22 @@ class Account(models.Model):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
+    @property
+    def debit_total(self):
+        return sum(item.debit for item in self.journal_items.filter(entry__state='POSTED'))
+
+    @property
+    def credit_total(self):
+        return sum(item.credit for item in self.journal_items.filter(entry__state='POSTED'))
+
+    @property
+    def balance(self):
+        # Assets and Expenses increase with Debit
+        if self.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+            return self.debit_total - self.credit_total
+        # Liabilities, Equity and Income increase with Credit
+        return self.credit_total - self.debit_total
+
     def save(self, *args, **kwargs):
         if not self.code:
             from .models import AccountingSettings
@@ -108,6 +124,11 @@ class AccountingSettings(models.Model):
     default_tax_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_receivable')
     default_tax_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_payable')
     default_inventory_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_inventory')
+
+    # Payment Method Accounts
+    default_cash_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_cash')
+    default_card_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_card')
+    default_transfer_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_transfer')
 
     # Code Format & Hierarchy
     # Example: "X.X.XX.XXX"

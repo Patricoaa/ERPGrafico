@@ -43,6 +43,15 @@ const items = [
         ]
     },
     {
+        title: "Facturación",
+        url: "#",
+        icon: FileText,
+        items: [
+            { title: "Documentos Emitidos", url: "/billing/sales" },
+            { title: "Documentos Recibidos", url: "/billing/purchases" },
+        ]
+    },
+    {
         title: "Inventario",
         url: "#",
         icon: Package,
@@ -51,6 +60,7 @@ const items = [
             { title: "Categorías", url: "/inventory/categories" },
             { title: "Almacenes", url: "/inventory/warehouses" },
             { title: "Movimientos", url: "/inventory/movements" },
+            { title: "Reporte de Stock", url: "/inventory/report" },
         ]
     },
     {

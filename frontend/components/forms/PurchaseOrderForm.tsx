@@ -53,6 +53,7 @@ const purchaseLineSchema = z.object({
 const purchaseOrderSchema = z.object({
     supplier: z.string().min(1, "El proveedor es requerido"),
     warehouse: z.string().min(1, "La bodega es requerida"),
+    payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
     supplier_reference: z.string().optional(),
     notes: z.string().optional(),
     lines: z.array(purchaseLineSchema).min(1, "Debe agregar al menos una línea"),
@@ -121,6 +122,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
         } : {
             supplier: "",
             warehouse: "",
+            payment_method: "CREDIT",
             supplier_reference: "",
             notes: "",
             lines: [{ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 }],
@@ -167,6 +169,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 form.reset({
                     supplier: "",
                     warehouse: "",
+                    payment_method: "CREDIT",
                     supplier_reference: "",
                     notes: "",
                     lines: [{ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 }],
@@ -270,6 +273,29 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                         <FormControl>
                                             <Input placeholder="Ej: Factura #123" {...field} />
                                         </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="payment_method"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Condición de Pago</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione condición" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="CASH">Efectivo</SelectItem>
+                                                <SelectItem value="CARD">Tarjeta</SelectItem>
+                                                <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                                                <SelectItem value="CREDIT">Crédito</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}

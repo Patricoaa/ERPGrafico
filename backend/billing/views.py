@@ -39,3 +39,20 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def pos_checkout(self, request):
+        order_data = request.data.get('order_data')
+        dte_type = request.data.get('dte_type')
+        payment_method = request.data.get('payment_method')
+        
+        if not all([order_data, dte_type, payment_method]):
+            return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            invoice = BillingService.pos_checkout(order_data, dte_type, payment_method)
+            return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

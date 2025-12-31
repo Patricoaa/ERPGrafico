@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -25,10 +25,11 @@ interface SaleOrder {
     total: string
 }
 
-const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
     'DRAFT': { label: 'Borrador', variant: 'outline' },
     'CONFIRMED': { label: 'Confirmado', variant: 'default' },
-    'PAID': { label: 'Pagado', variant: 'secondary' },
+    'INVOICED': { label: 'Facturado', variant: 'secondary' },
+    'PAID': { label: 'Pagado', variant: 'success' },
     'CANCELLED': { label: 'Anulado', variant: 'destructive' },
 }
 
@@ -70,6 +71,30 @@ export default function SalesOrdersPage() {
         } catch (error) {
             console.error("Error fetching order details:", error)
             toast.error("Error al cargar los detalles de la nota de venta.")
+        }
+    }
+
+    const handleConfirm = async (id: number) => {
+        try {
+            await api.post(`/sales/orders/${id}/confirm/`)
+            toast.success("Nota de Venta confirmada.")
+            fetchOrders()
+        } catch (error) {
+            toast.error("Error al confirmar venta.")
+        }
+    }
+
+    const handleInvoice = async (order: SaleOrder) => {
+        try {
+            await api.post('/billing/invoices/create_from_order/', {
+                order_id: order.id,
+                order_type: 'sale',
+                dte_type: 'FACTURA'
+            })
+            toast.success("Factura generada correctamente.")
+            fetchOrders()
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al facturar.")
         }
     }
 
@@ -133,14 +158,41 @@ export default function SalesOrdersPage() {
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleEdit(order)}
+                                            title="Editar"
                                         >
                                             <Pencil className="h-4 w-4" />
                                         </Button>
+
+                                        {order.status === 'DRAFT' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-emerald-600"
+                                                onClick={() => handleConfirm(order.id)}
+                                                title="Confirmar"
+                                            >
+                                                <CheckCircle className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {order.status === 'CONFIRMED' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-blue-600"
+                                                onClick={() => handleInvoice(order)}
+                                                title="Facturar"
+                                            >
+                                                <FileText className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             className="text-destructive hover:text-destructive"
                                             onClick={() => handleDelete(order.id)}
+                                            title="Eliminar"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

@@ -155,3 +155,52 @@ class BillingService:
         order.save()
 
         return invoice
+
+    @staticmethod
+    @transaction.atomic
+    def pos_checkout(order_data, dte_type, payment_method):
+        """
+        Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment.
+        """
+        from sales.serializers import CreateSaleOrderSerializer
+        from treasury.models import BankJournal
+        from treasury.services import TreasuryService
+        
+        # 1. Create Order
+        order_serializer = CreateSaleOrderSerializer(data=order_data)
+        if not order_serializer.is_valid():
+            raise ValidationError(order_serializer.errors)
+        order = order_serializer.save()
+        
+        # 2. Confirm Order (Inventory deduction happen here if implemented)
+        from sales.services import SalesService
+        SalesService.confirm_sale(order)
+        
+        # 3. Create Invoice
+        invoice = BillingService.create_sale_invoice(order, dte_type, payment_method)
+        
+        # 4. Create Payment (if not credit)
+        if payment_method != 'CREDIT':
+            journal = BankJournal.objects.first() # Default
+            if not journal:
+                 raise ValidationError("Debe configurar al menos un Diario de Caja/Banco.")
+            
+            # Use specific account if configured
+            payment_account = None
+            settings = AccountingSettings.objects.first()
+            if settings:
+                if payment_method == 'CASH': payment_account = settings.default_cash_account
+                elif payment_method == 'CARD': payment_account = settings.default_card_account
+                elif payment_method == 'TRANSFER': payment_account = settings.default_transfer_account
+
+            TreasuryService.register_payment(
+                journal=journal,
+                amount=order.total,
+                payment_type='INBOUND',
+                reference=f"POS-{order.number}",
+                partner=order.customer,
+                invoice=invoice,
+                account=payment_account
+            )
+            
+        return invoice
