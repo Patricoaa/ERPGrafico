@@ -1,0 +1,418 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { CalendarIcon, Plus, Trash2 } from "lucide-react"
+import { format } from "date-fns"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import api from "@/lib/api"
+import { toast } from "sonner"
+
+const journalItemSchema = z.object({
+    id: z.number().optional(),
+    account: z.string().min(1, "Cuenta requerida"),
+    partner: z.string().optional(),
+    label: z.string().optional(),
+    debit: z.coerce.number().min(0),
+    credit: z.coerce.number().min(0),
+})
+
+const journalEntrySchema = z.object({
+    date: z.date({
+        required_error: "La fecha es requerida",
+    }),
+    description: z.string().min(3, "La descripción debe tener al menos 3 caracteres"),
+    reference: z.string().optional(),
+    items: z.array(journalItemSchema).min(2, "El asiento debe tener al menos 2 líneas"),
+}).refine((data) => {
+    const totalDebit = data.items.reduce((sum, item) => sum + (item.debit || 0), 0)
+    const totalCredit = data.items.reduce((sum, item) => sum + (item.credit || 0), 0)
+    return Math.abs(totalDebit - totalCredit) < 0.01 // Floating point tolerance
+}, {
+    message: "El asiento no está cuadrado (Debe != Haber)",
+    path: ["items"],
+})
+
+type JournalEntryFormValues = z.infer<typeof journalEntrySchema>
+
+interface JournalEntryFormProps {
+    onSuccess?: () => void
+    initialData?: any
+    triggerText?: string
+}
+
+const TotalBalance = ({ control }: { control: Control<JournalEntryFormValues> }) => {
+    const items = useWatch({
+        control,
+        name: "items",
+    })
+
+    const totalDebit = items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) || 0
+    const totalCredit = items?.reduce((sum, item) => sum + (Number(item.credit) || 0), 0) || 0
+    const diff = totalDebit - totalCredit
+    const isBalanced = Math.abs(diff) < 0.01
+
+    return (
+        <div className="flex justify-end space-x-4 text-sm font-medium pt-2 border-t">
+            <div className={cn("flex flex-col items-end", isBalanced ? "text-green-600" : "text-red-500")}>
+                <span>Total Debe: {totalDebit.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                <span>Total Haber: {totalCredit.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                {!isBalanced && <span>Diferencia: {diff.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>}
+            </div>
+        </div>
+    )
+}
+
+export function JournalEntryForm({ onSuccess, initialData, triggerText = "Nuevo Asiento" }: JournalEntryFormProps) {
+    const [open, setOpen] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [accounts, setAccounts] = useState<any[]>([])
+
+    // Convert string date to Date object if editing
+    const defaultValues: Partial<JournalEntryFormValues> = initialData ? {
+        ...initialData,
+        date: new Date(initialData.date),
+        items: initialData.items.map((item: any) => ({
+            ...item,
+            account: item.account.toString(),
+            debit: parseFloat(item.debit),
+            credit: parseFloat(item.credit),
+        }))
+    } : {
+        date: new Date(),
+        description: "",
+        reference: "",
+        items: [
+            { account: "", label: "", debit: 0, credit: 0 },
+            { account: "", label: "", debit: 0, credit: 0 },
+        ],
+    }
+
+    const form = useForm<JournalEntryFormValues>({
+        resolver: zodResolver(journalEntrySchema),
+        defaultValues,
+    })
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "items",
+    })
+
+    const fetchAccounts = async () => {
+        try {
+            const response = await api.get('/accounting/accounts/')
+            setAccounts(response.data.results || response.data)
+        } catch (error) {
+            console.error("Error fetching accounts:", error)
+        }
+    }
+
+    useEffect(() => {
+        if (open) {
+            fetchAccounts()
+            if (!initialData) {
+                form.reset({
+                    date: new Date(),
+                    description: "",
+                    items: [
+                        { account: "", label: "", debit: 0, credit: 0 },
+                        { account: "", label: "", debit: 0, credit: 0 },
+                    ]
+                })
+            } else {
+                // Force reset with initial data when editing
+                form.reset(defaultValues)
+            }
+        }
+    }, [open, initialData])
+
+    async function onSubmit(data: JournalEntryFormValues) {
+        setLoading(true)
+        try {
+            const payload = {
+                ...data,
+                date: format(data.date, "yyyy-MM-dd"),
+            }
+
+            if (initialData?.id) {
+                await api.put(`/accounting/entries/${initialData.id}/`, payload)
+                toast.success("Asiento actualizado correctamente")
+            } else {
+                await api.post('/accounting/entries/', payload)
+                toast.success("Asiento creado correctamente")
+            }
+
+            setOpen(false)
+            if (onSuccess) onSuccess()
+        } catch (error: any) {
+            console.error("Error saving entry:", error)
+            const detail = error.response?.data?.error || error.response?.data?.detail || "Error al guardar el asiento"
+            // Check if validation array error
+            if (typeof detail === 'object') {
+                toast.error("Error de validación: Revise los campos")
+            } else {
+                toast.error(detail)
+            }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant={initialData ? "ghost" : "default"} size={initialData ? "sm" : "default"}>
+                    {triggerText}
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[1200px] max-h-[90vh] overflow-y-auto"> {/* Increased width */}
+                <DialogHeader>
+                    <DialogTitle>{initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}</DialogTitle>
+                    <DialogDescription>
+                        Ingrese los detalles del movimiento contable.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-3">
+                                <FormField
+                                    control={form.control}
+                                    name="date"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>Fecha</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant={"outline"}
+                                                            className={cn(
+                                                                "w-full pl-3 text-left font-normal",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            {field.value ? (
+                                                                format(field.value, "PPP")
+                                                            ) : (
+                                                                <span>Seleccione fecha</span>
+                                                            )}
+                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value}
+                                                        onSelect={field.onChange}
+                                                        disabled={(date) =>
+                                                            date > new Date() || date < new Date("1900-01-01")
+                                                        }
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <div className="col-span-6">
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Descripción</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Venta de mercadería..." {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <div className="col-span-3">
+                                <FormField
+                                    control={form.control}
+                                    name="reference"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Referencia</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="FAC-123" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="border rounded-md p-2">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[300px]">Cuenta</TableHead>
+                                        <TableHead>Etiqueta</TableHead>
+                                        <TableHead className="w-[150px]">Debe</TableHead>
+                                        <TableHead className="w-[150px]">Haber</TableHead>
+                                        <TableHead className="w-[50px]"></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {fields.map((field, index) => (
+                                        <TableRow key={field.id}>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`items.${index}.account`}
+                                                    render={({ field }) => (
+                                                        <FormItem className="space-y-0">
+                                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Cuenta" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {accounts.map((acc) => (
+                                                                        <SelectItem key={acc.id} value={acc.id.toString()}>
+                                                                            {acc.code} - {acc.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`items.${index}.label`}
+                                                    render={({ field }) => (
+                                                        <FormItem className="space-y-0">
+                                                            <FormControl>
+                                                                <Input {...field} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`items.${index}.debit`}
+                                                    render={({ field }) => (
+                                                        <FormItem className="space-y-0">
+                                                            <FormControl>
+                                                                <Input type="number" step="0.01" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} onFocus={(e) => e.target.select()} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`items.${index}.credit`}
+                                                    render={({ field }) => (
+                                                        <FormItem className="space-y-0">
+                                                            <FormControl>
+                                                                <Input type="number" step="0.01" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} onFocus={(e) => e.target.select()} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => remove(index)}
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            <div className="flex justify-between items-center mt-2 px-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => append({ account: "", label: "", debit: 0, credit: 0 })}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" /> Agregar Línea
+                                </Button>
+                                <TotalBalance control={form.control} />
+                            </div>
+                        </div>
+
+                        <FormMessage className="text-right" /> {/* Use for global form errors like balance */}
+                        {form.formState.errors.items?.root && (
+                            <div className="text-red-500 text-sm text-right font-medium">
+                                {form.formState.errors.items.root.message}
+                            </div>
+                        )}
+
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setOpen(false)}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={loading}>
+                                {loading ? "Guardando..." : (initialData ? "Actualizar Asiento" : "Crear Asiento")}
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
