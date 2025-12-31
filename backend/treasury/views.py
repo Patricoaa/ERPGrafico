@@ -28,6 +28,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
             customer_id = request.data.get('customer_id')
             supplier_id = request.data.get('supplier_id')
             
+            # Orders
+            sale_order_id = request.data.get('sale_order_id')
+            purchase_order_id = request.data.get('purchase_order_id')
+            
             journal = BankJournal.objects.get(pk=journal_id)
             partner = None
             if customer_id:
@@ -35,8 +39,16 @@ class PaymentViewSet(viewsets.ModelViewSet):
             elif supplier_id:
                 partner = Supplier.objects.get(pk=supplier_id)
             
+            order = None
+            if sale_order_id:
+                from sales.models import SaleOrder
+                order = SaleOrder.objects.get(pk=sale_order_id)
+            elif purchase_order_id:
+                from purchasing.models import PurchaseOrder
+                order = PurchaseOrder.objects.get(pk=purchase_order_id)
+            
             payment = TreasuryService.register_payment(
-                journal, amount, payment_type, reference=reference, partner=partner
+                journal, amount, payment_type, reference=reference, partner=partner, order=order
             )
             
             return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)

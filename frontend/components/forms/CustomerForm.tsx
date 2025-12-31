@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -36,15 +36,21 @@ type CustomerFormValues = z.infer<typeof customerSchema>
 
 interface CustomerFormProps {
     onSuccess?: () => void
+    initialData?: any
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function CustomerForm({ onSuccess }: CustomerFormProps) {
-    const [open, setOpen] = useState(false)
+export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenChange }: CustomerFormProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
     const [loading, setLoading] = useState(false)
 
     const form = useForm<CustomerFormValues>({
         resolver: zodResolver(customerSchema),
-        defaultValues: {
+        defaultValues: initialData || {
             name: "",
             tax_id: "",
             email: "",
@@ -53,16 +59,37 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
         },
     })
 
+    // Reset form when initialData changes or modal opens
+    useEffect(() => {
+        if (open) {
+            if (initialData) {
+                form.reset(initialData)
+            } else {
+                form.reset({
+                    name: "",
+                    tax_id: "",
+                    email: "",
+                    phone: "",
+                    address: "",
+                })
+            }
+        }
+    }, [open, initialData, form])
+
     async function onSubmit(data: CustomerFormValues) {
         setLoading(true)
         try {
-            await api.post('/sales/customers/', data)
+            if (initialData) {
+                await api.put(`/sales/customers/${initialData.id}/`, data)
+            } else {
+                await api.post('/sales/customers/', data)
+            }
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: any) {
-            console.error("Error creating customer:", error)
-            alert(error.response?.data?.detail || "Error al crear el cliente")
+            console.error("Error saving customer:", error)
+            alert(error.response?.data?.detail || "Error al guardar el cliente")
         } finally {
             setLoading(false)
         }
@@ -70,14 +97,16 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>Nuevo Cliente</Button>
-            </DialogTrigger>
+            {!initialData && (
+                <DialogTrigger asChild>
+                    <Button>Nuevo Cliente</Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Cliente</DialogTitle>
+                    <DialogTitle>{initialData ? "Editar Cliente" : "Crear Cliente"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los datos del nuevo cliente.
+                        {initialData ? "Modifique los datos del cliente." : "Ingrese los datos del nuevo cliente."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -156,7 +185,7 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Creando..." : "Crear Cliente"}
+                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Cliente"}
                             </Button>
                         </div>
                     </form>

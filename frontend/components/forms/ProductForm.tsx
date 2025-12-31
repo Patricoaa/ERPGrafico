@@ -44,10 +44,16 @@ type ProductFormValues = z.infer<typeof productSchema>
 
 interface ProductFormProps {
     onSuccess?: () => void
+    initialData?: any
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function ProductForm({ onSuccess }: ProductFormProps) {
-    const [open, setOpen] = useState(false)
+export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChange }: ProductFormProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
 
@@ -65,7 +71,10 @@ export function ProductForm({ onSuccess }: ProductFormProps) {
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema),
-        defaultValues: {
+        defaultValues: initialData ? {
+            ...initialData,
+            category: initialData.category?.toString() || "",
+        } : {
             code: "",
             name: "",
             product_type: "STORABLE",
@@ -74,16 +83,40 @@ export function ProductForm({ onSuccess }: ProductFormProps) {
         },
     })
 
+    // Reset form when initialData changes or modal opens
+    useEffect(() => {
+        if (open) {
+            if (initialData) {
+                form.reset({
+                    ...initialData,
+                    category: initialData.category?.id?.toString() || initialData.category?.toString() || "",
+                })
+            } else {
+                form.reset({
+                    code: "",
+                    name: "",
+                    product_type: "STORABLE",
+                    sale_price: "0",
+                    cost_price: "0",
+                })
+            }
+        }
+    }, [open, initialData, form])
+
     async function onSubmit(data: ProductFormValues) {
         setLoading(true)
         try {
-            await api.post('/inventory/products/', data)
+            if (initialData) {
+                await api.put(`/inventory/products/${initialData.id}/`, data)
+            } else {
+                await api.post('/inventory/products/', data)
+            }
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: any) {
-            console.error("Error creating product:", error)
-            alert(error.response?.data?.detail || "Error al crear el producto")
+            console.error("Error saving product:", error)
+            alert(error.response?.data?.detail || "Error al guardar el producto")
         } finally {
             setLoading(false)
         }
@@ -91,14 +124,16 @@ export function ProductForm({ onSuccess }: ProductFormProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>Nuevo Producto</Button>
-            </DialogTrigger>
+            {!initialData && (
+                <DialogTrigger asChild>
+                    <Button>Nuevo Producto</Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Producto</DialogTitle>
+                    <DialogTitle>{initialData ? "Editar Producto" : "Crear Producto"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los datos del nuevo producto.
+                        {initialData ? "Modifique los datos del producto." : "Ingrese los datos del nuevo producto."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -212,7 +247,7 @@ export function ProductForm({ onSuccess }: ProductFormProps) {
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Creando..." : "Crear Producto"}
+                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Producto"}
                             </Button>
                         </div>
                     </form>

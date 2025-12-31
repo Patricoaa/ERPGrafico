@@ -1,0 +1,416 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Plus, Trash2 } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import api from "@/lib/api"
+import { toast } from "sonner"
+
+const purchaseLineSchema = z.object({
+    id: z.number().optional(),
+    product: z.string().min(1, "El producto es requerido"),
+    quantity: z.number().min(0.01, "La cantidad debe ser mayor a 0"),
+    unit_cost: z.number().min(0, "El costo no puede ser negativo"),
+    tax_rate: z.number(),
+})
+
+const purchaseOrderSchema = z.object({
+    supplier: z.string().min(1, "El proveedor es requerido"),
+    warehouse: z.string().min(1, "La bodega es requerida"),
+    supplier_reference: z.string().optional(),
+    notes: z.string().optional(),
+    lines: z.array(purchaseLineSchema).min(1, "Debe agregar al menos una línea"),
+})
+
+type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>
+
+interface PurchaseOrderFormProps {
+    onSuccess?: () => void
+    initialData?: any
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+}
+
+const OrderTotals = ({ control }: { control: Control<PurchaseOrderFormValues> }) => {
+    const lines = useWatch({
+        control,
+        name: "lines",
+    })
+
+    const subtotal = lines?.reduce((sum, line) => sum + (Number(line.quantity) * Number(line.unit_cost) || 0), 0) || 0
+    const tax = lines?.reduce((sum, line) => {
+        const lineNet = Number(line.quantity) * Number(line.unit_cost) || 0
+        return sum + (lineNet * (Number(line.tax_rate) / 100))
+    }, 0) || 0
+    const total = subtotal + tax
+
+    return (
+        <div className="space-y-1 text-right pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+                Subtotal: {subtotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            </div>
+            <div className="text-sm text-muted-foreground">
+                IVA (19%): {tax.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            </div>
+            <div className="text-lg font-bold">
+                Total: {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            </div>
+        </div>
+    )
+}
+
+export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOpenChange }: PurchaseOrderFormProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
+    const [loading, setLoading] = useState(false)
+    const [suppliers, setSuppliers] = useState<any[]>([])
+    const [warehouses, setWarehouses] = useState<any[]>([])
+    const [products, setProducts] = useState<any[]>([])
+
+    const form = useForm<PurchaseOrderFormValues>({
+        resolver: zodResolver(purchaseOrderSchema),
+        defaultValues: initialData ? {
+            ...initialData,
+            supplier: initialData.supplier?.toString() || "",
+            warehouse: initialData.warehouse?.toString() || "",
+            lines: initialData.lines.map((l: any) => ({
+                id: l.id,
+                product: l.product?.id?.toString() || l.product?.toString() || "",
+                quantity: parseFloat(l.quantity) || 0,
+                unit_cost: parseFloat(l.unit_cost) || 0,
+                tax_rate: parseFloat(l.tax_rate) || 19,
+            }))
+        } : {
+            supplier: "",
+            warehouse: "",
+            supplier_reference: "",
+            notes: "",
+            lines: [{ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 }],
+        },
+    })
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "lines",
+    })
+
+    const fetchData = async () => {
+        try {
+            const [suppliersRes, warehousesRes, productsRes] = await Promise.all([
+                api.get('/purchasing/suppliers/'),
+                api.get('/inventory/warehouses/'),
+                api.get('/inventory/products/'),
+            ])
+            setSuppliers(suppliersRes.data.results || suppliersRes.data)
+            setWarehouses(warehousesRes.data.results || warehousesRes.data)
+            setProducts(productsRes.data.results || productsRes.data)
+        } catch (error) {
+            console.error("Error fetching data:", error)
+        }
+    }
+
+    useEffect(() => {
+        if (open) {
+            fetchData()
+            if (initialData) {
+                form.reset({
+                    ...initialData,
+                    supplier: initialData.supplier?.id?.toString() || initialData.supplier?.toString() || "",
+                    warehouse: initialData.warehouse?.id?.toString() || initialData.warehouse?.toString() || "",
+                    lines: initialData.lines.map((l: any) => ({
+                        id: l.id,
+                        product: l.product?.id?.toString() || l.product?.toString() || "",
+                        quantity: parseFloat(l.quantity) || 0,
+                        unit_cost: parseFloat(l.unit_cost) || 0,
+                        tax_rate: parseFloat(l.tax_rate) || 19,
+                    }))
+                })
+            } else {
+                form.reset({
+                    supplier: "",
+                    warehouse: "",
+                    supplier_reference: "",
+                    notes: "",
+                    lines: [{ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 }],
+                })
+            }
+        }
+    }, [open, initialData, form])
+
+    async function onSubmit(data: PurchaseOrderFormValues) {
+        setLoading(true)
+        try {
+            if (initialData) {
+                await api.put(`/purchasing/orders/${initialData.id}/`, data)
+                toast.success("Orden de Compra actualizada correctamente")
+            } else {
+                await api.post('/purchasing/orders/', data)
+                toast.success("Orden de Compra creada correctamente")
+            }
+            form.reset()
+            setOpen(false)
+            if (onSuccess) onSuccess()
+        } catch (error: any) {
+            console.error("Error saving purchase order:", error)
+            toast.error(error.response?.data?.detail || "Error al guardar la Orden de Compra")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            {!initialData && (
+                <DialogTrigger asChild>
+                    <Button>Nueva Orden de Compra</Button>
+                </DialogTrigger>
+            )}
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>{initialData ? "Editar Orden de Compra" : "Crear Orden de Compra"}</DialogTitle>
+                    <DialogDescription>
+                        {initialData ? "Modifique los datos de la orden de compra." : "Ingrese los detalles de la nueva orden de compra."}
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="supplier"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Proveedor</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione un proveedor" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {suppliers.map((s) => (
+                                                    <SelectItem key={s.id} value={s.id.toString()}>
+                                                        {s.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="warehouse"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Bodega de Recepción</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione una bodega" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {warehouses.map((w) => (
+                                                    <SelectItem key={w.id} value={w.id.toString()}>
+                                                        {w.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="supplier_reference"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Referencia Proveedor</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ej: Factura #123" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-medium">Líneas de Compra</h3>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => append({ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 })}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Agregar Producto
+                                </Button>
+                            </div>
+
+                            <div className="rounded-md border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[40%]">Producto</TableHead>
+                                            <TableHead className="w-[15%]">Cantidad</TableHead>
+                                            <TableHead className="w-[20%]">costo Unit.</TableHead>
+                                            <TableHead className="w-[15%]">Subtotal</TableHead>
+                                            <TableHead className="w-[10%]"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {fields.map((field, index) => (
+                                            <TableRow key={field.id}>
+                                                <TableCell>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`lines.${index}.product`}
+                                                        render={({ field }) => (
+                                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Producto" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {products.map((p) => (
+                                                                        <SelectItem key={p.id} value={p.id.toString()}>
+                                                                            {p.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        )}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`lines.${index}.quantity`}
+                                                        render={({ field }) => (
+                                                            <Input
+                                                                type="number"
+                                                                step="0.01"
+                                                                {...field}
+                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                            />
+                                                        )}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`lines.${index}.unit_cost`}
+                                                        render={({ field }) => (
+                                                            <Input
+                                                                type="number"
+                                                                step="0.01"
+                                                                {...field}
+                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                            />
+                                                        )}
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="text-right font-medium">
+                                                    {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_cost`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => remove(index)}
+                                                        disabled={fields.length === 1}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <FormField
+                                control={form.control}
+                                name="notes"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Notas / Observaciones</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Notas adicionales..."
+                                                className="resize-none h-24"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <OrderTotals control={form.control} />
+                        </div>
+
+                        <div className="flex justify-end space-x-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setOpen(false)}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={loading}>
+                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Orden de Compra"}
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}

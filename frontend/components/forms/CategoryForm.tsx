@@ -43,17 +43,29 @@ type CategoryFormValues = z.infer<typeof categorySchema>
 
 interface CategoryFormProps {
     onSuccess?: () => void
+    initialData?: any
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function CategoryForm({ onSuccess }: CategoryFormProps) {
-    const [open, setOpen] = useState(false)
+export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenChange }: CategoryFormProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
     const [accounts, setAccounts] = useState<any[]>([])
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
-        defaultValues: {
+        defaultValues: initialData ? {
+            ...initialData,
+            parent: initialData.parent?.toString() || "none",
+            asset_account: initialData.asset_account?.toString() || "none",
+            income_account: initialData.income_account?.toString() || "none",
+            expense_account: initialData.expense_account?.toString() || "none",
+        } : {
             name: "",
         },
     })
@@ -64,7 +76,7 @@ export function CategoryForm({ onSuccess }: CategoryFormProps) {
                 api.get('/inventory/categories/'),
                 api.get('/accounting/accounts/')
             ])
-            setCategories(catsRes.data)
+            setCategories(catsRes.data.results || catsRes.data)
             setAccounts(accsRes.data.results || accsRes.data)
         } catch (error) {
             console.error("Error fetching dependencies:", error)
@@ -75,38 +87,51 @@ export function CategoryForm({ onSuccess }: CategoryFormProps) {
         if (open) fetchData()
     }, [open])
 
+    // Reset form when initialData changes or modal opens
+    useEffect(() => {
+        if (open) {
+            if (initialData) {
+                form.reset({
+                    ...initialData,
+                    parent: initialData.parent?.id?.toString() || initialData.parent?.toString() || "none",
+                    asset_account: initialData.asset_account?.id?.toString() || initialData.asset_account?.toString() || "none",
+                    income_account: initialData.income_account?.id?.toString() || initialData.income_account?.toString() || "none",
+                    expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "none",
+                })
+            } else {
+                form.reset({
+                    name: "",
+                    parent: "none",
+                    asset_account: "none",
+                    income_account: "none",
+                    expense_account: "none",
+                })
+            }
+        }
+    }, [open, initialData, form])
+
     async function onSubmit(data: CategoryFormValues) {
         setLoading(true)
         try {
-            await api.post('/inventory/categories/', {
+            const payload = {
                 ...data,
                 parent: (data.parent && data.parent !== "none") ? data.parent : null,
                 asset_account: (data.asset_account && data.asset_account !== "none") ? data.asset_account : null,
                 income_account: (data.income_account && data.income_account !== "none") ? data.income_account : null,
                 expense_account: (data.expense_account && data.expense_account !== "none") ? data.expense_account : null,
-            })
+            }
+
+            if (initialData) {
+                await api.put(`/inventory/categories/${initialData.id}/`, payload)
+            } else {
+                await api.post('/inventory/categories/', payload)
+            }
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: any) {
-            console.error("Error creating category:", error)
-            if (error.response?.data) {
-                const data = error.response.data
-                let errorMessage = "Error al crear la categoría"
-
-                if (data.detail) {
-                    errorMessage = data.detail
-                } else {
-                    const fieldErrors = Object.keys(data).map(key => {
-                        const messages = Array.isArray(data[key]) ? data[key].join(", ") : data[key]
-                        return `${key}: ${messages}`
-                    }).join("\n")
-                    if (fieldErrors) errorMessage = fieldErrors
-                }
-                alert(errorMessage)
-            } else {
-                alert("Error desconocido al crear la categoría")
-            }
+            console.error("Error saving category:", error)
+            alert(error.response?.data?.detail || "Error al guardar la categoría")
         } finally {
             setLoading(false)
         }
@@ -123,9 +148,9 @@ export function CategoryForm({ onSuccess }: CategoryFormProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Categoría</DialogTitle>
+                    <DialogTitle>{initialData ? "Editar Categoría" : "Crear Categoría"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los datos de la nueva categoría y sus cuentas contables asociadas.
+                        {initialData ? "Modifique los datos de la categoría." : "Ingrese los datos de la nueva categoría y sus cuentas contables asociadas."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -252,7 +277,7 @@ export function CategoryForm({ onSuccess }: CategoryFormProps) {
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Creando..." : "Crear Categoría"}
+                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Categoría"}
                             </Button>
                         </div>
                     </form>

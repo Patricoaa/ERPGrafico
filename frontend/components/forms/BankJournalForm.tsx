@@ -34,7 +34,7 @@ import api from "@/lib/api"
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
     code: z.string().min(1, "El código es requerido"),
-    currency: z.string().default("CLP"),
+    currency: z.string().min(1, "La moneda es requerida"),
     account: z.string().min(1, "La cuenta contable es requerida"),
 })
 
@@ -42,16 +42,25 @@ type JournalFormValues = z.infer<typeof journalSchema>
 
 interface BankJournalFormProps {
     onSuccess?: () => void
+    initialData?: any
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function BankJournalForm({ onSuccess }: BankJournalFormProps) {
-    const [open, setOpen] = useState(false)
+export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpenChange }: BankJournalFormProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
     const [loading, setLoading] = useState(false)
     const [accounts, setAccounts] = useState<any[]>([])
 
     const form = useForm<JournalFormValues>({
         resolver: zodResolver(journalSchema),
-        defaultValues: {
+        defaultValues: initialData ? {
+            ...initialData,
+            account: initialData.account?.toString() || "",
+        } : {
             name: "",
             code: "",
             currency: "CLP",
@@ -61,7 +70,6 @@ export function BankJournalForm({ onSuccess }: BankJournalFormProps) {
     const fetchAccounts = async () => {
         try {
             const response = await api.get('/accounting/accounts/')
-            // Filter only Asset accounts in frontend or backend query
             const allAccounts = response.data.results || response.data
             setAccounts(allAccounts.filter((a: any) => a.account_type === 'ASSET'))
         } catch (error) {
@@ -73,32 +81,38 @@ export function BankJournalForm({ onSuccess }: BankJournalFormProps) {
         if (open) fetchAccounts()
     }, [open])
 
+    // Reset form when initialData changes or modal opens
+    useEffect(() => {
+        if (open) {
+            if (initialData) {
+                form.reset({
+                    ...initialData,
+                    account: initialData.account?.id?.toString() || initialData.account?.toString() || "",
+                })
+            } else {
+                form.reset({
+                    name: "",
+                    code: "",
+                    currency: "CLP",
+                })
+            }
+        }
+    }, [open, initialData, form])
+
     async function onSubmit(data: JournalFormValues) {
         setLoading(true)
         try {
-            await api.post('/treasury/journals/', data)
+            if (initialData) {
+                await api.put(`/treasury/journals/${initialData.id}/`, data)
+            } else {
+                await api.post('/treasury/journals/', data)
+            }
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: any) {
-            console.error("Error creating journal:", error)
-            if (error.response?.data) {
-                const data = error.response.data
-                let errorMessage = "Error al crear la caja/banco"
-
-                if (data.detail) {
-                    errorMessage = data.detail
-                } else {
-                    const fieldErrors = Object.keys(data).map(key => {
-                        const messages = Array.isArray(data[key]) ? data[key].join(", ") : data[key]
-                        return `${key}: ${messages}`
-                    }).join("\n")
-                    if (fieldErrors) errorMessage = fieldErrors
-                }
-                alert(errorMessage)
-            } else {
-                alert("Error desconocido al crear la caja/banco")
-            }
+            console.error("Error saving journal:", error)
+            alert(error.response?.data?.detail || "Error al guardar la caja/banco")
         } finally {
             setLoading(false)
         }
@@ -106,14 +120,16 @@ export function BankJournalForm({ onSuccess }: BankJournalFormProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>Nueva Caja/Banco</Button>
-            </DialogTrigger>
+            {!initialData && (
+                <DialogTrigger asChild>
+                    <Button>Nueva Caja/Banco</Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Caja o Banco</DialogTitle>
+                    <DialogTitle>{initialData ? "Editar Caja o Banco" : "Crear Caja o Banco"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los datos de la nueva cuenta de tesorería (Caja, Banco, etc).
+                        {initialData ? "Modifique los datos de la cuenta de tesorería." : "Ingrese los datos de la nueva cuenta de tesorería (Caja, Banco, etc)."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -199,7 +215,7 @@ export function BankJournalForm({ onSuccess }: BankJournalFormProps) {
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Creando..." : "Crear Caja/Banco"}
+                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Caja/Banco"}
                             </Button>
                         </div>
                     </form>

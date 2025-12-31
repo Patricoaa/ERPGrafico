@@ -10,7 +10,10 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Pencil, Trash2 } from "lucide-react"
 import api from "@/lib/api"
+import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 
 interface PurchaseOrder {
@@ -20,23 +23,58 @@ interface PurchaseOrder {
     date: string
     status: string
     total: string
+    warehouse_name: string
 }
 
-export default function OrdersPage() {
+const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    'DRAFT': { label: 'Borrador', variant: 'outline' },
+    'CONFIRMED': { label: 'Confirmado', variant: 'default' },
+    'RECEIVED': { label: 'Recibido', variant: 'secondary' },
+    'CANCELLED': { label: 'Anulado', variant: 'destructive' },
+}
+
+export default function PurchaseOrdersPage() {
     const [orders, setOrders] = useState<PurchaseOrder[]>([])
     const [loading, setLoading] = useState(true)
+    const [editingOrder, setEditingOrder] = useState<any | null>(null)
+    const [isFormOpen, setIsFormOpen] = useState(false)
+
+    const fetchOrders = async () => {
+        try {
+            const response = await api.get('/purchasing/orders/')
+            setOrders(response.data.results || response.data)
+        } catch (error) {
+            console.error("Failed to fetch purchase orders", error)
+            toast.error("Error al cargar las órdenes de compra.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleDelete = async (id: number) => {
+        if (!confirm("¿Está seguro de que desea eliminar esta Orden de Compra?")) return
+        try {
+            await api.delete(`/purchasing/orders/${id}/`)
+            toast.success("Orden de Compra eliminada correctamente.")
+            fetchOrders()
+        } catch (error) {
+            console.error("Error deleting order:", error)
+            toast.error("Error al eliminar la orden de compra.")
+        }
+    }
+
+    const handleEdit = async (order: PurchaseOrder) => {
+        try {
+            const response = await api.get(`/purchasing/orders/${order.id}/`)
+            setEditingOrder(response.data)
+            setIsFormOpen(true)
+        } catch (error) {
+            console.error("Error fetching order details:", error)
+            toast.error("Error al cargar los detalles de la orden de compra.")
+        }
+    }
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const response = await api.get('/purchasing/orders/')
-                setOrders(response.data.results || response.data)
-            } catch (error) {
-                console.error("Failed to fetch orders", error)
-            } finally {
-                setLoading(false)
-            }
-        }
         fetchOrders()
     }, [])
 
@@ -45,7 +83,25 @@ export default function OrdersPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
                 <div className="flex items-center space-x-2">
-                    <Button>Nueva Orden</Button>
+                    <PurchaseOrderForm
+                        onSuccess={fetchOrders}
+                        open={isFormOpen && !editingOrder}
+                        onOpenChange={(open) => {
+                            setIsFormOpen(open)
+                            if (!open) setEditingOrder(null)
+                        }}
+                    />
+                    {editingOrder && (
+                        <PurchaseOrderForm
+                            initialData={editingOrder}
+                            open={isFormOpen && !!editingOrder}
+                            onOpenChange={(open) => {
+                                setIsFormOpen(open)
+                                if (!open) setEditingOrder(null)
+                            }}
+                            onSuccess={fetchOrders}
+                        />
+                    )}
                 </div>
             </div>
             <div className="rounded-md border">
@@ -53,38 +109,56 @@ export default function OrdersPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Número</TableHead>
-                            <TableHead>Proveedor</TableHead>
                             <TableHead>Fecha</TableHead>
+                            <TableHead>Proveedor</TableHead>
+                            <TableHead>Bodega</TableHead>
+                            <TableHead>Total</TableHead>
                             <TableHead>Estado</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
+                            <TableHead className="w-[100px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {orders.map((order) => (
                             <TableRow key={order.id}>
                                 <TableCell className="font-medium">{order.number}</TableCell>
+                                <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                                 <TableCell>{order.supplier_name}</TableCell>
-                                <TableCell>{order.date}</TableCell>
+                                <TableCell>{order.warehouse_name}</TableCell>
+                                <TableCell>{parseFloat(order.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</TableCell>
                                 <TableCell>
-                                    <Badge variant={order.status === 'RECEIVED' ? 'default' : 'secondary'}>
-                                        {order.status}
+                                    <Badge variant={statusMap[order.status]?.variant || "default"}>
+                                        {statusMap[order.status]?.label || order.status}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-right">${Number(order.total).toLocaleString()}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm">Ver</Button>
+                                <TableCell>
+                                    <div className="flex justify-center space-x-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleEdit(order)}
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-destructive hover:text-destructive"
+                                            onClick={() => handleDelete(order.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
                         {loading && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center">Cargando órdenes...</TableCell>
+                                <TableCell colSpan={7} className="text-center">Cargando órdenes de compra...</TableCell>
                             </TableRow>
                         )}
                         {!loading && orders.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center">No hay órdenes registradas.</TableCell>
+                                <TableCell colSpan={7} className="text-center">No hay órdenes de compra registradas.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

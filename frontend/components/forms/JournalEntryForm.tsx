@@ -50,14 +50,12 @@ const journalItemSchema = z.object({
     account: z.string().min(1, "Cuenta requerida"),
     partner: z.string().optional(),
     label: z.string().optional(),
-    debit: z.coerce.number().min(0),
-    credit: z.coerce.number().min(0),
+    debit: z.number().min(0),
+    credit: z.number().min(0),
 })
 
 const journalEntrySchema = z.object({
-    date: z.date({
-        required_error: "La fecha es requerida",
-    }),
+    date: z.date(),
     description: z.string().min(3, "La descripción debe tener al menos 3 caracteres"),
     reference: z.string().optional(),
     items: z.array(journalItemSchema).min(2, "El asiento debe tener al menos 2 líneas"),
@@ -73,6 +71,7 @@ const journalEntrySchema = z.object({
 type JournalEntryFormValues = z.infer<typeof journalEntrySchema>
 
 interface JournalEntryFormProps {
+    accounts?: any[]
     onSuccess?: () => void
     initialData?: any
     triggerText?: string
@@ -100,10 +99,17 @@ const TotalBalance = ({ control }: { control: Control<JournalEntryFormValues> })
     )
 }
 
-export function JournalEntryForm({ onSuccess, initialData, triggerText = "Nuevo Asiento" }: JournalEntryFormProps) {
+export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialData, triggerText = "Nuevo Asiento" }: JournalEntryFormProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [accounts, setAccounts] = useState<any[]>([])
+    const [accounts, setAccounts] = useState<any[]>(accountsProp || [])
+
+    // Sync local accounts state if prop changes
+    useEffect(() => {
+        if (accountsProp && accountsProp.length > 0) {
+            setAccounts(accountsProp)
+        }
+    }, [accountsProp])
 
     // Convert string date to Date object if editing
     const defaultValues: Partial<JournalEntryFormValues> = initialData ? {
@@ -146,7 +152,9 @@ export function JournalEntryForm({ onSuccess, initialData, triggerText = "Nuevo 
 
     useEffect(() => {
         if (open) {
-            fetchAccounts()
+            if (!accountsProp || accountsProp.length === 0) {
+                fetchAccounts()
+            }
             if (!initialData) {
                 form.reset({
                     date: new Date(),
@@ -161,7 +169,7 @@ export function JournalEntryForm({ onSuccess, initialData, triggerText = "Nuevo 
                 form.reset(defaultValues)
             }
         }
-    }, [open, initialData])
+    }, [open, initialData, accountsProp])
 
     async function onSubmit(data: JournalEntryFormValues) {
         setLoading(true)

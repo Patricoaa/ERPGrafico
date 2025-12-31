@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -34,47 +34,56 @@ type WarehouseFormValues = z.infer<typeof warehouseSchema>
 
 interface WarehouseFormProps {
     onSuccess?: () => void
+    initialData?: any
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function WarehouseForm({ onSuccess }: WarehouseFormProps) {
-    const [open, setOpen] = useState(false)
+export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenChange }: WarehouseFormProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
     const [loading, setLoading] = useState(false)
 
     const form = useForm<WarehouseFormValues>({
         resolver: zodResolver(warehouseSchema),
-        defaultValues: {
+        defaultValues: initialData || {
             name: "",
             code: "",
             address: "",
         },
     })
 
+    // Reset form when initialData changes or modal opens
+    useEffect(() => {
+        if (open) {
+            if (initialData) {
+                form.reset(initialData)
+            } else {
+                form.reset({
+                    name: "",
+                    code: "",
+                    address: "",
+                })
+            }
+        }
+    }, [open, initialData, form])
+
     async function onSubmit(data: WarehouseFormValues) {
         setLoading(true)
         try {
-            await api.post('/inventory/warehouses/', data)
+            if (initialData) {
+                await api.put(`/inventory/warehouses/${initialData.id}/`, data)
+            } else {
+                await api.post('/inventory/warehouses/', data)
+            }
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: any) {
-            console.error("Error creating warehouse:", error)
-            if (error.response?.data) {
-                const data = error.response.data
-                let errorMessage = "Error al crear el almacén"
-
-                if (data.detail) {
-                    errorMessage = data.detail
-                } else {
-                    const fieldErrors = Object.keys(data).map(key => {
-                        const messages = Array.isArray(data[key]) ? data[key].join(", ") : data[key]
-                        return `${key}: ${messages}`
-                    }).join("\n")
-                    if (fieldErrors) errorMessage = fieldErrors
-                }
-                alert(errorMessage)
-            } else {
-                alert("Error desconocido al crear el almacén")
-            }
+            console.error("Error saving warehouse:", error)
+            alert(error.response?.data?.detail || "Error al guardar el almacén")
         } finally {
             setLoading(false)
         }
@@ -87,9 +96,9 @@ export function WarehouseForm({ onSuccess }: WarehouseFormProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Almacén</DialogTitle>
+                    <DialogTitle>{initialData ? "Editar Almacén" : "Crear Almacén"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los datos del nuevo almacén o bodega.
+                        {initialData ? "Modifique los datos del almacén o bodega." : "Ingrese los datos del nuevo almacén o bodega."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -142,7 +151,7 @@ export function WarehouseForm({ onSuccess }: WarehouseFormProps) {
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Creando..." : "Crear Almacén"}
+                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Almacén"}
                             </Button>
                         </div>
                     </form>

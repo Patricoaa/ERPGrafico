@@ -12,6 +12,9 @@ import {
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
+import { Pencil, Trash2 } from "lucide-react"
+import { WorkOrderForm } from "@/components/forms/WorkOrderForm"
+import { toast } from "sonner"
 
 interface WorkOrder {
     id: number
@@ -22,39 +25,71 @@ interface WorkOrder {
     due_date: string
 }
 
+const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "outline" | "destructive" }> = {
+    'PLANNED': { label: 'Planificada', variant: 'secondary' },
+    'IN_PROGRESS': { label: 'En Proceso', variant: 'default' },
+    'FINISHED': { label: 'Terminada', variant: 'outline' },
+    'CANCELLED': { label: 'Anulada', variant: 'destructive' },
+}
+
 export default function WorkOrdersPage() {
     const [orders, setOrders] = useState<WorkOrder[]>([])
     const [loading, setLoading] = useState(true)
+    const [editingOrder, setEditingOrder] = useState<any | null>(null)
+    const [isFormOpen, setIsFormOpen] = useState(false)
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const response = await api.get('/production/orders/')
-                setOrders(response.data.results || response.data)
-            } catch (error) {
-                console.error("Failed to fetch works orders", error)
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchOrders()
-    }, [])
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'PLANNED': return 'secondary'
-            case 'IN_PROGRESS': return 'default'
-            case 'FINISHED': return 'outline' // Green-ish usually but outline for now
-            default: return 'destructive'
+    const fetchOrders = async () => {
+        try {
+            const response = await api.get('/production/orders/')
+            setOrders(response.data.results || response.data)
+        } catch (error) {
+            console.error("Failed to fetch works orders", error)
+            toast.error("Error al cargar las OTs.")
+        } finally {
+            setLoading(false)
         }
     }
+
+    const handleDelete = async (id: number) => {
+        if (!confirm("¿Está seguro de que desea eliminar esta OT?")) return
+        try {
+            await api.delete(`/production/orders/${id}/`)
+            toast.success("OT eliminada correctamente.")
+            fetchOrders()
+        } catch (error) {
+            console.error("Error deleting order:", error)
+            toast.error("Error al eliminar la OT.")
+        }
+    }
+
+    useEffect(() => {
+        fetchOrders()
+    }, [])
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ordenes de Trabajo (OT)</h2>
                 <div className="flex items-center space-x-2">
-                    <Button>Nueva OT</Button>
+                    <WorkOrderForm
+                        onSuccess={fetchOrders}
+                        open={isFormOpen && !editingOrder}
+                        onOpenChange={(open) => {
+                            setIsFormOpen(open)
+                            if (!open) setEditingOrder(null)
+                        }}
+                    />
+                    {editingOrder && (
+                        <WorkOrderForm
+                            initialData={editingOrder}
+                            open={isFormOpen && !!editingOrder}
+                            onOpenChange={(open) => {
+                                setIsFormOpen(open)
+                                if (!open) setEditingOrder(null)
+                            }}
+                            onSuccess={fetchOrders}
+                        />
+                    )}
                 </div>
             </div>
             <div className="rounded-md border">
@@ -66,7 +101,7 @@ export default function WorkOrdersPage() {
                             <TableHead>Estado</TableHead>
                             <TableHead>Fecha Inicio</TableHead>
                             <TableHead>Fecha Entrega</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
+                            <TableHead className="w-[100px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -75,14 +110,33 @@ export default function WorkOrdersPage() {
                                 <TableCell className="font-medium">OT-{order.number}</TableCell>
                                 <TableCell>{order.description}</TableCell>
                                 <TableCell>
-                                    <Badge variant={getStatusColor(order.status) as any}>
-                                        {order.status}
+                                    <Badge variant={statusMap[order.status]?.variant || ("default" as any)}>
+                                        {statusMap[order.status]?.label || order.status}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>{order.start_date || '-'}</TableCell>
                                 <TableCell>{order.due_date || '-'}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm">Gestionar</Button>
+                                <TableCell>
+                                    <div className="flex justify-center space-x-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => {
+                                                setEditingOrder(order)
+                                                setIsFormOpen(true)
+                                            }}
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-destructive hover:text-destructive"
+                                            onClick={() => handleDelete(order.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}

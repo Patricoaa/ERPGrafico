@@ -1,6 +1,4 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -37,15 +35,21 @@ type SupplierFormValues = z.infer<typeof supplierSchema>
 
 interface SupplierFormProps {
     onSuccess?: () => void
+    initialData?: any
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function SupplierForm({ onSuccess }: SupplierFormProps) {
-    const [open, setOpen] = useState(false)
+export function SupplierForm({ onSuccess, initialData, open: openProp, onOpenChange }: SupplierFormProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
     const [loading, setLoading] = useState(false)
 
     const form = useForm<SupplierFormValues>({
         resolver: zodResolver(supplierSchema),
-        defaultValues: {
+        defaultValues: initialData || {
             name: "",
             tax_id: "",
             contact_name: "",
@@ -55,16 +59,37 @@ export function SupplierForm({ onSuccess }: SupplierFormProps) {
         },
     })
 
+    useEffect(() => {
+        if (open) {
+            if (initialData) {
+                form.reset(initialData)
+            } else {
+                form.reset({
+                    name: "",
+                    tax_id: "",
+                    contact_name: "",
+                    email: "",
+                    phone: "",
+                    address: "",
+                })
+            }
+        }
+    }, [open, initialData, form])
+
     async function onSubmit(data: SupplierFormValues) {
         setLoading(true)
         try {
-            await api.post('/purchasing/suppliers/', data)
+            if (initialData) {
+                await api.put(`/purchasing/suppliers/${initialData.id}/`, data)
+            } else {
+                await api.post('/purchasing/suppliers/', data)
+            }
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: any) {
-            console.error("Error creating supplier:", error)
-            alert(error.response?.data?.detail || "Error al crear el proveedor")
+            console.error("Error saving supplier:", error)
+            alert(error.response?.data?.detail || "Error al guardar el proveedor")
         } finally {
             setLoading(false)
         }
@@ -72,14 +97,16 @@ export function SupplierForm({ onSuccess }: SupplierFormProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>Nuevo Proveedor</Button>
-            </DialogTrigger>
+            {!initialData && (
+                <DialogTrigger asChild>
+                    <Button>Nuevo Proveedor</Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Proveedor</DialogTitle>
+                    <DialogTitle>{initialData ? "Editar Proveedor" : "Crear Proveedor"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los datos del nuevo proveedor.
+                        {initialData ? "Modifique los datos del proveedor." : "Ingrese los datos del nuevo proveedor."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -171,7 +198,7 @@ export function SupplierForm({ onSuccess }: SupplierFormProps) {
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Creando..." : "Crear Proveedor"}
+                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Proveedor"}
                             </Button>
                         </div>
                     </form>

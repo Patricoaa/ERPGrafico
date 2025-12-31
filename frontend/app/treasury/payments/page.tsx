@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { PaymentForm } from "@/components/forms/PaymentForm"
 import { Badge } from "@/components/ui/badge"
 
 interface Payment {
@@ -27,17 +28,19 @@ export default function PaymentsPage() {
     const [payments, setPayments] = useState<Payment[]>([])
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        const fetchPayments = async () => {
-            try {
-                const response = await api.get('/treasury/payments/')
-                setPayments(response.data.results || response.data)
-            } catch (error) {
-                console.error("Failed to fetch payments", error)
-            } finally {
-                setLoading(false)
-            }
+    const fetchPayments = async () => {
+        try {
+            setLoading(true)
+            const response = await api.get('/treasury/payments/')
+            setPayments(response.data.results || response.data)
+        } catch (error) {
+            console.error("Failed to fetch payments", error)
+        } finally {
+            setLoading(false)
         }
+    }
+
+    useEffect(() => {
         fetchPayments()
     }, [])
 
@@ -46,7 +49,7 @@ export default function PaymentsPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Pagos y Cobros</h2>
                 <div className="flex items-center space-x-2">
-                    <Button>Registrar Pago</Button>
+                    <PaymentForm onSuccess={fetchPayments} />
                 </div>
             </div>
             <div className="rounded-md border">
