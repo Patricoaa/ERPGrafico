@@ -105,9 +105,10 @@ export default function SalesOrdersPage() {
             const res = await api.post('/billing/invoices/pos_checkout/', {
                 order_data: {
                     id: payingOrder.id,
-                    customer: payingOrder.id, // This is a bit tricky, pos_checkout expected full order_data or ID?
+                    customer: payingOrder.customer,
                 },
                 dte_type: data.dteType || 'BOLETA',
+                payment_method: data.paymentMethod,
                 amount: data.amount,
                 transaction_number: data.transaction_number,
                 is_pending_registration: data.is_pending_registration

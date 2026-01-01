@@ -231,29 +231,6 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     </FormItem>
                                 )}
                             />
-                            <FormField
-                                control={form.control}
-                                name="payment_method"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Condición de Venta</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione condición" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="CASH">Efectivo</SelectItem>
-                                                <SelectItem value="CARD">Tarjeta</SelectItem>
-                                                <SelectItem value="TRANSFER">Transferencia</SelectItem>
-                                                <SelectItem value="CREDIT">Crédito</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         </div>
 
                         <div className="space-y-4">

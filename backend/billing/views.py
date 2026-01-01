@@ -42,17 +42,30 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def pos_checkout(self, request):
+        print(f"DEBUG: pos_checkout request data: {request.data}")
         order_data = request.data.get('order_data')
         dte_type = request.data.get('dte_type')
         payment_method = request.data.get('payment_method')
+        transaction_number = request.data.get('transaction_number')
+        is_pending_registration = request.data.get('is_pending_registration', False)
+        amount = request.data.get('amount')
         
         if not all([order_data, dte_type, payment_method]):
             return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            invoice = BillingService.pos_checkout(order_data, dte_type, payment_method)
+            invoice = BillingService.pos_checkout(
+                order_data, dte_type, payment_method, 
+                transaction_number=transaction_number,
+                is_pending_registration=is_pending_registration,
+                amount=amount
+            )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
+            print(f"DEBUG: pos_checkout ValidationError: {e}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            print(f"DEBUG: pos_checkout Exception: {e}")
+            import traceback
+            traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

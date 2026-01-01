@@ -82,8 +82,11 @@
     --color-emerald-700: #007956;
     --color-emerald-900: #004e3b;
     --color-emerald-950: #002c22;
+    --color-blue-50: #eff6ff;
+    --color-blue-100: #dbeafe;
     --color-blue-500: #3080ff;
     --color-blue-600: #155dfc;
+    --color-blue-900: #1c398e;
     --color-slate-50: #f8fafc;
     --color-slate-100: #f1f5f9;
     --color-slate-800: #1d293d;
@@ -153,8 +156,11 @@
       --color-emerald-700: lab(44.4871% -41.0396 11.0361);
       --color-emerald-900: lab(28.8637% -26.9249 5.45986);
       --color-emerald-950: lab(15.0582% -17.9507 2.38369);
+      --color-blue-50: lab(96.492% -1.14644 -5.11479);
+      --color-blue-100: lab(92.0301% -2.24757 -11.6453);
       --color-blue-500: lab(54.1736% 13.3369 -74.6839);
       --color-blue-600: lab(44.0605% 29.0279 -86.0352);
+      --color-blue-900: lab(26.1542% 15.7545 -51.5504);
       --color-slate-50: lab(98.1434% -.369519 -1.05966);
       --color-slate-100: lab(96.286% -.852436 -2.46847);
       --color-slate-800: lab(16.132% -.318035 -14.6672);
@@ -531,6 +537,10 @@
 
   .left-0 {
     left: calc(var(--spacing) * 0);
+  }
+
+  .left-0\.5 {
+    left: calc(var(--spacing) * .5);
   }
 
   .left-2 {
@@ -1127,6 +1137,10 @@
     scroll-margin-block: calc(var(--spacing) * 1);
   }
 
+  .appearance-none {
+    appearance: none;
+  }
+
   .auto-rows-min {
     grid-auto-rows: min-content;
   }
@@ -1139,8 +1153,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .grid-cols-12 {
@@ -1227,6 +1241,12 @@
     --tw-space-y-reverse: 0;
     margin-block-start: calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse));
     margin-block-end: calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
+  :where(.space-y-3 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)));
   }
 
   :where(.space-y-4 > :not(:last-child)) {
@@ -1376,12 +1396,20 @@
     border-left-width: 4px;
   }
 
+  .border-blue-100 {
+    border-color: var(--color-blue-100);
+  }
+
   .border-emerald-100 {
     border-color: var(--color-emerald-100);
   }
 
   .border-input {
     border-color: var(--input);
+  }
+
+  .border-primary {
+    border-color: var(--primary);
   }
 
   .border-sidebar-border {
@@ -1428,6 +1456,10 @@
     .bg-black\/50 {
       background-color: color-mix(in oklab, var(--color-black) 50%, transparent);
     }
+  }
+
+  .bg-blue-50 {
+    background-color: var(--color-blue-50);
   }
 
   .bg-blue-500 {
@@ -1759,6 +1791,10 @@
     font-size: 10px;
   }
 
+  .text-\[11px\] {
+    font-size: 11px;
+  }
+
   .leading-none {
     --tw-leading: 1;
     line-height: 1;
@@ -1823,6 +1859,10 @@
 
   .text-background {
     color: var(--background);
+  }
+
+  .text-blue-500 {
+    color: var(--color-blue-500);
   }
 
   .text-blue-600 {
@@ -2291,6 +2331,10 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
 
+  .peer-checked\:opacity-100:is(:where(.peer):checked ~ *) {
+    opacity: 1;
+  }
+
   @media (hover: hover) {
     .peer-hover\/menu-button\:text-sidebar-accent-foreground:is(:where(.peer\/menu-button):hover ~ *) {
       color: var(--sidebar-accent-foreground);
@@ -2392,6 +2436,10 @@
   .group-data-\[collapsible\=offcanvas\]\:after\:left-full:is(:where(.group)[data-collapsible="offcanvas"] *):after {
     content: var(--tw-content);
     left: 100%;
+  }
+
+  .checked\:bg-primary:checked {
+    background-color: var(--primary);
   }
 
   @media (hover: hover) {
@@ -3241,12 +3289,32 @@
     }
   }
 
+  .dark\:border-blue-900\/30:is(.dark *) {
+    border-color: #1c398e4d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .dark\:border-blue-900\/30:is(.dark *) {
+      border-color: color-mix(in oklab, var(--color-blue-900) 30%, transparent);
+    }
+  }
+
   .dark\:border-emerald-900:is(.dark *) {
     border-color: var(--color-emerald-900);
   }
 
   .dark\:border-input:is(.dark *) {
     border-color: var(--input);
+  }
+
+  .dark\:bg-blue-900\/10:is(.dark *) {
+    background-color: #1c398e1a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .dark\:bg-blue-900\/10:is(.dark *) {
+      background-color: color-mix(in oklab, var(--color-blue-900) 10%, transparent);
+    }
   }
 
   .dark\:bg-destructive\/60:is(.dark *) {

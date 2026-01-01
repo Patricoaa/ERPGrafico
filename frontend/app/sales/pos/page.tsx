@@ -117,7 +117,7 @@ export default function POSPage() {
                     lines: items.map(i => ({
                         description: i.name,
                         quantity: i.qty,
-                        unit_price: parseFloat(i.sale_price),
+                        unit_price: parseFloat(i.unit_price || i.sale_price),
                         tax_rate: 19
                     }))
                 },

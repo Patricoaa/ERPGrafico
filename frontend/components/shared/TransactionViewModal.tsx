@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash } from "lucide-react"
 
 interface TransactionViewModalProps {
     open: boolean

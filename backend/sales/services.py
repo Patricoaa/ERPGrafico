@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import SaleOrder, SaleOrder
+from .models import SaleOrder
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from decimal import Decimal
@@ -17,7 +17,7 @@ class SalesService:
         Credit: Tax Payable
         """
         if order.status != SaleOrder.Status.DRAFT:
-            raise ValidationError("Solo se pueden confirmar pedidos en borrador.")
+            return order
 
         # 1. Update Order Status
         order.status = SaleOrder.Status.CONFIRMED

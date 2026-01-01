@@ -158,7 +158,7 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def pos_checkout(order_data, dte_type, payment_method):
+    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, is_pending_registration=False, amount=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment.
         """
@@ -166,18 +166,27 @@ class BillingService:
         from treasury.models import BankJournal
         from treasury.services import TreasuryService
         
-        # 1. Create Order
-        order_serializer = CreateSaleOrderSerializer(data=order_data)
-        if not order_serializer.is_valid():
-            raise ValidationError(order_serializer.errors)
-        order = order_serializer.save(channel='POS')
+        # 1. Get or Create Order
+        order = None
+        if 'id' in order_data:
+            order = SaleOrder.objects.get(id=order_data['id'])
+        else:
+            if 'payment_method' not in order_data:
+                order_data['payment_method'] = payment_method
+                
+            order_serializer = CreateSaleOrderSerializer(data=order_data)
+            if not order_serializer.is_valid():
+                raise ValidationError(order_serializer.errors)
+            order = order_serializer.save(channel='POS')
         
         # 2. Confirm Order (Inventory deduction happen here if implemented)
         from sales.services import SalesService
         SalesService.confirm_sale(order)
         
-        # 3. Create Invoice
-        invoice = BillingService.create_sale_invoice(order, dte_type, payment_method)
+        # 3. Create Invoice (if not already invoiced)
+        invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
+        if not invoice:
+            invoice = BillingService.create_sale_invoice(order, dte_type, payment_method)
         
         # 4. Create Payment (if not credit)
         if payment_method != 'CREDIT':
@@ -195,12 +204,14 @@ class BillingService:
 
             TreasuryService.register_payment(
                 journal=journal,
-                amount=order.total,
+                amount=amount or order.total,
                 payment_type='INBOUND',
                 reference=f"NV-{order.number}",
                 partner=order.customer,
                 invoice=invoice,
-                account=payment_account
+                account=payment_account,
+                transaction_number=transaction_number,
+                is_pending_registration=is_pending_registration
             )
             
         return invoice
