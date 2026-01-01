@@ -16,6 +16,67 @@ class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
 
+    def create(self, request, *args, **kwargs):
+        # Support generic POST /api/treasury/payments/ from frontend
+        data = request.data.copy()
+        
+        # 1. Map payment_method to a default journal if journal is not provided
+        if not data.get('journal'):
+            journal = BankJournal.objects.first() # Default to first journal
+            if journal:
+                data['journal'] = journal.id
+            else:
+                return Response({'error': 'Debe configurar al menos un Diario de Caja/Banco.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Extract special fields for the service
+        amount = Decimal(str(data.get('amount', '0')))
+        payment_type = data.get('payment_type')
+        reference = data.get('reference', '')
+        sale_order_id = data.get('sale_order')
+        purchase_order_id = data.get('purchase_order')
+        invoice_id = data.get('invoice')
+        
+        journal = BankJournal.objects.get(pk=data['journal'])
+        
+        # Resolve objects
+        sale_order = None
+        if sale_order_id:
+            from sales.models import SaleOrder
+            sale_order = SaleOrder.objects.get(pk=sale_order_id)
+            
+        purchase_order = None
+        if purchase_order_id:
+            from purchasing.models import PurchaseOrder
+            purchase_order = PurchaseOrder.objects.get(pk=purchase_order_id)
+            
+        invoice = None
+        if invoice_id:
+            from billing.models import Invoice
+            invoice = Invoice.objects.get(pk=invoice_id)
+
+        # Determine Partner
+        partner = None
+        if sale_order: partner = sale_order.customer
+        elif purchase_order: partner = purchase_order.supplier
+        elif invoice: partner = invoice.customer or invoice.supplier
+
+        try:
+            payment = TreasuryService.register_payment(
+                journal=journal,
+                amount=amount,
+                payment_type=payment_type,
+                reference=reference,
+                partner=partner,
+                invoice=invoice,
+                sale_order=sale_order,
+                purchase_order=purchase_order
+            )
+            return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['post'])
     def register(self, request):
         try:

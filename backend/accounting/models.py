@@ -11,7 +11,7 @@ class AccountType(models.TextChoices):
     EXPENSE = 'EXPENSE', _('Gastos')
 
 class Account(models.Model):
-    code = models.CharField(_("Código"), max_length=20, unique=True, help_text="Ej: 1.1.01.001")
+    code = models.CharField(_("Código"), max_length=20, unique=True, blank=True, help_text="Ej: 1.1.01.001")
     name = models.CharField(_("Nombre"), max_length=255)
     account_type = models.CharField(_("Tipo"), max_length=20, choices=AccountType.choices)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Cuenta Padre"))

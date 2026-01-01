@@ -52,7 +52,7 @@ const purchaseLineSchema = z.object({
 
 const purchaseOrderSchema = z.object({
     supplier: z.string().min(1, "El proveedor es requerido"),
-    warehouse: z.string().min(1, "La bodega es requerida"),
+    warehouse: z.string().min(1, "El almacén es requerido"),
     payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
     supplier_reference: z.string().optional(),
     notes: z.string().optional(),
@@ -245,11 +245,11 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                 name="warehouse"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Bodega de Recepción</FormLabel>
+                                        <FormLabel>Almacén de Recepción</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione una bodega" />
+                                                    <SelectValue placeholder="Seleccione un almacén" />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>

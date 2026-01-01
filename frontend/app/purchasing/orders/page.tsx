@@ -179,7 +179,7 @@ export default function PurchaseOrdersPage() {
                             <TableHead>Número</TableHead>
                             <TableHead>Fecha</TableHead>
                             <TableHead>Proveedor</TableHead>
-                            <TableHead>Bodega</TableHead>
+                            <TableHead>Almacén</TableHead>
                             <TableHead>Total</TableHead>
                             <TableHead>Pagado</TableHead>
                             <TableHead>Estado</TableHead>

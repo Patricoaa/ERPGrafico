@@ -64,7 +64,7 @@ export default function MovementsPage() {
                         <TableRow>
                             <TableHead>Fecha</TableHead>
                             <TableHead>Producto</TableHead>
-                            <TableHead>Bodega</TableHead>
+                            <TableHead>Almacén</TableHead>
                             <TableHead>Cant.</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Descripción</TableHead>

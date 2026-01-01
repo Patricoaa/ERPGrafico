@@ -9,7 +9,7 @@ from decimal import Decimal
 class TreasuryService:
     @staticmethod
     @transaction.atomic
-    def register_payment(journal: BankJournal, amount: Decimal, payment_type, date=None, reference='', partner=None, invoice=None, account=None):
+    def register_payment(journal: BankJournal, amount: Decimal, payment_type, date=None, reference='', partner=None, invoice=None, account=None, sale_order=None, purchase_order=None):
         """
         Registers a payment and creates the corresponding Accounting Entry.
         """
@@ -26,7 +26,9 @@ class TreasuryService:
             amount=amount,
             date=date,
             reference=reference,
-            invoice=invoice
+            invoice=invoice,
+            sale_order=sale_order,
+            purchase_order=purchase_order
         )
         
         if partner:
@@ -55,10 +57,19 @@ class TreasuryService:
                     from purchasing.models import PurchaseOrder
                     invoice.purchase_order.status = PurchaseOrder.Status.PAID
                     invoice.purchase_order.save()
-            else:
-                # Still pending or partial? We could add a PARTIAL status
-                # For now let's just not mark as PAID
-                pass
+        
+        # If no invoice but associated with order directly (Partial payments without invoice yet)
+        target_order = sale_order or purchase_order
+        if target_order and not invoice:
+            total_paid = sum(p.amount for p in target_order.payments.all())
+            if total_paid >= target_order.total:
+                from sales.models import SaleOrder
+                from purchasing.models import PurchaseOrder
+                if isinstance(target_order, SaleOrder):
+                    target_order.status = SaleOrder.Status.PAID
+                else:
+                    target_order.status = PurchaseOrder.Status.PAID
+                target_order.save()
 
         # 3. Accounting Entry
         from accounting.models import AccountingSettings
@@ -94,7 +105,7 @@ class TreasuryService:
              if not ap_account:
                  raise ValidationError("No se encontró cuenta para Pago (AP).")
 
-             # Credit Bank
+              # Credit Bank
              JournalItem.objects.create(entry=entry, account=bank_account, debit=0, credit=amount)
              # Debit AP
              JournalItem.objects.create(entry=entry, account=ap_account, debit=amount, credit=0, partner=payment.supplier.name if payment.supplier else '')

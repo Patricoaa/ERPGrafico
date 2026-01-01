@@ -53,8 +53,7 @@ class AccountingService:
         # But for reset purposes, we usually start from zero.
         
         coa_data = [
-            ('1', 'Activos', 'ASSET', None),
-            ('1.1', 'Activos Corrientes', 'ASSET', '1'),
+            ('1.1', 'Activos Corrientes', 'ASSET', None),
             ('1.1.01', 'Caja y Equivalentes', 'ASSET', '1.1'),
             ('1.1.01.01', 'Caja General', 'ASSET', '1.1.01'),
             ('1.1.01.02', 'Banco Principal', 'ASSET', '1.1.01'),
@@ -64,25 +63,21 @@ class AccountingService:
             ('1.1.03.01', 'Mercaderías', 'ASSET', '1.1.03'),
             ('1.1.04', 'IVA por Recuperar', 'ASSET', '1.1'),
             
-            ('2', 'Pasivos', 'LIABILITY', None),
-            ('2.1', 'Pasivos Corrientes', 'LIABILITY', '2'),
+            ('2.1', 'Pasivos Corrientes', 'LIABILITY', None),
             ('2.1.01', 'Cuentas por Pagar', 'LIABILITY', '2.1'),
             ('2.1.01.01', 'Proveedores Locales', 'LIABILITY', '2.1.01'),
             ('2.1.02', 'Impuestos por Pagar', 'LIABILITY', '2.1'),
             ('2.1.02.01', 'IVA Débito Fiscal', 'LIABILITY', '2.1.02'),
             
-            ('3', 'Patrimonio', 'EQUITY', None),
-            ('3.1', 'Capital Social', 'EQUITY', '3'),
-            ('3.2', 'Resultados Acumulados', 'EQUITY', '3'),
+            ('3.1', 'Capital Social', 'EQUITY', None),
+            ('3.2', 'Resultados Acumulados', 'EQUITY', None),
             
-            ('4', 'Ingresos', 'INCOME', None),
-            ('4.1', 'Ingresos por Ventas', 'INCOME', '4'),
+            ('4.1', 'Ingresos por Ventas', 'INCOME', None),
             ('4.1.01', 'Ventas de Mercaderías', 'INCOME', '4.1'),
             
-            ('5', 'Costos y Gastos', 'EXPENSE', None),
-            ('5.1', 'Costo de Ventas', 'EXPENSE', '5'),
+            ('5.1', 'Costo de Ventas', 'EXPENSE', None),
             ('5.1.01', 'Costo de Mercaderías Vendidas', 'EXPENSE', '5.1'),
-            ('5.2', 'Gastos de Administración', 'EXPENSE', '5'),
+            ('5.2', 'Gastos de Administración', 'EXPENSE', None),
             ('5.2.01', 'Arriendos', 'EXPENSE', '5.2'),
             ('5.2.02', 'Sueldos', 'EXPENSE', '5.2'),
         ]

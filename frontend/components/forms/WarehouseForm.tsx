@@ -98,7 +98,7 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Almacén" : "Crear Almacén"}</DialogTitle>
                     <DialogDescription>
-                        {initialData ? "Modifique los datos del almacén o bodega." : "Ingrese los datos del nuevo almacén o bodega."}
+                        {initialData ? "Modifique los datos del almacén." : "Ingrese los datos del nuevo almacén."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -110,7 +110,7 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 <FormItem>
                                     <FormLabel>Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Bodega Central" {...field} />
+                                        <Input placeholder="Almacén Central" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
