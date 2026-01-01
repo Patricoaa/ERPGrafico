@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Supplier, PurchaseOrder, PurchaseLine
+from treasury.serializers import PaymentSerializer
 
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,6 +18,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
+    serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
 
     class Meta:
         model = PurchaseOrder

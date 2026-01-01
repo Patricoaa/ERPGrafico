@@ -35,6 +35,10 @@ class Payment(models.Model):
     date = models.DateField(_("Fecha"), auto_now_add=True)
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
     
+    # Transfer details
+    transaction_number = models.CharField(_("N° de Transacción"), max_length=100, blank=True, null=True)
+    is_pending_registration = models.BooleanField(_("Transacción Pendiente de Registro"), default=False)
+    
     # Partners (Optional generic link, simplified with direct FKs for now)
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')

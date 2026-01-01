@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { CreditCard, Banknote, Landmark, Receipt } from "lucide-react"
+import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface PaymentDialogProps {
     open: boolean
@@ -17,7 +18,9 @@ interface PaymentDialogProps {
         paymentMethod: string,
         amount: number,
         dteType?: string,
-        reference?: string
+        reference?: string,
+        transaction_number?: string,
+        is_pending_registration?: boolean
     }) => void
     showDteSelector?: boolean
 }
@@ -33,10 +36,14 @@ export function PaymentDialog({
     const [dteType, setDteType] = useState("BOLETA")
     const [paymentMethod, setPaymentMethod] = useState("CASH")
     const [amount, setAmount] = useState(pendingAmount.toString())
+    const [transactionNumber, setTransactionNumber] = useState("")
+    const [isPending, setIsPending] = useState(false)
 
     useEffect(() => {
         if (open) {
             setAmount(pendingAmount.toString())
+            setTransactionNumber("")
+            setIsPending(false)
         }
     }, [open, pendingAmount])
 
@@ -63,9 +70,9 @@ export function PaymentDialog({
                     <div className="grid gap-4">
                         {showDteSelector && (
                             <div className="grid gap-2">
-                                <Label className="flex items-center gap-2">
-                                    <Receipt className="h-4 w-4" />
-                                    Tipo de Documento a Emitir
+                                <Label className="flex items-center gap-2 text-[11px] font-bold uppercase text-muted-foreground">
+                                    <Receipt className="h-3 w-3" />
+                                    Documento a Emitir
                                 </Label>
                                 <Select value={dteType} onValueChange={setDteType}>
                                     <SelectTrigger>
@@ -80,29 +87,56 @@ export function PaymentDialog({
                         )}
 
                         <div className="grid gap-2">
-                            <Label>Método de Pago</Label>
-                            <div className="grid grid-cols-3 gap-2">
+                            <Label className="text-[11px] font-bold uppercase text-muted-foreground">Método de Pago</Label>
+                            <div className="grid grid-cols-4 gap-2">
                                 {[
                                     { id: 'CASH', label: 'Efectivo', icon: Banknote },
                                     { id: 'CARD', label: 'Tarjeta', icon: CreditCard },
                                     { id: 'TRANSFER', label: 'Transf.', icon: Landmark },
+                                    { id: 'CREDIT', label: 'Crédito', icon: Receipt },
                                 ].map((m) => (
                                     <Button
                                         key={m.id}
                                         type="button"
                                         variant={paymentMethod === m.id ? "default" : "outline"}
-                                        className="flex flex-col h-16 gap-1"
+                                        className="flex flex-col h-16 gap-1 px-1"
                                         onClick={() => setPaymentMethod(m.id)}
                                     >
                                         <m.icon className="h-5 w-5" />
-                                        <span className="text-[10px] uppercase font-bold">{m.label}</span>
+                                        <span className="text-[9px] uppercase font-bold">{m.label}</span>
                                     </Button>
                                 ))}
                             </div>
                         </div>
 
+                        {paymentMethod === 'TRANSFER' && (
+                            <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                                <div className="grid gap-2">
+                                    <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
+                                        <Hash className="h-3 w-3" /> N° de Transacción
+                                    </Label>
+                                    <Input
+                                        placeholder="Ingrese N° de Folio/Op"
+                                        value={transactionNumber}
+                                        onChange={(e) => setTransactionNumber(e.target.value)}
+                                        disabled={isPending}
+                                    />
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="pending"
+                                        checked={isPending}
+                                        onCheckedChange={(checked: boolean) => setIsPending(!!checked)}
+                                    />
+                                    <Label htmlFor="pending" className="text-xs flex items-center gap-1 cursor-pointer">
+                                        <ClipboardCheck className="h-3 w-3" /> N° de transacción pendiente de registro
+                                    </Label>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid gap-2">
-                            <Label>Monto a Pagar</Label>
+                            <Label className="text-[11px] font-bold uppercase text-muted-foreground">Monto a Pagar</Label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
                                 <Input
@@ -132,11 +166,13 @@ export function PaymentDialog({
                         onClick={() => onConfirm({
                             paymentMethod,
                             amount: parseFloat(amount),
-                            dteType: showDteSelector ? dteType : undefined
+                            dteType: showDteSelector ? dteType : undefined,
+                            transaction_number: transactionNumber,
+                            is_pending_registration: isPending
                         })}
-                        disabled={parseFloat(amount) <= 0}
+                        disabled={(paymentMethod !== 'CREDIT' && parseFloat(amount) <= 0)}
                     >
-                        Confirmar Pago
+                        {paymentMethod === 'CREDIT' ? 'Confirmar Crédito' : 'Confirmar Pago'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

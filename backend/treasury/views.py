@@ -35,6 +35,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
         sale_order_id = data.get('sale_order')
         purchase_order_id = data.get('purchase_order')
         invoice_id = data.get('invoice')
+        transaction_number = data.get('transaction_number')
+        is_pending_registration = data.get('is_pending_registration', False)
         
         journal = BankJournal.objects.get(pk=data['journal'])
         
@@ -69,7 +71,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 partner=partner,
                 invoice=invoice,
                 sale_order=sale_order,
-                purchase_order=purchase_order
+                purchase_order=purchase_order,
+                transaction_number=transaction_number,
+                is_pending_registration=is_pending_registration
             )
             return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -84,6 +88,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
             amount = Decimal(str(request.data.get('amount')))
             payment_type = request.data.get('payment_type')
             reference = request.data.get('reference', '')
+            transaction_number = request.data.get('transaction_number')
+            is_pending_registration = request.data.get('is_pending_registration', False)
             
             # Partners
             customer_id = request.data.get('customer_id')
@@ -105,7 +111,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 invoice = Invoice.objects.get(pk=invoice_id)
             
             payment = TreasuryService.register_payment(
-                journal, amount, payment_type, reference=reference, partner=partner, invoice=invoice
+                journal, amount, payment_type, reference=reference, partner=partner, invoice=invoice,
+                transaction_number=transaction_number,
+                is_pending_registration=is_pending_registration
             )
             
             return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)

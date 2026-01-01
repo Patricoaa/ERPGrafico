@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Customer, SaleOrder, SaleLine
+from treasury.serializers import PaymentSerializer
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,6 +20,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     channel_display = serializers.CharField(source='get_channel_display', read_only=True)
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
+    serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
 
     class Meta:
         model = SaleOrder

@@ -145,6 +145,53 @@ export function TransactionViewModal({ open, onOpenChange, type, id }: Transacti
                             </div>
                         </div>
 
+                        {/* Payment History Section */}
+                        {(type === 'sale_order' || type === 'purchase_order' || type === 'invoice') && (data.serialized_payments || data.payments_detail)?.length > 0 && (
+                            <div className="space-y-4 pt-6 border-t">
+                                <h3 className="font-bold text-lg flex items-center gap-2">
+                                    <Banknote className="h-5 w-5 text-emerald-600" />
+                                    Historial de Pagos
+                                </h3>
+                                <div className="border rounded-md">
+                                    <Table>
+                                        <TableHeader className="bg-muted/50">
+                                            <TableRow>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead>Método</TableHead>
+                                                <TableHead>Referencia / Transacción</TableHead>
+                                                <TableHead className="text-right">Monto</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
+                                                <TableRow key={pay.id}>
+                                                    <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline" className="uppercase text-[10px]">
+                                                            {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({pay.payment_method || pay.journal_name})
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-sm font-mono">
+                                                        {pay.transaction_number ? (
+                                                            <div className="flex flex-col">
+                                                                <span>{pay.transaction_number}</span>
+                                                                {pay.is_pending_registration && <span className="text-[9px] text-orange-500 font-bold uppercase">(Pendiente Registro)</span>}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">{pay.reference || '-'}</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-bold text-emerald-600">
+                                                        ${Number(pay.amount).toLocaleString()}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Notes */}
                         {data.notes && (
                             <div className="pt-4 border-t">

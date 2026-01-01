@@ -15,7 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { CheckoutDialog } from "@/components/pos/CheckoutDialog"
+import { PaymentDialog } from "@/components/shared/PaymentDialog"
 
 interface Product {
     id: number
@@ -107,7 +107,7 @@ export default function POSPage() {
         setCheckoutOpen(true)
     }
 
-    const handleCheckoutConfirm = async (data: { dteType: string, paymentMethod: string, amountReceived: number }) => {
+    const handleCheckoutConfirm = async (data: { dteType?: string, paymentMethod: string, amount?: number, transaction_number?: string, is_pending_registration?: boolean }) => {
         setCheckoutOpen(false)
         setLoading(true)
         try {
@@ -121,8 +121,11 @@ export default function POSPage() {
                         tax_rate: 19
                     }))
                 },
-                dte_type: data.dteType,
-                payment_method: data.paymentMethod
+                dte_type: data.dteType || 'BOLETA',
+                payment_method: data.paymentMethod,
+                amount: data.amount,
+                transaction_number: data.transaction_number,
+                is_pending_registration: data.is_pending_registration
             }
             await api.post('/billing/invoices/pos_checkout/', payload)
 
@@ -278,10 +281,12 @@ export default function POSPage() {
                 </div>
             </div>
 
-            <CheckoutDialog
+            <PaymentDialog
                 open={checkoutOpen}
                 onOpenChange={setCheckoutOpen}
                 total={total}
+                pendingAmount={total}
+                showDteSelector={true}
                 onConfirm={handleCheckoutConfirm}
             />
         </div>

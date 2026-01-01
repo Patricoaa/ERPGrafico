@@ -9,7 +9,7 @@ from decimal import Decimal
 class TreasuryService:
     @staticmethod
     @transaction.atomic
-    def register_payment(journal: BankJournal, amount: Decimal, payment_type, date=None, reference='', partner=None, invoice=None, account=None, sale_order=None, purchase_order=None):
+    def register_payment(journal: BankJournal, amount: Decimal, payment_type, date=None, reference='', partner=None, invoice=None, account=None, sale_order=None, purchase_order=None, transaction_number=None, is_pending_registration=False):
         """
         Registers a payment and creates the corresponding Accounting Entry.
         """
@@ -28,7 +28,9 @@ class TreasuryService:
             reference=reference,
             invoice=invoice,
             sale_order=sale_order,
-            purchase_order=purchase_order
+            purchase_order=purchase_order,
+            transaction_number=transaction_number,
+            is_pending_registration=is_pending_registration
         )
         
         if partner:

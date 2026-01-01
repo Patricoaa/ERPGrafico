@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, CheckCircle, Package, FileText } from "lucide-react"
+import { Pencil, Trash2, CheckCircle, Package, FileText, History } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -122,7 +122,12 @@ export default function PurchaseOrdersPage() {
         }
     }
 
-    const handlePayment = async (data: { paymentMethod: string, amount: number }) => {
+    const handlePayment = async (data: {
+        paymentMethod: string,
+        amount: number,
+        transaction_number?: string,
+        is_pending_registration?: boolean
+    }) => {
         if (!payingOrder) return
         try {
             // Register the payment
@@ -131,7 +136,9 @@ export default function PurchaseOrdersPage() {
                 payment_type: 'OUTBOUND',
                 reference: `OC-${payingOrder.number}`,
                 purchase_order: payingOrder.id,
-                payment_method: data.paymentMethod
+                payment_method: data.paymentMethod,
+                transaction_number: data.transaction_number,
+                is_pending_registration: data.is_pending_registration
             })
 
             toast.success("Pago registrado correctamente")
@@ -260,6 +267,18 @@ export default function PurchaseOrdersPage() {
                                                 title="Registrar Pago"
                                             >
                                                 <Banknote className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {order.total_paid > 0 && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-blue-500"
+                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id })}
+                                                title="Historial de Pagos"
+                                            >
+                                                <History className="h-4 w-4" />
                                             </Button>
                                         )}
 

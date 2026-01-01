@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, History } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -93,7 +93,13 @@ export default function SalesOrdersPage() {
         }
     }
 
-    const handlePayment = async (data: { paymentMethod: string, amount: number, dteType?: string }) => {
+    const handlePayment = async (data: {
+        paymentMethod: string,
+        amount: number,
+        dteType?: string,
+        transaction_number?: string,
+        is_pending_registration?: boolean
+    }) => {
         if (!payingOrder) return
         try {
             const res = await api.post('/billing/invoices/pos_checkout/', {
@@ -102,8 +108,9 @@ export default function SalesOrdersPage() {
                     customer: payingOrder.id, // This is a bit tricky, pos_checkout expected full order_data or ID?
                 },
                 dte_type: data.dteType || 'BOLETA',
-                payment_method: data.paymentMethod,
-                amount: data.amount
+                amount: data.amount,
+                transaction_number: data.transaction_number,
+                is_pending_registration: data.is_pending_registration
             })
             // Actually, we should probably have a more direct endpoint for paying an existing order
             // Let's use a new endpoint or update register_payment
@@ -129,7 +136,9 @@ export default function SalesOrdersPage() {
                 reference: `NV-${payingOrder.number}`,
                 invoice: invoiceId,
                 sale_order: payingOrder.id,
-                payment_method: data.paymentMethod
+                payment_method: data.paymentMethod,
+                transaction_number: data.transaction_number,
+                is_pending_registration: data.is_pending_registration
             })
 
             toast.success("Pago registrado correctamente")
@@ -250,6 +259,18 @@ export default function SalesOrdersPage() {
                                                 title="Registrar Pago"
                                             >
                                                 <Banknote className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {order.total_paid > 0 && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-blue-500"
+                                                onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id })}
+                                                title="Historial de Pagos"
+                                            >
+                                                <History className="h-4 w-4" />
                                             </Button>
                                         )}
 

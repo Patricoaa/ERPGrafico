@@ -50,7 +50,7 @@ class SaleOrder(models.Model):
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='orders')
     date = models.DateField(_("Fecha"), auto_now_add=True)
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.CONFIRMED)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     channel = models.CharField(_("Canal"), max_length=20, choices=Channel.choices, default=Channel.SYSTEM)
     
