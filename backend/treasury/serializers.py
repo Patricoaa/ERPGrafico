@@ -1,14 +1,10 @@
 from rest_framework import serializers
-from .models import BankJournal, Payment
-
-class BankJournalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BankJournal
-        fields = '__all__'
+from .models import Payment
 
 class PaymentSerializer(serializers.ModelSerializer):
-    journal_name = serializers.CharField(source='journal.name', read_only=True)
     partner_name = serializers.SerializerMethodField()
+    account_name = serializers.CharField(source='account.name', read_only=True)
+    payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
 
     class Meta:
         model = Payment

@@ -1,15 +1,16 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Payment, BankJournal
+from .models import Payment
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from decimal import Decimal
 
 class TreasuryService:
     @staticmethod
+    @staticmethod
     @transaction.atomic
-    def register_payment(journal: BankJournal, amount: Decimal, payment_type, date=None, reference='', partner=None, invoice=None, account=None, sale_order=None, purchase_order=None, transaction_number=None, is_pending_registration=False):
+    def register_payment(amount: Decimal, payment_type, payment_method=Payment.Method.CASH, date=None, reference='', partner=None, invoice=None, account=None, sale_order=None, purchase_order=None, transaction_number=None, is_pending_registration=False):
         """
         Registers a payment and creates the corresponding Accounting Entry.
         """
@@ -20,9 +21,30 @@ class TreasuryService:
             date = timezone.now().date()
 
         # 1. Create Payment Record
+        # Resolve Treasury Account first to satisfy FK
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
+        treasury_account = account 
+        if not treasury_account:
+            if settings:
+                if payment_method == Payment.Method.CASH:
+                    treasury_account = settings.default_cash_account
+                elif payment_method == Payment.Method.CARD:
+                    treasury_account = settings.default_card_account
+                elif payment_method == Payment.Method.TRANSFER:
+                    treasury_account = settings.default_transfer_account
+        
+        # If still no account, we cannot create the payment if it is required. 
+        # But if it is null=True (which it is NOT in my model change), we must fail.
+        # Wait, I made it models.ForeignKey(..., on_delete=models.PROTECT). It is REQUIRED.
+        if not treasury_account:
+             raise ValidationError(f"No se ha configurado una cuenta contable para el método {payment_method} y no se especificó una manualmente.")
+
+        # 1. Create Payment Record
         payment = Payment.objects.create(
-            journal=journal,
+            account=treasury_account,
             payment_type=payment_type,
+            payment_method=payment_method,
             amount=amount,
             date=date,
             reference=reference,
@@ -79,41 +101,39 @@ class TreasuryService:
                         target_order.save()
 
         # 3. Accounting Entry
-        from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        # Account is already set in payment.account
 
         entry = JournalEntry.objects.create(
             date=date,
-            description=f"Pago {payment.get_payment_type_display()} - {reference}",
+            description=f"Pago {payment.get_payment_type_display()} ({payment.get_payment_method_display()}) - {reference} {partner.name if partner else ''}",
             reference=f"PAY-{payment.id}",
             state=JournalEntry.State.DRAFT
         )
 
-        bank_account = account or journal.account
         
         if payment_type == Payment.Type.INBOUND:
-             # Customer Payment: Debit Bank, Credit AR
+             # Customer Payment: Debit Treasury, Credit AR
              ar_account = (payment.customer.account_receivable if payment.customer else None) or \
                           (settings.default_receivable_account if settings else None)
 
              if not ar_account:
                  raise ValidationError("No se encontró cuenta para Cobro (AR).")
 
-             # Debit Bank
-             JournalItem.objects.create(entry=entry, account=bank_account, debit=amount, credit=0)
+             # Debit Treasury
+             JournalItem.objects.create(entry=entry, account=treasury_account, debit=amount, credit=0)
              # Credit AR
              JournalItem.objects.create(entry=entry, account=ar_account, debit=0, credit=amount, partner=payment.customer.name if payment.customer else '')
 
         else:
-             # Supplier Payment: Debit AP, Credit Bank
+             # Supplier Payment: Debit AP, Credit Treasury
              ap_account = (payment.supplier.payable_account if payment.supplier else None) or \
                           (settings.default_payable_account if settings else None)
 
              if not ap_account:
                  raise ValidationError("No se encontró cuenta para Pago (AP).")
 
-              # Credit Bank
-             JournalItem.objects.create(entry=entry, account=bank_account, debit=0, credit=amount)
+              # Credit Treasury
+             JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=amount)
              # Debit AP
              JournalItem.objects.create(entry=entry, account=ap_account, debit=amount, credit=0, partner=payment.supplier.name if payment.supplier else '')
              

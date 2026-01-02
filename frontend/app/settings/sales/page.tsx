@@ -4,7 +4,9 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Loader2, Save } from "lucide-react"
+import { Loader2, Save, ChevronLeft } from "lucide-react"
+import { useRouter } from "next/navigation"
+import api from "@/lib/api"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -28,6 +30,7 @@ const salesSettingsSchema = z.object({
 type SalesSettingsValues = z.infer<typeof salesSettingsSchema>
 
 export default function SalesSettingsPage() {
+    const router = useRouter()
     const [isLoading, setIsLoading] = useState(true)
 
     const form = useForm<SalesSettingsValues>({
@@ -43,11 +46,8 @@ export default function SalesSettingsPage() {
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sales/settings/current/`)
-            if (res.ok) {
-                const data = await res.json()
-                form.reset(data)
-            }
+            const res = await api.get('/sales/settings/current/')
+            form.reset(res.data)
         } catch (error) {
             console.error("Error fetching settings:", error)
             toast.error("Error al cargar configuración")
@@ -58,16 +58,7 @@ export default function SalesSettingsPage() {
 
     const onSubmit = async (data: SalesSettingsValues) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sales/settings/current/`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-            })
-
-            if (!res.ok) throw new Error("Error saving settings")
-
+            await api.patch('/sales/settings/current/', data)
             toast.success("Configuración guardada exitosamente")
         } catch (error) {
             console.error("Error saving settings:", error)
@@ -84,13 +75,19 @@ export default function SalesSettingsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h3 className="text-lg font-medium">Configuración de Ventas</h3>
-                <p className="text-sm text-muted-foreground">
-                    Gestiona las políticas y restricciones para el módulo de ventas y punto de venta.
-                </p>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Configuración de Ventas</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Gestiona las políticas y restricciones para el módulo de ventas y punto de venta.
+                    </p>
+                </div>
             </div>
+
             <Separator />
 
             <Form {...form}>

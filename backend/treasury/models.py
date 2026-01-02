@@ -4,33 +4,31 @@ from accounting.models import Account, AccountType
 from sales.models import SaleOrder, Customer
 from purchasing.models import PurchaseOrder, Supplier
 
-class BankJournal(models.Model):
-    name = models.CharField(_("Nombre"), max_length=100)
-    code = models.CharField(_("Código"), max_length=20, unique=True)
-    currency = models.CharField(_("Moneda"), max_length=3, default='CLP')
-    
-    # Linked financial account (Asset -> Bank/Cash)
-    account = models.ForeignKey(
-        Account, 
-        on_delete=models.PROTECT, 
-        limit_choices_to={'account_type': AccountType.ASSET},
-        related_name='treasury_journals'
-    )
-
-    class Meta:
-        verbose_name = _("Caja/Banco")
-        verbose_name_plural = _("Cajas y Bancos")
-
-    def __str__(self):
-        return f"{self.name} ({self.currency})"
 
 class Payment(models.Model):
     class Type(models.TextChoices):
         INBOUND = 'INBOUND', _('Entrante (Cobro)')
         OUTBOUND = 'OUTBOUND', _('Saliente (Pago)')
 
+    class Method(models.TextChoices):
+        CASH = 'CASH', _('Efectivo')
+        CARD = 'CARD', _('Tarjeta')
+        TRANSFER = 'TRANSFER', _('Transferencia')
+        CREDIT = 'CREDIT', _('Crédito')
+        OTHER = 'OTHER', _('Otro')
+
     payment_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
-    journal = models.ForeignKey(BankJournal, on_delete=models.PROTECT, related_name='payments')
+    payment_method = models.CharField(_("Método"), max_length=10, choices=Method.choices, default=Method.CASH)
+    
+    # Financial Account (Replacing BankJournal)
+    account = models.ForeignKey(
+        Account, 
+        on_delete=models.PROTECT, 
+        related_name='payments',
+        limit_choices_to={'account_type': AccountType.ASSET},
+        verbose_name=_("Cuenta de Tesorería")
+    )
+
     amount = models.DecimalField(_("Monto"), max_digits=12, decimal_places=2)
     date = models.DateField(_("Fecha"), auto_now_add=True)
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
