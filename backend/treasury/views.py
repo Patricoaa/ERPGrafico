@@ -16,6 +16,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
 
+    def perform_destroy(self, instance):
+        TreasuryService.delete_payment(instance)
+
     def create(self, request, *args, **kwargs):
         # Support generic POST /api/treasury/payments/ from frontend
         data = request.data.copy()

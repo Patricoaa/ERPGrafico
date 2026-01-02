@@ -12,6 +12,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     queryset = Invoice.objects.all().order_by('-date', '-id')
     serializer_class = InvoiceSerializer
 
+    def perform_destroy(self, instance):
+        BillingService.delete_invoice(instance)
+
     @action(detail=False, methods=['post'])
     def create_from_order(self, request):
         serializer = CreateInvoiceSerializer(data=request.data)

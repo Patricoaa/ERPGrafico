@@ -209,9 +209,29 @@ class BillingService:
                 reference=f"NV-{order.number}",
                 partner=order.customer,
                 invoice=invoice,
+                sale_order=order,
                 account=payment_account,
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration
             )
             
         return invoice
+
+    @staticmethod
+    @transaction.atomic
+    def delete_invoice(invoice: Invoice):
+        """
+        Deletes an invoice, its associated Journal Entry, and its associated payments.
+        """
+        from treasury.services import TreasuryService
+        
+        # 1. Delete associated payments
+        for payment in invoice.payments.all():
+            TreasuryService.delete_payment(payment)
+        
+        # 2. Delete invoice's own Journal Entry
+        if invoice.journal_entry:
+            invoice.journal_entry.delete()
+        
+        # 3. Delete invoice
+        invoice.delete()

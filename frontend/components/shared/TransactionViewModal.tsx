@@ -13,9 +13,10 @@ interface TransactionViewModalProps {
     onOpenChange: (open: boolean) => void
     type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment'
     id: number | string
+    view?: 'details' | 'history' | 'all'
 }
 
-export function TransactionViewModal({ open, onOpenChange, type, id }: TransactionViewModalProps) {
+export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all' }: TransactionViewModalProps) {
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(false)
 
@@ -75,78 +76,82 @@ export function TransactionViewModal({ open, onOpenChange, type, id }: Transacti
                 ) : data ? (
                     <div className="space-y-6 py-4">
                         {/* Summary Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Card>
-                                <CardContent className="p-4">
-                                    <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                        {type === 'purchase_order' ? 'Proveedor' : 'Cliente'}
-                                    </div>
-                                    <div className="font-bold text-lg">
-                                        {data.customer_name || data.supplier_name || data.partner_name || 'N/A'}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardContent className="p-4">
-                                    <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Fecha</div>
-                                    <div className="font-bold text-lg">{new Date(data.date || data.created_at).toLocaleDateString()}</div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardContent className="p-4">
-                                    <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Estado</div>
-                                    <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
-                                        {data.status || data.state}
-                                    </Badge>
-                                </CardContent>
-                            </Card>
-                        </div>
+                        {(view === 'all' || view === 'details') && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                            {type === 'purchase_order' ? 'Proveedor' : 'Cliente'}
+                                        </div>
+                                        <div className="font-bold text-lg">
+                                            {data.customer_name || data.supplier_name || data.partner_name || 'N/A'}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Fecha</div>
+                                        <div className="font-bold text-lg">{new Date(data.date || data.created_at).toLocaleDateString()}</div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Estado</div>
+                                        <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
+                                            {data.status || data.state}
+                                        </Badge>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
 
                         {/* Line Items */}
-                        <div className="space-y-2">
-                            <h3 className="font-bold text-lg border-b pb-2">Detalles</h3>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Descripción</TableHead>
-                                        <TableHead className="text-center w-[100px]">Cant.</TableHead>
-                                        <TableHead className="text-right w-[150px]">Precio Unit.</TableHead>
-                                        <TableHead className="text-right w-[150px]">Subtotal</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {(data.lines || data.items || []).map((item: any) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>{item.description || item.product_name}</TableCell>
-                                            <TableCell className="text-center">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">${Number(item.unit_price).toLocaleString()}</TableCell>
-                                            <TableCell className="text-right font-bold">${Number(item.subtotal).toLocaleString()}</TableCell>
+                        {(view === 'all' || view === 'details') && (
+                            <div className="space-y-2">
+                                <h3 className="font-bold text-lg border-b pb-2">Detalles</h3>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Descripción</TableHead>
+                                            <TableHead className="text-center w-[100px]">Cant.</TableHead>
+                                            <TableHead className="text-right w-[150px]">Precio Unit.</TableHead>
+                                            <TableHead className="text-right w-[150px]">Subtotal</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {(data.lines || data.items || []).map((item: any) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell>{item.description || item.product_name}</TableCell>
+                                                <TableCell className="text-center">{item.quantity}</TableCell>
+                                                <TableCell className="text-right">${Number(item.unit_price).toLocaleString()}</TableCell>
+                                                <TableCell className="text-right font-bold">${Number(item.subtotal).toLocaleString()}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
 
-                        {/* Totals Section */}
-                        <div className="flex justify-end pt-4">
-                            <div className="w-64 space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Neto</span>
-                                    <span>${Number(data.total_net).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">IVA (19%)</span>
-                                    <span>${Number(data.total_tax).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
-                                    <span>Total</span>
-                                    <span>${Number(data.total).toLocaleString()}</span>
+                                {/* Totals Section */}
+                                <div className="flex justify-end pt-4">
+                                    <div className="w-64 space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Neto</span>
+                                            <span>${Number(data.total_net).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">IVA (19%)</span>
+                                            <span>${Number(data.total_tax).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
+                                            <span>Total</span>
+                                            <span>${Number(data.total).toLocaleString()}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Payment History Section */}
-                        {(type === 'sale_order' || type === 'purchase_order' || type === 'invoice') && (data.serialized_payments || data.payments_detail)?.length > 0 && (
+                        {(view === 'all' || view === 'history') && (type === 'sale_order' || type === 'purchase_order' || type === 'invoice') && (data.serialized_payments || data.payments_detail)?.length > 0 && (
                             <div className="space-y-4 pt-6 border-t">
                                 <h3 className="font-bold text-lg flex items-center gap-2">
                                     <Banknote className="h-5 w-5 text-emerald-600" />
@@ -193,7 +198,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id }: Transacti
                         )}
 
                         {/* Notes */}
-                        {data.notes && (
+                        {(view === 'all' || view === 'details') && data.notes && (
                             <div className="pt-4 border-t">
                                 <h4 className="text-sm font-semibold text-muted-foreground mb-1 uppercase">Notas</h4>
                                 <p className="text-sm bg-muted p-4 rounded-md">{data.notes}</p>

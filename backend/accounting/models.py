@@ -196,6 +196,11 @@ class JournalItem(models.Model):
         if self.debit > 0 and self.credit > 0:
             raise ValidationError(_("Un apunte no puede tener montos en Debe y Haber simultáneamente."))
 
+class InventoryValuationMethod(models.TextChoices):
+    AVERAGE = 'AVERAGE', _('Promedio Ponderado')
+    FIFO = 'FIFO', _('FIFO (Primero en entrar, primero en salir)')
+    LIFO = 'LIFO', _('LIFO (Último en entrar, primero en salir)')
+
 class AccountingSettings(models.Model):
     # Default Accounts
     default_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_receivable')
@@ -210,6 +215,14 @@ class AccountingSettings(models.Model):
     default_cash_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_cash')
     default_card_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_card')
     default_transfer_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_transfer')
+
+    # Inventory Config
+    inventory_valuation_method = models.CharField(
+        _("Método de Valoración de Inventario"), 
+        max_length=20, 
+        choices=InventoryValuationMethod.choices, 
+        default=InventoryValuationMethod.AVERAGE
+    )
 
     # Code Format & Hierarchy
     # Example: "X.X.XX.XXX"

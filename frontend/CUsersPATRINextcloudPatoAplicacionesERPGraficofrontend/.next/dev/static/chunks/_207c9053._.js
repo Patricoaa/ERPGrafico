@@ -2439,6 +2439,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$file$2d$text$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__FileText$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/file-text.js [app-client] (ecmascript) <export default as FileText>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$shopping$2d$bag$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ShoppingBag$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/shopping-bag.js [app-client] (ecmascript) <export default as ShoppingBag>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$receipt$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Receipt$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/receipt.js [app-client] (ecmascript) <export default as Receipt>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$banknote$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Banknote$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/banknote.js [app-client] (ecmascript) <export default as Banknote>");
 ;
 var _s = __turbopack_context__.k.signature();
 "use client";
@@ -2449,7 +2450,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
-function TransactionViewModal({ open, onOpenChange, type, id }) {
+function TransactionViewModal({ open, onOpenChange, type, id, view = 'all' }) {
     _s();
     const [data, setData] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
@@ -2492,28 +2493,28 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-            lineNumber: 55,
+            lineNumber: 56,
             columnNumber: 43
         }, this);
         if (type === 'purchase_order') return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$file$2d$text$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__FileText$3e$__["FileText"], {
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-            lineNumber: 56,
+            lineNumber: 57,
             columnNumber: 47
         }, this);
         if (type === 'invoice') return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$receipt$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Receipt$3e$__["Receipt"], {
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-            lineNumber: 57,
+            lineNumber: 58,
             columnNumber: 40
         }, this);
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$file$2d$text$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__FileText$3e$__["FileText"], {
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-            lineNumber: 58,
+            lineNumber: 59,
             columnNumber: 16
         }, this);
     };
@@ -2533,12 +2534,12 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                        lineNumber: 65,
+                        lineNumber: 66,
                         columnNumber: 21
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                    lineNumber: 64,
+                    lineNumber: 65,
                     columnNumber: 17
                 }, this),
                 loading ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2547,17 +2548,17 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                         className: "h-8 w-8 animate-spin text-primary"
                     }, void 0, false, {
                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                        lineNumber: 73,
+                        lineNumber: 74,
                         columnNumber: 25
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                    lineNumber: 72,
+                    lineNumber: 73,
                     columnNumber: 21
                 }, this) : data ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "space-y-6 py-4",
                     children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        (view === 'all' || view === 'details') && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "grid grid-cols-1 md:grid-cols-3 gap-4",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -2569,27 +2570,27 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                 children: type === 'purchase_order' ? 'Proveedor' : 'Cliente'
                                             }, void 0, false, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 81,
-                                                columnNumber: 37
+                                                lineNumber: 83,
+                                                columnNumber: 41
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "font-bold text-lg",
                                                 children: data.customer_name || data.supplier_name || data.partner_name || 'N/A'
                                             }, void 0, false, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 84,
-                                                columnNumber: 37
+                                                lineNumber: 86,
+                                                columnNumber: 41
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                        lineNumber: 80,
-                                        columnNumber: 33
+                                        lineNumber: 82,
+                                        columnNumber: 37
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 79,
-                                    columnNumber: 29
+                                    lineNumber: 81,
+                                    columnNumber: 33
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -2600,27 +2601,27 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                 children: "Fecha"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 91,
-                                                columnNumber: 37
+                                                lineNumber: 93,
+                                                columnNumber: 41
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "font-bold text-lg",
                                                 children: new Date(data.date || data.created_at).toLocaleDateString()
                                             }, void 0, false, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 92,
-                                                columnNumber: 37
+                                                lineNumber: 94,
+                                                columnNumber: 41
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                        lineNumber: 90,
-                                        columnNumber: 33
+                                        lineNumber: 92,
+                                        columnNumber: 37
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 89,
-                                    columnNumber: 29
+                                    lineNumber: 91,
+                                    columnNumber: 33
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -2631,8 +2632,8 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                 children: "Estado"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 97,
-                                                columnNumber: 37
+                                                lineNumber: 99,
+                                                columnNumber: 41
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
                                                 variant: data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary',
@@ -2640,27 +2641,27 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                 children: data.status || data.state
                                             }, void 0, false, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 98,
-                                                columnNumber: 37
+                                                lineNumber: 100,
+                                                columnNumber: 41
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                        lineNumber: 96,
-                                        columnNumber: 33
+                                        lineNumber: 98,
+                                        columnNumber: 37
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 95,
-                                    columnNumber: 29
+                                    lineNumber: 97,
+                                    columnNumber: 33
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                            lineNumber: 78,
-                            columnNumber: 25
+                            lineNumber: 80,
+                            columnNumber: 29
                         }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        (view === 'all' || view === 'details') && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "space-y-2",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -2668,8 +2669,8 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                     children: "Detalles"
                                 }, void 0, false, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 107,
-                                    columnNumber: 29
+                                    lineNumber: 111,
+                                    columnNumber: 33
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Table"], {
                                     children: [
@@ -2680,43 +2681,43 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                         children: "Descripción"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                        lineNumber: 111,
-                                                        columnNumber: 41
+                                                        lineNumber: 115,
+                                                        columnNumber: 45
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                         className: "text-center w-[100px]",
                                                         children: "Cant."
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                        lineNumber: 112,
-                                                        columnNumber: 41
+                                                        lineNumber: 116,
+                                                        columnNumber: 45
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                         className: "text-right w-[150px]",
                                                         children: "Precio Unit."
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                        lineNumber: 113,
-                                                        columnNumber: 41
+                                                        lineNumber: 117,
+                                                        columnNumber: 45
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                         className: "text-right w-[150px]",
                                                         children: "Subtotal"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                        lineNumber: 114,
-                                                        columnNumber: 41
+                                                        lineNumber: 118,
+                                                        columnNumber: 45
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 110,
-                                                columnNumber: 37
+                                                lineNumber: 114,
+                                                columnNumber: 41
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                            lineNumber: 109,
-                                            columnNumber: 33
+                                            lineNumber: 113,
+                                            columnNumber: 37
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableBody"], {
                                             children: (data.lines || data.items || []).map((item)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableRow"], {
@@ -2725,16 +2726,16 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                             children: item.description || item.product_name
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                            lineNumber: 120,
-                                                            columnNumber: 45
+                                                            lineNumber: 124,
+                                                            columnNumber: 49
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
                                                             className: "text-center",
                                                             children: item.quantity
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                            lineNumber: 121,
-                                                            columnNumber: 45
+                                                            lineNumber: 125,
+                                                            columnNumber: 49
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
                                                             className: "text-right",
@@ -2744,8 +2745,8 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                            lineNumber: 122,
-                                                            columnNumber: 45
+                                                            lineNumber: 126,
+                                                            columnNumber: 49
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
                                                             className: "text-right font-bold",
@@ -2755,146 +2756,146 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                            lineNumber: 123,
-                                                            columnNumber: 45
+                                                            lineNumber: 127,
+                                                            columnNumber: 49
                                                         }, this)
                                                     ]
                                                 }, item.id, true, {
                                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                    lineNumber: 119,
-                                                    columnNumber: 41
+                                                    lineNumber: 123,
+                                                    columnNumber: 45
                                                 }, this))
                                         }, void 0, false, {
                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                            lineNumber: 117,
-                                            columnNumber: 33
+                                            lineNumber: 121,
+                                            columnNumber: 37
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 108,
-                                    columnNumber: 29
+                                    lineNumber: 112,
+                                    columnNumber: 33
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "flex justify-end pt-4",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "w-64 space-y-2",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between text-sm",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground",
+                                                        children: "Neto"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                        lineNumber: 137,
+                                                        columnNumber: 45
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        children: [
+                                                            "$",
+                                                            Number(data.total_net).toLocaleString()
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                        lineNumber: 138,
+                                                        columnNumber: 45
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                lineNumber: 136,
+                                                columnNumber: 41
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between text-sm",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground",
+                                                        children: "IVA (19%)"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                        lineNumber: 141,
+                                                        columnNumber: 45
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        children: [
+                                                            "$",
+                                                            Number(data.total_tax).toLocaleString()
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                        lineNumber: 142,
+                                                        columnNumber: 45
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                lineNumber: 140,
+                                                columnNumber: 41
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between font-bold text-xl border-t pt-2 mt-2",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        children: "Total"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                        lineNumber: 145,
+                                                        columnNumber: 45
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        children: [
+                                                            "$",
+                                                            Number(data.total).toLocaleString()
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                        lineNumber: 146,
+                                                        columnNumber: 45
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                                lineNumber: 144,
+                                                columnNumber: 41
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                        lineNumber: 135,
+                                        columnNumber: 37
+                                    }, this)
+                                }, void 0, false, {
+                                    fileName: "[project]/components/shared/TransactionViewModal.tsx",
+                                    lineNumber: 134,
+                                    columnNumber: 33
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                            lineNumber: 106,
-                            columnNumber: 25
+                            lineNumber: 110,
+                            columnNumber: 29
                         }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "flex justify-end pt-4",
-                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "w-64 space-y-2",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex justify-between text-sm",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                className: "text-muted-foreground",
-                                                children: "Neto"
-                                            }, void 0, false, {
-                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 134,
-                                                columnNumber: 37
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                children: [
-                                                    "$",
-                                                    Number(data.total_net).toLocaleString()
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 135,
-                                                columnNumber: 37
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                        lineNumber: 133,
-                                        columnNumber: 33
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex justify-between text-sm",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                className: "text-muted-foreground",
-                                                children: "IVA (19%)"
-                                            }, void 0, false, {
-                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 138,
-                                                columnNumber: 37
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                children: [
-                                                    "$",
-                                                    Number(data.total_tax).toLocaleString()
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 139,
-                                                columnNumber: 37
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                        lineNumber: 137,
-                                        columnNumber: 33
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex justify-between font-bold text-xl border-t pt-2 mt-2",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                children: "Total"
-                                            }, void 0, false, {
-                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 142,
-                                                columnNumber: 37
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                children: [
-                                                    "$",
-                                                    Number(data.total).toLocaleString()
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 143,
-                                                columnNumber: 37
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                        lineNumber: 141,
-                                        columnNumber: 33
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                lineNumber: 132,
-                                columnNumber: 29
-                            }, this)
-                        }, void 0, false, {
-                            fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                            lineNumber: 131,
-                            columnNumber: 25
-                        }, this),
-                        (type === 'sale_order' || type === 'purchase_order' || type === 'invoice') && (data.serialized_payments || data.payments_detail)?.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        (view === 'all' || view === 'history') && (type === 'sale_order' || type === 'purchase_order' || type === 'invoice') && (data.serialized_payments || data.payments_detail)?.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "space-y-4 pt-6 border-t",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
                                     className: "font-bold text-lg flex items-center gap-2",
                                     children: [
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Banknote, {
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$banknote$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Banknote$3e$__["Banknote"], {
                                             className: "h-5 w-5 text-emerald-600"
                                         }, void 0, false, {
                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                            lineNumber: 152,
+                                            lineNumber: 157,
                                             columnNumber: 37
                                         }, this),
                                         "Historial de Pagos"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 151,
+                                    lineNumber: 156,
                                     columnNumber: 33
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2909,21 +2910,21 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                             children: "Fecha"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                            lineNumber: 159,
+                                                            lineNumber: 164,
                                                             columnNumber: 49
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                             children: "Método"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                            lineNumber: 160,
+                                                            lineNumber: 165,
                                                             columnNumber: 49
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                             children: "Referencia / Transacción"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                            lineNumber: 161,
+                                                            lineNumber: 166,
                                                             columnNumber: 49
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
@@ -2931,18 +2932,18 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                             children: "Monto"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                            lineNumber: 162,
+                                                            lineNumber: 167,
                                                             columnNumber: 49
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                    lineNumber: 158,
+                                                    lineNumber: 163,
                                                     columnNumber: 45
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 157,
+                                                lineNumber: 162,
                                                 columnNumber: 41
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -2952,7 +2953,7 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                                 children: new Date(pay.date || pay.created_at).toLocaleDateString()
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                lineNumber: 168,
+                                                                lineNumber: 173,
                                                                 columnNumber: 53
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -2967,12 +2968,12 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                    lineNumber: 170,
+                                                                    lineNumber: 175,
                                                                     columnNumber: 57
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                lineNumber: 169,
+                                                                lineNumber: 174,
                                                                 columnNumber: 53
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -2984,7 +2985,7 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                                             children: pay.transaction_number
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                            lineNumber: 177,
+                                                                            lineNumber: 182,
                                                                             columnNumber: 65
                                                                         }, this),
                                                                         pay.is_pending_registration && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2992,25 +2993,25 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                                             children: "(Pendiente Registro)"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                            lineNumber: 178,
+                                                                            lineNumber: 183,
                                                                             columnNumber: 97
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                    lineNumber: 176,
+                                                                    lineNumber: 181,
                                                                     columnNumber: 61
                                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                     className: "text-muted-foreground",
                                                                     children: pay.reference || '-'
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                    lineNumber: 181,
+                                                                    lineNumber: 186,
                                                                     columnNumber: 61
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                lineNumber: 174,
+                                                                lineNumber: 179,
                                                                 columnNumber: 53
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3021,38 +3022,38 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                                lineNumber: 184,
+                                                                lineNumber: 189,
                                                                 columnNumber: 53
                                                             }, this)
                                                         ]
                                                     }, pay.id, true, {
                                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                        lineNumber: 167,
+                                                        lineNumber: 172,
                                                         columnNumber: 49
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                                lineNumber: 165,
+                                                lineNumber: 170,
                                                 columnNumber: 41
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                        lineNumber: 156,
+                                        lineNumber: 161,
                                         columnNumber: 37
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 155,
+                                    lineNumber: 160,
                                     columnNumber: 33
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                            lineNumber: 150,
+                            lineNumber: 155,
                             columnNumber: 29
                         }, this),
-                        data.notes && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        (view === 'all' || view === 'details') && data.notes && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "pt-4 border-t",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
@@ -3060,7 +3061,7 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                     children: "Notas"
                                 }, void 0, false, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 198,
+                                    lineNumber: 203,
                                     columnNumber: 33
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3068,37 +3069,37 @@ function TransactionViewModal({ open, onOpenChange, type, id }) {
                                     children: data.notes
                                 }, void 0, false, {
                                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                                    lineNumber: 199,
+                                    lineNumber: 204,
                                     columnNumber: 33
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                            lineNumber: 197,
+                            lineNumber: 202,
                             columnNumber: 29
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                    lineNumber: 76,
+                    lineNumber: 77,
                     columnNumber: 21
                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "py-20 text-center text-muted-foreground",
                     children: "No se pudo cargar la información."
                 }, void 0, false, {
                     fileName: "[project]/components/shared/TransactionViewModal.tsx",
-                    lineNumber: 204,
+                    lineNumber: 209,
                     columnNumber: 21
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/components/shared/TransactionViewModal.tsx",
-            lineNumber: 63,
+            lineNumber: 64,
             columnNumber: 13
         }, this)
     }, void 0, false, {
         fileName: "[project]/components/shared/TransactionViewModal.tsx",
-        lineNumber: 62,
+        lineNumber: 63,
         columnNumber: 9
     }, this);
 }

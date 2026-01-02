@@ -28,3 +28,28 @@ class SalesService:
         return order
 
         return order
+
+    @staticmethod
+    @transaction.atomic
+    def delete_sale_order(order: SaleOrder):
+        """
+        Deletes a sale order, its invoices, and associated journal entries.
+        """
+        from billing.services import BillingService
+        from treasury.services import TreasuryService
+        
+        # 1. Delete associated invoices (and their payments/JEs)
+        for invoice in order.invoices.all():
+            if invoice.status != 'CANCELLED': # Safety check if needed
+                 BillingService.delete_invoice(invoice)
+        
+        # 2. Delete stand-alone payments linked to order
+        for payment in order.payments.all():
+            TreasuryService.delete_payment(payment)
+
+        # 3. Delete order's own journal entry
+        if order.journal_entry:
+            order.journal_entry.delete()
+            
+        # 4. Delete Order
+        order.delete()

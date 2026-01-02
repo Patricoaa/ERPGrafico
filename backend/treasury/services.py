@@ -57,8 +57,10 @@ class TreasuryService:
                     invoice.sale_order.save()
                 elif invoice.purchase_order:
                     from purchasing.models import PurchaseOrder
-                    invoice.purchase_order.status = PurchaseOrder.Status.PAID
-                    invoice.purchase_order.save()
+                    # Only mark as PAID if already RECEIVED or INVOICED to allow reception flow
+                    if invoice.purchase_order.status in [PurchaseOrder.Status.RECEIVED, PurchaseOrder.Status.INVOICED]:
+                        invoice.purchase_order.status = PurchaseOrder.Status.PAID
+                        invoice.purchase_order.save()
         
         # If no invoice but associated with order directly (Partial payments without invoice yet)
         target_order = sale_order or purchase_order
@@ -69,9 +71,12 @@ class TreasuryService:
                 from purchasing.models import PurchaseOrder
                 if isinstance(target_order, SaleOrder):
                     target_order.status = SaleOrder.Status.PAID
+                    target_order.save()
                 else:
-                    target_order.status = PurchaseOrder.Status.PAID
-                target_order.save()
+                    # For Purchase Orders, only mark as PAID if already RECEIVED or INVOICED
+                    if target_order.status in [PurchaseOrder.Status.RECEIVED, PurchaseOrder.Status.INVOICED]:
+                        target_order.status = PurchaseOrder.Status.PAID
+                        target_order.save()
 
         # 3. Accounting Entry
         from accounting.models import AccountingSettings
@@ -118,3 +123,13 @@ class TreasuryService:
         payment.save()
         
         return payment
+
+    @staticmethod
+    @transaction.atomic
+    def delete_payment(payment: Payment):
+        """
+        Deletes a payment and its associated Journal Entry.
+        """
+        if payment.journal_entry:
+            payment.journal_entry.delete()
+        payment.delete()

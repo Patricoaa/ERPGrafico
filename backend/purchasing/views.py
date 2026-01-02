@@ -20,6 +20,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             return CreatePurchaseOrderSerializer
         return PurchaseOrderSerializer
 
+    def perform_destroy(self, instance):
+        PurchasingService.delete_purchase_order(instance)
+
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         order = self.get_object()

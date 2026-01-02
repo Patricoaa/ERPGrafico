@@ -39,7 +39,7 @@ class Product(models.Model):
     product_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices, default=Type.STORABLE)
     
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=2, default=0)
-    cost_price = models.DecimalField(_("Costo Referencia"), max_digits=12, decimal_places=2, default=0)
+    cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=2, default=0, editable=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

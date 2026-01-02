@@ -29,6 +29,7 @@ interface SaleOrder {
     total: string
     total_paid: number
     pending_amount: number
+    customer: number
     channel_display: string
 }
 
@@ -45,7 +46,7 @@ export default function SalesOrdersPage() {
     const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
 
     const fetchOrders = async () => {
@@ -102,7 +103,9 @@ export default function SalesOrdersPage() {
     }) => {
         if (!payingOrder) return
         try {
-            const res = await api.post('/billing/invoices/pos_checkout/', {
+            // We use the pos_checkout endpoint which handles everything safely
+            // (Order confirmation, invoice creation if needed, and payment registration)
+            await api.post('/billing/invoices/pos_checkout/', {
                 order_data: {
                     id: payingOrder.id,
                     customer: payingOrder.customer,
@@ -113,39 +116,12 @@ export default function SalesOrdersPage() {
                 transaction_number: data.transaction_number,
                 is_pending_registration: data.is_pending_registration
             })
-            // Actually, we should probably have a more direct endpoint for paying an existing order
-            // Let's use a new endpoint or update register_payment
 
-            // For now, let's use the register_payment logic if we have an invoice, 
-            // or create the invoice first if needed.
-
-            // If the order is confirmed but not invoiced, we create the invoice first
-            let invoiceId;
-            if (payingOrder.status === 'CONFIRMED') {
-                const invRes = await api.post('/billing/invoices/create_from_order/', {
-                    order_id: payingOrder.id,
-                    order_type: 'sale',
-                    dte_type: data.dteType || 'BOLETA'
-                })
-                invoiceId = invRes.data.id
-            }
-
-            // Register the payment
-            await api.post('/treasury/payments/', {
-                amount: data.amount,
-                payment_type: 'INBOUND',
-                reference: `NV-${payingOrder.number}`,
-                invoice: invoiceId,
-                sale_order: payingOrder.id,
-                payment_method: data.paymentMethod,
-                transaction_number: data.transaction_number,
-                is_pending_registration: data.is_pending_registration
-            })
-
-            toast.success("Pago registrado correctamente")
+            toast.success("Operación procesada correctamente")
             setPayingOrder(null)
             fetchOrders()
         } catch (error: any) {
+            console.error("Error in handlePayment:", error)
             toast.error(error.response?.data?.error || "Error al procesar el pago")
         }
     }
@@ -160,7 +136,12 @@ export default function SalesOrdersPage() {
                 <h2 className="text-3xl font-bold tracking-tight">Notas de Venta</h2>
                 <div className="flex items-center space-x-2">
                     <SaleOrderForm
-                        onSuccess={fetchOrders}
+                        onSuccess={(newOrder) => {
+                            fetchOrders()
+                            if (newOrder && !editingOrder) {
+                                setPayingOrder(newOrder)
+                            }
+                        }}
                         open={isFormOpen && !editingOrder}
                         onOpenChange={(open) => {
                             setIsFormOpen(open)
@@ -225,7 +206,7 @@ export default function SalesOrdersPage() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id })}
+                                            onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'details' })}
                                             title="Ver Detalles"
                                         >
                                             <Eye className="h-4 w-4" />
@@ -268,7 +249,7 @@ export default function SalesOrdersPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-blue-500"
-                                                onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id })}
+                                                onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'history' })}
                                                 title="Historial de Pagos"
                                             >
                                                 <History className="h-4 w-4" />
@@ -308,6 +289,7 @@ export default function SalesOrdersPage() {
                     onOpenChange={(open) => !open && setViewingTransaction(null)}
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
+                    view={viewingTransaction.view}
                 />
             )}
 

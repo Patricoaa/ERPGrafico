@@ -46,7 +46,7 @@ export default function PurchaseOrdersPage() {
     const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [payingOrder, setPayingOrder] = useState<PurchaseOrder | null>(null)
 
     const fetchOrders = async () => {
@@ -220,7 +220,7 @@ export default function PurchaseOrdersPage() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id })}
+                                            onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}
                                             title="Ver Detalles"
                                         >
                                             <Eye className="h-4 w-4" />
@@ -275,7 +275,7 @@ export default function PurchaseOrdersPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-blue-500"
-                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id })}
+                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'history' })}
                                                 title="Historial de Pagos"
                                             >
                                                 <History className="h-4 w-4" />
@@ -315,6 +315,7 @@ export default function PurchaseOrdersPage() {
                     onOpenChange={(open) => !open && setViewingTransaction(null)}
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
+                    view={viewingTransaction.view}
                 />
             )}
 

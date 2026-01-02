@@ -61,7 +61,7 @@ const saleOrderSchema = z.object({
 type SaleOrderFormValues = z.infer<typeof saleOrderSchema>
 
 interface SaleOrderFormProps {
-    onSuccess?: () => void
+    onSuccess?: (order?: any) => void
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
@@ -173,16 +173,17 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     async function onSubmit(data: SaleOrderFormValues) {
         setLoading(true)
         try {
+            let res;
             if (initialData) {
-                await api.put(`/sales/orders/${initialData.id}/`, data)
+                res = await api.put(`/sales/orders/${initialData.id}/`, data)
                 toast.success("Nota de Venta actualizada correctamente")
             } else {
-                await api.post('/sales/orders/', data)
+                res = await api.post('/sales/orders/', data)
                 toast.success("Nota de Venta creada correctamente")
             }
             form.reset()
             setOpen(false)
-            if (onSuccess) onSuccess()
+            if (onSuccess) onSuccess(res?.data)
         } catch (error: any) {
             console.error("Error saving sale order:", error)
             toast.error(error.response?.data?.detail || "Error al guardar la Nota de Venta")
