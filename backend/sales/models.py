@@ -106,3 +106,17 @@ class SaleLine(models.Model):
             self.description = self.product.name
         super().save(*args, **kwargs)
         # Trigger total update on parent would be good here
+
+class SalesSettings(models.Model):
+    restrict_stock_sales = models.BooleanField(
+        _("Restringir Ventas Sin Stock"), 
+        default=False,
+        help_text=_("Si está activo, impide vender productos almacenables si no hay stock suficiente.")
+    )
+
+    class Meta:
+        verbose_name = _("Configuración de Ventas")
+        verbose_name_plural = _("Configuración de Ventas")
+
+    def __str__(self):
+        return "Configuración de Ventas"

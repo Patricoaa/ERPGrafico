@@ -39,7 +39,6 @@ const productSchema = z.object({
     category: z.string().min(1, "La categoría es requerida"),
     product_type: z.enum(["STORABLE", "CONSUMABLE", "SERVICE"]),
     sale_price: z.string().min(0),
-    cost_price: z.string().min(0),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -83,7 +82,6 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
             name: "",
             product_type: "STORABLE",
             sale_price: "0",
-            cost_price: "0",
         },
     })
 
@@ -101,7 +99,6 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                     name: "",
                     product_type: "STORABLE",
                     sale_price: "0",
-                    cost_price: "0",
                 })
             }
         }
@@ -230,20 +227,7 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 </FormItem>
                             )}
                         />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="cost_price"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Costo</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" placeholder="0" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <div className="grid grid-cols-1">
                             <FormField
                                 control={form.control}
                                 name="sale_price"

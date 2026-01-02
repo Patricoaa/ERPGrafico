@@ -20,8 +20,10 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             return CreatePurchaseOrderSerializer
         return PurchaseOrderSerializer
 
-    def perform_destroy(self, instance):
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
         PurchasingService.delete_purchase_order(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):

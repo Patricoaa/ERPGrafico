@@ -8,10 +8,16 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    current_stock = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
         fields = '__all__'
+
+    def get_current_stock(self, obj):
+        # Calculate stock based on sum of moves
+        from django.db.models import Sum
+        return obj.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
 
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:

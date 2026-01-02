@@ -1,10 +1,17 @@
 from rest_framework import serializers
-from .models import Customer, SaleOrder, SaleLine
+from .models import Customer, SaleOrder, SaleLine, SalesSettings
 from treasury.serializers import PaymentSerializer
+from inventory.models import Product
+from django.db.models import Sum
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
+        fields = '__all__'
+
+class SalesSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalesSettings
         fields = '__all__'
 
 class SaleLineSerializer(serializers.ModelSerializer):
@@ -42,6 +49,20 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         model = SaleOrder
         fields = ['id', 'number', 'customer', 'notes', 'payment_method', 'lines']
         read_only_fields = ['id', 'number']
+
+    def validate(self, attrs):
+        settings = SalesSettings.objects.first()
+        if settings and settings.restrict_stock_sales:
+            for line in attrs.get('lines', []):
+                product = line.get('product')
+                quantity = line.get('quantity')
+                if product and product.product_type == 'STORABLE':
+                     current_stock = product.moves.aggregate(total=Sum('quantity'))['total'] or 0
+                     if current_stock < quantity:
+                         raise serializers.ValidationError(
+                             f"Stock insuficiente para {product.name}. Disponible: {current_stock}, Solicitado: {quantity}"
+                         )
+        return attrs
 
     def create(self, validated_data):
         lines_data = validated_data.pop('lines')

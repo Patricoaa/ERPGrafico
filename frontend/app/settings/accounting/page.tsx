@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { ChevronLeft, Loader2 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const accountingSchema = z.object({
     default_receivable_account: z.string().nullable(),
@@ -28,6 +29,7 @@ const accountingSchema = z.object({
     equity_prefix: z.string(),
     income_prefix: z.string(),
     expense_prefix: z.string(),
+    inventory_valuation_method: z.string(),
 })
 
 type AccountingFormValues = z.infer<typeof accountingSchema>
@@ -53,6 +55,7 @@ export default function AccountingSettingsPage() {
             equity_prefix: "3",
             income_prefix: "4",
             expense_prefix: "5",
+            inventory_valuation_method: "AVERAGE",
         }
     })
 
@@ -178,6 +181,37 @@ export default function AccountingSettingsPage() {
                                     <FormItem><FormLabel>Gastos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                                 )} />
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Inventario</CardTitle>
+                            <CardDescription>Configure el comportamiento de la valoración de existencias.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <FormField
+                                control={form.control}
+                                name="inventory_valuation_method"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Método de Valoración</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || "AVERAGE"}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione método" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="AVERAGE">Promedio Ponderado</SelectItem>
+                                                <SelectItem value="FIFO">FIFO (Primero en entrar, primero en salir)</SelectItem>
+                                                <SelectItem value="LIFO">LIFO (Último en entrar, primero en salir)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </CardContent>
                     </Card>
 

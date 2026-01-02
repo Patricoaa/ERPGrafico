@@ -1,8 +1,9 @@
+
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Settings, User, Building2, Bell, Shield, Database } from "lucide-react"
+import { Settings, User, Building2, Bell, Shield, Database, ShoppingCart } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -42,6 +43,18 @@ export default function SettingsPage() {
                             <div>
                                 <CardTitle>Usuarios y Permisos</CardTitle>
                                 <CardDescription>Gestión de accesos y roles.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
+
+                <Link href="/settings/sales">
+                    <Card className="cursor-pointer hover:border-primary">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <ShoppingCart className="h-8 w-8 text-primary" />
+                            <div>
+                                <CardTitle>Ventas</CardTitle>
+                                <CardDescription>Políticas de stock y restricciones.</CardDescription>
                             </div>
                         </CardHeader>
                     </Card>
