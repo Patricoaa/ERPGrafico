@@ -1,10 +1,11 @@
 "use client"
 
+
 import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Box } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -285,11 +286,27 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
-                                                                    {products.filter(p => p.id).map((p) => (
-                                                                        <SelectItem key={p.id} value={p.id.toString()}>
-                                                                            {p.name}
-                                                                        </SelectItem>
-                                                                    ))}
+                                                                    {products.filter(p => p.id).map((p) => {
+                                                                        const stock = p.current_stock || 0
+                                                                        const isStorable = p.product_type === 'STORABLE'
+                                                                        const hasStock = stock > 0
+                                                                        console.log(p.name, p.current_stock)
+                                                                        return (
+                                                                            <SelectItem key={p.id} value={p.id.toString()}>
+                                                                                <div className="flex items-center justify-between w-full min-w-[300px]">
+                                                                                    <span>{p.name}</span>
+                                                                                    {isStorable && (
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <span className={`text-xs ${hasStock ? 'text-green-600' : 'text-red-600'}`}>
+                                                                                                Stock: {stock}
+                                                                                            </span>
+                                                                                            <div className={`h-2 w-2 rounded-full ${hasStock ? 'bg-green-500' : 'bg-red-500'}`} />
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </SelectItem>
+                                                                        )
+                                                                    })}
                                                                 </SelectContent>
                                                             </Select>
                                                         )}

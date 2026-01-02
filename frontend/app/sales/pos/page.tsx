@@ -22,6 +22,9 @@ interface Product {
     code: string
     name: string
     sale_price: string
+    current_stock?: number
+    product_type?: string
+    unit_price?: string
 }
 
 interface Customer {
@@ -191,6 +194,12 @@ export default function POSPage() {
                                             <div className="font-bold truncate">{product.name}</div>
                                             <div className="text-sm text-muted-foreground">${Number(product.sale_price).toLocaleString()}</div>
                                             <div className="text-[10px] text-muted-foreground uppercase">{product.code}</div>
+                                            {product.product_type === 'STORABLE' && (
+                                                <div className="absolute top-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border">
+                                                    <div className={`h-2 w-2 rounded-full ${(product.current_stock || 0) > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                                                    <span className="text-[10px] font-medium">{product.current_stock || 0}</span>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 ))}
