@@ -8,7 +8,6 @@ from decimal import Decimal
 
 class TreasuryService:
     @staticmethod
-    @staticmethod
     @transaction.atomic
     def register_payment(amount: Decimal, payment_type, payment_method=Payment.Method.CASH, date=None, reference='', partner=None, invoice=None, account=None, sale_order=None, purchase_order=None, transaction_number=None, is_pending_registration=False):
         """

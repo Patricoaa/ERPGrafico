@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 interface PaymentDialogProps {
     open: boolean
@@ -20,7 +21,8 @@ interface PaymentDialogProps {
         dteType?: string,
         reference?: string,
         transaction_number?: string,
-        is_pending_registration?: boolean
+        is_pending_registration?: boolean,
+        account_id?: string | null
     }) => void
     showDteSelector?: boolean
 }
@@ -38,12 +40,14 @@ export function PaymentDialog({
     const [amount, setAmount] = useState(pendingAmount.toString())
     const [transactionNumber, setTransactionNumber] = useState("")
     const [isPending, setIsPending] = useState(false)
+    const [account, setAccount] = useState<string | null>(null)
 
     useEffect(() => {
         if (open) {
             setAmount(pendingAmount.toString())
             setTransactionNumber("")
             setIsPending(false)
+            setAccount(null)
         }
     }, [open, pendingAmount])
 
@@ -109,6 +113,18 @@ export function PaymentDialog({
                             </div>
                         </div>
 
+                        {paymentMethod !== 'CREDIT' && (
+                            <div className="grid gap-2">
+                                <Label className="text-[11px] font-bold uppercase text-muted-foreground">Cuenta Destino (Opcional)</Label>
+                                <AccountSelector
+                                    value={account}
+                                    onChange={setAccount}
+                                    placeholder="Cuenta Automática (según config.)"
+                                    accountType="ASSET"
+                                />
+                            </div>
+                        )}
+
                         {paymentMethod === 'TRANSFER' && (
                             <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
                                 <div className="grid gap-2">
@@ -168,7 +184,8 @@ export function PaymentDialog({
                             amount: parseFloat(amount),
                             dteType: showDteSelector ? dteType : undefined,
                             transaction_number: transactionNumber,
-                            is_pending_registration: isPending
+                            is_pending_registration: isPending,
+                            account_id: account
                         })}
                         disabled={(paymentMethod !== 'CREDIT' && parseFloat(amount) <= 0)}
                     >

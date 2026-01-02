@@ -23,6 +23,9 @@ const accountingSchema = z.object({
     default_tax_receivable_account: z.string().nullable(),
     default_tax_payable_account: z.string().nullable(),
     default_inventory_account: z.string().nullable(),
+    default_cash_account: z.string().nullable(),
+    default_card_account: z.string().nullable(),
+    default_transfer_account: z.string().nullable(),
     code_format: z.string(),
     asset_prefix: z.string(),
     liability_prefix: z.string(),
@@ -49,6 +52,9 @@ export default function AccountingSettingsPage() {
             default_tax_receivable_account: null,
             default_tax_payable_account: null,
             default_inventory_account: null,
+            default_cash_account: null,
+            default_card_account: null,
+            default_transfer_account: null,
             code_format: "X.X.XX.XXX",
             asset_prefix: "1",
             liability_prefix: "2",
@@ -140,6 +146,14 @@ export default function AccountingSettingsPage() {
                                 <AccountField form={form} name="default_tax_receivable_account" label="IVA Crédito (Compras)" accountType="ASSET" />
                                 <AccountField form={form} name="default_tax_payable_account" label="IVA Débito (Ventas)" accountType="LIABILITY" />
                                 <AccountField form={form} name="default_inventory_account" label="Cuenta de Inventario" accountType="ASSET" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t">
+                                <div className="col-span-full">
+                                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Cuentas de Tesorería (Pagos y Cobros)</h3>
+                                </div>
+                                <AccountField form={form} name="default_cash_account" label="Efectivo (Caja)" accountType="ASSET" />
+                                <AccountField form={form} name="default_transfer_account" label="Transferencia Bancaria" accountType="ASSET" />
+                                <AccountField form={form} name="default_card_account" label="Tarjeta (Transbank/Crédito)" accountType="ASSET" />
                             </div>
                         </CardContent>
                     </Card>

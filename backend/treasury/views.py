@@ -1,19 +1,16 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import BankJournal, Payment
-from .serializers import BankJournalSerializer, PaymentSerializer
+from .models import Payment
+from .serializers import PaymentSerializer
 from .services import TreasuryService
 from sales.models import Customer
 from purchasing.models import Supplier
 from decimal import Decimal
-
-class BankJournalViewSet(viewsets.ModelViewSet):
-    queryset = BankJournal.objects.all()
-    serializer_class = BankJournalSerializer
+from accounting.models import Account
 
 class PaymentViewSet(viewsets.ModelViewSet):
-    queryset = Payment.objects.all()
+    queryset = Payment.objects.all().order_by('-date', '-created_at')
     serializer_class = PaymentSerializer
 
     def destroy(self, request, *args, **kwargs):
@@ -25,25 +22,18 @@ class PaymentViewSet(viewsets.ModelViewSet):
         # Support generic POST /api/treasury/payments/ from frontend
         data = request.data.copy()
         
-        # 1. Map payment_method to a default journal if journal is not provided
-        if not data.get('journal'):
-            journal = BankJournal.objects.first() # Default to first journal
-            if journal:
-                data['journal'] = journal.id
-            else:
-                return Response({'error': 'Debe configurar al menos un Diario de Caja/Banco.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 2. Extract special fields for the service
+        # Extract fields
         amount = Decimal(str(data.get('amount', '0')))
         payment_type = data.get('payment_type')
+        payment_method = data.get('payment_method', 'CASH')
+        account_id = data.get('account') # Optional override
+        
         reference = data.get('reference', '')
         sale_order_id = data.get('sale_order')
         purchase_order_id = data.get('purchase_order')
         invoice_id = data.get('invoice')
         transaction_number = data.get('transaction_number')
         is_pending_registration = data.get('is_pending_registration', False)
-        
-        journal = BankJournal.objects.get(pk=data['journal'])
         
         # Resolve objects
         sale_order = None
@@ -67,11 +57,17 @@ class PaymentViewSet(viewsets.ModelViewSet):
         elif purchase_order: partner = purchase_order.supplier
         elif invoice: partner = invoice.customer or invoice.supplier
 
+        # Account override
+        account = None
+        if account_id:
+            account = Account.objects.get(pk=account_id)
+
         try:
             payment = TreasuryService.register_payment(
-                journal=journal,
                 amount=amount,
                 payment_type=payment_type,
+                payment_method=payment_method,
+                account=account,
                 reference=reference,
                 partner=partner,
                 invoice=invoice,
@@ -89,9 +85,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def register(self, request):
         try:
-            journal_id = request.data.get('journal_id')
             amount = Decimal(str(request.data.get('amount')))
             payment_type = request.data.get('payment_type')
+            payment_method = request.data.get('payment_method', 'CASH')
+            account_id = request.data.get('account_id')
             reference = request.data.get('reference', '')
             transaction_number = request.data.get('transaction_number')
             is_pending_registration = request.data.get('is_pending_registration', False)
@@ -103,7 +100,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
             # Invoices
             invoice_id = request.data.get('invoice_id')
             
-            journal = BankJournal.objects.get(pk=journal_id)
             partner = None
             if customer_id:
                 partner = Customer.objects.get(pk=customer_id)
@@ -114,9 +110,19 @@ class PaymentViewSet(viewsets.ModelViewSet):
             if invoice_id:
                 from billing.models import Invoice
                 invoice = Invoice.objects.get(pk=invoice_id)
+
+            account = None
+            if account_id:
+                account = Account.objects.get(pk=account_id)
             
             payment = TreasuryService.register_payment(
-                journal, amount, payment_type, reference=reference, partner=partner, invoice=invoice,
+                amount=amount,
+                payment_type=payment_type,
+                payment_method=payment_method,
+                account=account,
+                reference=reference,
+                partner=partner,
+                invoice=invoice,
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration
             )

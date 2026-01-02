@@ -163,7 +163,6 @@ class BillingService:
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment.
         """
         from sales.serializers import CreateSaleOrderSerializer
-        from treasury.models import BankJournal
         from treasury.services import TreasuryService
         
         # 1. Get or Create Order
@@ -190,10 +189,6 @@ class BillingService:
         
         # 4. Create Payment (if not credit)
         if payment_method != 'CREDIT':
-            journal = BankJournal.objects.first() # Default
-            if not journal:
-                 raise ValidationError("Debe configurar al menos un Diario de Caja/Banco.")
-            
             # Use specific account if configured
             payment_account = None
             settings = AccountingSettings.objects.first()
@@ -203,9 +198,9 @@ class BillingService:
                 elif payment_method == 'TRANSFER': payment_account = settings.default_transfer_account
 
             TreasuryService.register_payment(
-                journal=journal,
                 amount=amount or order.total,
                 payment_type='INBOUND',
+                payment_method=payment_method,
                 reference=f"NV-{order.number}",
                 partner=order.customer,
                 invoice=invoice,

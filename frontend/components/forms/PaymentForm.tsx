@@ -29,13 +29,14 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
-    journal_id: z.string().min(1, "El diario es requerido"),
+    payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
+    account: z.string().optional().nullable(),
     amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
     customer_id: z.string().optional().or(z.literal("")),
     supplier_id: z.string().optional().or(z.literal("")),
@@ -58,7 +59,6 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [journals, setJournals] = useState<any[]>([])
     const [partners, setPartners] = useState<any[]>([])
     const [orders, setOrders] = useState<any[]>([])
 
@@ -66,7 +66,8 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
         resolver: zodResolver(paymentSchema),
         defaultValues: {
             payment_type: "INBOUND",
-            journal_id: "",
+            payment_method: "CASH",
+            account: null,
             amount: 0,
             customer_id: "",
             supplier_id: "",
@@ -78,15 +79,6 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
     const paymentType = useWatch({ control: form.control, name: "payment_type" })
     const customerId = useWatch({ control: form.control, name: "customer_id" })
     const supplierId = useWatch({ control: form.control, name: "supplier_id" })
-
-    const fetchJournals = async () => {
-        try {
-            const response = await api.get('/treasury/journals/')
-            setJournals(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching journals:", error)
-        }
-    }
 
     const fetchPartners = async () => {
         try {
@@ -120,7 +112,6 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
 
     useEffect(() => {
         if (open) {
-            fetchJournals()
             fetchPartners()
         }
     }, [open, paymentType])
@@ -136,6 +127,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
             customer_id: (data.customer_id === "" || data.customer_id === "__none__") ? null : data.customer_id,
             supplier_id: (data.supplier_id === "" || data.supplier_id === "__none__") ? null : data.supplier_id,
             invoice_id: (data.invoice_id === "" || data.invoice_id === "__none__") ? null : data.invoice_id,
+            account_id: data.account || null, // Send account_id if selected
         }
         try {
             await api.post('/treasury/payments/register/', payload)
@@ -189,30 +181,51 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="journal_id"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Caja / Banco</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="payment_method"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Método</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione método" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="CASH">Efectivo</SelectItem>
+                                                <SelectItem value="CARD">Tarjeta</SelectItem>
+                                                <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                                                <SelectItem value="CREDIT">Crédito</SelectItem>
+                                                <SelectItem value="OTHER">Otro</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="account"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Cuenta (Opcional)</FormLabel>
                                         <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione diario" />
-                                            </SelectTrigger>
+                                            <AccountSelector
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                accountType="ASSET"
+                                                placeholder="Predeterminada"
+                                            />
                                         </FormControl>
-                                        <SelectContent>
-                                            {journals.map((j) => (
-                                                <SelectItem key={j.id} value={j.id.toString()}>
-                                                    {j.name} ({j.currency})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField
@@ -221,7 +234,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{paymentType === "INBOUND" ? "Cliente" : "Proveedor"}</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value || "__none__"}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Seleccione..." />
@@ -247,7 +260,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Factura (Opcional)</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value || "__none__"}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Seleccione..." />

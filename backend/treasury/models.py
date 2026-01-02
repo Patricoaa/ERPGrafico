@@ -18,13 +18,20 @@ class Payment(models.Model):
         OTHER = 'OTHER', _('Otro')
 
     payment_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
-    payment_method = models.CharField(_("Método"), max_length=10, choices=Method.choices, default=Method.CASH)
+    payment_method = models.CharField(
+        _("Método de Pago"), 
+        max_length=20, 
+        choices=Method.choices, # Changed to Method.choices to match the class name
+        default=Method.CASH # Changed to Method.CASH to match the class name
+    )
     
     # Financial Account (Replacing BankJournal)
     account = models.ForeignKey(
         Account, 
         on_delete=models.PROTECT, 
         related_name='payments',
+        null=True, # Added null=True
+        blank=True, # Added blank=True as null=True is present
         limit_choices_to={'account_type': AccountType.ASSET},
         verbose_name=_("Cuenta de Tesorería")
     )
