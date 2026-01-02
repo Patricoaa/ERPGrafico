@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
 interface PaymentDialogProps {
     open: boolean
@@ -22,7 +22,7 @@ interface PaymentDialogProps {
         reference?: string,
         transaction_number?: string,
         is_pending_registration?: boolean,
-        account_id?: string | null
+        treasury_account_id?: string | null
     }) => void
     showDteSelector?: boolean
 }
@@ -40,14 +40,14 @@ export function PaymentDialog({
     const [amount, setAmount] = useState(pendingAmount.toString())
     const [transactionNumber, setTransactionNumber] = useState("")
     const [isPending, setIsPending] = useState(false)
-    const [account, setAccount] = useState<string | null>(null)
+    const [treasuryAccount, setTreasuryAccount] = useState<string | null>(null)
 
     useEffect(() => {
         if (open) {
             setAmount(pendingAmount.toString())
             setTransactionNumber("")
             setIsPending(false)
-            setAccount(null)
+            setTreasuryAccount(null)
         }
     }, [open, pendingAmount])
 
@@ -116,11 +116,11 @@ export function PaymentDialog({
                         {paymentMethod !== 'CREDIT' && (
                             <div className="grid gap-2">
                                 <Label className="text-[11px] font-bold uppercase text-muted-foreground">Cuenta Destino (Opcional)</Label>
-                                <AccountSelector
-                                    value={account}
-                                    onChange={setAccount}
+                                <TreasuryAccountSelector
+                                    value={treasuryAccount}
+                                    onChange={setTreasuryAccount}
                                     placeholder="Cuenta Automática (según config.)"
-                                    accountType="ASSET"
+                                    type={paymentMethod === 'CASH' ? 'CASH' : 'BANK'}
                                 />
                             </div>
                         )}
@@ -185,7 +185,7 @@ export function PaymentDialog({
                             dteType: showDteSelector ? dteType : undefined,
                             transaction_number: transactionNumber,
                             is_pending_registration: isPending,
-                            account_id: account
+                            treasury_account_id: treasuryAccount
                         })}
                         disabled={(paymentMethod !== 'CREDIT' && parseFloat(amount) <= 0)}
                     >

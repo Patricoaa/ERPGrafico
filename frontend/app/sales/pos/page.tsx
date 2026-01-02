@@ -110,7 +110,7 @@ export default function POSPage() {
         setCheckoutOpen(true)
     }
 
-    const handleCheckoutConfirm = async (data: { dteType?: string, paymentMethod: string, amount?: number, transaction_number?: string, is_pending_registration?: boolean }) => {
+    const handleCheckoutConfirm = async (data: { dteType?: string, paymentMethod: string, amount?: number, transaction_number?: string, is_pending_registration?: boolean, treasury_account_id?: string | null }) => {
         setCheckoutOpen(false)
         setLoading(true)
         try {
@@ -128,7 +128,8 @@ export default function POSPage() {
                 payment_method: data.paymentMethod,
                 amount: data.amount,
                 transaction_number: data.transaction_number,
-                is_pending_registration: data.is_pending_registration
+                is_pending_registration: data.is_pending_registration,
+                treasury_account_id: data.treasury_account_id
             }
             await api.post('/billing/invoices/pos_checkout/', payload)
 

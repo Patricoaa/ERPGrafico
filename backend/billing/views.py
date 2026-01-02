@@ -54,6 +54,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         transaction_number = request.data.get('transaction_number')
         is_pending_registration = request.data.get('is_pending_registration', False)
         amount = request.data.get('amount')
+        treasury_account_id = request.data.get('treasury_account_id') or request.data.get('treasury_account')
         
         if not all([order_data, dte_type, payment_method]):
             return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
@@ -63,7 +64,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 order_data, dte_type, payment_method, 
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration,
-                amount=amount
+                amount=amount,
+                treasury_account_id=treasury_account_id
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

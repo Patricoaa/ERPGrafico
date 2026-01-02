@@ -158,7 +158,7 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, is_pending_registration=False, amount=None):
+    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, is_pending_registration=False, amount=None, treasury_account_id=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment.
         """
@@ -189,14 +189,6 @@ class BillingService:
         
         # 4. Create Payment (if not credit)
         if payment_method != 'CREDIT':
-            # Use specific account if configured
-            payment_account = None
-            settings = AccountingSettings.objects.first()
-            if settings:
-                if payment_method == 'CASH': payment_account = settings.default_cash_account
-                elif payment_method == 'CARD': payment_account = settings.default_card_account
-                elif payment_method == 'TRANSFER': payment_account = settings.default_transfer_account
-
             TreasuryService.register_payment(
                 amount=amount or order.total,
                 payment_type='INBOUND',
@@ -205,7 +197,7 @@ class BillingService:
                 partner=order.customer,
                 invoice=invoice,
                 sale_order=order,
-                account=payment_account,
+                treasury_account_id=treasury_account_id,
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration
             )

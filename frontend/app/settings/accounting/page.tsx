@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { ChevronLeft, Loader2 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
 const accountingSchema = z.object({
     default_receivable_account: z.string().nullable(),
@@ -23,9 +24,9 @@ const accountingSchema = z.object({
     default_tax_receivable_account: z.string().nullable(),
     default_tax_payable_account: z.string().nullable(),
     default_inventory_account: z.string().nullable(),
-    default_cash_account: z.string().nullable(),
-    default_card_account: z.string().nullable(),
-    default_transfer_account: z.string().nullable(),
+    default_cash_treasury_account: z.string().nullable(),
+    default_card_treasury_account: z.string().nullable(),
+    default_transfer_treasury_account: z.string().nullable(),
     code_format: z.string(),
     asset_prefix: z.string(),
     liability_prefix: z.string(),
@@ -52,9 +53,9 @@ export default function AccountingSettingsPage() {
             default_tax_receivable_account: null,
             default_tax_payable_account: null,
             default_inventory_account: null,
-            default_cash_account: null,
-            default_card_account: null,
-            default_transfer_account: null,
+            default_cash_treasury_account: null,
+            default_card_treasury_account: null,
+            default_transfer_treasury_account: null,
             code_format: "X.X.XX.XXX",
             asset_prefix: "1",
             liability_prefix: "2",
@@ -151,9 +152,9 @@ export default function AccountingSettingsPage() {
                                 <div className="col-span-full">
                                     <h3 className="text-sm font-medium text-muted-foreground mb-4">Cuentas de Tesorería (Pagos y Cobros)</h3>
                                 </div>
-                                <AccountField form={form} name="default_cash_account" label="Efectivo (Caja)" accountType="ASSET" />
-                                <AccountField form={form} name="default_transfer_account" label="Transferencia Bancaria" accountType="ASSET" />
-                                <AccountField form={form} name="default_card_account" label="Tarjeta (Transbank/Crédito)" accountType="ASSET" />
+                                <TreasuryField form={form} name="default_cash_treasury_account" label="Caja Predeterminada (Efectivo)" type="CASH" />
+                                <TreasuryField form={form} name="default_transfer_treasury_account" label="Cuenta Predeterminada (Transferencia)" type="BANK" />
+                                <TreasuryField form={form} name="default_card_treasury_account" label="Cuenta Predeterminada (Tarjeta)" />
                             </div>
                         </CardContent>
                     </Card>
@@ -246,7 +247,7 @@ export default function AccountingSettingsPage() {
 
 interface AccountFieldProps {
     form: UseFormReturn<AccountingFormValues>
-    name: keyof AccountingFormValues
+    name: any
     label: string
     accountType: string
 }
@@ -264,6 +265,28 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
                             value={field.value}
                             onChange={field.onChange}
                             accountType={accountType}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    )
+}
+
+function TreasuryField({ form, name, label, type }: { form: UseFormReturn<AccountingFormValues>, name: any, label: string, type?: 'BANK' | 'CASH' }) {
+    return (
+        <FormField
+            control={form.control}
+            name={name}
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>{label}</FormLabel>
+                    <FormControl>
+                        <TreasuryAccountSelector
+                            value={field.value}
+                            onChange={field.onChange}
+                            type={type}
                         />
                     </FormControl>
                     <FormMessage />

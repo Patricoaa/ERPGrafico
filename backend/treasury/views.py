@@ -1,13 +1,17 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Payment
-from .serializers import PaymentSerializer
+from .models import Payment, TreasuryAccount
+from .serializers import PaymentSerializer, TreasuryAccountSerializer
 from .services import TreasuryService
 from sales.models import Customer
 from purchasing.models import Supplier
 from decimal import Decimal
 from accounting.models import Account
+
+class TreasuryAccountViewSet(viewsets.ModelViewSet):
+    queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
+    serializer_class = TreasuryAccountSerializer
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all().order_by('-date', '-created_at')
@@ -26,7 +30,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         amount = Decimal(str(data.get('amount', '0')))
         payment_type = data.get('payment_type')
         payment_method = data.get('payment_method', 'CASH')
-        account_id = data.get('account') # Optional override
+        treasury_account_id = data.get('treasury_account_id') or data.get('treasury_account')  # New field
         
         reference = data.get('reference', '')
         sale_order_id = data.get('sale_order')
@@ -57,17 +61,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
         elif purchase_order: partner = purchase_order.supplier
         elif invoice: partner = invoice.customer or invoice.supplier
 
-        # Account override
-        account = None
-        if account_id:
-            account = Account.objects.get(pk=account_id)
-
         try:
             payment = TreasuryService.register_payment(
                 amount=amount,
                 payment_type=payment_type,
                 payment_method=payment_method,
-                account=account,
+                treasury_account_id=treasury_account_id,
                 reference=reference,
                 partner=partner,
                 invoice=invoice,
@@ -88,7 +87,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
             amount = Decimal(str(request.data.get('amount')))
             payment_type = request.data.get('payment_type')
             payment_method = request.data.get('payment_method', 'CASH')
-            account_id = request.data.get('account_id')
+            treasury_account_id = request.data.get('treasury_account_id') or request.data.get('treasury_account')
             reference = request.data.get('reference', '')
             transaction_number = request.data.get('transaction_number')
             is_pending_registration = request.data.get('is_pending_registration', False)
@@ -111,15 +110,11 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 from billing.models import Invoice
                 invoice = Invoice.objects.get(pk=invoice_id)
 
-            account = None
-            if account_id:
-                account = Account.objects.get(pk=account_id)
-            
             payment = TreasuryService.register_payment(
                 amount=amount,
                 payment_type=payment_type,
                 payment_method=payment_method,
-                account=account,
+                treasury_account_id=treasury_account_id,
                 reference=reference,
                 partner=partner,
                 invoice=invoice,

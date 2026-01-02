@@ -156,20 +156,20 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         <Search className="h-4 w-4" />
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl">
+                <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>Búsqueda Avanzada de Cuentas</DialogTitle>
                         <DialogDescription>
                             Seleccione una cuenta del plan contable.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 pt-4">
+                    <div className="space-y-4 pt-4 flex-1 overflow-hidden flex flex-col">
                         <Input
                             placeholder="Filtrar por código o nombre..."
                             value={searchTerm}
                             onChange={(e) => searchAccounts(e.target.value)}
                         />
-                        <div className="border rounded-md max-h-[400px] overflow-y-auto">
+                        <div className="border rounded-md flex-1 overflow-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>

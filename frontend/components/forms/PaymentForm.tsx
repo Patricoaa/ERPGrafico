@@ -31,12 +31,12 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
-    payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
-    account: z.string().optional().nullable(),
+    payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT", "OTHER"]),
+    treasury_account: z.string().optional().nullable(),
     amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
     customer_id: z.string().optional().or(z.literal("")),
     supplier_id: z.string().optional().or(z.literal("")),
@@ -67,7 +67,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
         defaultValues: {
             payment_type: "INBOUND",
             payment_method: "CASH",
-            account: null,
+            treasury_account: null,
             amount: 0,
             customer_id: "",
             supplier_id: "",
@@ -77,6 +77,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
     })
 
     const paymentType = useWatch({ control: form.control, name: "payment_type" })
+    const paymentMethod = useWatch({ control: form.control, name: "payment_method" })
     const customerId = useWatch({ control: form.control, name: "customer_id" })
     const supplierId = useWatch({ control: form.control, name: "supplier_id" })
 
@@ -127,7 +128,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
             customer_id: (data.customer_id === "" || data.customer_id === "__none__") ? null : data.customer_id,
             supplier_id: (data.supplier_id === "" || data.supplier_id === "__none__") ? null : data.supplier_id,
             invoice_id: (data.invoice_id === "" || data.invoice_id === "__none__") ? null : data.invoice_id,
-            account_id: data.account || null, // Send account_id if selected
+            treasury_account_id: data.treasury_account || null, // Send treasury_account_id
         }
         try {
             await api.post('/treasury/payments/register/', payload)
@@ -209,16 +210,17 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
 
                             <FormField
                                 control={form.control}
-                                name="account"
+                                name="treasury_account"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Cuenta (Opcional)</FormLabel>
                                         <FormControl>
-                                            <AccountSelector
+                                            <TreasuryAccountSelector
                                                 value={field.value}
                                                 onChange={field.onChange}
-                                                accountType="ASSET"
+                                                type={paymentMethod === 'CASH' ? 'CASH' : (paymentMethod === 'TRANSFER' || paymentMethod === 'CARD') ? 'BANK' : undefined}
                                                 placeholder="Predeterminada"
+                                                disabled={paymentMethod === 'CREDIT'}
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -270,7 +272,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                                 <SelectItem value="__none__">Ninguna</SelectItem>
                                                 {orders.map((o) => (
                                                     <SelectItem key={o.id} value={o.id.toString()}>
-                                                        {o.dte_type_display} - {o.number || 'Pendiente'} (${Number(o.total).toLocaleString()})
+                                                        {o.dte_type_display} - {o.number || 'Pendiente'} ({o.total})
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>

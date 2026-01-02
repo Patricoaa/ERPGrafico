@@ -76,7 +76,7 @@ const items = [
         url: "#",
         icon: Banknote,
         items: [
-            { title: "Cajas y Bancos", url: "/treasury/journals" },
+            { title: "Cajas y Bancos", url: "/treasury/accounts" },
             { title: "Pagos y Cobros", url: "/treasury/payments" },
         ]
     },
