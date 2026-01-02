@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import Supplier, PurchaseOrder, PurchaseLine
+from .models import Supplier, PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
 from treasury.serializers import PaymentSerializer
+
 
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,9 +9,12 @@ class SupplierSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PurchaseLineSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    quantity_pending = serializers.ReadOnlyField()
+    
     class Meta:
         model = PurchaseLine
-        fields = ['id', 'product', 'quantity', 'unit_cost', 'tax_rate', 'subtotal']
+        fields = ['id', 'product', 'product_name', 'quantity', 'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending']
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseLineSerializer(many=True, read_only=True)
@@ -59,3 +63,20 @@ class CreatePurchaseOrderSerializer(serializers.ModelSerializer):
         order.save()
         
         return order
+
+class PurchaseReceiptLineSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_code = serializers.CharField(source='product.code', read_only=True)
+    
+    class Meta:
+        model = PurchaseReceiptLine
+        fields = '__all__'
+
+class PurchaseReceiptSerializer(serializers.ModelSerializer):
+    lines = PurchaseReceiptLineSerializer(many=True, read_only=True)
+    purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True)
+    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    
+    class Meta:
+        model = PurchaseReceipt
+        fields = '__all__'

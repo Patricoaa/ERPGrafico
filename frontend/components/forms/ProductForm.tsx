@@ -29,7 +29,11 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, X, AlertCircle } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 import api from "@/lib/api"
 import { CategoryForm } from "./CategoryForm"
 
@@ -37,7 +41,7 @@ const productSchema = z.object({
     code: z.string().min(1, "El código es requerido"),
     name: z.string().min(1, "El nombre es requerido"),
     category: z.string().min(1, "La categoría es requerida"),
-    product_type: z.enum(["STORABLE", "CONSUMABLE", "SERVICE"]),
+    product_type: z.enum(["STORABLE", "CONSUMABLE", "SERVICE", "MANUFACTURABLE"]),
     sale_price: z.string().min(0),
 })
 
@@ -58,6 +62,12 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
     const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
+
+    // Variants State
+    const [hasVariants, setHasVariants] = useState(false)
+    const [variantAttributes, setVariantAttributes] = useState<{ name: string, values: string[] }[]>([])
+    const [currentAttrName, setCurrentAttrName] = useState("")
+    const [currentAttrValues, setCurrentAttrValues] = useState("")
 
     const fetchCategories = async () => {
         try {
@@ -107,17 +117,41 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
     async function onSubmit(data: ProductFormValues) {
         setLoading(true)
         try {
+            let productId
             if (initialData) {
                 await api.put(`/inventory/products/${initialData.id}/`, data)
+                productId = initialData.id
             } else {
-                await api.post('/inventory/products/', data)
+                const res = await api.post('/inventory/products/', data)
+                productId = res.data.id
             }
+
+            // Generate Variants if new product and hasVariants
+            if (!initialData && hasVariants && variantAttributes.length > 0) {
+                const attributesPayload: any = {}
+                variantAttributes.forEach(attr => {
+                    attributesPayload[attr.name] = attr.values
+                })
+
+                try {
+                    await api.post(`/inventory/products/${productId}/generate_variants/`, {
+                        attributes: attributesPayload
+                    })
+                    toast.success("Variantes generadas exitosamente")
+                } catch (error: any) {
+                    console.error("Error generating variants:", error)
+                    toast.error("Producto creado, pero error al generar variantes")
+                }
+            } else {
+                toast.success(initialData ? "Producto actualizado" : "Producto creado exitosamente")
+            }
+
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: any) {
             console.error("Error saving product:", error)
-            alert(error.response?.data?.detail || "Error al guardar el producto")
+            toast.error(error.response?.data?.detail || "Error al guardar el producto")
         } finally {
             setLoading(false)
         }
@@ -130,7 +164,7 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                     <Button>Nuevo Producto</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Producto" : "Crear Producto"}</DialogTitle>
                     <DialogDescription>
@@ -221,6 +255,7 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                                             <SelectItem value="STORABLE">Almacenable</SelectItem>
                                             <SelectItem value="CONSUMABLE">Consumible</SelectItem>
                                             <SelectItem value="SERVICE">Servicio</SelectItem>
+                                            <SelectItem value="MANUFACTURABLE">Fabricable</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -242,6 +277,91 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 )}
                             />
                         </div>
+
+                        {!initialData && (
+                            <div className="space-y-4 border rounded-md p-4 bg-muted/20">
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="has-variants"
+                                        checked={hasVariants}
+                                        onCheckedChange={setHasVariants}
+                                    />
+                                    <Label htmlFor="has-variants">Este producto tiene variantes</Label>
+                                </div>
+
+                                {hasVariants && (
+                                    <div className="space-y-4 animate-in fade-in zoom-in slide-in-from-top-2 duration-300">
+                                        <div className="text-sm text-muted-foreground">
+                                            Defina los atributos (ej. Color) y sus valores separados por comba (ej. Rojo, Azul).
+                                        </div>
+
+                                        <div className="grid grid-cols-[1fr,1.5fr,auto] gap-2 items-end">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">Atributo</Label>
+                                                <Input
+                                                    placeholder="Ej. Color"
+                                                    value={currentAttrName}
+                                                    onChange={(e) => setCurrentAttrName(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">Valores (separar con coma)</Label>
+                                                <Input
+                                                    placeholder="Ej. Rojo, Azul, Verde"
+                                                    value={currentAttrValues}
+                                                    onChange={(e) => setCurrentAttrValues(e.target.value)}
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                size="icon"
+                                                onClick={() => {
+                                                    if (!currentAttrName || !currentAttrValues) return
+                                                    const values = currentAttrValues.split(',').map(v => v.trim()).filter(v => v)
+                                                    if (values.length === 0) return
+
+                                                    setVariantAttributes([...variantAttributes, { name: currentAttrName, values }])
+                                                    setCurrentAttrName("")
+                                                    setCurrentAttrValues("")
+                                                }}
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {variantAttributes.map((attr, idx) => (
+                                                <div key={idx} className="flex items-start justify-between bg-background border p-2 rounded-md">
+                                                    <div>
+                                                        <span className="font-semibold text-sm">{attr.name}:</span>
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {attr.values.map((v, i) => (
+                                                                <Badge key={i} variant="secondary" className="text-xs">
+                                                                    {v}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                        onClick={() => {
+                                                            const newAttrs = [...variantAttributes]
+                                                            newAttrs.splice(idx, 1)
+                                                            setVariantAttributes(newAttrs)
+                                                        }}
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <div className="flex justify-end space-x-2">
                             <Button
                                 type="button"

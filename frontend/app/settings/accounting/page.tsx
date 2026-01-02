@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { ChevronLeft, Loader2 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
+
 
 const accountingSchema = z.object({
     default_receivable_account: z.string().nullable(),
@@ -24,9 +24,7 @@ const accountingSchema = z.object({
     default_tax_receivable_account: z.string().nullable(),
     default_tax_payable_account: z.string().nullable(),
     default_inventory_account: z.string().nullable(),
-    default_cash_treasury_account: z.string().nullable(),
-    default_card_treasury_account: z.string().nullable(),
-    default_transfer_treasury_account: z.string().nullable(),
+
     code_format: z.string(),
     asset_prefix: z.string(),
     liability_prefix: z.string(),
@@ -53,9 +51,7 @@ export default function AccountingSettingsPage() {
             default_tax_receivable_account: null,
             default_tax_payable_account: null,
             default_inventory_account: null,
-            default_cash_treasury_account: null,
-            default_card_treasury_account: null,
-            default_transfer_treasury_account: null,
+
             code_format: "X.X.XX.XXX",
             asset_prefix: "1",
             liability_prefix: "2",
@@ -148,14 +144,7 @@ export default function AccountingSettingsPage() {
                                 <AccountField form={form} name="default_tax_payable_account" label="IVA Débito (Ventas)" accountType="LIABILITY" />
                                 <AccountField form={form} name="default_inventory_account" label="Cuenta de Inventario" accountType="ASSET" />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t">
-                                <div className="col-span-full">
-                                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Cuentas de Tesorería (Pagos y Cobros)</h3>
-                                </div>
-                                <TreasuryField form={form} name="default_cash_treasury_account" label="Caja Predeterminada (Efectivo)" type="CASH" />
-                                <TreasuryField form={form} name="default_transfer_treasury_account" label="Cuenta Predeterminada (Transferencia)" type="BANK" />
-                                <TreasuryField form={form} name="default_card_treasury_account" label="Cuenta Predeterminada (Tarjeta)" />
-                            </div>
+
                         </CardContent>
                     </Card>
 
@@ -274,24 +263,4 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
     )
 }
 
-function TreasuryField({ form, name, label, type }: { form: UseFormReturn<AccountingFormValues>, name: any, label: string, type?: 'BANK' | 'CASH' }) {
-    return (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>{label}</FormLabel>
-                    <FormControl>
-                        <TreasuryAccountSelector
-                            value={field.value}
-                            onChange={field.onChange}
-                            type={type}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-    )
-}
+

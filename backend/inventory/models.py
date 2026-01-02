@@ -27,11 +27,35 @@ class ProductCategory(models.Model):
     def __str__(self):
         return self.name
 
+class ProductAttribute(models.Model):
+    name = models.CharField(_("Nombre"), max_length=100) # ej: Color, Size
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Atributo de Producto")
+        verbose_name_plural = _("Atributos de Producto")
+
+    def __str__(self):
+        return self.name
+
+class ProductAttributeValue(models.Model):
+    attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE, related_name='values')
+    value = models.CharField(_("Valor"), max_length=100) # ej: Red, XL
+    
+    class Meta:
+        verbose_name = _("Valor de Atributo")
+        verbose_name_plural = _("Valores de Atributo")
+        unique_together = ('attribute', 'value')
+
+    def __str__(self):
+        return f"{self.attribute.name}: {self.value}"
+
 class Product(models.Model):
     class Type(models.TextChoices):
         STORABLE = 'STORABLE', _('Almacenable')
         CONSUMABLE = 'CONSUMABLE', _('Consumible')
         SERVICE = 'SERVICE', _('Servicio')
+        MANUFACTURABLE = 'MANUFACTURABLE', _('Fabricable')
 
     code = models.CharField(_("Código/SKU"), max_length=50, unique=True)
     name = models.CharField(_("Nombre"), max_length=255)
@@ -40,6 +64,16 @@ class Product(models.Model):
     
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=2, default=0)
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=2, default=0, editable=False)
+
+    # Variant Logic
+    variant_of = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True, related_name='variants',
+        help_text=_("Producto padre (plantilla). Si está vacío, es un producto principal.")
+    )
+    attribute_values = models.ManyToManyField(
+        ProductAttributeValue, blank=True, related_name='products',
+        help_text=_("Valores de atributos que definen esta variante.")
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

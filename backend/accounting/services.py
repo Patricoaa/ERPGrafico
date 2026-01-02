@@ -111,8 +111,6 @@ class AccountingService:
             settings.default_tax_payable_account = Account.objects.filter(code='2.1.02.01').first()
         if not settings.default_inventory_account:
             settings.default_inventory_account = Account.objects.filter(code='1.1.03.01').first()
-        if not settings.default_cash_account:
-            settings.default_cash_account = Account.objects.filter(code='1.1.01.01').first()
         
         settings.save()
         

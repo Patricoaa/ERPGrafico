@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import WorkOrder, ProductionConsumption
+from .models import WorkOrder, ProductionConsumption, BillOfMaterials
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from inventory.models import StockMove
@@ -93,3 +93,92 @@ class ProductionService:
         )
         
         return consumption
+
+    @staticmethod
+    @transaction.atomic
+    def create_work_order_from_sale(sale_line):
+        """
+        Creates a Work Order in DRAFT status from a sale line with a MANUFACTURABLE product.
+        Auto-fills specifications with product data.
+        """
+        product = sale_line.product
+        
+        if not product or product.product_type != 'MANUFACTURABLE':
+            raise ValidationError("Solo se pueden crear OT para productos fabricables.")
+        
+        # Build specifications from product data
+        specs_parts = [
+            f"Producto: {product.name} ({product.code})",
+            f"Cantidad: {sale_line.quantity}",
+            f"Precio Unitario: ${sale_line.unit_price}",
+        ]
+        
+        # Add BOM info if available
+        active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
+        if active_bom:
+            specs_parts.append(f"\nBOM: {active_bom.name}")
+            specs_parts.append("Componentes:")
+            for line in active_bom.lines.all():
+                specs_parts.append(f"  - {line.component.code}: {line.quantity} {line.unit}")
+        
+        specifications = "\n".join(specs_parts)
+        
+        # Create Work Order
+        work_order = WorkOrder.objects.create(
+            description=f"{product.name} - NV-{sale_line.order.number}",
+            sale_order=sale_line.order,
+            sale_line=sale_line,
+            status=WorkOrder.Status.DRAFT,
+            specifications=specifications,
+            estimated_completion_date=None  # Can be calculated based on business rules
+        )
+        
+        return work_order
+    
+    @staticmethod
+    @transaction.atomic
+    def consume_materials_from_bom(work_order: WorkOrder, warehouse, multiplier: Decimal = Decimal('1.0')):
+        """
+        Consumes materials based on the BOM of the product associated with the work order.
+        
+        Args:
+            work_order: The work order to consume materials for
+            warehouse: The warehouse to consume from
+            multiplier: Quantity multiplier (e.g., if producing 10 units, multiplier=10)
+        
+        Returns:
+            List of ProductionConsumption records created
+        """
+        if not work_order.sale_line or not work_order.sale_line.product:
+            raise ValidationError("La orden de trabajo debe estar asociada a una línea de venta con producto.")
+        
+        product = work_order.sale_line.product
+        
+        if product.product_type != 'MANUFACTURABLE':
+            raise ValidationError("El producto debe ser fabricable.")
+        
+        # Get active BOM
+        active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
+        
+        if not active_bom:
+            raise ValidationError(f"No hay BOM activo para el producto {product.name}.")
+        
+        if not active_bom.lines.exists():
+            raise ValidationError(f"El BOM {active_bom.name} no tiene componentes definidos.")
+        
+        consumptions = []
+        
+        # Consume each component
+        for bom_line in active_bom.lines.all():
+            quantity_to_consume = bom_line.quantity * multiplier
+            
+            consumption = ProductionService.consume_material(
+                work_order=work_order,
+                product=bom_line.component,
+                warehouse=warehouse,
+                quantity=quantity_to_consume
+            )
+            
+            consumptions.append(consumption)
+        
+        return consumptions

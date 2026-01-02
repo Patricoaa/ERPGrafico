@@ -1,10 +1,18 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Customer, SaleOrder, SalesSettings
-from .serializers import CustomerSerializer, SaleOrderSerializer, CreateSaleOrderSerializer, SalesSettingsSerializer
+from .models import Customer, SaleOrder, SalesSettings, SaleDelivery
+from .serializers import (
+    CustomerSerializer, 
+    SaleOrderSerializer, 
+    CreateSaleOrderSerializer, 
+    SalesSettingsSerializer,
+    SaleDeliverySerializer
+)
 from .services import SalesService
+from inventory.models import Warehouse
 from django.core.exceptions import ValidationError
+from decimal import Decimal
 
 from core.mixins import BulkImportMixin
 
@@ -65,3 +73,66 @@ class SaleOrderViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'], url_path='dispatch')
+    def dispatch_order(self, request, pk=None):
+        """Dispatch complete order"""
+        order = self.get_object()
+        try:
+            warehouse_id = request.data.get('warehouse_id')
+            delivery_date = request.data.get('delivery_date')
+            
+            warehouse = Warehouse.objects.get(pk=warehouse_id)
+            
+            delivery = SalesService.dispatch_order(
+                order=order,
+                warehouse=warehouse,
+                delivery_date=delivery_date
+            )
+            
+            return Response(
+                SaleDeliverySerializer(delivery).data,
+                status=status.HTTP_201_CREATED
+            )
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def partial_dispatch(self, request, pk=None):
+        """Dispatch specific quantities of products"""
+        order = self.get_object()
+        try:
+            warehouse_id = request.data.get('warehouse_id')
+            delivery_date = request.data.get('delivery_date')
+            line_quantities = request.data.get('line_quantities', {})  # {sale_line_id: quantity}
+            
+            warehouse = Warehouse.objects.get(pk=warehouse_id)
+            
+            delivery = SalesService.partial_dispatch(
+                order=order,
+                warehouse=warehouse,
+                line_quantities=line_quantities,
+                delivery_date=delivery_date
+            )
+            
+            return Response(
+                SaleDeliverySerializer(delivery).data,
+                status=status.HTTP_201_CREATED
+            )
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['get'])
+    def deliveries(self, request, pk=None):
+        """List all deliveries for this order"""
+        order = self.get_object()
+        deliveries = order.deliveries.all()
+        return Response(SaleDeliverySerializer(deliveries, many=True).data)
+
+class SaleDeliveryViewSet(viewsets.ModelViewSet):
+    queryset = SaleDelivery.objects.all()
+    serializer_class = SaleDeliverySerializer

@@ -10,13 +10,14 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle, History } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, History, Truck } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { DeliveryModal } from "@/components/sales/DeliveryModal"
 import { Progress } from "../../../components/ui/progress"
 import { Banknote } from "lucide-react"
 
@@ -48,6 +49,7 @@ export default function SalesOrdersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
+    const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
 
     const fetchOrders = async () => {
         try {
@@ -244,6 +246,18 @@ export default function SalesOrdersPage() {
                                             </Button>
                                         )}
 
+                                        {['CONFIRMED', 'INVOICED', 'PAID'].includes(order.status) && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-purple-600"
+                                                onClick={() => setDispatchingOrder(order.id)}
+                                                title="Despachar"
+                                            >
+                                                <Truck className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
                                         {order.total_paid > 0 && (
                                             <Button
                                                 variant="ghost"
@@ -301,6 +315,15 @@ export default function SalesOrdersPage() {
                     pendingAmount={payingOrder.pending_amount}
                     showDteSelector={payingOrder.status === 'CONFIRMED'}
                     onConfirm={handlePayment}
+                />
+            )}
+
+            {dispatchingOrder && (
+                <DeliveryModal
+                    open={!!dispatchingOrder}
+                    onOpenChange={(open) => !open && setDispatchingOrder(null)}
+                    orderId={dispatchingOrder}
+                    onSuccess={fetchOrders}
                 />
             )}
         </div>

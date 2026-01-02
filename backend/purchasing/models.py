@@ -39,6 +39,11 @@ class PurchaseOrder(models.Model):
         INVOICED = 'INVOICED', _('Facturado')
         PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
+    
+    class ReceivingStatus(models.TextChoices):
+        PENDING = 'PENDING', _('Pendiente')
+        PARTIAL = 'PARTIAL', _('Parcial')
+        RECEIVED = 'RECEIVED', _('Recibido')
 
     class PaymentMethod(models.TextChoices):
         CASH = 'CASH', _('Efectivo')
@@ -56,6 +61,15 @@ class PurchaseOrder(models.Model):
     
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='purchases', help_text="Bodega de recepción")
     notes = models.TextField(_("Notas"), blank=True)
+    
+    # Receiving fields
+    receiving_status = models.CharField(
+        _("Estado de Recepción"), 
+        max_length=20, 
+        choices=ReceivingStatus.choices, 
+        default=ReceivingStatus.PENDING
+    )
+    receipt_date = models.DateField(_("Fecha de Recepción Planificada"), null=True, blank=True)
 
     total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=2, default=0)
     total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=2, default=0)
@@ -96,7 +110,122 @@ class PurchaseLine(models.Model):
     tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00)
     
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=2, editable=False)
+    
+    # Track received quantity
+    quantity_received = models.DecimalField(
+        _("Cantidad Recibida"), 
+        max_digits=10, 
+        decimal_places=2, 
+        default=0,
+        help_text="Cantidad total recibida de esta línea"
+    )
 
     def save(self, *args, **kwargs):
         self.subtotal = self.quantity * self.unit_cost
         super().save(*args, **kwargs)
+    
+    @property
+    def quantity_pending(self):
+        """Returns the quantity still pending receipt"""
+        return self.quantity - self.quantity_received
+
+class PurchaseReceipt(models.Model):
+    """
+    Represents a receipt of a purchase order.
+    Can be partial or complete.
+    """
+    class Status(models.TextChoices):
+        DRAFT = 'DRAFT', _('Borrador')
+        CONFIRMED = 'CONFIRMED', _('Confirmado')
+        CANCELLED = 'CANCELLED', _('Anulado')
+    
+    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
+    purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.PROTECT, related_name='receipts')
+    warehouse = models.ForeignKey(
+        Warehouse, 
+        on_delete=models.PROTECT, 
+        related_name='purchase_receipts',
+        help_text="Bodega de recepción"
+    )
+    
+    receipt_date = models.DateField(_("Fecha de Recepción"))
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    # Link to Accounting (if needed for cost adjustments or accruals)
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='purchase_receipt'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = _("Recepción de Compra")
+        verbose_name_plural = _("Recepciones de Compra")
+        ordering = ['-receipt_date', '-created_at']
+    
+    def __str__(self):
+        return f"Recepción-{self.number} (OC-{self.purchase_order.number})"
+    
+    def save(self, *args, **kwargs):
+        if not self.number:
+            last_receipt = PurchaseReceipt.objects.all().order_by('id').last()
+            if last_receipt and last_receipt.number.isdigit():
+                self.number = str(int(last_receipt.number) + 1).zfill(6)
+            else:
+                self.number = '000001'
+        super().save(*args, **kwargs)
+
+class PurchaseReceiptLine(models.Model):
+    """
+    Individual line of a receipt.
+    Links to the original purchase line and tracks quantity received and cost.
+    """
+    receipt = models.ForeignKey(PurchaseReceipt, on_delete=models.CASCADE, related_name='lines')
+    purchase_line = models.ForeignKey(PurchaseLine, on_delete=models.PROTECT, related_name='receipt_lines')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='receipt_lines')
+    
+    quantity_received = models.DecimalField(
+        _("Cantidad Recibida"), 
+        max_digits=10, 
+        decimal_places=2,
+        help_text="Cantidad recibida en esta recepción"
+    )
+    
+    # Link to Stock Move
+    stock_move = models.OneToOneField(
+        'inventory.StockMove',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='purchase_receipt_line'
+    )
+    
+    # Cost tracking (allows updating cost price upon receipt)
+    unit_cost = models.DecimalField(
+        _("Costo Unitario Real"), 
+        max_digits=12, 
+        decimal_places=2,
+        help_text="Costo unitario real al momento de la recepción"
+    )
+    total_cost = models.DecimalField(
+        _("Costo Total"), 
+        max_digits=12, 
+        decimal_places=2,
+        editable=False
+    )
+    
+    class Meta:
+        verbose_name = _("Línea de Recepción")
+        verbose_name_plural = _("Líneas de Recepción")
+    
+    def __str__(self):
+        return f"{self.product.code} x {self.quantity_received}"
+    
+    def save(self, *args, **kwargs):
+        self.total_cost = self.quantity_received * self.unit_cost
+        super().save(*args, **kwargs)
+

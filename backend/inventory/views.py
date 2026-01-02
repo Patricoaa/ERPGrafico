@@ -1,10 +1,12 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Product, ProductCategory, Warehouse, StockMove
-from .serializers import ProductSerializer, ProductCategorySerializer, WarehouseSerializer, StockMoveSerializer
+from .serializers import ProductSerializer, ProductCategorySerializer, WarehouseSerializer, StockMoveSerializer, ProductAttributeSerializer, ProductAttributeValueSerializer
+from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue
 from .services import StockService
 from decimal import Decimal
+import itertools
+from django.utils.text import slugify
 
 from core.mixins import BulkImportMixin
 
@@ -44,6 +46,67 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
             })
             
         return Response(report)
+
+    @action(detail=True, methods=['post'])
+    def generate_variants(self, request, pk=None):
+        parent = self.get_object()
+        if parent.variant_of:
+            return Response({"error": "No se pueden generar variantes de una variante"}, status=400)
+            
+        attributes = request.data.get('attributes', {})
+        # attributes = {"Color": ["Rojo", "Azul"], "Talla": ["S", "M"]}
+        
+        if not attributes:
+            return Response({"error": "Se requieren atributos"}, status=400)
+
+        # Generate combinations
+        keys = list(attributes.keys())
+        values_list = [attributes[key] for key in keys]
+        
+        combinations = list(itertools.product(*values_list))
+        
+        variants_created = []
+        
+        for combination in combinations:
+            attr_values_objs = []
+            variant_name_suffix = []
+            variant_code_suffix = []
+            
+            for i, value_str in enumerate(combination):
+                attr_name = keys[i]
+                attr, _ = ProductAttribute.objects.get_or_create(name=attr_name)
+                val_obj, _ = ProductAttributeValue.objects.get_or_create(attribute=attr, value=value_str)
+                attr_values_objs.append(val_obj)
+                variant_name_suffix.append(value_str)
+                variant_code_suffix.append(slugify(value_str)[:3].upper())
+            
+            variant_name = f"{parent.name} - {' '.join(variant_name_suffix)}"
+            # Generate code: PARENT-COL-SIZ
+            variant_code = f"{parent.code}-{''.join(variant_code_suffix)}"
+            
+            if Product.objects.filter(code=variant_code).exists():
+                continue
+                
+            variant = Product.objects.create(
+                name=variant_name,
+                code=variant_code,
+                category=parent.category,
+                product_type=parent.product_type,
+                sale_price=parent.sale_price,
+                variant_of=parent
+            )
+            variant.attribute_values.set(attr_values_objs)
+            variants_created.append(variant.code)
+            
+        return Response({"message": f"{len(variants_created)} variantes creadas", "variants": variants_created})
+
+class ProductAttributeViewSet(viewsets.ModelViewSet):
+    queryset = ProductAttribute.objects.all()
+    serializer_class = ProductAttributeSerializer
+
+class ProductAttributeValueViewSet(viewsets.ModelViewSet):
+    queryset = ProductAttributeValue.objects.all()
+    serializer_class = ProductAttributeValueSerializer
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = ProductCategory.objects.all()

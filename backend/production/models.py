@@ -5,6 +5,7 @@ from inventory.models import Product, Warehouse
 
 class WorkOrder(models.Model):
     class Status(models.TextChoices):
+        DRAFT = 'DRAFT', _('Borrador')
         PLANNED = 'PLANNED', _('Planificada')
         IN_PROGRESS = 'IN_PROGRESS', _('En Proceso')
         FINISHED = 'FINISHED', _('Terminada')
@@ -21,15 +22,20 @@ class WorkOrder(models.Model):
         help_text="Nota de Venta asociada"
     )
     
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.PLANNED)
+    sale_line = models.ForeignKey(
+        'sales.SaleLine',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='work_orders',
+        help_text="Línea de venta asociada"
+    )
+    
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     
     # Specs
     specifications = models.TextField(_("Especificaciones Técnicas"), blank=True, help_text="Papel, Tintas, Terminaciones, etc.")
-    qty_planned = models.IntegerField(_("Cantidad Planificada"), default=0)
-    qty_produced = models.IntegerField(_("Cantidad Producida"), default=0)
 
-    start_date = models.DateField(_("Fecha Inicio"), null=True, blank=True)
-    due_date = models.DateField(_("Fecha Entrega"), null=True, blank=True)
+    estimated_completion_date = models.DateField(_("Fecha Estimada de Finalización"), null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,6 +46,21 @@ class WorkOrder(models.Model):
 
     def __str__(self):
         return f"OT-{self.number} {self.description}"
+    
+    @property
+    def product_info(self):
+        """
+        Returns product information if associated with a sale line.
+        """
+        if self.sale_line and self.sale_line.product:
+            product = self.sale_line.product
+            return {
+                'code': product.code,
+                'name': product.name,
+                'quantity': float(self.sale_line.quantity),
+                'unit_price': float(self.sale_line.unit_price),
+            }
+        return None
     
     def save(self, *args, **kwargs):
         if not self.number:
@@ -76,3 +97,69 @@ class ProductionConsumption(models.Model):
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity} (OT-{self.work_order.number})"
+
+class BillOfMaterials(models.Model):
+    """
+    Lista de materiales para productos fabricables.
+    Define qué materiales se necesitan para producir 1 unidad del producto.
+    """
+    product = models.ForeignKey(
+        Product, 
+        on_delete=models.CASCADE, 
+        related_name='boms',
+        limit_choices_to={'product_type': 'MANUFACTURABLE'},
+        help_text="Producto fabricable"
+    )
+    name = models.CharField(_("Nombre"), max_length=255, help_text="Ej: BOM Camiseta Roja v1")
+    active = models.BooleanField(_("Activo"), default=True, help_text="Solo puede haber un BOM activo por producto")
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Lista de Materiales (BOM)")
+        verbose_name_plural = _("Listas de Materiales (BOMs)")
+        ordering = ['-active', '-created_at']
+
+    def __str__(self):
+        status = "✓" if self.active else "✗"
+        return f"{status} {self.name} - {self.product.name}"
+    
+    def save(self, *args, **kwargs):
+        # If this BOM is being set as active, deactivate other BOMs for the same product
+        if self.active:
+            BillOfMaterials.objects.filter(product=self.product, active=True).exclude(pk=self.pk).update(active=False)
+        super().save(*args, **kwargs)
+
+class BillOfMaterialsLine(models.Model):
+    """
+    Línea individual de la lista de materiales.
+    Especifica un componente necesario para fabricar el producto.
+    """
+    bom = models.ForeignKey(BillOfMaterials, on_delete=models.CASCADE, related_name='lines')
+    component = models.ForeignKey(
+        Product, 
+        on_delete=models.PROTECT, 
+        related_name='used_in_boms',
+        help_text="Producto componente/material"
+    )
+    quantity = models.DecimalField(
+        _("Cantidad"), 
+        max_digits=12, 
+        decimal_places=4,
+        help_text="Cantidad necesaria por unidad producida"
+    )
+    unit = models.CharField(_("Unidad"), max_length=20, default='UN')
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    sequence = models.IntegerField(_("Secuencia"), default=10, help_text="Orden de visualización")
+
+    class Meta:
+        verbose_name = _("Línea de BOM")
+        verbose_name_plural = _("Líneas de BOM")
+        ordering = ['sequence', 'id']
+        unique_together = [['bom', 'component']]
+
+    def __str__(self):
+        return f"{self.component.code} x {self.quantity} {self.unit}"

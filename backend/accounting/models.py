@@ -211,28 +211,6 @@ class AccountingSettings(models.Model):
     default_tax_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_payable')
     default_inventory_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_inventory')
 
-    # Payment Method Accounts (Treasury Accounts)
-    default_cash_treasury_account = models.ForeignKey(
-        'treasury.TreasuryAccount', 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
-        related_name='+',
-        verbose_name=_("Caja Predeterminada (Efectivo)")
-    )
-    default_card_treasury_account = models.ForeignKey(
-        'treasury.TreasuryAccount', 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
-        related_name='+',
-        verbose_name=_("Cuenta Predeterminada (Tarjeta)")
-    )
-    default_transfer_treasury_account = models.ForeignKey(
-        'treasury.TreasuryAccount', 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
-        related_name='+',
-        verbose_name=_("Cuenta Predeterminada (Transferencia)")
-    )
 
     # Inventory Config
     inventory_valuation_method = models.CharField(

@@ -18,7 +18,8 @@ import { Badge } from "@/components/ui/badge"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Progress } from "@/components/ui/progress"
-import { Banknote, Eye } from "lucide-react"
+import { Banknote, Eye, TrendingDown } from "lucide-react"
+import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 
 interface PurchaseOrder {
     id: number
@@ -48,6 +49,7 @@ export default function PurchaseOrdersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [payingOrder, setPayingOrder] = useState<PurchaseOrder | null>(null)
+    const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null)
 
     const fetchOrders = async () => {
         try {
@@ -94,14 +96,8 @@ export default function PurchaseOrdersPage() {
         }
     }
 
-    const handleReceive = async (id: number) => {
-        try {
-            await api.post(`/purchasing/orders/${id}/receive/`)
-            toast.success("Mercadería recibida e inventario actualizado.")
-            fetchOrders()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al recibir.")
-        }
+    const handleReceive = (order: PurchaseOrder) => {
+        setReceivingOrder(order)
     }
 
     const handleInvoice = async (order: PurchaseOrder) => {
@@ -251,7 +247,7 @@ export default function PurchaseOrdersPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-orange-600"
-                                                onClick={() => handleReceive(order.id)}
+                                                onClick={() => handleReceive(order)}
                                                 title="Recibir Mercadería"
                                             >
                                                 <Package className="h-4 w-4" />
@@ -326,6 +322,15 @@ export default function PurchaseOrdersPage() {
                     total={parseFloat(payingOrder.total)}
                     pendingAmount={payingOrder.pending_amount}
                     onConfirm={handlePayment}
+                />
+            )}
+
+            {receivingOrder && (
+                <ReceiptModal
+                    open={!!receivingOrder}
+                    onOpenChange={(open) => !open && setReceivingOrder(null)}
+                    orderId={receivingOrder.id}
+                    onSuccess={fetchOrders}
                 />
             )}
         </div>

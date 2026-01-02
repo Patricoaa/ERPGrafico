@@ -96,7 +96,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="w-full justify-between"
+                        className="flex-1 justify-between"
                     >
                         {selectedAccount
                             ? `${selectedAccount.code} - ${selectedAccount.name}`

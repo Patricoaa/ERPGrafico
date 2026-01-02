@@ -69,6 +69,7 @@ const items = [
         icon: Printer,
         items: [
             { title: "Ordenes de Trabajo", url: "/production/orders" },
+            { title: "Materiales (BOM)", url: "/production/boms" },
         ]
     },
     {

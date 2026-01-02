@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Customer, SaleOrder, SaleLine, SalesSettings
+from .models import Customer, SaleOrder, SaleLine, SalesSettings, SaleDelivery, SaleDeliveryLine
 from treasury.serializers import PaymentSerializer
 from inventory.models import Product
 from django.db.models import Sum
@@ -16,10 +16,11 @@ class SalesSettingsSerializer(serializers.ModelSerializer):
 
 class SaleLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
+    quantity_pending = serializers.ReadOnlyField()
     
     class Meta:
         model = SaleLine
-        fields = ['id', 'product', 'product_name', 'description', 'quantity', 'unit_price', 'tax_rate', 'subtotal']
+        fields = ['id', 'product', 'product_name', 'description', 'quantity', 'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 'quantity_pending']
 
 class SaleOrderSerializer(serializers.ModelSerializer):
     lines = SaleLineSerializer(many=True, read_only=True)
@@ -86,3 +87,20 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         order.save()
         
         return order
+
+class SaleDeliveryLineSerializer(serializers.ModelSerializer):
+    product_code = serializers.CharField(source='product.code', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    
+    class Meta:
+        model = SaleDeliveryLine
+        fields = '__all__'
+
+class SaleDeliverySerializer(serializers.ModelSerializer):
+    lines = SaleDeliveryLineSerializer(many=True, read_only=True)
+    sale_order_number = serializers.CharField(source='sale_order.number', read_only=True)
+    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    
+    class Meta:
+        model = SaleDelivery
+        fields = '__all__'
