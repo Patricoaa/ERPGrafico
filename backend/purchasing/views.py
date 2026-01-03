@@ -22,6 +22,18 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             return WritePurchaseOrderSerializer
         return PurchaseOrderSerializer
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response({'error': 'Solo se pueden editar órdenes en estado Borrador.'}, status=status.HTTP_400_BAD_REQUEST)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response({'error': 'Solo se pueden editar órdenes en estado Borrador.'}, status=status.HTTP_400_BAD_REQUEST)
+        return super().partial_update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         PurchasingService.delete_purchase_order(instance)
@@ -94,11 +106,37 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['get'])
-    def receipts(self, request, pk=None):
-        order = self.get_object()
-        receipts = order.receipts.all()
         return Response(PurchaseReceiptSerializer(receipts, many=True).data)
+
+    @action(detail=True, methods=['post'])
+    def register_note(self, request, pk=None):
+        order = self.get_object()
+        try:
+            note_type = request.data.get('note_type')
+            amount_net = Decimal(str(request.data.get('amount_net', '0')))
+            amount_tax = Decimal(str(request.data.get('amount_tax', '0')))
+            document_number = request.data.get('document_number')
+            document_attachment = request.FILES.get('document_attachment')
+            return_items = request.data.get('return_items', []) # [{product_id, quantity}]
+
+            invoice = PurchasingService.create_note(
+                order=order,
+                note_type=note_type,
+                amount_net=amount_net,
+                amount_tax=amount_tax,
+                document_number=document_number,
+                document_attachment=document_attachment,
+                return_items=return_items
+            )
+
+            from billing.serializers import InvoiceSerializer
+            return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class PurchaseReceiptViewSet(viewsets.ModelViewSet):
     queryset = PurchaseReceipt.objects.all()

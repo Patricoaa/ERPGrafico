@@ -140,7 +140,7 @@ export function PaymentDialog({
                                 </div>
                                 <div className="grid gap-2">
                                     <Label className="text-[10px] font-bold uppercase">
-                                        {existingInvoice ? "Documento Adjunto" : "Adjuntar Documento (Obligatorio)"}
+                                        {existingInvoice ? "Documento Adjunto" : "Adjuntar Documento (Opcional)"}
                                     </Label>
                                     {!existingInvoice ? (
                                         <div className="flex gap-2">
@@ -283,7 +283,7 @@ export function PaymentDialog({
                         })}
                         disabled={
                             (paymentMethod !== 'CREDIT' && parseFloat(amount) <= 0) ||
-                            (isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && (!documentReference || !documentAttachment)) ||
+                            (isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference) ||
                             (isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)
                         }
                     >

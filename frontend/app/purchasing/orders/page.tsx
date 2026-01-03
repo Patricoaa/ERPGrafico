@@ -15,12 +15,13 @@ import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { Banknote, Eye, TrendingDown, FileBadge } from "lucide-react"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { Progress } from "@/components/ui/progress"
-import { Banknote, Eye, TrendingDown } from "lucide-react"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
+import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
 
 interface PurchaseOrder {
     id: number
@@ -59,6 +60,7 @@ export default function PurchaseOrdersPage() {
     const [payingOrder, setPayingOrder] = useState<PurchaseOrder | null>(null)
     const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
+    const [notingOrder, setNotingOrder] = useState<PurchaseOrder | null>(null)
 
 
     const fetchOrders = async () => {
@@ -222,7 +224,8 @@ export default function PurchaseOrdersPage() {
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleEdit(order)}
-                                            title="Editar"
+                                            title={order.status === 'DRAFT' ? "Editar" : "Solo se puede editar en Borrador"}
+                                            disabled={order.status !== 'DRAFT'}
                                         >
                                             <Pencil className="h-4 w-4 text-orange-500" />
                                         </Button>
@@ -260,6 +263,18 @@ export default function PurchaseOrdersPage() {
                                                 title="Registrar Factura/Boleta"
                                             >
                                                 <FileText className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {['RECEIVED', 'INVOICED', 'CONFIRMED', 'PAID'].includes(order.status) && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-amber-600"
+                                                onClick={() => setNotingOrder(order)}
+                                                title="Registrar Nota Crédito/Débito"
+                                            >
+                                                <FileBadge className="h-4 w-4" />
                                             </Button>
                                         )}
 
@@ -352,6 +367,16 @@ export default function PurchaseOrdersPage() {
                     onOpenChange={(open) => !open && setInvoicingOrder(null)}
                     orderId={invoicingOrder.id}
                     orderNumber={invoicingOrder.number}
+                    onSuccess={fetchOrders}
+                />
+            )}
+
+            {notingOrder && (
+                <PurchaseNoteModal
+                    open={!!notingOrder}
+                    onOpenChange={(open: boolean) => !open && setNotingOrder(null)}
+                    orderId={notingOrder.id}
+                    orderNumber={notingOrder.number}
                     onSuccess={fetchOrders}
                 />
             )}

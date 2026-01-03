@@ -259,6 +259,99 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
+    def create_note(order: PurchaseOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
+                    document_number: str, document_attachment=None, return_items=None):
+        """
+        Integral creation of a Credit or Debit Note linked to a Purchase Order.
+        - note_type: NOTA_CREDITO or NOTA_DEBITO
+        - return_items: list of { 'product_id': int, 'quantity': float } (optional, for returns)
+        """
+        from billing.models import Invoice
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from inventory.models import StockMove
+        
+        total_amount = amount_net + amount_tax
+        
+        # 1. Create Invoice Note
+        invoice = Invoice.objects.create(
+            dte_type=note_type,
+            number=document_number,
+            document_attachment=document_attachment,
+            purchase_order=order,
+            total_net=amount_net,
+            total_tax=amount_tax,
+            total=total_amount,
+            status=Invoice.Status.POSTED
+        )
+
+        # 2. Accounting logic
+        settings = AccountingSettings.objects.first()
+        entry = JournalEntry.objects.create(
+            date=timezone.now().date(),
+            description=f"{invoice.get_dte_type_display()} {document_number} (Ref OC-{order.number})",
+            reference=f"NOTE-{invoice.id}",
+            state=JournalEntry.State.DRAFT
+        )
+
+        payable_account = (order.supplier.payable_account) or (settings.default_payable_account if settings else None)
+        if not payable_account:
+            raise ValidationError("No se encontró cuenta por pagar para el proveedor.")
+
+        if note_type == Invoice.DTEType.NOTA_CREDITO:
+            # Credit Note: Reduces debt -> Debit AP
+            JournalItem.objects.create(entry=entry, account=payable_account, debit=total_amount, credit=0, partner=order.supplier.name)
+            
+            # Counterpart: Credit Inventory/Expense
+            if return_items:
+                for item in return_items:
+                    from inventory.models import Product
+                    product = Product.objects.get(pk=item['product_id'])
+                    qty = Decimal(str(item['quantity']))
+                    
+                    # Create Stock Move (OUT)
+                    StockMove.objects.create(
+                        date=timezone.now().date(),
+                        product=product,
+                        warehouse=order.warehouse,
+                        quantity=-qty,
+                        move_type=StockMove.Type.OUT,
+                        description=f"Retorno por Nota de Crédito {document_number}",
+                        journal_entry=entry
+                    )
+                
+                # Global Credit to Inventory/Expense to balance
+                credit_account = settings.default_inventory_account if settings else None
+                JournalItem.objects.create(entry=entry, account=credit_account, debit=0, credit=amount_net)
+            else:
+                credit_account = settings.default_expense_account or settings.default_inventory_account
+                JournalItem.objects.create(entry=entry, account=credit_account, debit=0, credit=amount_net)
+            
+            # Tax credit (IVA)
+            if amount_tax > 0:
+                tax_account = settings.default_tax_receivable_account
+                JournalItem.objects.create(entry=entry, account=tax_account, debit=0, credit=amount_tax)
+
+        else: # NOTA_DEBITO
+            # Debit Note: Increases debt -> Credit AP
+            JournalItem.objects.create(entry=entry, account=payable_account, debit=0, credit=total_amount, partner=order.supplier.name)
+            
+            # Counterpart: Debit Inventory/Expense
+            debit_account = settings.default_expense_account or settings.default_inventory_account
+            JournalItem.objects.create(entry=entry, account=debit_account, debit=amount_net, credit=0)
+            
+            # Tax payable (IVA)
+            if amount_tax > 0:
+                tax_account = settings.default_tax_receivable_account
+                JournalItem.objects.create(entry=entry, account=tax_account, debit=amount_tax, credit=0)
+
+        JournalEntryService.post_entry(entry)
+        invoice.journal_entry = entry
+        invoice.save()
+        
+        return invoice
+
+    @staticmethod
+    @transaction.atomic
     def delete_receipt(receipt: PurchaseReceipt):
         """
         Deletes a purchase receipt, its journal entry, and associated stock moves.

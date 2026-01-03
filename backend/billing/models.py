@@ -9,6 +9,8 @@ class Invoice(models.Model):
         FACTURA = 'FACTURA', _('Factura Electrónica')
         BOLETA = 'BOLETA', _('Boleta Electrónica')
         PURCHASE_INV = 'PURCHASE_INV', _('Factura de Compra')
+        NOTA_CREDITO = 'NOTA_CREDITO', _('Nota de Crédito')
+        NOTA_DEBITO = 'NOTA_DEBITO', _('Nota de Débito')
 
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')

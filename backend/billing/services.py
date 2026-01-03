@@ -312,5 +312,8 @@ class BillingService:
         if invoice.journal_entry:
             invoice.journal_entry.delete()
         
+        # 2.5 Delete reconciliation journal entries (RECO-...)
+        JournalEntry.objects.filter(reference=f"RECO-{invoice.id}").delete()
+        
         # 3. Delete invoice
         invoice.delete()
