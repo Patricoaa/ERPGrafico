@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Supplier, PurchaseOrder, PurchaseReceipt
-from .serializers import SupplierSerializer, PurchaseOrderSerializer, CreatePurchaseOrderSerializer, PurchaseReceiptSerializer
+from .serializers import SupplierSerializer, PurchaseOrderSerializer, WritePurchaseOrderSerializer, PurchaseReceiptSerializer
 from .services import PurchasingService
 from inventory.models import Warehouse
 from django.core.exceptions import ValidationError
@@ -18,8 +18,8 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     queryset = PurchaseOrder.objects.all()
     
     def get_serializer_class(self):
-        if self.action == 'create':
-            return CreatePurchaseOrderSerializer
+        if self.action in ['create', 'update', 'partial_update']:
+            return WritePurchaseOrderSerializer
         return PurchaseOrderSerializer
 
     def destroy(self, request, *args, **kwargs):
