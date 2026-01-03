@@ -30,10 +30,11 @@ interface ProductSelectorProps {
     onChange: (value: string | null) => void
     placeholder?: string
     productType?: string
-    showAllVariants?: boolean // New prop to control if we want to see variants in the list
+    showAllVariants?: boolean
+    disabled?: boolean
 }
 
-export function ProductSelector({ value, onChange, placeholder = "Seleccionar producto...", productType, showAllVariants = true }: ProductSelectorProps) {
+export function ProductSelector({ value, onChange, placeholder = "Seleccionar producto...", productType, showAllVariants = true, disabled = false }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
@@ -121,21 +122,22 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
     }
 
     return (
-        <div className="flex gap-2 w-full">
+        <div className="flex gap-2 w-full min-w-0">
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="w-full justify-between h-9 px-3"
+                        disabled={disabled}
+                        className="flex-1 justify-between h-9 px-3 min-w-0"
                     >
                         <div className="flex items-center gap-2 truncate">
                             {selectedProduct ? (
                                 <>
-                                    <span className="font-medium">{selectedProduct.code} - {selectedProduct.name}</span>
+                                    <span className="font-medium truncate">{selectedProduct.code} - {selectedProduct.name}</span>
                                     {selectedProduct.attribute_values?.length > 0 && (
-                                        <div className="flex gap-0.5 scale-75 origin-left">
+                                        <div className="flex gap-0.5 scale-75 origin-left shrink-0">
                                             {selectedProduct.attribute_values.map((av: any) => (
                                                 <Badge key={av.id} variant="outline" className="text-[9px] px-1 py-0 h-4 bg-muted/50">
                                                     {av.value}
@@ -145,13 +147,13 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                                     )}
                                 </>
                             ) : (
-                                <span className="text-muted-foreground">{placeholder}</span>
+                                <span className="text-muted-foreground truncate">{placeholder}</span>
                             )}
                         </div>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[350px] p-0">
+                <PopoverContent className="w-[350px] p-0" align="start">
                     <div className="p-2">
                         <div className="flex items-center px-3 border rounded-md mb-2">
                             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
@@ -240,6 +242,7 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                     <div className="space-y-4 pt-4 flex-1 overflow-hidden flex flex-col">
                         <div className="flex gap-2">
                             <Input
+                                autoFocus
                                 placeholder="Filtrar por código, nombre o atributos..."
                                 value={searchTerm}
                                 onChange={(e) => searchProducts(e.target.value)}

@@ -142,6 +142,28 @@ export default function POSPage() {
         setCheckoutOpen(true)
     }
 
+    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            const term = searchTerm.toLowerCase().trim()
+            if (!term) return
+
+            // 1. Try exact code match
+            const exactMatch = products.find(p => p.code.toLowerCase() === term && p.variant_of === null)
+            if (exactMatch) {
+                addToCart(exactMatch)
+                setSearchTerm("")
+                return
+            }
+
+            // 2. If not exact, check if filtered list has exactly one result
+            if (filteredProducts.length === 1) {
+                addToCart(filteredProducts[0])
+                setSearchTerm("")
+            }
+        }
+    }
+
     const handleCheckoutConfirm = async (data: { dteType?: string, paymentMethod: string, amount?: number, transaction_number?: string, is_pending_registration?: boolean, treasury_account_id?: string | null }) => {
         setCheckoutOpen(false)
         setLoading(true)
@@ -212,6 +234,8 @@ export default function POSPage() {
                                     className="pl-8"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyDown={handleSearchKeyDown}
+                                    autoFocus
                                 />
                             </div>
                         </CardHeader>
@@ -220,7 +244,7 @@ export default function POSPage() {
                                 {filteredProducts.map(product => (
                                     <Card
                                         key={product.id}
-                                        className="cursor-pointer hover:border-primary transition-all active:scale-95"
+                                        className="cursor-pointer hover:border-primary transition-all active:scale-95 relative"
                                         onClick={() => addToCart(product)}
                                     >
                                         <CardContent className="p-4 text-center space-y-1">

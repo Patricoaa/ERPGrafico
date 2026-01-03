@@ -53,11 +53,9 @@ export function BomForm({ open, onOpenChange, onSuccess, initialData }: BomFormP
     const [active, setActive] = useState(true)
     const [lines, setLines] = useState<BomLine[]>([])
     const [loading, setLoading] = useState(false)
-    const [manufacturableProducts, setManufacturableProducts] = useState<Product[]>([])
 
     useEffect(() => {
         if (open) {
-            fetchManufacturableProducts()
             if (initialData) {
                 setName(initialData.name)
                 setProduct(initialData.product)
@@ -68,17 +66,6 @@ export function BomForm({ open, onOpenChange, onSuccess, initialData }: BomFormP
             }
         }
     }, [open, initialData])
-
-    const fetchManufacturableProducts = async () => {
-        try {
-            // Need an endpoint to filter by type=MANUFACTURABLE
-            // Assuming API supports ?product_type=MANUFACTURABLE
-            const response = await api.get('/inventory/products/?product_type=MANUFACTURABLE')
-            setManufacturableProducts(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching products:", error)
-        }
-    }
 
     const resetForm = () => {
         setName("")
@@ -171,22 +158,13 @@ export function BomForm({ open, onOpenChange, onSuccess, initialData }: BomFormP
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="product">Producto a Fabricar</Label>
-                            <Select
-                                value={product?.toString()}
-                                onValueChange={(v) => setProduct(Number(v))}
+                            <ProductSelector
+                                value={product}
+                                onChange={(val) => setProduct(val ? Number(val) : null)}
                                 disabled={!!initialData}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar producto..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {manufacturableProducts.map(p => (
-                                        <SelectItem key={p.id} value={p.id.toString()}>
-                                            {p.name} ({p.code})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                productType="MANUFACTURABLE"
+                                placeholder="Seleccionar producto a fabricar..."
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="name">Nombre / Versión</Label>

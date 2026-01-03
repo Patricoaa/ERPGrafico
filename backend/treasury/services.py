@@ -30,18 +30,20 @@ class TreasuryService:
                  pass
         
         if not treasury_account:
-            from accounting.models import AccountingSettings
-            settings = AccountingSettings.objects.first()
-            if settings:
-                if payment_method == Payment.Method.CASH:
-                    treasury_account = settings.default_cash_treasury_account
-                elif payment_method == Payment.Method.CARD:
-                    treasury_account = settings.default_card_treasury_account
-                elif payment_method == Payment.Method.TRANSFER:
-                    treasury_account = settings.default_transfer_treasury_account
+        if not treasury_account:
+            # Fallback: Find the first available treasury account of the correct type
+            if payment_method == Payment.Method.CASH:
+                treasury_account = TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.CASH).first()
+            else:
+                # For Card/Transfer, prefer Bank, but fallback to any valid account if needed logic could be added
+                treasury_account = TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.BANK).first()
         
         if not treasury_account:
-             raise ValidationError(f"No se ha configurado una cuenta de tesorería para el método {payment_method} y no se especificó una manualmente.")
+             # Last resort: just get ANY treasury account
+             treasury_account = TreasuryAccount.objects.first()
+
+        if not treasury_account:
+             raise ValidationError(f"No se ha configurado ninguna cuenta de tesorería (Caja o Banco). Cree una en Tesorería -> Cuentas.")
              
         # Resolve Financial Account from Treasury Account
         financial_account = treasury_account.account
