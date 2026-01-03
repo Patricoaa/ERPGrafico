@@ -86,7 +86,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 document_reference=document_reference,
                 document_attachment=document_attachment
             )
-            return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+            if payment:
+                return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Acción de crédito procesada (documento registrado)'}, status=status.HTTP_200_OK)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -144,6 +146,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 document_attachment=document_attachment
             )
             
-            return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+            if payment:
+                return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Acción de crédito procesada (documento registrado)'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

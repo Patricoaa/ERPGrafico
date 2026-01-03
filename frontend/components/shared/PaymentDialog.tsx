@@ -196,6 +196,12 @@ export function PaymentDialog({
                                     </Button>
                                 ))}
                             </div>
+                            {paymentMethod === 'CREDIT' && (
+                                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900 rounded-md text-[10px] text-amber-700 dark:text-amber-400">
+                                    <p className="font-bold mb-1">Nota sobre Venta/Compra a Crédito:</p>
+                                    <p>Esta opción no genera un movimiento de caja. Solo servirá para registrar el documento (Factura/Boleta) y generar la deuda en la cuenta corriente del {isPurchase ? 'proveedor' : 'cliente'}.</p>
+                                </div>
+                            )}
                         </div>
 
                         {paymentMethod !== 'CREDIT' && (
@@ -281,7 +287,9 @@ export function PaymentDialog({
                             (isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)
                         }
                     >
-                        {paymentMethod === 'CREDIT' ? 'Confirmar Crédito' : 'Confirmar Pago'}
+                        {paymentMethod === 'CREDIT' ? (
+                            existingInvoice ? 'Mantener en Cuenta Corriente' : 'Confirmar Venta/Compra a Crédito'
+                        ) : 'Confirmar Pago'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

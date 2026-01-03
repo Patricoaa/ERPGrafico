@@ -62,6 +62,11 @@ class TreasuryService:
                 dte_type=dte_type,
                 document_attachment=document_attachment
             )
+        
+        # 1.6 If method is CREDIT, we DON'T create a Payment record or Journal Entry.
+        # We only wanted the invoice creation (which happened above).
+        if payment_method == Payment.Method.CREDIT:
+             return None
 
         # 2. Create Payment Record
         payment = Payment.objects.create(
