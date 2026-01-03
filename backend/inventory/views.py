@@ -10,9 +10,20 @@ from django.utils.text import slugify
 
 from core.mixins import BulkImportMixin
 
+from .filters import ProductFilter
+
 class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filterset_class = ProductFilter
+
+    def perform_update(self, serializer):
+        sync_variants_price = self.request.data.get('sync_variants_price', False)
+        instance = serializer.save()
+        
+        if sync_variants_price and not instance.variant_of:
+            # Update all variants with the new parent price
+            instance.variants.all().update(sale_price=instance.sale_price)
 
     @action(detail=False, methods=['get'])
     def stock_report(self, request):

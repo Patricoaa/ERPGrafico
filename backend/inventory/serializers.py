@@ -23,15 +23,31 @@ class ProductSerializer(serializers.ModelSerializer):
     current_stock = serializers.SerializerMethodField()
     attribute_values = ProductAttributeValueSerializer(many=True, read_only=True)
     variants_count = serializers.IntegerField(source='variants.count', read_only=True)
+    total_stock = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
         fields = '__all__'
 
     def get_current_stock(self, obj):
-        # Calculate stock based on sum of moves
+        # Calculate stock based on sum of moves for this specific product
         from django.db.models import Sum
         return obj.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
+
+    def get_total_stock(self, obj):
+        # For parents, sum all variant moves plus its own moves
+        # For variants/simple, it's the same as current_stock
+        from django.db.models import Sum, Q
+        from .models import StockMove
+        
+        if obj.variants.exists():
+            # Sum moves of this product AND all its variants
+            total = StockMove.objects.filter(
+                Q(product=obj) | Q(product__variant_of=obj)
+            ).aggregate(total=Sum('quantity'))['total'] or 0.0
+            return float(total)
+        
+        return self.get_current_stock(obj)
 
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:

@@ -9,7 +9,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5432:5432"
+      - "54321:5432"
 
   redis:
     image: redis:7-alpine
@@ -18,7 +18,7 @@ services:
       - "6379:6379"
 
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
@@ -40,16 +40,23 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    user: "root"
     command: npm run dev
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.next
+      - /app/.turbo
     ports:
       - "3000:3000"
     depends_on:
       - backend
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_OTEL_FETCH_DISABLED=1
+      - TURBO_CACHE_DIR=/tmp/.turbo
+      - TURBO_DATABASE_DIR=/tmp/turbo-db
 
 volumes:
   postgres_data:

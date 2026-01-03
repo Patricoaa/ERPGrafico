@@ -10,3 +10,4 @@ gunicorn
 python-dotenv
 dj-database-url
 reportlab
+django-filter

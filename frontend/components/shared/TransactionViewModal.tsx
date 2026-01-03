@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
 import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash } from "lucide-react"
+import { translateStatus, translatePaymentMethod } from "@/lib/utils"
 
 interface TransactionViewModalProps {
     open: boolean
@@ -98,7 +99,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                     <CardContent className="p-4">
                                         <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Estado</div>
                                         <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
-                                            {data.status || data.state}
+                                            {translateStatus(data.status || data.state)}
                                         </Badge>
                                     </CardContent>
                                 </Card>

@@ -42,6 +42,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { AttributeBadges } from "@/components/shared/AttributeBadges"
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
@@ -268,47 +270,30 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         control={form.control}
                                                         name={`lines.${index}.product`}
                                                         render={({ field }) => (
-                                                            <Select
-                                                                onValueChange={(value) => {
-                                                                    field.onChange(value)
-                                                                    // Auto-populate price and description from product
-                                                                    const selectedProduct = products.find(p => p.id.toString() === value)
-                                                                    if (selectedProduct) {
-                                                                        form.setValue(`lines.${index}.unit_price`, parseFloat(selectedProduct.sale_price))
-                                                                        form.setValue(`lines.${index}.description`, selectedProduct.name)
-                                                                    }
-                                                                }}
-                                                                value={field.value}
-                                                            >
-                                                                <FormControl>
-                                                                    <SelectTrigger>
-                                                                        <SelectValue placeholder="Seleccione producto" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    {products.filter(p => p.id).map((p) => {
-                                                                        const stock = p.current_stock || 0
-                                                                        const isStorable = p.product_type === 'STORABLE'
-                                                                        const hasStock = stock > 0
-                                                                        console.log(p.name, p.current_stock)
-                                                                        return (
-                                                                            <SelectItem key={p.id} value={p.id.toString()}>
-                                                                                <div className="flex items-center justify-between w-full min-w-[300px]">
-                                                                                    <span>{p.name}</span>
-                                                                                    {isStorable && (
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <span className={`text-xs ${hasStock ? 'text-green-600' : 'text-red-600'}`}>
-                                                                                                Stock: {stock}
-                                                                                            </span>
-                                                                                            <div className={`h-2 w-2 rounded-full ${hasStock ? 'bg-green-500' : 'bg-red-500'}`} />
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                            </SelectItem>
-                                                                        )
-                                                                    })}
-                                                                </SelectContent>
-                                                            </Select>
+                                                            <div className="space-y-1">
+                                                                <ProductSelector
+                                                                    value={field.value}
+                                                                    onChange={(value: string | null) => {
+                                                                        field.onChange(value)
+                                                                        // Auto-populate price and description from product
+                                                                        const selectedProduct = products.find(p => p.id.toString() === value)
+                                                                        if (selectedProduct) {
+                                                                            form.setValue(`lines.${index}.unit_price`, parseFloat(selectedProduct.sale_price))
+                                                                            form.setValue(`lines.${index}.description`, selectedProduct.name)
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                {field.value && (
+                                                                    <div className="pl-1">
+                                                                        {(() => {
+                                                                            const prod = products.find(p => p.id.toString() === field.value)
+                                                                            return prod?.attribute_values?.length > 0 && (
+                                                                                <AttributeBadges attributes={prod.attribute_values} />
+                                                                            )
+                                                                        })()}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     />
                                                 </TableCell>

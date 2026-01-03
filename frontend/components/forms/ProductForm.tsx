@@ -43,6 +43,7 @@ const productSchema = z.object({
     category: z.string().min(1, "La categoría es requerida"),
     product_type: z.enum(["STORABLE", "CONSUMABLE", "SERVICE", "MANUFACTURABLE"]),
     sale_price: z.string().min(0),
+    sync_variants_price: z.boolean().optional(),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -92,6 +93,7 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
             name: "",
             product_type: "STORABLE",
             sale_price: "0",
+            sync_variants_price: false,
         },
     })
 
@@ -276,6 +278,29 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                                     </FormItem>
                                 )}
                             />
+
+                            {initialData && initialData.variants_count > 0 && (
+                                <FormField
+                                    control={form.control}
+                                    name="sync_variants_price"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-xs">Sincronizar precio con variantes</FormLabel>
+                                                <div className="text-[10px] text-muted-foreground">
+                                                    Actualizará el precio de todas sus variantes al guardar.
+                                                </div>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
                         </div>
 
                         {!initialData && (

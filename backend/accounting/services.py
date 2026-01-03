@@ -61,7 +61,7 @@ class AccountingService:
             ('1.1.02.01', 'Clientes Locales', 'ASSET', '1.1.02'),
             ('1.1.03', 'Inventarios', 'ASSET', '1.1'),
             ('1.1.03.01', 'Mercaderías', 'ASSET', '1.1.03'),
-            ('1.1.04', 'IVA por Recuperar', 'ASSET', '1.1'),
+            ('1.1.04', 'IVA crédito fiscal', 'ASSET', '1.1'),
             
             ('2.1', 'Pasivos Corrientes', 'LIABILITY', None),
             ('2.1.01', 'Cuentas por Pagar', 'LIABILITY', '2.1'),

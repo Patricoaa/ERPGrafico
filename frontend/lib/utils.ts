@@ -4,3 +4,39 @@ import { twMerge } from "tailwind-merge"
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+export function translateStatus(status: string): string {
+  const map: Record<string, string> = {
+    'DRAFT': 'Borrador',
+    'CONFIRMED': 'Confirmado',
+    'INVOICED': 'Facturado',
+    'PAID': 'Pagado',
+    'CANCELLED': 'Anulado',
+    'RECEIVED': 'Recibido',
+    'PARTIAL_RECEIVED': 'Recibido Parcial',
+    'OPEN': 'Abierto',
+    'POSTED': 'Publicado',
+    'CANCEL': 'Cancelado',
+  }
+  return map[status.toUpperCase()] || status
+}
+
+export function translateProductType(type: string): string {
+  const map: Record<string, string> = {
+    'STORABLE': 'Almacenable',
+    'CONSUMABLE': 'Consumible',
+    'SERVICE': 'Servicio',
+    'MANUFACTURABLE': 'Fabricable',
+  }
+  return map[type.toUpperCase()] || type
+}
+
+export function translatePaymentMethod(method: string): string {
+  const map: Record<string, string> = {
+    'CASH': 'Efectivo',
+    'CARD': 'Tarjeta',
+    'TRANSFER': 'Transferencia',
+    'CREDIT': 'Crédito',
+  }
+  return map[method.toUpperCase()] || method
+}

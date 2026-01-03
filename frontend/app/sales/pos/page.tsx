@@ -16,6 +16,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { VariantPicker } from "@/components/shared/VariantPicker"
+import { AttributeBadges } from "@/components/shared/AttributeBadges"
 
 interface Product {
     id: number
@@ -25,6 +27,9 @@ interface Product {
     current_stock?: number
     product_type?: string
     unit_price?: string
+    variants_count?: number
+    variant_of?: number | null
+    attribute_values?: any[]
 }
 
 interface Customer {
@@ -46,6 +51,10 @@ export default function POSPage() {
     const [loading, setLoading] = useState(false)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
 
+    // Variant Picker State
+    const [pickerOpen, setPickerOpen] = useState(false)
+    const [pickingParent, setPickingParent] = useState<Product | null>(null)
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -64,11 +73,18 @@ export default function POSPage() {
     }, [])
 
     const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.code.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.code.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        p.variant_of === null // Only show parents in the grid for clarity
     )
 
     const addToCart = (product: Product) => {
+        if ((product.variants_count || 0) > 0) {
+            setPickingParent(product)
+            setPickerOpen(true)
+            return
+        }
+
         const existing = items.find(i => i.id === product.id)
         if (existing) {
             setItems(items.map(i => i.id === product.id
@@ -80,6 +96,22 @@ export default function POSPage() {
                 ...product,
                 qty: 1,
                 total: parseFloat(product.sale_price)
+            }])
+        }
+    }
+
+    const onVariantSelect = (variant: any) => {
+        const existing = items.find(i => i.id === variant.id)
+        if (existing) {
+            setItems(items.map(i => i.id === variant.id
+                ? { ...i, qty: i.qty + 1, total: (i.qty + 1) * parseFloat(i.sale_price) }
+                : i
+            ))
+        } else {
+            setItems([...items, {
+                ...variant,
+                qty: 1,
+                total: parseFloat(variant.sale_price)
             }])
         }
     }
@@ -235,7 +267,16 @@ export default function POSPage() {
                                     <TableBody>
                                         {items.map((item) => (
                                             <TableRow key={item.id}>
-                                                <TableCell className="max-w-[120px] truncate">{item.name}</TableCell>
+                                                <TableCell className="max-w-[120px]">
+                                                    <div className="flex flex-col">
+                                                        <span className="truncate font-medium">{item.name}</span>
+                                                        {item.attribute_values && item.attribute_values.length > 0 && (
+                                                            <div className="scale-75 origin-left -mt-1 -mb-1">
+                                                                <AttributeBadges attributes={item.attribute_values} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center justify-center gap-1">
                                                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(item.id, -1)}><Minus className="h-3 w-3" /></Button>
@@ -298,6 +339,13 @@ export default function POSPage() {
                 pendingAmount={total}
                 showDteSelector={true}
                 onConfirm={handleCheckoutConfirm}
+            />
+
+            <VariantPicker
+                open={pickerOpen}
+                onOpenChange={setPickerOpen}
+                parentProduct={pickingParent}
+                onSelect={onVariantSelect}
             />
         </div>
     )
