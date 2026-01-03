@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from decimal import Decimal
 
 class AccountType(models.TextChoices):
@@ -116,34 +116,50 @@ class JournalEntry(models.Model):
     @property
     def get_source_documents(self):
         docs = []
-        if hasattr(self, 'invoice'):
-            docs.append({
-                'type': 'invoice',
-                'id': self.invoice.id,
-                'name': str(self.invoice),
-                'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}'
-            })
-        if hasattr(self, 'payment'):
-            docs.append({
-                'type': 'payment',
-                'id': self.payment.id,
-                'name': f"Pago {self.payment.id}",
-                'url': '/treasury/payments'
-            })
-        if hasattr(self, 'sale_order'):
-            docs.append({
-                'type': 'sale_order',
-                'id': self.sale_order.id,
-                'name': str(self.sale_order),
-                'url': '/sales/orders'
-            })
-        if hasattr(self, 'purchase_order'):
-            docs.append({
-                'type': 'purchase_order',
-                'id': self.purchase_order.id,
-                'name': str(self.purchase_order),
-                'url': '/purchasing/orders'
-            })
+        try:
+            if hasattr(self, 'invoice'):
+                docs.append({
+                    'type': 'invoice',
+                    'id': self.invoice.id,
+                    'name': str(self.invoice),
+                    'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}'
+                })
+        except ObjectDoesNotExist:
+            pass
+
+        try:
+            if hasattr(self, 'payment'):
+                docs.append({
+                    'type': 'payment',
+                    'id': self.payment.id,
+                    'name': f"Pago {self.payment.id}",
+                    'url': '/treasury/payments'
+                })
+        except ObjectDoesNotExist:
+            pass
+
+        try:
+            if hasattr(self, 'sale_order'):
+                docs.append({
+                    'type': 'sale_order',
+                    'id': self.sale_order.id,
+                    'name': str(self.sale_order),
+                    'url': '/sales/orders'
+                })
+        except ObjectDoesNotExist:
+            pass
+
+        try:
+            if hasattr(self, 'purchase_order'):
+                docs.append({
+                    'type': 'purchase_order',
+                    'id': self.purchase_order.id,
+                    'name': str(self.purchase_order),
+                    'url': '/purchasing/orders'
+                })
+        except ObjectDoesNotExist:
+            pass
+
         if self.stock_moves.exists():
             for move in self.stock_moves.all():
                 docs.append({
@@ -156,20 +172,28 @@ class JournalEntry(models.Model):
 
     @property
     def get_source_document(self):
-        if hasattr(self, 'invoice'):
-            return {
-                'type': 'invoice',
-                'id': self.invoice.id,
-                'name': str(self.invoice),
-                'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}' # Simplified URL
-            }
-        if hasattr(self, 'payment'):
-            return {
-                'type': 'payment',
-                'id': self.payment.id,
-                'name': f"Pago {self.payment.id}",
-                'url': '/treasury/payments'
-            }
+        try:
+            if hasattr(self, 'invoice'):
+                return {
+                    'type': 'invoice',
+                    'id': self.invoice.id,
+                    'name': str(self.invoice),
+                    'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}' # Simplified URL
+                }
+        except ObjectDoesNotExist:
+            pass
+
+        try:
+            if hasattr(self, 'payment'):
+                return {
+                    'type': 'payment',
+                    'id': self.payment.id,
+                    'name': f"Pago {self.payment.id}",
+                    'url': '/treasury/payments'
+                }
+        except ObjectDoesNotExist:
+            pass
+
         if self.stock_moves.exists():
             move = self.stock_moves.first()
             return {

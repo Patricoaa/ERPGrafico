@@ -120,6 +120,8 @@ class TreasuryService:
             state=JournalEntry.State.DRAFT
         )
 
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
         
         if payment_type == Payment.Type.INBOUND:
              # Customer Payment: Debit Treasury, Credit AR
