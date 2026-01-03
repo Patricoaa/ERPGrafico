@@ -12,6 +12,9 @@ import {
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Eye } from "lucide-react"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
 interface StockMove {
     id: number
@@ -26,18 +29,21 @@ interface StockMove {
 export default function MovementsPage() {
     const [moves, setMoves] = useState<StockMove[]>([])
     const [loading, setLoading] = useState(true)
+    const [viewingMove, setViewingMove] = useState<number | null>(null)
+
+    const fetchMoves = async () => {
+        setLoading(true)
+        try {
+            const response = await api.get('/inventory/moves/')
+            setMoves(response.data.results || response.data)
+        } catch (error) {
+            console.error("Failed to fetch stock moves", error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
-        const fetchMoves = async () => {
-            try {
-                const response = await api.get('/inventory/moves/')
-                setMoves(response.data.results || response.data)
-            } catch (error) {
-                console.error("Failed to fetch stock moves", error)
-            } finally {
-                setLoading(false)
-            }
-        }
         fetchMoves()
     }, [])
 
@@ -68,23 +74,24 @@ export default function MovementsPage() {
                             <TableHead>Cant.</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Descripción</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-10">Cargando movimientos...</TableCell>
+                                <TableCell colSpan={7} className="text-center py-10">Cargando movimientos...</TableCell>
                             </TableRow>
                         ) : moves.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
+                                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
                             </TableRow>
                         ) : moves.map((move) => (
                             <TableRow key={move.id}>
                                 <TableCell>{new Date(move.date).toLocaleDateString()}</TableCell>
                                 <TableCell className="font-medium">{move.product_name}</TableCell>
                                 <TableCell>{move.warehouse_name}</TableCell>
-                                <TableCell className={parseFloat(move.quantity) > 0 ? "text-green-600" : "text-red-600 font-bold"}>
+                                <TableCell className={parseFloat(move.quantity) > 0 ? "text-green-600 font-medium" : "text-red-600 font-bold"}>
                                     {move.quantity}
                                 </TableCell>
                                 <TableCell>
@@ -93,11 +100,29 @@ export default function MovementsPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">{move.description}</TableCell>
+                                <TableCell className="text-right">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setViewingMove(move.id)}
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
             </div>
+
+            {viewingMove && (
+                <TransactionViewModal
+                    open={!!viewingMove}
+                    onOpenChange={(open) => !open && setViewingMove(null)}
+                    type="inventory"
+                    id={viewingMove}
+                />
+            )}
         </div>
     )
 }

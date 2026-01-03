@@ -12,7 +12,7 @@ import { translateStatus, translatePaymentMethod } from "@/lib/utils"
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry'
+    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory'
     id: number | string
     view?: 'details' | 'history' | 'all'
 }
@@ -36,6 +36,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
             else if (type === 'invoice') endpoint = `/billing/invoices/${id}/`
             else if (type === 'payment') endpoint = `/treasury/payments/${id}/`
             else if (type === 'journal_entry') endpoint = `/accounting/entries/${id}/`
+            else if (type === 'inventory') endpoint = `/inventory/moves/${id}/`
 
             const response = await api.get(endpoint)
             setData(response.data)
@@ -52,6 +53,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
         if (type === 'invoice') return `${data?.dte_type_display || 'Factura'} ${data?.number || ''}`
         if (type === 'payment') return `Pago ${data?.id || ''}`
         if (type === 'journal_entry') return `Asiento Contable ${data?.number || data?.id || ''}`
+        if (type === 'inventory') return `Movimiento de Inventario #${data?.id || ''}`
         return "Detalles de Transacción"
     }
 
@@ -60,6 +62,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
         if (type === 'purchase_order') return <FileText className="h-5 w-5" />
         if (type === 'invoice') return <Receipt className="h-5 w-5" />
         if (type === 'journal_entry') return <Hash className="h-5 w-5" />
+        if (type === 'inventory') return <ShoppingBag className="h-5 w-5 text-blue-600" />
         return <FileText className="h-5 w-5" />
     }
 
@@ -81,76 +84,144 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                     <div className="space-y-6 py-4">
                         {/* Summary Cards */}
                         {(view === 'all' || view === 'details') && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <Card>
                                     <CardContent className="p-4">
                                         <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {type === 'purchase_order' ? 'Proveedor' : (type === 'journal_entry' ? 'Referencia' : 'Cliente')}
+                                            {type === 'purchase_order' ? 'Proveedor' :
+                                                type === 'inventory' ? 'Producto' :
+                                                    (type === 'journal_entry' ? 'Referencia' : 'Cliente')}
                                         </div>
-                                        <div className="font-bold text-lg">
-                                            {type === 'journal_entry' ? (data.reference || '-') : (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
+                                        <div className="font-bold text-base truncate">
+                                            {type === 'journal_entry' ? (data.reference || '-') :
+                                                type === 'inventory' ? data.product_name :
+                                                    (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
+                                        </div>
+                                        {type === 'inventory' && <div className="text-[10px] text-muted-foreground font-mono">{data.product_code}</div>}
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                            {type === 'inventory' ? 'Almacén' : 'Fecha'}
+                                        </div>
+                                        <div className="font-bold text-base">
+                                            {type === 'inventory' ? data.warehouse_name : new Date(data.date || data.created_at).toLocaleDateString()}
                                         </div>
                                     </CardContent>
                                 </Card>
                                 <Card>
                                     <CardContent className="p-4">
-                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Fecha</div>
-                                        <div className="font-bold text-lg">{new Date(data.date || data.created_at).toLocaleDateString()}</div>
+                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                            {type === 'inventory' ? 'Fecha Mov.' : 'Estado'}
+                                        </div>
+                                        <div className="font-bold text-base">
+                                            {type === 'inventory' ? new Date(data.date).toLocaleDateString() : (
+                                                <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
+                                                    {translateStatus(data.status || data.state)}
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </CardContent>
                                 </Card>
                                 <Card>
                                     <CardContent className="p-4">
-                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Estado</div>
-                                        <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
-                                            {translateStatus(data.status || data.state)}
-                                        </Badge>
+                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                            {type === 'inventory' ? 'Tipo Mov.' : 'Total'}
+                                        </div>
+                                        <div className="font-bold text-base">
+                                            {type === 'inventory' ? (
+                                                <Badge variant={data.move_type === 'IN' ? 'default' : data.move_type === 'OUT' ? 'destructive' : 'outline'}>
+                                                    {data.move_type_display}
+                                                </Badge>
+                                            ) : `$${Number(data.total).toLocaleString()}`}
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>
                         )}
 
-                        {/* Line Items */}
+                        {/* Line Items or Movement Detail */}
                         {(view === 'all' || view === 'details') && (
                             <div className="space-y-2">
-                                <h3 className="font-bold text-lg border-b pb-2">Detalles</h3>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Descripción</TableHead>
-                                            <TableHead className="text-center w-[100px]">Cant.</TableHead>
-                                            <TableHead className="text-right w-[150px]">Precio Unit.</TableHead>
-                                            <TableHead className="text-right w-[150px]">Subtotal</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {(data.lines || data.items || []).map((item: any) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell>{item.description || item.product_name}</TableCell>
-                                                <TableCell className="text-center">{item.quantity}</TableCell>
-                                                <TableCell className="text-right">${Number(item.unit_price).toLocaleString()}</TableCell>
-                                                <TableCell className="text-right font-bold">${Number(item.subtotal).toLocaleString()}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                <h3 className="font-bold text-lg border-b pb-2">
+                                    {type === 'inventory' ? 'Información del Movimiento' : 'Detalles'}
+                                </h3>
 
-                                {/* Totals Section */}
-                                <div className="flex justify-end pt-4">
-                                    <div className="w-64 space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Neto</span>
-                                            <span>${Number(data.total_net).toLocaleString()}</span>
+                                {type === 'inventory' ? (
+                                    <div className="grid grid-cols-2 gap-8 py-2">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Descripción</h4>
+                                                <p className="text-sm font-medium">{data.description || 'Sin descripción'}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Cantidad</h4>
+                                                <p className={`text-xl font-bold ${parseFloat(data.quantity) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {data.quantity}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">IVA (19%)</span>
-                                            <span>${Number(data.total_tax).toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
-                                            <span>Total</span>
-                                            <span>${Number(data.total).toLocaleString()}</span>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Documento Contable</h4>
+                                                {data.journal_entry ? (
+                                                    <button
+                                                        onClick={() => {
+                                                            onOpenChange(false);
+                                                            // We assume some mechanism to switch view or just navigate
+                                                            // For now let's just show the number if we can't switch easily
+                                                        }}
+                                                        className="text-sm font-bold text-blue-600 hover:underline"
+                                                    >
+                                                        Asiento {data.journal_entry_number}
+                                                    </button>
+                                                ) : <span className="text-sm text-muted-foreground">No asociado</span>}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Descripción</TableHead>
+                                                    <TableHead className="text-center w-[100px]">Cant.</TableHead>
+                                                    <TableHead className="text-right w-[150px]">Precio Unit.</TableHead>
+                                                    <TableHead className="text-right w-[150px]">Subtotal</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {(data.lines || data.items || []).map((item: any) => (
+                                                    <TableRow key={item.id}>
+                                                        <TableCell>{item.description || item.product_name}</TableCell>
+                                                        <TableCell className="text-center">{item.quantity}</TableCell>
+                                                        <TableCell className="text-right">${Number(item.unit_price || item.unit_cost).toLocaleString()}</TableCell>
+                                                        <TableCell className="text-right font-bold">${Number(item.subtotal).toLocaleString()}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+
+                                        {/* Totals Section */}
+                                        <div className="flex justify-end pt-4">
+                                            <div className="w-64 space-y-2">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Neto</span>
+                                                    <span>${Number(data.total_net).toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">IVA (19%)</span>
+                                                    <span>${Number(data.total_tax).toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
+                                                    <span>Total</span>
+                                                    <span>${Number(data.total).toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
 

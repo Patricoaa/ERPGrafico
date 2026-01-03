@@ -240,10 +240,13 @@ export default function PurchaseOrdersPage() {
                                             </button>
                                         ))}
                                         {(order.related_documents?.receipts?.length ?? 0) > 0 && (
-                                            <div className="flex flex-col text-left items-start leading-tight">
+                                            <button
+                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
                                                 <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepciones</span>
-                                                <span className="text-[10px] text-muted-foreground">{order.related_documents?.receipts?.length} recep.</span>
-                                            </div>
+                                                <span className="text-[10px]">{order.related_documents?.receipts?.length} recep.</span>
+                                            </button>
                                         )}
                                         {(order.related_documents?.payments?.length ?? 0) > 0 && (
                                             <button

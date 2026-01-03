@@ -16,8 +16,8 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Input } from "@/components/ui/input"
-
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 
 interface Note {
     id: number
@@ -30,6 +30,12 @@ interface Note {
     purchase_order?: number
     pending_amount?: number
     supplier_name?: string
+    related_documents?: {
+        invoices: any[]
+        notes: any[]
+        receipts: any[]
+        payments: any[]
+    }
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" }> = {
@@ -43,8 +49,9 @@ export default function PurchaseNotesPage() {
     const [notes, setNotes] = useState<Note[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
-    const [viewingNote, setViewingNote] = useState<{ id: number | string } | null>(null)
+    const [viewingNote, setViewingNote] = useState<{ type: any, id: number | string, view?: any } | null>(null)
     const [payingNote, setPayingNote] = useState<Note | null>(null)
+    const [receivingNote, setReceivingNote] = useState<Note | null>(null)
 
     useEffect(() => {
         fetchNotes()
@@ -54,6 +61,7 @@ export default function PurchaseNotesPage() {
         setLoading(true)
         try {
             const response = await api.get('/billing/invoices/')
+            // Now the serializer includes related_documents
             const filteredNotes = response.data.filter((inv: any) =>
                 ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && inv.purchase_order
             )
@@ -130,6 +138,7 @@ export default function PurchaseNotesPage() {
                             <TableHead>Tipo</TableHead>
                             <TableHead>Folio</TableHead>
                             <TableHead>OC Relacionada</TableHead>
+                            <TableHead>Documentos</TableHead>
                             <TableHead>Total</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead className="text-center">Acciones</TableHead>
@@ -138,11 +147,11 @@ export default function PurchaseNotesPage() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-10">Cargando...</TableCell>
+                                <TableCell colSpan={8} className="text-center py-10">Cargando...</TableCell>
                             </TableRow>
                         ) : filteredNotes.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground italic">No se encontraron notas</TableCell>
+                                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground italic">No se encontraron notas</TableCell>
                             </TableRow>
                         ) : filteredNotes.map((note) => (
                             <TableRow key={note.id}>
@@ -159,6 +168,48 @@ export default function PurchaseNotesPage() {
                                         OC-{note.purchase_order_number || note.purchase_order}
                                     </Badge>
                                 </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col gap-1">
+                                        {note.related_documents?.invoices.map((inv: any) => (
+                                            <button
+                                                key={inv.id}
+                                                onClick={() => setViewingNote({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
+                                                #{inv.number}
+                                            </button>
+                                        ))}
+                                        {note.related_documents?.notes.filter((n: any) => n.id !== note.id).map((n: any) => (
+                                            <button
+                                                key={n.id}
+                                                onClick={() => setViewingNote({ type: 'invoice', id: n.id, view: 'details' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota {n.type === 'NOTA_CREDITO' ? 'Crédito' : 'Débito'}</span>
+                                                #{n.number}
+                                            </button>
+                                        ))}
+                                        {(note.related_documents?.receipts?.length ?? 0) > 0 && (
+                                            <button
+                                                onClick={() => setViewingNote({ type: 'purchase_order', id: note.purchase_order!, view: 'details' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepciones</span>
+                                                <span className="text-[10px]">{note.related_documents?.receipts?.length} recep.</span>
+                                            </button>
+                                        )}
+                                        {(note.related_documents?.payments?.length ?? 0) > 0 && (
+                                            <button
+                                                onClick={() => setViewingNote({ type: 'purchase_order', id: note.purchase_order!, view: 'history' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pagos</span>
+                                                <span className="text-[10px]">{note.related_documents?.payments?.length} reg.</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </TableCell>
                                 <TableCell className="font-black text-primary">
                                     ${parseFloat(note.total).toLocaleString()}
                                 </TableCell>
@@ -168,14 +219,23 @@ export default function PurchaseNotesPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex justify-center space-x-2">
+                                    <div className="flex justify-center space-x-1">
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => setViewingNote({ id: note.id })}
+                                            onClick={() => setViewingNote({ type: 'invoice', id: note.id, view: 'details' })}
                                             title="Ver Detalle"
                                         >
                                             <Eye className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-blue-600"
+                                            onClick={() => setReceivingNote(note)}
+                                            title="Recepcionar Mercadería"
+                                        >
+                                            <Receipt className="h-4 w-4" />
                                         </Button>
                                         <Button
                                             variant="ghost"
@@ -208,8 +268,8 @@ export default function PurchaseNotesPage() {
                     open={!!viewingNote}
                     onOpenChange={(open) => !open && setViewingNote(null)}
                     id={viewingNote.id}
-                    type="invoice"
-                    view="details"
+                    type={viewingNote.type}
+                    view={viewingNote.view || "details"}
                 />
             )}
 
@@ -226,6 +286,15 @@ export default function PurchaseNotesPage() {
                         number: payingNote.number,
                         document_attachment: null
                     }}
+                />
+            )}
+
+            {receivingNote && receivingNote.purchase_order && (
+                <ReceiptModal
+                    open={!!receivingNote}
+                    onOpenChange={(open) => !open && setReceivingNote(null)}
+                    orderId={receivingNote.purchase_order}
+                    onSuccess={fetchNotes}
                 />
             )}
         </div>

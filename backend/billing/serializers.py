@@ -11,10 +11,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
     sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
     purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
     partner_name = serializers.SerializerMethodField()
+    related_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = '__all__'
+
+    def get_related_documents(self, obj):
+        if obj.purchase_order:
+            # We reuse the logic from PurchaseOrderSerializer efficiently
+            # Note: Importing inside method to avoid circular imports
+            from purchasing.serializers import PurchaseOrderSerializer
+            return PurchaseOrderSerializer().get_related_documents(obj.purchase_order)
+        return None
 
     def get_partner_name(self, obj):
         if obj.sale_order:
