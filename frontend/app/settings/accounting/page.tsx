@@ -24,6 +24,10 @@ const accountingSchema = z.object({
     default_tax_receivable_account: z.string().nullable(),
     default_tax_payable_account: z.string().nullable(),
     default_inventory_account: z.string().nullable(),
+    stock_input_account: z.string().nullable(),
+    stock_output_account: z.string().nullable(),
+    default_prepayment_account: z.string().nullable(),
+    default_advance_payment_account: z.string().nullable(),
 
     code_format: z.string(),
     asset_prefix: z.string(),
@@ -51,6 +55,10 @@ export default function AccountingSettingsPage() {
             default_tax_receivable_account: null,
             default_tax_payable_account: null,
             default_inventory_account: null,
+            stock_input_account: null,
+            stock_output_account: null,
+            default_prepayment_account: null,
+            default_advance_payment_account: null,
 
             code_format: "X.X.XX.XXX",
             asset_prefix: "1",
@@ -143,6 +151,10 @@ export default function AccountingSettingsPage() {
                                 <AccountField form={form} name="default_tax_receivable_account" label="IVA Crédito (Compras)" accountType="ASSET" />
                                 <AccountField form={form} name="default_tax_payable_account" label="IVA Débito (Ventas)" accountType="LIABILITY" />
                                 <AccountField form={form} name="default_inventory_account" label="Cuenta de Inventario" accountType="ASSET" />
+                                <AccountField form={form} name="stock_input_account" label="Entrada Stock (Puente/Pasivo)" accountType="LIABILITY" />
+                                <AccountField form={form} name="stock_output_account" label="Salida Stock (Puente/Activo)" accountType="ASSET" />
+                                <AccountField form={form} name="default_prepayment_account" label="Anticipos a Proveedores (Activo)" accountType="ASSET" />
+                                <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
                             </div>
 
                         </CardContent>

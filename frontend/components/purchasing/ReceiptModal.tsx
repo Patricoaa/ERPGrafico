@@ -65,6 +65,8 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
     const [receiptQuantities, setReceiptQuantities] = useState<{ [lineId: number]: number }>({})
     const [receiptCosts, setReceiptCosts] = useState<{ [lineId: number]: number }>({})
     const [receiptDate, setReceiptDate] = useState(new Date().toISOString().split('T')[0])
+    const [deliveryReference, setDeliveryReference] = useState("")
+    const [notes, setNotes] = useState("")
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [isPartialReceipt, setIsPartialReceipt] = useState(false)
@@ -87,8 +89,8 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
             const initialCosts: { [lineId: number]: number } = {}
 
             orderResponse.data.lines.forEach((line: PurchaseOrderLine) => {
-                initialQuantities[line.id] = line.quantity_pending
-                initialCosts[line.id] = line.unit_cost
+                initialQuantities[line.id] = Math.ceil(line.quantity_pending)
+                initialCosts[line.id] = Math.ceil(line.unit_cost)
             })
             setReceiptQuantities(initialQuantities)
             setReceiptCosts(initialCosts)
@@ -113,7 +115,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
     }
 
     const handleQuantityChange = (lineId: number, value: string) => {
-        const numValue = parseFloat(value) || 0
+        const numValue = Math.ceil(parseFloat(value) || 0)
         setReceiptQuantities(prev => ({
             ...prev,
             [lineId]: numValue
@@ -127,7 +129,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
     }
 
     const handleCostChange = (lineId: number, value: string) => {
-        const numValue = parseFloat(value) || 0
+        const numValue = Math.ceil(parseFloat(value) || 0)
         setReceiptCosts(prev => ({
             ...prev,
             [lineId]: numValue
@@ -167,6 +169,8 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
             await api.post(`/purchasing/orders/${orderId}/partial_receive/`, {
                 warehouse_id: selectedWarehouse,
                 receipt_date: receiptDate,
+                delivery_reference: deliveryReference,
+                notes: notes,
                 line_data: lineData
             })
 
@@ -196,7 +200,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1200px] w-[90vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5" />
@@ -237,6 +241,27 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
                                     type="date"
                                     value={receiptDate}
                                     onChange={(e) => setReceiptDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="delivery-reference">Referencia (Guía/Comprobante)</Label>
+                                <Input
+                                    id="delivery-reference"
+                                    placeholder="Ej: GD-12345"
+                                    value={deliveryReference}
+                                    onChange={(e) => setDeliveryReference(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="notes">Notas / Observaciones</Label>
+                                <Input
+                                    id="notes"
+                                    placeholder="Mercadería recibida en buen estado..."
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -287,7 +312,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
                                                         type="number"
                                                         min="0"
                                                         max={line.quantity_pending}
-                                                        step="0.01"
+                                                        step="1"
                                                         value={receiptQuantities[line.id] || 0}
                                                         onChange={(e) => handleQuantityChange(line.id, e.target.value)}
                                                         className="w-24 text-center mx-auto"

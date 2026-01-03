@@ -50,7 +50,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             receipt = PurchasingService.receive_order(
                 order=order,
                 warehouse=warehouse,
-                receipt_date=receipt_date
+                receipt_date=receipt_date,
+                delivery_reference=request.data.get('delivery_reference', ''),
+                notes=request.data.get('notes', '')
             )
             
             return Response(
@@ -78,7 +80,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
                 order=order,
                 warehouse=warehouse,
                 line_data=line_data,
-                receipt_date=receipt_date
+                receipt_date=receipt_date,
+                delivery_reference=request.data.get('delivery_reference', ''),
+                notes=request.data.get('notes', '')
             )
             
             return Response(

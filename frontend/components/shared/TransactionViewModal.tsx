@@ -12,7 +12,7 @@ import { translateStatus, translatePaymentMethod } from "@/lib/utils"
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment'
+    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry'
     id: number | string
     view?: 'details' | 'history' | 'all'
 }
@@ -35,6 +35,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
             else if (type === 'purchase_order') endpoint = `/purchasing/orders/${id}/`
             else if (type === 'invoice') endpoint = `/billing/invoices/${id}/`
             else if (type === 'payment') endpoint = `/treasury/payments/${id}/`
+            else if (type === 'journal_entry') endpoint = `/accounting/entries/${id}/`
 
             const response = await api.get(endpoint)
             setData(response.data)
@@ -50,6 +51,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
         if (type === 'purchase_order') return `Orden de Compra ${data?.number || ''}`
         if (type === 'invoice') return `${data?.dte_type_display || 'Factura'} ${data?.number || ''}`
         if (type === 'payment') return `Pago ${data?.id || ''}`
+        if (type === 'journal_entry') return `Asiento Contable ${data?.number || data?.id || ''}`
         return "Detalles de Transacción"
     }
 
@@ -57,6 +59,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
         if (type === 'sale_order') return <ShoppingBag className="h-5 w-5" />
         if (type === 'purchase_order') return <FileText className="h-5 w-5" />
         if (type === 'invoice') return <Receipt className="h-5 w-5" />
+        if (type === 'journal_entry') return <Hash className="h-5 w-5" />
         return <FileText className="h-5 w-5" />
     }
 
@@ -82,10 +85,10 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                 <Card>
                                     <CardContent className="p-4">
                                         <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {type === 'purchase_order' ? 'Proveedor' : 'Cliente'}
+                                            {type === 'purchase_order' ? 'Proveedor' : (type === 'journal_entry' ? 'Referencia' : 'Cliente')}
                                         </div>
                                         <div className="font-bold text-lg">
-                                            {data.customer_name || data.supplier_name || data.partner_name || 'N/A'}
+                                            {type === 'journal_entry' ? (data.reference || '-') : (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
                                         </div>
                                     </CardContent>
                                 </Card>

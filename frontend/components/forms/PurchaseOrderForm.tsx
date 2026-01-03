@@ -55,7 +55,6 @@ const purchaseLineSchema = z.object({
 const purchaseOrderSchema = z.object({
     supplier: z.string().min(1, "El proveedor es requerido"),
     warehouse: z.string().min(1, "El almacén es requerido"),
-    supplier_reference: z.string().optional(),
     notes: z.string().optional(),
     lines: z.array(purchaseLineSchema).min(1, "Debe agregar al menos una línea"),
 })
@@ -123,7 +122,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
         } : {
             supplier: "",
             warehouse: "",
-            supplier_reference: "",
             notes: "",
             lines: [{ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 }],
         },
@@ -169,7 +167,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 form.reset({
                     supplier: "",
                     warehouse: "",
-                    supplier_reference: "",
                     notes: "",
                     lines: [{ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 }],
                 })
@@ -205,7 +202,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                     <Button>Nueva Orden de Compra</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1200px] w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Orden de Compra" : "Crear Orden de Compra"}</DialogTitle>
                     <DialogDescription>
@@ -263,19 +260,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                     </FormItem>
                                 )}
                             />
-                            <FormField
-                                control={form.control}
-                                name="supplier_reference"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Referencia Proveedor</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Ej: Factura #123" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+
                         </div>
 
                         <div className="space-y-4">
@@ -346,9 +331,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                         render={({ field }) => (
                                                             <Input
                                                                 type="number"
-                                                                step="0.01"
+                                                                step="1"
                                                                 {...field}
-                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                                             />
                                                         )}
                                                     />
@@ -360,9 +345,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                         render={({ field }) => (
                                                             <Input
                                                                 type="number"
-                                                                step="0.01"
+                                                                step="1"
                                                                 {...field}
-                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                                             />
                                                         )}
                                                     />

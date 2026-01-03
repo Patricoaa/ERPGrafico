@@ -166,7 +166,7 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                     <Button>Nuevo Producto</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1000px] w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Producto" : "Crear Producto"}</DialogTitle>
                     <DialogDescription>
@@ -272,7 +272,13 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                                     <FormItem>
                                         <FormLabel>Precio Venta</FormLabel>
                                         <FormControl>
-                                            <Input type="number" placeholder="0" {...field} />
+                                            <Input
+                                                type="number"
+                                                step="1"
+                                                placeholder="0"
+                                                {...field}
+                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0).toString())}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

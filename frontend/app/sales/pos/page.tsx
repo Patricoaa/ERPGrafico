@@ -88,14 +88,14 @@ export default function POSPage() {
         const existing = items.find(i => i.id === product.id)
         if (existing) {
             setItems(items.map(i => i.id === product.id
-                ? { ...i, qty: i.qty + 1, total: (i.qty + 1) * parseFloat(i.sale_price) }
+                ? { ...i, qty: i.qty + 1, total: Math.ceil((i.qty + 1) * parseFloat(i.sale_price)) }
                 : i
             ))
         } else {
             setItems([...items, {
                 ...product,
                 qty: 1,
-                total: parseFloat(product.sale_price)
+                total: Math.ceil(parseFloat(product.sale_price))
             }])
         }
     }
@@ -104,14 +104,14 @@ export default function POSPage() {
         const existing = items.find(i => i.id === variant.id)
         if (existing) {
             setItems(items.map(i => i.id === variant.id
-                ? { ...i, qty: i.qty + 1, total: (i.qty + 1) * parseFloat(i.sale_price) }
+                ? { ...i, qty: i.qty + 1, total: Math.ceil((i.qty + 1) * parseFloat(i.sale_price)) }
                 : i
             ))
         } else {
             setItems([...items, {
                 ...variant,
                 qty: 1,
-                total: parseFloat(variant.sale_price)
+                total: Math.ceil(parseFloat(variant.sale_price))
             }])
         }
     }
@@ -119,8 +119,8 @@ export default function POSPage() {
     const updateQty = (id: number, delta: number) => {
         setItems(items.map(i => {
             if (i.id === id) {
-                const newQty = Math.max(0.1, i.qty + delta)
-                return { ...i, qty: newQty, total: newQty * parseFloat(i.sale_price) }
+                const newQty = Math.max(1, i.qty + delta)
+                return { ...i, qty: newQty, total: Math.ceil(newQty * parseFloat(i.sale_price)) }
             }
             return i
         }))

@@ -22,9 +22,17 @@ interface PaymentDialogProps {
         reference?: string,
         transaction_number?: string,
         is_pending_registration?: boolean,
-        treasury_account_id?: string | null
+        treasury_account_id?: string | null,
+        documentReference?: string,
+        documentAttachment?: File | null
     }) => void
     showDteSelector?: boolean
+    isPurchase?: boolean
+    existingInvoice?: {
+        dte_type: string
+        number: string
+        document_attachment: string | null
+    } | null
 }
 
 export function PaymentDialog({
@@ -33,12 +41,16 @@ export function PaymentDialog({
     total,
     pendingAmount,
     onConfirm,
-    showDteSelector = false
+    showDteSelector = false,
+    isPurchase = false,
+    existingInvoice = null
 }: PaymentDialogProps) {
-    const [dteType, setDteType] = useState("BOLETA")
+    const [dteType, setDteType] = useState(isPurchase ? "NONE" : "BOLETA")
     const [paymentMethod, setPaymentMethod] = useState("CASH")
     const [amount, setAmount] = useState(pendingAmount.toString())
     const [transactionNumber, setTransactionNumber] = useState("")
+    const [documentReference, setDocumentReference] = useState("")
+    const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isPending, setIsPending] = useState(false)
     const [treasuryAccount, setTreasuryAccount] = useState<string | null>(null)
 
@@ -46,10 +58,20 @@ export function PaymentDialog({
         if (open) {
             setAmount(pendingAmount.toString())
             setTransactionNumber("")
+            setDocumentReference(existingInvoice?.number || "")
+            setDocumentAttachment(null)
             setIsPending(false)
             setTreasuryAccount(null)
+
+            if (isPurchase) {
+                if (existingInvoice) {
+                    setDteType(existingInvoice.dte_type)
+                } else {
+                    setDteType("NONE")
+                }
+            }
         }
-    }, [open, pendingAmount])
+    }, [open, pendingAmount, isPurchase, existingInvoice])
 
     const change = Math.max(0, parseFloat(amount || "0") - pendingAmount)
 
@@ -76,17 +98,80 @@ export function PaymentDialog({
                             <div className="grid gap-2">
                                 <Label className="flex items-center gap-2 text-[11px] font-bold uppercase text-muted-foreground">
                                     <Receipt className="h-3 w-3" />
-                                    Documento a Emitir
+                                    {isPurchase ? "Documento Recibido" : "Documento a Emitir"}
                                 </Label>
-                                <Select value={dteType} onValueChange={setDteType}>
+                                <Select value={dteType} onValueChange={setDteType} disabled={!!existingInvoice}>
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
-                                        <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
+                                        {isPurchase ? (
+                                            <>
+                                                <SelectItem value="NONE">Aún no he recibido el documento</SelectItem>
+                                                <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
+                                                <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
+                                                <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
+                                            </>
+                                        )}
                                     </SelectContent>
                                 </Select>
+                                {existingInvoice && (
+                                    <p className="text-[10px] text-amber-600 font-medium">
+                                        * Documento ya registrado anteriormente
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {isPurchase && (dteType === "BOLETA" || dteType === "FACTURA") && (
+                            <div className="space-y-3 p-3 bg-muted/30 rounded-lg border border-dashed">
+                                <div className="grid gap-2">
+                                    <Label className="text-[10px] font-bold uppercase">N° de Folio / Referencia (Obligatorio)</Label>
+                                    <Input
+                                        placeholder="Ej: 12345"
+                                        value={documentReference}
+                                        onChange={(e) => setDocumentReference(e.target.value)}
+                                        disabled={!!existingInvoice}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="text-[10px] font-bold uppercase">
+                                        {existingInvoice ? "Documento Adjunto" : "Adjuntar Documento (Obligatorio)"}
+                                    </Label>
+                                    {!existingInvoice ? (
+                                        <div className="flex gap-2">
+                                            <Input
+                                                type="file"
+                                                onChange={(e) => setDocumentAttachment(e.target.files?.[0] || null)}
+                                                className="text-xs h-9 py-1"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-xs text-blue-600 font-medium p-2 bg-blue-50 rounded border border-blue-100">
+                                            <Receipt className="h-4 w-4" />
+                                            <span>Documento cargado correctamente</span>
+                                            {existingInvoice.document_attachment && (
+                                                <a
+                                                    href={existingInvoice.document_attachment}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="ml-auto underline"
+                                                >
+                                                    Ver
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+                                    {documentAttachment && (
+                                        <div className="text-[10px] text-emerald-600 font-medium">
+                                            ✓ {documentAttachment.name}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -157,8 +242,9 @@ export function PaymentDialog({
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
                                 <Input
                                     type="number"
+                                    step="1"
                                     value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
+                                    onChange={(e) => setAmount(Math.ceil(parseFloat(e.target.value) || 0).toString())}
                                     className="pl-7 text-2xl font-black h-14"
                                     autoFocus
                                     onFocus={(e) => e.target.select()}
@@ -182,12 +268,18 @@ export function PaymentDialog({
                         onClick={() => onConfirm({
                             paymentMethod,
                             amount: parseFloat(amount),
-                            dteType: showDteSelector ? dteType : undefined,
+                            dteType: (showDteSelector && dteType !== 'NONE') ? dteType : undefined,
+                            documentReference: (isPurchase && dteType !== 'NONE') ? documentReference : undefined,
+                            documentAttachment: (isPurchase && dteType !== 'NONE') ? documentAttachment : undefined,
                             transaction_number: transactionNumber,
-                            is_pending_registration: isPending,
+                            is_pending_registration: !!isPending,
                             treasury_account_id: treasuryAccount
                         })}
-                        disabled={(paymentMethod !== 'CREDIT' && parseFloat(amount) <= 0)}
+                        disabled={
+                            (paymentMethod !== 'CREDIT' && parseFloat(amount) <= 0) ||
+                            (isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && (!documentReference || !documentAttachment)) ||
+                            (isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)
+                        }
                     >
                         {paymentMethod === 'CREDIT' ? 'Confirmar Crédito' : 'Confirmar Pago'}
                     </Button>

@@ -161,7 +161,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     <Button>Nueva Orden de Trabajo</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1000px] w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Orden de Trabajo" : "Crear Orden de Trabajo"}</DialogTitle>
                     <DialogDescription>
@@ -245,9 +245,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                         <FormControl>
                                             <Input
                                                 type="number"
-                                                step="0.01"
+                                                step="1"
                                                 {...field}
-                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -263,9 +263,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                         <FormControl>
                                             <Input
                                                 type="number"
-                                                step="0.01"
+                                                step="1"
                                                 {...field}
-                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                             />
                                         </FormControl>
                                         <FormMessage />

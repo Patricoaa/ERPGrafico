@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Supplier, PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
 from treasury.serializers import PaymentSerializer
+import math
+from decimal import Decimal
 
 
 class SupplierSerializer(serializers.ModelSerializer):
@@ -24,6 +26,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
+    is_invoiced = serializers.SerializerMethodField()
+    invoice_details = serializers.SerializerMethodField()
     serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
 
     class Meta:
@@ -35,6 +39,19 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
     def get_pending_amount(self, obj):
         return obj.total - self.get_total_paid(obj)
+
+    def get_is_invoiced(self, obj):
+        return obj.invoices.exists()
+    
+    def get_invoice_details(self, obj):
+        invoice = obj.invoices.first()
+        if invoice:
+            return {
+                'dte_type': invoice.dte_type,
+                'number': invoice.number,
+                'document_attachment': invoice.document_attachment.url if invoice.document_attachment else None
+            }
+        return None
 
 class WritePurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseLineSerializer(many=True)
@@ -107,8 +124,8 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
             total_tax += line_tax
             
         order.total_net = total_net
-        order.total_tax = total_tax
-        order.total = total_net + total_tax
+        order.total_tax = Decimal(str(math.ceil(total_tax)))
+        order.total = Decimal(str(math.ceil(total_net + total_tax)))
         order.save()
 
 class PurchaseReceiptLineSerializer(serializers.ModelSerializer):

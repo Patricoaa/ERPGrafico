@@ -3,6 +3,8 @@ from .models import Customer, SaleOrder, SaleLine, SalesSettings, SaleDelivery, 
 from treasury.serializers import PaymentSerializer
 from inventory.models import Product
 from django.db.models import Sum
+import math
+from decimal import Decimal
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,8 +84,8 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
             total_tax += line_tax
 
         order.total_net = total_net
-        order.total_tax = total_tax
-        order.total = total_net + total_tax
+        order.total_tax = Decimal(str(math.ceil(total_tax)))
+        order.total = Decimal(str(math.ceil(total_net + total_tax)))
         order.save()
         
         return order

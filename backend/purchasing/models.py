@@ -149,6 +149,7 @@ class PurchaseReceipt(models.Model):
     )
     
     receipt_date = models.DateField(_("Fecha de Recepción"))
+    delivery_reference = models.CharField(_("Referencia de Despacho/Guía"), max_length=100, blank=True)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     notes = models.TextField(_("Notas"), blank=True)
     

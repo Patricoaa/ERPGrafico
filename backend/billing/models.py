@@ -24,6 +24,7 @@ class Invoice(models.Model):
 
     dte_type = models.CharField(_("Tipo DTE"), max_length=20, choices=DTEType.choices)
     number = models.CharField(_("Folio"), max_length=20, blank=True)
+    document_attachment = models.FileField(_("Adjunto de Documento"), upload_to='invoices/', null=True, blank=True)
     date = models.DateField(_("Fecha"), auto_now_add=True)
     
     # Links

@@ -9,7 +9,11 @@ from decimal import Decimal
 class TreasuryService:
     @staticmethod
     @transaction.atomic
-    def register_payment(amount: Decimal, payment_type, payment_method=Payment.Method.CASH, date=None, reference='', partner=None, invoice=None, treasury_account_id=None, sale_order=None, purchase_order=None, transaction_number=None, is_pending_registration=False):
+    def register_payment(amount: Decimal, payment_type, payment_method=Payment.Method.CASH, 
+                         date=None, reference='', partner=None, invoice=None, 
+                         treasury_account_id=None, sale_order=None, purchase_order=None, 
+                         transaction_number=None, is_pending_registration=False,
+                         dte_type=None, document_reference=None, document_attachment=None):
         """
         Registers a payment and creates the corresponding Accounting Entry.
         """
@@ -48,6 +52,16 @@ class TreasuryService:
         financial_account = treasury_account.account
         if not financial_account:
              raise ValidationError(f"La cuenta de tesorería '{treasury_account.name}' no tiene una cuenta contable asociada.")
+
+        # 1.5 Handle Purchase Document Registration (Auto-billing during payment)
+        if purchase_order and dte_type and document_reference and not invoice:
+            from billing.services import BillingService
+            invoice = BillingService.create_purchase_bill(
+                order=purchase_order,
+                supplier_invoice_number=document_reference,
+                dte_type=dte_type,
+                document_attachment=document_attachment
+            )
 
         # 2. Create Payment Record
         payment = Payment.objects.create(
@@ -124,30 +138,46 @@ class TreasuryService:
         settings = AccountingSettings.objects.first()
         
         if payment_type == Payment.Type.INBOUND:
-             # Customer Payment: Debit Treasury, Credit AR
-             ar_account = (payment.customer.account_receivable if payment.customer else None) or \
-                          (settings.default_receivable_account if settings else None)
+             # Customer Payment/Collection: Debit Treasury, Credit AR or Advance
+             target_account = None
+             
+             if invoice:
+                 # Real debt
+                 target_account = (payment.customer.account_receivable if payment.customer else None) or \
+                                  (settings.default_receivable_account if settings else None)
+             else:
+                 # Prepayment / Advance
+                 target_account = (settings.default_advance_payment_account if settings else None) or \
+                                  (settings.default_receivable_account if settings else None)
 
-             if not ar_account:
-                 raise ValidationError("No se encontró cuenta para Cobro (AR).")
+             if not target_account:
+                 raise ValidationError("No se encontró cuenta para Cobro (AR/Anticipo).")
 
              # Debit Treasury
              JournalItem.objects.create(entry=entry, account=payment.account, debit=amount, credit=0)
-             # Credit AR
-             JournalItem.objects.create(entry=entry, account=ar_account, debit=0, credit=amount, partner=payment.customer.name if payment.customer else '')
+             # Credit AR / Advance
+             JournalItem.objects.create(entry=entry, account=target_account, debit=0, credit=amount, partner=payment.customer.name if payment.customer else '')
 
         else:
-             # Supplier Payment: Debit AP, Credit Treasury
-             ap_account = (payment.supplier.payable_account if payment.supplier else None) or \
-                          (settings.default_payable_account if settings else None)
+             # Supplier Payment: Debit AP or Prepayment, Credit Treasury
+             target_account = None
+             
+             if invoice:
+                 # Real debt payment
+                 target_account = (payment.supplier.payable_account if payment.supplier else None) or \
+                                  (settings.default_payable_account if settings else None)
+             else:
+                 # Prepayment to supplier
+                 target_account = (settings.default_prepayment_account if settings else None) or \
+                                  (settings.default_payable_account if settings else None)
 
-             if not ap_account:
-                 raise ValidationError("No se encontró cuenta para Pago (AP).")
+             if not target_account:
+                 raise ValidationError("No se encontró cuenta para Pago (AP/Anticipo).")
 
               # Credit Treasury
              JournalItem.objects.create(entry=entry, account=payment.account, debit=0, credit=amount)
-             # Debit AP
-             JournalItem.objects.create(entry=entry, account=ap_account, debit=amount, credit=0, partner=payment.supplier.name if payment.supplier else '')
+             # Debit AP / Prepayment
+             JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0, partner=payment.supplier.name if payment.supplier else '')
              
         JournalEntryService.post_entry(entry)
         

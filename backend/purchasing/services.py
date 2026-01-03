@@ -11,7 +11,7 @@ from decimal import Decimal
 class PurchasingService:
     @staticmethod
     @transaction.atomic
-    def receive_order(order: PurchaseOrder, warehouse: Warehouse, receipt_date=None):
+    def receive_order(order: PurchaseOrder, warehouse: Warehouse, receipt_date=None, delivery_reference='', notes=''):
         """
         Receives a complete purchase order.
         Creates receipt, increases stock, updates costs, and generates accounting entries.
@@ -27,6 +27,8 @@ class PurchasingService:
             purchase_order=order,
             warehouse=warehouse,
             receipt_date=receipt_date,
+            delivery_reference=delivery_reference,
+            notes=notes,
             status=PurchaseReceipt.Status.DRAFT
         )
         
@@ -52,7 +54,7 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def partial_receive(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None):
+    def partial_receive(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None, delivery_reference='', notes=''):
         """
         Receives specific quantities and potentially adjusted costs.
         line_data = [{ 'line_id': 1, 'quantity': 5, 'unit_cost': 1000 }, ...]
@@ -65,6 +67,8 @@ class PurchasingService:
             purchase_order=order,
             warehouse=warehouse,
             receipt_date=receipt_date,
+            delivery_reference=delivery_reference,
+            notes=notes,
             status=PurchaseReceipt.Status.DRAFT
         )
         
@@ -188,24 +192,27 @@ class PurchasingService:
                     label="Inventario (Fallback)"
                 )
 
-             JournalItem.objects.create(
-                entry=entry,
-                account=clearing_account, # Using same account for clearing? No, usually a liability account.
-                # For simplicity in this v1, we credit the same inventory account 
-                # effectively washing it out if we debit it too?
-                # No. 
-                # Debit: Asset Account (Real Inventory)
-                # Credit: "Facturas por Recibir" (Liability) - Pending Bill
-                
-                # Let's assume default_inventory_account is the Asset Account (1.1.04).
-                # We need a Liability Account "2.1.XX - Proveedores por Facturar".
-                # If not exists, we just use a placeholder or the same account (bad practice but balances).
-                
-                debit=0,
-                credit=total_amount,
-                label=f"Contrapartida Recepción OC-{receipt.purchase_order.number}"
-             )
+             # Debit: Asset Account (Real Inventory)
+             # Credit: "Facturas por Recibir" (Liability) - Pending Bill (stock_input_account)
              
+             credit_account = settings.stock_input_account if settings else None
+             
+             if not credit_account and settings:
+                 # Fallback to default payable if no specific stock input account
+                 credit_account = settings.default_payable_account
+                 
+             if not credit_account:
+                 # Ultimate fallback to clearing (inventory) but warn it's bad practice
+                 credit_account = clearing_account
+
+             if credit_account:
+                 JournalItem.objects.create(
+                    entry=entry,
+                    account=credit_account, 
+                    debit=0,
+                    credit=total_amount,
+                    label=f"Contrapartida Recepción OC-{receipt.purchase_order.number}"
+                 )
         JournalEntryService.post_entry(entry)
         receipt.journal_entry = entry
         receipt.status = PurchaseReceipt.Status.CONFIRMED

@@ -202,7 +202,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     <Button>Nueva Nota de Venta</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1200px] w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Nota de Venta" : "Crear Nota de Venta"}</DialogTitle>
                     <DialogDescription>
@@ -304,9 +304,9 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         render={({ field }) => (
                                                             <Input
                                                                 type="number"
-                                                                step="0.01"
+                                                                step="1"
                                                                 {...field}
-                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                                             />
                                                         )}
                                                     />
@@ -318,9 +318,9 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         render={({ field }) => (
                                                             <Input
                                                                 type="number"
-                                                                step="0.01"
+                                                                step="1"
                                                                 {...field}
-                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                                             />
                                                         )}
                                                     />

@@ -33,7 +33,13 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 else:
                     order = PurchaseOrder.objects.get(id=order_id)
                     supplier_invoice_number = serializer.validated_data.get('supplier_invoice_number', '')
-                    invoice = BillingService.create_purchase_bill(order, supplier_invoice_number)
+                    document_attachment = serializer.validated_data.get('document_attachment')
+                    invoice = BillingService.create_purchase_bill(
+                        order, 
+                        supplier_invoice_number, 
+                        dte_type=dte_type,
+                        document_attachment=document_attachment
+                    )
                 
                 return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
             except (SaleOrder.DoesNotExist, PurchaseOrder.DoesNotExist):
@@ -53,6 +59,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         payment_method = request.data.get('payment_method')
         transaction_number = request.data.get('transaction_number')
         is_pending_registration = request.data.get('is_pending_registration', False)
+        if isinstance(is_pending_registration, str):
+            is_pending_registration = is_pending_registration.lower() == 'true'
         amount = request.data.get('amount')
         treasury_account_id = request.data.get('treasury_account_id') or request.data.get('treasury_account')
         

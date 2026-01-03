@@ -81,21 +81,65 @@ class BillingService:
         invoice.journal_entry = entry
         invoice.save()
 
-        # Update Order
-        order.status = SaleOrder.Status.INVOICED
+        # Check for advances and link them
+        advances = order.payments.filter(invoice__isnull=True)
+        total_advanced = sum(p.amount for p in advances)
+
+        if total_advanced > 0:
+            recon_entry = JournalEntry.objects.create(
+                date=timezone.now().date(),
+                description=f"Conciliación Anticipos - Pedido {order.number} -> Factura {invoice.id}",
+                reference=f"RECO-{invoice.id}", 
+                state=JournalEntry.State.DRAFT
+            )
+            
+            advance_account = settings.default_advance_payment_account or receivable_account
+            
+            # Debit: Advance Account (Clear the liability)
+            JournalItem.objects.create(
+                entry=recon_entry,
+                account=advance_account,
+                debit=total_advanced,
+                credit=0,
+                partner=order.customer.name
+            )
+            
+            # Credit: Receivable Account (Reduce what they owe us)
+            JournalItem.objects.create(
+                entry=recon_entry,
+                account=receivable_account,
+                debit=0,
+                credit=total_advanced,
+                partner=order.customer.name
+            )
+            
+            JournalEntryService.post_entry(recon_entry)
+            
+            for payment in advances:
+                payment.invoice = invoice
+                payment.save()
+
+        # Update Order Status
+        if total_advanced >= order.total:
+             order.status = SaleOrder.Status.PAID
+        else:
+             order.status = SaleOrder.Status.INVOICED
         order.save()
 
         return invoice
 
     @staticmethod
     @transaction.atomic
-    def create_purchase_bill(order: PurchaseOrder, supplier_invoice_number: str):
+    def create_purchase_bill(order: PurchaseOrder, supplier_invoice_number: str, 
+                             dte_type: str = Invoice.DTEType.PURCHASE_INV, 
+                             document_attachment=None):
         """
         Creates a Purchase Bill from a PurchaseOrder.
         """
         invoice = Invoice.objects.create(
-            dte_type=Invoice.DTEType.PURCHASE_INV,
+            dte_type=dte_type,
             number=supplier_invoice_number,
+            document_attachment=document_attachment,
             date=timezone.now().date(),
             purchase_order=order,
             total_net=order.total_net,
@@ -108,10 +152,13 @@ class BillingService:
         payable_account = order.supplier.payable_account or (settings.default_payable_account if settings else None)
         tax_account = settings.default_tax_receivable_account if settings else None
         
-        # We need an Inventory clearing account (Received Not Billed)
-        # For now, we'll use a generic one or fallback to expense/asset?
-        # Let's assume there is a clearing account or we use the direct asset.
-        clearing_account = settings.default_inventory_account # Simplified
+        # We need to clear the Stock Interim (Received Not Billed)
+        # established during reception.
+        stock_input_account = settings.stock_input_account if settings else None
+        
+        if not stock_input_account:
+            # Fallback to inventory if someone is not using bridge accounts
+            stock_input_account = settings.default_inventory_account
 
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
@@ -120,7 +167,7 @@ class BillingService:
             state=JournalEntry.State.DRAFT
         )
 
-        # Credit: AP (Total)
+        # Credit: Accounts Payable (Total real debt)
         JournalItem.objects.create(
             entry=entry,
             account=payable_account,
@@ -129,16 +176,17 @@ class BillingService:
             partner=order.supplier.name
         )
 
-        # Debit: Inventory Clearing / Asset (Net)
+        # Debit: Stock Interim (Net) - CLEARING the liability from reception
         JournalItem.objects.create(
             entry=entry,
-            account=clearing_account,
+            account=stock_input_account,
             debit=invoice.total_net,
-            credit=0
+            credit=0,
+            label="Limpieza Cuenta Puente Recepción"
         )
 
         # Debit: Tax (IVA Crédito)
-        if invoice.total_tax > 0:
+        if invoice.total_tax > 0 and tax_account:
              JournalItem.objects.create(
                 entry=entry,
                 account=tax_account,
@@ -151,7 +199,51 @@ class BillingService:
         invoice.journal_entry = entry
         invoice.save()
 
-        order.status = PurchaseOrder.Status.INVOICED
+        # Check for prepayments on this order and link them
+        prepayments = order.payments.filter(invoice__isnull=True)
+        total_prepaid = sum(p.amount for p in prepayments)
+
+        if total_prepaid > 0:
+            # Reconcile prepayments: Move from Prepayment Account to Payable Account
+            recon_entry = JournalEntry.objects.create(
+                date=timezone.now().date(),
+                description=f"Conciliación Anticipos - OC {order.number} -> Factura {supplier_invoice_number}",
+                reference=f"RECO-{invoice.id}", # Reconciliation
+                state=JournalEntry.State.DRAFT
+            )
+            
+            prepayment_account = settings.default_prepayment_account or payable_account
+            
+            # Debit: Payable Account (Reduce what we owe)
+            JournalItem.objects.create(
+                entry=recon_entry,
+                account=payable_account,
+                debit=total_prepaid,
+                credit=0,
+                partner=order.supplier.name
+            )
+            
+            # Credit: Prepayment Account (Clear the advance)
+            JournalItem.objects.create(
+                entry=recon_entry,
+                account=prepayment_account,
+                debit=0,
+                credit=total_prepaid,
+                partner=order.supplier.name
+            )
+            
+            JournalEntryService.post_entry(recon_entry)
+            
+            # Link payments to the new invoice
+            for payment in prepayments:
+                payment.invoice = invoice
+                payment.save()
+
+        # Update Order Status
+        if total_prepaid >= order.total:
+            order.status = PurchaseOrder.Status.PAID
+        else:
+            order.status = PurchaseOrder.Status.INVOICED
         order.save()
 
         return invoice

@@ -38,6 +38,14 @@ class PaymentViewSet(viewsets.ModelViewSet):
         invoice_id = data.get('invoice')
         transaction_number = data.get('transaction_number')
         is_pending_registration = data.get('is_pending_registration', False)
+        if isinstance(is_pending_registration, str):
+            is_pending_registration = is_pending_registration.lower() == 'true'
+        
+        # New Document Registration Fields
+        dte_type = data.get('dte_type')
+        document_reference = data.get('document_reference')
+        document_attachment = request.FILES.get('document_attachment')
+
         
         # Resolve objects
         sale_order = None
@@ -73,7 +81,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 sale_order=sale_order,
                 purchase_order=purchase_order,
                 transaction_number=transaction_number,
-                is_pending_registration=is_pending_registration
+                is_pending_registration=is_pending_registration,
+                dte_type=dte_type,
+                document_reference=document_reference,
+                document_attachment=document_attachment
             )
             return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -91,6 +102,14 @@ class PaymentViewSet(viewsets.ModelViewSet):
             reference = request.data.get('reference', '')
             transaction_number = request.data.get('transaction_number')
             is_pending_registration = request.data.get('is_pending_registration', False)
+            if isinstance(is_pending_registration, str):
+                is_pending_registration = is_pending_registration.lower() == 'true'
+            
+            # New Document Registration Fields
+            dte_type = request.data.get('dte_type')
+            document_reference = request.data.get('document_reference')
+            document_attachment = request.FILES.get('document_attachment')
+
             
             # Partners
             customer_id = request.data.get('customer_id')
@@ -119,7 +138,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 partner=partner,
                 invoice=invoice,
                 transaction_number=transaction_number,
-                is_pending_registration=is_pending_registration
+                is_pending_registration=is_pending_registration,
+                dte_type=dte_type,
+                document_reference=document_reference,
+                document_attachment=document_attachment
             )
             
             return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)

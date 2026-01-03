@@ -234,8 +234,38 @@ class AccountingSettings(models.Model):
     default_tax_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_receivable')
     default_tax_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_payable')
     default_inventory_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_inventory')
+    
+    # Stock Interim Accounts
+    stock_input_account = models.ForeignKey(
+        Account, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='settings_stock_input',
+        verbose_name=_("Cuenta de Entrada de Stock (Puente)"),
+        help_text=_("Cuenta de Pasivo (ej: Proveedores por Facturar) usada como contrapartida en recepciones.")
+    )
+    stock_output_account = models.ForeignKey(
+        Account, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='settings_stock_output',
+        verbose_name=_("Cuenta de Salida de Stock (Puente)"),
+        help_text=_("Cuenta usada como contrapartida en salidas no facturadas (si aplica).")
+    )
 
 
+    # Advanced Accounting
+    default_prepayment_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True, 
+        related_name='settings_prepayments',
+        verbose_name=_("Cuenta de Anticipos a Proveedores (Activo)")
+    )
+    default_advance_payment_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True, 
+        related_name='settings_advances',
+        verbose_name=_("Cuenta de Anticipos de Clientes (Pasivo)")
+    )
+    
     # Inventory Config
     inventory_valuation_method = models.CharField(
         _("Método de Valoración de Inventario"), 

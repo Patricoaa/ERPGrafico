@@ -211,7 +211,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                     {triggerText}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[1200px] max-h-[90vh] overflow-y-auto"> {/* Increased width */}
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-y-auto"> {/* Increased width significantly and restored scroll */}
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}</DialogTitle>
                     <DialogDescription>
@@ -347,7 +347,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                                     render={({ field }) => (
                                                         <FormItem className="space-y-0">
                                                             <FormControl>
-                                                                <Input type="number" step="0.01" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} onFocus={(e) => e.target.select()} />
+                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}
@@ -360,7 +360,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                                     render={({ field }) => (
                                                         <FormItem className="space-y-0">
                                                             <FormControl>
-                                                                <Input type="number" step="0.01" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} onFocus={(e) => e.target.select()} />
+                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}

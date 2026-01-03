@@ -20,6 +20,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Progress } from "@/components/ui/progress"
 import { Banknote, Eye, TrendingDown } from "lucide-react"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
+import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
 
 interface PurchaseOrder {
     id: number
@@ -31,6 +32,13 @@ interface PurchaseOrder {
     warehouse_name: string
     total_paid: number
     pending_amount: number
+    is_invoiced: boolean
+    receiving_status: string
+    invoice_details?: {
+        dte_type: string
+        number: string
+        document_attachment: string | null
+    } | null
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" }> = {
@@ -50,6 +58,8 @@ export default function PurchaseOrdersPage() {
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [payingOrder, setPayingOrder] = useState<PurchaseOrder | null>(null)
     const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null)
+    const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
+
 
     const fetchOrders = async () => {
         try {
@@ -101,40 +111,27 @@ export default function PurchaseOrdersPage() {
     }
 
     const handleInvoice = async (order: PurchaseOrder) => {
-        const invNum = prompt("Ingrese el número de factura del proveedor:")
-        if (!invNum) return
-
-        try {
-            await api.post('/billing/invoices/create_from_order/', {
-                order_id: order.id,
-                order_type: 'purchase',
-                dte_type: 'PURCHASE_INV',
-                supplier_invoice_number: invNum
-            })
-            toast.success("Factura de proveedor registrada.")
-            fetchOrders()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar factura.")
-        }
+        setInvoicingOrder(order)
     }
 
-    const handlePayment = async (data: {
-        paymentMethod: string,
-        amount: number,
-        transaction_number?: string,
-        is_pending_registration?: boolean
-    }) => {
+    const handlePayment = async (data: any) => {
         if (!payingOrder) return
         try {
-            // Register the payment
-            await api.post('/treasury/payments/', {
-                amount: data.amount,
-                payment_type: 'OUTBOUND',
-                reference: `OC-${payingOrder.number}`,
-                purchase_order: payingOrder.id,
-                payment_method: data.paymentMethod,
-                transaction_number: data.transaction_number,
-                is_pending_registration: data.is_pending_registration
+            const formData = new FormData()
+            formData.append('amount', data.amount.toString())
+            formData.append('payment_type', 'OUTBOUND')
+            formData.append('reference', `OC-${payingOrder.number}`)
+            formData.append('purchase_order', payingOrder.id.toString())
+            formData.append('payment_method', data.paymentMethod)
+            if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
+            if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
+            if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
+            if (data.dteType) formData.append('dte_type', data.dteType)
+            if (data.documentReference) formData.append('document_reference', data.documentReference)
+            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
+
+            await api.post('/treasury/payments/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             })
 
             toast.success("Pago registrado correctamente")
@@ -242,7 +239,7 @@ export default function PurchaseOrdersPage() {
                                             </Button>
                                         )}
 
-                                        {order.status === 'CONFIRMED' && (
+                                        {['CONFIRMED', 'INVOICED', 'RECEIVED', 'PAID'].includes(order.status) && order.receiving_status !== 'RECEIVED' && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -251,6 +248,18 @@ export default function PurchaseOrdersPage() {
                                                 title="Recibir Mercadería"
                                             >
                                                 <Package className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {['RECEIVED', 'CONFIRMED', 'PAID'].includes(order.status) && !order.is_invoiced && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-emerald-500"
+                                                onClick={() => handleInvoice(order)}
+                                                title="Registrar Factura/Boleta"
+                                            >
+                                                <FileText className="h-4 w-4" />
                                             </Button>
                                         )}
 
@@ -322,6 +331,9 @@ export default function PurchaseOrdersPage() {
                     total={parseFloat(payingOrder.total)}
                     pendingAmount={payingOrder.pending_amount}
                     onConfirm={handlePayment}
+                    showDteSelector={true}
+                    isPurchase={true}
+                    existingInvoice={payingOrder.invoice_details}
                 />
             )}
 
@@ -330,6 +342,16 @@ export default function PurchaseOrdersPage() {
                     open={!!receivingOrder}
                     onOpenChange={(open) => !open && setReceivingOrder(null)}
                     orderId={receivingOrder.id}
+                    onSuccess={fetchOrders}
+                />
+            )}
+
+            {invoicingOrder && (
+                <DocumentRegistrationModal
+                    open={!!invoicingOrder}
+                    onOpenChange={(open) => !open && setInvoicingOrder(null)}
+                    orderId={invoicingOrder.id}
+                    orderNumber={invoicingOrder.number}
                     onSuccess={fetchOrders}
                 />
             )}
