@@ -55,13 +55,17 @@ class TreasuryService:
 
         # 1.5 Handle Purchase Document Registration (Auto-billing during payment)
         if purchase_order and dte_type and document_reference and not invoice:
-            from billing.services import BillingService
-            invoice = BillingService.create_purchase_bill(
-                order=purchase_order,
-                supplier_invoice_number=document_reference,
-                dte_type=dte_type,
-                document_attachment=document_attachment
-            )
+            existing_invoice = purchase_order.invoices.filter(status='POSTED').first()
+            if not existing_invoice:
+                from billing.services import BillingService
+                invoice = BillingService.create_purchase_bill(
+                    order=purchase_order,
+                    supplier_invoice_number=document_reference,
+                    dte_type=dte_type,
+                    document_attachment=document_attachment
+                )
+            else:
+                invoice = existing_invoice
         
         # 1.6 If method is CREDIT, we DON'T create a Payment record or Journal Entry.
         # We only wanted the invoice creation (which happened above).

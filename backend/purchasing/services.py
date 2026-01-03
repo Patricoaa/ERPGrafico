@@ -259,6 +259,28 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
+    def delete_receipt(receipt: PurchaseReceipt):
+        """
+        Deletes a purchase receipt, its journal entry, and associated stock moves.
+        Also reverts quantity_received on the purchase order lines.
+        """
+        # 1. Revert received quantities & Delete Stock Moves
+        for line in receipt.lines.all():
+            if line.stock_move:
+                line.stock_move.delete() # Accounting entry for move is often shared with receipt JE
+            
+            line.purchase_line.quantity_received -= line.quantity_received
+            line.purchase_line.save()
+
+        # 2. Delete Journal Entry
+        if receipt.journal_entry:
+            receipt.journal_entry.delete()
+
+        # 3. Delete Receipt
+        receipt.delete()
+
+    @staticmethod
+    @transaction.atomic
     def delete_purchase_order(order: PurchaseOrder):
         """
         Deletes a purchase order, its invoices, and associated journal entries.
@@ -275,12 +297,9 @@ class PurchasingService:
         for payment in order.payments.all():
             TreasuryService.delete_payment(payment)
 
-        # 3. Delete receipts?
-        # If we delete PO, we should arguably reverse receipts or error if received.
-        # For now, let's error if received.
-        if order.receiving_status != 'PENDING' and order.receiving_status != 'DRAFT':
-             # Allow force delete?
-             pass
+        # 3. Delete receipts (which removes Stock Moves and their JEs)
+        for receipt in order.receipts.all():
+            PurchasingService.delete_receipt(receipt)
 
         # 3. Delete order's own journal entry
         if order.journal_entry:
