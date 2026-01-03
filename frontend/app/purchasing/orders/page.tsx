@@ -35,11 +35,12 @@ interface PurchaseOrder {
     pending_amount: number
     is_invoiced: boolean
     receiving_status: string
-    invoice_details?: {
-        dte_type: string
-        number: string
-        document_attachment: string | null
-    } | null
+    related_documents?: {
+        invoices: any[]
+        notes: any[]
+        receipts: any[]
+        payments: any[]
+    }
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" }> = {
@@ -185,6 +186,7 @@ export default function PurchaseOrdersPage() {
                             <TableHead>Total</TableHead>
                             <TableHead>Pagado</TableHead>
                             <TableHead>Estado</TableHead>
+                            <TableHead>Documentos</TableHead>
                             <TableHead className="w-[150px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -209,6 +211,30 @@ export default function PurchaseOrdersPage() {
                                     <Badge variant={statusMap[order.status]?.variant || "default"}>
                                         {statusMap[order.status]?.label || order.status}
                                     </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                        {order.related_documents?.invoices.map((inv: any) => (
+                                            <Badge key={inv.id} variant="outline" className="text-[9px] bg-emerald-50 text-emerald-700 border-emerald-200 cursor-pointer hover:bg-emerald-100" onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}>
+                                                F-{inv.number}
+                                            </Badge>
+                                        ))}
+                                        {order.related_documents?.notes.map((note: any) => (
+                                            <Badge key={note.id} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200 cursor-pointer hover:bg-amber-100" onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}>
+                                                {note.type === 'NOTA_CREDITO' ? 'NC' : 'ND'}-{note.number}
+                                            </Badge>
+                                        ))}
+                                        {(order.related_documents?.receipts?.length ?? 0) > 0 && (
+                                            <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-700 border-blue-200">
+                                                {order.related_documents?.receipts?.length} Rec.
+                                            </Badge>
+                                        )}
+                                        {(order.related_documents?.payments?.length ?? 0) > 0 && (
+                                            <Badge variant="outline" className="text-[9px] bg-purple-50 text-purple-700 border-purple-200">
+                                                {order.related_documents?.payments?.length} Pagos
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center space-x-1">

@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from core.models import User
 from accounting.models import Account, AccountType
 from inventory.models import Product, Warehouse
+from decimal import Decimal
 
 class Supplier(models.Model):
     name = models.CharField(_("Nombre / Razón Social"), max_length=255)
@@ -93,6 +94,31 @@ class PurchaseOrder(models.Model):
     def __str__(self):
         return f"OC-{self.number} {self.supplier.name}"
     
+    @property
+    def effective_total(self):
+        """Returns the net value of the order considering all posted notes (ND increase, NC decrease)"""
+        invoices = self.invoices.filter(status='POSTED')
+        if not invoices.exists():
+            return self.total
+            
+        from billing.models import Invoice
+        net = Decimal('0')
+        # If we have a finalized invoice flow, use the sum of documents.
+        # Otherwise, use original total as base if no primary invoice exists.
+        has_primary = invoices.filter(dte_type__in=[Invoice.DTEType.FACTURA, Invoice.DTEType.PURCHASE_INV]).exists()
+        
+        if not has_primary:
+            base = self.total
+        else:
+            base = Decimal('0')
+            
+        for inv in invoices:
+            if inv.dte_type in [Invoice.DTEType.FACTURA, Invoice.DTEType.NOTA_DEBITO, Invoice.DTEType.PURCHASE_INV]:
+                base += inv.total
+            elif inv.dte_type == Invoice.DTEType.NOTA_CREDITO:
+                base -= inv.total
+        return base
+
     def save(self, *args, **kwargs):
         if not self.number:
             last_order = PurchaseOrder.objects.all().order_by('id').last()

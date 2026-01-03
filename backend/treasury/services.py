@@ -121,9 +121,16 @@ class TreasuryService:
         target_order = sale_order or purchase_order
         if target_order and not invoice:
             total_paid = sum(p.amount for p in target_order.payments.all())
-            if total_paid >= target_order.total:
+            
+            # Use effective_total for PurchaseOrders to account for ND/NC
+            from purchasing.models import PurchaseOrder
+            if isinstance(target_order, PurchaseOrder):
+                 order_total = target_order.effective_total
+            else:
+                 order_total = target_order.total
+
+            if total_paid >= order_total:
                 from sales.models import SaleOrder
-                from purchasing.models import PurchaseOrder
                 if isinstance(target_order, SaleOrder):
                     target_order.status = SaleOrder.Status.PAID
                     target_order.save()

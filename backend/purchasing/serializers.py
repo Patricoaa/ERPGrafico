@@ -29,6 +29,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     is_invoiced = serializers.SerializerMethodField()
     invoice_details = serializers.SerializerMethodField()
     serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
+    related_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
@@ -38,20 +39,78 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         return sum(p.amount for p in obj.payments.all())
 
     def get_pending_amount(self, obj):
-        return obj.total - self.get_total_paid(obj)
+        return obj.effective_total - self.get_total_paid(obj)
 
     def get_is_invoiced(self, obj):
-        return obj.invoices.exists()
+        from billing.models import Invoice
+        return obj.invoices.filter(dte_type__in=[
+            Invoice.DTEType.FACTURA, 
+            Invoice.DTEType.BOLETA, 
+            Invoice.DTEType.PURCHASE_INV
+        ]).exists()
     
     def get_invoice_details(self, obj):
-        invoice = obj.invoices.first()
+        from billing.models import Invoice
+        invoice = obj.invoices.filter(dte_type__in=[
+            Invoice.DTEType.FACTURA, 
+            Invoice.DTEType.BOLETA, 
+            Invoice.DTEType.PURCHASE_INV
+        ]).first()
+        
+        if not invoice:
+            # Fallback to any linked document (like a Note) if no primary exists
+            invoice = obj.invoices.first()
+
         if invoice:
             return {
+                'id': invoice.id,
                 'dte_type': invoice.dte_type,
                 'number': invoice.number,
                 'document_attachment': invoice.document_attachment.url if invoice.document_attachment else None
             }
         return None
+
+    def get_related_documents(self, obj):
+        """Returns a summary of all documents related to this PO for UI linking"""
+        docs = {
+            'invoices': [], # Primary bills
+            'notes': [],    # NC / ND
+            'receipts': [], # Stock receipts
+            'payments': []  # Payments
+        }
+
+        from billing.models import Invoice
+        for inv in obj.invoices.all():
+            doc_info = {
+                'id': inv.id,
+                'number': inv.number or 'Draft',
+                'type': inv.dte_type,
+                'type_display': inv.get_dte_type_display(),
+                'total': inv.total
+            }
+            if inv.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
+                docs['notes'].append(doc_info)
+            else:
+                docs['invoices'].append(doc_info)
+
+        for rec in obj.receipts.all():
+            docs['receipts'].append({
+                'id': rec.id,
+                'number': rec.number,
+                'date': rec.receipt_date,
+                # Link stock moves if they exist on lines
+                'stock_move_ids': [l.stock_move.id for l in rec.lines.all() if l.stock_move]
+            })
+
+        for pay in obj.payments.all():
+            docs['payments'].append({
+                'id': pay.id,
+                'amount': pay.amount,
+                'date': pay.date,
+                'method': pay.get_payment_method_display()
+            })
+
+        return docs
 
 class WritePurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseLineSerializer(many=True)

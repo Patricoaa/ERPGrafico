@@ -264,7 +264,7 @@ class PurchasingService:
         """
         Integral creation of a Credit or Debit Note linked to a Purchase Order.
         - note_type: NOTA_CREDITO or NOTA_DEBITO
-        - return_items: list of { 'product_id': int, 'quantity': float } (optional, for returns)
+        - return_items: list of { 'product_id': int, 'quantity': float, 'unit_cost': float }
         """
         from billing.models import Invoice
         from accounting.models import AccountingSettings, JournalEntry, JournalItem
@@ -300,48 +300,62 @@ class PurchasingService:
         if note_type == Invoice.DTEType.NOTA_CREDITO:
             # Credit Note: Reduces debt -> Debit AP
             JournalItem.objects.create(entry=entry, account=payable_account, debit=total_amount, credit=0, partner=order.supplier.name)
-            
-            # Counterpart: Credit Inventory/Expense
-            if return_items:
-                for item in return_items:
-                    from inventory.models import Product
-                    product = Product.objects.get(pk=item['product_id'])
-                    qty = Decimal(str(item['quantity']))
-                    
-                    # Create Stock Move (OUT)
+        else:
+            # Debit Note: Increases debt -> Credit AP
+            JournalItem.objects.create(entry=entry, account=payable_account, debit=0, credit=total_amount, partner=order.supplier.name)
+
+        processed_net = Decimal('0')
+        if return_items:
+            for item in return_items:
+                from inventory.models import Product
+                product = Product.objects.get(pk=item['product_id'])
+                qty = Decimal(str(item['quantity']))
+                item_unit_cost = Decimal(str(item.get('unit_cost', '0')))
+                item_net = qty * item_unit_cost
+                processed_net += item_net
+                
+                if qty != 0:
+                    # Stock Move
+                    if note_type == Invoice.DTEType.NOTA_CREDITO:
+                        st_type = StockMove.Type.OUT
+                        st_qty = -qty
+                    else:
+                        st_type = StockMove.Type.IN
+                        st_qty = qty
+                        
                     StockMove.objects.create(
                         date=timezone.now().date(),
                         product=product,
                         warehouse=order.warehouse,
-                        quantity=-qty,
-                        move_type=StockMove.Type.OUT,
-                        description=f"Retorno por Nota de Crédito {document_number}",
+                        quantity=st_qty,
+                        move_type=st_type,
+                        description=f"{invoice.get_dte_type_display()} {document_number}",
                         journal_entry=entry
                     )
                 
-                # Global Credit to Inventory/Expense to balance
-                credit_account = settings.default_inventory_account if settings else None
-                JournalItem.objects.create(entry=entry, account=credit_account, debit=0, credit=amount_net)
-            else:
-                credit_account = settings.default_expense_account or settings.default_inventory_account
-                JournalItem.objects.create(entry=entry, account=credit_account, debit=0, credit=amount_net)
-            
-            # Tax credit (IVA)
-            if amount_tax > 0:
-                tax_account = settings.default_tax_receivable_account
-                JournalItem.objects.create(entry=entry, account=tax_account, debit=0, credit=amount_tax)
+                # Accounting for this item
+                asset_account = product.get_asset_account or (settings.default_inventory_account if settings else None)
+                if asset_account:
+                    if note_type == Invoice.DTEType.NOTA_CREDITO:
+                         JournalItem.objects.create(entry=entry, account=asset_account, debit=0, credit=item_net)
+                    else:
+                         JournalItem.objects.create(entry=entry, account=asset_account, debit=item_net, credit=0)
+        
+        # 4. Global adjustments for remaining net (or if no items)
+        remaining_net = amount_net - processed_net
+        if remaining_net != 0:
+             adj_account = settings.default_expense_account or settings.default_inventory_account
+             if note_type == Invoice.DTEType.NOTA_CREDITO:
+                  JournalItem.objects.create(entry=entry, account=adj_account, debit=0, credit=remaining_net)
+             else:
+                  JournalItem.objects.create(entry=entry, account=adj_account, debit=remaining_net, credit=0)
 
-        else: # NOTA_DEBITO
-            # Debit Note: Increases debt -> Credit AP
-            JournalItem.objects.create(entry=entry, account=payable_account, debit=0, credit=total_amount, partner=order.supplier.name)
-            
-            # Counterpart: Debit Inventory/Expense
-            debit_account = settings.default_expense_account or settings.default_inventory_account
-            JournalItem.objects.create(entry=entry, account=debit_account, debit=amount_net, credit=0)
-            
-            # Tax payable (IVA)
-            if amount_tax > 0:
-                tax_account = settings.default_tax_receivable_account
+        # 5. Tax processing (IVA)
+        if amount_tax > 0:
+            tax_account = settings.default_tax_receivable_account
+            if note_type == Invoice.DTEType.NOTA_CREDITO:
+                JournalItem.objects.create(entry=entry, account=tax_account, debit=0, credit=amount_tax)
+            else:
                 JournalItem.objects.create(entry=entry, account=tax_account, debit=amount_tax, credit=0)
 
         JournalEntryService.post_entry(entry)

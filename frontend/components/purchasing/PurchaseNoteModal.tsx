@@ -40,31 +40,55 @@ export function PurchaseNoteModal({
 }: PurchaseNoteModalProps) {
     const [noteType, setNoteType] = useState("NOTA_CREDITO")
     const [documentNumber, setDocumentNumber] = useState("")
-    const [amountNet, setAmountNet] = useState("")
-    const [amountTax, setAmountTax] = useState("")
+    const [lines, setLines] = useState<any[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
-
-    const total = (parseFloat(amountNet) || 0) + (parseFloat(amountTax) || 0)
+    const [loadingOrder, setLoadingOrder] = useState(false)
 
     useEffect(() => {
         if (open) {
             setDocumentNumber("")
-            setAmountNet("")
-            setAmountTax("")
             setAttachment(null)
+            fetchOrderDetails()
         }
     }, [open])
 
-    const handleNetChange = (val: string) => {
-        setAmountNet(val)
-        const net = parseFloat(val) || 0
-        setAmountTax(Math.round(net * 0.19).toString()) // Default 19% tax
+    const fetchOrderDetails = async () => {
+        setLoadingOrder(true)
+        try {
+            const response = await api.get(`/purchasing/orders/${orderId}/`)
+            // Initializing lines with 0 quantity but original unit cost
+            const initialLines = (response.data.lines || []).map((line: any) => ({
+                ...line,
+                note_quantity: 0,
+                note_unit_cost: parseFloat(line.unit_cost)
+            }))
+            setLines(initialLines)
+        } catch (error) {
+            console.error("Error fetching order details:", error)
+            toast.error("No se pudieron cargar los detalles de la orden")
+        } finally {
+            setLoadingOrder(false)
+        }
     }
 
+    const handleLineChange = (index: number, field: string, value: string) => {
+        const newLines = [...lines]
+        newLines[index][field] = parseFloat(value) || 0
+        setLines(newLines)
+    }
+
+    const amountNet = lines.reduce((acc, line) => acc + (line.note_quantity * line.note_unit_cost), 0)
+    const amountTax = Math.round(amountNet * 0.19)
+    const total = amountNet + amountTax
+
     const handleSubmit = async () => {
-        if (!documentNumber || !amountNet) {
-            toast.error("El número de documento y el monto neto son obligatorios")
+        if (!documentNumber) {
+            toast.error("El número de documento es obligatorio")
+            return
+        }
+        if (amountNet <= 0) {
+            toast.error("El monto total de la nota debe ser mayor a 0")
             return
         }
 
@@ -73,8 +97,19 @@ export function PurchaseNoteModal({
             const formData = new FormData()
             formData.append('note_type', noteType)
             formData.append('document_number', documentNumber)
-            formData.append('amount_net', amountNet)
-            formData.append('amount_tax', amountTax)
+            formData.append('amount_net', amountNet.toString())
+            formData.append('amount_tax', amountTax.toString())
+
+            const returnItems = lines
+                .filter(l => l.note_quantity > 0)
+                .map(l => ({
+                    product_id: l.product,
+                    quantity: l.note_quantity,
+                    unit_cost: l.note_unit_cost
+                }))
+
+            formData.append('return_items', JSON.stringify(returnItems))
+
             if (attachment) {
                 formData.append('document_attachment', attachment)
             }
@@ -96,15 +131,12 @@ export function PurchaseNoteModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[900px]">
                 <DialogHeader className="border-b pb-4">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                         <FileBadge className="h-6 w-6 text-amber-500" />
                         Registrar Nota Crédito/Débito - OC-{orderNumber}
                     </DialogTitle>
-                    <DialogDescription>
-                        Esta acción afectará la contabilidad y el saldo pendiente de la orden.
-                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6 py-6">
@@ -116,8 +148,8 @@ export function PurchaseNoteModal({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="NOTA_CREDITO">Nota de Crédito (Descuento/Devolución)</SelectItem>
-                                    <SelectItem value="NOTA_DEBITO">Nota de Débito (Cargo Adicional)</SelectItem>
+                                    <SelectItem value="NOTA_CREDITO">Nota de Crédito (Devolución)</SelectItem>
+                                    <SelectItem value="NOTA_DEBITO">Nota de Débito (Agregación)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -133,60 +165,100 @@ export function PurchaseNoteModal({
                         </div>
                     </div>
 
-                    <div className="p-4 bg-muted/30 rounded-lg border space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-bold uppercase">Monto Neto</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">$</span>
-                                    <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={amountNet}
-                                        onChange={(e) => handleNetChange(e.target.value)}
-                                        className="pl-7 font-bold"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-bold uppercase">IVA (19%)</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">$</span>
-                                    <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={amountTax}
-                                        onChange={(e) => setAmountTax(e.target.value)}
-                                        className="pl-7 font-bold"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-between items-center pt-2 border-t font-black">
-                            <span className="text-sm">TOTAL AFECTADO:</span>
-                            <span className="text-2xl text-primary">${total.toLocaleString()}</span>
-                        </div>
+                    <div className="rounded-md border overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted/50 border-b">
+                                <tr>
+                                    <th className="px-3 py-2 text-left font-bold text-[10px] uppercase">Producto</th>
+                                    <th className="px-3 py-2 text-center font-bold text-[10px] uppercase w-20">Cant. Orig.</th>
+                                    <th className="px-3 py-2 text-center font-bold text-[10px] uppercase w-24">Cant. Nota</th>
+                                    <th className="px-3 py-2 text-right font-bold text-[10px] uppercase w-32">Costo Unit.</th>
+                                    <th className="px-3 py-2 text-right font-bold text-[10px] uppercase w-32">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {loadingOrder ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-4 text-center text-muted-foreground italic">Cargando productos...</td>
+                                    </tr>
+                                ) : lines.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-4 text-center text-muted-foreground italic">No se encontraron productos en la orden</td>
+                                    </tr>
+                                ) : lines.map((line, idx) => (
+                                    <tr key={line.id} className={line.note_quantity > 0 ? "bg-amber-50/30" : ""}>
+                                        <td className="px-3 py-2 font-medium">{line.product_name}</td>
+                                        <td className="px-3 py-2 text-center text-muted-foreground font-bold">{line.quantity}</td>
+                                        <td className="px-3 py-2">
+                                            <Input
+                                                type="number"
+                                                className="h-8 text-center font-bold"
+                                                value={line.note_quantity}
+                                                onChange={(e) => handleLineChange(idx, 'note_quantity', e.target.value)}
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <div className="relative">
+                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]">$</span>
+                                                <Input
+                                                    type="number"
+                                                    className="h-8 pl-5 text-right font-bold"
+                                                    value={line.note_unit_cost}
+                                                    onChange={(e) => handleLineChange(idx, 'note_unit_cost', e.target.value)}
+                                                />
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-2 text-right font-black">
+                                            ${(line.note_quantity * line.note_unit_cost).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label className="text-[11px] font-bold uppercase text-muted-foreground">Adjuntar Documento (Opcional)</Label>
-                        <Input
-                            type="file"
-                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                            className="cursor-pointer text-xs"
-                        />
-                        {attachment && (
-                            <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3" /> {attachment.name}
+                    <div className="flex justify-between items-start gap-8">
+                        <div className="flex-1 space-y-2">
+                            <Label className="text-[11px] font-bold uppercase text-muted-foreground">Adjuntar Documento (Opcional)</Label>
+                            <Input
+                                type="file"
+                                onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                                className="cursor-pointer text-xs h-9"
+                            />
+                            {attachment && (
+                                <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                                    <CheckCircle2 className="h-3 w-3" /> {attachment.name}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="w-64 p-4 bg-muted/30 rounded-lg border space-y-2">
+                            <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
+                                <span>Neto:</span>
+                                <span>${amountNet.toLocaleString()}</span>
                             </div>
-                        )}
+                            <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
+                                <span>IVA (19%):</span>
+                                <span>${amountTax.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t font-black">
+                                <span className="text-sm">TOTAL:</span>
+                                <span className="text-xl text-primary">${total.toLocaleString()}</span>
+                            </div>
+                        </div>
                     </div>
 
                     {noteType === 'NOTA_CREDITO' && (
                         <div className="flex gap-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded border border-blue-100 dark:border-blue-900/30 text-[10px] text-blue-700 dark:text-blue-400">
                             <AlertCircle className="h-4 w-4 shrink-0" />
-                            <p>Si la nota implica devolución física de mercadería, el sistema registrará una salida de inventario automática (Stock OUT).</p>
+                            <p>Si la nota implica devolución física de mercadería, el sistema registrará una salida de inventario automática (Stock OUT) para los productos con cantidad mayor a cero.</p>
+                        </div>
+                    )}
+
+                    {noteType === 'NOTA_DEBITO' && (
+                        <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-900/10 rounded border border-amber-100 dark:border-amber-900/30 text-[10px] text-amber-700 dark:text-amber-400">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            <p>Si la nota implica recepción física de mercadería adicional o aumento de valor, el sistema registrará una entrada de inventario automática (Stock IN) para los productos con cantidad mayor a cero.</p>
                         </div>
                     )}
                 </div>
@@ -197,8 +269,8 @@ export function PurchaseNoteModal({
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={submitting || !documentNumber || !amountNet}
-                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                        disabled={submitting || !documentNumber || amountNet <= 0}
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-11 px-8"
                     >
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirmar Registro de Nota

@@ -87,6 +87,7 @@ const items = [
         icon: ShoppingBag,
         items: [
             { title: "Ordenes de Compra", url: "/purchasing/orders" },
+            { title: "Notas de Crédito/Débito", url: "/purchasing/notes" },
             { title: "Proveedores", url: "/purchasing/suppliers" },
         ]
     },

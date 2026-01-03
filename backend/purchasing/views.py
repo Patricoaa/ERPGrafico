@@ -112,12 +112,18 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     def register_note(self, request, pk=None):
         order = self.get_object()
         try:
+            import json
             note_type = request.data.get('note_type')
             amount_net = Decimal(str(request.data.get('amount_net', '0')))
             amount_tax = Decimal(str(request.data.get('amount_tax', '0')))
             document_number = request.data.get('document_number')
             document_attachment = request.FILES.get('document_attachment')
-            return_items = request.data.get('return_items', []) # [{product_id, quantity}]
+            
+            return_items_raw = request.data.get('return_items', '[]')
+            if isinstance(return_items_raw, str):
+                return_items = json.loads(return_items_raw)
+            else:
+                return_items = return_items_raw
 
             invoice = PurchasingService.create_note(
                 order=order,
