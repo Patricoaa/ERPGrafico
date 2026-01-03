@@ -84,6 +84,23 @@ export default function PurchaseNotesPage() {
         n.purchase_order_number?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
+    const handlePaymentConfirm = async (paymentData: any) => {
+        try {
+            await api.post('/treasury/payments/', {
+                ...paymentData,
+                purchase_order: payingNote?.purchase_order,
+                invoice: payingNote?.id,
+                payment_type: payingNote?.dte_type === 'NOTA_CREDITO' ? 'INBOUND' : 'OUTBOUND'
+            })
+            toast.success("Operación registrada correctamente")
+            setPayingNote(null)
+            fetchNotes()
+        } catch (error) {
+            console.error("Error registering payment:", error)
+            toast.error("Error al registrar la operación")
+        }
+    }
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -190,8 +207,8 @@ export default function PurchaseNotesPage() {
                 <TransactionViewModal
                     open={!!viewingNote}
                     onOpenChange={(open) => !open && setViewingNote(null)}
-                    transactionId={viewingNote.id}
-                    transactionType="purchase_order"
+                    id={viewingNote.id}
+                    type="invoice"
                     view="details"
                 />
             )}
@@ -200,12 +217,10 @@ export default function PurchaseNotesPage() {
                 <PaymentDialog
                     open={!!payingNote}
                     onOpenChange={(open) => !open && setPayingNote(null)}
-                    onSuccess={fetchNotes}
-                    orderType="purchase"
-                    orderId={payingNote.purchase_order!}
-                    totalAmount={parseFloat(payingNote.total)}
+                    onConfirm={handlePaymentConfirm}
+                    isPurchase={true}
+                    total={parseFloat(payingNote.total)}
                     pendingAmount={payingNote.pending_amount ?? parseFloat(payingNote.total)}
-                    supplierName={payingNote.supplier_name}
                     existingInvoice={{
                         dte_type: payingNote.dte_type,
                         number: payingNote.number,

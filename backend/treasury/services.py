@@ -89,9 +89,13 @@ class TreasuryService:
         )
         
         if partner:
-             if payment_type == Payment.Type.INBOUND:
+             # Direct assignment based on model type to avoid confusion with INBOUND/OUTBOUND
+             from sales.models import Customer
+             from purchasing.models import Supplier
+             
+             if isinstance(partner, Customer):
                  payment.customer = partner
-             else:
+             elif isinstance(partner, Supplier):
                  payment.supplier = partner
         
         payment.save()

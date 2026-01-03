@@ -35,6 +35,11 @@ interface PurchaseOrder {
     pending_amount: number
     is_invoiced: boolean
     receiving_status: string
+    invoice_details?: {
+        dte_type: string
+        number: string
+        document_attachment: string | null
+    } | null
     related_documents?: {
         invoices: any[]
         notes: any[]
@@ -213,26 +218,44 @@ export default function PurchaseOrdersPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                    <div className="flex flex-col gap-1">
                                         {order.related_documents?.invoices.map((inv: any) => (
-                                            <Badge key={inv.id} variant="outline" className="text-[9px] bg-emerald-50 text-emerald-700 border-emerald-200 cursor-pointer hover:bg-emerald-100" onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}>
-                                                F-{inv.number}
-                                            </Badge>
+                                            <button
+                                                key={inv.id}
+                                                onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
+                                                #{inv.number}
+                                            </button>
                                         ))}
                                         {order.related_documents?.notes.map((note: any) => (
-                                            <Badge key={note.id} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200 cursor-pointer hover:bg-amber-100" onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}>
-                                                {note.type === 'NOTA_CREDITO' ? 'NC' : 'ND'}-{note.number}
-                                            </Badge>
+                                            <button
+                                                key={note.id}
+                                                onClick={() => setViewingTransaction({ type: 'invoice', id: note.id, view: 'details' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota {note.type === 'NOTA_CREDITO' ? 'Crédito' : 'Débito'}</span>
+                                                #{note.number}
+                                            </button>
                                         ))}
                                         {(order.related_documents?.receipts?.length ?? 0) > 0 && (
-                                            <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-700 border-blue-200">
-                                                {order.related_documents?.receipts?.length} Rec.
-                                            </Badge>
+                                            <div className="flex flex-col text-left items-start leading-tight">
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepciones</span>
+                                                <span className="text-[10px] text-muted-foreground">{order.related_documents?.receipts?.length} recep.</span>
+                                            </div>
                                         )}
                                         {(order.related_documents?.payments?.length ?? 0) > 0 && (
-                                            <Badge variant="outline" className="text-[9px] bg-purple-50 text-purple-700 border-purple-200">
-                                                {order.related_documents?.payments?.length} Pagos
-                                            </Badge>
+                                            <button
+                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'history' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pagos</span>
+                                                <span className="text-[10px]">{order.related_documents?.payments?.length} reg.</span>
+                                            </button>
+                                        )}
+                                        {!order.related_documents?.invoices.length && !order.related_documents?.notes.length && !order.related_documents?.receipts.length && !order.related_documents?.payments.length && (
+                                            <span className="text-muted-foreground text-xs">-</span>
                                         )}
                                     </div>
                                 </TableCell>
