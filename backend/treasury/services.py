@@ -30,7 +30,6 @@ class TreasuryService:
                  pass
         
         if not treasury_account:
-        if not treasury_account:
             # Fallback: Find the first available treasury account of the correct type
             if payment_method == Payment.Method.CASH:
                 treasury_account = TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.CASH).first()

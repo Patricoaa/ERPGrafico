@@ -39,6 +39,7 @@ interface TreasuryAccount {
     code: string | null
     currency: string
     account: number | null
+    account_name?: string
     account_details?: any
     account_type: 'BANK' | 'CASH'
 }
@@ -136,9 +137,10 @@ export default function TreasuryAccountsPage() {
                                     <TableCell>{acc.currency}</TableCell>
                                     <TableCell>
                                         {acc.account ? (
-                                            <span className="text-xs bg-secondary px-2 py-1 rounded-full">
-                                                ID: {acc.account}
-                                            </span>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium">{acc.account_name || 'Cuenta Contable'}</span>
+                                                <span className="text-[10px] text-muted-foreground">ID: {acc.account}</span>
+                                            </div>
                                         ) : <span className="text-muted-foreground text-xs">Sin asignar</span>}
                                     </TableCell>
                                     <TableCell>
