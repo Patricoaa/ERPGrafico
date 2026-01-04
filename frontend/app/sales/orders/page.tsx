@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -292,7 +292,7 @@ export default function SalesOrdersPage() {
                                             </Button>
                                         )}
 
-                                        {order.total_paid > 0 && (
+                                        {(order.related_documents?.payments?.length ?? 0) > 0 && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -300,7 +300,7 @@ export default function SalesOrdersPage() {
                                                 onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'history' })}
                                                 title="Historial de Pagos"
                                             >
-                                                <Banknote className="h-4 w-4" />
+                                                <History className="h-4 w-4" />
                                             </Button>
                                         )}
 

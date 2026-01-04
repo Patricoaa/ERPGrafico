@@ -15,13 +15,9 @@ import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Eye, TrendingDown, FileBadge } from "lucide-react"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { Eye, FileBadge } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
-import { PurchaseNoteModal } from "../../../components/purchasing/PurchaseNoteModal"
 
 interface PurchaseOrder {
     id: number
@@ -50,11 +46,7 @@ interface PurchaseOrder {
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" }> = {
     'DRAFT': { label: 'Borrador', variant: 'outline' },
-    'CONFIRMED': { label: 'Confirmado', variant: 'default' },
-    'RECEIVED': { label: 'Recibido', variant: 'secondary' },
-    'INVOICED': { label: 'Facturado', variant: 'info' },
-    'PAID': { label: 'Pagado', variant: 'success' },
-    'CANCELLED': { label: 'Anulado', variant: 'destructive' },
+    'CONFIRMED': { label: 'Confirmado', variant: 'info' },
 }
 
 export default function PurchaseOrdersPage() {
@@ -63,10 +55,7 @@ export default function PurchaseOrdersPage() {
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
-    const [payingOrder, setPayingOrder] = useState<PurchaseOrder | null>(null)
-    const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
-    const [notingOrder, setNotingOrder] = useState<PurchaseOrder | null>(null)
 
 
     const fetchOrders = async () => {
@@ -114,40 +103,8 @@ export default function PurchaseOrdersPage() {
         }
     }
 
-    const handleReceive = (order: PurchaseOrder) => {
-        setReceivingOrder(order)
-    }
-
     const handleInvoice = async (order: PurchaseOrder) => {
         setInvoicingOrder(order)
-    }
-
-    const handlePayment = async (data: any) => {
-        if (!payingOrder) return
-        try {
-            const formData = new FormData()
-            formData.append('amount', data.amount.toString())
-            formData.append('payment_type', 'OUTBOUND')
-            formData.append('reference', `OC-${payingOrder.number}`)
-            formData.append('purchase_order', payingOrder.id.toString())
-            formData.append('payment_method', data.paymentMethod)
-            if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
-            if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
-            if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
-            if (data.dteType) formData.append('dte_type', data.dteType)
-            if (data.documentReference) formData.append('document_reference', data.documentReference)
-            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
-
-            await api.post('/treasury/payments/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
-
-            toast.success("Pago registrado correctamente")
-            setPayingOrder(null)
-            fetchOrders()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al procesar el pago")
-        }
     }
 
     useEffect(() => {
@@ -189,7 +146,6 @@ export default function PurchaseOrdersPage() {
                             <TableHead>Proveedor</TableHead>
                             <TableHead>Almacén</TableHead>
                             <TableHead>Total</TableHead>
-                            <TableHead>Pagado</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead>Documentos</TableHead>
                             <TableHead className="w-[150px] text-center">Acciones</TableHead>
@@ -204,21 +160,13 @@ export default function PurchaseOrdersPage() {
                                 <TableCell>{order.warehouse_name}</TableCell>
                                 <TableCell>{parseFloat(order.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</TableCell>
                                 <TableCell>
-                                    <div className="space-y-1 w-32">
-                                        <div className="flex justify-between text-[10px] font-bold">
-                                            <span>{Math.round((order.total_paid / parseFloat(order.total)) * 100)}%</span>
-                                            <span>${order.total_paid.toLocaleString()}</span>
-                                        </div>
-                                        <Progress value={(order.total_paid / parseFloat(order.total)) * 100} className="h-1" />
-                                    </div>
-                                </TableCell>
-                                <TableCell>
                                     <Badge variant={statusMap[order.status]?.variant || "default"}>
                                         {statusMap[order.status]?.label || order.status}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex flex-col gap-1">
+                                        {/* Only show Invoices/Boletas as requested */}
                                         {order.related_documents?.invoices.map((inv: any) => (
                                             <button
                                                 key={inv.id}
@@ -231,37 +179,7 @@ export default function PurchaseOrdersPage() {
                                                 {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
                                             </button>
                                         ))}
-                                        {order.related_documents?.notes.map((note: any) => (
-                                            <button
-                                                key={note.id}
-                                                onClick={() => setViewingTransaction({ type: 'invoice', id: note.id, view: 'details' })}
-                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">{note.type === 'NOTA_CREDITO' ? 'Nota Crédito' : 'Nota Débito'}</span>
-                                                {note.type === 'NOTA_CREDITO' ? 'NC' : 'ND'}-{note.number}
-                                            </button>
-                                        ))}
-                                        {order.related_documents?.receipts?.map((rec: any) => (
-                                            <button
-                                                key={rec.id}
-                                                onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
-                                                className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepción</span>
-                                                <span className="text-[10px]">{rec.number}</span>
-                                            </button>
-                                        ))}
-                                        {order.related_documents?.payments?.map((pay: any) => (
-                                            <button
-                                                key={pay.id}
-                                                onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
-                                                className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
-                                                <span className="text-[10px] font-mono">{pay.code}</span>
-                                            </button>
-                                        ))}
-                                        {!order.related_documents?.invoices.length && !order.related_documents?.notes.length && !order.related_documents?.receipts.length && !order.related_documents?.payments.length && (
+                                        {!order.related_documents?.invoices.length && (
                                             <span className="text-muted-foreground text-xs">-</span>
                                         )}
                                     </div>
@@ -307,19 +225,7 @@ export default function PurchaseOrdersPage() {
                                             </>
                                         )}
 
-                                        {['CONFIRMED', 'INVOICED', 'RECEIVED', 'PAID'].includes(order.status) && order.receiving_status !== 'RECEIVED' && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-orange-600"
-                                                onClick={() => handleReceive(order)}
-                                                title="Recibir Mercadería"
-                                            >
-                                                <Package className="h-4 w-4" />
-                                            </Button>
-                                        )}
-
-                                        {['RECEIVED', 'CONFIRMED', 'PAID'].includes(order.status) && !order.is_invoiced && (
+                                        {['CONFIRMED', 'RECEIVED', 'PAID', 'INVOICED'].includes(order.status) && !order.is_invoiced && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -328,42 +234,6 @@ export default function PurchaseOrdersPage() {
                                                 title="Registrar Factura/Boleta"
                                             >
                                                 <FileText className="h-4 w-4" />
-                                            </Button>
-                                        )}
-
-                                        {['CONFIRMED', 'RECEIVED', 'INVOICED', 'PAID'].includes(order.status) && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-amber-600"
-                                                onClick={() => setNotingOrder(order)}
-                                                title="Registrar Nota Crédito/Débito"
-                                            >
-                                                <FileBadge className="h-4 w-4" />
-                                            </Button>
-                                        )}
-
-                                        {['RECEIVED', 'INVOICED', 'CONFIRMED'].includes(order.status) && order.pending_amount > 0 && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-emerald-600"
-                                                onClick={() => setPayingOrder(order)}
-                                                title="Registrar Pago"
-                                            >
-                                                <Banknote className="h-4 w-4" />
-                                            </Button>
-                                        )}
-
-                                        {order.total_paid > 0 && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-emerald-600"
-                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'history' })}
-                                                title="Historial de Pagos"
-                                            >
-                                                <Banknote className="h-4 w-4" />
                                             </Button>
                                         )}
                                     </div>
@@ -394,44 +264,12 @@ export default function PurchaseOrdersPage() {
                 />
             )}
 
-            {payingOrder && (
-                <PaymentDialog
-                    open={!!payingOrder}
-                    onOpenChange={(open) => !open && setPayingOrder(null)}
-                    total={parseFloat(payingOrder.total)}
-                    pendingAmount={payingOrder.pending_amount}
-                    onConfirm={handlePayment}
-                    showDteSelector={true}
-                    isPurchase={true}
-                    existingInvoice={payingOrder.invoice_details}
-                />
-            )}
-
-            {receivingOrder && (
-                <ReceiptModal
-                    open={!!receivingOrder}
-                    onOpenChange={(open) => !open && setReceivingOrder(null)}
-                    orderId={receivingOrder.id}
-                    onSuccess={fetchOrders}
-                />
-            )}
-
             {invoicingOrder && (
                 <DocumentRegistrationModal
                     open={!!invoicingOrder}
                     onOpenChange={(open) => !open && setInvoicingOrder(null)}
                     orderId={invoicingOrder.id}
                     orderNumber={invoicingOrder.number}
-                    onSuccess={fetchOrders}
-                />
-            )}
-
-            {notingOrder && (
-                <PurchaseNoteModal
-                    open={!!notingOrder}
-                    onOpenChange={(open: boolean) => !open && setNotingOrder(null)}
-                    orderId={notingOrder.id}
-                    orderNumber={notingOrder.number}
                     onSuccess={fetchOrders}
                 />
             )}

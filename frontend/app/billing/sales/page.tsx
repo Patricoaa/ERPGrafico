@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, Banknote } from "lucide-react"
+import { Search, Eye, Banknote, History } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -114,7 +114,7 @@ export default function SalesInvoicesPage() {
                                             >
                                                 <Eye className="h-4 w-4" />
                                             </Button>
-                                            {inv.status === 'PAID' && (
+                                            {(inv.related_documents?.payments?.length ?? 0) > 0 && (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -122,7 +122,7 @@ export default function SalesInvoicesPage() {
                                                     onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'history' })}
                                                     title="Historial de Pagos"
                                                 >
-                                                    <Banknote className="h-4 w-4" />
+                                                    <History className="h-4 w-4" />
                                                 </Button>
                                             )}
                                         </div>

@@ -27,7 +27,9 @@ interface PaymentDialogProps {
         documentAttachment?: File | null
     }) => void
     showDteSelector?: boolean
+    hideDteFields?: boolean
     isPurchase?: boolean
+    isRefund?: boolean
     existingInvoice?: {
         dte_type: string
         number: string
@@ -42,7 +44,9 @@ export function PaymentDialog({
     pendingAmount,
     onConfirm,
     showDteSelector = false,
+    hideDteFields = false,
     isPurchase = false,
+    isRefund = false,
     existingInvoice = null
 }: PaymentDialogProps) {
     const [dteType, setDteType] = useState(isPurchase ? "NONE" : "BOLETA")
@@ -81,7 +85,7 @@ export function PaymentDialog({
                 <DialogHeader className="border-b pb-4">
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                         <Banknote className="h-5 w-5" />
-                        Registrar Pago
+                        {isRefund ? "Registrar Reembolso / Devolución" : "Registrar Pago"}
                     </DialogTitle>
                 </DialogHeader>
 
@@ -89,12 +93,12 @@ export function PaymentDialog({
                     <div className="flex justify-between items-center p-4 bg-muted/50 rounded-lg">
                         <div className="text-sm font-medium text-muted-foreground">Monto Total: ${total.toLocaleString()}</div>
                         <div className="text-2xl font-black text-primary">
-                            Pendiente: ${pendingAmount.toLocaleString()}
+                            {isRefund ? "Por Recibir" : "Pendiente"}: ${pendingAmount.toLocaleString()}
                         </div>
                     </div>
 
                     <div className="grid gap-4">
-                        {showDteSelector && (
+                        {showDteSelector && !hideDteFields && (
                             <div className="grid gap-2">
                                 <Label className="flex items-center gap-2 text-[11px] font-bold uppercase text-muted-foreground">
                                     <Receipt className="h-3 w-3" />
@@ -127,7 +131,7 @@ export function PaymentDialog({
                             </div>
                         )}
 
-                        {isPurchase && (dteType === "BOLETA" || dteType === "FACTURA") && (
+                        {!hideDteFields && isPurchase && (dteType === "BOLETA" || dteType === "FACTURA") && (
                             <div className="space-y-3 p-3 bg-muted/30 rounded-lg border border-dashed">
                                 <div className="grid gap-2">
                                     <Label className="text-[10px] font-bold uppercase">N° de Folio / Referencia (Obligatorio)</Label>
@@ -183,7 +187,7 @@ export function PaymentDialog({
                                     { id: 'CARD', label: 'Tarjeta', icon: CreditCard },
                                     { id: 'TRANSFER', label: 'Transf.', icon: Landmark },
                                     { id: 'CREDIT', label: 'Crédito', icon: Receipt },
-                                ].map((m) => (
+                                ].filter(m => !isPurchase || m.id !== 'CREDIT').map((m) => (
                                     <Button
                                         key={m.id}
                                         type="button"
@@ -243,7 +247,9 @@ export function PaymentDialog({
                         )}
 
                         <div className="grid gap-2">
-                            <Label className="text-[11px] font-bold uppercase text-muted-foreground">Monto a Pagar</Label>
+                            <Label className="text-[11px] font-bold uppercase text-muted-foreground">
+                                {isRefund ? "Monto a Recibir" : "Monto a Pagar"}
+                            </Label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
                                 <Input
@@ -259,7 +265,9 @@ export function PaymentDialog({
 
                             {paymentMethod === 'CASH' && change > 0 && (
                                 <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 rounded-md">
-                                    <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Vuelto a entregar:</span>
+                                    <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                                        {isRefund ? "Diferencia a favor:" : "Vuelto a entregar:"}
+                                    </span>
                                     <span className="font-bold text-xl text-emerald-600 dark:text-emerald-400">${change.toLocaleString()}</span>
                                 </div>
                             )}
@@ -289,7 +297,7 @@ export function PaymentDialog({
                     >
                         {paymentMethod === 'CREDIT' ? (
                             existingInvoice ? 'Mantener en Cuenta Corriente' : 'Confirmar Venta/Compra a Crédito'
-                        ) : 'Confirmar Pago'}
+                        ) : (isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

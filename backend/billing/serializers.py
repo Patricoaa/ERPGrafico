@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Invoice
+from treasury.serializers import PaymentSerializer
 from sales.serializers import SaleOrderSerializer
 from purchasing.serializers import PurchaseOrderSerializer
 
@@ -15,10 +16,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
     related_documents = serializers.SerializerMethodField()
     related_stock_moves = serializers.SerializerMethodField()
     lines = serializers.SerializerMethodField()
+    pending_amount = serializers.SerializerMethodField()
+    serialized_payments = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = '__all__'
+
+    def get_serialized_payments(self, obj):
+        return PaymentSerializer(obj.payments.all(), many=True).data
+
+    def get_pending_amount(self, obj):
+        total_paid = sum(p.amount for p in obj.payments.all())
+        return obj.total - total_paid
 
     def get_lines(self, obj):
         if obj.sale_order:

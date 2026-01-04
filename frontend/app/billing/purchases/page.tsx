@@ -14,6 +14,7 @@ import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 import { DocumentEditModal } from "../../../components/purchasing/DocumentEditModal"
 import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
+import { Progress } from "@/components/ui/progress"
 
 interface PurchaseDocument {
     id: number
@@ -28,6 +29,7 @@ interface PurchaseDocument {
     status: string
     status_display?: string
     pending_amount?: number
+    serialized_payments?: any[]
     po_receiving_status?: string
     related_documents?: {
         invoices: any[]
@@ -159,9 +161,10 @@ export default function PurchaseInvoicesPage() {
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Proveedor</TableHead>
-                                <TableHead>Documentos</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
+                                <TableHead>Pagado/Devuelto</TableHead>
                                 <TableHead>Estado</TableHead>
+                                <TableHead>Documentos</TableHead>
                                 <TableHead className="text-center">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -191,6 +194,48 @@ export default function PurchaseInvoicesPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>{doc.partner_name}</TableCell>
+                                        <TableCell className="text-right font-medium">
+                                            ${Number(doc.total).toLocaleString()}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="space-y-1 w-32">
+                                                {(() => {
+                                                    const total = parseFloat(doc.total)
+                                                    const pending = doc.pending_amount ?? total
+                                                    const paid = total - pending
+                                                    const percentage = total > 0 ? Math.round((paid / total) * 100) : 0
+                                                    return (
+                                                        <>
+                                                            <div className="flex justify-between text-[10px] font-bold">
+                                                                <span>{percentage}%</span>
+                                                                <span>${paid.toLocaleString()}</span>
+                                                            </div>
+                                                            <Progress value={percentage} className="h-1" />
+                                                        </>
+                                                    )
+                                                })()}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1">
+                                                {doc.status !== 'POSTED' && (
+                                                    <Badge variant={badgeStyle.variant as any}>
+                                                        {badgeStyle.label}
+                                                    </Badge>
+                                                )}
+                                                {/* Additional Status Badges */}
+                                                <div className="flex flex-wrap gap-1">
+                                                    {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && (
+                                                        <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
+                                                    )}
+                                                    {doc.po_receiving_status === 'RECEIVED' && (
+                                                        <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-orange-600 font-bold whitespace-nowrap">
+                                                            {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col gap-1">
                                                 {/* Purchase Order Link */}
@@ -203,6 +248,19 @@ export default function PurchaseInvoicesPage() {
                                                         OC-{doc.purchase_order_number || doc.purchase_order}
                                                     </button>
                                                 )}
+
+                                                {/* Show Originating Invoice if this is a Note */}
+                                                {isNote && doc.related_documents?.invoices?.filter((inv: any) => inv.id !== doc.id && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)).map((inv: any) => (
+                                                    <button
+                                                        key={inv.id}
+                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                        className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                    >
+                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Origen: {inv.dte_type === 'FACTURA' ? 'Factura' : 'Boleta'}</span>
+                                                        {inv.number}
+                                                    </button>
+                                                ))}
+
                                                 {doc.related_documents?.receipts?.map((rec: any) => (
                                                     <button
                                                         key={rec.id}
@@ -227,14 +285,6 @@ export default function PurchaseInvoicesPage() {
                                                 ))}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-right font-medium">
-                                            ${Number(doc.total).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={badgeStyle.variant as any}>
-                                                {badgeStyle.label}
-                                            </Badge>
-                                        </TableCell>
                                         <TableCell>
                                             <div className="flex justify-center space-x-1">
                                                 {/* View Details */}
@@ -247,14 +297,14 @@ export default function PurchaseInvoicesPage() {
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
 
-                                                {/* Receive Merchandise (Only if PO not fully received) */}
-                                                {doc.purchase_order && doc.po_receiving_status !== 'RECEIVED' && (
+                                                {/* Receive/Send Merchandise */}
+                                                {(doc.purchase_order || isNote) && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         className="text-orange-600"
                                                         onClick={() => setReceivingDoc(doc)}
-                                                        title="Recibir Mercadería (Orden Original)"
+                                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería (Manual)" : "Recibir Mercadería"}
                                                     >
                                                         <Package className="h-4 w-4" />
                                                     </Button>
@@ -271,8 +321,8 @@ export default function PurchaseInvoicesPage() {
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>
 
-                                                {/* Credit/Debit Note */}
-                                                {doc.purchase_order && (
+                                                {/* Credit/Debit Note (Only for primary documents) */}
+                                                {doc.purchase_order && !isNote && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -297,6 +347,19 @@ export default function PurchaseInvoicesPage() {
                                                     </Button>
                                                 )}
 
+                                                {/* Payment History */}
+                                                {((doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0) && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-emerald-600"
+                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
+                                                        title="Historial de Pagos"
+                                                    >
+                                                        <History className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+
                                                 {/* Delete */}
                                                 <Button
                                                     variant="ghost"
@@ -307,19 +370,6 @@ export default function PurchaseInvoicesPage() {
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
-
-                                                {/* Payment History */}
-                                                {((doc.related_documents?.payments?.length ?? 0) > 0 || doc.status === 'PAID') && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-emerald-600"
-                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
-                                                        title="Historial de Pagos"
-                                                    >
-                                                        <Banknote className="h-4 w-4" />
-                                                    </Button>
-                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -348,6 +398,8 @@ export default function PurchaseInvoicesPage() {
                     isPurchase={true}
                     total={parseFloat(payingDoc.total)}
                     pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)}
+                    hideDteFields={true}
+                    isRefund={payingDoc.dte_type === 'NOTA_CREDITO'}
                     existingInvoice={{
                         dte_type: payingDoc.dte_type,
                         number: payingDoc.number,
@@ -362,6 +414,7 @@ export default function PurchaseInvoicesPage() {
                     onOpenChange={(open: boolean) => !open && setReceivingDoc(null)}
                     orderId={receivingDoc.purchase_order}
                     onSuccess={fetchDocuments}
+                    isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'}
                 />
             )}
 

@@ -56,9 +56,10 @@ interface ReceiptModalProps {
     onOpenChange: (open: boolean) => void
     orderId: number
     onSuccess?: () => void
+    isRefund?: boolean
 }
 
-export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: ReceiptModalProps) {
+export function ReceiptModal({ open, onOpenChange, orderId, onSuccess, isRefund = false }: ReceiptModalProps) {
     const [order, setOrder] = useState<PurchaseOrder | null>(null)
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
@@ -108,7 +109,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
             }
         } catch (error) {
             console.error("Error fetching data:", error)
-            toast.error("Error al cargar los datos de recepción")
+            toast.error(isRefund ? "Error al cargar los datos de devolución" : "Error al cargar los datos de recepción")
         } finally {
             setLoading(false)
         }
@@ -160,13 +161,14 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
             }).filter(item => item !== null) || []
 
             if (lineData.length === 0) {
-                toast.error("Ingrese al menos una cantidad a recibir")
+                toast.error(isRefund ? "Ingrese al menos una cantidad a devolver" : "Ingrese al menos una cantidad a recibir")
                 setSubmitting(false)
                 return
             }
 
-            // Always use partial_receive as it's more flexible and we want to support cost updates
-            await api.post(`/purchasing/orders/${orderId}/partial_receive/`, {
+            // Always use partial_receive/return as it's more flexible
+            const endpoint = isRefund ? `/purchasing/orders/${orderId}/partial_return/` : `/purchasing/orders/${orderId}/partial_receive/`
+            await api.post(endpoint, {
                 warehouse_id: selectedWarehouse,
                 receipt_date: receiptDate,
                 delivery_reference: deliveryReference,
@@ -174,12 +176,12 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
                 line_data: lineData
             })
 
-            toast.success("Recepción registrada correctamente")
+            toast.success(isRefund ? "Devolución registrada correctamente" : "Recepción registrada correctamente")
             onOpenChange(false)
             onSuccess?.()
         } catch (error: any) {
             console.error("Error receiving order:", error)
-            toast.error(error.response?.data?.error || "Error al registrar la recepción")
+            toast.error(error.response?.data?.error || (isRefund ? "Error al registrar la devolución" : "Error al registrar la recepción"))
         } finally {
             setSubmitting(false)
         }
@@ -204,7 +206,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5" />
-                        Recibir Orden OC-{order?.number}
+                        {isRefund ? "Devolver Productos" : "Recibir Orden"} OC-{order?.number}
                     </DialogTitle>
                     <DialogDescription>
                         Proveedor: {order?.supplier_name}
@@ -220,7 +222,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
                         {/* Warehouse and Date Selection */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="warehouse">Bodega de Recepción</Label>
+                                <Label htmlFor="warehouse">Bodega de {isRefund ? 'Salida' : 'Recepción'}</Label>
                                 <select
                                     id="warehouse"
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -235,7 +237,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="receipt-date">Fecha de Recepción</Label>
+                                <Label htmlFor="receipt-date">Fecha de {isRefund ? 'Devolución' : 'Recepción'}</Label>
                                 <Input
                                     id="receipt-date"
                                     type="date"
@@ -268,13 +270,13 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
 
                         {/* Receiving Status */}
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Estado de Recepción:</span>
+                            <span className="text-sm text-muted-foreground">Estado de {isRefund ? 'Devolución' : 'Recepción'}:</span>
                             <Badge variant={
                                 order?.receiving_status === 'RECEIVED' ? 'success' :
                                     order?.receiving_status === 'PARTIAL' ? 'secondary' :
                                         'outline'
                             }>
-                                {order?.receiving_status === 'RECEIVED' ? 'Recibido' :
+                                {order?.receiving_status === 'RECEIVED' ? (isRefund ? 'Devuelto' : 'Recibido') :
                                     order?.receiving_status === 'PARTIAL' ? 'Parcial' :
                                         'Pendiente'}
                             </Badge>
@@ -287,7 +289,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
                                     <TableRow>
                                         <TableHead>Producto</TableHead>
                                         <TableHead className="text-center">Pendiente</TableHead>
-                                        <TableHead className="text-center w-24">A Recibir</TableHead>
+                                        <TableHead className="text-center w-24">A {isRefund ? 'Devolver' : 'Recibir'}</TableHead>
                                         <TableHead className="text-center w-32">Costo (Unit)</TableHead>
                                         <TableHead>Estado</TableHead>
                                     </TableRow>
@@ -369,7 +371,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess }: Receipt
                     </Button>
                     <Button onClick={handleReceive} disabled={loading || submitting || !selectedWarehouse}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Confirmar Recepción
+                        {isRefund ? 'Confirmar Devolución' : 'Confirmar Recepción'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

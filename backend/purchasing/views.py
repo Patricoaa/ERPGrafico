@@ -105,6 +105,36 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         return Response(PurchaseReceiptSerializer(receipts, many=True).data)
 
     @action(detail=True, methods=['post'])
+    def partial_return(self, request, pk=None):
+        order = self.get_object()
+        try:
+            warehouse_id = request.data.get('warehouse_id')
+            receipt_date = request.data.get('receipt_date')
+            line_data = request.data.get('line_data', [])
+            
+            warehouse = order.warehouse
+            if warehouse_id:
+                warehouse = Warehouse.objects.get(pk=warehouse_id)
+            
+            receipt = PurchasingService.partial_return(
+                order=order,
+                warehouse=warehouse,
+                line_data=line_data,
+                receipt_date=receipt_date,
+                delivery_reference=request.data.get('delivery_reference', ''),
+                notes=request.data.get('notes', '')
+            )
+            
+            return Response(
+                PurchaseReceiptSerializer(receipt).data,
+                status=status.HTTP_201_CREATED
+            )
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
     def register_note(self, request, pk=None):
         order = self.get_object()
         try:

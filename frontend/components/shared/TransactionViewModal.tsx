@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { translateStatus, translatePaymentMethod } from "@/lib/utils"
 
@@ -101,7 +101,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     }
 
     const getIcon = () => {
-        if (view === 'history') return <Banknote className="h-5 w-5 text-emerald-600" />
+        if (view === 'history') return <History className="h-5 w-5 text-emerald-600" />
         if (currentType === 'sale_order') return <ShoppingBag className="h-5 w-5" />
         if (currentType === 'purchase_order') return <FileText className="h-5 w-5" />
         if (currentType === 'invoice') return <Receipt className="h-5 w-5" />
@@ -124,6 +124,17 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                         <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
                             {getIcon()}
                             {getTitle()}
+                            {data?.document_attachment && (
+                                <a
+                                    href={data.document_attachment}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ml-2 text-muted-foreground hover:text-primary transition-colors"
+                                    title="Ver adjunto"
+                                >
+                                    <Paperclip className="h-5 w-5" />
+                                </a>
+                            )}
                         </DialogTitle>
                     </div>
                 </DialogHeader>
@@ -471,7 +482,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                     <TableHead>Método</TableHead>
                                                     <TableHead>Referencia / Transacción</TableHead>
                                                     <TableHead className="text-right">Monto</TableHead>
-                                                    <TableHead className="text-right">Acción</TableHead>
+                                                    {view !== 'history' && <TableHead className="text-right">Acción</TableHead>}
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -496,11 +507,13 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <TableCell className="text-right font-bold text-emerald-600">
                                                             ${Number(pay.amount).toLocaleString()}
                                                         </TableCell>
-                                                        <TableCell className="text-right">
-                                                            <Button variant="ghost" size="icon" onClick={() => navigateTo('payment', pay.id)}>
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                        </TableCell>
+                                                        {view !== 'history' && (
+                                                            <TableCell className="text-right">
+                                                                <Button variant="ghost" size="icon" onClick={() => navigateTo('payment', pay.id)}>
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            </TableCell>
+                                                        )}
                                                     </TableRow>
                                                 ))}
                                             </TableBody>

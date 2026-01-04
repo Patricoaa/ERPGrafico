@@ -101,6 +101,129 @@ class PurchasingService:
         return receipt
 
     @staticmethod
+    @transaction.atomic
+    def partial_return(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None, delivery_reference='', notes=''):
+        """
+        Returns specific quantities.
+        line_data = [{ 'line_id': 1, 'quantity': 5, 'unit_cost': 1000 }, ...]
+        """
+        if not receipt_date:
+            receipt_date = timezone.now().date()
+            
+        # Create Receipt (acts as Return document)
+        receipt = PurchaseReceipt.objects.create(
+            purchase_order=order,
+            warehouse=warehouse,
+            receipt_date=receipt_date,
+            delivery_reference=delivery_reference,
+            notes=notes,
+            status=PurchaseReceipt.Status.DRAFT
+        )
+        
+        for item in line_data:
+            line_id = item.get('line_id')
+            quantity = Decimal(str(item.get('quantity', 0)))
+            unit_cost = Decimal(str(item.get('unit_cost', 0)))
+            
+            if quantity <= 0:
+                continue
+                
+            purchase_line = order.lines.get(id=line_id)
+            
+            PurchasingService._create_receipt_line(
+                receipt=receipt,
+                purchase_line=purchase_line,
+                quantity=-quantity, # Negative for return
+                unit_cost=unit_cost if unit_cost > 0 else purchase_line.unit_cost
+            )
+            
+        # Confirm "receipt" (return)
+        PurchasingService.confirm_return(receipt)
+        
+        # Update Order Receiving Status
+        PurchasingService._update_order_receiving_status(order)
+        
+        return receipt
+
+    @staticmethod
+    @transaction.atomic
+    def confirm_return(receipt: PurchaseReceipt):
+        """
+        Confirms return:
+        1. Creates Stock Moves (OUT)
+        2. Creates Accounting Entry (Debit Received Not Billed, Credit Inventory)
+        3. Updates Purchase Line received qty (decreases)
+        """
+        if receipt.status != PurchaseReceipt.Status.DRAFT:
+            raise ValidationError("Solo se pueden confirmar devoluciones en borrador.")
+            
+        # Create Accounting Entry
+        entry = JournalEntry.objects.create(
+            date=receipt.receipt_date,
+            description=f"Devolución OC-{receipt.purchase_order.number} (Ret-{receipt.number})",
+            reference=f"Ret-{receipt.number}",
+            state=JournalEntry.State.DRAFT
+        )
+        
+        total_amount = Decimal('0.00')
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
+        
+        for line in receipt.lines.all():
+            # 1. Create Stock Move (OUT) - quantity is already negative in receipt line
+            from inventory.models import StockMove
+            stock_move = StockMove.objects.create(
+                date=receipt.receipt_date,
+                product=line.product,
+                warehouse=receipt.warehouse,
+                quantity=line.quantity_received, 
+                move_type=StockMove.Type.OUT,
+                description=f"Devolución OC-{receipt.purchase_order.number}",
+                journal_entry=entry
+            )
+            line.stock_move = stock_move
+            line.save()
+            
+            # 2. Update Purchase Line (Revert receiving)
+            line.purchase_line.quantity_received += line.quantity_received
+            line.purchase_line.save()
+            
+            # 3. Accounting
+            asset_account = line.product.get_asset_account or (settings.default_inventory_account if settings else None)
+            line_total = abs(line.total_cost)
+            total_amount += line_total
+            
+            if asset_account:
+                # Credit Inventory (Asset)
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=asset_account,
+                    debit=0,
+                    credit=line_total,
+                    label=f"Devolución {line.product.code} x {abs(line.quantity_received)}"
+                )
+        
+        # 4. Debit Received Not Billed (Liability clearing)
+        if total_amount > 0:
+            credit_account = settings.stock_input_account if settings else None
+            if not credit_account and settings:
+                credit_account = settings.default_payable_account
+            
+            if credit_account:
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=credit_account, 
+                    debit=total_amount,
+                    credit=0,
+                    label=f"Contrapartida Devolución OC-{receipt.purchase_order.number}"
+                )
+
+        JournalEntryService.post_entry(entry)
+        receipt.journal_entry = entry
+        receipt.status = PurchaseReceipt.Status.CONFIRMED
+        receipt.save()
+
+    @staticmethod
     def _create_receipt_line(receipt, purchase_line, quantity, unit_cost):
         PurchaseReceiptLine.objects.create(
             receipt=receipt,
@@ -305,51 +428,13 @@ class PurchasingService:
             # Debit Note: Increases debt -> Credit AP
             JournalItem.objects.create(entry=entry, account=payable_account, debit=0, credit=total_amount, partner=order.supplier.name)
 
-        processed_net = Decimal('0')
-        if return_items:
-            for item in return_items:
-                from inventory.models import Product
-                product = Product.objects.get(pk=item['product_id'])
-                qty = Decimal(str(item['quantity']))
-                item_unit_cost = Decimal(str(item.get('unit_cost', '0')))
-                item_net = qty * item_unit_cost
-                processed_net += item_net
-                
-                if qty != 0:
-                    # Stock Move
-                    if note_type == Invoice.DTEType.NOTA_CREDITO:
-                        st_type = StockMove.Type.OUT
-                        st_qty = -qty
-                    else:
-                        st_type = StockMove.Type.IN
-                        st_qty = qty
-                        
-                    StockMove.objects.create(
-                        date=timezone.now().date(),
-                        product=product,
-                        warehouse=order.warehouse,
-                        quantity=st_qty,
-                        move_type=st_type,
-                        description=f"{invoice.get_dte_type_display()} {document_number}",
-                        journal_entry=entry
-                    )
-                
-                # Accounting for this item
-                asset_account = product.get_asset_account or (settings.default_inventory_account if settings else None)
-                if asset_account:
-                    if note_type == Invoice.DTEType.NOTA_CREDITO:
-                         JournalItem.objects.create(entry=entry, account=asset_account, debit=0, credit=item_net)
-                    else:
-                         JournalItem.objects.create(entry=entry, account=asset_account, debit=item_net, credit=0)
-        
         # 4. Global adjustments for remaining net (or if no items)
-        remaining_net = amount_net - processed_net
-        if remaining_net != 0:
-             adj_account = settings.default_expense_account or settings.default_inventory_account
-             if note_type == Invoice.DTEType.NOTA_CREDITO:
-                  JournalItem.objects.create(entry=entry, account=adj_account, debit=0, credit=remaining_net)
-             else:
-                  JournalItem.objects.create(entry=entry, account=adj_account, debit=remaining_net, credit=0)
+        remaining_net = amount_net
+        adj_account = settings.default_expense_account or settings.default_inventory_account
+        if note_type == Invoice.DTEType.NOTA_CREDITO:
+            JournalItem.objects.create(entry=entry, account=adj_account, debit=0, credit=remaining_net)
+        else:
+            JournalItem.objects.create(entry=entry, account=adj_account, debit=remaining_net, credit=0)
 
         # 5. Tax processing (IVA)
         if amount_tax > 0:

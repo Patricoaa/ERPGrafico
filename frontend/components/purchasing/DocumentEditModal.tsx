@@ -31,6 +31,7 @@ export function DocumentEditModal({
 }: DocumentEditModalProps) {
     const [number, setNumber] = useState("")
     const [date, setDate] = useState("")
+    const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
 
     useEffect(() => {
@@ -50,9 +51,17 @@ export function DocumentEditModal({
 
         setSubmitting(true)
         try {
-            await api.patch(`/billing/invoices/${document.id}/`, {
-                number: number,
-                date: date
+            const formData = new FormData()
+            formData.append('number', number)
+            formData.append('date', date)
+            if (attachment) {
+                formData.append('document_attachment', attachment)
+            }
+
+            await api.patch(`/billing/invoices/${document.id}/`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
             })
 
             toast.success("Documento actualizado correctamente")
@@ -98,6 +107,21 @@ export function DocumentEditModal({
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-attachment">Adjunto (Factura/Boleta)</Label>
+                        <Input
+                            id="edit-attachment"
+                            type="file"
+                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                            className="cursor-pointer"
+                        />
+                        {document?.document_attachment && (
+                            <p className="text-[10px] text-muted-foreground">
+                                Ya existe un archivo cargado. Seleccione uno nuevo para reemplazarlo.
+                            </p>
+                        )}
                     </div>
                 </div>
 
