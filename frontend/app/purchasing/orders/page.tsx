@@ -331,7 +331,7 @@ export default function PurchaseOrdersPage() {
                                             </Button>
                                         )}
 
-                                        {['RECEIVED', 'INVOICED', 'CONFIRMED'].includes(order.status) && (
+                                        {['RECEIVED', 'INVOICED', 'CONFIRMED'].includes(order.status) && order.pending_amount > 0 && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

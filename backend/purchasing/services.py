@@ -278,6 +278,7 @@ class PurchasingService:
             number=document_number,
             document_attachment=document_attachment,
             purchase_order=order,
+            date=timezone.now().date(),
             total_net=amount_net,
             total_tax=amount_tax,
             total=total_amount,

@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Trash2, Eye, FileBadge, Receipt, Search, FileText, Banknote } from "lucide-react"
+import { Trash2, Eye, FileBadge, Receipt, Search, FileText, Banknote, Package } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
@@ -137,8 +137,7 @@ export default function PurchaseNotesPage() {
                             <TableHead>Fecha</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Folio</TableHead>
-                            <TableHead>OC Relacionada</TableHead>
-                            <TableHead>Documentos</TableHead>
+                            <TableHead>Documentos Asociados</TableHead>
                             <TableHead>Total</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead className="text-center">Acciones</TableHead>
@@ -164,50 +163,45 @@ export default function PurchaseNotesPage() {
                                 </TableCell>
                                 <TableCell className="font-bold">{note.number}</TableCell>
                                 <TableCell>
-                                    <Badge variant="outline" className="font-mono">
-                                        OC-{note.purchase_order_number || note.purchase_order}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
                                     <div className="flex flex-col gap-1">
+                                        {/* Purchase Order Link */}
+                                        <button
+                                            onClick={() => setViewingNote({ type: 'purchase_order', id: note.purchase_order!, view: 'details' })}
+                                            className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                        >
+                                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Orden de Compra</span>
+                                            OC-{note.purchase_order_number || note.purchase_order}
+                                        </button>
+
+                                        {/* Related Invoice (Factura) */}
                                         {note.related_documents?.invoices.map((inv: any) => (
                                             <button
                                                 key={inv.id}
                                                 onClick={() => setViewingNote({ type: 'invoice', id: inv.id, view: 'details' })}
                                                 className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura Asociada</span>
                                                 #{inv.number}
                                             </button>
                                         ))}
-                                        {note.related_documents?.notes.filter((n: any) => n.id !== note.id).map((n: any) => (
+
+                                        {/* Payments specific to this Note */}
+                                        {note.related_documents?.payments?.filter((p: any) => p.invoice_id === note.id).map((pay: any) => (
                                             <button
-                                                key={n.id}
-                                                onClick={() => setViewingNote({ type: 'invoice', id: n.id, view: 'details' })}
-                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota {n.type === 'NOTA_CREDITO' ? 'Crédito' : 'Débito'}</span>
-                                                #{n.number}
-                                            </button>
-                                        ))}
-                                        {(note.related_documents?.receipts?.length ?? 0) > 0 && (
-                                            <button
-                                                onClick={() => setViewingNote({ type: 'purchase_order', id: note.purchase_order!, view: 'details' })}
-                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepciones</span>
-                                                <span className="text-[10px]">{note.related_documents?.receipts?.length} recep.</span>
-                                            </button>
-                                        )}
-                                        {(note.related_documents?.payments?.length ?? 0) > 0 && (
-                                            <button
+                                                key={pay.id}
                                                 onClick={() => setViewingNote({ type: 'purchase_order', id: note.purchase_order!, view: 'history' })}
                                                 className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pagos</span>
-                                                <span className="text-[10px]">{note.related_documents?.payments?.length} reg.</span>
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
+                                                    {note.dte_type === 'NOTA_CREDITO' ? 'Devolución' : 'Pago'}
+                                                </span>
+                                                <span className="text-[10px]">${pay.amount.toLocaleString()}</span>
                                             </button>
-                                        )}
+                                        ))}
+
+                                        {/* Hide other notes/documents/receipts as per request for cleaner view, 
+                                            or check if there is a way to link receipts directly. 
+                                            Current request implies removing "payments of other notes". */}
                                     </div>
                                 </TableCell>
                                 <TableCell className="font-black text-primary">
@@ -233,9 +227,9 @@ export default function PurchaseNotesPage() {
                                             size="icon"
                                             className="text-blue-600"
                                             onClick={() => setReceivingNote(note)}
-                                            title="Recepcionar Mercadería"
+                                            title="Recibir Mercadería"
                                         >
-                                            <Receipt className="h-4 w-4" />
+                                            <Package className="h-4 w-4" />
                                         </Button>
                                         <Button
                                             variant="ghost"

@@ -102,7 +102,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 'id': pay.id,
                 'amount': pay.amount,
                 'date': pay.date,
-                'method': pay.get_payment_method_display()
+                'method': pay.get_payment_method_display(),
+                'invoice_id': pay.invoice_id
             })
 
         return docs
