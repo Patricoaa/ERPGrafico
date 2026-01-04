@@ -31,6 +31,7 @@ interface PurchaseDocument {
     pending_amount?: number
     serialized_payments?: any[]
     po_receiving_status?: string
+    related_stock_moves?: any[]
     related_documents?: {
         invoices: any[]
         notes: any[]
@@ -219,13 +220,13 @@ export default function PurchaseInvoicesPage() {
                                         <TableCell>
                                             <div className="flex flex-col gap-1">
                                                 {doc.status !== 'POSTED' && (
-                                                    <Badge variant={badgeStyle.variant as any}>
+                                                    <Badge variant={badgeStyle.variant as any} className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">
                                                         {badgeStyle.label}
                                                     </Badge>
                                                 )}
                                                 {/* Additional Status Badges */}
                                                 <div className="flex flex-wrap gap-1">
-                                                    {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && (
+                                                    {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && doc.status !== 'PAID' && (
                                                         <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
                                                     )}
                                                     {doc.po_receiving_status === 'RECEIVED' && (
@@ -238,8 +239,8 @@ export default function PurchaseInvoicesPage() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col gap-1">
-                                                {/* Purchase Order Link */}
-                                                {doc.purchase_order && (
+                                                {/* Purchase Order Link (Only for non-Notes or if Note has no originating inv) */}
+                                                {doc.purchase_order && !isNote && (
                                                     <button
                                                         onClick={() => setViewingTransaction({ type: 'purchase_order', id: doc.purchase_order!, view: 'details' })}
                                                         className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
@@ -261,16 +262,30 @@ export default function PurchaseInvoicesPage() {
                                                     </button>
                                                 ))}
 
-                                                {doc.related_documents?.receipts?.map((rec: any) => (
-                                                    <button
-                                                        key={rec.id}
-                                                        onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
-                                                        className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                                    >
-                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Recepción</span>
-                                                        {rec.number}
-                                                    </button>
-                                                ))}
+                                                {/* Stock Moves: For NC/ND show specific moves, for others show order receipts */}
+                                                {isNote ? (
+                                                    doc.related_stock_moves?.map((move: any) => (
+                                                        <button
+                                                            key={move.id}
+                                                            onClick={() => setViewingTransaction({ type: 'inventory', id: move.id, view: 'details' })}
+                                                            className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                        >
+                                                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
+                                                            {move.product} ({move.quantity})
+                                                        </button>
+                                                    ))
+                                                ) : (
+                                                    doc.related_documents?.receipts?.map((rec: any) => (
+                                                        <button
+                                                            key={rec.id}
+                                                            onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
+                                                            className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                        >
+                                                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Recepción</span>
+                                                            {rec.number}
+                                                        </button>
+                                                    ))
+                                                )}
 
                                                 {/* Payments specific to this Document */}
                                                 {doc.related_documents?.payments?.filter((p: any) => p.invoice_id === doc.id).map((pay: any) => (

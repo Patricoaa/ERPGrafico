@@ -68,7 +68,7 @@ export default function PaymentsPage() {
                             <TableHead className="w-[120px]">Número</TableHead>
                             <TableHead className="w-[120px]">Fecha</TableHead>
                             <TableHead className="w-[100px] text-center">Tipo</TableHead>
-                            <TableHead>Documento / Referencia</TableHead>
+                            <TableHead>Documento</TableHead>
                             <TableHead className="text-right w-[150px]">Monto</TableHead>
                             <TableHead className="text-center w-[80px]">Acción</TableHead>
                         </TableRow>
@@ -109,8 +109,10 @@ export default function PaymentsPage() {
                                                     <span className="text-[10px]">
                                                         {payment.document_info.type === 'purchase_order' ? `OC-${payment.document_info.number}` :
                                                             payment.document_info.type === 'sale_order' ? `NV-${payment.document_info.number}` :
-                                                                payment.document_info.label.split('#')[1] ? `${payment.document_info.label.includes('Bol') ? 'BOL' : 'FACT'}-${payment.document_info.label.split('#')[1]}` :
-                                                                    payment.document_info.label}
+                                                                payment.document_info.label.includes('Crédito') ? `NC-${payment.document_info.number}` :
+                                                                    payment.document_info.label.includes('Débito') ? `ND-${payment.document_info.number}` :
+                                                                        payment.document_info.label.includes('Bol') ? `BOL-${payment.document_info.number}` :
+                                                                            `FACT-${payment.document_info.number}`}
                                                     </span>
                                                 </button>
                                             ) : (
