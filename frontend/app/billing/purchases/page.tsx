@@ -12,7 +12,7 @@ import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
-import { DocumentEditModal } from "@/components/purchasing/DocumentEditModal"
+import { DocumentEditModal } from "../../../components/purchasing/DocumentEditModal"
 import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
 
 interface PurchaseDocument {
@@ -147,7 +147,7 @@ export default function PurchaseInvoicesPage() {
                             placeholder="Buscar por número, proveedor u OC..."
                             className="pl-8"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </CardHeader>
@@ -310,7 +310,7 @@ export default function PurchaseInvoicesPage() {
             {viewingTransaction && (
                 <TransactionViewModal
                     open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
                     view={viewingTransaction.view}
@@ -320,7 +320,7 @@ export default function PurchaseInvoicesPage() {
             {payingDoc && (
                 <PaymentDialog
                     open={!!payingDoc}
-                    onOpenChange={(open) => !open && setPayingDoc(null)}
+                    onOpenChange={(open: boolean) => !open && setPayingDoc(null)}
                     onConfirm={handlePayment}
                     isPurchase={true}
                     total={parseFloat(payingDoc.total)}
@@ -336,7 +336,7 @@ export default function PurchaseInvoicesPage() {
             {receivingDoc && receivingDoc.purchase_order && (
                 <ReceiptModal
                     open={!!receivingDoc}
-                    onOpenChange={(open) => !open && setReceivingDoc(null)}
+                    onOpenChange={(open: boolean) => !open && setReceivingDoc(null)}
                     orderId={receivingDoc.purchase_order}
                     onSuccess={fetchDocuments}
                 />
@@ -345,7 +345,7 @@ export default function PurchaseInvoicesPage() {
             {editingDoc && (
                 <DocumentEditModal
                     open={!!editingDoc}
-                    onOpenChange={(open) => !open && setEditingDoc(null)}
+                    onOpenChange={(open: boolean) => !open && setEditingDoc(null)}
                     document={editingDoc}
                     onSuccess={fetchDocuments}
                 />
