@@ -62,9 +62,9 @@ export default function SalesInvoicesPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>Número</TableHead>
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Tipo</TableHead>
-                                <TableHead>Número</TableHead>
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Origen</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
@@ -74,16 +74,16 @@ export default function SalesInvoicesPage() {
                         </TableHeader>
                         <TableBody>
                             {loading ? (
-                                <TableRow><TableCell colSpan={7} className="text-center py-10">Cargando...</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={8} className="text-center py-10">Cargando...</TableCell></TableRow>
                             ) : filtered.length === 0 ? (
-                                <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No se encontraron documentos.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No se encontraron documentos.</TableCell></TableRow>
                             ) : filtered.map((inv) => (
                                 <TableRow key={inv.id}>
-                                    <TableCell>{inv.date}</TableCell>
-                                    <TableCell>{inv.dte_type_display}</TableCell>
                                     <TableCell>
                                         <span className="font-mono font-medium">{inv.number || '---'}</span>
                                     </TableCell>
+                                    <TableCell>{inv.date}</TableCell>
+                                    <TableCell>{inv.dte_type_display}</TableCell>
                                     <TableCell>{inv.partner_name}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-1">

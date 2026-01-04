@@ -132,7 +132,7 @@ class JournalEntry(models.Model):
                 docs.append({
                     'type': 'payment',
                     'id': self.payment.id,
-                    'name': f"Pago {self.payment.id}",
+                    'name': str(self.payment),
                     'url': '/treasury/payments'
                 })
         except ObjectDoesNotExist:
@@ -165,7 +165,7 @@ class JournalEntry(models.Model):
                 docs.append({
                     'type': 'inventory',
                     'id': move.id,
-                    'name': f"Mov. Stock {move.id}",
+                    'name': f"MOV-{str(move.id).zfill(6)}",
                     'url': '/inventory/movements'
                 })
         return docs
@@ -199,7 +199,7 @@ class JournalEntry(models.Model):
             return {
                 'type': 'inventory',
                 'id': move.id,
-                'name': f"Mov. Stock {move.id}",
+                'name': f"MOV-{str(move.id).zfill(6)}",
                 'url': '/inventory/movements'
             }
         return None

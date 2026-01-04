@@ -77,19 +77,19 @@ export default function StockReportPage() {
                                         <TableCell className="font-medium">{item.name}</TableCell>
                                         <TableCell>{item.category_name}</TableCell>
                                         <TableCell className="text-right font-bold">
-                                            {item.stock_qty.toLocaleString()}
+                                            {Math.round(item.stock_qty).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            ${item.unit_cost.toLocaleString()}
+                                            ${Math.round(item.unit_cost).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-right font-medium">
-                                            ${item.total_value.toLocaleString()}
+                                            ${Math.round(item.total_value).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-right text-green-600">
-                                            {item.moves_in > 0 ? `+${item.moves_in.toLocaleString()}` : '0'}
+                                            {item.moves_in > 0 ? `+${Math.round(item.moves_in).toLocaleString()}` : '0'}
                                         </TableCell>
                                         <TableCell className="text-right text-red-600">
-                                            {item.moves_out > 0 ? `-${item.moves_out.toLocaleString()}` : '0'}
+                                            {item.moves_out > 0 ? `-${Math.round(item.moves_out).toLocaleString()}` : '0'}
                                         </TableCell>
                                     </TableRow>
                                 ))}

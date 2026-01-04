@@ -65,9 +65,10 @@ export default function PaymentsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead className="w-[120px]">Número</TableHead>
                             <TableHead className="w-[120px]">Fecha</TableHead>
                             <TableHead className="w-[100px] text-center">Tipo</TableHead>
-                            <TableHead>Documento</TableHead>
+                            <TableHead>Documento / Referencia</TableHead>
                             <TableHead className="text-right w-[150px]">Monto</TableHead>
                             <TableHead className="text-center w-[80px]">Acción</TableHead>
                         </TableRow>
@@ -75,6 +76,7 @@ export default function PaymentsPage() {
                     <TableBody>
                         {payments.map((payment) => (
                             <TableRow key={payment.id}>
+                                <TableCell className="font-mono text-xs font-bold">{payment.code}</TableCell>
                                 <TableCell className="text-muted-foreground">{new Date(payment.date).toLocaleDateString()}</TableCell>
                                 <TableCell>
                                     <div className="flex justify-center">
@@ -93,7 +95,6 @@ export default function PaymentsPage() {
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex flex-col">
-                                        <div className="font-mono text-[10px] text-muted-foreground leading-none mb-1">{payment.code}</div>
                                         <div className="flex items-center gap-2">
                                             {payment.document_info ? (
                                                 <button

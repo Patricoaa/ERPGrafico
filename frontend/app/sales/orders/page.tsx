@@ -187,7 +187,7 @@ export default function SalesOrdersPage() {
                     <TableBody>
                         {orders.map((order) => (
                             <TableRow key={order.id}>
-                                <TableCell className="font-medium">{order.number}</TableCell>
+                                <TableCell className="font-medium">NV-{order.number}</TableCell>
                                 <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                                 <TableCell>{order.customer_name}</TableCell>
                                 <TableCell>{parseFloat(order.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</TableCell>

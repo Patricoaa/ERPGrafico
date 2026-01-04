@@ -198,7 +198,7 @@ export default function PurchaseOrdersPage() {
                     <TableBody>
                         {orders.map((order) => (
                             <TableRow key={order.id}>
-                                <TableCell className="font-medium">{order.number}</TableCell>
+                                <TableCell className="font-medium">OC-{order.number}</TableCell>
                                 <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                                 <TableCell>{order.supplier_name}</TableCell>
                                 <TableCell>{order.warehouse_name}</TableCell>
@@ -225,8 +225,10 @@ export default function PurchaseOrdersPage() {
                                                 onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
                                                 className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
-                                                FACT-{inv.number}
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">
+                                                    {inv.type === 'BOLETA' ? 'Boleta' : 'Factura'}
+                                                </span>
+                                                {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
                                             </button>
                                         ))}
                                         {order.related_documents?.notes.map((note: any) => (
@@ -246,7 +248,7 @@ export default function PurchaseOrdersPage() {
                                                 className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
                                                 <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepción</span>
-                                                <span className="text-[10px]">REC-{rec.number}</span>
+                                                <span className="text-[10px]">{rec.label || `REC-${rec.number}`}</span>
                                             </button>
                                         ))}
                                         {order.related_documents?.payments?.map((pay: any) => (

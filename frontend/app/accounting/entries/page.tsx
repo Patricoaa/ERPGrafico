@@ -100,8 +100,8 @@ export default function EntriesPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Fecha</TableHead>
                             <TableHead>Número</TableHead>
+                            <TableHead>Fecha</TableHead>
                             <TableHead>Descripción</TableHead>
                             <TableHead>Documentos</TableHead>
                             <TableHead>Estado</TableHead>
@@ -111,8 +111,8 @@ export default function EntriesPage() {
                     <TableBody>
                         {entries.map((entry) => (
                             <TableRow key={entry.id}>
+                                <TableCell className="font-medium">AS-{entry.number}</TableCell>
                                 <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
-                                <TableCell className="font-medium">{entry.number}</TableCell>
                                 <TableCell>{entry.description}</TableCell>
                                 <TableCell>
                                     <div className="flex flex-col gap-1">
@@ -124,8 +124,10 @@ export default function EntriesPage() {
                                                     className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                 >
                                                     <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
-                                                        {doc.type === 'invoice' ? (doc.name.includes('Bol') ? 'Boleta' : 'Factura') :
-                                                            doc.type === 'payment' ? 'Pago' :
+                                                        {doc.type === 'invoice' ? (doc.name.includes('BOL') ? 'Boleta' :
+                                                            doc.name.includes('NC') ? 'Nota de Crédito' :
+                                                                doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
+                                                            doc.type === 'payment' ? (doc.name.includes('ING') ? 'Comprobante Ingreso' : 'Comprobante Egreso') :
                                                                 doc.type === 'purchase_order' ? 'Orden de Compra' :
                                                                     doc.type === 'sale_order' ? 'Orden de Venta' :
                                                                         doc.type === 'inventory' ? 'Movimiento' : doc.type}
@@ -145,21 +147,31 @@ export default function EntriesPage() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-1">
-                                        <JournalEntryForm
-                                            accounts={accounts}
-                                            initialData={entry}
-                                            onSuccess={fetchEntries}
-                                        />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
+                                            title="Ver Detalle"
+                                        >
+                                            <Eye className="h-4 w-4 text-blue-600" />
+                                        </Button>
                                         {entry.state === 'DRAFT' && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-emerald-600"
-                                                onClick={() => handlePost(entry.id)}
-                                                title="Publicar"
-                                            >
-                                                <CheckCircle className="h-4 w-4" />
-                                            </Button>
+                                            <>
+                                                <JournalEntryForm
+                                                    accounts={accounts}
+                                                    initialData={entry}
+                                                    onSuccess={fetchEntries}
+                                                />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-emerald-600"
+                                                    onClick={() => handlePost(entry.id)}
+                                                    title="Publicar"
+                                                >
+                                                    <CheckCircle className="h-4 w-4" />
+                                                </Button>
+                                            </>
                                         )}
                                         <Button
                                             variant="ghost"

@@ -155,9 +155,9 @@ export default function PurchaseInvoicesPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>N° Documento</TableHead>
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Tipo</TableHead>
-                                <TableHead>N° Documento</TableHead>
                                 <TableHead>Proveedor</TableHead>
                                 <TableHead>Documentos</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
@@ -176,6 +176,9 @@ export default function PurchaseInvoicesPage() {
 
                                 return (
                                     <TableRow key={doc.id}>
+                                        <TableCell>
+                                            <span className="font-mono font-medium">{doc.number}</span>
+                                        </TableCell>
                                         <TableCell>{new Date(doc.date).toLocaleDateString()}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2" title={doc.dte_type_display}>
@@ -186,9 +189,6 @@ export default function PurchaseInvoicesPage() {
                                                             doc.dte_type === 'BOLETA' ? 'BOL' : 'FACT'}
                                                 </span>
                                             </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="font-mono font-medium">{doc.number}</span>
                                         </TableCell>
                                         <TableCell>{doc.partner_name}</TableCell>
                                         <TableCell>
@@ -210,7 +210,7 @@ export default function PurchaseInvoicesPage() {
                                                         className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                     >
                                                         <span className="font-semibold uppercase text-[8px] text-muted-foreground">Recepción</span>
-                                                        REC-{rec.number}
+                                                        {rec.label || `REC-${rec.number}`}
                                                     </button>
                                                 ))}
 

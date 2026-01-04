@@ -68,6 +68,7 @@ export default function MovementsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>Número</TableHead>
                             <TableHead>Fecha</TableHead>
                             <TableHead>Producto</TableHead>
                             <TableHead>Almacén</TableHead>
@@ -80,19 +81,20 @@ export default function MovementsPage() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-10">Cargando movimientos...</TableCell>
+                                <TableCell colSpan={8} className="text-center py-10">Cargando movimientos...</TableCell>
                             </TableRow>
                         ) : moves.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
+                                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
                             </TableRow>
                         ) : moves.map((move) => (
                             <TableRow key={move.id}>
+                                <TableCell className="font-mono text-xs">MOV-{move.id.toString().padStart(6, '0')}</TableCell>
                                 <TableCell>{new Date(move.date).toLocaleDateString()}</TableCell>
                                 <TableCell className="font-medium">{move.product_name}</TableCell>
                                 <TableCell>{move.warehouse_name}</TableCell>
                                 <TableCell className={parseFloat(move.quantity) > 0 ? "text-green-600 font-medium" : "text-red-600 font-bold"}>
-                                    {move.quantity}
+                                    {Math.round(Math.abs(parseFloat(move.quantity)))}
                                 </TableCell>
                                 <TableCell>
                                     <Badge variant={move.move_type === 'IN' ? 'default' : move.move_type === 'OUT' ? 'destructive' : 'outline'}>

@@ -89,11 +89,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 docs['invoices'].append(doc_info)
 
         for rec in obj.receipts.all():
+            # Get the primary stock move ID for the label (from first line)
+            first_move = rec.lines.filter(stock_move__isnull=False).first()
+            move_label = f"MOV-{str(first_move.stock_move.id).zfill(6)}" if first_move else f"REC-{rec.number}"
+            
             docs['receipts'].append({
                 'id': rec.id,
                 'number': rec.number,
+                'label': move_label,
                 'date': rec.receipt_date,
-                # Link stock moves if they exist on lines
                 'stock_moves': [{
                     'id': l.stock_move.id,
                     'product': l.stock_move.product.name,

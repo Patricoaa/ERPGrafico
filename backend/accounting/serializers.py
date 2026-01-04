@@ -20,9 +20,12 @@ class AccountingSettingsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class JournalItemSerializer(serializers.ModelSerializer):
+    account_code = serializers.CharField(source='account.code', read_only=True)
+    account_name = serializers.CharField(source='account.name', read_only=True)
+
     class Meta:
         model = JournalItem
-        fields = ['id', 'account', 'partner', 'label', 'debit', 'credit']
+        fields = ['id', 'account', 'account_code', 'account_name', 'partner', 'label', 'debit', 'credit']
 
 class JournalEntrySerializer(serializers.ModelSerializer):
     items = JournalItemSerializer(many=True, read_only=True)

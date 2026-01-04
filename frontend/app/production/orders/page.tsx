@@ -97,9 +97,9 @@ export default function WorkOrdersPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Número</TableHead>
+                            <TableHead>Fecha Inicio</TableHead>
                             <TableHead>Descripción</TableHead>
                             <TableHead>Estado</TableHead>
-                            <TableHead>Fecha Inicio</TableHead>
                             <TableHead>Fecha Entrega</TableHead>
                             <TableHead className="w-[100px] text-center">Acciones</TableHead>
                         </TableRow>
@@ -108,13 +108,13 @@ export default function WorkOrdersPage() {
                         {orders.map((order) => (
                             <TableRow key={order.id}>
                                 <TableCell className="font-medium">OT-{order.number}</TableCell>
+                                <TableCell>{order.start_date || '-'}</TableCell>
                                 <TableCell>{order.description}</TableCell>
                                 <TableCell>
                                     <Badge variant={statusMap[order.status]?.variant || ("default" as any)}>
                                         {statusMap[order.status]?.label || order.status}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{order.start_date || '-'}</TableCell>
                                 <TableCell>{order.due_date || '-'}</TableCell>
                                 <TableCell>
                                     <div className="flex justify-center space-x-2">

@@ -186,10 +186,10 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
                                                     {currentType === 'purchase_order' ? 'Proveedor' :
                                                         currentType === 'inventory' ? 'Producto' :
-                                                            (currentType === 'journal_entry' ? 'Referencia' : 'Cliente')}
+                                                            (currentType === 'journal_entry' ? 'Descripción' : 'Cliente')}
                                                 </div>
                                                 <div className="font-bold text-base truncate">
-                                                    {currentType === 'journal_entry' ? (data.reference || '-') :
+                                                    {currentType === 'journal_entry' ? (data.description || data.reference || '-') :
                                                         currentType === 'inventory' ? data.product_name :
                                                             (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
                                                 </div>
@@ -231,7 +231,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <Badge variant={data.move_type === 'IN' ? 'default' : data.move_type === 'OUT' ? 'destructive' : 'outline'}>
                                                             {data.move_type_display}
                                                         </Badge>
-                                                    ) : `$${Number(data.total).toLocaleString()}`}
+                                                    ) : `$${Number(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + Number(i.debit), 0) : data.total).toLocaleString()}`}
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -245,34 +245,17 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                             <div className="space-y-4">
                                 {currentType === 'payment' ? (
                                     <div className="space-y-6 pt-4">
-                                        <div className="grid grid-cols-2 gap-8 border-t pt-4">
+                                        <div className="border-t pt-4 max-w-md mx-auto w-full">
                                             <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Cliente / Proveedor</h4>
-                                                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                                                    <User className="h-5 w-5 text-muted-foreground" />
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-semibold">{data.partner_name || '-'}</span>
-                                                        <span className="text-[10px] text-muted-foreground uppercase">{data.payment_type === 'INBOUND' ? 'Cliente' : 'Proveedor'}</span>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2 text-center">Cliente / Proveedor</h4>
+                                                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-2xl border border-dashed">
+                                                    <div className="p-2 bg-white rounded-xl shadow-sm border">
+                                                        <User className="h-6 w-6 text-muted-foreground" />
                                                     </div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Documento Asociado</h4>
-                                                <div className="pt-0.5">
-                                                    {data.document_info ? (
-                                                        <Button
-                                                            variant="outline"
-                                                            className="w-full justify-start text-blue-600 bg-blue-50/10 border-blue-200/50 hover:bg-blue-50/20"
-                                                            onClick={() => navigateTo(data.document_info.type, data.document_info.id)}
-                                                        >
-                                                            <FileText className="h-4 w-4 mr-2" />
-                                                            {data.document_info.label}
-                                                        </Button>
-                                                    ) : (
-                                                        <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground italic border border-dashed text-center">
-                                                            Sin documento asociado
-                                                        </div>
-                                                    )}
+                                                    <div className="flex flex-col">
+                                                        <span className="text-base font-bold">{data.partner_name || '-'}</span>
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-medium tracking-wider">{data.payment_type === 'INBOUND' ? 'Cliente' : 'Proveedor'}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -314,44 +297,102 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                     </div>
                                 ) : (
                                     <>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Descripción</TableHead>
-                                                    <TableHead className="text-center w-[100px]">Cant.</TableHead>
-                                                    <TableHead className="text-right w-[150px]">Precio Unit.</TableHead>
-                                                    <TableHead className="text-right w-[150px]">Subtotal</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {(data.lines || data.items || []).map((item: any) => (
-                                                    <TableRow key={item.id}>
-                                                        <TableCell>{item.description || item.product_name}</TableCell>
-                                                        <TableCell className="text-center">{item.quantity}</TableCell>
-                                                        <TableCell className="text-right">${Number(item.unit_price || item.unit_cost).toLocaleString()}</TableCell>
-                                                        <TableCell className="text-right font-bold">${Number(item.subtotal).toLocaleString()}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
+                                        {currentType === 'journal_entry' ? (
+                                            <>
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Cuenta</TableHead>
+                                                            <TableHead>Glosa</TableHead>
+                                                            <TableHead className="text-right w-[120px]">Debe</TableHead>
+                                                            <TableHead className="text-right w-[120px]">Haber</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {(data.items || []).map((item: any) => (
+                                                            <TableRow key={item.id}>
+                                                                <TableCell>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-[10px] font-mono">{item.account_code}</span>
+                                                                        <span className="text-xs">{item.account_name}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-xs italic text-muted-foreground">{item.label}</TableCell>
+                                                                <TableCell className="text-right text-sm">
+                                                                    {Number(item.debit) > 0 ? `$${Number(item.debit).toLocaleString()}` : '-'}
+                                                                </TableCell>
+                                                                <TableCell className="text-right text-sm">
+                                                                    {Number(item.credit) > 0 ? `$${Number(item.credit).toLocaleString()}` : '-'}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
 
-                                        {/* Totals Section */}
-                                        <div className="flex justify-end pt-4">
-                                            <div className="w-64 space-y-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-muted-foreground">Neto</span>
-                                                    <span>${Number(data.total_net).toLocaleString()}</span>
+                                                <div className="flex justify-end pt-4">
+                                                    <div className="w-full max-w-md pt-2 border-t space-y-1">
+                                                        <div className="flex justify-between items-end">
+                                                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Totales</span>
+                                                            <div className="flex gap-12">
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="text-[9px] uppercase text-muted-foreground font-semibold">Total Debe</span>
+                                                                    <span className="font-bold text-base text-blue-600">
+                                                                        ${(data.items || []).reduce((acc: number, i: any) => acc + Number(i.debit), 0).toLocaleString()}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="text-[9px] uppercase text-muted-foreground font-semibold">Total Haber</span>
+                                                                    <span className="font-bold text-base text-emerald-600">
+                                                                        ${(data.items || []).reduce((acc: number, i: any) => acc + Number(i.credit), 0).toLocaleString()}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-muted-foreground">IVA (19%)</span>
-                                                    <span>${Number(data.total_tax).toLocaleString()}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Descripción</TableHead>
+                                                            <TableHead className="text-center w-[100px]">Cant.</TableHead>
+                                                            <TableHead className="text-right w-[150px]">Precio Unit.</TableHead>
+                                                            <TableHead className="text-right w-[150px]">Subtotal</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {(data.lines || data.items || []).map((item: any) => (
+                                                            <TableRow key={item.id}>
+                                                                <TableCell>{item.description || item.product_name}</TableCell>
+                                                                <TableCell className="text-center">{item.quantity}</TableCell>
+                                                                <TableCell className="text-right">${Number(item.unit_price || item.unit_cost).toLocaleString()}</TableCell>
+                                                                <TableCell className="text-right font-bold">${Number(item.subtotal).toLocaleString()}</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+
+                                                {/* Totals Section */}
+                                                <div className="flex justify-end pt-4">
+                                                    <div className="w-64 space-y-2">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-muted-foreground">Neto</span>
+                                                            <span>${Number(data.total_net).toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-muted-foreground">IVA (19%)</span>
+                                                            <span>${Number(data.total_tax).toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
+                                                            <span>Total</span>
+                                                            <span>${Number(data.total).toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
-                                                    <span>Total</span>
-                                                    <span>${Number(data.total).toLocaleString()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </div>

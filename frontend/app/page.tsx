@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 <ArrowUpRight className="h-4 w-4" />
               </button>
               <button onClick={() => window.location.href = '/accounting/entries'} className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted transition-colors text-sm">
-                <span>Libro Diario</span>
+                <span>Asientos Contables</span>
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>

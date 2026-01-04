@@ -28,7 +28,7 @@ const items = [
         icon: Calculator,
         items: [
             { title: "Plan de Cuentas", url: "/accounting/accounts" },
-            { title: "Libro Diario", url: "/accounting/entries" },
+            { title: "Asientos Contables", url: "/accounting/entries" },
         ]
     },
     {

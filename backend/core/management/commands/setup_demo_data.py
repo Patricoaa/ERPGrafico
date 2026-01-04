@@ -83,73 +83,85 @@ class Command(BaseCommand):
         AccountingSettings.objects.all().delete()
         Account.objects.all().delete()
 
+    def _get_acc(self, code, name, account_type, parent=None, is_reconcilable=False):
+        acc, _ = Account.objects.get_or_create(
+            code=code,
+            defaults={
+                'name': name,
+                'account_type': account_type,
+                'parent': parent,
+                'is_reconcilable': is_reconcilable
+            }
+        )
+        return acc
+
     def _create_accounts(self):
         # 1. Root Accounts
-        assets = Account.objects.create(code="1", name="ACTIVOS", account_type=AccountType.ASSET)
-        liabilities = Account.objects.create(code="2", name="PASIVOS", account_type=AccountType.LIABILITY)
-        equity = Account.objects.create(code="3", name="PATRIMONIO", account_type=AccountType.EQUITY)
-        income = Account.objects.create(code="4", name="INGRESOS", account_type=AccountType.INCOME)
-        expenses = Account.objects.create(code="5", name="GASTOS", account_type=AccountType.EXPENSE)
+        assets = self._get_acc("1", "ACTIVOS", AccountType.ASSET)
+        liabilities = self._get_acc("2", "PASIVOS", AccountType.LIABILITY)
+        equity = self._get_acc("3", "PATRIMONIO", AccountType.EQUITY)
+        income = self._get_acc("4", "INGRESOS", AccountType.INCOME)
+        expenses = self._get_acc("5", "GASTOS", AccountType.EXPENSE)
 
         # 1.1 Current Assets
-        start_assets = Account.objects.create(code="1.1", name="Activos Corrientes", parent=assets, account_type=AccountType.ASSET)
+        start_assets = self._get_acc("1.1", "Activos Corrientes", AccountType.ASSET, assets)
         
         # 1.1.01 Cash & Bank
-        cash_grp = Account.objects.create(code="1.1.01", name="Efectivo y Equivalentes", parent=start_assets, account_type=AccountType.ASSET)
-        cash_box = Account.objects.create(code="1.1.01.01", name="Caja General", parent=cash_grp, account_type=AccountType.ASSET, is_reconcilable=True)
-        bank_main = Account.objects.create(code="1.1.01.02", name="Banco Principal", parent=cash_grp, account_type=AccountType.ASSET, is_reconcilable=True)
+        cash_grp = self._get_acc("1.1.01", "Efectivo y Equivalentes", AccountType.ASSET, start_assets)
+        cash_box = self._get_acc("1.1.01.01", "Caja General", AccountType.ASSET, cash_grp, True)
+        bank_main = self._get_acc("1.1.01.02", "Banco Principal", AccountType.ASSET, cash_grp, True)
 
         # 1.1.02 Receivables
-        receivable_grp = Account.objects.create(code="1.1.02", name="Deudores Comerciales", parent=start_assets, account_type=AccountType.ASSET)
-        receivables = Account.objects.create(code="1.1.02.01", name="Clientes Nacionales", parent=receivable_grp, account_type=AccountType.ASSET, is_reconcilable=True)
+        receivable_grp = self._get_acc("1.1.02", "Deudores Comerciales", AccountType.ASSET, start_assets)
+        receivables = self._get_acc("1.1.02.01", "Clientes Nacionales", AccountType.ASSET, receivable_grp, True)
 
         # 1.1.03 Inventory
-        inventory_grp = Account.objects.create(code="1.1.03", name="Inventarios", parent=start_assets, account_type=AccountType.ASSET)
-        stock_materials = Account.objects.create(code="1.1.03.01", name="Mercaderías", parent=inventory_grp, account_type=AccountType.ASSET)
-        stock_raw = Account.objects.create(code="1.1.03.02", name="Materias Primas", parent=inventory_grp, account_type=AccountType.ASSET)
+        inventory_grp = self._get_acc("1.1.03", "Inventarios", AccountType.ASSET, start_assets)
+        stock_materials = self._get_acc("1.1.03.01", "Mercaderías", AccountType.ASSET, inventory_grp)
+        stock_raw = self._get_acc("1.1.03.02", "Materias Primas", AccountType.ASSET, inventory_grp)
         
         # 1.1.04 Tax Assets
-        tax_assets = Account.objects.create(code="1.1.04", name="Impuestos por Recuperar", parent=start_assets, account_type=AccountType.ASSET)
-        vat_credit = Account.objects.create(code="1.1.04.01", name="IVA Crédito Fiscal", parent=tax_assets, account_type=AccountType.ASSET)
+        tax_assets = self._get_acc("1.1.04", "Impuestos por Recuperar", AccountType.ASSET, start_assets)
+        vat_credit = self._get_acc("1.1.04.01", "IVA Crédito Fiscal", AccountType.ASSET, tax_assets)
 
         # 1.1.05 Prepayments
-        prepay_grp = Account.objects.create(code="1.1.05", name="Anticipos", parent=start_assets, account_type=AccountType.ASSET)
-        prepayments = Account.objects.create(code="1.1.05.01", name="Anticipos a Proveedores", parent=prepay_grp, account_type=AccountType.ASSET, is_reconcilable=True)
+        prepay_grp = self._get_acc("1.1.05", "Anticipos", AccountType.ASSET, start_assets)
+        prepayments = self._get_acc("1.1.05.01", "Anticipos a Proveedores", AccountType.ASSET, prepay_grp, True)
 
         # 2.1 Current Liabilities
-        start_liabilities = Account.objects.create(code="2.1", name="Pasivos Corrientes", parent=liabilities, account_type=AccountType.LIABILITY)
+        start_liabilities = self._get_acc("2.1", "Pasivos Corrientes", AccountType.LIABILITY, liabilities)
         
         # 2.1.01 Payables
-        payable_grp = Account.objects.create(code="2.1.01", name="Cuentas por Pagar", parent=start_liabilities, account_type=AccountType.LIABILITY)
-        payables = Account.objects.create(code="2.1.01.01", name="Proveedores Nacionales", parent=payable_grp, account_type=AccountType.LIABILITY, is_reconcilable=True)
+        payable_grp = self._get_acc("2.1.01", "Cuentas por Pagar", AccountType.LIABILITY, start_liabilities)
+        payables = self._get_acc("2.1.01.01", "Proveedores Nacionales", AccountType.LIABILITY, payable_grp, True)
 
         # 2.1.04 Customer Advances
-        advance_grp = Account.objects.create(code="2.1.04", name="Anticipos de Clientes", parent=start_liabilities, account_type=AccountType.LIABILITY)
-        advances = Account.objects.create(code="2.1.04.01", name="Anticipos de Clientes", parent=advance_grp, account_type=AccountType.LIABILITY, is_reconcilable=True)
+        advance_grp = self._get_acc("2.1.04", "Anticipos de Clientes", AccountType.LIABILITY, start_liabilities)
+        advances = self._get_acc("2.1.04.01", "Anticipos de Clientes", AccountType.LIABILITY, advance_grp, True)
         
-        # 2.1.02 Stock Interim (The Fix!)
-        stock_interim_grp = Account.objects.create(code="2.1.02", name="Cuentas Puente Inventario", parent=start_liabilities, account_type=AccountType.LIABILITY)
-        stock_input = Account.objects.create(code="2.1.02.01", name="Facturas Pendientes de Recepción", parent=stock_interim_grp, account_type=AccountType.LIABILITY, is_reconcilable=True)
+        # 2.1.02 Stock Interim
+        stock_interim_grp = self._get_acc("2.1.02", "Cuentas Puente Inventario", AccountType.LIABILITY, start_liabilities)
+        stock_input = self._get_acc("2.1.02.01", "Facturas Pendientes de Recepción", AccountType.LIABILITY, stock_interim_grp, True)
         
         # 2.1.03 Tax Liabilities
-        tax_liabilities = Account.objects.create(code="2.1.03", name="Impuestos por Pagar", parent=start_liabilities, account_type=AccountType.LIABILITY)
-        vat_debit = Account.objects.create(code="2.1.03.01", name="IVA Débito Fiscal", parent=tax_liabilities, account_type=AccountType.LIABILITY)
+        tax_liabilities = self._get_acc("2.1.03", "Impuestos por Pagar", AccountType.LIABILITY, start_liabilities)
+        vat_debit = self._get_acc("2.1.03.01", "IVA Débito Fiscal", AccountType.LIABILITY, tax_liabilities)
 
         # 3.1 Equity
-        capital = Account.objects.create(code="3.1.01", name="Capital Social", parent=equity, account_type=AccountType.EQUITY)
-        results = Account.objects.create(code="3.1.02", name="Resultados Acumulados", parent=equity, account_type=AccountType.EQUITY)
+        capital = self._get_acc("3.1.01", "Capital Social", AccountType.EQUITY, equity)
+        res_acum = self._get_acc("3.1.02", "Resultados Acumulados", AccountType.EQUITY, equity)
 
         # 4.1 Income
-        sales_grp = Account.objects.create(code="4.1.01", name="Ingresos de Explotación", parent=income, account_type=AccountType.INCOME)
-        sales_merch = Account.objects.create(code="4.1.01.01", name="Venta de Mercaderías", parent=sales_grp, account_type=AccountType.INCOME)
-        sales_service = Account.objects.create(code="4.1.01.02", name="Venta de Servicios", parent=sales_grp, account_type=AccountType.INCOME)
+        sales_grp = self._get_acc("4.1.01", "Ingresos de Explotación", AccountType.INCOME, income)
+        sales_merch = self._get_acc("4.1.01.01", "Venta de Mercaderías", AccountType.INCOME, sales_grp)
+        sales_service = self._get_acc("4.1.01.02", "Venta de Servicios", AccountType.INCOME, sales_grp)
         
         # 5.1 Expenses
-        cost_grp = Account.objects.create(code="5.1.01", name="Costo de Ventas", parent=expenses, account_type=AccountType.EXPENSE)
-        cogs = Account.objects.create(code="5.1.01.01", name="Costo de Venta", parent=cost_grp, account_type=AccountType.EXPENSE)
+        cost_grp = self._get_acc("5.1.01", "Costo de Ventas", AccountType.EXPENSE, expenses)
+        cogs = self._get_acc("5.1.01.01", "Costo de Venta", AccountType.EXPENSE, cost_grp)
         
-        expense_grp = Account.objects.create(code="5.2.01", name="Gastos de Administración", parent=expenses, account_type=AccountType.EXPENSE)
-        office_exp = Account.objects.create(code="5.2.01.01", name="Gastos de Oficina", parent=expense_grp, account_type=AccountType.EXPENSE)
+        expense_grp = self._get_acc("5.2.01", "Gastos de Administración", AccountType.EXPENSE, expenses)
+        office_exp = self._get_acc("5.2.01.01", "Gastos de Oficina", AccountType.EXPENSE, expense_grp)
 
         return {
             'cash': cash_box,
@@ -178,7 +190,6 @@ class Command(BaseCommand):
         settings.default_tax_payable_account = accounts['vat_debit']
         settings.default_inventory_account = accounts['stock_merch']
         
-        # The specific cleanup fix
         settings.stock_input_account = accounts['stock_input']
         settings.default_prepayment_account = accounts['prepayments']
         settings.default_advance_payment_account = accounts['advances']
@@ -186,43 +197,52 @@ class Command(BaseCommand):
         settings.save()
         
         # Treasury Accounts
-        TreasuryAccount.objects.create(name="Caja Chica", code="C01", currency="CLP", account=accounts['cash'], account_type=TreasuryAccount.Type.CASH)
-        TreasuryAccount.objects.create(name="Banco Santander", code="B01", currency="CLP", account=accounts['bank'], account_type=TreasuryAccount.Type.BANK)
+        TreasuryAccount.objects.get_or_create(code="C01", defaults={'name': "Caja Chica", 'currency': "CLP", 'account': accounts['cash'], 'account_type': TreasuryAccount.Type.CASH})
+        TreasuryAccount.objects.get_or_create(code="B01", defaults={'name': "Banco Santander", 'currency': "CLP", 'account': accounts['bank'], 'account_type': TreasuryAccount.Type.BANK})
 
     def _create_partners(self, accounts):
-        Contact.objects.create(name="Cliente Mostrador", tax_id="66666666-6", email="cliente@ejemplo.com", account_receivable=accounts['receivable'])
-        Contact.objects.create(name="Proveedor Mayorista", tax_id="77777777-7", email="proveedor@ejemplo.com", account_payable=accounts['payable'])
-        Contact.objects.create(name="Servicios Profesionales SpA", tax_id="88888888-8", email="servicios@ejemplo.com", account_payable=accounts['payable'])
+        Contact.objects.get_or_create(tax_id="66666666-6", defaults={'name': "Cliente Mostrador", 'email': "cliente@ejemplo.com", 'account_receivable': accounts['receivable']})
+        Contact.objects.get_or_create(tax_id="77777777-7", defaults={'name': "Proveedor Mayorista", 'email': "proveedor@ejemplo.com", 'account_payable': accounts['payable']})
+        Contact.objects.get_or_create(tax_id="88888888-8", defaults={'name': "Servicios Profesionales SpA", 'email': "servicios@ejemplo.com", 'account_payable': accounts['payable']})
 
     def _create_inventory(self, accounts):
         # Warehouse
-        wh = Warehouse.objects.create(name="Bodega Central", code="WH-MAIN")
+        wh, _ = Warehouse.objects.get_or_create(code="WH-MAIN", defaults={'name': "Bodega Central"})
 
         # Categories
-        cat_tech = ProductCategory.objects.create(
+        cat_tech, _ = ProductCategory.objects.get_or_create(
             name="Tecnología",
-            asset_account=accounts['stock_merch'],
-            income_account=accounts['sales'],
-            expense_account=accounts['cogs']
+            defaults={
+                'asset_account': accounts['stock_merch'],
+                'income_account': accounts['sales'],
+                'expense_account': accounts['cogs']
+            }
         )
         
         # Products
-        Product.objects.create(
-            name="Notebook Gamer",
+        Product.objects.get_or_create(
             code="DEV-001",
-            category=cat_tech,
-            sale_price=1500000,
-            product_type=Product.Type.STORABLE
+            defaults={
+                'name': "Notebook Gamer",
+                'category': cat_tech,
+                'sale_price': 1500000,
+                'product_type': Product.Type.STORABLE
+            }
         )
-        Product.objects.create(
-            name="Mouse Óptico",
+        Product.objects.get_or_create(
             code="PER-001",
-            category=cat_tech,
-            sale_price=15000,
-            product_type=Product.Type.STORABLE
+            defaults={
+                'name': "Mouse Óptico",
+                'category': cat_tech,
+                'sale_price': 15000,
+                'product_type': Product.Type.STORABLE
+            }
         )
 
     def _create_opening_balance(self, accounts):
+        if JournalEntry.objects.filter(reference="APERTURA-001").exists():
+            return
+            
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
             description="Asiento de Apertura de Capital",
