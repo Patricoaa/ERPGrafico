@@ -73,6 +73,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
     const getTitle = () => {
         if (!data) return "DETALLE DE TRANSACCIÓN"
+        if (view === 'history') return "HISTORIAL DE PAGOS"
 
         switch (currentType) {
             case 'sale_order':
@@ -100,6 +101,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     }
 
     const getIcon = () => {
+        if (view === 'history') return <Banknote className="h-5 w-5 text-emerald-600" />
         if (currentType === 'sale_order') return <ShoppingBag className="h-5 w-5" />
         if (currentType === 'purchase_order') return <FileText className="h-5 w-5" />
         if (currentType === 'invoice') return <Receipt className="h-5 w-5" />
@@ -111,7 +113,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className={`${currentType === 'journal_entry' ? 'max-w-5xl' : 'max-w-4xl'} max-h-[90vh] overflow-y-auto`}>
                 <DialogHeader className="border-b pb-4 flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
                         {history.length > 0 && (
@@ -133,12 +135,12 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 ) : data ? (
                     <div className="space-y-6 py-4">
                         {/* Summary Cards */}
-                        {(view === 'all' || view === 'details') && (
+                        {(view === 'all' || view === 'details' || view === 'history') && (
                             <div className={`grid grid-cols-2 ${currentType === 'payment' ? 'lg:grid-cols-4' : 'md:grid-cols-4'} gap-4`}>
                                 {currentType === 'payment' ? (
                                     <>
                                         {/* 1. Tipo */}
-                                        <Card>
+                                        <Card className="border-none shadow-sm bg-muted/30">
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Tipo</div>
                                                 <div className="font-bold text-base">
@@ -149,7 +151,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             </CardContent>
                                         </Card>
                                         {/* 2. Caja / Banco */}
-                                        <Card>
+                                        <Card className="border-none shadow-sm bg-muted/30">
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Caja / Banco</div>
                                                 <div className="font-bold text-base truncate">
@@ -161,7 +163,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             </CardContent>
                                         </Card>
                                         {/* 3. Método de Pago */}
-                                        <Card>
+                                        <Card className="border-none shadow-sm bg-muted/30">
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Método de Pago</div>
                                                 <div className="font-bold text-sm truncate pt-0.5">
@@ -170,7 +172,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             </CardContent>
                                         </Card>
                                         {/* 4. Monto */}
-                                        <Card>
+                                        <Card className="border-none shadow-sm bg-muted/30">
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Monto</div>
                                                 <div className={`font-bold text-lg ${data.payment_type === 'INBOUND' ? 'text-green-600' : 'text-red-600'}`}>
@@ -181,7 +183,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                     </>
                                 ) : (
                                     <>
-                                        <Card>
+                                        <Card className="border-none shadow-sm bg-muted/30">
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
                                                     {currentType === 'inventory' ? 'Tipo Mov.' :
@@ -198,7 +200,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                        <Card>
+                                        <Card className="border-none shadow-sm bg-muted/30">
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
                                                     {currentType === 'inventory' ? 'Fecha Mov.' : 'Fecha'}
@@ -208,7 +210,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                        <Card>
+                                        <Card className="border-none shadow-sm bg-muted/30">
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
                                                     {currentType === 'inventory' ? 'Almacén' : 'Estado'}
@@ -222,7 +224,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                        <Card>
+                                        <Card className="border-none shadow-sm bg-muted/30">
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
                                                     {currentType === 'inventory' ? 'Cantidad' : 'Total'}
@@ -239,10 +241,10 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
                         {/* Main Content Area */}
                         {(view === 'all' || view === 'details') && (
-                            <div className="space-y-4">
+                            <div className="space-y-4 pt-4">
                                 {currentType === 'payment' ? (
-                                    <div className="space-y-6 pt-4">
-                                        <div className="border-t pt-4 max-w-md mx-auto w-full">
+                                    <div className="space-y-6">
+                                        <div className="border-t pt-6 max-w-md mx-auto w-full">
                                             <div>
                                                 <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2 text-center">Cliente / Proveedor</h4>
                                                 <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-2xl border border-dashed">
@@ -265,7 +267,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                         )}
                                     </div>
                                 ) : currentType === 'inventory' ? (
-                                    <div className="grid grid-cols-2 gap-8 py-2">
+                                    <div className="grid grid-cols-2 gap-8 py-2 border-t pt-6">
                                         <div className="space-y-4">
                                             <div>
                                                 <h4 className="text-xs font-semibold text-muted-foreground uppercase">Descripción</h4>
@@ -283,7 +285,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                         </div>
                                     </div>
                                 ) : (
-                                    <>
+                                    <div className="space-y-6 pt-4 border-t">
                                         {currentType === 'journal_entry' ? (
                                             <>
                                                 <Table>
@@ -350,14 +352,24 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
-                                                        {(data.lines || data.items || []).map((item: any) => (
-                                                            <TableRow key={item.id}>
-                                                                <TableCell>{item.description || item.product_name}</TableCell>
-                                                                <TableCell className="text-center">{item.quantity}</TableCell>
-                                                                <TableCell className="text-right">${Number(item.unit_price || item.unit_cost).toLocaleString()}</TableCell>
-                                                                <TableCell className="text-right font-bold">${Number(item.subtotal).toLocaleString()}</TableCell>
+                                                        {(data.lines || data.items || []).map((item: any, idx: number) => (
+                                                            <TableRow key={item.id || idx}>
+                                                                <TableCell className="font-medium text-sm">
+                                                                    <div className="flex flex-col">
+                                                                        <span>{item.description || item.product_name}</span>
+                                                                        <span className="text-[8px] text-muted-foreground font-mono uppercase">{item.product_code}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-center text-sm">{Math.round(parseFloat(item.quantity || 0))}</TableCell>
+                                                                <TableCell className="text-right text-sm">${Number(item.unit_price || item.unit_cost).toLocaleString()}</TableCell>
+                                                                <TableCell className="text-right font-bold text-sm">${Number(item.subtotal).toLocaleString()}</TableCell>
                                                             </TableRow>
                                                         ))}
+                                                        {(!data.lines && !data.items) && (
+                                                            <TableRow>
+                                                                <TableCell colSpan={4} className="text-center py-4 text-muted-foreground italic text-xs">No se encontraron líneas de detalle</TableCell>
+                                                            </TableRow>
+                                                        )}
                                                     </TableBody>
                                                 </Table>
 
@@ -380,7 +392,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                 </div>
                                             </>
                                         )}
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -388,7 +400,6 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                         {/* Stock Movements / Receipts Section */}
                         {(view === 'all' || view === 'details') && (
                             <>
-
                                 {/* Case 2: Invoice/Note Stock Moves */}
                                 {currentType === 'invoice' && data.related_stock_moves?.length > 0 && (
                                     <div className="space-y-4 pt-6 border-t">
@@ -445,55 +456,62 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                         )}
 
                         {/* Payment History Section */}
-                        {(view === 'all' || view === 'history') && (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (data.serialized_payments || data.payments_detail)?.length > 0 && (
+                        {(view === 'all' || view === 'history') && (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (
                             <div className="space-y-4 pt-6 border-t">
-                                <h3 className="font-bold text-lg flex items-center gap-2">
-                                    <Banknote className="h-5 w-5 text-emerald-600" />
+                                <h3 className="font-bold text-lg flex items-center gap-2 text-emerald-600">
+                                    <Banknote className="h-5 w-5" />
                                     Historial de Pagos
                                 </h3>
-                                <div className="border rounded-md">
-                                    <Table>
-                                        <TableHeader className="bg-muted/50">
-                                            <TableRow>
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>Método</TableHead>
-                                                <TableHead>Referencia / Transacción</TableHead>
-                                                <TableHead className="text-right">Monto</TableHead>
-                                                <TableHead className="text-right">Acción</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
-                                                <TableRow key={pay.id}>
-                                                    <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className="uppercase text-[10px]">
-                                                            {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({pay.payment_method || pay.journal_name})
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-sm font-mono">
-                                                        {pay.transaction_number ? (
-                                                            <div className="flex flex-col">
-                                                                <span>{pay.transaction_number}</span>
-                                                                {pay.is_pending_registration && <span className="text-[9px] text-orange-500 font-bold uppercase">(Pendiente Registro)</span>}
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-muted-foreground">{pay.reference || '-'}</span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-bold text-emerald-600">
-                                                        ${Number(pay.amount).toLocaleString()}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Button variant="ghost" size="icon" onClick={() => navigateTo('payment', pay.id)}>
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
+                                {(data.serialized_payments || data.payments_detail)?.length > 0 ? (
+                                    <div className="border rounded-md">
+                                        <Table>
+                                            <TableHeader className="bg-muted/50">
+                                                <TableRow>
+                                                    <TableHead>Fecha</TableHead>
+                                                    <TableHead>Método</TableHead>
+                                                    <TableHead>Referencia / Transacción</TableHead>
+                                                    <TableHead className="text-right">Monto</TableHead>
+                                                    <TableHead className="text-right">Acción</TableHead>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
+                                                    <TableRow key={pay.id}>
+                                                        <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
+                                                        <TableCell>
+                                                            <Badge variant="outline" className="uppercase text-[10px]">
+                                                                {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({pay.payment_method || pay.journal_name})
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-sm font-mono">
+                                                            {pay.transaction_number ? (
+                                                                <div className="flex flex-col">
+                                                                    <span>{pay.transaction_number}</span>
+                                                                    {pay.is_pending_registration && <span className="text-[9px] text-orange-500 font-bold uppercase">(Pendiente Registro)</span>}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-muted-foreground">{pay.reference || '-'}</span>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="text-right font-bold text-emerald-600">
+                                                            ${Number(pay.amount).toLocaleString()}
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <Button variant="ghost" size="icon" onClick={() => navigateTo('payment', pay.id)}>
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                ) : (
+                                    <div className="border border-dashed p-10 text-center rounded-2xl bg-muted/20">
+                                        <Banknote className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
+                                        <p className="text-muted-foreground text-sm italic">No se registran pagos para este documento</p>
+                                    </div>
+                                )}
                             </div>
                         )}
 

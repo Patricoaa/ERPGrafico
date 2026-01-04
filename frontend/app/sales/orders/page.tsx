@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle, History, Truck } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -19,7 +19,7 @@ import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DeliveryModal } from "@/components/sales/DeliveryModal"
 import { Progress } from "../../../components/ui/progress"
-import { Banknote } from "lucide-react"
+
 
 interface SaleOrder {
     id: number
@@ -296,11 +296,11 @@ export default function SalesOrdersPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-blue-500"
+                                                className="text-emerald-600"
                                                 onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'history' })}
                                                 title="Historial de Pagos"
                                             >
-                                                <History className="h-4 w-4" />
+                                                <Banknote className="h-4 w-4" />
                                             </Button>
                                         )}
 

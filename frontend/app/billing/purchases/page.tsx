@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil } from "lucide-react"
+import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil, History } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -307,6 +307,19 @@ export default function PurchaseInvoicesPage() {
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
+
+                                                {/* Payment History */}
+                                                {((doc.related_documents?.payments?.length ?? 0) > 0 || doc.status === 'PAID') && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-emerald-600"
+                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
+                                                        title="Historial de Pagos"
+                                                    >
+                                                        <Banknote className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye } from "lucide-react"
+import { Search, Eye, Banknote } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -16,7 +16,7 @@ export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
 
     useEffect(() => {
         fetchInvoices()
@@ -105,13 +105,27 @@ export default function SalesInvoicesPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id })}
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
+                                        <div className="flex space-x-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                title="Ver Detalle"
+                                            >
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
+                                            {inv.status === 'PAID' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-emerald-600"
+                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'history' })}
+                                                    title="Historial de Pagos"
+                                                >
+                                                    <Banknote className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -126,6 +140,7 @@ export default function SalesInvoicesPage() {
                     onOpenChange={(open) => !open && setViewingTransaction(null)}
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
+                    view={viewingTransaction.view}
                 />
             )}
         </div>

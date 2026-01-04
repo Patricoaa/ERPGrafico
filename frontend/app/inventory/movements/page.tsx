@@ -24,7 +24,7 @@ interface StockMove {
     quantity: string
     move_type: string
     description: string
-    related_documents?: Array<{
+    related_documents: Array<{
         type: string
         id: number | string
         name: string
@@ -34,8 +34,7 @@ interface StockMove {
 export default function MovementsPage() {
     const [moves, setMoves] = useState<StockMove[]>([])
     const [loading, setLoading] = useState(true)
-    const [viewingMove, setViewingMove] = useState<number | null>(null)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
 
     const fetchMoves = async () => {
         setLoading(true)
@@ -70,18 +69,17 @@ export default function MovementsPage() {
                             <TableHead>Cant.</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Documentos</TableHead>
-                            <TableHead>Descripción</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={9} className="text-center py-10">Cargando movimientos...</TableCell>
+                                <TableCell colSpan={8} className="text-center py-10">Cargando movimientos...</TableCell>
                             </TableRow>
                         ) : moves.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
+                                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
                             </TableRow>
                         ) : moves.map((move) => (
                             <TableRow key={move.id}>
@@ -98,29 +96,36 @@ export default function MovementsPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex flex-wrap gap-1">
-                                        {move.related_documents && move.related_documents.length > 0 ? (
-                                            move.related_documents.map((doc, idx) => (
-                                                <Badge
-                                                    key={idx}
-                                                    variant="outline"
-                                                    className="cursor-pointer hover:bg-blue-50 hover:text-blue-600 border-blue-200 text-blue-500 text-[10px] py-0 px-2 flex items-center gap-1"
-                                                    onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
-                                                >
-                                                    {doc.name}
-                                                </Badge>
-                                            ))
+                                    <div className="flex flex-col gap-1">
+                                        {move.related_documents && move.related_documents.filter(d => d.type !== 'inventory').length > 0 ? (
+                                            move.related_documents
+                                                .filter(d => d.type !== 'inventory')
+                                                .map((doc, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
+                                                        className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                    >
+                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
+                                                            {doc.type === 'invoice' ? (doc.name.includes('BOL') ? 'Boleta' :
+                                                                doc.name.includes('NC') ? 'Nota de Crédito' :
+                                                                    doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
+                                                                doc.type === 'purchase_order' ? 'Orden de Compra' :
+                                                                    doc.type === 'sale_order' ? 'Orden de Venta' : doc.type}
+                                                        </span>
+                                                        {doc.name}
+                                                    </button>
+                                                ))
                                         ) : (
-                                            <span className="text-muted-foreground text-[10px]">-</span>
+                                            <span className="text-muted-foreground text-xs">-</span>
                                         )}
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-sm text-muted-foreground">{move.description}</TableCell>
                                 <TableCell className="text-right">
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => setViewingMove(move.id)}
+                                        onClick={() => setViewingTransaction({ type: 'inventory', id: move.id })}
                                     >
                                         <Eye className="h-4 w-4" />
                                     </Button>
@@ -131,21 +136,13 @@ export default function MovementsPage() {
                 </Table>
             </div>
 
-            {viewingMove && (
-                <TransactionViewModal
-                    open={!!viewingMove}
-                    onOpenChange={(open) => !open && setViewingMove(null)}
-                    type="inventory"
-                    id={viewingMove}
-                />
-            )}
-
             {viewingTransaction && (
                 <TransactionViewModal
                     open={!!viewingTransaction}
                     onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type as any}
+                    type={viewingTransaction.type}
                     id={viewingTransaction.id}
+                    view={viewingTransaction.view}
                 />
             )}
         </div>

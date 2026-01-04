@@ -68,11 +68,73 @@ class StockMoveSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_related_documents(self, obj):
+        docs = []
+        # 1. Check via journal entry
         if obj.journal_entry:
-            # We filter to only include invoices, sale orders, and purchase orders as requested
-            docs = obj.journal_entry.get_source_documents
-            return [d for d in docs if d['type'] in ('invoice', 'sale_order', 'purchase_order')]
-        return []
+            docs.extend(obj.journal_entry.get_source_documents)
+            
+        # 2. Check via Purchase Receipt Line
+        try:
+            if hasattr(obj, 'purchase_receipt_line'):
+                pr = obj.purchase_receipt_line.receipt
+                po = pr.purchase_order
+                if po:
+                    po_doc = {
+                        'type': 'purchase_order',
+                        'id': po.id,
+                        'name': str(po),
+                        'url': '/purchasing/orders'
+                    }
+                    docs.append(po_doc)
+                    
+                    # Add Invoices related to this PO
+                    for inv in po.invoices.all():
+                        inv_doc = {
+                            'type': 'invoice',
+                            'id': inv.id,
+                            'name': str(inv),
+                            'url': f'/billing/purchases'
+                        }
+                        docs.append(inv_doc)
+        except Exception:
+            pass
+
+        # 3. Check via Sale Delivery Line
+        try:
+            if hasattr(obj, 'sale_delivery_line'):
+                sd = obj.sale_delivery_line.delivery
+                so = sd.sale_order
+                if so:
+                    so_doc = {
+                        'type': 'sale_order',
+                        'id': so.id,
+                        'name': str(so),
+                        'url': '/sales/orders'
+                    }
+                    docs.append(so_doc)
+                    
+                    # Add Invoices related to this SO
+                    for inv in so.invoices.all():
+                        inv_doc = {
+                            'type': 'invoice',
+                            'id': inv.id,
+                            'name': str(inv),
+                            'url': f'/billing/sales'
+                        }
+                        docs.append(inv_doc)
+        except Exception:
+            pass
+        
+        # Deduplicate and filter out 'inventory' (self)
+        unique_docs = []
+        seen = set()
+        for d in docs:
+            key = (d['type'], d['id'])
+            if key not in seen and d['type'] != 'inventory':
+                seen.add(key)
+                unique_docs.append(d)
+                
+        return unique_docs
 
     def get_reference_code(self, obj):
         # Prefer the internal MOV code as requested by the user

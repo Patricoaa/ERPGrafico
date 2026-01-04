@@ -10,13 +10,13 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, CheckCircle, Package, FileText, History } from "lucide-react"
+import { Pencil, Trash2, CheckCircle, Package, FileText, History, Banknote } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Banknote, Eye, TrendingDown, FileBadge } from "lucide-react"
+import { Eye, TrendingDown, FileBadge } from "lucide-react"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
@@ -359,11 +359,11 @@ export default function PurchaseOrdersPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-blue-500"
+                                                className="text-emerald-600"
                                                 onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'history' })}
                                                 title="Historial de Pagos"
                                             >
-                                                <History className="h-4 w-4" />
+                                                <Banknote className="h-4 w-4" />
                                             </Button>
                                         )}
                                     </div>

@@ -14,10 +14,20 @@ class InvoiceSerializer(serializers.ModelSerializer):
     partner_name = serializers.SerializerMethodField()
     related_documents = serializers.SerializerMethodField()
     related_stock_moves = serializers.SerializerMethodField()
+    lines = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = '__all__'
+
+    def get_lines(self, obj):
+        if obj.sale_order:
+            from sales.serializers import SaleLineSerializer
+            return SaleLineSerializer(obj.sale_order.lines.all(), many=True).data
+        if obj.purchase_order:
+            from purchasing.serializers import PurchaseLineSerializer
+            return PurchaseLineSerializer(obj.purchase_order.lines.all(), many=True).data
+        return []
 
     def get_related_documents(self, obj):
         if obj.purchase_order:
@@ -25,6 +35,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             # Note: Importing inside method to avoid circular imports
             from purchasing.serializers import PurchaseOrderSerializer
             return PurchaseOrderSerializer().get_related_documents(obj.purchase_order)
+        if obj.sale_order:
+            from sales.serializers import SaleOrderSerializer
+            return SaleOrderSerializer().get_related_documents(obj.sale_order)
         return None
 
     def get_partner_name(self, obj):
