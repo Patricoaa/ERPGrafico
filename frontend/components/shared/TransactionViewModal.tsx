@@ -1,12 +1,10 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { translateStatus, translatePaymentMethod } from "@/lib/utils"
 
@@ -18,26 +16,37 @@ interface TransactionViewModalProps {
     view?: 'details' | 'history' | 'all'
 }
 
-export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all' }: TransactionViewModalProps) {
+export function TransactionViewModal({ open, onOpenChange, type: initialType, id: initialId, view = 'all' }: TransactionViewModalProps) {
+    const [history, setHistory] = useState<{ type: string, id: number | string }[]>([])
+    const [currentType, setCurrentType] = useState<any>(initialType)
+    const [currentId, setCurrentId] = useState<number | string>(initialId)
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        if (open && id) {
+        if (open) {
+            setCurrentType(initialType)
+            setCurrentId(initialId)
+            setHistory([])
+        }
+    }, [open, initialType, initialId])
+
+    useEffect(() => {
+        if (open && currentId) {
             fetchData()
         }
-    }, [open, id, type])
+    }, [open, currentId, currentType])
 
     const fetchData = async () => {
         setLoading(true)
         try {
             let endpoint = ""
-            if (type === 'sale_order') endpoint = `/sales/orders/${id}/`
-            else if (type === 'purchase_order') endpoint = `/purchasing/orders/${id}/`
-            else if (type === 'invoice') endpoint = `/billing/invoices/${id}/`
-            else if (type === 'payment') endpoint = `/treasury/payments/${id}/`
-            else if (type === 'journal_entry') endpoint = `/accounting/entries/${id}/`
-            else if (type === 'inventory') endpoint = `/inventory/moves/${id}/`
+            if (currentType === 'sale_order') endpoint = `/sales/orders/${currentId}/`
+            else if (currentType === 'purchase_order') endpoint = `/purchasing/orders/${currentId}/`
+            else if (currentType === 'invoice') endpoint = `/billing/invoices/${currentId}/`
+            else if (currentType === 'payment') endpoint = `/treasury/payments/${currentId}/`
+            else if (currentType === 'journal_entry') endpoint = `/accounting/entries/${currentId}/`
+            else if (currentType === 'inventory') endpoint = `/inventory/moves/${currentId}/`
 
             const response = await api.get(endpoint)
             setData(response.data)
@@ -48,33 +57,55 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
         }
     }
 
+    const navigateTo = (newType: string, newId: number | string) => {
+        setHistory(prev => [...prev, { type: currentType, id: currentId }])
+        setCurrentType(newType)
+        setCurrentId(newId)
+    }
+
+    const goBack = () => {
+        if (history.length === 0) return
+        const prev = history[history.length - 1]
+        setHistory(prev => prev.slice(0, -1))
+        setCurrentType(prev.type)
+        setCurrentId(prev.id)
+    }
+
     const getTitle = () => {
-        if (type === 'sale_order') return `Nota de Venta ${data?.number || ''}`
-        if (type === 'purchase_order') return `Orden de Compra ${data?.number || ''}`
-        if (type === 'invoice') return `${data?.dte_type_display || 'Factura'} ${data?.number || ''}`
-        if (type === 'payment') return `Pago ${data?.id || ''}`
-        if (type === 'journal_entry') return `Asiento Contable ${data?.number || data?.id || ''}`
-        if (type === 'inventory') return `Movimiento de Inventario #${data?.id || ''}`
+        if (currentType === 'sale_order') return `Nota de Venta ${data?.number || ''}`
+        if (currentType === 'purchase_order') return `Orden de Compra ${data?.number || ''}`
+        if (currentType === 'invoice') return `${data?.dte_type_display || 'Factura'} ${data?.number || ''}`
+        if (currentType === 'payment') return `Detalle de Movimiento: ${data?.code || data?.id || ''}`
+        if (currentType === 'journal_entry') return `Asiento Contable ${data?.number || data?.id || ''}`
+        if (currentType === 'inventory') return `Movimiento de Inventario #${data?.id || ''}`
         return "Detalles de Transacción"
     }
 
     const getIcon = () => {
-        if (type === 'sale_order') return <ShoppingBag className="h-5 w-5" />
-        if (type === 'purchase_order') return <FileText className="h-5 w-5" />
-        if (type === 'invoice') return <Receipt className="h-5 w-5" />
-        if (type === 'journal_entry') return <Hash className="h-5 w-5" />
-        if (type === 'inventory') return <ShoppingBag className="h-5 w-5 text-blue-600" />
+        if (currentType === 'sale_order') return <ShoppingBag className="h-5 w-5" />
+        if (currentType === 'purchase_order') return <FileText className="h-5 w-5" />
+        if (currentType === 'invoice') return <Receipt className="h-5 w-5" />
+        if (currentType === 'journal_entry') return <Hash className="h-5 w-5" />
+        if (currentType === 'inventory') return <Package className="h-5 w-5 text-blue-600" />
+        if (currentType === 'payment') return <Banknote className="h-5 w-5 text-emerald-600" />
         return <FileText className="h-5 w-5" />
     }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader className="border-b pb-4">
-                    <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
-                        {getIcon()}
-                        {getTitle()}
-                    </DialogTitle>
+                <DialogHeader className="border-b pb-4 flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        {history.length > 0 && (
+                            <Button variant="ghost" size="icon" onClick={goBack} className="mr-2">
+                                <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                        )}
+                        <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
+                            {getIcon()}
+                            {getTitle()}
+                        </DialogTitle>
+                    </div>
                 </DialogHeader>
 
                 {loading ? (
@@ -89,51 +120,68 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                 <Card>
                                     <CardContent className="p-4">
                                         <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {type === 'purchase_order' ? 'Proveedor' :
-                                                type === 'inventory' ? 'Producto' :
-                                                    (type === 'journal_entry' ? 'Referencia' : 'Cliente')}
+                                            {currentType === 'purchase_order' ? 'Proveedor' :
+                                                currentType === 'inventory' ? 'Producto' :
+                                                    (currentType === 'journal_entry' ? 'Referencia' :
+                                                        currentType === 'payment' ? 'Referencia' : 'Cliente')}
                                         </div>
                                         <div className="font-bold text-base truncate">
-                                            {type === 'journal_entry' ? (data.reference || '-') :
-                                                type === 'inventory' ? data.product_name :
-                                                    (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
+                                            {currentType === 'journal_entry' ? (data.reference || '-') :
+                                                currentType === 'payment' ? (data.reference || '-') :
+                                                    currentType === 'inventory' ? data.product_name :
+                                                        (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
                                         </div>
-                                        {type === 'inventory' && <div className="text-[10px] text-muted-foreground font-mono">{data.product_code}</div>}
+                                        {currentType === 'inventory' && <div className="text-[10px] text-muted-foreground font-mono">{data.product_code}</div>}
                                     </CardContent>
                                 </Card>
                                 <Card>
                                     <CardContent className="p-4">
                                         <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {type === 'inventory' ? 'Almacén' : 'Fecha'}
+                                            {currentType === 'inventory' ? 'Almacén' :
+                                                currentType === 'payment' ? 'Cliente / Proveedor' : 'Fecha'}
                                         </div>
-                                        <div className="font-bold text-base">
-                                            {type === 'inventory' ? data.warehouse_name : new Date(data.date || data.created_at).toLocaleDateString()}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="p-4">
-                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {type === 'inventory' ? 'Fecha Mov.' : 'Estado'}
-                                        </div>
-                                        <div className="font-bold text-base">
-                                            {type === 'inventory' ? new Date(data.date).toLocaleDateString() : (
-                                                <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
-                                                    {translateStatus(data.status || data.state)}
-                                                </Badge>
-                                            )}
+                                        <div className="font-bold text-base truncate">
+                                            {currentType === 'inventory' ? data.warehouse_name :
+                                                currentType === 'payment' ? data.partner_name :
+                                                    new Date(data.date || data.created_at).toLocaleDateString()}
                                         </div>
                                     </CardContent>
                                 </Card>
                                 <Card>
                                     <CardContent className="p-4">
                                         <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {type === 'inventory' ? 'Tipo Mov.' : 'Total'}
+                                            {currentType === 'inventory' ? 'Fecha Mov.' :
+                                                currentType === 'payment' ? 'Caja / Banco' : 'Estado'}
                                         </div>
                                         <div className="font-bold text-base">
-                                            {type === 'inventory' ? (
+                                            {currentType === 'inventory' ? new Date(data.date).toLocaleDateString() :
+                                                currentType === 'payment' ? (
+                                                    <div className="flex items-center gap-1">
+                                                        {data.treasury_account_type === 'BANK' ? <Building2 className="h-4 w-4 text-blue-500" /> : <Banknote className="h-4 w-4 text-green-500" />}
+                                                        <span className="truncate">{data.journal_name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
+                                                        {translateStatus(data.status || data.state)}
+                                                    </Badge>
+                                                )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                            {currentType === 'inventory' ? 'Tipo Mov.' :
+                                                currentType === 'payment' ? 'Tipo' : 'Total'}
+                                        </div>
+                                        <div className="font-bold text-base">
+                                            {currentType === 'inventory' ? (
                                                 <Badge variant={data.move_type === 'IN' ? 'default' : data.move_type === 'OUT' ? 'destructive' : 'outline'}>
                                                     {data.move_type_display}
+                                                </Badge>
+                                            ) : currentType === 'payment' ? (
+                                                <Badge variant={data.payment_type === 'INBOUND' ? 'default' : 'destructive'}>
+                                                    {data.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso'}
                                                 </Badge>
                                             ) : `$${Number(data.total).toLocaleString()}`}
                                         </div>
@@ -142,14 +190,63 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                             </div>
                         )}
 
-                        {/* Line Items or Movement Detail */}
+                        {/* Main Content Area */}
                         {(view === 'all' || view === 'details') && (
-                            <div className="space-y-2">
-                                <h3 className="font-bold text-lg border-b pb-2">
-                                    {type === 'inventory' ? 'Información del Movimiento' : 'Detalles'}
-                                </h3>
+                            <div className="space-y-4">
+                                {currentType === 'payment' ? (
+                                    <div className="space-y-4 pt-2">
+                                        <div className="grid grid-cols-2 gap-8">
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase">Monto de la Operación</h4>
+                                                    <p className={`text-3xl font-black ${data.payment_type === 'INBOUND' ? 'text-green-600' : 'text-red-600'}`}>
+                                                        ${Number(data.amount).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase italic pb-1">Método de Pago</h4>
+                                                    <Badge variant="outline" className="font-mono">{data.payment_method_display || data.payment_method || '-'}</Badge>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase">Documentos Asociados</h4>
+                                                    <div className="space-y-2 pt-1">
+                                                        {data.document_info ? (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="w-full justify-start text-blue-600"
+                                                                onClick={() => navigateTo(data.document_info.type, data.document_info.id)}
+                                                            >
+                                                                <FileText className="h-4 w-4 mr-2" />
+                                                                {data.document_info.label}
+                                                            </Button>
+                                                        ) : <span className="text-sm text-muted-foreground">Sin documento asociado</span>}
 
-                                {type === 'inventory' ? (
+                                                        {data.journal_entry && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="w-full justify-start text-muted-foreground italic text-[10px]"
+                                                                onClick={() => navigateTo('journal_entry', data.journal_entry)}
+                                                            >
+                                                                <Hash className="h-3 w-3 mr-2" />
+                                                                Ver Movimiento Contable
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {data.notes && (
+                                            <div className="pt-2">
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Observaciones</h4>
+                                                <p className="text-sm bg-muted p-3 rounded-md italic">{data.notes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : currentType === 'inventory' ? (
                                     <div className="grid grid-cols-2 gap-8 py-2">
                                         <div className="space-y-4">
                                             <div>
@@ -168,14 +265,10 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                                 <h4 className="text-xs font-semibold text-muted-foreground uppercase">Documento Contable</h4>
                                                 {data.journal_entry ? (
                                                     <button
-                                                        onClick={() => {
-                                                            onOpenChange(false);
-                                                            // We assume some mechanism to switch view or just navigate
-                                                            // For now let's just show the number if we can't switch easily
-                                                        }}
+                                                        onClick={() => navigateTo('journal_entry', data.journal_entry)}
                                                         className="text-sm font-bold text-blue-600 hover:underline"
                                                     >
-                                                        Asiento {data.journal_entry_number}
+                                                        Asiento {data.journal_entry_number || data.journal_entry}
                                                     </button>
                                                 ) : <span className="text-sm text-muted-foreground">No asociado</span>}
                                             </div>
@@ -230,7 +323,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                         {(view === 'all' || view === 'details') && (
                             <>
                                 {/* Case 1: Purchase Order Receipts */}
-                                {type === 'purchase_order' && data.related_documents?.receipts?.length > 0 && (
+                                {currentType === 'purchase_order' && data.related_documents?.receipts?.length > 0 && (
                                     <div className="space-y-4 pt-6 border-t">
                                         <h3 className="font-bold text-lg flex items-center gap-2">
                                             <Package className="h-5 w-5 text-blue-600" />
@@ -266,27 +359,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                                                                 variant="ghost"
                                                                                 size="sm"
                                                                                 className="h-6 text-[10px] text-blue-600"
-                                                                                onClick={() => {
-                                                                                    // Hacky: We want to switch view to 'inventory' type. 
-                                                                                    // Current parent implementation might not support clean switching if state is local.
-                                                                                    // Ideally onOpenChange should allow switching type/id. 
-                                                                                    // But props are fixed. We might need a way to open a "child" modal or notify parent?
-                                                                                    // Since this component is presented as a controlled modal, 
-                                                                                    // we probably can't switch the props from inside easily unless we modify the caller.
-                                                                                    // ALTERNATIVE: Use local state override if the component design supports it, 
-                                                                                    // OR just render the move details here in nested way? 
-                                                                                    // "Visualizar detalle" usually implies viewing the Inventory Move record.
-                                                                                    // Checking lines 20-21: props are passed in.
-                                                                                    // We can add a "onNavigate" prop in future. 
-                                                                                    // For now, let's assume we can't easily switch the modal context entirely without parent help.
-                                                                                    // BUT, maybe we can just show the detail in a toast or simple alert? No that's bad.
-                                                                                    // Wait, we can modify the `TransactionViewModal` to have internal navigation stack? Too complex.
-                                                                                    // Let's assume the user just sees the info here (Qty is key).
-                                                                                    // The prompt asked for "vista de detalle".
-                                                                                    // Note: The previous edits to page.tsx passed specific IDs.
-                                                                                    // If I can't switch the modal, listing the info here IS the detail view for the context of the PO.
-                                                                                    alert(`Movimiento ID: ${move.id} - ${move.product}`)
-                                                                                }}
+                                                                                onClick={() => navigateTo('inventory', move.id)}
                                                                             >
                                                                                 <Eye className="h-3 w-3 mr-1" />
                                                                                 Ver
@@ -304,7 +377,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                 )}
 
                                 {/* Case 2: Invoice/Note Stock Moves */}
-                                {type === 'invoice' && data.related_stock_moves?.length > 0 && (
+                                {currentType === 'invoice' && data.related_stock_moves?.length > 0 && (
                                     <div className="space-y-4 pt-6 border-t">
                                         <h3 className="font-bold text-lg flex items-center gap-2">
                                             <Package className="h-5 w-5 text-orange-600" />
@@ -319,6 +392,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                                         <TableHead>Producto</TableHead>
                                                         <TableHead className="text-center">Tipo</TableHead>
                                                         <TableHead className="text-right">Cantidad</TableHead>
+                                                        <TableHead className="text-right">Acción</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -337,6 +411,16 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                                                     {move.quantity}
                                                                 </span>
                                                             </TableCell>
+                                                            <TableCell className="text-right">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-6 w-6"
+                                                                    onClick={() => navigateTo('inventory', move.id)}
+                                                                >
+                                                                    <Eye className="h-3 w-3 text-blue-600" />
+                                                                </Button>
+                                                            </TableCell>
                                                         </TableRow>
                                                     ))}
                                                 </TableBody>
@@ -348,7 +432,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                         )}
 
                         {/* Payment History Section */}
-                        {(view === 'all' || view === 'history') && (type === 'sale_order' || type === 'purchase_order' || type === 'invoice') && (data.serialized_payments || data.payments_detail)?.length > 0 && (
+                        {(view === 'all' || view === 'history') && (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (data.serialized_payments || data.payments_detail)?.length > 0 && (
                             <div className="space-y-4 pt-6 border-t">
                                 <h3 className="font-bold text-lg flex items-center gap-2">
                                     <Banknote className="h-5 w-5 text-emerald-600" />
@@ -362,6 +446,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                                 <TableHead>Método</TableHead>
                                                 <TableHead>Referencia / Transacción</TableHead>
                                                 <TableHead className="text-right">Monto</TableHead>
+                                                <TableHead className="text-right">Acción</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -386,6 +471,11 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                                                     <TableCell className="text-right font-bold text-emerald-600">
                                                         ${Number(pay.amount).toLocaleString()}
                                                     </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button variant="ghost" size="icon" onClick={() => navigateTo('payment', pay.id)}>
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -395,7 +485,7 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
                         )}
 
                         {/* Notes */}
-                        {(view === 'all' || view === 'details') && data.notes && (
+                        {(view === 'all' || view === 'details') && data.notes && currentType !== 'payment' && (
                             <div className="pt-4 border-t">
                                 <h4 className="text-sm font-semibold text-muted-foreground mb-1 uppercase">Notas</h4>
                                 <p className="text-sm bg-muted p-4 rounded-md">{data.notes}</p>
@@ -411,3 +501,4 @@ export function TransactionViewModal({ open, onOpenChange, type, id, view = 'all
         </Dialog>
     )
 }
+

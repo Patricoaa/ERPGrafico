@@ -82,7 +82,7 @@ const items = [
         icon: Banknote,
         items: [
             { title: "Cajas y Bancos", url: "/treasury/accounts" },
-            { title: "Pagos y Cobros", url: "/treasury/payments" },
+            { title: "Ingresos y Egresos", url: "/treasury/payments" },
         ]
     },
     {

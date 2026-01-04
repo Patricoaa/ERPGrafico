@@ -10,10 +10,9 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Eye } from "lucide-react"
+import { ArrowDownLeft, ArrowUpRight, Eye } from "lucide-react"
 import api from "@/lib/api"
 import { PaymentForm } from "@/components/forms/PaymentForm"
-import { Badge } from "@/components/ui/badge"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
 interface Payment {
@@ -36,7 +35,7 @@ interface Payment {
 export default function PaymentsPage() {
     const [payments, setPayments] = useState<Payment[]>([])
     const [loading, setLoading] = useState(true)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
 
     const fetchPayments = async () => {
         try {
@@ -66,59 +65,64 @@ export default function PaymentsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Referencia</TableHead>
-                            <TableHead>Tipo</TableHead>
+                            <TableHead className="w-[120px]">Fecha</TableHead>
+                            <TableHead className="w-[100px] text-center">Tipo</TableHead>
                             <TableHead>Documento</TableHead>
-                            <TableHead>Entidad</TableHead>
-                            <TableHead>Caja/Banco</TableHead>
-                            <TableHead className="text-right">Monto</TableHead>
-                            <TableHead className="text-center">Acciones</TableHead>
+                            <TableHead className="text-right w-[150px]">Monto</TableHead>
+                            <TableHead className="text-center w-[80px]">Acción</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {payments.map((payment) => (
                             <TableRow key={payment.id}>
-                                <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
-                                <TableCell className="font-mono text-xs">{payment.code}</TableCell>
+                                <TableCell className="text-muted-foreground">{new Date(payment.date).toLocaleDateString()}</TableCell>
                                 <TableCell>
-                                    <Badge variant={payment.payment_type === 'INBOUND' ? 'default' : 'destructive'}>
-                                        {payment.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso'}
-                                    </Badge>
+                                    <div className="flex justify-center">
+                                        {payment.payment_type === 'INBOUND' ? (
+                                            <div className="flex items-center gap-1 text-emerald-600 font-bold text-xs">
+                                                <ArrowDownLeft className="h-4 w-4" />
+                                                <span>INGRESO</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1 text-red-600 font-bold text-xs">
+                                                <ArrowUpRight className="h-4 w-4" />
+                                                <span>EGRESO</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
-                                    {payment.document_info ? (
-                                        <button
-                                            onClick={() => setViewingTransaction({ type: payment.document_info!.type, id: payment.document_info!.id, view: 'details' })}
-                                            className="text-blue-600 hover:underline text-[12px] font-medium text-left leading-tight"
-                                        >
-                                            {payment.document_info.label}
-                                        </button>
-                                    ) : (
-                                        <span className="text-muted-foreground text-xs">{payment.reference || '-'}</span>
-                                    )}
+                                    <div className="flex flex-col">
+                                        <div className="font-mono text-[10px] text-muted-foreground leading-none mb-1">{payment.code}</div>
+                                        <div className="flex items-center gap-2">
+                                            {payment.document_info ? (
+                                                <button
+                                                    onClick={() => setViewingTransaction({ type: payment.document_info!.type, id: payment.document_info!.id })}
+                                                    className="text-blue-600 hover:underline font-bold text-sm"
+                                                >
+                                                    {payment.document_info.label}
+                                                </button>
+                                            ) : (
+                                                <span className="font-medium text-sm">{payment.reference || 'Pago Manual'}</span>
+                                            )}
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground font-medium mt-0.5">{payment.partner_name}</div>
+                                    </div>
                                 </TableCell>
-                                <TableCell className="text-sm">{payment.partner_name}</TableCell>
-                                <TableCell className="text-sm">{payment.journal_name}</TableCell>
-                                <TableCell className="text-right font-medium font-mono">${Number(payment.amount).toLocaleString()}</TableCell>
+                                <TableCell className="text-right font-black font-mono">
+                                    <span className={payment.payment_type === 'INBOUND' ? "text-emerald-700" : "text-red-700"}>
+                                        ${Number(payment.amount).toLocaleString()}
+                                    </span>
+                                </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center">
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => {
-                                                if (payment.document_info) {
-                                                    setViewingTransaction({
-                                                        type: payment.document_info.type,
-                                                        id: payment.document_info.id,
-                                                        view: 'details'
-                                                    })
-                                                }
-                                            }}
+                                            onClick={() => setViewingTransaction({ type: 'payment', id: payment.id })}
                                             title="Ver Detalle"
-                                            disabled={!payment.document_info}
                                         >
-                                            <Eye className="h-4 w-4" />
+                                            <Eye className="h-4 w-4 text-blue-600" />
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -126,12 +130,12 @@ export default function PaymentsPage() {
                         ))}
                         {loading && (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center">Cargando movimientos...</TableCell>
+                                <TableCell colSpan={5} className="text-center py-10">Cargando movimientos...</TableCell>
                             </TableRow>
                         )}
                         {!loading && payments.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center">No hay movimientos registrados.</TableCell>
+                                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
@@ -144,7 +148,6 @@ export default function PaymentsPage() {
                     onOpenChange={(open) => !open && setViewingTransaction(null)}
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
-                    view={viewingTransaction.view || "details"}
                 />
             )}
         </div>

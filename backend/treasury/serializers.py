@@ -15,6 +15,7 @@ class PaymentSerializer(serializers.ModelSerializer):
     account_name = serializers.CharField(source='account.name', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
     journal_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    treasury_account_type = serializers.CharField(source='treasury_account.account_type', read_only=True)
     code = serializers.SerializerMethodField()
     document_info = serializers.SerializerMethodField()
 
