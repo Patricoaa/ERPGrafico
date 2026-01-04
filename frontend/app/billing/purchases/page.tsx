@@ -5,13 +5,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, FileBadge, Banknote, Package, Trash2 } from "lucide-react"
+import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
+import { DocumentEditModal } from "@/components/purchasing/DocumentEditModal"
+import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
 
 interface PurchaseDocument {
     id: number
@@ -26,6 +28,7 @@ interface PurchaseDocument {
     status: string
     status_display?: string
     pending_amount?: number
+    po_receiving_status?: string
     related_documents?: {
         invoices: any[]
         notes: any[]
@@ -47,9 +50,10 @@ export default function PurchaseInvoicesPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
 
-    // Actions state
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<PurchaseDocument | null>(null)
+    const [editingDoc, setEditingDoc] = useState<PurchaseDocument | null>(null)
+    const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
 
     useEffect(() => {
         fetchDocuments()
@@ -233,11 +237,8 @@ export default function PurchaseInvoicesPage() {
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
 
-                                                {/* Receive Merchandise (Only for Original Orders via Notes/Invoices?) 
-                                                Actually, usually you receive against the PO. 
-                                                If viewing an Invoice, merging Receive action here is convenient shortcut to receive the PO items.
-                                            */}
-                                                {doc.purchase_order && (
+                                                {/* Receive Merchandise (Only if PO not fully received) */}
+                                                {doc.purchase_order && doc.po_receiving_status !== 'RECEIVED' && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -246,6 +247,30 @@ export default function PurchaseInvoicesPage() {
                                                         title="Recibir Mercadería (Orden Original)"
                                                     >
                                                         <Package className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+
+                                                {/* Edit Metadata */}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-orange-500"
+                                                    onClick={() => setEditingDoc(doc)}
+                                                    title="Editar"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+
+                                                {/* Credit/Debit Note */}
+                                                {doc.purchase_order && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-amber-600"
+                                                        onClick={() => setNotingDoc(doc)}
+                                                        title="Registrar Nota Crédito/Débito"
+                                                    >
+                                                        <FileBadge className="h-4 w-4" />
                                                     </Button>
                                                 )}
 
@@ -262,10 +287,7 @@ export default function PurchaseInvoicesPage() {
                                                     </Button>
                                                 )}
 
-                                                {/* Delete (Only allowed for drafts or clean-up, restricted by backend usually) */}
-                                                {/* Notes page had delete. Invoices page usually restricts it more, 
-                                                but for consistency let's allow it visually, backend will reject if linked heavily.
-                                            */}
+                                                {/* Delete */}
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -316,6 +338,25 @@ export default function PurchaseInvoicesPage() {
                     open={!!receivingDoc}
                     onOpenChange={(open) => !open && setReceivingDoc(null)}
                     orderId={receivingDoc.purchase_order}
+                    onSuccess={fetchDocuments}
+                />
+            )}
+
+            {editingDoc && (
+                <DocumentEditModal
+                    open={!!editingDoc}
+                    onOpenChange={(open) => !open && setEditingDoc(null)}
+                    document={editingDoc}
+                    onSuccess={fetchDocuments}
+                />
+            )}
+
+            {notingDoc && notingDoc.purchase_order && (
+                <PurchaseNoteModal
+                    open={!!notingDoc}
+                    onOpenChange={(open: boolean) => !open && setNotingDoc(null)}
+                    orderId={notingDoc.purchase_order}
+                    orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order.toString()}
                     onSuccess={fetchDocuments}
                 />
             )}

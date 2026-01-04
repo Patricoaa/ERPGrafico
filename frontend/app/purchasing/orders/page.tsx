@@ -273,26 +273,34 @@ export default function PurchaseOrdersPage() {
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                         {order.status === 'DRAFT' && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleEdit(order)}
-                                                title="Editar"
-                                            >
-                                                <Pencil className="h-4 w-4 text-orange-500" />
-                                            </Button>
-                                        )}
-
-                                        {order.status === 'DRAFT' && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-blue-600"
-                                                onClick={() => handleConfirm(order.id)}
-                                                title="Confirmar"
-                                            >
-                                                <CheckCircle className="h-4 w-4" />
-                                            </Button>
+                                            <>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleEdit(order)}
+                                                    title="Editar"
+                                                >
+                                                    <Pencil className="h-4 w-4 text-orange-500" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-blue-600"
+                                                    onClick={() => handleConfirm(order.id)}
+                                                    title="Confirmar"
+                                                >
+                                                    <CheckCircle className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-destructive hover:text-destructive"
+                                                    onClick={() => handleDelete(order.id)}
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </>
                                         )}
 
                                         {['CONFIRMED', 'INVOICED', 'RECEIVED', 'PAID'].includes(order.status) && order.receiving_status !== 'RECEIVED' && (
@@ -319,7 +327,7 @@ export default function PurchaseOrdersPage() {
                                             </Button>
                                         )}
 
-                                        {['RECEIVED', 'INVOICED', 'CONFIRMED', 'PAID'].includes(order.status) && (
+                                        {['CONFIRMED', 'RECEIVED', 'INVOICED', 'PAID'].includes(order.status) && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -354,16 +362,6 @@ export default function PurchaseOrdersPage() {
                                                 <History className="h-4 w-4" />
                                             </Button>
                                         )}
-
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-destructive hover:text-destructive"
-                                            onClick={() => handleDelete(order.id)}
-                                            title="Eliminar"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
                                     </div>
                                 </TableCell>
                             </TableRow>

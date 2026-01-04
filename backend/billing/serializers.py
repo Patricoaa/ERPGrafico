@@ -10,6 +10,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     
     sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
     purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
+    po_receiving_status = serializers.CharField(source='purchase_order.receiving_status', read_only=True, allow_null=True)
     partner_name = serializers.SerializerMethodField()
     related_documents = serializers.SerializerMethodField()
     related_stock_moves = serializers.SerializerMethodField()
