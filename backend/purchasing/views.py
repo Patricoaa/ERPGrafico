@@ -1,18 +1,14 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Supplier, PurchaseOrder, PurchaseReceipt
-from .serializers import SupplierSerializer, PurchaseOrderSerializer, WritePurchaseOrderSerializer, PurchaseReceiptSerializer
+from .models import PurchaseOrder, PurchaseReceipt
+from .serializers import PurchaseOrderSerializer, WritePurchaseOrderSerializer, PurchaseReceiptSerializer
 from .services import PurchasingService
 from inventory.models import Warehouse
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin
-
-class SupplierViewSet(BulkImportMixin, viewsets.ModelViewSet):
-    queryset = Supplier.objects.all()
-    serializer_class = SupplierSerializer
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
     queryset = PurchaseOrder.objects.all()

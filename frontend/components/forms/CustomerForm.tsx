@@ -81,9 +81,9 @@ export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenCha
         setLoading(true)
         try {
             if (initialData) {
-                await api.put(`/sales/customers/${initialData.id}/`, data)
+                await api.put(`/contacts/${initialData.id}/`, data)
             } else {
-                await api.post('/sales/customers/', data)
+                await api.post('/contacts/', data)
             }
             form.reset()
             setOpen(false)

@@ -83,7 +83,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
 
     const fetchPartners = async () => {
         try {
-            const endpoint = paymentType === "INBOUND" ? '/sales/customers/' : '/purchasing/suppliers/'
+            const endpoint = paymentType === "INBOUND" ? '/contacts/?type=customer' : '/contacts/?type=supplier'
             const response = await api.get(endpoint)
             setPartners(response.data.results || response.data)
         } catch (error) {

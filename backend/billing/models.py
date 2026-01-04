@@ -1,33 +1,12 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-from accounting.models import JournalEntry
-from sales.models import SaleOrder
-from purchasing.models import PurchaseOrder
+from django.utils import timezone
 
 class Invoice(models.Model):
-    class DTEType(models.TextChoices):
-        FACTURA = 'FACTURA', _('Factura Electrónica')
-        BOLETA = 'BOLETA', _('Boleta Electrónica')
-        PURCHASE_INV = 'PURCHASE_INV', _('Factura de Compra')
-        NOTA_CREDITO = 'NOTA_CREDITO', _('Nota de Crédito')
-        NOTA_DEBITO = 'NOTA_DEBITO', _('Nota de Débito')
-
-    class Status(models.TextChoices):
-        DRAFT = 'DRAFT', _('Borrador')
-        POSTED = 'POSTED', _('Publicado')
-        PAID = 'PAID', _('Pagado')
-        CANCELLED = 'CANCELLED', _('Anulado')
-
-    class PaymentMethod(models.TextChoices):
-        CASH = 'CASH', _('Efectivo')
-        CARD = 'CARD', _('Tarjeta')
-        TRANSFER = 'TRANSFER', _('Transferencia')
-        CREDIT = 'CREDIT', _('Crédito')
+    # ... (enums remains)
 
     dte_type = models.CharField(_("Tipo DTE"), max_length=20, choices=DTEType.choices)
     number = models.CharField(_("Folio"), max_length=20, blank=True)
     document_attachment = models.FileField(_("Adjunto de Documento"), upload_to='invoices/', null=True, blank=True)
-    date = models.DateField(_("Fecha"), auto_now_add=True)
+    date = models.DateField(_("Fecha"), default=timezone.now)
     
     # Links
     sale_order = models.ForeignKey(SaleOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')

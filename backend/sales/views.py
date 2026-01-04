@@ -1,9 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Customer, SaleOrder, SalesSettings, SaleDelivery
+from .models import SaleOrder, SalesSettings, SaleDelivery
 from .serializers import (
-    CustomerSerializer, 
     SaleOrderSerializer, 
     CreateSaleOrderSerializer, 
     SalesSettingsSerializer,
@@ -15,10 +14,6 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin
-
-class CustomerViewSet(BulkImportMixin, viewsets.ModelViewSet):
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
 
 class SalesSettingsViewSet(viewsets.ModelViewSet):
     queryset = SalesSettings.objects.all()

@@ -4,8 +4,7 @@ from rest_framework.response import Response
 from .models import Payment, TreasuryAccount
 from .serializers import PaymentSerializer, TreasuryAccountSerializer
 from .services import TreasuryService
-from sales.models import Customer
-from purchasing.models import Supplier
+from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
 
@@ -63,11 +62,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
             from billing.models import Invoice
             invoice = Invoice.objects.get(pk=invoice_id)
 
-        # Determine Partner
+        # Determine Partner (Contact)
         partner = None
         if sale_order: partner = sale_order.customer
         elif purchase_order: partner = purchase_order.supplier
-        elif invoice: partner = invoice.customer or invoice.supplier
 
         try:
             payment = TreasuryService.register_payment(
@@ -113,18 +111,15 @@ class PaymentViewSet(viewsets.ModelViewSet):
             document_attachment = request.FILES.get('document_attachment')
 
             
-            # Partners
-            customer_id = request.data.get('customer_id')
-            supplier_id = request.data.get('supplier_id')
+            # Contact (unified partner)
+            contact_id = request.data.get('contact_id')
             
             # Invoices
             invoice_id = request.data.get('invoice_id')
             
             partner = None
-            if customer_id:
-                partner = Customer.objects.get(pk=customer_id)
-            elif supplier_id:
-                partner = Supplier.objects.get(pk=supplier_id)
+            if contact_id:
+                partner = Contact.objects.get(pk=contact_id)
             
             invoice = None
             if invoice_id:

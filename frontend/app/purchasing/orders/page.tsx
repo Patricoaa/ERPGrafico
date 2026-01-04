@@ -272,15 +272,16 @@ export default function PurchaseOrdersPage() {
                                         >
                                             <Eye className="h-4 w-4" />
                                         </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleEdit(order)}
-                                            title={order.status === 'DRAFT' ? "Editar" : "Solo se puede editar en Borrador"}
-                                            disabled={order.status !== 'DRAFT'}
-                                        >
-                                            <Pencil className="h-4 w-4 text-orange-500" />
-                                        </Button>
+                                        {order.status === 'DRAFT' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleEdit(order)}
+                                                title="Editar"
+                                            >
+                                                <Pencil className="h-4 w-4 text-orange-500" />
+                                            </Button>
+                                        )}
 
                                         {order.status === 'DRAFT' && (
                                             <Button

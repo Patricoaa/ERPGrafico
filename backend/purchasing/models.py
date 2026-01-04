@@ -5,33 +5,6 @@ from accounting.models import Account, AccountType
 from inventory.models import Product, Warehouse
 from decimal import Decimal
 
-class Supplier(models.Model):
-    name = models.CharField(_("Nombre / Razón Social"), max_length=255)
-    tax_id = models.CharField(_("RUT/Tax ID"), max_length=20, unique=True)
-    contact_name = models.CharField(_("Nombre Contacto"), max_length=100, blank=True)
-    email = models.EmailField(_("Email"), blank=True)
-    phone = models.CharField(_("Teléfono"), max_length=20, blank=True)
-    address = models.TextField(_("Dirección"), blank=True)
-    
-    # Financials
-    payable_account = models.ForeignKey(
-        Account, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='supplier_payables',
-        limit_choices_to={'account_type': AccountType.LIABILITY}
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = _("Proveedor")
-        verbose_name_plural = _("Proveedores")
-
-    def __str__(self):
-        return self.name
-
 class PurchaseOrder(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
@@ -55,7 +28,7 @@ class PurchaseOrder(models.Model):
     number = models.CharField(_("Número Interno"), max_length=20, unique=True, editable=False)
     supplier_reference = models.CharField(_("Referencia Proveedor"), max_length=50, blank=True, help_text="Ej: Nro Factura Proveedor")
     
-    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name='orders')
+    supplier = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='purchase_orders')
     date = models.DateField(_("Fecha"), auto_now_add=True)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)

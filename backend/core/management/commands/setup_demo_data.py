@@ -1,9 +1,11 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from accounting.models import Account, AccountType, AccountingSettings, JournalEntry
+from django.utils import timezone
+from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem
 from inventory.models import ProductCategory, Product, Warehouse, StockMove
-from sales.models import Customer, SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
-from purchasing.models import Supplier, PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
+from contacts.models import Contact
+from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
+from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
 from treasury.models import TreasuryAccount, Payment
 from billing.models import Invoice
 
@@ -40,6 +42,9 @@ class Command(BaseCommand):
         self.stdout.write('Creating Inventory Data...')
         self._create_inventory(accounts)
 
+        self.stdout.write('Creating Opening Balance...')
+        self._create_opening_balance(accounts)
+
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data!'))
 
     def _purge_data(self):
@@ -64,14 +69,14 @@ class Command(BaseCommand):
         # 3. Delete Stock Moves and Journal Entries
         StockMove.objects.all().delete()
         JournalEntry.objects.all().delete()
+        # Items are deleted by Cascade
         
         # 4. Master Data
         Product.objects.all().delete()
         ProductCategory.objects.all().delete()
         Warehouse.objects.all().delete()
         
-        Customer.objects.all().delete()
-        Supplier.objects.all().delete()
+        Contact.objects.all().delete()
         TreasuryAccount.objects.all().delete()
         
         # 5. Configuration & Accounts
@@ -149,6 +154,7 @@ class Command(BaseCommand):
         return {
             'cash': cash_box,
             'bank': bank_main,
+            'capital': capital,
             'receivable': receivables,
             'payable': payables,
             'stock_merch': stock_materials,
@@ -184,8 +190,9 @@ class Command(BaseCommand):
         TreasuryAccount.objects.create(name="Banco Santander", code="B01", currency="CLP", account=accounts['bank'], account_type=TreasuryAccount.Type.BANK)
 
     def _create_partners(self, accounts):
-        Customer.objects.create(name="Cliente Mostrador", tax_id="66666666-6", email="cliente@ejemplo.com", account_receivable=accounts['receivable'])
-        Supplier.objects.create(name="Proveedor Mayorista", tax_id="77777777-7", email="proveedor@ejemplo.com")
+        Contact.objects.create(name="Cliente Mostrador", tax_id="66666666-6", email="cliente@ejemplo.com", account_receivable=accounts['receivable'])
+        Contact.objects.create(name="Proveedor Mayorista", tax_id="77777777-7", email="proveedor@ejemplo.com", account_payable=accounts['payable'])
+        Contact.objects.create(name="Servicios Profesionales SpA", tax_id="88888888-8", email="servicios@ejemplo.com", account_payable=accounts['payable'])
 
     def _create_inventory(self, accounts):
         # Warehouse
@@ -213,4 +220,30 @@ class Command(BaseCommand):
             category=cat_tech,
             sale_price=15000,
             product_type=Product.Type.STORABLE
+        )
+
+    def _create_opening_balance(self, accounts):
+        entry = JournalEntry.objects.create(
+            date=timezone.now().date(),
+            description="Asiento de Apertura de Capital",
+            reference="APERTURA-001",
+            state=JournalEntry.State.POSTED,
+        )
+        
+        # Debit: Bank
+        JournalItem.objects.create(
+            entry=entry,
+            account=accounts['bank'],
+            label="Aporte de Capital Inicial",
+            debit=10000000,
+            credit=0
+        )
+        
+        # Credit: Capital
+        JournalItem.objects.create(
+            entry=entry,
+            account=accounts['capital'],
+            label="Aporte de Capital Inicial",
+            debit=0,
+            credit=10000000
         )

@@ -135,7 +135,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
     const fetchData = async () => {
         try {
             const [suppliersRes, warehousesRes, productsRes] = await Promise.all([
-                api.get('/purchasing/suppliers/'),
+                api.get('/contacts/?type=supplier'),
                 api.get('/inventory/warehouses/'),
                 api.get('/inventory/products/'),
             ])

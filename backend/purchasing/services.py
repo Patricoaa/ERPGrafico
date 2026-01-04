@@ -293,7 +293,7 @@ class PurchasingService:
             state=JournalEntry.State.DRAFT
         )
 
-        payable_account = (order.supplier.payable_account) or (settings.default_payable_account if settings else None)
+        payable_account = (order.supplier.account_payable) or (settings.default_payable_account if settings else None)
         if not payable_account:
             raise ValidationError("No se encontró cuenta por pagar para el proveedor.")
 

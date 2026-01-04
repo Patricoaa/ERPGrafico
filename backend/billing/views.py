@@ -34,11 +34,13 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                     order = PurchaseOrder.objects.get(id=order_id)
                     supplier_invoice_number = serializer.validated_data.get('supplier_invoice_number', '')
                     document_attachment = serializer.validated_data.get('document_attachment')
+                    issue_date = serializer.validated_data.get('issue_date')
                     invoice = BillingService.create_purchase_bill(
                         order, 
                         supplier_invoice_number, 
                         dte_type=dte_type,
-                        document_attachment=document_attachment
+                        document_attachment=document_attachment,
+                        date=issue_date
                     )
                 
                 return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)

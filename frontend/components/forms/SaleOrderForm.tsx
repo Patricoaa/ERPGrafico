@@ -136,7 +136,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const fetchCustomers = async () => {
         try {
             const [customersRes, productsRes] = await Promise.all([
-                api.get('/sales/customers/'),
+                api.get('/contacts/?type=customer'),
                 api.get('/inventory/products/')
             ])
             setCustomers(customersRes.data.results || customersRes.data)

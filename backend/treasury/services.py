@@ -85,18 +85,9 @@ class TreasuryService:
             sale_order=sale_order,
             purchase_order=purchase_order,
             transaction_number=transaction_number,
-            is_pending_registration=is_pending_registration
+            is_pending_registration=is_pending_registration,
+            contact=partner  # Unified contact field
         )
-        
-        if partner:
-             # Direct assignment based on model type to avoid confusion with INBOUND/OUTBOUND
-             from sales.models import Customer
-             from purchasing.models import Supplier
-             
-             if isinstance(partner, Customer):
-                 payment.customer = partner
-             elif isinstance(partner, Supplier):
-                 payment.supplier = partner
         
         payment.save()
 
@@ -163,7 +154,7 @@ class TreasuryService:
              
              if invoice:
                  # Real debt
-                 target_account = (payment.customer.account_receivable if payment.customer else None) or \
+                 target_account = (partner.account_receivable if partner else None) or \
                                   (settings.default_receivable_account if settings else None)
              else:
                  # Prepayment / Advance
@@ -176,7 +167,7 @@ class TreasuryService:
              # Debit Treasury
              JournalItem.objects.create(entry=entry, account=payment.account, debit=amount, credit=0)
              # Credit AR / Advance
-             JournalItem.objects.create(entry=entry, account=target_account, debit=0, credit=amount, partner=payment.customer.name if payment.customer else '')
+             JournalItem.objects.create(entry=entry, account=target_account, debit=0, credit=amount, partner=partner.name if partner else '')
 
         else:
              # Supplier Payment: Debit AP or Prepayment, Credit Treasury
@@ -184,7 +175,7 @@ class TreasuryService:
              
              if invoice:
                  # Real debt payment
-                 target_account = (payment.supplier.payable_account if payment.supplier else None) or \
+                 target_account = (partner.account_payable if partner else None) or \
                                   (settings.default_payable_account if settings else None)
              else:
                  # Prepayment to supplier
@@ -197,7 +188,7 @@ class TreasuryService:
               # Credit Treasury
              JournalItem.objects.create(entry=entry, account=payment.account, debit=0, credit=amount)
              # Debit AP / Prepayment
-             JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0, partner=payment.supplier.name if payment.supplier else '')
+             JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0, partner=partner.name if partner else '')
              
         JournalEntryService.post_entry(entry)
         

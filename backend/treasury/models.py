@@ -1,8 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from accounting.models import Account, AccountType
-from sales.models import SaleOrder, Customer
-from purchasing.models import PurchaseOrder, Supplier
+from sales.models import SaleOrder
+from purchasing.models import PurchaseOrder
 
 
 class TreasuryAccount(models.Model):
@@ -88,9 +88,8 @@ class Payment(models.Model):
     transaction_number = models.CharField(_("N° de Transacción"), max_length=100, blank=True, null=True)
     is_pending_registration = models.BooleanField(_("Transacción Pendiente de Registro"), default=False)
     
-    # Partners (Optional generic link, simplified with direct FKs for now)
-    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
-    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
+    # Unified contact field (replaces separate customer/supplier fields)
+    contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     
     # Allocation
     invoice = models.ForeignKey('billing.Invoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')

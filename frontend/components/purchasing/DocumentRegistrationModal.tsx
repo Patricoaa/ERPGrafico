@@ -40,13 +40,26 @@ export function DocumentRegistrationModal({
 }: DocumentRegistrationModalProps) {
     const [dteType, setDteType] = useState("FACTURA")
     const [reference, setReference] = useState("")
+    const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
 
     const handleSubmit = async () => {
-        if (!reference) {
-            toast.error("El número de referencia es obligatorio")
-            return
+        // Validation: Required fields for Factura
+        if (dteType === 'FACTURA') {
+            if (!reference) {
+                toast.error("El número de referencia/folio es obligatorio para Facturas")
+                return
+            }
+            if (!attachment) {
+                toast.error("El documento adjunto es obligatorio para Facturas")
+                return
+            }
+        }
+
+        // Optional warning for Boletas without reference (optional)
+        if (dteType === 'BOLETA' && !reference) {
+            // We allow it, but logic implies it's okay.
         }
 
         setSubmitting(true)
@@ -56,6 +69,7 @@ export function DocumentRegistrationModal({
             formData.append('order_type', 'purchase')
             formData.append('dte_type', dteType)
             formData.append('supplier_invoice_number', reference)
+            formData.append('issue_date', issueDate)
             if (attachment) {
                 formData.append('document_attachment', attachment)
             }
@@ -103,7 +117,19 @@ export function DocumentRegistrationModal({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="reference">N° de Folio / Referencia</Label>
+                        <Label htmlFor="issue-date">Fecha de Emisión</Label>
+                        <Input
+                            id="issue-date"
+                            type="date"
+                            value={issueDate}
+                            onChange={(e) => setIssueDate(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="reference">
+                            N° de Folio / Referencia {dteType === 'FACTURA' && <span className="text-destructive">*</span>}
+                        </Label>
                         <Input
                             id="reference"
                             placeholder="Ej: 12345"
@@ -113,7 +139,9 @@ export function DocumentRegistrationModal({
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Adjuntar Documento (Opcional)</Label>
+                        <Label>
+                            Adjuntar Documento {dteType === 'FACTURA' ? <span className="text-destructive">*</span> : "(Opcional)"}
+                        </Label>
                         <div className="flex items-center gap-2">
                             <Input
                                 type="file"

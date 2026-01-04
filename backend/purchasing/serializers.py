@@ -1,14 +1,9 @@
 from rest_framework import serializers
-from .models import Supplier, PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
+from .models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
 from treasury.serializers import PaymentSerializer
 import math
 from decimal import Decimal
 
-
-class SupplierSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Supplier
-        fields = '__all__'
 
 class PurchaseLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)

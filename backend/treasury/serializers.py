@@ -22,8 +22,8 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
     def get_partner_name(self, obj):
-        if obj.customer: return obj.customer.name
-        if obj.supplier: return obj.supplier.name
+        if obj.contact:
+            return obj.contact.name
         return '-'
 
     def get_journal_entry(self, obj):

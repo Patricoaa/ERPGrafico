@@ -1,4 +1,4 @@
-import { Calendar, Home, Inbox, Search, Settings, Calculator, ShoppingCart, Package, Printer, Banknote, FileText, ShoppingBag } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, Calculator, ShoppingCart, Package, Printer, Banknote, FileText, ShoppingBag, Users } from "lucide-react"
 import Link from "next/link"
 
 import {
@@ -32,13 +32,17 @@ const items = [
         ]
     },
     {
+        title: "Contactos",
+        url: "/contacts",
+        icon: Users,
+    },
+    {
         title: "Ventas",
         url: "#",
         icon: ShoppingCart,
         items: [
             { title: "Notas de Venta", url: "/sales/orders" },
             { title: "POS", url: "/sales/pos" },
-            { title: "Clientes", url: "/sales/customers" },
             { title: "Historial", url: "/sales/history" },
         ]
     },
@@ -88,7 +92,6 @@ const items = [
         items: [
             { title: "Ordenes de Compra", url: "/purchasing/orders" },
             { title: "NC /NB recibidas", url: "/purchasing/notes" },
-            { title: "Proveedores", url: "/purchasing/suppliers" },
         ]
     },
     {

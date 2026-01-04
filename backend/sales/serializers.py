@@ -1,14 +1,14 @@
 from rest_framework import serializers
-from .models import Customer, SaleOrder, SaleLine, SalesSettings, SaleDelivery, SaleDeliveryLine
+from .models import SaleOrder, SaleLine, SalesSettings, SaleDelivery, SaleDeliveryLine
 from treasury.serializers import PaymentSerializer
 from inventory.models import Product
 from django.db.models import Sum
 import math
 from decimal import Decimal
 
-class CustomerSerializer(serializers.ModelSerializer):
+class SalesSettingsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Customer
+        model = SalesSettings
         fields = '__all__'
 
 class SalesSettingsSerializer(serializers.ModelSerializer):

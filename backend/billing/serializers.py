@@ -39,4 +39,5 @@ class CreateInvoiceSerializer(serializers.Serializer):
     payment_method = serializers.ChoiceField(choices=Invoice.PaymentMethod.choices, default='CREDIT')
     supplier_invoice_number = serializers.CharField(required=False, allow_blank=True)
     document_attachment = serializers.FileField(required=False, allow_null=True)
+    issue_date = serializers.DateField(required=False, allow_null=True)
 

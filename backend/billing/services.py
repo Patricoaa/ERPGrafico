@@ -36,7 +36,7 @@ class BillingService:
         if not settings:
             raise ValidationError("Debe configurar la contabilidad primero.")
 
-        receivable_account = settings.default_receivable_account
+        receivable_account = order.customer.account_receivable or settings.default_receivable_account
         revenue_account = settings.default_revenue_account
         tax_account = settings.default_tax_payable_account
         
@@ -132,7 +132,7 @@ class BillingService:
     @transaction.atomic
     def create_purchase_bill(order: PurchaseOrder, supplier_invoice_number: str, 
                              dte_type: str = Invoice.DTEType.PURCHASE_INV, 
-                             document_attachment=None):
+                             document_attachment=None, date=None):
         """
         Creates a Purchase Bill from a PurchaseOrder.
         """
@@ -140,7 +140,7 @@ class BillingService:
             dte_type=dte_type,
             number=supplier_invoice_number,
             document_attachment=document_attachment,
-            date=timezone.now().date(),
+            date=date or timezone.now().date(),
             purchase_order=order,
             total_net=order.total_net,
             total_tax=order.total_tax,
@@ -149,7 +149,7 @@ class BillingService:
         )
 
         settings = AccountingSettings.objects.first()
-        payable_account = order.supplier.payable_account or (settings.default_payable_account if settings else None)
+        payable_account = order.supplier.account_payable or (settings.default_payable_account if settings else None)
         tax_account = settings.default_tax_receivable_account if settings else None
         
         # We need to clear the Stock Interim (Received Not Billed)

@@ -64,7 +64,7 @@ export default function PurchaseInvoicesPage() {
                             <TableRow>
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Tipo</TableHead>
-                                <TableHead>Factura #</TableHead>
+                                <TableHead>N° Documento</TableHead>
                                 <TableHead>Proveedor</TableHead>
                                 <TableHead>Origen</TableHead>
                                 <TableHead className="text-right">Total</TableHead>

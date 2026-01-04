@@ -3,32 +3,6 @@ from django.utils.translation import gettext_lazy as _
 from core.models import User
 from accounting.models import Account
 
-class Customer(models.Model):
-    name = models.CharField(_("Nombre / Razón Social"), max_length=255)
-    tax_id = models.CharField(_("RUT/Tax ID"), max_length=20, unique=True)
-    email = models.EmailField(_("Email"), blank=True)
-    phone = models.CharField(_("Teléfono"), max_length=20, blank=True)
-    address = models.TextField(_("Dirección"), blank=True)
-    
-    # Accounting link (optional, for specific AR accounts)
-    account_receivable = models.ForeignKey(
-        Account, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='customer_receivables',
-        limit_choices_to={'account_type': 'ASSET'}
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = _("Cliente")
-        verbose_name_plural = _("Clientes")
-
-    def __str__(self):
-        return f"{self.name} ({self.tax_id})"
-
 class SaleOrder(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
@@ -53,7 +27,7 @@ class SaleOrder(models.Model):
         CREDIT = 'CREDIT', _('Crédito')
 
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='orders')
+    customer = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='sale_orders')
     date = models.DateField(_("Fecha"), auto_now_add=True)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.CONFIRMED)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)

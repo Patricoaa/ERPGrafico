@@ -81,9 +81,9 @@ export function SupplierForm({ onSuccess, initialData, open: openProp, onOpenCha
         setLoading(true)
         try {
             if (initialData) {
-                await api.put(`/purchasing/suppliers/${initialData.id}/`, data)
+                await api.put(`/contacts/${initialData.id}/`, data)
             } else {
-                await api.post('/purchasing/suppliers/', data)
+                await api.post('/contacts/', data)
             }
             form.reset()
             setOpen(false)
