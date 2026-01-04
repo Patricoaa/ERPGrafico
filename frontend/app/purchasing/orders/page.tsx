@@ -244,11 +244,11 @@ export default function PurchaseOrdersPage() {
                                         {order.related_documents?.receipts?.map((rec: any) => (
                                             <button
                                                 key={rec.id}
-                                                onClick={() => setViewingTransaction({ type: 'inventory', id: rec.stock_moves[0]?.id, view: 'details' })}
+                                                onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
                                                 className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
                                                 <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepción</span>
-                                                <span className="text-[10px]">{rec.label || `REC-${rec.number}`}</span>
+                                                <span className="text-[10px]">{rec.number}</span>
                                             </button>
                                         ))}
                                         {order.related_documents?.payments?.map((pay: any) => (

@@ -199,7 +199,7 @@ class JournalEntry(models.Model):
             return {
                 'type': 'inventory',
                 'id': move.id,
-                'name': f"MOV-{str(move.id).zfill(6)}",
+                'name': f"Mov. Stock {move.id}",
                 'url': '/inventory/movements'
             }
         return None

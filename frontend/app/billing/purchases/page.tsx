@@ -206,11 +206,11 @@ export default function PurchaseInvoicesPage() {
                                                 {doc.related_documents?.receipts?.map((rec: any) => (
                                                     <button
                                                         key={rec.id}
-                                                        onClick={() => setViewingTransaction({ type: 'inventory', id: rec.stock_moves[0]?.id, view: 'details' })}
+                                                        onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
                                                         className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                     >
                                                         <span className="font-semibold uppercase text-[8px] text-muted-foreground">Recepción</span>
-                                                        {rec.label || `REC-${rec.number}`}
+                                                        {rec.number}
                                                     </button>
                                                 ))}
 

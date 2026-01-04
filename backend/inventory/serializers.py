@@ -67,13 +67,5 @@ class StockMoveSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_reference_code(self, obj):
-        # Case 1: Linked to a Purchase Receipt
-        if hasattr(obj, 'purchase_receipt_line'):
-            return f"REC-{obj.purchase_receipt_line.receipt.number}"
-        
-        # Case 2: Linked to a Journal Entry
-        if obj.journal_entry:
-            return f"AS-{obj.journal_entry.number}"
-            
-        # Default: Internal Move
+        # Prefer the internal MOV code as requested by the user
         return f"MOV-{str(obj.id).zfill(6)}"

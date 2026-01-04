@@ -89,22 +89,21 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 docs['invoices'].append(doc_info)
 
         for rec in obj.receipts.all():
-            # Get the primary stock move ID for the label (from first line)
-            first_move = rec.lines.filter(stock_move__isnull=False).first()
-            move_label = f"MOV-{str(first_move.stock_move.id).zfill(6)}" if first_move else f"REC-{rec.number}"
-            
-            docs['receipts'].append({
-                'id': rec.id,
-                'number': rec.number,
-                'label': move_label,
-                'date': rec.receipt_date,
-                'stock_moves': [{
-                    'id': l.stock_move.id,
-                    'product': l.stock_move.product.name,
-                    'quantity': l.stock_move.quantity,
-                    'is_return': l.stock_move.quantity < 0
-                } for l in rec.lines.all() if l.stock_move]
-            })
+            for line in rec.lines.all():
+                if line.stock_move:
+                    move = line.stock_move
+                    move_code = f"MOV-{str(move.id).zfill(6)}"
+                    docs['receipts'].append({
+                        'id': move.id,
+                        'number': move_code,
+                        'date': rec.receipt_date,
+                        'stock_moves': [{
+                            'id': move.id,
+                            'product': move.product.name,
+                            'quantity': move.quantity,
+                            'is_return': move.quantity < 0
+                        }]
+                    })
 
         for pay in obj.payments.all():
             prefix = 'ING' if pay.payment_type == 'INBOUND' else 'EGR'
