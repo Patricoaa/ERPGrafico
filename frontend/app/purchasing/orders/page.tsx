@@ -21,7 +21,7 @@ import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
-import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
+import { PurchaseNoteModal } from "../../../components/purchasing/PurchaseNoteModal"
 
 interface PurchaseOrder {
     id: number

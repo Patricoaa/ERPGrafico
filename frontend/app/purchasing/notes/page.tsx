@@ -92,20 +92,33 @@ export default function PurchaseNotesPage() {
         n.purchase_order_number?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    const handlePaymentConfirm = async (paymentData: any) => {
+    const handlePayment = async (data: any) => {
+        if (!payingNote) return
         try {
-            await api.post('/treasury/payments/', {
-                ...paymentData,
-                purchase_order: payingNote?.purchase_order,
-                invoice: payingNote?.id,
-                payment_type: payingNote?.dte_type === 'NOTA_CREDITO' ? 'INBOUND' : 'OUTBOUND'
+            const formData = new FormData()
+            formData.append('amount', data.amount.toString())
+            formData.append('payment_type', payingNote.dte_type === 'NOTA_CREDITO' ? 'INBOUND' : 'OUTBOUND')
+            formData.append('reference', `${payingNote.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND'}-${payingNote.number}`)
+            formData.append('purchase_order', payingNote.purchase_order ? payingNote.purchase_order.toString() : '')
+            formData.append('invoice', payingNote.id.toString())
+            formData.append('payment_method', data.paymentMethod)
+
+            if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
+            if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
+            if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
+            if (data.dteType) formData.append('dte_type', data.dteType)
+            if (data.documentReference) formData.append('document_reference', data.documentReference)
+            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
+
+            await api.post('/treasury/payments/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             })
             toast.success("Operación registrada correctamente")
             setPayingNote(null)
             fetchNotes()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error registering payment:", error)
-            toast.error("Error al registrar la operación")
+            toast.error(error.response?.data?.error || "Error al registrar la operación")
         }
     }
 
@@ -114,7 +127,6 @@ export default function PurchaseNotesPage() {
             <div className="flex items-center justify-between space-y-2">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Notas de Crédito y Débito</h2>
-                    <p className="text-muted-foreground">Gestión de devoluciones y ajustes de compras</p>
                 </div>
             </div>
 
@@ -137,7 +149,7 @@ export default function PurchaseNotesPage() {
                             <TableHead>Fecha</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Folio</TableHead>
-                            <TableHead>Documentos Asociados</TableHead>
+                            <TableHead>Documentos</TableHead>
                             <TableHead>Total</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead className="text-center">Acciones</TableHead>
@@ -222,24 +234,29 @@ export default function PurchaseNotesPage() {
                                         >
                                             <Eye className="h-4 w-4" />
                                         </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-blue-600"
-                                            onClick={() => setReceivingNote(note)}
-                                            title="Recibir Mercadería"
-                                        >
-                                            <Package className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-emerald-600"
-                                            onClick={() => setPayingNote(note)}
-                                            title={note.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
-                                        >
-                                            <Banknote className="h-4 w-4" />
-                                        </Button>
+                                        {note.purchase_order && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-orange-600"
+                                                onClick={() => setReceivingNote(note)}
+                                                title="Recibir Mercadería (Orden Original)"
+                                            >
+                                                <Package className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {(note.pending_amount ?? 0) > 0 && ['POSTED'].includes(note.status) && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-emerald-600"
+                                                onClick={() => setPayingNote(note)}
+                                                title={note.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
+                                            >
+                                                <Banknote className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -271,7 +288,7 @@ export default function PurchaseNotesPage() {
                 <PaymentDialog
                     open={!!payingNote}
                     onOpenChange={(open) => !open && setPayingNote(null)}
-                    onConfirm={handlePaymentConfirm}
+                    onConfirm={handlePayment}
                     isPurchase={true}
                     total={parseFloat(payingNote.total)}
                     pendingAmount={payingNote.pending_amount ?? parseFloat(payingNote.total)}

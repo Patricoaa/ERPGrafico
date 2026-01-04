@@ -12,6 +12,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
     partner_name = serializers.SerializerMethodField()
     related_documents = serializers.SerializerMethodField()
+    related_stock_moves = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -31,6 +32,22 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if obj.purchase_order:
             return obj.purchase_order.supplier.name
         return ""
+
+    def get_related_stock_moves(self, obj):
+        if not obj.journal_entry:
+            return []
+        
+        from inventory.models import StockMove
+        moves = StockMove.objects.filter(journal_entry=obj.journal_entry)
+        
+        return [{
+            'id': m.id,
+            'date': m.date,
+            'product': m.product.name,
+            'quantity': m.quantity,
+            'warehouse': m.warehouse.name,
+            'move_type_display': m.get_move_type_display()
+        } for m in moves]
 
 class CreateInvoiceSerializer(serializers.Serializer):
     order_id = serializers.IntegerField()

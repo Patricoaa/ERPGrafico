@@ -94,7 +94,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 'number': rec.number,
                 'date': rec.receipt_date,
                 # Link stock moves if they exist on lines
-                'stock_move_ids': [l.stock_move.id for l in rec.lines.all() if l.stock_move]
+                'stock_moves': [{
+                    'id': l.stock_move.id,
+                    'product': l.stock_move.product.name,
+                    'quantity': l.stock_move.quantity,
+                    'is_return': l.stock_move.quantity < 0
+                } for l in rec.lines.all() if l.stock_move]
             })
 
         for pay in obj.payments.all():
