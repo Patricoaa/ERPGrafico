@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, Plus, Trash2 } from "lucide-react"
+import { CalendarIcon, Plus, Trash2, Pencil } from "lucide-react"
 import { format } from "date-fns"
 import {
     Dialog,
@@ -207,8 +207,8 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant={initialData ? "ghost" : "default"} size={initialData ? "sm" : "default"}>
-                    {triggerText}
+                <Button variant={initialData ? "ghost" : "default"} size={initialData ? "icon" : "default"}>
+                    {initialData ? <Pencil className="h-4 w-4" /> : triggerText}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-y-auto"> {/* Increased width significantly and restored scroll */}

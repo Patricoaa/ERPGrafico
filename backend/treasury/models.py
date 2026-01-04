@@ -111,4 +111,5 @@ class Payment(models.Model):
         verbose_name_plural = _("Pagos")
 
     def __str__(self):
-        return f"{self.payment_type} - {self.amount} ({self.date})"
+        prefix = 'ING' if self.payment_type == 'INBOUND' else 'EGR'
+        return f"{prefix}-{str(self.id).zfill(5)}"

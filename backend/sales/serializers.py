@@ -31,10 +31,54 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
+    related_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
         fields = '__all__'
+
+    def get_related_documents(self, obj):
+        from billing.models import Invoice
+        docs = {
+            'invoices': [],
+            'notes': [],
+            'payments': [],
+            'deliveries': []
+        }
+
+        for inv in obj.invoices.all():
+            doc_info = {
+                'id': inv.id,
+                'number': inv.number or 'Draft',
+                'type': inv.dte_type,
+                'type_display': inv.get_dte_type_display(),
+                'total': inv.total
+            }
+            if inv.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
+                docs['notes'].append(doc_info)
+            else:
+                docs['invoices'].append(doc_info)
+
+        for deliv in obj.deliveries.all():
+            docs['deliveries'].append({
+                'id': deliv.id,
+                'number': deliv.id, # Deliveries might not have a public number yet
+                'date': deliv.date
+            })
+
+        for pay in obj.payments.all():
+            prefix = 'ING' if pay.payment_type == 'INBOUND' else 'EGR'
+            code = f"{prefix}-{str(pay.id).zfill(5)}"
+            docs['payments'].append({
+                'id': pay.id,
+                'amount': pay.amount,
+                'date': pay.date,
+                'method': pay.get_payment_method_display(),
+                'invoice_id': pay.invoice_id,
+                'code': code
+            })
+
+        return docs
 
     def get_total_paid(self, obj):
         return sum(p.amount for p in obj.payments.all())

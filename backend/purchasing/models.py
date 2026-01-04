@@ -169,7 +169,7 @@ class PurchaseReceipt(models.Model):
         ordering = ['-receipt_date', '-created_at']
     
     def __str__(self):
-        return f"Recepción-{self.number} (OC-{self.purchase_order.number})"
+        return f"REC-{self.number} (OC-{self.purchase_order.number})"
     
     def save(self, *args, **kwargs):
         if not self.number:

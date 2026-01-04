@@ -159,7 +159,7 @@ export default function PurchaseInvoicesPage() {
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>N° Documento</TableHead>
                                 <TableHead>Proveedor</TableHead>
-                                <TableHead>Documentos Asociados</TableHead>
+                                <TableHead>Documentos</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                                 <TableHead>Estado</TableHead>
                                 <TableHead className="text-center">Acciones</TableHead>
@@ -181,7 +181,9 @@ export default function PurchaseInvoicesPage() {
                                             <div className="flex items-center gap-2" title={doc.dte_type_display}>
                                                 <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-blue-500' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-slate-600'}`} />
                                                 <span className="text-xs font-bold uppercase hidden md:inline-block">
-                                                    {doc.dte_type === 'NOTA_CREDITO' ? 'NC' : doc.dte_type === 'NOTA_DEBITO' ? 'ND' : 'FAC'}
+                                                    {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
+                                                        doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
+                                                            doc.dte_type === 'BOLETA' ? 'BOL' : 'FACT'}
                                                 </span>
                                             </div>
                                         </TableCell>
@@ -201,18 +203,26 @@ export default function PurchaseInvoicesPage() {
                                                         OC-{doc.purchase_order_number || doc.purchase_order}
                                                     </button>
                                                 )}
+                                                {doc.related_documents?.receipts?.map((rec: any) => (
+                                                    <button
+                                                        key={rec.id}
+                                                        onClick={() => setViewingTransaction({ type: 'inventory', id: rec.stock_moves[0]?.id, view: 'details' })}
+                                                        className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                    >
+                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Recepción</span>
+                                                        REC-{rec.number}
+                                                    </button>
+                                                ))}
 
                                                 {/* Payments specific to this Document */}
                                                 {doc.related_documents?.payments?.filter((p: any) => p.invoice_id === doc.id).map((pay: any) => (
                                                     <button
                                                         key={pay.id}
-                                                        onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })} // Or view order history
+                                                        onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
                                                         className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                     >
-                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
-                                                            {doc.dte_type === 'NOTA_CREDITO' ? 'Devolución' : 'Pago'}
-                                                        </span>
-                                                        <span className="text-[10px]">${Number(pay.amount).toLocaleString()}</span>
+                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
+                                                        <span className="text-[10px] font-mono">{pay.code}</span>
                                                     </button>
                                                 ))}
                                             </div>

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { JournalEntryForm } from "@/components/forms/JournalEntryForm"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { Trash2, CheckCircle, Eye } from "lucide-react"
 
 interface JournalEntry {
     id: number
@@ -102,8 +103,7 @@ export default function EntriesPage() {
                             <TableHead>Fecha</TableHead>
                             <TableHead>Número</TableHead>
                             <TableHead>Descripción</TableHead>
-                            <TableHead>Referencia</TableHead>
-                            <TableHead>Documento</TableHead>
+                            <TableHead>Documentos</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -114,7 +114,6 @@ export default function EntriesPage() {
                                 <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
                                 <TableCell className="font-medium">{entry.number}</TableCell>
                                 <TableCell>{entry.description}</TableCell>
-                                <TableCell>{entry.reference || "-"}</TableCell>
                                 <TableCell>
                                     <div className="flex flex-col gap-1">
                                         {entry.source_documents && entry.source_documents.length > 0 ? (
@@ -122,59 +121,67 @@ export default function EntriesPage() {
                                                 <button
                                                     key={idx}
                                                     onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
-                                                    className="text-blue-600 hover:underline text-xs flex flex-col text-left items-start"
+                                                    className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                 >
-                                                    <span className="font-semibold uppercase text-[9px] text-muted-foreground leading-tight">
-                                                        {doc.type}
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
+                                                        {doc.type === 'invoice' ? (doc.name.includes('Bol') ? 'Boleta' : 'Factura') :
+                                                            doc.type === 'payment' ? 'Pago' :
+                                                                doc.type === 'purchase_order' ? 'Orden de Compra' :
+                                                                    doc.type === 'sale_order' ? 'Orden de Venta' :
+                                                                        doc.type === 'inventory' ? 'Movimiento' : doc.type}
                                                     </span>
                                                     {doc.name}
                                                 </button>
                                             ))
                                         ) : (
-                                            <span className="text-muted-foreground">-</span>
+                                            <span className="text-muted-foreground text-xs">-</span>
                                         )}
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${entry.state === 'POSTED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                        }`}>
+                                    <Badge variant={entry.state === 'POSTED' ? 'default' : 'secondary'}>
                                         {entry.state === 'POSTED' ? 'Publicado' : 'Borrador'}
-                                    </span>
+                                    </Badge>
                                 </TableCell>
-                                <TableCell className="text-right space-x-2">
-                                    <JournalEntryForm
-                                        accounts={accounts}
-                                        initialData={entry}
-                                        onSuccess={fetchEntries}
-                                        triggerText="Editar"
-                                    />
-                                    {entry.state === 'DRAFT' && (
+                                <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                        <JournalEntryForm
+                                            accounts={accounts}
+                                            initialData={entry}
+                                            onSuccess={fetchEntries}
+                                        />
+                                        {entry.state === 'DRAFT' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-emerald-600"
+                                                onClick={() => handlePost(entry.id)}
+                                                title="Publicar"
+                                            >
+                                                <CheckCircle className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                         <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handlePost(entry.id)}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-red-500"
+                                            onClick={() => handleDelete(entry.id)}
+                                            title="Eliminar"
                                         >
-                                            Publicar
+                                            <Trash2 className="h-4 w-4" />
                                         </Button>
-                                    )}
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => handleDelete(entry.id)}
-                                    >
-                                        Eliminar
-                                    </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
                         {loading && (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center">Cargando asientos...</TableCell>
+                                <TableCell colSpan={6} className="text-center">Cargando asientos...</TableCell>
                             </TableRow>
                         )}
                         {!loading && entries.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center">No hay asientos registrados.</TableCell>
+                                <TableCell colSpan={6} className="text-center">No hay asientos registrados.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

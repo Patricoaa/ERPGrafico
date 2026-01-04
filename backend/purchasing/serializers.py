@@ -103,12 +103,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             })
 
         for pay in obj.payments.all():
+            prefix = 'ING' if pay.payment_type == 'INBOUND' else 'EGR'
+            code = f"{prefix}-{str(pay.id).zfill(5)}"
             docs['payments'].append({
                 'id': pay.id,
                 'amount': pay.amount,
                 'date': pay.date,
                 'method': pay.get_payment_method_display(),
-                'invoice_id': pay.invoice_id
+                'invoice_id': pay.invoice_id,
+                'code': code
             })
 
         return docs

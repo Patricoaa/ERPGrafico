@@ -32,6 +32,12 @@ interface SaleOrder {
     pending_amount: number
     customer: number
     channel_display: string
+    related_documents?: {
+        invoices: any[]
+        notes: any[]
+        payments: any[]
+        deliveries: any[]
+    }
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
@@ -174,6 +180,7 @@ export default function SalesOrdersPage() {
                             <TableHead>Pagado</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead>Canal</TableHead>
+                            <TableHead>Documentos</TableHead>
                             <TableHead className="w-[150px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -202,6 +209,33 @@ export default function SalesOrdersPage() {
                                     <Badge variant="outline" className="text-[10px] uppercase">
                                         {order.channel_display}
                                     </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col gap-1">
+                                        {order.related_documents?.invoices.map((inv: any) => (
+                                            <button
+                                                key={inv.id}
+                                                onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
+                                                {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
+                                            </button>
+                                        ))}
+                                        {order.related_documents?.payments?.map((pay: any) => (
+                                            <button
+                                                key={pay.id}
+                                                onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
+                                                className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
+                                                <span className="text-[10px] font-mono">{pay.code}</span>
+                                            </button>
+                                        ))}
+                                        {!order.related_documents?.invoices.length && !order.related_documents?.payments.length && (
+                                            <span className="text-muted-foreground text-xs">-</span>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center space-x-1">

@@ -86,12 +86,15 @@ export default function SalesInvoicesPage() {
                                     </TableCell>
                                     <TableCell>{inv.partner_name}</TableCell>
                                     <TableCell>
-                                        <button
-                                            onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order })}
-                                            className="text-blue-600 hover:underline text-xs font-medium"
-                                        >
-                                            NV-{inv.sale_order_number}
-                                        </button>
+                                        <div className="flex flex-col gap-1">
+                                            <button
+                                                onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order })}
+                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Orden de Venta</span>
+                                                NV-{inv.sale_order_number}
+                                            </button>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right font-medium">
                                         ${Number(inv.total).toLocaleString()}

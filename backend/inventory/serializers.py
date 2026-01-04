@@ -60,7 +60,20 @@ class StockMoveSerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     move_type_display = serializers.CharField(source='get_move_type_display', read_only=True)
     journal_entry_number = serializers.CharField(source='journal_entry.number', read_only=True, allow_null=True)
+    reference_code = serializers.SerializerMethodField()
 
     class Meta:
         model = StockMove
         fields = '__all__'
+
+    def get_reference_code(self, obj):
+        # Case 1: Linked to a Purchase Receipt
+        if hasattr(obj, 'purchase_receipt_line'):
+            return f"REC-{obj.purchase_receipt_line.receipt.number}"
+        
+        # Case 2: Linked to a Journal Entry
+        if obj.journal_entry:
+            return f"AS-{obj.journal_entry.number}"
+            
+        # Default: Internal Move
+        return f"MOV-{str(obj.id).zfill(6)}"

@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2 } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { translateStatus, translatePaymentMethod } from "@/lib/utils"
 
@@ -72,13 +72,31 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     }
 
     const getTitle = () => {
-        if (currentType === 'sale_order') return `Nota de Venta ${data?.number || ''}`
-        if (currentType === 'purchase_order') return `Orden de Compra ${data?.number || ''}`
-        if (currentType === 'invoice') return `${data?.dte_type_display || 'Factura'} ${data?.number || ''}`
-        if (currentType === 'payment') return `Detalle de Movimiento: ${data?.code || data?.id || ''}`
-        if (currentType === 'journal_entry') return `Asiento Contable ${data?.number || data?.id || ''}`
-        if (currentType === 'inventory') return `Movimiento de Inventario #${data?.id || ''}`
-        return "Detalles de Transacción"
+        if (!data) return "DETALLE DE TRANSACCIÓN"
+
+        switch (currentType) {
+            case 'sale_order':
+                return `ORDEN DE VENTA NV-${data.number || data.id}`
+            case 'purchase_order':
+                return `ORDEN DE COMPRA OC-${data.number || data.id}`
+            case 'invoice':
+                const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'NOTA DE CRÉDITO' :
+                    data.dte_type === 'NOTA_DEBITO' ? 'NOTA DE DÉBITO' :
+                        data.dte_type === 'BOLETA' ? 'BOLETA' : 'FACTURA'
+                const prefix = data.dte_type === 'NOTA_CREDITO' ? 'NC' :
+                    data.dte_type === 'NOTA_DEBITO' ? 'ND' :
+                        data.dte_type === 'BOLETA' ? 'BOL' : 'FACT'
+                return `${typeLabel} ${prefix}-${data.number || data.id}`
+            case 'payment':
+                const payPrefix = data.payment_type === 'INBOUND' ? 'COMPROBANTE DE INGRESO' : 'COMPROBANTE DE EGRESO'
+                return `${payPrefix} ${data.code || data.id}`
+            case 'journal_entry':
+                return `ASIENTO CONTABLE AS-${data.number || data.id}`
+            case 'inventory':
+                return `MOVIMIENTO DE INVENTARIO ${data.reference_code || `MOV-${data.id}`}`
+            default:
+                return "DETALLES DE TRANSACCIÓN"
+        }
     }
 
     const getIcon = () => {
@@ -116,77 +134,109 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                     <div className="space-y-6 py-4">
                         {/* Summary Cards */}
                         {(view === 'all' || view === 'details') && (
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <Card>
-                                    <CardContent className="p-4">
-                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {currentType === 'purchase_order' ? 'Proveedor' :
-                                                currentType === 'inventory' ? 'Producto' :
-                                                    (currentType === 'journal_entry' ? 'Referencia' :
-                                                        currentType === 'payment' ? 'Referencia' : 'Cliente')}
-                                        </div>
-                                        <div className="font-bold text-base truncate">
-                                            {currentType === 'journal_entry' ? (data.reference || '-') :
-                                                currentType === 'payment' ? (data.reference || '-') :
-                                                    currentType === 'inventory' ? data.product_name :
-                                                        (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
-                                        </div>
-                                        {currentType === 'inventory' && <div className="text-[10px] text-muted-foreground font-mono">{data.product_code}</div>}
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="p-4">
-                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {currentType === 'inventory' ? 'Almacén' :
-                                                currentType === 'payment' ? 'Cliente / Proveedor' : 'Fecha'}
-                                        </div>
-                                        <div className="font-bold text-base truncate">
-                                            {currentType === 'inventory' ? data.warehouse_name :
-                                                currentType === 'payment' ? data.partner_name :
-                                                    new Date(data.date || data.created_at).toLocaleDateString()}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="p-4">
-                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {currentType === 'inventory' ? 'Fecha Mov.' :
-                                                currentType === 'payment' ? 'Caja / Banco' : 'Estado'}
-                                        </div>
-                                        <div className="font-bold text-base">
-                                            {currentType === 'inventory' ? new Date(data.date).toLocaleDateString() :
-                                                currentType === 'payment' ? (
+                            <div className={`grid grid-cols-2 ${currentType === 'payment' ? 'lg:grid-cols-4' : 'md:grid-cols-4'} gap-4`}>
+                                {currentType === 'payment' ? (
+                                    <>
+                                        {/* 1. Tipo */}
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Tipo</div>
+                                                <div className="font-bold text-base">
+                                                    <Badge variant={data.payment_type === 'INBOUND' ? 'default' : 'destructive'}>
+                                                        {data.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso'}
+                                                    </Badge>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        {/* 2. Caja / Banco */}
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Caja / Banco</div>
+                                                <div className="font-bold text-base truncate">
                                                     <div className="flex items-center gap-1">
                                                         {data.treasury_account_type === 'BANK' ? <Building2 className="h-4 w-4 text-blue-500" /> : <Banknote className="h-4 w-4 text-green-500" />}
-                                                        <span className="truncate">{data.journal_name}</span>
+                                                        <span className="truncate text-sm">{data.journal_name}</span>
                                                     </div>
-                                                ) : (
-                                                    <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
-                                                        {translateStatus(data.status || data.state)}
-                                                    </Badge>
-                                                )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="p-4">
-                                        <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                            {currentType === 'inventory' ? 'Tipo Mov.' :
-                                                currentType === 'payment' ? 'Tipo' : 'Total'}
-                                        </div>
-                                        <div className="font-bold text-base">
-                                            {currentType === 'inventory' ? (
-                                                <Badge variant={data.move_type === 'IN' ? 'default' : data.move_type === 'OUT' ? 'destructive' : 'outline'}>
-                                                    {data.move_type_display}
-                                                </Badge>
-                                            ) : currentType === 'payment' ? (
-                                                <Badge variant={data.payment_type === 'INBOUND' ? 'default' : 'destructive'}>
-                                                    {data.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso'}
-                                                </Badge>
-                                            ) : `$${Number(data.total).toLocaleString()}`}
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        {/* 3. Método de Pago */}
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Método de Pago</div>
+                                                <div className="font-bold text-sm truncate pt-0.5">
+                                                    {data.payment_method_display || data.payment_method || '-'}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        {/* 4. Monto */}
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">Monto</div>
+                                                <div className={`font-bold text-lg ${data.payment_type === 'INBOUND' ? 'text-green-600' : 'text-red-600'}`}>
+                                                    ${Number(data.amount).toLocaleString()}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                                    {currentType === 'purchase_order' ? 'Proveedor' :
+                                                        currentType === 'inventory' ? 'Producto' :
+                                                            (currentType === 'journal_entry' ? 'Referencia' : 'Cliente')}
+                                                </div>
+                                                <div className="font-bold text-base truncate">
+                                                    {currentType === 'journal_entry' ? (data.reference || '-') :
+                                                        currentType === 'inventory' ? data.product_name :
+                                                            (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
+                                                </div>
+                                                {currentType === 'inventory' && <div className="text-[10px] text-muted-foreground font-mono">{data.product_code}</div>}
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                                    {currentType === 'inventory' ? 'Almacén' : 'Fecha'}
+                                                </div>
+                                                <div className="font-bold text-base truncate">
+                                                    {currentType === 'inventory' ? data.warehouse_name :
+                                                        new Date(data.date || data.created_at).toLocaleDateString()}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                                    {currentType === 'inventory' ? 'Fecha Mov.' : 'Estado'}
+                                                </div>
+                                                <div className="font-bold text-base">
+                                                    {currentType === 'inventory' ? new Date(data.date).toLocaleDateString() : (
+                                                        <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
+                                                            {translateStatus(data.status || data.state)}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                                    {currentType === 'inventory' ? 'Tipo Mov.' : 'Total'}
+                                                </div>
+                                                <div className="font-bold text-base">
+                                                    {currentType === 'inventory' ? (
+                                                        <Badge variant={data.move_type === 'IN' ? 'default' : data.move_type === 'OUT' ? 'destructive' : 'outline'}>
+                                                            {data.move_type_display}
+                                                        </Badge>
+                                                    ) : `$${Number(data.total).toLocaleString()}`}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </>
+                                )}
                             </div>
                         )}
 
@@ -194,51 +244,39 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                         {(view === 'all' || view === 'details') && (
                             <div className="space-y-4">
                                 {currentType === 'payment' ? (
-                                    <div className="space-y-4 pt-2">
-                                        <div className="grid grid-cols-2 gap-8">
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase">Monto de la Operación</h4>
-                                                    <p className={`text-3xl font-black ${data.payment_type === 'INBOUND' ? 'text-green-600' : 'text-red-600'}`}>
-                                                        ${Number(data.amount).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase italic pb-1">Método de Pago</h4>
-                                                    <Badge variant="outline" className="font-mono">{data.payment_method_display || data.payment_method || '-'}</Badge>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase">Documentos Asociados</h4>
-                                                    <div className="space-y-2 pt-1">
-                                                        {data.document_info ? (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="w-full justify-start text-blue-600"
-                                                                onClick={() => navigateTo(data.document_info.type, data.document_info.id)}
-                                                            >
-                                                                <FileText className="h-4 w-4 mr-2" />
-                                                                {data.document_info.label}
-                                                            </Button>
-                                                        ) : <span className="text-sm text-muted-foreground">Sin documento asociado</span>}
-
-                                                        {data.journal_entry && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="w-full justify-start text-muted-foreground italic text-[10px]"
-                                                                onClick={() => navigateTo('journal_entry', data.journal_entry)}
-                                                            >
-                                                                <Hash className="h-3 w-3 mr-2" />
-                                                                Ver Movimiento Contable
-                                                            </Button>
-                                                        )}
+                                    <div className="space-y-6 pt-4">
+                                        <div className="grid grid-cols-2 gap-8 border-t pt-4">
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Cliente / Proveedor</h4>
+                                                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                                                    <User className="h-5 w-5 text-muted-foreground" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-semibold">{data.partner_name || '-'}</span>
+                                                        <span className="text-[10px] text-muted-foreground uppercase">{data.payment_type === 'INBOUND' ? 'Cliente' : 'Proveedor'}</span>
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Documento Asociado</h4>
+                                                <div className="pt-0.5">
+                                                    {data.document_info ? (
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full justify-start text-blue-600 bg-blue-50/10 border-blue-200/50 hover:bg-blue-50/20"
+                                                            onClick={() => navigateTo(data.document_info.type, data.document_info.id)}
+                                                        >
+                                                            <FileText className="h-4 w-4 mr-2" />
+                                                            {data.document_info.label}
+                                                        </Button>
+                                                    ) : (
+                                                        <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground italic border border-dashed text-center">
+                                                            Sin documento asociado
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
+
                                         {data.notes && (
                                             <div className="pt-2">
                                                 <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Observaciones</h4>
@@ -322,59 +360,6 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                         {/* Stock Movements / Receipts Section */}
                         {(view === 'all' || view === 'details') && (
                             <>
-                                {/* Case 1: Purchase Order Receipts */}
-                                {currentType === 'purchase_order' && data.related_documents?.receipts?.length > 0 && (
-                                    <div className="space-y-4 pt-6 border-t">
-                                        <h3 className="font-bold text-lg flex items-center gap-2">
-                                            <Package className="h-5 w-5 text-blue-600" />
-                                            Recepciones de Mercadería
-                                        </h3>
-                                        <div className="space-y-4">
-                                            {data.related_documents.receipts.map((receipt: any) => (
-                                                <div key={receipt.id} className="border rounded-md overflow-hidden">
-                                                    <div className="bg-muted/30 px-4 py-2 flex justify-between items-center text-sm border-b">
-                                                        <span className="font-bold">Recepción: {receipt.number}</span>
-                                                        <span className="text-muted-foreground">{new Date(receipt.date).toLocaleDateString()}</span>
-                                                    </div>
-                                                    <div className="p-0">
-                                                        <Table>
-                                                            <TableHeader>
-                                                                <TableRow>
-                                                                    <TableHead className="h-8">Producto</TableHead>
-                                                                    <TableHead className="h-8 text-center">Cantidad</TableHead>
-                                                                    <TableHead className="h-8 text-right">Acción</TableHead>
-                                                                </TableRow>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                                {receipt.stock_moves?.map((move: any) => (
-                                                                    <TableRow key={move.id}>
-                                                                        <TableCell className="py-2 text-sm">{move.product}</TableCell>
-                                                                        <TableCell className="py-2 text-center text-sm font-bold">
-                                                                            <span className={move.is_return ? "text-red-600" : "text-green-600"}>
-                                                                                {move.quantity}
-                                                                            </span>
-                                                                        </TableCell>
-                                                                        <TableCell className="py-2 text-right">
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="h-6 text-[10px] text-blue-600"
-                                                                                onClick={() => navigateTo('inventory', move.id)}
-                                                                            >
-                                                                                <Eye className="h-3 w-3 mr-1" />
-                                                                                Ver
-                                                                            </Button>
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))}
-                                                            </TableBody>
-                                                        </Table>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
 
                                 {/* Case 2: Invoice/Note Stock Moves */}
                                 {currentType === 'invoice' && data.related_stock_moves?.length > 0 && (

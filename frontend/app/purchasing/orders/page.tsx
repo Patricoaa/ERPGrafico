@@ -226,7 +226,7 @@ export default function PurchaseOrdersPage() {
                                                 className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
                                                 <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
-                                                #{inv.number}
+                                                FACT-{inv.number}
                                             </button>
                                         ))}
                                         {order.related_documents?.notes.map((note: any) => (
@@ -235,28 +235,30 @@ export default function PurchaseOrdersPage() {
                                                 onClick={() => setViewingTransaction({ type: 'invoice', id: note.id, view: 'details' })}
                                                 className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota {note.type === 'NOTA_CREDITO' ? 'Crédito' : 'Débito'}</span>
-                                                #{note.number}
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">{note.type === 'NOTA_CREDITO' ? 'Nota Crédito' : 'Nota Débito'}</span>
+                                                {note.type === 'NOTA_CREDITO' ? 'NC' : 'ND'}-{note.number}
                                             </button>
                                         ))}
-                                        {(order.related_documents?.receipts?.length ?? 0) > 0 && (
+                                        {order.related_documents?.receipts?.map((rec: any) => (
                                             <button
-                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}
-                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                key={rec.id}
+                                                onClick={() => setViewingTransaction({ type: 'inventory', id: rec.stock_moves[0]?.id, view: 'details' })}
+                                                className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepciones</span>
-                                                <span className="text-[10px]">{order.related_documents?.receipts?.length} recep.</span>
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Recepción</span>
+                                                <span className="text-[10px]">REC-{rec.number}</span>
                                             </button>
-                                        )}
-                                        {(order.related_documents?.payments?.length ?? 0) > 0 && (
+                                        ))}
+                                        {order.related_documents?.payments?.map((pay: any) => (
                                             <button
-                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'history' })}
-                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                key={pay.id}
+                                                onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
+                                                className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pagos</span>
-                                                <span className="text-[10px]">{order.related_documents?.payments?.length} reg.</span>
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
+                                                <span className="text-[10px] font-mono">{pay.code}</span>
                                             </button>
-                                        )}
+                                        ))}
                                         {!order.related_documents?.invoices.length && !order.related_documents?.notes.length && !order.related_documents?.receipts.length && !order.related_documents?.payments.length && (
                                             <span className="text-muted-foreground text-xs">-</span>
                                         )}

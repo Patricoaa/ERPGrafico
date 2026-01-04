@@ -58,4 +58,8 @@ class Invoice(models.Model):
         verbose_name_plural = _("Facturas y Boletas")
 
     def __str__(self):
-        return f"{self.dte_type} {self.number or 'Draft'}"
+        prefix = 'FACT'
+        if self.dte_type == 'NOTA_CREDITO': prefix = 'NC'
+        elif self.dte_type == 'NOTA_DEBITO': prefix = 'ND'
+        elif self.dte_type == 'BOLETA': prefix = 'BOL'
+        return f"{prefix}-{self.number or 'Draft'}"
