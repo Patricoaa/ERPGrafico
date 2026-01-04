@@ -91,7 +91,6 @@ const items = [
         icon: ShoppingBag,
         items: [
             { title: "Ordenes de Compra", url: "/purchasing/orders" },
-            { title: "NC /NB recibidas", url: "/purchasing/notes" },
         ]
     },
     {
