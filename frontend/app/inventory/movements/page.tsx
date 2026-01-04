@@ -24,12 +24,18 @@ interface StockMove {
     quantity: string
     move_type: string
     description: string
+    related_documents?: Array<{
+        type: string
+        id: number | string
+        name: string
+    }>
 }
 
 export default function MovementsPage() {
     const [moves, setMoves] = useState<StockMove[]>([])
     const [loading, setLoading] = useState(true)
     const [viewingMove, setViewingMove] = useState<number | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string } | null>(null)
 
     const fetchMoves = async () => {
         setLoading(true)
@@ -53,17 +59,6 @@ export default function MovementsPage() {
                 <h2 className="text-3xl font-bold tracking-tight">Movimientos de Inventario</h2>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Movimientos</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{moves.length}</div>
-                    </CardContent>
-                </Card>
-            </div>
-
             <div className="rounded-md border bg-white dark:bg-slate-950">
                 <Table>
                     <TableHeader>
@@ -74,6 +69,7 @@ export default function MovementsPage() {
                             <TableHead>Almacén</TableHead>
                             <TableHead>Cant.</TableHead>
                             <TableHead>Tipo</TableHead>
+                            <TableHead>Documentos</TableHead>
                             <TableHead>Descripción</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -81,11 +77,11 @@ export default function MovementsPage() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center py-10">Cargando movimientos...</TableCell>
+                                <TableCell colSpan={9} className="text-center py-10">Cargando movimientos...</TableCell>
                             </TableRow>
                         ) : moves.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
+                                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
                             </TableRow>
                         ) : moves.map((move) => (
                             <TableRow key={move.id}>
@@ -100,6 +96,24 @@ export default function MovementsPage() {
                                     <Badge variant={move.move_type === 'IN' ? 'default' : move.move_type === 'OUT' ? 'destructive' : 'outline'}>
                                         {move.move_type === 'IN' ? 'Entrada' : move.move_type === 'OUT' ? 'Salida' : 'Ajuste'}
                                     </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-wrap gap-1">
+                                        {move.related_documents && move.related_documents.length > 0 ? (
+                                            move.related_documents.map((doc, idx) => (
+                                                <Badge
+                                                    key={idx}
+                                                    variant="outline"
+                                                    className="cursor-pointer hover:bg-blue-50 hover:text-blue-600 border-blue-200 text-blue-500 text-[10px] py-0 px-2 flex items-center gap-1"
+                                                    onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
+                                                >
+                                                    {doc.name}
+                                                </Badge>
+                                            ))
+                                        ) : (
+                                            <span className="text-muted-foreground text-[10px]">-</span>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">{move.description}</TableCell>
                                 <TableCell className="text-right">
@@ -123,6 +137,15 @@ export default function MovementsPage() {
                     onOpenChange={(open) => !open && setViewingMove(null)}
                     type="inventory"
                     id={viewingMove}
+                />
+            )}
+
+            {viewingTransaction && (
+                <TransactionViewModal
+                    open={!!viewingTransaction}
+                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    type={viewingTransaction.type as any}
+                    id={viewingTransaction.id}
                 />
             )}
         </div>

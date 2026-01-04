@@ -61,10 +61,18 @@ class StockMoveSerializer(serializers.ModelSerializer):
     move_type_display = serializers.CharField(source='get_move_type_display', read_only=True)
     journal_entry_number = serializers.CharField(source='journal_entry.number', read_only=True, allow_null=True)
     reference_code = serializers.SerializerMethodField()
+    related_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = StockMove
         fields = '__all__'
+
+    def get_related_documents(self, obj):
+        if obj.journal_entry:
+            # We filter to only include invoices, sale orders, and purchase orders as requested
+            docs = obj.journal_entry.get_source_documents
+            return [d for d in docs if d['type'] in ('invoice', 'sale_order', 'purchase_order')]
+        return []
 
     def get_reference_code(self, obj):
         # Prefer the internal MOV code as requested by the user

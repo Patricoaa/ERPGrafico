@@ -184,36 +184,37 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                         <Card>
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                                    {currentType === 'purchase_order' ? 'Proveedor' :
-                                                        currentType === 'inventory' ? 'Producto' :
-                                                            (currentType === 'journal_entry' ? 'Descripción' : 'Cliente')}
+                                                    {currentType === 'inventory' ? 'Tipo Mov.' :
+                                                        (currentType === 'purchase_order' ? 'Proveedor' :
+                                                            (currentType === 'journal_entry' ? 'Descripción' : 'Cliente'))}
                                                 </div>
                                                 <div className="font-bold text-base truncate">
-                                                    {currentType === 'journal_entry' ? (data.description || data.reference || '-') :
-                                                        currentType === 'inventory' ? data.product_name :
-                                                            (data.customer_name || data.supplier_name || data.partner_name || 'N/A')}
-                                                </div>
-                                                {currentType === 'inventory' && <div className="text-[10px] text-muted-foreground font-mono">{data.product_code}</div>}
-                                            </CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardContent className="p-4">
-                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                                    {currentType === 'inventory' ? 'Almacén' : 'Fecha'}
-                                                </div>
-                                                <div className="font-bold text-base truncate">
-                                                    {currentType === 'inventory' ? data.warehouse_name :
-                                                        new Date(data.date || data.created_at).toLocaleDateString()}
+                                                    {currentType === 'inventory' ? (
+                                                        <Badge variant={data.move_type === 'IN' ? 'default' : data.move_type === 'OUT' ? 'destructive' : 'outline'} className="mt-1">
+                                                            {data.move_type_display}
+                                                        </Badge>
+                                                    ) : (currentType === 'journal_entry' ? (data.description || data.reference || '-') :
+                                                        (data.customer_name || data.supplier_name || data.partner_name || 'N/A'))}
                                                 </div>
                                             </CardContent>
                                         </Card>
                                         <Card>
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                                    {currentType === 'inventory' ? 'Fecha Mov.' : 'Estado'}
+                                                    {currentType === 'inventory' ? 'Fecha Mov.' : 'Fecha'}
                                                 </div>
-                                                <div className="font-bold text-base">
-                                                    {currentType === 'inventory' ? new Date(data.date).toLocaleDateString() : (
+                                                <div className="font-bold text-base truncate">
+                                                    {new Date(data.date || data.created_at).toLocaleDateString()}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
+                                                    {currentType === 'inventory' ? 'Almacén' : 'Estado'}
+                                                </div>
+                                                <div className="font-bold text-base truncate">
+                                                    {currentType === 'inventory' ? data.warehouse_name : (
                                                         <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
                                                             {translateStatus(data.status || data.state)}
                                                         </Badge>
@@ -224,14 +225,10 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                         <Card>
                                             <CardContent className="p-4">
                                                 <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                                    {currentType === 'inventory' ? 'Tipo Mov.' : 'Total'}
+                                                    {currentType === 'inventory' ? 'Cantidad' : 'Total'}
                                                 </div>
-                                                <div className="font-bold text-base">
-                                                    {currentType === 'inventory' ? (
-                                                        <Badge variant={data.move_type === 'IN' ? 'default' : data.move_type === 'OUT' ? 'destructive' : 'outline'}>
-                                                            {data.move_type_display}
-                                                        </Badge>
-                                                    ) : `$${Number(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + Number(i.debit), 0) : data.total).toLocaleString()}`}
+                                                <div className={`font-bold text-base truncate ${currentType === 'inventory' ? (parseFloat(data.quantity) > 0 ? 'text-green-600' : 'text-red-600') : ''}`}>
+                                                    {currentType === 'inventory' ? Math.round(Math.abs(parseFloat(data.quantity))) : `$${Number(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + Number(i.debit), 0) : data.total).toLocaleString()}`}
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -274,24 +271,14 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                 <h4 className="text-xs font-semibold text-muted-foreground uppercase">Descripción</h4>
                                                 <p className="text-sm font-medium">{data.description || 'Sin descripción'}</p>
                                             </div>
-                                            <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Cantidad</h4>
-                                                <p className={`text-xl font-bold ${parseFloat(data.quantity) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {data.quantity}
-                                                </p>
-                                            </div>
                                         </div>
                                         <div className="space-y-4">
                                             <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Documento Contable</h4>
-                                                {data.journal_entry ? (
-                                                    <button
-                                                        onClick={() => navigateTo('journal_entry', data.journal_entry)}
-                                                        className="text-sm font-bold text-blue-600 hover:underline"
-                                                    >
-                                                        Asiento {data.journal_entry_number || data.journal_entry}
-                                                    </button>
-                                                ) : <span className="text-sm text-muted-foreground">No asociado</span>}
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Producto</h4>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold">{data.product_name}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">{data.product_code}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
