@@ -8,7 +8,39 @@ from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from decimal import Decimal
 
+
 class BillingService:
+    @staticmethod
+    def _capitalize_tax_to_product_cost(product, tax_amount, unit_cost, quantity):
+        """
+        Capitalizes tax amount into product cost using weighted average.
+        This is used for Boletas and Draft Facturas.
+        """
+        from inventory.models import StockMove
+        total_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
+        
+        if total_stock > 0:
+            current_value = product.cost_price * total_stock
+            product.cost_price = (current_value + tax_amount) / total_stock
+        else:
+            # No stock yet, set cost to unit cost + tax per unit
+            product.cost_price = unit_cost + (tax_amount / quantity)
+        product.save()
+    
+    @staticmethod
+    def _revert_tax_from_product_cost(product, tax_amount):
+        """
+        Reverts previously capitalized tax from product cost.
+        This is used when confirming a Draft Factura as a regular Factura.
+        """
+        from inventory.models import StockMove
+        total_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
+        
+        if total_stock > 0:
+            current_value = product.cost_price * total_stock
+            product.cost_price = (current_value - tax_amount) / total_stock
+            product.save()
+    
     @staticmethod
     @transaction.atomic
     def create_sale_invoice(order: SaleOrder, dte_type: str, payment_method: str = 'CREDIT'):
@@ -197,27 +229,20 @@ class BillingService:
                 asset_account = line.product.get_asset_account or settings.default_inventory_account
                 line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                 
-                if line_tax > 0 and asset_account:
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=asset_account,
-                        debit=line_tax,
-                        credit=0,
-                        label=f"{'IVA Provisorio' if is_draft and not is_boleta else 'IVA Capitalizado'} - {line.product.code}"
-                    )
+                if line_tax > 0:
+                    # Create accounting entry only if we have an asset account
+                    if asset_account:
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=asset_account,
+                            debit=line_tax,
+                            credit=0,
+                            label=f"{'IVA Provisorio' if is_draft and not is_boleta else 'IVA Capitalizado'} - {line.product.code}"
+                        )
                     
-                    # Update Product Cost Price
+                    # Update Product Cost Price (always, even if no asset account)
                     if line.quantity > 0:
-                        product = line.product
-                        from inventory.models import StockMove
-                        total_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
-                        
-                        if total_stock > 0:
-                            current_value = product.cost_price * total_stock
-                            product.cost_price = (current_value + line_tax) / total_stock
-                        else:
-                            product.cost_price = line.unit_cost + (line_tax / line.quantity)
-                        product.save()
+                        BillingService._capitalize_tax_to_product_cost(line.product, line_tax, line.unit_cost, line.quantity)
         else:
             # POSTED Factura: Normal VAT separation
             if invoice.total_tax > 0 and tax_account:
@@ -398,32 +423,13 @@ class BillingService:
                             credit=0,
                             label="IVA Compras (Crédito Fiscal)"
                         )
-
-                        # 3. Revert Product Cost Capitalization (Fix for Cost Reversion Bug)
-                        # We need to reduce the product cost because we are moving the tax from Asset to VAT Receivable
-                        # This is an approximation if multiple products are involved, ideally we track per-line.
-                        # Since we don't have per-line link here easily without iterating invoice lines, let's do that.
                         
-                        from inventory.models import StockMove
-                        for line in invoice.purchase_order.lines.all():
-                            print(f"DEBUG: BillingService Revert Check - Line {line.id}, Subtotal {line.subtotal}, TaxRate {line.tax_rate}")
-                            # Calculate the tax portion for this line that was capitalized
-                            # Line Tax = Subtotal * TaxRate / 100
-                            line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
-                            
-                            if line_tax > 0:
-                                product = line.product
-                                current_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
-                                
-                                if current_stock > 0:
-                                    current_value = product.cost_price * current_stock
-                                    # Subtract the tax we are decapitalizing
-                                    new_value = current_value - line_tax
-                                    # Ensure we don't go negative due to rounding or timing weirdness
-                                    if new_value < 0: new_value = 0
-                                    
-                                    product.cost_price = new_value / current_stock
-                                    product.save()
+                        # Revert the capitalized tax from product costs
+                        if invoice.purchase_order:
+                            for line in invoice.purchase_order.lines.all():
+                                line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                                if line_tax > 0:
+                                    BillingService._revert_tax_from_product_cost(line.product, line_tax)
             
             # Repost entry
             JournalEntryService.post_entry(entry)
