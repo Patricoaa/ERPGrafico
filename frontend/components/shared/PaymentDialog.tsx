@@ -291,8 +291,9 @@ export function PaymentDialog({
                         })}
                         disabled={
                             (paymentMethod !== 'CREDIT' && parseFloat(amount) <= 0) ||
-                            (isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference) ||
-                            (isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)
+                            (!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference) ||
+                            (!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference) ||
+                            ((paymentMethod === 'CARD' || paymentMethod === 'TRANSFER') && !isPending && !transactionNumber)
                         }
                     >
                         {paymentMethod === 'CREDIT' ? (

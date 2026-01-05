@@ -14,7 +14,7 @@ import { PaymentForm } from "@/components/forms/PaymentForm"
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory'
+    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation'
     id: number | string
     view?: 'details' | 'history' | 'all'
 }
@@ -52,6 +52,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             else if (currentType === 'payment') endpoint = `/treasury/payments/${currentId}/`
             else if (currentType === 'journal_entry') endpoint = `/accounting/entries/${currentId}/`
             else if (currentType === 'inventory') endpoint = `/inventory/moves/${currentId}/`
+            else if (currentType === 'service_obligation') endpoint = `/services/obligations/${currentId}/`
 
             const response = await api.get(endpoint)
             setData(response.data)
@@ -113,6 +114,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 return `ASIENTO CONTABLE AS-${data.number || data.id}`
             case 'inventory':
                 return `MOVIMIENTO DE INVENTARIO ${data.reference_code || `MOV-${data.id}`}`
+            case 'service_obligation':
+                return `OBLIGACIÓN DE SERVICIO OB-${data.id}`
             default:
                 return "DETALLES DE TRANSACCIÓN"
         }
@@ -126,6 +129,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         if (currentType === 'journal_entry') return <Hash className="h-5 w-5" />
         if (currentType === 'inventory') return <Package className="h-5 w-5 text-blue-600" />
         if (currentType === 'payment') return <Banknote className="h-5 w-5 text-emerald-600" />
+        if (currentType === 'service_obligation') return <Building2 className="h-5 w-5 text-indigo-600" />
         return <FileText className="h-5 w-5" />
     }
 
@@ -313,6 +317,29 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             <div>
                                                 <h4 className="text-xs font-semibold text-muted-foreground uppercase">Notas / Observaciones</h4>
                                                 <p className="text-sm italic text-muted-foreground">{data.notes || data.observation || '-'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : currentType === 'service_obligation' ? (
+                                    <div className="grid grid-cols-2 gap-8 py-4 border-t">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Proveedor</h4>
+                                                <p className="font-bold">{data.contract_data?.supplier_name}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Contrato</h4>
+                                                <p className="text-sm">{data.contract_data?.name}</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Periodo</h4>
+                                                <p className="text-sm font-mono">{data.period_start} - {data.period_end}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Vencimiento</h4>
+                                                <p className="text-sm">{data.due_date}</p>
                                             </div>
                                         </div>
                                     </div>

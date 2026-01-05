@@ -25,6 +25,8 @@ interface PurchaseDocument {
     partner_name?: string
     purchase_order?: number
     purchase_order_number?: string
+    service_obligation?: number
+    service_obligation_data?: any
     total: string
     status: string
     status_display?: string
@@ -70,8 +72,8 @@ export default function PurchaseInvoicesPage() {
             // Ideally backend filters, but frontend filter for strict "Purchase" context:
             // Includes: FACTURA_COMPRA (custom type?), or standard Invoices linked to PO, or NC/ND linked to PO.
             // Let's stick to "linked to purchase_order" or "DTE Type is specifically Purchase-related" check.
-            // For now, mirroring previous logic: `i.purchase_order`
-            const filtered = results.filter((i: any) => i.purchase_order)
+            // Include: Invoices with PO OR Invoices with Service Obligation
+            const filtered = results.filter((i: any) => i.purchase_order || i.service_obligation)
             setDocuments(filtered)
         } catch (error) {
             console.error(error)
@@ -247,6 +249,16 @@ export default function PurchaseInvoicesPage() {
                                                     >
                                                         <span className="font-semibold uppercase text-[8px] text-muted-foreground">Orden de Compra</span>
                                                         OC-{doc.purchase_order_number || doc.purchase_order}
+                                                    </button>
+                                                )}
+
+                                                {doc.service_obligation && (
+                                                    <button
+                                                        onClick={() => setViewingTransaction({ type: 'service_obligation', id: doc.service_obligation!, view: 'details' })}
+                                                        className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                    >
+                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Servicio Recurrente</span>
+                                                        OB-{doc.service_obligation}
                                                     </button>
                                                 )}
 

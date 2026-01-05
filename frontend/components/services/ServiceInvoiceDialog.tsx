@@ -144,7 +144,7 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                             name="amount"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Monto Total</FormLabel>
+                                    <FormLabel>Monto Total (Bruto)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field} value={field.value?.toString() || "0"} /></FormControl>
                                     <FormMessage />
                                 </FormItem>

@@ -37,6 +37,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if obj.purchase_order:
             from purchasing.serializers import PurchaseLineSerializer
             return PurchaseLineSerializer(obj.purchase_order.lines.all(), many=True).data
+        if obj.service_obligation:
+            return [{
+                'id': f"SVC-{obj.service_obligation.id}",
+                'product_name': f"Servicio: {obj.service_obligation.contract.name}",
+                'description': f"Periodo: {obj.service_obligation.period_start} - {obj.service_obligation.period_end}",
+                'quantity': 1,
+                'price_unit': obj.total,
+                'total': obj.total
+            }]
         return []
 
     def get_related_documents(self, obj):
@@ -55,6 +64,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
             return obj.sale_order.customer.name
         if obj.purchase_order:
             return obj.purchase_order.supplier.name
+        if obj.service_obligation:
+            return obj.service_obligation.contract.supplier.name
+        if obj.contact:
+            return obj.contact.name
         return ""
 
     def get_related_stock_moves(self, obj):

@@ -43,3 +43,38 @@ def check_overdue_obligations_task():
     count = ServiceObligationService.check_overdue()
     logger.info(f"Finished check_overdue_obligations_task. Marked {count} obligations as OVERDUE.")
     return f"Marked {count} overdue"
+
+@shared_task
+def generate_provisions_task():
+    """
+    Periodic task to generate provisions for pending obligations 
+    whose category requires it and whose period has ended.
+    """
+    from .models import ServiceObligation
+    from django.utils import timezone
+    from django.db.models import Q
+    
+    logger.info("Starting generate_provisions_task")
+    today = timezone.now().date()
+    
+    # Candidates: Pending obligations whose category requires provision 
+    # and no provision exists yet. 
+    # We provision if period_end <= today OR (if period_end is null) due_date <= today
+    pending_provision = ServiceObligation.objects.filter(
+        status=ServiceObligation.Status.PENDING,
+        journal_entry__isnull=True,
+        contract__category__requires_provision=True
+    ).filter(
+        Q(period_end__lte=today) | Q(period_end__isnull=True, due_date__lte=today)
+    )
+    
+    count = 0
+    for ob in pending_provision:
+        try:
+            ServiceObligationService.create_provision(ob)
+            count += 1
+        except Exception as e:
+            logger.error(f"Error provisioning obligation {ob.id}: {e}")
+            
+    logger.info(f"Finished generate_provisions_task. Generated {count} provisions.")
+    return f"Created {count} provisions"

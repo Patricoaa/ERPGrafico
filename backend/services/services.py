@@ -3,6 +3,9 @@ from django.db import transaction
 from .models import ServiceContract, ServiceObligation, ServiceCategory
 from dateutil.relativedelta import relativedelta
 import datetime
+from decimal import Decimal
+from accounting.models import JournalEntry, JournalItem, AccountingSettings, Account
+from accounting.services import JournalEntryService
 
 class ServiceContractService:
     @staticmethod
@@ -150,22 +153,203 @@ class ServiceObligationService:
 
     @staticmethod
     @transaction.atomic
+    def reverse_provision(obligation, reversal_date=None):
+        """
+        Creates a reversal entry for an existing provision.
+        Entry: Dr Provision Payable / Cr Expense
+        """
+        if not obligation.journal_entry:
+            return None
+        
+        provision_entry = obligation.journal_entry
+        if provision_entry.state != JournalEntry.State.POSTED:
+            # If not posted, we can just delete it? 
+            # Better to cancel/reverse if we want audit trail.
+            # But let's assume we reverse the effects.
+            pass
+
+        reversal_date = reversal_date or timezone.now().date()
+        
+        # Identify lines to reverse
+        # Original: Dr Expense / Cr Provision Payable
+        # Reversal: Dr Provision Payable / Cr Expense
+        
+        reverse_entry = JournalEntry.objects.create(
+            date=reversal_date,
+            description=f"Reversa Provisión - {obligation.contract.name} - Período {obligation.period_start}",
+            reference=f"REV-PROV-{obligation.id}",
+            state=JournalEntry.State.DRAFT
+        )
+        
+        for item in provision_entry.items.all():
+            # Invert debit and credit
+            JournalItem.objects.create(
+                entry=reverse_entry,
+                account=item.account,
+                debit=item.credit,
+                credit=item.debit,
+                partner=item.partner,
+                label=f"REVERSA: {item.label or ''}"
+            )
+        
+        JournalEntryService.post_entry(reverse_entry)
+        
+        # We don't clear obligation.journal_entry because we might want to keep the trail.
+        # Or maybe we link the reversal to the obligation too? ServiceObligation only has one journal_entry field.
+        # Let's just return it for now.
+        return reverse_entry
+
+    @staticmethod
+    @transaction.atomic
+    def create_provision(obligation, provision_date=None, amount=None):
+        """
+        Creates a provision for the service obligation.
+        Entry: Dr Expense / Cr Provision Payable
+        """
+        if obligation.journal_entry or obligation.status != ServiceObligation.Status.PENDING:
+            return None
+            
+        provision_date = provision_date or obligation.period_end or timezone.now().date()
+        amount = amount or obligation.amount
+        
+        expense_account = obligation.contract.expense_account or obligation.contract.category.expense_account
+        payable_account = obligation.contract.payable_account or obligation.contract.category.payable_account # This should be the Provision Liability
+        
+        if not expense_account or not payable_account:
+            raise ValueError("Las cuentas contables no están configuradas en el contrato ni en la categoría.")
+
+        entry = JournalEntry.objects.create(
+            date=provision_date,
+            description=f"Provisión Gasto - {obligation.contract.name} - Período {obligation.period_start}",
+            reference=f"PROV-{obligation.id}",
+            state=JournalEntry.State.DRAFT
+        )
+        
+        # Debit: Expense
+        JournalItem.objects.create(
+            entry=entry,
+            account=expense_account,
+            debit=amount,
+            credit=0,
+            partner=obligation.contract.supplier.name
+        )
+        
+        # Credit: Provision Payable
+        JournalItem.objects.create(
+            entry=entry,
+            account=payable_account,
+            debit=0,
+            credit=amount,
+            partner=obligation.contract.supplier.name
+        )
+        
+        JournalEntryService.post_entry(entry)
+        
+        obligation.journal_entry = entry
+        obligation.save()
+        return entry
+
+    @staticmethod
+    @transaction.atomic
     def register_invoice(obligation, data):
         from billing.models import Invoice
         
-        # Create the invoice
+        # 1. Reverse Provision if exists
+        if obligation.journal_entry:
+            ServiceObligationService.reverse_provision(obligation, data['invoice_date'])
+        
+        # 2. Create the invoice
         invoice = Invoice.objects.create(
             date=data['invoice_date'],
             number=data['invoice_number'],
             total=data['amount'],
             dte_type=data.get('dte_type', 'FACTURA'),
-            contact=obligation.contract.supplier, # Use 'contact' instead of 'partner'
+            contact=obligation.contract.supplier,
+            service_obligation=obligation,
             status='POSTED',
             document_attachment=data.get('document_attachment'),
             purchase_order=None
         )
         
-        # Link it
+        # 3. Create Accounting Entry for Invoice (Dr Expense / Cr Supplier Payable)
+        # We handle it here because BillingService.create_purchase_bill is tied to PurchaseOrder
+        
+        settings = AccountingSettings.objects.first()
+        # For the real payable, we use the supplier's account or system default
+        real_payable_account = obligation.contract.supplier.account_payable or (settings.default_payable_account if settings else None)
+        tax_account = settings.default_tax_receivable_account if settings else None
+        
+        if not real_payable_account:
+             real_payable_account = Account.objects.filter(account_type='LIABILITY').first()
+
+        invoice_entry = JournalEntry.objects.create(
+            date=data['invoice_date'],
+            description=f"Gasto Servicio {obligation.contract.name} - {invoice.get_dte_type_display()} {data['invoice_number']}",
+            reference=f"SVC-INV-{obligation.id}",
+            state=JournalEntry.State.DRAFT
+        )
+        
+        is_boleta = data.get('dte_type') == 'BOLETA'
+        total = Decimal(str(data['amount']))
+        
+        # Calculate net and tax regardless of type for the record
+        # Net = Total / 1.19, Tax = Total - Net
+        net = (total / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        tax = total - net
+        
+        # Update invoice records for consistency
+        invoice.total_net = net
+        invoice.total_tax = tax
+        invoice.save()
+
+        # Use contract accounts or fallback to category defaults
+        expense_account = obligation.contract.expense_account or obligation.contract.category.expense_account
+
+        if is_boleta:
+            # Debit: Expense (Total)
+            JournalItem.objects.create(
+                entry=invoice_entry,
+                account=expense_account,
+                debit=total,
+                credit=0,
+                partner=obligation.contract.supplier.name,
+                label="Gasto Servicio (IVA Capitalizado)"
+            )
+        else:
+            # Factura: Separate VAT in JE
+            # Debit: Expense (Net)
+            JournalItem.objects.create(
+                entry=invoice_entry,
+                account=expense_account,
+                debit=net,
+                credit=0,
+                partner=obligation.contract.supplier.name
+            )
+            
+            # Debit: Tax (IVA Crédito)
+            if tax > 0 and tax_account:
+                JournalItem.objects.create(
+                    entry=invoice_entry,
+                    account=tax_account,
+                    debit=tax,
+                    credit=0,
+                    label="IVA Crédito Fiscal (Servicios)"
+                )
+        
+        # Credit: Supplier Payable (Total)
+        JournalItem.objects.create(
+            entry=invoice_entry,
+            account=real_payable_account,
+            debit=0,
+            credit=total,
+            partner=obligation.contract.supplier.name
+        )
+        
+        JournalEntryService.post_entry(invoice_entry)
+        invoice.journal_entry = invoice_entry
+        invoice.save()
+
+        # 4. Link it
         return ServiceObligationService.link_invoice(obligation, invoice)
 
     @staticmethod

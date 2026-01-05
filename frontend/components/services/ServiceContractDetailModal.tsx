@@ -114,7 +114,7 @@ export function ServiceContractDetailModal({ contractId, open, onOpenChange, onS
     if (loading || !contract) {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-[1400px] max-h-[90vh] overflow-y-auto">
                     <div className="p-6">Cargando...</div>
                 </DialogContent>
             </Dialog>
@@ -123,7 +123,7 @@ export function ServiceContractDetailModal({ contractId, open, onOpenChange, onS
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-[1400px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-center justify-between">
                         <div>

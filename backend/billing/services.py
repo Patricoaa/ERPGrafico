@@ -177,6 +177,11 @@ class BillingService:
         )
 
         # Debit: Stock Interim (Net) - CLEARING the liability from reception
+        # If it's a BOLETA, the bridge account (stock_input_account) only has the NET value from reception.
+        # So we clear the NET part and debit the rest to INVENTORY (capitalizing the tax).
+        is_boleta = dte_type == Invoice.DTEType.BOLETA
+        
+        # 1. Clear Bridge Account for the NET amount (always net from reception)
         JournalItem.objects.create(
             entry=entry,
             account=stock_input_account,
@@ -185,15 +190,38 @@ class BillingService:
             label="Limpieza Cuenta Puente Recepción"
         )
 
-        # Debit: Tax (IVA Crédito)
-        if invoice.total_tax > 0 and tax_account:
-             JournalItem.objects.create(
-                entry=entry,
-                account=tax_account,
-                debit=invoice.total_tax,
-                credit=0,
-                label="IVA Compras"
-             )
+        if is_boleta:
+            # 2. Capitalize Tax into Inventory and Product Cost
+            for line in order.lines.all():
+                asset_account = line.product.get_asset_account or settings.default_inventory_account
+                # Calculate tax portion for this line
+                line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                
+                if line_tax > 0 and asset_account:
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=asset_account,
+                        debit=line_tax,
+                        credit=0,
+                        label=f"IVA Capitalizado (Boleta) - {line.product.code}"
+                    )
+                    
+                    # Update Product Cost Price (Include the tax portion)
+                    if line.quantity > 0:
+                        tax_per_unit = line_tax / line.quantity
+                        product = line.product
+                        product.cost_price = (product.cost_price or Decimal('0')) + tax_per_unit
+                        product.save()
+        else:
+            # 2. Factura: Normal tax handling (VAT Receivable / IVA Crédito)
+            if invoice.total_tax > 0 and tax_account:
+                 JournalItem.objects.create(
+                    entry=entry,
+                    account=tax_account,
+                    debit=invoice.total_tax,
+                    credit=0,
+                    label="IVA Compras (Crédito Fiscal)"
+                 )
 
         JournalEntryService.post_entry(entry)
         invoice.journal_entry = entry

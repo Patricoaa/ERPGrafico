@@ -45,21 +45,15 @@ export function DocumentRegistrationModal({
     const [submitting, setSubmitting] = useState(false)
 
     const handleSubmit = async () => {
-        // Validation: Required fields for Factura
-        if (dteType === 'FACTURA') {
-            if (!reference) {
-                toast.error("El número de referencia/folio es obligatorio para Facturas")
-                return
-            }
-            if (!attachment) {
-                toast.error("El documento adjunto es obligatorio para Facturas")
-                return
-            }
+        // Validation: Required fields
+        if (!reference) {
+            toast.error(`El número de referencia/folio es obligatorio para ${dteType === 'FACTURA' ? 'Facturas' : 'Boletas'}`)
+            return
         }
 
-        // Optional warning for Boletas without reference (optional)
-        if (dteType === 'BOLETA' && !reference) {
-            // We allow it, but logic implies it's okay.
+        if (dteType === 'FACTURA' && !attachment) {
+            toast.error("El documento adjunto es obligatorio para Facturas")
+            return
         }
 
         setSubmitting(true)
@@ -128,7 +122,7 @@ export function DocumentRegistrationModal({
 
                     <div className="space-y-2">
                         <Label htmlFor="reference">
-                            N° de Folio / Referencia {dteType === 'FACTURA' && <span className="text-destructive">*</span>}
+                            N° de Folio / Referencia <span className="text-destructive">*</span>
                         </Label>
                         <Input
                             id="reference"

@@ -202,7 +202,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                     <Button>Nueva Orden de Compra</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[1200px] w-[95vw] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1000px] w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Orden de Compra" : "Crear Orden de Compra"}</DialogTitle>
                     <DialogDescription>

@@ -86,6 +86,7 @@ class ServiceContract(models.Model):
         on_delete=models.PROTECT, 
         related_name='service_expenses',
         limit_choices_to={'account_type': AccountType.EXPENSE},
+        null=True, blank=True,
         verbose_name=_("Cuenta de Gasto")
     )
     payable_account = models.ForeignKey(
@@ -93,6 +94,7 @@ class ServiceContract(models.Model):
         on_delete=models.PROTECT, 
         related_name='service_payables',
         limit_choices_to={'account_type': AccountType.LIABILITY},
+        null=True, blank=True,
         verbose_name=_("Cuenta por Pagar")
     )
     

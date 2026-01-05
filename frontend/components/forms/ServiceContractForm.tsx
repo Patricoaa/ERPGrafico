@@ -49,6 +49,8 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
             payment_day: 1,
             is_amount_variable: false,
             auto_renew: false,
+            expense_account: "inherited",
+            payable_account: "inherited",
             ...initialData
         },
     })
@@ -65,8 +67,8 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                 // Ensure IDs are strings for Select components
                 supplier: initialData.supplier?.toString(),
                 category: initialData.category?.toString(),
-                expense_account: initialData.expense_account?.toString(),
-                payable_account: initialData.payable_account?.toString(),
+                expense_account: initialData.expense_account?.toString() || "inherited",
+                payable_account: initialData.payable_account?.toString() || "inherited",
             })
         }
     }, [initialData, form])
@@ -90,23 +92,25 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
         loadData()
     }, [])
 
-    // Auto-fill accounts when category changes
+    // Auto-fill accounts when category changes - only if they were empty or "inherited"
     const onCategoryChange = (catId: string) => {
         form.setValue("category", catId)
-        const cat: any = categories.find((c: any) => c.id.toString() === catId)
-        if (cat) {
-            if (cat.expense_account) form.setValue("expense_account", cat.expense_account.toString())
-            if (cat.payable_account) form.setValue("payable_account", cat.payable_account.toString())
-        }
+        // We don't force accounts anymore if they are to be "inherited" by default
     }
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
+            const data = {
+                ...values,
+                expense_account: values.expense_account === "inherited" ? null : values.expense_account,
+                payable_account: values.payable_account === "inherited" ? null : values.payable_account,
+            }
+
             if (initialData?.id) {
-                await api.patch(`/services/contracts/${initialData.id}/`, values)
+                await api.patch(`/services/contracts/${initialData.id}/`, data)
                 toast.success("Contrato actualizado exitosamente")
             } else {
-                await api.post("/services/contracts/", values)
+                await api.post("/services/contracts/", data)
                 toast.success("Contrato creado exitosamente")
             }
 
@@ -124,7 +128,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                     {/* Basic Info */}
                     <Card>
@@ -241,7 +245,15 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Monto Base</FormLabel>
-                                            <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    {...field}
+                                                    disabled={form.watch("is_amount_variable")}
+                                                    className={form.watch("is_amount_variable") ? "bg-muted" : ""}
+                                                />
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -252,10 +264,16 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     render={({ field }) => (
                                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm mt-8">
                                             <div className="space-y-0.5">
-                                                <FormLabel>Monto Variable</FormLabel>
+                                                <FormLabel className="text-xs">Monto Variable</FormLabel>
                                             </div>
                                             <FormControl>
-                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={(val) => {
+                                                        field.onChange(val)
+                                                        if (val) form.setValue("base_amount", 0)
+                                                    }}
+                                                />
                                             </FormControl>
                                         </FormItem>
                                     )}
@@ -264,79 +282,104 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                         </CardContent>
                     </Card>
 
-                    {/* Dates */}
-                    <Card>
-                        <CardContent className="pt-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                    {/* Dates & More Column (Dates + Renewal) */}
+                    <div className="space-y-6">
+                        <Card>
+                            <CardContent className="pt-6 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="start_date"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Fecha Inicio</FormLabel>
+                                                <FormControl><Input type="date" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="end_date"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Fecha Término</FormLabel>
+                                                <FormControl><Input type="date" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
                                 <FormField
                                     control={form.control}
-                                    name="start_date"
+                                    name="auto_renew"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Fecha Inicio</FormLabel>
-                                            <FormControl><Input type="date" {...field} /></FormControl>
-                                            <FormMessage />
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                            <div className="space-y-0.5">
+                                                <FormLabel>Renovación Automática</FormLabel>
+                                                <FormDescription className="text-[10px]">Extender automáticamente</FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                            </FormControl>
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
-                                    control={form.control}
-                                    name="end_date"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Fecha Término</FormLabel>
-                                            <FormControl><Input type="date" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <FormField
-                                control={form.control}
-                                name="auto_renew"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                        <div className="space-y-0.5">
-                                            <FormLabel>Renovación Automática</FormLabel>
-                                            <FormDescription>Extender contrato automáticamente al finalizar</FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
 
-                    {/* Accounting Hidden/Optional details */}
-                    <Card>
-                        <CardContent className="pt-6 space-y-4 opacity-50 hover:opacity-100 transition-opacity">
-                            <h3 className="text-sm font-medium text-muted-foreground">Configuración Contable (Avanzado)</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="expense_account"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Cuenta Gasto</FormLabel>
-                                            <FormControl><Input {...field} readOnly placeholder="Heredado de categoría" /></FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="payable_account"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Cuenta Pasivo</FormLabel>
-                                            <FormControl><Input {...field} readOnly placeholder="Heredado de categoría" /></FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
+                        {/* Accounting details */}
+                        <Card className="border-indigo-100 bg-indigo-50/10">
+                            <CardContent className="pt-6 space-y-4">
+                                <h3 className="text-sm font-semibold text-indigo-900 border-b pb-2 flex justify-between items-center">
+                                    Configuración Contable
+                                    <span className="text-[10px] font-normal text-muted-foreground uppercase">Avanzado</span>
+                                </h3>
+                                <div className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="expense_account"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Cuenta Gasto</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || "inherited"}>
+                                                    <FormControl>
+                                                        <SelectTrigger><SelectValue placeholder="Heredado" /></SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="inherited" className="font-semibold text-indigo-600 italic">Heredar de categoría (Recomendado)</SelectItem>
+                                                        {accounts.filter((a: any) => a.account_type === 'EXPENSE').map((a: any) => (
+                                                            <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="payable_account"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Cuenta Pasivo / Provisión</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || "inherited"}>
+                                                    <FormControl>
+                                                        <SelectTrigger><SelectValue placeholder="Heredado" /></SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="inherited" className="font-semibold text-indigo-600 italic">Heredar de categoría (Recomendado)</SelectItem>
+                                                        {accounts.filter((a: any) => a.account_type === 'LIABILITY').map((a: any) => (
+                                                            <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
                 </div>
                 <Button type="submit" size="lg">{initialData ? 'Actualizar Contrato' : 'Crear Contrato'}</Button>

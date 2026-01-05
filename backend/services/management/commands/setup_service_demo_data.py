@@ -308,22 +308,19 @@ class Command(BaseCommand):
             )
             categories[d['code']] = cat
 
-        # 3. Suppliers (Use existing ones or create)
-        suppliers = list(Contact.objects.filter(account_payable=accounts['payable'])[:3])
-        if len(suppliers) < 3:
-            # Create some if not enough
-            s_data = [
-                {'name': 'Proveedor Demo 1', 'tax_id': '77.777.777-1'},
-                {'name': 'Proveedor Demo 2', 'tax_id': '77.777.777-2'},
-                {'name': 'Proveedor Demo 3', 'tax_id': '77.777.777-3'},
-            ]
-            for d in s_data:
-                supplier, _ = Contact.objects.get_or_create(
-                    tax_id=d['tax_id'],
-                    defaults={'name': d['name'], 'account_payable': accounts['payable']}
-                )
-                if supplier not in suppliers:
-                    suppliers.append(supplier)
+        # 3. Suppliers
+        suppliers = []
+        s_data = [
+            {'name': 'Arriendos SpA', 'tax_id': '76.123.456-1'},
+            {'name': 'Telecom Chile', 'tax_id': '76.999.888-2'},
+            {'name': 'AWS Cloud', 'tax_id': '77.111.222-3'},
+        ]
+        for d in s_data:
+            supplier, _ = Contact.objects.get_or_create(
+                tax_id=d['tax_id'],
+                defaults={'name': d['name'], 'account_payable': accounts['payable']}
+            )
+            suppliers.append(supplier)
 
         # 4. Contracts
         today = timezone.now().date()
@@ -344,7 +341,7 @@ class Command(BaseCommand):
             },
             {
                 'name': 'Internet Fibra Óptica',
-                'supplier': suppliers[1] if len(suppliers) > 1 else suppliers[0],
+                'supplier': suppliers[1],
                 'category': categories['TEL'],
                 'base_amount': Decimal('60000.00'),
                 'payment_day': 10,
@@ -355,8 +352,8 @@ class Command(BaseCommand):
                 'recurrence_type': ServiceContract.RecurrenceType.MONTHLY
             },
             {
-                'name': 'Suscripción ERP Cloud',
-                'supplier': suppliers[2] if len(suppliers) > 2 else suppliers[0],
+                'name': 'ERP Cloud Subscription',
+                'supplier': suppliers[2],
                 'category': categories['SaaS'],
                 'base_amount': Decimal('250000.00'),
                 'payment_day': 1,
@@ -368,6 +365,7 @@ class Command(BaseCommand):
             }
         ]
 
+        from services.services import ServiceContractService
         for d in contracts_data:
             c_name = d.pop('name')
             c_supplier = d.pop('supplier')
@@ -376,8 +374,7 @@ class Command(BaseCommand):
                 supplier=c_supplier,
                 defaults=d
             )
-            if created:
-                if contract.status == ServiceContract.Status.ACTIVE:
-                    from services.services import ServiceContractService
-                    ServiceContractService.generate_next_obligation(contract, reference_date=last_month)
-                    ServiceContractService.generate_next_obligation(contract, reference_date=today)
+            if created and contract.status == ServiceContract.Status.ACTIVE:
+                # Generate initial obligations to have something in the list
+                ServiceContractService.generate_next_obligation(contract, reference_date=last_month)
+                ServiceContractService.generate_next_obligation(contract, reference_date=today)
