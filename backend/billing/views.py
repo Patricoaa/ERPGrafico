@@ -35,12 +35,14 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                     supplier_invoice_number = serializer.validated_data.get('supplier_invoice_number', '')
                     document_attachment = serializer.validated_data.get('document_attachment')
                     issue_date = serializer.validated_data.get('issue_date')
+                    status_val = serializer.validated_data.get('status', Invoice.Status.POSTED)
                     invoice = BillingService.create_purchase_bill(
                         order, 
                         supplier_invoice_number, 
                         dte_type=dte_type,
                         document_attachment=document_attachment,
-                        date=issue_date
+                        date=issue_date,
+                        status=status_val
                     )
                 
                 return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
@@ -52,6 +54,20 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        instance = self.get_object()
+        number = request.data.get('number')
+        document_attachment = request.FILES.get('document_attachment')
+        
+        try:
+            invoice = BillingService.confirm_invoice(instance, number, document_attachment)
+            return Response(InvoiceSerializer(invoice).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'])
     def pos_checkout(self, request):

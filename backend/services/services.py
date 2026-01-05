@@ -258,15 +258,17 @@ class ServiceObligationService:
         if obligation.journal_entry:
             ServiceObligationService.reverse_provision(obligation, data['invoice_date'])
         
+        status = data.get('status', 'POSTED')
+        
         # 2. Create the invoice
         invoice = Invoice.objects.create(
             date=data['invoice_date'],
-            number=data['invoice_number'],
+            number=data.get('invoice_number', ''),
             total=data['amount'],
             dte_type=data.get('dte_type', 'FACTURA'),
             contact=obligation.contract.supplier,
             service_obligation=obligation,
-            status='POSTED',
+            status=status,
             document_attachment=data.get('document_attachment'),
             purchase_order=None
         )
@@ -284,8 +286,8 @@ class ServiceObligationService:
 
         invoice_entry = JournalEntry.objects.create(
             date=data['invoice_date'],
-            description=f"Gasto Servicio {obligation.contract.name} - {invoice.get_dte_type_display()} {data['invoice_number']}",
-            reference=f"SVC-INV-{obligation.id}",
+            description=f"Gasto Servicio {obligation.contract.name} - {invoice.get_dte_type_display()} {'(Folio Pendiente)' if status == 'DRAFT' else data.get('invoice_number', '')}",
+            reference=f"SVC-INV-{invoice.id}",
             state=JournalEntry.State.DRAFT
         )
         
@@ -305,15 +307,17 @@ class ServiceObligationService:
         # Use contract accounts or fallback to category defaults
         expense_account = obligation.contract.expense_account or obligation.contract.category.expense_account
 
-        if is_boleta:
-            # Debit: Expense (Total)
+        is_draft = status == 'DRAFT'
+
+        if is_boleta or is_draft:
+            # Debit: Expense (Total) - Either because it's a Boleta or a provisional draft 
             JournalItem.objects.create(
                 entry=invoice_entry,
                 account=expense_account,
                 debit=total,
                 credit=0,
                 partner=obligation.contract.supplier.name,
-                label="Gasto Servicio (IVA Capitalizado)"
+                label=f"Gasto Servicio ({'IVA Provisorio' if is_draft and not is_boleta else 'IVA Capitalizado'})"
             )
         else:
             # Factura: Separate VAT in JE

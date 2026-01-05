@@ -130,12 +130,16 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def create_purchase_bill(order: PurchaseOrder, supplier_invoice_number: str, 
+    def create_purchase_bill(order: PurchaseOrder, supplier_invoice_number: str = '', 
                              dte_type: str = Invoice.DTEType.PURCHASE_INV, 
-                             document_attachment=None, date=None):
+                             document_attachment=None, date=None, status=Invoice.Status.POSTED):
         """
         Creates a Purchase Bill from a PurchaseOrder.
+        If status is DRAFT, it allows empty folio and deferred VAT separation.
         """
+        if status == Invoice.Status.POSTED and not supplier_invoice_number:
+            raise ValidationError("El número de folio es obligatorio para publicar la factura.")
+
         invoice = Invoice.objects.create(
             dte_type=dte_type,
             number=supplier_invoice_number,
@@ -145,7 +149,7 @@ class BillingService:
             total_net=order.total_net,
             total_tax=order.total_tax,
             total=order.total,
-            status=Invoice.Status.POSTED
+            status=status
         )
 
         settings = AccountingSettings.objects.first()
@@ -153,17 +157,14 @@ class BillingService:
         tax_account = settings.default_tax_receivable_account if settings else None
         
         # We need to clear the Stock Interim (Received Not Billed)
-        # established during reception.
         stock_input_account = settings.stock_input_account if settings else None
-        
         if not stock_input_account:
-            # Fallback to inventory if someone is not using bridge accounts
             stock_input_account = settings.default_inventory_account
 
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description=f"Factura Compra {supplier_invoice_number} - OC {order.number}",
-            reference=f"FCP-{supplier_invoice_number}",
+            description=f"{invoice.get_dte_type_display()} Compra {'(Pendiente)' if status == Invoice.Status.DRAFT else supplier_invoice_number} - OC {order.number}",
+            reference=f"FCP-{invoice.id}", # Use ID as reference until we have folio
             state=JournalEntry.State.DRAFT
         )
 
@@ -176,12 +177,7 @@ class BillingService:
             partner=order.supplier.name
         )
 
-        # Debit: Stock Interim (Net) - CLEARING the liability from reception
-        # If it's a BOLETA, the bridge account (stock_input_account) only has the NET value from reception.
-        # So we clear the NET part and debit the rest to INVENTORY (capitalizing the tax).
-        is_boleta = dte_type == Invoice.DTEType.BOLETA
-        
-        # 1. Clear Bridge Account for the NET amount (always net from reception)
+        # Debit: Stock Interim (Clear clearing account from reception)
         JournalItem.objects.create(
             entry=entry,
             account=stock_input_account,
@@ -190,11 +186,15 @@ class BillingService:
             label="Limpieza Cuenta Puente Recepción"
         )
 
-        if is_boleta:
-            # 2. Capitalize Tax into Inventory and Product Cost
+        # Handle Taxes vs Capitalization
+        is_boleta = dte_type == Invoice.DTEType.BOLETA
+        is_draft = status == Invoice.Status.DRAFT
+
+        if is_boleta or is_draft:
+            # Capitalize everything into Inventory if it's a Boleta OR a Draft Factura
+            # (In Draft Factura we capitalize provisionally until confirmed)
             for line in order.lines.all():
                 asset_account = line.product.get_asset_account or settings.default_inventory_account
-                # Calculate tax portion for this line
                 line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                 
                 if line_tax > 0 and asset_account:
@@ -203,26 +203,23 @@ class BillingService:
                         account=asset_account,
                         debit=line_tax,
                         credit=0,
-                        label=f"IVA Capitalizado (Boleta) - {line.product.code}"
+                        label=f"{'IVA Provisorio' if is_draft and not is_boleta else 'IVA Capitalizado'} - {line.product.code}"
                     )
                     
-                    # Update Product Cost Price (Correct WAC adjustment for capitalized tax)
+                    # Update Product Cost Price
                     if line.quantity > 0:
                         product = line.product
                         from inventory.models import StockMove
                         total_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
                         
                         if total_stock > 0:
-                            # Add the tax portion to the total inventory value and re-average
                             current_value = product.cost_price * total_stock
                             product.cost_price = (current_value + line_tax) / total_stock
                         else:
-                            # Fallback if stock is inconsistent
                             product.cost_price = line.unit_cost + (line_tax / line.quantity)
-                        
                         product.save()
         else:
-            # 2. Factura: Normal tax handling (VAT Receivable / IVA Crédito)
+            # POSTED Factura: Normal VAT separation
             if invoice.total_tax > 0 and tax_account:
                  JournalItem.objects.create(
                     entry=entry,
@@ -331,6 +328,80 @@ class BillingService:
                 is_pending_registration=is_pending_registration
             )
             
+        return invoice
+
+    @staticmethod
+    @transaction.atomic
+    def confirm_invoice(invoice: Invoice, number: str, document_attachment=None):
+        """
+        Finalizes a DRAFT invoice, adding folio and separating VAT if Factura.
+        Works for both Purchase Orders and Service Obligations.
+        """
+        if invoice.status != Invoice.Status.DRAFT:
+            raise ValidationError("Solo se pueden confirmar facturas en estado borrador.")
+        
+        if not number:
+            raise ValidationError("El número de folio es obligatorio para confirmar la factura.")
+
+        invoice.number = number
+        if document_attachment:
+            invoice.document_attachment = document_attachment
+        invoice.status = Invoice.Status.POSTED
+        invoice.save()
+
+        # Adjust Journal Entry
+        entry = invoice.journal_entry
+        if entry:
+            # 1. Update Description
+            if invoice.purchase_order:
+                entry.description = f"{invoice.get_dte_type_display()} Compra {number} - OC {invoice.purchase_order.number}"
+            elif invoice.service_obligation:
+                entry.description = f"Gasto Servicio {invoice.service_obligation.contract.name} - {invoice.get_dte_type_display()} {number}"
+            
+            entry.reference = f"{'FCP' if invoice.purchase_order else 'SVC'}-{number}"
+            entry.save()
+
+            # 2. Adjust VAT if it was provisionally capitalized (FACTURA/PURCHASE_INV)
+            if invoice.dte_type in [Invoice.DTEType.FACTURA, Invoice.DTEType.PURCHASE_INV]:
+                settings = AccountingSettings.objects.first()
+                tax_account = settings.default_tax_receivable_account if settings else None
+                
+                if tax_account and invoice.total_tax > 0:
+                    # Find provisional tax items (those with "IVA Provisorio" in label)
+                    iva_items = entry.items.filter(label__icontains="IVA Provisorio")
+                    
+                    if iva_items.exists():
+                        # We need to reduce the asset/expense account and move the amount to VAT
+                        # To keep it simple and clean, we just recreate the JE lines for the debit side
+                        # because we need to know WHICH account was debited provisionally.
+                        
+                        # Get the total tax already in the Entry as "Provisional"
+                        total_prov_tax = sum(item.debit for item in iva_items)
+                        
+                        # For each provisional item, reduce its account and move to VAT
+                        for item in iva_items:
+                            acc = item.account
+                            # Reduce the provisional capitalization
+                            JournalItem.objects.create(
+                                entry=entry,
+                                account=acc,
+                                debit=0,
+                                credit=item.debit,
+                                label=f"Corrección IVA Provisorio -> Crédito Fiscal"
+                            )
+                        
+                        # Create the real VAT item
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=tax_account,
+                            debit=total_prov_tax,
+                            credit=0,
+                            label="IVA Compras (Crédito Fiscal)"
+                        )
+            
+            # Repost entry
+            JournalEntryService.post_entry(entry)
+
         return invoice
 
     @staticmethod

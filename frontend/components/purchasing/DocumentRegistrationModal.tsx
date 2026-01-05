@@ -42,18 +42,21 @@ export function DocumentRegistrationModal({
     const [reference, setReference] = useState("")
     const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0])
     const [attachment, setAttachment] = useState<File | null>(null)
+    const [isPending, setIsPending] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
     const handleSubmit = async () => {
-        // Validation: Required fields
-        if (!reference) {
-            toast.error(`El número de referencia/folio es obligatorio para ${dteType === 'FACTURA' ? 'Facturas' : 'Boletas'}`)
-            return
-        }
+        // Validation: Required fields (Skip if isPending)
+        if (!isPending) {
+            if (!reference) {
+                toast.error(`El número de referencia/folio es obligatorio para ${dteType === 'FACTURA' ? 'Facturas' : 'Boletas'}`)
+                return
+            }
 
-        if (dteType === 'FACTURA' && !attachment) {
-            toast.error("El documento adjunto es obligatorio para Facturas")
-            return
+            if (dteType === 'FACTURA' && !attachment) {
+                toast.error("El documento adjunto es obligatorio para Facturas")
+                return
+            }
         }
 
         setSubmitting(true)
@@ -62,9 +65,11 @@ export function DocumentRegistrationModal({
             formData.append('order_id', orderId.toString())
             formData.append('order_type', 'purchase')
             formData.append('dte_type', dteType)
-            formData.append('supplier_invoice_number', reference)
+            formData.append('supplier_invoice_number', isPending ? '' : reference)
             formData.append('issue_date', issueDate)
-            if (attachment) {
+            formData.append('status', isPending ? 'DRAFT' : 'POSTED')
+
+            if (attachment && !isPending) {
                 formData.append('document_attachment', attachment)
             }
 
@@ -72,7 +77,7 @@ export function DocumentRegistrationModal({
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
 
-            toast.success("Documento registrado correctamente")
+            toast.success(isPending ? "Documento registrado como pendiente" : "Documento registrado correctamente")
             onOpenChange(false)
             onSuccess?.()
         } catch (error: any) {
@@ -120,7 +125,20 @@ export function DocumentRegistrationModal({
                         />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="flex items-center space-x-2 py-2">
+                        <input
+                            type="checkbox"
+                            id="pending-check"
+                            checked={isPending}
+                            onChange={(e) => setIsPending(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                        />
+                        <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
+                            Aún no recibo el documento físico
+                        </Label>
+                    </div>
+
+                    <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
                         <Label htmlFor="reference">
                             N° de Folio / Referencia <span className="text-destructive">*</span>
                         </Label>
@@ -129,10 +147,11 @@ export function DocumentRegistrationModal({
                             placeholder="Ej: 12345"
                             value={reference}
                             onChange={(e) => setReference(e.target.value)}
+                            disabled={isPending}
                         />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
                         <Label>
                             Adjuntar Documento {dteType === 'FACTURA' ? <span className="text-destructive">*</span> : "(Opcional)"}
                         </Label>
@@ -141,6 +160,7 @@ export function DocumentRegistrationModal({
                                 type="file"
                                 onChange={(e) => setAttachment(e.target.files?.[0] || null)}
                                 className="cursor-pointer"
+                                disabled={isPending}
                             />
                         </div>
                         {attachment && (

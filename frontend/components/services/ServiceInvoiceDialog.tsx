@@ -14,12 +14,21 @@ import api from "@/lib/api"
 import { Paperclip } from "lucide-react"
 
 const formSchema = z.object({
-    invoice_number: z.string().min(1, "Número es requerido"),
+    invoice_number: z.string().optional(),
     invoice_date: z.string().min(1, "Fecha es requerida"),
     amount: z.coerce.number().min(0, "El monto debe ser mayor o igual a 0"),
     dte_type: z.string().default("FACTURA"),
     document_attachment: z.any().optional(),
+    is_pending: z.boolean().default(false),
 }).refine((data) => {
+    if (data.is_pending) return true;
+    if (!data.invoice_number || data.invoice_number.length < 1) return false;
+    return true;
+}, {
+    message: "Número es requerido",
+    path: ["invoice_number"],
+}).refine((data) => {
+    if (data.is_pending) return true;
     if (data.dte_type === "FACTURA" && !data.document_attachment) {
         return false;
     }
@@ -45,7 +54,8 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
             invoice_date: new Date().toISOString().split('T')[0],
             dte_type: "FACTURA",
             amount: 0,
-            document_attachment: undefined
+            document_attachment: undefined,
+            is_pending: false
         },
     })
 
@@ -56,7 +66,8 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                 invoice_date: new Date().toISOString().split('T')[0],
                 amount: parseFloat(obligation.amount) || 0,
                 dte_type: "FACTURA",
-                document_attachment: undefined
+                document_attachment: undefined,
+                is_pending: false
             })
             setFile(null)
         }
@@ -65,11 +76,13 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
             const formData = new FormData()
-            formData.append('invoice_number', values.invoice_number)
+            formData.append('invoice_number', values.invoice_number || '')
             formData.append('invoice_date', values.invoice_date)
             formData.append('amount', values.amount.toString())
             formData.append('dte_type', values.dte_type)
-            if (file) {
+            formData.append('status', values.is_pending ? 'DRAFT' : 'POSTED')
+
+            if (file && !values.is_pending) {
                 formData.append('document_attachment', file)
             }
 
@@ -115,7 +128,30 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                                 </FormItem>
                             )}
                         />
-                        <div className="grid grid-cols-2 gap-4">
+
+                        <FormField
+                            control={form.control}
+                            name="is_pending"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                    <FormControl>
+                                        <input
+                                            type="checkbox"
+                                            checked={field.value}
+                                            onChange={field.onChange}
+                                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                        />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                        <FormLabel className="cursor-pointer">
+                                            Aún no recibo el documento físico
+                                        </FormLabel>
+                                    </div>
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className={`grid grid-cols-2 gap-4 ${form.watch("is_pending") ? 'opacity-50 pointer-events-none' : ''}`}>
                             <FormField
                                 control={form.control}
                                 name="invoice_number"
@@ -155,7 +191,7 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                             control={form.control}
                             name="document_attachment"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className={form.watch("is_pending") ? 'opacity-50 pointer-events-none' : ''}>
                                     <FormLabel>Adjunto del Documento</FormLabel>
                                     <FormControl>
                                         <div className="flex items-center gap-2">
@@ -164,6 +200,7 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                                                 className="hidden"
                                                 id="file-upload"
                                                 accept="image/*,application/pdf"
+                                                disabled={form.watch("is_pending")}
                                                 onChange={(e) => {
                                                     const files = e.target.files;
                                                     if (files && files[0]) {
@@ -176,6 +213,7 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                                                 type="button"
                                                 variant="outline"
                                                 className="w-full flex justify-between"
+                                                disabled={form.watch("is_pending")}
                                                 onClick={() => document.getElementById('file-upload')?.click()}
                                             >
                                                 {file ? file.name : "Seleccionar archivo"}

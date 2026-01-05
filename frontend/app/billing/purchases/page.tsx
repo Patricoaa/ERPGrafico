@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil, History } from "lucide-react"
+import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -14,6 +14,7 @@ import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 import { DocumentEditModal } from "../../../components/purchasing/DocumentEditModal"
 import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
+import { DocumentCompletionModal } from "@/components/purchasing/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
 
 interface PurchaseDocument {
@@ -42,9 +43,9 @@ interface PurchaseDocument {
     }
 }
 
-const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" }> = {
-    'DRAFT': { label: 'Borrador', variant: 'outline' },
-    'POSTED': { label: 'Publicado', variant: 'info' }, // Changed to info/default to match previous preferences
+const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
+    'DRAFT': { label: 'Folio Pendiente', variant: 'warning' as any },
+    'POSTED': { label: 'Publicado', variant: 'info' },
     'PAID': { label: 'Pagado', variant: 'success' },
     'CANCELLED': { label: 'Anulado', variant: 'destructive' },
 }
@@ -59,6 +60,7 @@ export default function PurchaseInvoicesPage() {
     const [receivingDoc, setReceivingDoc] = useState<PurchaseDocument | null>(null)
     const [editingDoc, setEditingDoc] = useState<PurchaseDocument | null>(null)
     const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
+    const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
 
     useEffect(() => {
         fetchDocuments()
@@ -324,6 +326,19 @@ export default function PurchaseInvoicesPage() {
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
 
+                                                {/* Finalize Folio (Draft only) */}
+                                                {doc.status === 'DRAFT' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-amber-600"
+                                                        onClick={() => setCompletingDoc(doc)}
+                                                        title="Completar Folio"
+                                                    >
+                                                        <FileEdit className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+
                                                 {/* Receive/Send Merchandise */}
                                                 {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
                                                     <Button
@@ -460,6 +475,16 @@ export default function PurchaseInvoicesPage() {
                     onOpenChange={(open: boolean) => !open && setNotingDoc(null)}
                     orderId={notingDoc.purchase_order}
                     orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order.toString()}
+                    onSuccess={fetchDocuments}
+                />
+            )}
+
+            {completingDoc && (
+                <DocumentCompletionModal
+                    open={!!completingDoc}
+                    onOpenChange={(open: boolean) => !open && setCompletingDoc(null)}
+                    invoiceId={completingDoc.id}
+                    invoiceType={completingDoc.dte_type}
                     onSuccess={fetchDocuments}
                 />
             )}
