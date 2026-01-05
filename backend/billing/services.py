@@ -220,11 +220,9 @@ class BillingService:
 
         # Handle Taxes vs Capitalization
         is_boleta = dte_type == Invoice.DTEType.BOLETA
-        is_draft = status == Invoice.Status.DRAFT
 
-        if is_boleta or is_draft:
-            # Capitalize everything into Inventory if it's a Boleta OR a Draft Factura
-            # (In Draft Factura we capitalize provisionally until confirmed)
+        if is_boleta:
+            # BOLETAS: Always capitalize VAT into product cost (no tax credit)
             for line in order.lines.all():
                 asset_account = line.product.get_asset_account or settings.default_inventory_account
                 line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
@@ -237,14 +235,14 @@ class BillingService:
                             account=asset_account,
                             debit=line_tax,
                             credit=0,
-                            label=f"{'IVA Provisorio' if is_draft and not is_boleta else 'IVA Capitalizado'} - {line.product.code}"
+                            label=f"IVA Capitalizado - {line.product.code}"
                         )
                     
                     # Update Product Cost Price (always, even if no asset account)
                     if line.quantity > 0:
                         BillingService._capitalize_tax_to_product_cost(line.product, line_tax, line.unit_cost, line.quantity)
         else:
-            # POSTED Factura: Normal VAT separation
+            # FACTURAS (both DRAFT and POSTED): Record VAT as tax receivable
             if invoice.total_tax > 0 and tax_account:
                  JournalItem.objects.create(
                     entry=entry,
@@ -389,54 +387,9 @@ class BillingService:
             entry.reference = f"{'FCP' if invoice.purchase_order else 'SVC'}-{number}"
             entry.save()
 
-            # 2. Adjust VAT if it was provisionally capitalized (FACTURA/PURCHASE_INV)
-            if invoice.dte_type in [Invoice.DTEType.FACTURA, Invoice.DTEType.PURCHASE_INV]:
-                settings = AccountingSettings.objects.first()
-                tax_account = settings.default_tax_receivable_account if settings else None
-                
-                if tax_account and invoice.total_tax > 0:
-                    # Find provisional tax items (those with "IVA Provisorio" in label)
-                    iva_items = entry.items.filter(label__icontains="IVA Provisorio")
-                    
-                    if iva_items.exists():
-                        # We need to reduce the asset/expense account and move the amount to VAT
-                        # To keep it simple and clean, we just recreate the JE lines for the debit side
-                        # because we need to know WHICH account was debited provisionally.
-                        
-                        # Get the total tax already in the Entry as "Provisional"
-                        total_prov_tax = sum(item.debit for item in iva_items)
-                        
-                        # For each provisional item, reduce its account and move to VAT
-                        for item in iva_items:
-                            acc = item.account
-                            # Reduce the provisional capitalization
-                            JournalItem.objects.create(
-                                entry=entry,
-                                account=acc,
-                                debit=0,
-                                credit=item.debit,
-                                label=f"Corrección IVA Provisorio -> Crédito Fiscal"
-                            )
-                        
-                        # Create the real VAT item
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=tax_account,
-                            debit=total_prov_tax,
-                            credit=0,
-                            label="IVA Compras (Crédito Fiscal)"
-                        )
-                        
-                        # Revert the capitalized tax from product costs
-                        if invoice.purchase_order:
-                            for line in invoice.purchase_order.lines.all():
-                                line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
-                                if line_tax > 0:
-                                    BillingService._revert_tax_from_product_cost(line.product, line_tax)
-            
-            # Repost entry only if it's in DRAFT state
-            if entry.state == JournalEntry.State.DRAFT:
-                JournalEntryService.post_entry(entry)
+
+            # Post entry (it was created in DRAFT state)
+            JournalEntryService.post_entry(entry)
 
         return invoice
 

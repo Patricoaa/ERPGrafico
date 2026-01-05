@@ -307,20 +307,18 @@ class ServiceObligationService:
         # Use contract accounts or fallback to category defaults
         expense_account = obligation.contract.expense_account or obligation.contract.category.expense_account
 
-        is_draft = status == 'DRAFT'
-
-        if is_boleta or is_draft:
-            # Debit: Expense (Total) - Either because it's a Boleta or a provisional draft 
+        if is_boleta:
+            # BOLETAS: Capitalize VAT into expense (no tax credit)
             JournalItem.objects.create(
                 entry=invoice_entry,
                 account=expense_account,
                 debit=total,
                 credit=0,
                 partner=obligation.contract.supplier.name,
-                label=f"Gasto Servicio ({'IVA Provisorio' if is_draft and not is_boleta else 'IVA Capitalizado'})"
+                label=f"Gasto Servicio (IVA Capitalizado)"
             )
         else:
-            # Factura: Separate VAT in JE
+            # FACTURAS (both DRAFT and POSTED): Separate VAT
             # Debit: Expense (Net)
             JournalItem.objects.create(
                 entry=invoice_entry,
