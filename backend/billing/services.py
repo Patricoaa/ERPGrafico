@@ -206,11 +206,20 @@ class BillingService:
                         label=f"IVA Capitalizado (Boleta) - {line.product.code}"
                     )
                     
-                    # Update Product Cost Price (Include the tax portion)
+                    # Update Product Cost Price (Correct WAC adjustment for capitalized tax)
                     if line.quantity > 0:
-                        tax_per_unit = line_tax / line.quantity
                         product = line.product
-                        product.cost_price = (product.cost_price or Decimal('0')) + tax_per_unit
+                        from inventory.models import StockMove
+                        total_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
+                        
+                        if total_stock > 0:
+                            # Add the tax portion to the total inventory value and re-average
+                            current_value = product.cost_price * total_stock
+                            product.cost_price = (current_value + line_tax) / total_stock
+                        else:
+                            # Fallback if stock is inconsistent
+                            product.cost_price = line.unit_cost + (line_tax / line.quantity)
+                        
                         product.save()
         else:
             # 2. Factura: Normal tax handling (VAT Receivable / IVA Crédito)
