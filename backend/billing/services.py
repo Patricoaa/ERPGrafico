@@ -254,7 +254,10 @@ class BillingService:
                     label="IVA Compras (Crédito Fiscal)"
                  )
 
-        JournalEntryService.post_entry(entry)
+        # Only post the entry if the invoice is POSTED, not DRAFT
+        if status == Invoice.Status.POSTED:
+            JournalEntryService.post_entry(entry)
+        
         invoice.journal_entry = entry
         invoice.save()
 
@@ -431,8 +434,9 @@ class BillingService:
                                 if line_tax > 0:
                                     BillingService._revert_tax_from_product_cost(line.product, line_tax)
             
-            # Repost entry
-            JournalEntryService.post_entry(entry)
+            # Repost entry only if it's in DRAFT state
+            if entry.state == JournalEntry.State.DRAFT:
+                JournalEntryService.post_entry(entry)
 
         return invoice
 
