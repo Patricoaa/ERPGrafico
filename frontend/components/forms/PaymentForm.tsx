@@ -65,14 +65,14 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentSchema),
         defaultValues: {
-            payment_type: "INBOUND",
-            payment_method: "CASH",
-            treasury_account: null,
-            amount: 0,
-            customer_id: "",
-            supplier_id: "",
-            invoice_id: "",
-            reference: "",
+            payment_type: initialData?.payment_type || "INBOUND",
+            payment_method: initialData?.payment_method || "CASH",
+            treasury_account: initialData?.treasury_account?.toString() || initialData?.treasury_account_id?.toString() || null,
+            amount: initialData?.amount ? parseFloat(initialData.amount) : 0,
+            customer_id: (initialData?.payment_type === "INBOUND" ? (initialData?.contact?.toString() || initialData?.customer?.toString() || initialData?.customer_id?.toString()) : "") || "",
+            supplier_id: (initialData?.payment_type === "OUTBOUND" ? (initialData?.contact?.toString() || initialData?.supplier?.toString() || initialData?.supplier_id?.toString()) : "") || "",
+            invoice_id: initialData?.invoice?.toString() || initialData?.invoice_id?.toString() || "",
+            reference: initialData?.reference || initialData?.transaction_number || "",
         },
     })
 
@@ -125,20 +125,25 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
         setLoading(true)
         const payload = {
             ...data,
-            customer_id: (data.customer_id === "" || data.customer_id === "__none__") ? null : data.customer_id,
-            supplier_id: (data.supplier_id === "" || data.supplier_id === "__none__") ? null : data.supplier_id,
-            invoice_id: (data.invoice_id === "" || data.invoice_id === "__none__") ? null : data.invoice_id,
-            treasury_account_id: data.treasury_account || null, // Send treasury_account_id
+            customer_id: (data.customer_id === "" || data.customer_id === "__none__") ? null : parseInt(data.customer_id as string),
+            supplier_id: (data.supplier_id === "" || data.supplier_id === "__none__") ? null : parseInt(data.supplier_id as string),
+            invoice_id: (data.invoice_id === "" || data.invoice_id === "__none__") ? null : parseInt(data.invoice_id as string),
+            treasury_account_id: data.treasury_account ? parseInt(data.treasury_account) : null,
         }
         try {
-            await api.post('/treasury/payments/register/', payload)
-            toast.success("Pago registrado correctamente")
+            if (initialData?.id) {
+                await api.patch(`/treasury/payments/${initialData.id}/`, payload)
+                toast.success("Pago actualizado correctamente")
+            } else {
+                await api.post('/treasury/payments/register/', payload)
+                toast.success("Pago registrado correctamente")
+            }
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: any) {
-            console.error("Error registering payment:", error)
-            toast.error(error.response?.data?.error || "Error al registrar el pago")
+            console.error("Error saving payment:", error)
+            toast.error(error.response?.data?.error || "Error al guardar el pago")
         } finally {
             setLoading(false)
         }
@@ -153,34 +158,36 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
             )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Registrar Pago</DialogTitle>
+                    <DialogTitle>{initialData ? "Editar Pago" : "Registrar Pago"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los detalles del pago o cobro.
+                        {initialData ? "Modifique los detalles del pago." : "Ingrese los detalles del pago o cobro."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="payment_type"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Tipo de Pago</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione tipo" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="INBOUND">Cobro (Cliente)</SelectItem>
-                                            <SelectItem value="OUTBOUND">Pago (Proveedor)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {!initialData && (
+                            <FormField
+                                control={form.control}
+                                name="payment_type"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tipo de Pago</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione tipo" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="INBOUND">Cobro (Cliente)</SelectItem>
+                                                <SelectItem value="OUTBOUND">Pago (Proveedor)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField
@@ -235,7 +242,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name={paymentType === "INBOUND" ? "customer_id" : "supplier_id"}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{paymentType === "INBOUND" ? "Cliente" : "Proveedor"}</FormLabel>
+                                        <FormLabel>Proveedor/Cliente</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value || "__none__"}>
                                             <FormControl>
                                                 <SelectTrigger>
@@ -256,31 +263,33 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="invoice_id"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Factura (Opcional)</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || "__none__"}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="__none__">Ninguna</SelectItem>
-                                                {orders.map((o) => (
-                                                    <SelectItem key={o.id} value={o.id.toString()}>
-                                                        {o.dte_type_display} - {o.number || 'Pendiente'} ({o.total})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            {!initialData && (
+                                <FormField
+                                    control={form.control}
+                                    name="invoice_id"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Factura (Opcional)</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value || "__none__"}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione..." />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="__none__">Ninguna</SelectItem>
+                                                    {orders.map((o) => (
+                                                        <SelectItem key={o.id} value={o.id.toString()}>
+                                                            {o.dte_type_display} - {o.number || 'Pendiente'} ({o.total})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
                         </div>
 
                         <FormField
@@ -325,7 +334,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Registrando..." : "Registrar Pago"}
+                                {loading ? "Guardando..." : (initialData ? "Guardar Cambios" : "Registrar Pago")}
                             </Button>
                         </div>
                     </form>

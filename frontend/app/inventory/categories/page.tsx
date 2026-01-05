@@ -97,7 +97,7 @@ export default function CategoriesPage() {
                         <TableRow>
                             <TableHead>Nombre</TableHead>
                             <TableHead>Categoría Padre</TableHead>
-                            <TableHead className="w-[100px] text-center">Acciones</TableHead>
+                            <TableHead>Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>

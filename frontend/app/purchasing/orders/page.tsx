@@ -160,8 +160,8 @@ export default function PurchaseOrdersPage() {
                                 <TableCell>{order.warehouse_name}</TableCell>
                                 <TableCell>{parseFloat(order.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</TableCell>
                                 <TableCell>
-                                    <Badge variant={statusMap[order.status]?.variant || "default"}>
-                                        {statusMap[order.status]?.label || order.status}
+                                    <Badge variant={order.status === 'DRAFT' ? 'outline' : 'info'}>
+                                        {order.status === 'DRAFT' ? 'Borrador' : 'Confirmado'}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>

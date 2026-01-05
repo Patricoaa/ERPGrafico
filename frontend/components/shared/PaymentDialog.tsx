@@ -220,14 +220,14 @@ export function PaymentDialog({
                             </div>
                         )}
 
-                        {paymentMethod === 'TRANSFER' && (
+                        {(paymentMethod === 'TRANSFER' || paymentMethod === 'CARD') && (
                             <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
                                 <div className="grid gap-2">
                                     <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
-                                        <Hash className="h-3 w-3" /> N° de Transacción
+                                        <Hash className="h-3 w-3" /> N° de Transacción ({paymentMethod === 'CARD' ? 'Tarjeta' : 'Transferencia'})
                                     </Label>
                                     <Input
-                                        placeholder="Ingrese N° de Folio/Op"
+                                        placeholder="Ingrese N° de Folio/Op/Voucher"
                                         value={transactionNumber}
                                         onChange={(e) => setTransactionNumber(e.target.value)}
                                         disabled={isPending}
