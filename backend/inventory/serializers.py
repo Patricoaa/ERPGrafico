@@ -62,6 +62,8 @@ class StockMoveSerializer(serializers.ModelSerializer):
     journal_entry_number = serializers.CharField(source='journal_entry.number', read_only=True, allow_null=True)
     reference_code = serializers.SerializerMethodField()
     related_documents = serializers.SerializerMethodField()
+    reference = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
 
     class Meta:
         model = StockMove
@@ -139,3 +141,28 @@ class StockMoveSerializer(serializers.ModelSerializer):
     def get_reference_code(self, obj):
         # Prefer the internal MOV code as requested by the user
         return f"MOV-{str(obj.id).zfill(6)}"
+
+    def get_reference(self, obj):
+        # 1. Purchase Receipt
+        if hasattr(obj, 'purchase_receipt_line'):
+            return obj.purchase_receipt_line.receipt.delivery_reference
+        
+        # 2. Sale Delivery
+        if hasattr(obj, 'sale_delivery_line'):
+            # Assuming sale delivery has a reference or just use the number
+            # Check if sale_delivery_line.delivery exists
+            delivery = obj.sale_delivery_line.delivery
+            return delivery.tracking_number or f"ENT-{delivery.number}"
+            
+        return None
+
+    def get_notes(self, obj):
+        # 1. Purchase Receipt
+        if hasattr(obj, 'purchase_receipt_line'):
+            return obj.purchase_receipt_line.receipt.notes
+            
+        # 2. Sale Delivery
+        if hasattr(obj, 'sale_delivery_line'):
+             return obj.sale_delivery_line.delivery.notes
+             
+        return None

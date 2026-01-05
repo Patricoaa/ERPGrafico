@@ -298,15 +298,9 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                     </div>
                                 ) : currentType === 'inventory' ? (
                                     <div className="grid grid-cols-2 gap-8 py-2 border-t pt-6">
-                                        <div className="space-y-4">
-                                            <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Descripción</h4>
-                                                <p className="text-sm font-medium">{data.description || 'Sin descripción'}</p>
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">N° Comprobante / Guía</h4>
-                                                <p className="text-sm font-bold font-mono text-blue-600">{data.reference_code || data.reference || 'N/A'}</p>
-                                            </div>
+                                        <div>
+                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase">N° Comprobante / Guía</h4>
+                                            <p className="text-sm font-bold font-mono text-blue-600">{data.reference || data.reference_code || 'N/A'}</p>
                                         </div>
                                         <div className="space-y-4">
                                             <div>
