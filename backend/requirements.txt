@@ -11,3 +11,5 @@ python-dotenv
 dj-database-url
 reportlab
 django-filter
+celery
+django-celery-beat

@@ -94,6 +94,17 @@ const items = [
         ]
     },
     {
+        title: "Servicios",
+        url: "#",
+        icon: Calendar,
+        items: [
+            { title: "Dashboard", url: "/services" },
+            { title: "Contratos", url: "/services/contracts" },
+            { title: "Obligaciones", url: "/services/obligations" },
+            { title: "Categorías", url: "/services/categories" },
+        ]
+    },
+    {
         title: "Reportes",
         url: "/reports",
         icon: FileText,

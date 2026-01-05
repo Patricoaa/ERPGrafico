@@ -36,6 +36,40 @@ services:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/erpgrafico
       - REDIS_URL=redis://redis:6379/1
 
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A config worker -l info
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=dev_secret_key
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/erpgrafico
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=dev_secret_key
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/erpgrafico
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
   frontend:
     build:
       context: ./frontend
