@@ -12,6 +12,16 @@ import { es } from "date-fns/locale"
 import { ServiceInvoiceDialog } from "@/components/services/ServiceInvoiceDialog"
 import { ServicePaymentDialog } from "@/components/services/ServicePaymentDialog"
 import { Banknote, FileText } from "lucide-react"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { ServiceContractDetailModal } from "@/components/services/ServiceContractDetailModal"
+
+const statusLabels: Record<string, string> = {
+    'PENDING': 'Pendiente',
+    'INVOICED': 'Facturado',
+    'PAID': 'Pagado',
+    'OVERDUE': 'Vencido',
+    'CANCELLED': 'Cancelado'
+}
 
 export default function ServiceObligationsPage() {
     const [obligations, setObligations] = useState([])
@@ -21,6 +31,10 @@ export default function ServiceObligationsPage() {
     const [selectedObligation, setSelectedObligation] = useState<any>(null)
     const [showInvoiceDialog, setShowInvoiceDialog] = useState(false)
     const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+
+    // Transaction viewing
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
+    const [viewingContractId, setViewingContractId] = useState<number | null>(null)
 
     useEffect(() => {
         fetchObligations()
@@ -97,9 +111,12 @@ export default function ServiceObligationsPage() {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col">
-                                            <span>{o.contract_name}</span>
-                                        </div>
+                                        <button
+                                            onClick={() => setViewingContractId(o.contract)}
+                                            className="text-blue-600 hover:underline text-left"
+                                        >
+                                            {o.contract_name}
+                                        </button>
                                     </TableCell>
                                     <TableCell>{o.supplier_name}</TableCell>
                                     <TableCell className="text-xs text-muted-foreground">
@@ -108,13 +125,29 @@ export default function ServiceObligationsPage() {
                                     <TableCell className="text-right font-mono">${Number(o.amount).toLocaleString()}</TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusVariant(o.status, o.is_overdue)}>
-                                            {o.status}
+                                            {statusLabels[o.status] || o.status}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col gap-1 text-xs">
-                                            {o.invoice && <span className="text-blue-600 font-semibold">Fact #{o.invoice}</span>}
-                                            {o.payment && <span className="text-green-600 font-semibold">Pago #{o.payment}</span>}
+                                        <div className="flex flex-col gap-1">
+                                            {o.invoice && (
+                                                <button
+                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: o.invoice, view: 'details' })}
+                                                    className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                >
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
+                                                    {o.invoice_number || `ID-${o.invoice}`}
+                                                </button>
+                                            )}
+                                            {o.payment && (
+                                                <button
+                                                    onClick={() => setViewingTransaction({ type: 'payment', id: o.payment, view: 'details' })}
+                                                    className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                >
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">Pago</span>
+                                                    {o.payment_code || `ID-${o.payment}`}
+                                                </button>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -151,6 +184,23 @@ export default function ServiceObligationsPage() {
                 open={showPaymentDialog}
                 onOpenChange={setShowPaymentDialog}
                 obligation={selectedObligation}
+                onSuccess={fetchObligations}
+            />
+
+            {viewingTransaction && (
+                <TransactionViewModal
+                    type={viewingTransaction.type}
+                    id={viewingTransaction.id}
+                    view={viewingTransaction.view}
+                    open={!!viewingTransaction}
+                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                />
+            )}
+
+            <ServiceContractDetailModal
+                contractId={viewingContractId}
+                open={viewingContractId !== null}
+                onOpenChange={(open) => !open && setViewingContractId(null)}
                 onSuccess={fetchObligations}
             />
         </div>

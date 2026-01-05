@@ -11,8 +11,8 @@ class ServiceContractService:
         """
         Activates a contract and generates the first obligation if applicable.
         """
-        if contract.status != ServiceContract.Status.DRAFT:
-            raise ValueError("Solo contratos en borrador pueden activarse.")
+        if contract.status not in [ServiceContract.Status.DRAFT, ServiceContract.Status.SUSPENDED]:
+            raise ValueError("Solo contratos en borrador o suspendidos pueden activarse.")
         
         contract.status = ServiceContract.Status.ACTIVE
         contract.save()

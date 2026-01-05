@@ -27,7 +27,7 @@ interface ServiceInvoiceDialogProps {
 }
 
 export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess }: ServiceInvoiceDialogProps) {
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
             invoice_number: "",
@@ -119,7 +119,7 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Monto Total</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={field.value?.toString() || "0"} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

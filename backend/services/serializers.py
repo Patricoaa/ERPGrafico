@@ -22,6 +22,8 @@ class ServiceObligationSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source='contract.supplier.name', read_only=True)
     is_overdue = serializers.SerializerMethodField()
     days_until_due = serializers.SerializerMethodField()
+    invoice_number = serializers.CharField(source='invoice.number', read_only=True)
+    payment_code = serializers.CharField(source='payment.code', read_only=True)
     
     class Meta:
         model = ServiceObligation
@@ -29,7 +31,7 @@ class ServiceObligationSerializer(serializers.ModelSerializer):
             'id', 'contract', 'contract_name', 'supplier_name',
             'due_date', 'period_start', 'period_end',
             'amount', 'paid_amount', 'status',
-            'invoice', 'payment', 'journal_entry',
+            'invoice', 'invoice_number', 'payment', 'payment_code', 'journal_entry',
             'invoiced_date', 'paid_date', 'notes',
             'is_overdue', 'days_until_due'
         ]

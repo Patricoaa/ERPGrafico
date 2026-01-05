@@ -3,16 +3,25 @@
 import { useState, useEffect } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Eye, PlayCircle, StopCircle, Pencil } from "lucide-react"
+import { Plus, Eye, PlayCircle, StopCircle, Pencil, Trash2 } from "lucide-react"
 import api from "@/lib/api"
-import Link from "next/link"
 import { toast } from "sonner"
 import { ServiceContractDialog } from "@/components/services/ServiceContractDialog"
+import { ServiceContractDetailModal } from "@/components/services/ServiceContractDetailModal"
+
+const statusLabels: Record<string, string> = {
+    'DRAFT': 'Borrador',
+    'ACTIVE': 'Activo',
+    'SUSPENDED': 'Suspendido',
+    'EXPIRED': 'Vencido',
+    'CANCELLED': 'Cancelado'
+}
 
 export default function ServiceContractsPage() {
     const [contracts, setContracts] = useState([])
+    const [viewingContractId, setViewingContractId] = useState<number | null>(null)
 
     useEffect(() => {
         fetchContracts()
@@ -32,9 +41,32 @@ export default function ServiceContractsPage() {
                 toast.success("Contrato suspendido")
             }
             fetchContracts()
-        } catch (error) {
+        } catch (error: any) {
             console.error(error)
-            toast.error("Error al cambiar estado")
+            toast.error(error.response?.data?.error || "Error al cambiar estado")
+        }
+    }
+
+    const handleDelete = async (contract: any) => {
+        if (contract.status !== 'DRAFT') {
+            toast.error("Solo se pueden eliminar contratos en estado Borrador")
+            return
+        }
+
+        if ((contract.total_obligations || 0) > 0) {
+            toast.error("No se puede eliminar un contrato con obligaciones asociadas")
+            return
+        }
+
+        if (!confirm(`¿Está seguro de eliminar el contrato "${contract.name}"?`)) return
+
+        try {
+            await api.delete(`/services/contracts/${contract.id}/`)
+            toast.success("Contrato eliminado correctamente")
+            fetchContracts()
+        } catch (error: any) {
+            console.error("Error deleting contract:", error)
+            toast.error(error.response?.data?.error || "No se pudo eliminar el contrato")
         }
     }
 
@@ -82,13 +114,13 @@ export default function ServiceContractsPage() {
                                     <TableCell>{c.start_date}</TableCell>
                                     <TableCell>
                                         <Badge variant={c.status === 'ACTIVE' ? 'success' : c.status === 'DRAFT' ? 'outline' : 'secondary'}>
-                                            {c.status}
+                                            {statusLabels[c.status] || c.status}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-center gap-2">
-                                            <Button variant="ghost" size="icon" asChild>
-                                                <Link href={`/services/contracts/${c.id}`}><Eye className="h-4 w-4" /></Link>
+                                            <Button variant="ghost" size="icon" onClick={() => setViewingContractId(c.id)}>
+                                                <Eye className="h-4 w-4" />
                                             </Button>
 
                                             <ServiceContractDialog initialData={c} onSuccess={fetchContracts}>
@@ -107,6 +139,12 @@ export default function ServiceContractsPage() {
                                                     <StopCircle className="h-4 w-4" />
                                                 </Button>
                                             )}
+
+                                            {c.status === 'DRAFT' && (c.total_obligations || 0) === 0 && (
+                                                <Button variant="ghost" size="icon" className="text-red-600" onClick={() => handleDelete(c)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -115,6 +153,13 @@ export default function ServiceContractsPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            <ServiceContractDetailModal
+                contractId={viewingContractId}
+                open={viewingContractId !== null}
+                onOpenChange={(open) => !open && setViewingContractId(null)}
+                onSuccess={fetchContracts}
+            />
         </div>
     )
 }

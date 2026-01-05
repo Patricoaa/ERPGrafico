@@ -30,7 +30,7 @@ interface ServicePaymentDialogProps {
 export function ServicePaymentDialog({ open, onOpenChange, obligation, onSuccess }: ServicePaymentDialogProps) {
     const [accounts, setAccounts] = useState([])
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
             payment_method: "TRANSFER",
@@ -99,7 +99,7 @@ export function ServicePaymentDialog({ open, onOpenChange, obligation, onSuccess
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Monto a Pagar</FormLabel>
-                                        <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                        <FormControl><Input type="number" step="0.01" {...field} value={field.value?.toString() || "0"} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
