@@ -109,6 +109,17 @@ export default function PurchaseOrdersPage() {
         setInvoicingOrder(order)
     }
 
+    const handleDeleteInvoice = async (invoiceId: number) => {
+        try {
+            await api.delete(`/billing/invoices/${invoiceId}/`)
+            toast.success("Documento eliminado correctamente")
+            fetchOrders()
+        } catch (error: any) {
+            console.error("Error deleting invoice:", error)
+            toast.error(error.response?.data?.error || "Error al eliminar el documento")
+        }
+    }
+
     useEffect(() => {
         fetchOrders()
     }, [])
@@ -170,28 +181,16 @@ export default function PurchaseOrdersPage() {
                                     <div className="flex flex-col gap-1">
                                         {/* Only show Invoices/Boletas as requested */}
                                         {order.related_documents?.invoices.map((inv: any) => (
-                                            <div key={inv.id} className="flex items-center gap-1">
-                                                <button
-                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                                    className={`text-[10px] flex flex-col text-left items-start leading-tight ${inv.status === 'DRAFT' ? 'text-amber-600' : 'text-blue-600 hover:underline'}`}
-                                                >
-                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">
-                                                        {inv.type === 'BOLETA' ? 'Boleta' : 'Factura'}
-                                                    </span>
-                                                    {inv.status === 'DRAFT' ? '(Pendiente)' : `${inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-${inv.number}`}
-                                                </button>
-                                                {inv.status === 'DRAFT' && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-5 w-5 text-amber-600"
-                                                        onClick={() => setCompletingInvoice({ id: inv.id, type: inv.type })}
-                                                        title="Completar Folio"
-                                                    >
-                                                        <FileEdit className="h-3 w-3" />
-                                                    </Button>
-                                                )}
-                                            </div>
+                                            <button
+                                                key={inv.id}
+                                                onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                className={`text-[10px] flex flex-col text-left items-start leading-tight ${inv.status === 'DRAFT' ? 'text-amber-600' : 'text-blue-600 hover:underline'}`}
+                                            >
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">
+                                                    {inv.type === 'BOLETA' ? 'Boleta' : 'Factura'}
+                                                </span>
+                                                {inv.status === 'DRAFT' ? '(Pendiente)' : `${inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-${inv.number}`}
+                                            </button>
                                         ))}
                                         {!order.related_documents?.invoices.length && (
                                             <span className="text-muted-foreground text-xs">-</span>
@@ -248,6 +247,40 @@ export default function PurchaseOrdersPage() {
                                                 title="Registrar Factura/Boleta"
                                             >
                                                 <FileText className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {/* Complete Folio for Draft Invoices */}
+                                        {order.related_documents?.invoices.some((inv: any) => inv.status === 'DRAFT') && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-amber-600"
+                                                onClick={() => {
+                                                    const draftInv = order.related_documents?.invoices.find((inv: any) => inv.status === 'DRAFT')
+                                                    if (draftInv) setCompletingInvoice({ id: draftInv.id, type: draftInv.type })
+                                                }}
+                                                title="Completar Folio"
+                                            >
+                                                <FileEdit className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {/* Delete Invoice */}
+                                        {order.related_documents?.invoices.length > 0 && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-destructive"
+                                                onClick={() => {
+                                                    const inv = order.related_documents?.invoices[0]
+                                                    if (inv && confirm(`¿Está seguro de eliminar ${inv.type === 'BOLETA' ? 'la Boleta' : 'la Factura'} ${inv.number || '(Pendiente)'}?`)) {
+                                                        handleDeleteInvoice(inv.id)
+                                                    }
+                                                }}
+                                                title="Eliminar Documento"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         )}
                                     </div>
