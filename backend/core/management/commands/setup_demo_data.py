@@ -128,6 +128,10 @@ class Command(BaseCommand):
         prepay_grp = self._get_acc("1.1.05", "Anticipos", AccountType.ASSET, start_assets)
         prepayments = self._get_acc("1.1.05.01", "Anticipos a Proveedores", AccountType.ASSET, prepay_grp, True)
 
+        # 1.1.06 Interim Assets
+        interim_asset_grp = self._get_acc("1.1.06", "Cuentas Puente Activos", AccountType.ASSET, start_assets)
+        stock_output = self._get_acc("1.1.06.01", "Salida de Stock (Puente)", AccountType.ASSET, interim_asset_grp, True)
+
         # 2.1 Current Liabilities
         start_liabilities = self._get_acc("2.1", "Pasivos Corrientes", AccountType.LIABILITY, liabilities)
         
@@ -140,7 +144,7 @@ class Command(BaseCommand):
         advances = self._get_acc("2.1.04.01", "Anticipos de Clientes", AccountType.LIABILITY, advance_grp, True)
         
         # 2.1.02 Stock Interim
-        stock_interim_grp = self._get_acc("2.1.02", "Cuentas Puente Inventario", AccountType.LIABILITY, start_liabilities)
+        stock_interim_grp = self._get_acc("2.1.02", "Cuentas Puente Pasivos", AccountType.LIABILITY, start_liabilities)
         stock_input = self._get_acc("2.1.02.01", "Facturas Pendientes de Recepción", AccountType.LIABILITY, stock_interim_grp, True)
         
         # 2.1.03 Tax Liabilities
@@ -171,6 +175,7 @@ class Command(BaseCommand):
             'payable': payables,
             'stock_merch': stock_materials,
             'stock_input': stock_input,
+            'stock_output': stock_output,
             'vat_credit': vat_credit,
             'vat_debit': vat_debit,
             'sales': sales_merch,
@@ -191,6 +196,7 @@ class Command(BaseCommand):
         settings.default_inventory_account = accounts['stock_merch']
         
         settings.stock_input_account = accounts['stock_input']
+        settings.stock_output_account = accounts['stock_output']
         settings.default_prepayment_account = accounts['prepayments']
         settings.default_advance_payment_account = accounts['advances']
         

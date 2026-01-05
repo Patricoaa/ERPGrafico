@@ -475,6 +475,7 @@ export default function PurchaseInvoicesPage() {
                     onOpenChange={(open: boolean) => !open && setNotingDoc(null)}
                     orderId={notingDoc.purchase_order}
                     orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order.toString()}
+                    invoiceId={notingDoc.id}
                     onSuccess={fetchDocuments}
                 />
             )}

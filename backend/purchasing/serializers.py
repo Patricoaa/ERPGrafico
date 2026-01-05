@@ -211,3 +211,20 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseReceipt
         fields = '__all__'
+
+class NoteCreationSerializer(serializers.Serializer):
+    note_type = serializers.ChoiceField(choices=[('NOTA_CREDITO', 'Nota de Crédito'), ('NOTA_DEBITO', 'Nota de Débito')])
+    amount_net = serializers.DecimalField(max_digits=14, decimal_places=2)
+    amount_tax = serializers.DecimalField(max_digits=14, decimal_places=2)
+    document_number = serializers.CharField(max_length=50)
+    original_invoice_id = serializers.IntegerField(required=False, allow_null=True)
+    return_items = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        allow_empty=True
+    )
+    
+    def validate(self, data):
+        if data['amount_net'] < 0 or data['amount_tax'] < 0:
+            raise serializers.ValidationError("Los montos no pueden ser negativos.")
+        return data

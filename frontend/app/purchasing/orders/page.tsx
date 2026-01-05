@@ -226,15 +226,6 @@ export default function PurchaseOrdersPage() {
                                                 >
                                                     <CheckCircle className="h-4 w-4" />
                                                 </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() => handleDelete(order.id)}
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
                                             </>
                                         )}
 
@@ -252,33 +243,45 @@ export default function PurchaseOrdersPage() {
 
                                         {/* Complete Folio for Draft Invoices */}
                                         {order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT') && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-amber-600"
-                                                onClick={() => {
-                                                    const draftInv = order.related_documents?.invoices?.find((inv: any) => inv.status === 'DRAFT')
-                                                    if (draftInv) setCompletingInvoice({ id: draftInv.id, type: draftInv.type })
-                                                }}
-                                                title="Completar Folio"
-                                            >
-                                                <FileEdit className="h-4 w-4" />
-                                            </Button>
+                                            <>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-amber-600"
+                                                    onClick={() => {
+                                                        const draftInv = order.related_documents?.invoices?.find((inv: any) => inv.status === 'DRAFT')
+                                                        if (draftInv) setCompletingInvoice({ id: draftInv.id, type: draftInv.type })
+                                                    }}
+                                                    title="Completar Folio"
+                                                >
+                                                    <FileEdit className="h-4 w-4" />
+                                                </Button>
+                                                {/* Delete Draft Invoice */}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-destructive"
+                                                    onClick={() => {
+                                                        const inv = order.related_documents?.invoices?.[0]
+                                                        if (inv && confirm(`¿Está seguro de eliminar ${inv.type === 'BOLETA' ? 'la Boleta' : 'la Factura'} ${inv.number || '(Pendiente)'}?`)) {
+                                                            handleDeleteInvoice(inv.id)
+                                                        }
+                                                    }}
+                                                    title="Eliminar Documento"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </>
                                         )}
 
-                                        {/* Delete Invoice */}
-                                        {(order.related_documents?.invoices?.length ?? 0) > 0 && (
+                                        {/* Delete Purchase Order */}
+                                        {!order.related_documents?.invoices?.length && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-destructive"
-                                                onClick={() => {
-                                                    const inv = order.related_documents?.invoices?.[0]
-                                                    if (inv && confirm(`¿Está seguro de eliminar ${inv.type === 'BOLETA' ? 'la Boleta' : 'la Factura'} ${inv.number || '(Pendiente)'}?`)) {
-                                                        handleDeleteInvoice(inv.id)
-                                                    }
-                                                }}
-                                                title="Eliminar Documento"
+                                                className="text-destructive hover:text-destructive"
+                                                onClick={() => handleDelete(order.id)}
+                                                title="Eliminar Orden de Compra"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>

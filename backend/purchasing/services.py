@@ -394,15 +394,46 @@ class PurchasingService:
     @staticmethod
     @transaction.atomic
     def create_note(order: PurchaseOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
-                    document_number: str, document_attachment=None, return_items=None):
+                    document_number: str, document_attachment=None, return_items=None, original_invoice_id=None):
         """
         Integral creation of a Credit or Debit Note linked to a Purchase Order.
+        Properly reverses the original invoice accounting based on document type (Boleta vs Factura).
+        
         - note_type: NOTA_CREDITO or NOTA_DEBITO
-        - return_items: list of { 'product_id': int, 'quantity': float, 'unit_cost': float }
+        - return_items: list of { 'product_id': int, 'quantity': Decimal, 'line_id': int }
+          (unit_cost is locked to original invoice values)
         """
         from billing.models import Invoice
         from accounting.models import AccountingSettings, JournalEntry, JournalItem
         from inventory.models import StockMove
+        from billing.services import BillingService
+        
+        # Get the original invoice to determine document type
+        original_invoice = None
+        if original_invoice_id:
+             original_invoice = Invoice.objects.filter(id=original_invoice_id).first()
+
+        if not original_invoice:
+            original_invoice = order.invoices.filter(
+                dte_type__in=[Invoice.DTEType.FACTURA, Invoice.DTEType.PURCHASE_INV, Invoice.DTEType.BOLETA]
+            ).first()
+        
+        if not original_invoice:
+            raise ValidationError("No se encontró factura/boleta original para crear la nota.")
+        
+        is_boleta = original_invoice.dte_type == Invoice.DTEType.BOLETA
+        
+        # Validate note amount doesn't exceed invoice total
+        if note_type == Invoice.DTEType.NOTA_CREDITO:
+            # For credit notes, check we don't exceed invoice amount
+            existing_credits = order.invoices.filter(dte_type=Invoice.DTEType.NOTA_CREDITO)
+            total_credited = sum(cn.total for cn in existing_credits)
+            if (total_credited + amount_net + amount_tax) > original_invoice.total:
+                raise ValidationError(
+                    f"El monto de la nota de crédito excede el total de la factura original. "
+                    f"Factura: ${original_invoice.total}, Ya acreditado: ${total_credited}, "
+                    f"Intentando acreditar: ${amount_net + amount_tax}"
+                )
         
         total_amount = amount_net + amount_tax
         
@@ -419,8 +450,11 @@ class PurchasingService:
             status=Invoice.Status.POSTED
         )
 
-        # 2. Accounting logic
+        # 2. Create Accounting Entry
         settings = AccountingSettings.objects.first()
+        if not settings:
+            raise ValidationError("No se encontró configuración contable.")
+            
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
             description=f"{invoice.get_dte_type_display()} {document_number} (Ref OC-{order.number})",
@@ -428,38 +462,215 @@ class PurchasingService:
             state=JournalEntry.State.DRAFT
         )
 
-        payable_account = (order.supplier.account_payable) or (settings.default_payable_account if settings else None)
+        payable_account = order.supplier.account_payable or settings.default_payable_account
         if not payable_account:
             raise ValidationError("No se encontró cuenta por pagar para el proveedor.")
 
-        if note_type == Invoice.DTEType.NOTA_CREDITO:
-            # Credit Note: Reduces debt -> Debit AP
-            JournalItem.objects.create(entry=entry, account=payable_account, debit=total_amount, credit=0, partner=order.supplier.name)
-        else:
-            # Debit Note: Increases debt -> Credit AP
-            JournalItem.objects.create(entry=entry, account=payable_account, debit=0, credit=total_amount, partner=order.supplier.name)
+        stock_input_account = settings.stock_input_account or settings.default_inventory_account
+        if not stock_input_account:
+            raise ValidationError("No se encontró cuenta de entrada de stock.")
 
-        # 4. Global adjustments for remaining net (or if no items)
-        remaining_net = amount_net
-        adj_account = settings.default_expense_account or settings.default_inventory_account
+        # 3. Accounts Payable Entry (opposite for credit vs debit)
         if note_type == Invoice.DTEType.NOTA_CREDITO:
-            JournalItem.objects.create(entry=entry, account=adj_account, debit=0, credit=remaining_net)
+            # Credit Note: Reduces debt -> Debit AP (we owe less)
+            JournalItem.objects.create(
+                entry=entry, 
+                account=payable_account, 
+                debit=total_amount, 
+                credit=0, 
+                partner=order.supplier.name
+            )
         else:
-            JournalItem.objects.create(entry=entry, account=adj_account, debit=remaining_net, credit=0)
+            # Debit Note: Increases debt -> Credit AP (we owe more)
+            JournalItem.objects.create(
+                entry=entry, 
+                account=payable_account, 
+                debit=0, 
+                credit=total_amount, 
+                partner=order.supplier.name
+            )
 
-        # 5. Tax processing (IVA)
+        # 4. Reverse Stock Input Account (clearing account)
+        # 4. Reverse Stock Input Account (clearing account)
+        # This reverses the "Debit: Stock Input" from the original invoice
+        if note_type == Invoice.DTEType.NOTA_CREDITO:
+            # Credit: Stock Input (reverses the debit from invoice)
+            # FIX: Use CREDIT, not DEBIT
+            JournalItem.objects.create(
+                entry=entry, 
+                account=stock_input_account, 
+                debit=0, 
+                credit=amount_net,
+                label="Reverso Limpieza Cuenta Puente"
+            )
+        else:
+            # Debit: Stock Input
+            # FIX: Use DEBIT, not CREDIT
+            JournalItem.objects.create(
+                entry=entry, 
+                account=stock_input_account, 
+                debit=amount_net, 
+                credit=0,
+                label="Ajuste Cuenta Puente"
+            )
+
+        # 5. Tax Handling - depends on original document type
         if amount_tax > 0:
-            tax_account = settings.default_tax_receivable_account
-            if note_type == Invoice.DTEType.NOTA_CREDITO:
-                JournalItem.objects.create(entry=entry, account=tax_account, debit=0, credit=amount_tax)
+            if is_boleta:
+                # BOLETA: Tax was capitalized into product cost
+                # Need to reverse the capitalized VAT from inventory
+                if return_items:
+                    # Process per product to reverse capitalized VAT
+                    for item in return_items:
+                        product_id = item.get('product_id')
+                        quantity = Decimal(str(item.get('quantity', 0)))
+                        
+                        # Find the purchase line to get unit cost and tax rate
+                        purchase_line = order.lines.filter(product_id=product_id).first()
+                        if not purchase_line:
+                            continue
+                            
+                        # Calculate the tax portion for this line
+                        line_tax = (purchase_line.unit_cost * quantity * (purchase_line.tax_rate / Decimal('100.0'))).quantize(
+                            Decimal('0.01'), rounding='ROUND_HALF_UP'
+                        )
+                        
+                        if line_tax > 0:
+                            asset_account = purchase_line.product.get_asset_account or settings.default_inventory_account
+                            
+                            if note_type == Invoice.DTEType.NOTA_CREDITO:
+                                # Credit: Asset Account (reverse capitalized VAT)
+                                # FIX: Use CREDIT, not DEBIT
+                                JournalItem.objects.create(
+                                    entry=entry,
+                                    account=asset_account,
+                                    debit=0,
+                                    credit=line_tax,
+                                    label=f"Reverso IVA Capitalizado - {purchase_line.product.code}"
+                                )
+                                
+                                # Reverse VAT from product cost
+                                BillingService._revert_tax_from_product_cost(purchase_line.product, line_tax)
+                            else:
+                                # Debit: Asset Account (add capitalized VAT)
+                                # FIX: Use DEBIT, not CREDIT
+                                JournalItem.objects.create(
+                                    entry=entry,
+                                    account=asset_account,
+                                    debit=line_tax,
+                                    credit=0,
+                                    label=f"IVA Capitalizado - {purchase_line.product.code}"
+                                )
+                                
+                                # Add VAT to product cost
+                                if quantity > 0:
+                                    BillingService._capitalize_tax_to_product_cost(
+                                        purchase_line.product, line_tax, purchase_line.unit_cost, quantity
+                                    )
+                else:
+                    # No return items specified, use global adjustment to inventory
+                    if note_type == Invoice.DTEType.NOTA_CREDITO:
+                        # FIX: Use CREDIT
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=settings.default_inventory_account,
+                            debit=0,
+                            credit=amount_tax,
+                            label="Reverso IVA Capitalizado (Global)"
+                        )
+                    else:
+                        # FIX: Use DEBIT
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=settings.default_inventory_account,
+                            debit=amount_tax,
+                            credit=0,
+                            label="IVA Capitalizado (Global)"
+                        )
             else:
-                JournalItem.objects.create(entry=entry, account=tax_account, debit=amount_tax, credit=0)
+                # FACTURA: Tax was recorded as IVA Crédito Fiscal
+                # Reverse the tax receivable account
+                tax_account = settings.default_tax_receivable_account
+                if not tax_account:
+                    raise ValidationError("No se encontró cuenta de IVA Crédito Fiscal.")
+                
+                if note_type == Invoice.DTEType.NOTA_CREDITO:
+                    # Credit: IVA Crédito Fiscal (reverses the debit from invoice)
+                    # FIX: Use CREDIT
+                    JournalItem.objects.create(
+                        entry=entry, 
+                        account=tax_account, 
+                        debit=0, 
+                        credit=amount_tax,
+                        label="Reverso IVA Crédito Fiscal"
+                    )
+                else:
+                    # Debit: IVA Crédito Fiscal
+                    # FIX: Use DEBIT
+                    JournalItem.objects.create(
+                        entry=entry, 
+                        account=tax_account, 
+                        debit=amount_tax, 
+                        credit=0,
+                        label="IVA Crédito Fiscal"
+                    )
 
+        # 6. Process Inventory Returns (only for credit notes)
+        if note_type == Invoice.DTEType.NOTA_CREDITO and return_items:
+            for item in return_items:
+                product_id = item.get('product_id')
+                quantity = Decimal(str(item.get('quantity', 0)))
+                line_id = item.get('line_id')  # Optional: link to specific purchase line
+                
+                if quantity <= 0:
+                    continue
+                
+                # Find the purchase line
+                if line_id:
+                    purchase_line = order.lines.filter(id=line_id).first()
+                else:
+                    purchase_line = order.lines.filter(product_id=product_id).first()
+                
+                if not purchase_line:
+                    raise ValidationError(f"No se encontró línea de compra para producto ID {product_id}")
+                
+                # Validate quantity doesn't exceed purchased quantity
+                if quantity > purchase_line.quantity:
+                    raise ValidationError(
+                        f"Cantidad a devolver ({quantity}) excede la cantidad comprada ({purchase_line.quantity}) "
+                        f"para {purchase_line.product.name}"
+                    )
+                
+                # Create Stock Move (OUT) for the return
+                # Find the warehouse from the most recent receipt
+                warehouse = None
+                for receipt in order.receipts.filter(status=PurchaseReceipt.Status.CONFIRMED):
+                    receipt_line = receipt.lines.filter(purchase_line=purchase_line).first()
+                    if receipt_line:
+                        warehouse = receipt.warehouse
+                        break
+                
+                if not warehouse:
+                    # Fallback to order's warehouse if no receipts found
+                    warehouse = order.warehouse
+                
+                StockMove.objects.create(
+                    date=timezone.now().date(),
+                    product=purchase_line.product,
+                    warehouse=warehouse,
+                    quantity=-quantity,  # Negative for OUT
+                    move_type=StockMove.Type.OUT,
+                    description=f"Devolución NC-{document_number} (OC-{order.number})",
+                    journal_entry=entry
+                )
+
+        # 7. Post the entry
         JournalEntryService.post_entry(entry)
         invoice.journal_entry = entry
         invoice.save()
         
         return invoice
+
 
     @staticmethod
     @transaction.atomic
