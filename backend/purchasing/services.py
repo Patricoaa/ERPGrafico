@@ -258,7 +258,31 @@ class PurchasingService:
         
         for line in receipt.lines.all():
             # 1. Update Product Cost (Weighted Average)
-            PurchasingService._update_product_cost(line.product, line.quantity_received, line.unit_cost)
+            # Fix: If the order has a Boleta associated, we must use the Tax-Inclusive Cost (Gross)
+            # because the VAT is non-recoverable and was/will be capitalized.
+            # If we use Net here, we overwrite the capitalization done by the BillingService.
+            
+            effective_unit_cost = line.unit_cost
+            from billing.models import Invoice
+            # Check for ANY Boleta associated with this PO (even if cancelled? No, posted/draft maybe?)
+            # Usually only Posted/Draft Boletas matter.
+            has_boleta = line.receipt.purchase_order.invoices.filter(
+                dte_type=Invoice.DTEType.BOLETA
+            ).exclude(status=Invoice.Status.CANCELLED).exists()
+            
+            if has_boleta:
+                print(f"DEBUG: PurchasingService Found Boleta for Line {line.id}")
+                # Add Tax to Cost
+                try:
+                    tax_rate = line.purchase_line.tax_rate
+                    print(f"DEBUG: Tax Rate {tax_rate}")
+                    tax_per_unit = line.unit_cost * (tax_rate / Decimal('100.0'))
+                    effective_unit_cost += tax_per_unit
+                except Exception as e:
+                    print(f"DEBUG: Error calculating tax: {e}")
+                    raise
+
+            PurchasingService._update_product_cost(line.product, line.quantity_received, effective_unit_cost)
             
             # 2. Create Stock Move (IN)
             stock_move = StockMove.objects.create(

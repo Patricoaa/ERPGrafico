@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, CheckCircle, Package, FileText, History, Banknote } from "lucide-react"
+import { Pencil, Trash2, CheckCircle, Package, FileText, History, Banknote, FileEdit } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, FileBadge } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
+import { DocumentCompletionModal } from "@/components/purchasing/DocumentCompletionModal"
 
 interface PurchaseOrder {
     id: number
@@ -56,6 +57,7 @@ export default function PurchaseOrdersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
+    const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
 
 
     const fetchOrders = async () => {
@@ -168,16 +170,28 @@ export default function PurchaseOrdersPage() {
                                     <div className="flex flex-col gap-1">
                                         {/* Only show Invoices/Boletas as requested */}
                                         {order.related_documents?.invoices.map((inv: any) => (
-                                            <button
-                                                key={inv.id}
-                                                onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">
-                                                    {inv.type === 'BOLETA' ? 'Boleta' : 'Factura'}
-                                                </span>
-                                                {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
-                                            </button>
+                                            <div key={inv.id} className="flex items-center gap-1">
+                                                <button
+                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                    className={`text-[10px] flex flex-col text-left items-start leading-tight ${inv.status === 'DRAFT' ? 'text-amber-600' : 'text-blue-600 hover:underline'}`}
+                                                >
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">
+                                                        {inv.type === 'BOLETA' ? 'Boleta' : 'Factura'}
+                                                    </span>
+                                                    {inv.status === 'DRAFT' ? '(Pendiente)' : `${inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-${inv.number}`}
+                                                </button>
+                                                {inv.status === 'DRAFT' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-5 w-5 text-amber-600"
+                                                        onClick={() => setCompletingInvoice({ id: inv.id, type: inv.type })}
+                                                        title="Completar Folio"
+                                                    >
+                                                        <FileEdit className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         ))}
                                         {!order.related_documents?.invoices.length && (
                                             <span className="text-muted-foreground text-xs">-</span>
@@ -270,6 +284,16 @@ export default function PurchaseOrdersPage() {
                     onOpenChange={(open) => !open && setInvoicingOrder(null)}
                     orderId={invoicingOrder.id}
                     orderNumber={invoicingOrder.number}
+                    onSuccess={fetchOrders}
+                />
+            )}
+
+            {completingInvoice && (
+                <DocumentCompletionModal
+                    open={!!completingInvoice}
+                    onOpenChange={(open) => !open && setCompletingInvoice(null)}
+                    invoiceId={completingInvoice.id}
+                    invoiceType={completingInvoice.type}
                     onSuccess={fetchOrders}
                 />
             )}

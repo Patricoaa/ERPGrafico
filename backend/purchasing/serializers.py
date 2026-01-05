@@ -81,6 +81,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 'number': inv.number or 'Draft',
                 'type': inv.dte_type,
                 'type_display': inv.get_dte_type_display(),
+                'status': inv.status,
                 'total': inv.total
             }
             if inv.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:

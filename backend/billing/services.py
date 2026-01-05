@@ -398,6 +398,32 @@ class BillingService:
                             credit=0,
                             label="IVA Compras (Crédito Fiscal)"
                         )
+
+                        # 3. Revert Product Cost Capitalization (Fix for Cost Reversion Bug)
+                        # We need to reduce the product cost because we are moving the tax from Asset to VAT Receivable
+                        # This is an approximation if multiple products are involved, ideally we track per-line.
+                        # Since we don't have per-line link here easily without iterating invoice lines, let's do that.
+                        
+                        from inventory.models import StockMove
+                        for line in invoice.purchase_order.lines.all():
+                            print(f"DEBUG: BillingService Revert Check - Line {line.id}, Subtotal {line.subtotal}, TaxRate {line.tax_rate}")
+                            # Calculate the tax portion for this line that was capitalized
+                            # Line Tax = Subtotal * TaxRate / 100
+                            line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                            
+                            if line_tax > 0:
+                                product = line.product
+                                current_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
+                                
+                                if current_stock > 0:
+                                    current_value = product.cost_price * current_stock
+                                    # Subtract the tax we are decapitalizing
+                                    new_value = current_value - line_tax
+                                    # Ensure we don't go negative due to rounding or timing weirdness
+                                    if new_value < 0: new_value = 0
+                                    
+                                    product.cost_price = new_value / current_stock
+                                    product.save()
             
             # Repost entry
             JournalEntryService.post_entry(entry)
