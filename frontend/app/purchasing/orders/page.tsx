@@ -180,7 +180,7 @@ export default function PurchaseOrdersPage() {
                                 <TableCell>
                                     <div className="flex flex-col gap-1">
                                         {/* Only show Invoices/Boletas as requested */}
-                                        {order.related_documents?.invoices.map((inv: any) => (
+                                        {order.related_documents?.invoices?.map((inv: any) => (
                                             <button
                                                 key={inv.id}
                                                 onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
@@ -192,7 +192,7 @@ export default function PurchaseOrdersPage() {
                                                 {inv.status === 'DRAFT' ? '(Pendiente)' : `${inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-${inv.number}`}
                                             </button>
                                         ))}
-                                        {!order.related_documents?.invoices.length && (
+                                        {!order.related_documents?.invoices?.length && (
                                             <span className="text-muted-foreground text-xs">-</span>
                                         )}
                                     </div>
@@ -251,13 +251,13 @@ export default function PurchaseOrdersPage() {
                                         )}
 
                                         {/* Complete Folio for Draft Invoices */}
-                                        {order.related_documents?.invoices.some((inv: any) => inv.status === 'DRAFT') && (
+                                        {order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT') && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-amber-600"
                                                 onClick={() => {
-                                                    const draftInv = order.related_documents?.invoices.find((inv: any) => inv.status === 'DRAFT')
+                                                    const draftInv = order.related_documents?.invoices?.find((inv: any) => inv.status === 'DRAFT')
                                                     if (draftInv) setCompletingInvoice({ id: draftInv.id, type: draftInv.type })
                                                 }}
                                                 title="Completar Folio"
@@ -267,13 +267,13 @@ export default function PurchaseOrdersPage() {
                                         )}
 
                                         {/* Delete Invoice */}
-                                        {order.related_documents?.invoices.length > 0 && (
+                                        {(order.related_documents?.invoices?.length ?? 0) > 0 && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-destructive"
                                                 onClick={() => {
-                                                    const inv = order.related_documents?.invoices[0]
+                                                    const inv = order.related_documents?.invoices?.[0]
                                                     if (inv && confirm(`¿Está seguro de eliminar ${inv.type === 'BOLETA' ? 'la Boleta' : 'la Factura'} ${inv.number || '(Pendiente)'}?`)) {
                                                         handleDeleteInvoice(inv.id)
                                                     }
