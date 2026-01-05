@@ -258,7 +258,7 @@ export default function PurchaseInvoicesPage() {
                                                         className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                     >
                                                         <span className="font-semibold uppercase text-[8px] text-muted-foreground">Origen: {inv.dte_type === 'FACTURA' ? 'Factura' : 'Boleta'}</span>
-                                                        {inv.number}
+                                                        {inv.dte_type === 'FACTURA' ? `FACT-${inv.number}` : `BOL-${inv.number}`}
                                                     </button>
                                                 ))}
 
@@ -271,7 +271,7 @@ export default function PurchaseInvoicesPage() {
                                                             className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                         >
                                                             <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
-                                                            {move.product} ({move.quantity})
+                                                            MOV-{move.id}
                                                         </button>
                                                     ))
                                                 ) : (
@@ -281,7 +281,7 @@ export default function PurchaseInvoicesPage() {
                                                             onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
                                                             className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                         >
-                                                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Recepción</span>
+                                                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
                                                             {rec.number}
                                                         </button>
                                                     ))
@@ -295,7 +295,7 @@ export default function PurchaseInvoicesPage() {
                                                         className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                     >
                                                         <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
-                                                        <span className="text-[10px] font-mono">{pay.code}</span>
+                                                        {pay.code}
                                                     </button>
                                                 ))}
                                             </div>
@@ -313,13 +313,13 @@ export default function PurchaseInvoicesPage() {
                                                 </Button>
 
                                                 {/* Receive/Send Merchandise */}
-                                                {(doc.purchase_order || isNote) && (
+                                                {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         className="text-orange-600"
                                                         onClick={() => setReceivingDoc(doc)}
-                                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería (Manual)" : "Recibir Mercadería"}
+                                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
                                                     >
                                                         <Package className="h-4 w-4" />
                                                     </Button>
