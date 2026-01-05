@@ -116,58 +116,68 @@ class JournalEntry(models.Model):
     @property
     def get_source_documents(self):
         docs = []
+        # Invoice
         try:
-            if hasattr(self, 'invoice'):
+            if hasattr(self, 'invoice') and self.invoice:
                 docs.append({
                     'type': 'invoice',
                     'id': self.invoice.id,
                     'name': str(self.invoice),
-                    'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}'
+                    'url': f'/billing/{"sales" if self.invoice.sale_order_id else "purchases"}'
                 })
-        except ObjectDoesNotExist:
+        except (ObjectDoesNotExist, AttributeError):
             pass
 
+        # Payment
         try:
-            if hasattr(self, 'payment'):
+            if hasattr(self, 'payment') and self.payment:
                 docs.append({
                     'type': 'payment',
                     'id': self.payment.id,
                     'name': str(self.payment),
                     'url': '/treasury/payments'
                 })
-        except ObjectDoesNotExist:
+        except (ObjectDoesNotExist, AttributeError):
             pass
 
+        # Sale Order
         try:
-            if hasattr(self, 'sale_order'):
+            if hasattr(self, 'sale_order') and self.sale_order:
                 docs.append({
                     'type': 'sale_order',
                     'id': self.sale_order.id,
                     'name': str(self.sale_order),
                     'url': '/sales/orders'
                 })
-        except ObjectDoesNotExist:
+        except (ObjectDoesNotExist, AttributeError):
             pass
 
+        # Purchase Order
         try:
-            if hasattr(self, 'purchase_order'):
+            if hasattr(self, 'purchase_order') and self.purchase_order:
                 docs.append({
                     'type': 'purchase_order',
                     'id': self.purchase_order.id,
                     'name': str(self.purchase_order),
                     'url': '/purchasing/orders'
                 })
-        except ObjectDoesNotExist:
+        except (ObjectDoesNotExist, AttributeError):
             pass
 
-        if self.stock_moves.exists():
-            for move in self.stock_moves.all():
-                docs.append({
-                    'type': 'inventory',
-                    'id': move.id,
-                    'name': f"MOV-{str(move.id).zfill(6)}",
-                    'url': '/inventory/movements'
-                })
+        # Stock Moves
+        try:
+            moves = self.stock_moves.all()
+            if moves.exists():
+                for move in moves:
+                    docs.append({
+                        'type': 'inventory',
+                        'id': move.id,
+                        'name': f"MOV-{str(move.id).zfill(6)}",
+                        'url': '/inventory/movements'
+                    })
+        except (ObjectDoesNotExist, AttributeError):
+            pass
+            
         return docs
 
     @property
