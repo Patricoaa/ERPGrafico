@@ -11,7 +11,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ServiceInvoiceDialog } from "@/components/services/ServiceInvoiceDialog"
 import { ServicePaymentDialog } from "@/components/services/ServicePaymentDialog"
-import { Banknote, FileText } from "lucide-react"
+import { FileText } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { ServiceContractDetailModal } from "@/components/services/ServiceContractDetailModal"
 
@@ -52,11 +52,6 @@ export default function ServiceObligationsPage() {
     const handleRegisterInvoice = (ob: any) => {
         setSelectedObligation(ob)
         setShowInvoiceDialog(true)
-    }
-
-    const handleRegisterPayment = (ob: any) => {
-        setSelectedObligation(ob)
-        setShowPaymentDialog(true)
     }
 
     const getStatusVariant = (status: string, isOverdue: boolean) => {
@@ -154,14 +149,13 @@ export default function ServiceObligationsPage() {
                                         <div className="flex justify-center gap-2">
                                             {/* Actions */}
                                             {!o.invoice && o.status !== 'PAID' && o.status !== 'CANCELLED' && (
-                                                <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => handleRegisterInvoice(o)} title="Registrar Factura">
-                                                    <FileText className="h-4 w-4 mr-1" /> Factura
-                                                </Button>
-                                            )}
-
-                                            {o.status !== 'PAID' && o.status !== 'CANCELLED' && (
-                                                <Button size="sm" variant="default" className="h-8 px-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => handleRegisterPayment(o)} title="Pagar">
-                                                    <Banknote className="h-4 w-4 mr-1" /> Pagar
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    onClick={() => handleRegisterInvoice(o)}
+                                                    title="Registrar Factura/Boleta"
+                                                >
+                                                    <FileText className="h-4 w-4" />
                                                 </Button>
                                             )}
                                         </div>

@@ -80,8 +80,7 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                                             <SelectTrigger><SelectValue /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="FACTURA">Factura Afecta</SelectItem>
-                                            <SelectItem value="FACTURA_EXENTA">Factura Exenta</SelectItem>
+                                            <SelectItem value="FACTURA">Factura</SelectItem>
                                             <SelectItem value="BOLETA">Boleta</SelectItem>
                                         </SelectContent>
                                     </Select>

@@ -30,7 +30,7 @@ export function ServiceContractDialog({ children, initialData, onSuccess }: Serv
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{initialData ? 'Editar Contrato' : 'Nuevo Contrato de Servicio'}</DialogTitle>
                     <DialogDescription>
