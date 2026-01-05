@@ -5,7 +5,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import api from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -25,7 +24,6 @@ const statusLabels: Record<string, string> = {
 
 export default function ServiceObligationsPage() {
     const [obligations, setObligations] = useState([])
-    const [filter, setFilter] = useState('ALL')
 
     // Dialog states
     const [selectedObligation, setSelectedObligation] = useState<any>(null)
@@ -38,14 +36,10 @@ export default function ServiceObligationsPage() {
 
     useEffect(() => {
         fetchObligations()
-    }, [filter])
+    }, [])
 
     const fetchObligations = () => {
         let url = '/services/obligations/'
-        if (filter === 'PENDING') url += '?status=PENDING'
-        else if (filter === 'PAID') url += '?status=PAID'
-        else if (filter === 'OVERDUE') url += 'overdue/'
-
         api.get(url).then(res => setObligations(res.data.results || res.data))
     }
 
@@ -66,17 +60,6 @@ export default function ServiceObligationsPage() {
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight">Obligaciones de Servicio</h1>
-                <Select value={filter} onValueChange={setFilter}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Estado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="ALL">Todas</SelectItem>
-                        <SelectItem value="PENDING">Pendientes</SelectItem>
-                        <SelectItem value="OVERDUE">Vencidas</SelectItem>
-                        <SelectItem value="PAID">Pagadas</SelectItem>
-                    </SelectContent>
-                </Select>
             </div>
 
             <Card>

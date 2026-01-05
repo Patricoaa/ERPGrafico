@@ -28,7 +28,6 @@ class ServiceCategory(models.Model):
     
     # Configuración
     requires_provision = models.BooleanField(_("Requiere Provisión Mensual"), default=False)
-    is_tax_deductible = models.BooleanField(_("Es Deducible de Impuestos"), default=True)
 
     class Meta:
         verbose_name = _("Categoría de Servicio")

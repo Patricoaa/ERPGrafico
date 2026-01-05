@@ -14,7 +14,7 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
             'id', 'name', 'code', 
             'expense_account', 'expense_account_data',
             'payable_account', 'payable_account_data',
-            'requires_provision', 'is_tax_deductible'
+            'requires_provision'
         ]
 
 class ServiceObligationSerializer(serializers.ModelSerializer):
@@ -95,6 +95,12 @@ class ServiceInvoiceRegistrationSerializer(serializers.Serializer):
     invoice_date = serializers.DateField()
     amount = serializers.DecimalField(max_digits=12, decimal_places=2)
     dte_type = serializers.CharField(max_length=20, default='FACTURA') # FACTURA, BOLETA
+    document_attachment = serializers.FileField(required=False, allow_null=True)
+
+    def validate(self, data):
+        if data['dte_type'] == 'FACTURA' and not data.get('document_attachment'):
+            raise serializers.ValidationError({"document_attachment": "El adjunto es obligatorio para Facturas."})
+        return data
 
 class ServicePaymentRegistrationSerializer(serializers.Serializer):
     payment_method = serializers.CharField(max_length=50)

@@ -161,6 +161,7 @@ class ServiceObligationService:
             dte_type=data.get('dte_type', 'FACTURA'),
             contact=obligation.contract.supplier, # Use 'contact' instead of 'partner'
             status='POSTED',
+            document_attachment=data.get('document_attachment'),
             purchase_order=None
         )
         

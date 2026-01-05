@@ -26,7 +26,6 @@ const formSchema = z.object({
     expense_account: z.string().min(1, "Debe seleccionar cuenta de gasto"),
     payable_account: z.string().min(1, "Debe seleccionar cuenta por pagar"),
     requires_provision: z.boolean().default(false),
-    is_tax_deductible: z.boolean().default(true),
 })
 
 interface ServiceCategoryDialogProps {
@@ -47,7 +46,6 @@ export function ServiceCategoryDialog({ children, initialData, onSuccess }: Serv
             expense_account: "",
             payable_account: "",
             requires_provision: false,
-            is_tax_deductible: true,
             ...initialData
         },
     })
@@ -56,7 +54,6 @@ export function ServiceCategoryDialog({ children, initialData, onSuccess }: Serv
         if (initialData) {
             form.reset({
                 requires_provision: false,
-                is_tax_deductible: true,
                 ...initialData,
                 expense_account: initialData.expense_account?.toString(),
                 payable_account: initialData.payable_account?.toString(),
@@ -195,23 +192,6 @@ export function ServiceCategoryDialog({ children, initialData, onSuccess }: Serv
                                             <FormLabel>Requiere Provisión Mensual</FormLabel>
                                             <FormDescription>
                                                 Generar provisiones contables mensuales para este tipo de servicio
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="is_tax_deductible"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                        <div className="space-y-0.5">
-                                            <FormLabel>Es Deducible de Impuestos</FormLabel>
-                                            <FormDescription>
-                                                Este gasto es deducible para efectos tributarios
                                             </FormDescription>
                                         </div>
                                         <FormControl>
