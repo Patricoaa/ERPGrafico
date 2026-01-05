@@ -21,8 +21,8 @@ const formSchema = z.object({
     supplier: z.string().min(1, "Debe seleccionar proveedor"),
     category: z.string().min(1, "Debe seleccionar categoría"),
     recurrence_type: z.string().default("MONTHLY"),
-    payment_day: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().min(1).max(31)),
-    base_amount: z.string().transform((val) => parseFloat(val)).pipe(z.number().min(0)),
+    payment_day: z.coerce.number().min(1).max(31),
+    base_amount: z.coerce.number().min(0),
     is_amount_variable: z.boolean().default(false),
     start_date: z.string().min(1, "Fecha de inicio requerida"),
     end_date: z.string().optional(),
@@ -31,21 +31,45 @@ const formSchema = z.object({
     payable_account: z.string().optional(), // Will be populated from category
 })
 
-export function ServiceContractForm() {
+interface ServiceContractFormProps {
+    onSuccess?: () => void
+    initialData?: any
+}
+
+export function ServiceContractForm({ onSuccess, initialData }: ServiceContractFormProps) {
     const router = useRouter()
     const [suppliers, setSuppliers] = useState([])
     const [categories, setCategories] = useState([])
     const [accounts, setAccounts] = useState([])
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
             recurrence_type: "MONTHLY",
             payment_day: 1,
             is_amount_variable: false,
             auto_renew: false,
+            ...initialData
         },
     })
+
+    // Update defaults if initialData loads later (though usually passed fully formed)
+    useEffect(() => {
+        if (initialData) {
+            form.reset({
+                recurrence_type: "MONTHLY",
+                payment_day: 1,
+                is_amount_variable: false,
+                auto_renew: false,
+                ...initialData,
+                // Ensure IDs are strings for Select components
+                supplier: initialData.supplier?.toString(),
+                category: initialData.category?.toString(),
+                expense_account: initialData.expense_account?.toString(),
+                payable_account: initialData.payable_account?.toString(),
+            })
+        }
+    }, [initialData, form])
 
     useEffect(() => {
         const loadData = async () => {
@@ -78,12 +102,22 @@ export function ServiceContractForm() {
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
-            await api.post("/services/contracts/", values)
-            toast.success("Contrato creado exitosamente")
-            router.push("/services/contracts")
+            if (initialData?.id) {
+                await api.patch(`/services/contracts/${initialData.id}/`, values)
+                toast.success("Contrato actualizado exitosamente")
+            } else {
+                await api.post("/services/contracts/", values)
+                toast.success("Contrato creado exitosamente")
+            }
+
+            if (onSuccess) {
+                onSuccess()
+            } else {
+                router.push("/services/contracts")
+            }
         } catch (error: any) {
             console.error(error)
-            toast.error(error.response?.data?.error || "Error al crear contrato")
+            toast.error(error.response?.data?.error || "Error al guardar contrato")
         }
     }
 
@@ -305,7 +339,7 @@ export function ServiceContractForm() {
                     </Card>
 
                 </div>
-                <Button type="submit" size="lg">Crear Contrato</Button>
+                <Button type="submit" size="lg">{initialData ? 'Actualizar Contrato' : 'Crear Contrato'}</Button>
             </form>
         </Form>
     )

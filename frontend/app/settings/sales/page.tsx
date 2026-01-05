@@ -33,7 +33,7 @@ export default function SalesSettingsPage() {
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(true)
 
-    const form = useForm<SalesSettingsValues>({
+    const form = useForm({
         resolver: zodResolver(salesSettingsSchema),
         defaultValues: {
             restrict_stock_sales: false,

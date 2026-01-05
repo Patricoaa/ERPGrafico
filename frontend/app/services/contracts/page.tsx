@@ -5,10 +5,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Eye, PlayCircle, StopCircle } from "lucide-react"
+import { Plus, Eye, PlayCircle, StopCircle, Pencil } from "lucide-react"
 import api from "@/lib/api"
 import Link from "next/link"
 import { toast } from "sonner"
+import { ServiceContractDialog } from "@/components/services/ServiceContractDialog"
 
 export default function ServiceContractsPage() {
     const [contracts, setContracts] = useState([])
@@ -41,11 +42,11 @@ export default function ServiceContractsPage() {
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight">Contratos de Servicio</h1>
-                <Button asChild>
-                    <Link href="/services/contracts/new">
+                <ServiceContractDialog onSuccess={fetchContracts}>
+                    <Button>
                         <Plus className="mr-2 h-4 w-4" /> Nuevo Contrato
-                    </Link>
-                </Button>
+                    </Button>
+                </ServiceContractDialog>
             </div>
 
             <Card>
@@ -87,11 +88,16 @@ export default function ServiceContractsPage() {
                                     <TableCell>
                                         <div className="flex justify-center gap-2">
                                             <Button variant="ghost" size="icon" asChild>
-                                                {/* Detail View Todo */}
                                                 <Link href={`/services/contracts/${c.id}`}><Eye className="h-4 w-4" /></Link>
                                             </Button>
 
-                                            {c.status === 'DRAFT' && (
+                                            <ServiceContractDialog initialData={c} onSuccess={fetchContracts}>
+                                                <Button variant="ghost" size="icon">
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                            </ServiceContractDialog>
+
+                                            {(c.status === 'DRAFT' || c.status === 'SUSPENDED') && (
                                                 <Button variant="ghost" size="icon" className="text-emerald-600" onClick={() => toggleStatus(c.id, c.status)}>
                                                     <PlayCircle className="h-4 w-4" />
                                                 </Button>

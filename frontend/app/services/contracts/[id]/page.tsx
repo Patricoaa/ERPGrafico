@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { format } from "date-fns" // Assuming date-fns is installed as per other files
 import { toast } from "sonner"
-import { ArrowLeft, PlayCircle, StopCircle, Trash2 } from "lucide-react"
+import { ArrowLeft, PlayCircle, StopCircle, Trash2, Pencil } from "lucide-react"
 import Link from "next/link"
+import { ServiceContractDialog } from "@/components/services/ServiceContractDialog"
 
 export default function ServiceContractDetailPage() {
     const params = useParams()
@@ -82,7 +83,13 @@ export default function ServiceContractDetailPage() {
                     </div>
                 </div>
                 <div className="ml-auto flex gap-2">
-                    {contract.status === 'DRAFT' && (
+                    <ServiceContractDialog initialData={contract} onSuccess={fetchData}>
+                        <Button variant="outline">
+                            <Pencil className="mr-2 h-4 w-4" /> Editar
+                        </Button>
+                    </ServiceContractDialog>
+
+                    {(contract.status === 'DRAFT' || contract.status === 'SUSPENDED') && (
                         <Button onClick={handleActivate} className="bg-emerald-600 hover:bg-emerald-700">
                             <PlayCircle className="mr-2 h-4 w-4" /> Activar
                         </Button>
