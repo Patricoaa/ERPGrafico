@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Account, JournalEntry, JournalItem, AccountingSettings
+from .models import Account, JournalEntry, JournalItem, AccountingSettings, Budget, BudgetItem
 
 class AccountSerializer(serializers.ModelSerializer):
     account_type_display = serializers.CharField(source='get_account_type_display', read_only=True)
@@ -34,3 +34,20 @@ class JournalEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = JournalEntry
         fields = ['id', 'number', 'date', 'description', 'reference', 'state', 'items', 'source_documents', 'created_at']
+
+# --- Budgeting Serializers ---
+
+class BudgetItemSerializer(serializers.ModelSerializer):
+    account_name = serializers.CharField(source='account.name', read_only=True)
+    account_code = serializers.CharField(source='account.code', read_only=True)
+    
+    class Meta:
+        model = BudgetItem
+        fields = ['id', 'budget', 'account', 'account_code', 'account_name', 'amount']
+
+class BudgetSerializer(serializers.ModelSerializer):
+    items = BudgetItemSerializer(many=True, read_only=True) # or separate endpoint for items management
+
+    class Meta:
+        model = Budget
+        fields = ['id', 'name', 'start_date', 'end_date', 'description', 'created_at', 'items']

@@ -301,3 +301,34 @@ class AccountingSettings(models.Model):
 
     def __str__(self):
         return "Configuración Contable Global"
+
+# --- Budgeting Models ---
+
+class Budget(models.Model):
+    name = models.CharField(_("Nombre del Presupuesto"), max_length=255)
+    start_date = models.DateField(_("Fecha Inicio"))
+    end_date = models.DateField(_("Fecha Fin"))
+    description = models.TextField(_("Descripción"), blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date']
+        verbose_name = _("Presupuesto")
+        verbose_name_plural = _("Presupuestos")
+
+    def __str__(self):
+        return f"{self.name} ({self.start_date} - {self.end_date})"
+
+class BudgetItem(models.Model):
+    budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name='items')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='budget_items')
+    amount = models.DecimalField(_("Monto Presupuestado"), max_digits=20, decimal_places=2)
+    # Optional period breakdown could be added here (e.g., month), but for now assuming total for budget period.
+    
+    class Meta:
+        unique_together = ['budget', 'account']
+        verbose_name = _("Item de Presupuesto")
+        verbose_name_plural = _("Items de Presupuesto")
+
+    def __str__(self):
+        return f"{self.budget.name} - {self.account.name}: {self.amount}"

@@ -1,8 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Account, JournalEntry, AccountingSettings
-from .serializers import AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer
+from django.db.models import Sum, Q
+from .models import Account, JournalEntry, AccountingSettings, Budget, BudgetItem, AccountType, JournalItem
+from .serializers import AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer, BudgetSerializer, BudgetItemSerializer
 from .services import JournalEntryService, AccountingService
 from django.core.exceptions import ValidationError
 from core.mixins import BulkImportMixin
@@ -141,3 +142,77 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# --- Budgeting ViewSets ---
+
+class BudgetViewSet(viewsets.ModelViewSet):
+    queryset = Budget.objects.all()
+    serializer_class = BudgetSerializer
+
+    @action(detail=True, methods=['get'])
+    def execution(self, request, pk=None):
+        """
+        Calculates the execution status of the budget.
+        Compares budgeted amounts vs actual journal items for the period.
+        """
+        budget = self.get_object()
+        items = budget.items.all().select_related('account')
+        
+        report = []
+        total_budgeted = 0
+        total_actual = 0
+        
+        for item in items:
+            account = item.account
+            
+            # Filter actual items
+            filters = Q(entry__state='POSTED', 
+                        entry__date__gte=budget.start_date, 
+                        entry__date__lte=budget.end_date,
+                        account=account)
+            
+            # Calculate balance for the period (movement)
+            result = JournalItem.objects.filter(filters).aggregate(
+                debit=Sum('debit'),
+                credit=Sum('credit')
+            )
+            
+            debit = result['debit'] or 0
+            credit = result['credit'] or 0
+            
+            # Determine actual based on account type
+            # Income/Liability/Equity: Credit (positive effect) - Debit
+            # Expense/Asset: Debit (positive effect usually for expense) - Credit
+            
+            # For Budgeting, usually we budget Expenses (Debit) and Income (Credit).
+            if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                actual = float(debit - credit)
+            else:
+                actual = float(credit - debit)
+                
+            report.append({
+                'account_id': account.id,
+                'account_code': account.code,
+                'account_name': account.name,
+                'budgeted': float(item.amount),
+                'actual': actual,
+                'variance': actual - float(item.amount),
+                'percentage': (actual / float(item.amount) * 100) if float(item.amount) != 0 else 0
+            })
+            
+            total_budgeted += float(item.amount)
+            total_actual += actual
+            
+        return Response({
+            'budget': BudgetSerializer(budget).data,
+            'items': report,
+            'summary': {
+                'total_budgeted': total_budgeted,
+                'total_actual': total_actual,
+                'total_variance': total_actual - total_budgeted
+            }
+        })
+
+class BudgetItemViewSet(viewsets.ModelViewSet):
+    queryset = BudgetItem.objects.all()
+    serializer_class = BudgetItemSerializer

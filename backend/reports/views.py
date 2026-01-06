@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db.models import Sum
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -6,7 +6,11 @@ from reportlab.lib import colors
 from accounting.models import Account, AccountType, JournalItem
 from datetime import date
 from io import BytesIO
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .services import ReportService
 
+# --- PDF Generation Classes (Legacy/Download) ---
 class PDFReport:
     def __init__(self, title):
         self.buffer = BytesIO()
@@ -47,6 +51,8 @@ class PDFReport:
         self.p.save()
         self.buffer.seek(0)
         return self.buffer
+
+# --- Original PDF Views ---
 
 def balance_sheet_view(request):
     report = PDFReport("Balance General")
@@ -140,3 +146,96 @@ def income_statement_view(request):
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="estado_resultados.pdf"'
     return response
+
+
+# --- New API Views (JSON) ---
+
+@api_view(['GET'])
+def get_balance_sheet_data(request):
+    """
+    Returns the Balance Sheet data as JSON.
+    Query Params: date (YYYY-MM-DD), default today.
+    """
+    end_date = request.query_params.get('date', date.today())
+    data = ReportService.get_balance_sheet(end_date)
+    return Response(data)
+
+@api_view(['GET'])
+def get_income_statement_data(request):
+    """
+    Returns the Income Statement data as JSON.
+    Query Params: start_date, end_date (YYYY-MM-DD)
+    """
+    end_date = request.query_params.get('end_date', date.today())
+    # Default start date: First day of current year
+    default_start = date(date.today().year, 1, 1)
+    start_date = request.query_params.get('start_date', default_start)
+    
+    data = ReportService.get_income_statement(start_date, end_date)
+    return Response(data)
+
+@api_view(['GET'])
+def get_cash_flow_data(request):
+    """
+    Returns the Cash Flow data as JSON.
+    Query Params: start_date, end_date (YYYY-MM-DD)
+    """
+    end_date = request.query_params.get('end_date', date.today())
+    default_start = date(date.today().year, 1, 1)
+    start_date = request.query_params.get('start_date', default_start)
+    
+    data = ReportService.get_cash_flow(start_date, end_date)
+    return Response(data)
+
+@api_view(['GET'])
+def get_financial_analysis_data(request):
+    """
+    Returns key financial ratios and structure for dashboards.
+    """
+    end_date = request.query_params.get('date', date.today())
+    
+    # We reuse basic reports logic to get totals
+    bs = ReportService.get_balance_sheet(end_date)
+    
+    total_assets = bs['total_assets']
+    total_liabilities = bs['total_liabilities']
+    total_equity = bs['total_equity']
+    
+    # Calculate Ratios
+    # 1. Financing Structure
+    # Debt Ratio = Liabilities / Assets
+    debt_ratio = (total_liabilities / total_assets) if total_assets else 0
+    # Equity Ratio = Equity / Assets
+    equity_ratio = (total_equity / total_assets) if total_assets else 0
+    # Debt to Equity = Liabilities / Equity
+    debt_to_equity = (total_liabilities / total_equity) if total_equity else 0
+    
+    # Liquidity (Current Ratio) = Current Assets / Current Liabilities
+    # We need to filter for Current (usually 1.1 and 2.1 in our simple tree check)
+    current_assets = sum(n['balance'] for n in bs['assets'] if n['code'].startswith('1.1'))
+    current_liabilities = sum(n['balance'] for n in bs['liabilities'] if n['code'].startswith('2.1'))
+    
+    current_ratio = (current_assets / current_liabilities) if current_liabilities else 0
+    
+    # Solvency (Solvency Ratio) = Total Assets / Total Liabilities (Inverse of Debt Ratio somewhat, or (NI + Dep) / Liab)
+    # Let's use simple Assets / Liabilities
+    solvency_ratio = (total_assets / total_liabilities) if total_liabilities else 0
+
+    return Response({
+        'structure': {
+            'total_assets': total_assets,
+            'total_liabilities': total_liabilities,
+            'total_equity': total_equity,
+            'debt_ratio': debt_ratio,
+            'equity_ratio': equity_ratio,
+            'debt_to_equity': debt_to_equity
+        },
+        'liquidity': {
+            'current_assets': current_assets,
+            'current_liabilities': current_liabilities,
+            'current_ratio': current_ratio
+        },
+        'solvency': {
+            'solvency_ratio': solvency_ratio
+        }
+    })
