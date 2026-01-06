@@ -144,7 +144,7 @@ export function ServiceInvoiceDialog({ open, onOpenChange, obligation, onSuccess
                                     </FormControl>
                                     <div className="space-y-1 leading-none">
                                         <FormLabel className="cursor-pointer">
-                                            Aún no recibo el documento físico
+                                            Aún no recibo el documento físico / digital
                                         </FormLabel>
                                     </div>
                                 </FormItem>

@@ -91,14 +91,15 @@ class ServiceContractSerializer(serializers.ModelSerializer):
         )
 
 class ServiceInvoiceRegistrationSerializer(serializers.Serializer):
-    invoice_number = serializers.CharField(max_length=50)
+    invoice_number = serializers.CharField(max_length=50, allow_blank=True)
     invoice_date = serializers.DateField()
     amount = serializers.DecimalField(max_digits=12, decimal_places=2)
     dte_type = serializers.CharField(max_length=20, default='FACTURA') # FACTURA, BOLETA
+    status = serializers.CharField(max_length=20, default='POSTED')
     document_attachment = serializers.FileField(required=False, allow_null=True)
 
     def validate(self, data):
-        if data['dte_type'] == 'FACTURA' and not data.get('document_attachment'):
+        if data.get('status') != 'DRAFT' and data['dte_type'] == 'FACTURA' and not data.get('document_attachment'):
             raise serializers.ValidationError({"document_attachment": "El adjunto es obligatorio para Facturas."})
         return data
 

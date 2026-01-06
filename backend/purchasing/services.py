@@ -624,12 +624,12 @@ class PurchasingService:
                         label="IVA Crédito Fiscal"
                     )
 
-        # 6. Process Inventory Returns (only for credit notes)
-        if note_type == Invoice.DTEType.NOTA_CREDITO and return_items:
+        # 6. Process Inventory Movements (for both NC and ND if return_items specified)
+        if return_items:
             for item in return_items:
                 product_id = item.get('product_id')
                 quantity = Decimal(str(item.get('quantity', 0)))
-                line_id = item.get('line_id')  # Optional: link to specific purchase line
+                line_id = item.get('line_id')  
                 
                 if quantity <= 0:
                     continue
@@ -643,24 +643,22 @@ class PurchasingService:
                 if not purchase_line:
                     raise ValidationError(f"No se encontró línea de compra para producto ID {product_id}")
                 
-                # Validate quantity doesn't exceed purchased quantity
-                if quantity > purchase_line.quantity:
-                    raise ValidationError(
-                        f"Cantidad a devolver ({quantity}) excede la cantidad comprada ({purchase_line.quantity}) "
-                        f"para {purchase_line.product.name}"
-                    )
+                # For Credit Notes, validate quantity doesn't exceed purchased quantity
+                if note_type == Invoice.DTEType.NOTA_CREDITO:
+                    if quantity > purchase_line.quantity:
+                        raise ValidationError(
+                            f"Cantidad a devolver ({quantity}) excede la cantidad comprada ({purchase_line.quantity}) "
+                            f"para {purchase_line.product.name}"
+                        )
+                    
+                    # Validation: Cannot return more than received (Physical Return)
+                    if quantity > purchase_line.quantity_received:
+                         raise ValidationError(
+                            f"No puede devolver {quantity} unidades de {purchase_line.product.name} porque solo se han recibido {purchase_line.quantity_received}. "
+                            "Si desea anular la factura de items no recibidos, reduzca la cantidad de devolución."
+                         )
                 
-                # Validation: Cannot return more than received (Physical Return)
-                # If the user wants to cancel a bill for items not received, they should not send 'return_items'
-                # or only send up to what was received.
-                if quantity > purchase_line.quantity_received:
-                     raise ValidationError(
-                        f"No puede devolver {quantity} unidades de {purchase_line.product.name} porque solo se han recibido {purchase_line.quantity_received}. "
-                        "Si desea anular la factura de items no recibidos, reduzca la cantidad de devolución."
-                     )
-                
-                # Create Stock Move (OUT) for the return
-                # Find the warehouse from the most recent receipt
+                # Determine Warehouse
                 warehouse = None
                 for receipt in order.receipts.filter(status=PurchaseReceipt.Status.CONFIRMED):
                     receipt_line = receipt.lines.filter(purchase_line=purchase_line).first()
@@ -669,16 +667,19 @@ class PurchasingService:
                         break
                 
                 if not warehouse:
-                    # Fallback to order's warehouse if no receipts found
                     warehouse = order.warehouse
+                
+                # Create Stock Move
+                move_type = StockMove.Type.OUT if note_type == Invoice.DTEType.NOTA_CREDITO else StockMove.Type.IN
+                move_qty = -quantity if note_type == Invoice.DTEType.NOTA_CREDITO else quantity
                 
                 StockMove.objects.create(
                     date=timezone.now().date(),
                     product=purchase_line.product,
                     warehouse=warehouse,
-                    quantity=-quantity,  # Negative for OUT
-                    move_type=StockMove.Type.OUT,
-                    description=f"Devolución NC-{document_number} (OC-{order.number})",
+                    quantity=move_qty,
+                    move_type=move_type,
+                    description=f"{invoice.get_dte_type_display()} {document_number} (OC-{order.number})",
                     journal_entry=entry
                 )
                 

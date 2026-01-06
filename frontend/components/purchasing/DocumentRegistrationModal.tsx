@@ -134,7 +134,7 @@ export function DocumentRegistrationModal({
                             className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                         />
                         <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
-                            Aún no recibo el documento físico
+                            Aún no recibo el documento físico / digital
                         </Label>
                     </div>
 

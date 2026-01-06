@@ -284,9 +284,16 @@ class ServiceObligationService:
         if not real_payable_account:
              real_payable_account = Account.objects.filter(account_type='LIABILITY').first()
 
+        invoice_number = data.get('invoice_number', '')
+        description = f"Gasto Servicio {obligation.contract.name} - {invoice.get_dte_type_display()}"
+        if status == 'DRAFT' or not invoice_number:
+            description += " (Folio Pendiente)"
+        else:
+            description += f" {invoice_number}"
+
         invoice_entry = JournalEntry.objects.create(
             date=data['invoice_date'],
-            description=f"Gasto Servicio {obligation.contract.name} - {invoice.get_dte_type_display()} {'(Folio Pendiente)' if status == 'DRAFT' else data.get('invoice_number', '')}",
+            description=description,
             reference=f"SVC-INV-{invoice.id}",
             state=JournalEntry.State.DRAFT
         )
