@@ -465,6 +465,15 @@ class PurchasingService:
         payable_account = order.supplier.account_payable or settings.default_payable_account
         if not payable_account:
             raise ValidationError("No se encontró cuenta por pagar para el proveedor.")
+            
+        if payable_account.account_type != AccountType.LIABILITY:
+             # Fallback if the associated account is not a Liability (e.g. user assigned Receivable by mistake)
+             if settings.default_payable_account and settings.default_payable_account.account_type == AccountType.LIABILITY:
+                 payable_account = settings.default_payable_account
+             else:
+                 # If even default is wrong, warn but proceed? Or strict error? 
+                 # Strict error is safer to prevent accounting mess.
+                 raise ValidationError(f"La cuenta asignada ({payable_account.name}) no es de Pasivo. Verifique la configuración del proveedor.")
 
         stock_input_account = settings.stock_input_account or settings.default_inventory_account
         if not stock_input_account:
@@ -663,6 +672,51 @@ class PurchasingService:
                     description=f"Devolución NC-{document_number} (OC-{order.number})",
                     journal_entry=entry
                 )
+                
+                # ACCOUNTING FOR INVENTORY RETURN
+                # We need to reverse the Reception: Dr Stock Input (Liability), Cr Inventory (Asset)
+                # This Dr Stock Input cancels the Cr Stock Input from the Financial Reversal (Step 4)
+                
+                inventory_account = purchase_line.product.get_asset_account or settings.default_inventory_account
+                line_cost = (quantity * purchase_line.unit_cost).quantize(Decimal('0.01'), rounding='ROUND_HALF_UP')
+                
+                if line_cost > 0:
+                    if note_type == Invoice.DTEType.NOTA_CREDITO:
+                        # Credit Note = Return Goods
+                        # Debit: Stock Input (Bridge) - Offsets the financial Credit
+                        # Credit: Inventory (Asset) - Reduces stock value
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=stock_input_account,
+                            debit=line_cost,
+                            credit=0,
+                            label=f"Reverso Recepción (Devolución) - {purchase_line.product.code}"
+                        )
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=inventory_account,
+                            debit=0,
+                            credit=line_cost,
+                            label=f"Baja de Inventario - {purchase_line.product.code}"
+                        )
+                    else:
+                        # Debit Note = Receive Goods (Rare, usually price adjustment, but if qty > 0)
+                        # Credit: Stock Input
+                        # Debit: Inventory
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=stock_input_account,
+                            debit=0,
+                            credit=line_cost,
+                            label=f"Ajuste Recepción (Corrección) - {purchase_line.product.code}"
+                        )
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=inventory_account,
+                            debit=line_cost,
+                            credit=0,
+                            label=f"Alta de Inventario - {purchase_line.product.code}"
+                        )
 
         # 7. Post the entry
         JournalEntryService.post_entry(entry)
