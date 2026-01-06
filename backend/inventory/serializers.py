@@ -145,24 +145,27 @@ class StockMoveSerializer(serializers.ModelSerializer):
     def get_reference(self, obj):
         # 1. Purchase Receipt
         if hasattr(obj, 'purchase_receipt_line'):
-            return obj.purchase_receipt_line.receipt.delivery_reference
+            receipt = getattr(obj.purchase_receipt_line, 'receipt', None)
+            return receipt.delivery_reference if receipt else None
         
         # 2. Sale Delivery
         if hasattr(obj, 'sale_delivery_line'):
-            # Assuming sale delivery has a reference or just use the number
-            # Check if sale_delivery_line.delivery exists
-            delivery = obj.sale_delivery_line.delivery
-            return delivery.tracking_number or f"ENT-{delivery.number}"
+            delivery = getattr(obj.sale_delivery_line, 'delivery', None)
+            if delivery:
+                # Use .number as .tracking_number does not exist in the model
+                return f"ENT-{delivery.number}"
             
         return None
 
     def get_notes(self, obj):
         # 1. Purchase Receipt
         if hasattr(obj, 'purchase_receipt_line'):
-            return obj.purchase_receipt_line.receipt.notes
+            receipt = getattr(obj.purchase_receipt_line, 'receipt', None)
+            return receipt.notes if receipt else None
             
         # 2. Sale Delivery
         if hasattr(obj, 'sale_delivery_line'):
-             return obj.sale_delivery_line.delivery.notes
+             delivery = getattr(obj.sale_delivery_line, 'delivery', None)
+             return delivery.notes if delivery else None
              
         return None
