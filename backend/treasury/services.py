@@ -148,47 +148,65 @@ class TreasuryService:
         from accounting.models import AccountingSettings
         settings = AccountingSettings.objects.first()
         
+        # Determine Financial Context (Purchase vs Sale)
+        is_purchase = False
+        if purchase_order:
+            is_purchase = True
+        elif invoice and invoice.purchase_order:
+            is_purchase = True
+        
+        # Determine the counterpart account based on context and payment type
+        target_account = None
+        
         if payment_type == Payment.Type.INBOUND:
-             # Customer Payment/Collection: Debit Treasury, Credit AR or Advance
-             target_account = None
-             
-             if invoice:
-                 # Real debt
-                 target_account = (partner.account_receivable if partner else None) or \
-                                  (settings.default_receivable_account if settings else None)
-             else:
-                 # Prepayment / Advance
-                 target_account = (settings.default_advance_payment_account if settings else None) or \
-                                  (settings.default_receivable_account if settings else None)
+            # Money in: Could be Customer Payment (Sale) OR Supplier Refund (Purchase)
+            if is_purchase:
+                # Supplier Refund: Use AP account
+                target_account = (partner.account_payable if partner else None) or \
+                                 (settings.default_payable_account if settings else None)
+            else:
+                # Customer Payment (Sale / Default): Use AR account
+                if invoice:
+                     # For specific invoice
+                     target_account = (partner.account_receivable if partner else None) or \
+                                      (settings.default_receivable_account if settings else None)
+                else:
+                     # Prepayment from customer
+                     target_account = (settings.default_advance_payment_account if settings else None) or \
+                                      (settings.default_receivable_account if settings else None)
+            
+            if not target_account:
+                raise ValidationError("No se encontró cuenta para el Cobro/Reembolso Entrante.")
 
-             if not target_account:
-                 raise ValidationError("No se encontró cuenta para Cobro (AR/Anticipo).")
-
-             # Debit Treasury
-             JournalItem.objects.create(entry=entry, account=payment.account, debit=amount, credit=0)
-             # Credit AR / Advance
-             JournalItem.objects.create(entry=entry, account=target_account, debit=0, credit=amount, partner=partner.name if partner else '')
+            # Debit Treasury (Money In)
+            JournalItem.objects.create(entry=entry, account=payment.account, debit=amount, credit=0)
+            # Credit Counterpart (Reduces debtor balance or Increases supplier balance)
+            JournalItem.objects.create(entry=entry, account=target_account, debit=0, credit=amount, partner=partner.name if partner else '')
 
         else:
-             # Supplier Payment: Debit AP or Prepayment, Credit Treasury
-             target_account = None
-             
-             if invoice:
-                 # Real debt payment
-                 target_account = (partner.account_payable if partner else None) or \
-                                  (settings.default_payable_account if settings else None)
-             else:
-                 # Prepayment to supplier
-                 target_account = (settings.default_prepayment_account if settings else None) or \
-                                  (settings.default_payable_account if settings else None)
+            # Money out: Could be Supplier Payment (Purchase) OR Customer Refund (Sale)
+            if is_purchase:
+                # Regular Supplier Payment
+                if invoice:
+                    target_account = (partner.account_payable if partner else None) or \
+                                     (settings.default_payable_account if settings else None)
+                else:
+                    # Prepayment to supplier
+                    target_account = (settings.default_prepayment_account if settings else None) or \
+                                     (settings.default_payable_account if settings else None)
+            else:
+                # Customer Refund: Use AR account
+                target_account = (partner.account_receivable if partner else None) or \
+                                 (settings.default_receivable_account if settings else None)
 
-             if not target_account:
-                 raise ValidationError("No se encontró cuenta para Pago (AP/Anticipo).")
+            if not target_account:
+                raise ValidationError("No se encontró cuenta para el Pago/Reembolso Saliente.")
 
-              # Credit Treasury
-             JournalItem.objects.create(entry=entry, account=payment.account, debit=0, credit=amount)
-             # Debit AP / Prepayment
-             JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0, partner=partner.name if partner else '')
+            # Credit Treasury (Money Out)
+            JournalItem.objects.create(entry=entry, account=payment.account, debit=0, credit=amount)
+            # Debit Counterpart (Reduces liability or Increases customer asset)
+            JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0, partner=partner.name if partner else '')
+
              
         JournalEntryService.post_entry(entry)
         

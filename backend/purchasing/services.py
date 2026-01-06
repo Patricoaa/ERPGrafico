@@ -650,6 +650,15 @@ class PurchasingService:
                         f"para {purchase_line.product.name}"
                     )
                 
+                # Validation: Cannot return more than received (Physical Return)
+                # If the user wants to cancel a bill for items not received, they should not send 'return_items'
+                # or only send up to what was received.
+                if quantity > purchase_line.quantity_received:
+                     raise ValidationError(
+                        f"No puede devolver {quantity} unidades de {purchase_line.product.name} porque solo se han recibido {purchase_line.quantity_received}. "
+                        "Si desea anular la factura de items no recibidos, reduzca la cantidad de devolución."
+                     )
+                
                 # Create Stock Move (OUT) for the return
                 # Find the warehouse from the most recent receipt
                 warehouse = None
