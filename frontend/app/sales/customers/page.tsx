@@ -89,7 +89,7 @@ export default function CustomersPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Razón Social</TableHead>
-                            <TableHead>RUT/Tax ID</TableHead>
+                            <TableHead>RUT</TableHead>
                             <TableHead>Contacto</TableHead>
                             <TableHead className="w-[100px] text-center">Acciones</TableHead>
                         </TableRow>

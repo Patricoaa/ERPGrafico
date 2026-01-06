@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
@@ -38,7 +39,7 @@ interface ServiceContractFormProps {
 
 export function ServiceContractForm({ onSuccess, initialData }: ServiceContractFormProps) {
     const router = useRouter()
-    const [suppliers, setSuppliers] = useState([])
+    // const [suppliers, setSuppliers] = useState([])
     const [categories, setCategories] = useState([])
     const [accounts, setAccounts] = useState([])
 
@@ -76,12 +77,10 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [supRes, catRes, accRes] = await Promise.all([
-                    api.get('/contacts/?is_supplier=true'),
+                const [catRes, accRes] = await Promise.all([
                     api.get('/services/categories/'),
                     api.get('/accounting/accounts/?account_type=EXPENSE,LIABILITY&is_leaf=true') // Filter leaf accounts
                 ])
-                setSuppliers(supRes.data.results || supRes.data)
                 setCategories(catRes.data.results || catRes.data)
                 setAccounts(accRes.data.results || accRes.data)
             } catch (e) {
@@ -162,16 +161,14 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Proveedor</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {suppliers.map((s: any) => (
-                                                        <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <FormControl>
+                                                <AdvancedContactSelector
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    contactType="SUPPLIER"
+                                                    placeholder="Buscar proveedor..."
+                                                />
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}

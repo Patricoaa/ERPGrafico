@@ -22,13 +22,13 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import {
-    Select,
+Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {
     Table,
     TableBody,
@@ -104,7 +104,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [customers, setCustomers] = useState<any[]>([])
+    // const [customers, setCustomers] = useState<any[]>([])
     const [products, setProducts] = useState<any[]>([])
 
     const form = useForm<SaleOrderFormValues>({
@@ -135,11 +135,10 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     const fetchCustomers = async () => {
         try {
-            const [customersRes, productsRes] = await Promise.all([
-                api.get('/contacts/?type=customer'),
+            const [productsRes] = await Promise.all([
                 api.get('/inventory/products/')
             ])
-            setCustomers(customersRes.data.results || customersRes.data)
+            // setCustomers(customersRes.data.results || customersRes.data)
             setProducts(productsRes.data.results || productsRes.data)
         } catch (error) {
             console.error("Error fetching data:", error)
@@ -218,20 +217,15 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Cliente</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione un cliente" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {customers.filter(c => c.id).map((c) => (
-                                                    <SelectItem key={c.id} value={c.id.toString()}>
-                                                        {c.name} ({c.tax_id})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <AdvancedContactSelector
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                contactType="CUSTOMER"
+                                                placeholder="Buscar cliente..."
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />

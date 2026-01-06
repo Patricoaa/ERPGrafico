@@ -8,13 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Trash2, ShoppingCart, Search, User, Minus } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { VariantPicker } from "@/components/shared/VariantPicker"
 import { AttributeBadges } from "@/components/shared/AttributeBadges"
@@ -44,7 +38,7 @@ interface CartItem extends Product {
 
 export default function POSPage() {
     const [products, setProducts] = useState<Product[]>([])
-    const [customers, setCustomers] = useState<Customer[]>([])
+    // const [customers, setCustomers] = useState<Customer[]>([]) // Removed in favor of async selector
     const [selectedCustomer, setSelectedCustomer] = useState<string>("")
     const [items, setItems] = useState<CartItem[]>([])
     const [searchTerm, setSearchTerm] = useState("")
@@ -58,12 +52,11 @@ export default function POSPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [prodRes, custRes] = await Promise.all([
+                const [prodRes] = await Promise.all([
                     api.get('/inventory/products/'),
-                    api.get('/sales/customers/')
                 ])
                 setProducts(prodRes.data.results || prodRes.data)
-                setCustomers(custRes.data.results || custRes.data)
+                // setCustomers(custRes.data.results || custRes.data)
             } catch (error) {
                 console.error("Failed to fetch POS data", error)
                 toast.error("Error al cargar datos del POS")
@@ -205,20 +198,7 @@ export default function POSPage() {
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold tracking-tight">Punto de Venta</h2>
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 w-64 text-sm">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar Cliente" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {customers.map(c => (
-                                    <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <Button variant="outline" onClick={() => setItems([])}>Limpiar</Button>
+                    {/* Elements moved to cart card */}
                 </div>
             </div>
 
@@ -274,6 +254,20 @@ export default function POSPage() {
                 <div className="flex flex-col space-y-4 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+                            <div className="p-4 border-b space-y-3 bg-muted/20">
+                                <div className="flex items-center gap-2 justify-between">
+                                    <div className="flex-1">
+                                        <AdvancedContactSelector
+                                            value={selectedCustomer}
+                                            onChange={(val) => setSelectedCustomer(val || "")}
+                                            placeholder="Buscar Cliente (Nombre o Rut)..."
+                                        />
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => setItems([])} title="Limpiar Carrito" className="hover:bg-destructive/10 hover:text-destructive">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
                             <div className="p-4 border-b font-medium bg-muted/50 flex justify-between items-center">
                                 <span>Resumen de Venta</span>
                                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{items.length} items</span>

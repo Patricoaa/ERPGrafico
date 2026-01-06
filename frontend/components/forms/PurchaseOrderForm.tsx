@@ -28,6 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {
     Table,
     TableBody,
@@ -102,7 +103,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [suppliers, setSuppliers] = useState<any[]>([])
+    // const [suppliers, setSuppliers] = useState<any[]>([])
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [products, setProducts] = useState<any[]>([])
 
@@ -134,12 +135,11 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
 
     const fetchData = async () => {
         try {
-            const [suppliersRes, warehousesRes, productsRes] = await Promise.all([
-                api.get('/contacts/?type=supplier'),
+            const [warehousesRes, productsRes] = await Promise.all([
                 api.get('/inventory/warehouses/'),
                 api.get('/inventory/products/'),
             ])
-            setSuppliers(suppliersRes.data.results || suppliersRes.data)
+            // setSuppliers(suppliersRes.data.results || suppliersRes.data)
             setWarehouses(warehousesRes.data.results || warehousesRes.data)
             setProducts(productsRes.data.results || productsRes.data)
         } catch (error) {
@@ -218,20 +218,14 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Proveedor</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione un proveedor" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {suppliers.filter(s => s.id).map((s) => (
-                                                    <SelectItem key={s.id} value={s.id.toString()}>
-                                                        {s.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <AdvancedContactSelector
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                contactType="SUPPLIER"
+                                                placeholder="Buscar proveedor..."
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

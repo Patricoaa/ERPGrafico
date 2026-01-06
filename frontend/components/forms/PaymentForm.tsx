@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
@@ -82,13 +83,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
     const supplierId = useWatch({ control: form.control, name: "supplier_id" })
 
     const fetchPartners = async () => {
-        try {
-            const endpoint = paymentType === "INBOUND" ? '/contacts/?type=customer' : '/contacts/?type=supplier'
-            const response = await api.get(endpoint)
-            setPartners(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching partners:", error)
-        }
+        // Logic moved to AdvancedContactSelector
     }
 
     const fetchInvoices = async () => {
@@ -112,9 +107,9 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
     }
 
     useEffect(() => {
-        if (open) {
-            fetchPartners()
-        }
+        // if (open) {
+        //     fetchPartners()
+        // }
     }, [open, paymentType])
 
     useEffect(() => {
@@ -243,21 +238,14 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Proveedor/Cliente</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || "__none__"}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="__none__">Ninguno</SelectItem>
-                                                {partners.filter(p => p.id).map((p) => (
-                                                    <SelectItem key={p.id} value={p.id.toString()}>
-                                                        {p.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <AdvancedContactSelector
+                                                value={field.value === "__none__" ? "" : field.value}
+                                                onChange={(val) => field.onChange(val || "")}
+                                                contactType={paymentType === "INBOUND" ? "CUSTOMER" : "SUPPLIER"}
+                                                placeholder={paymentType === "INBOUND" ? "Buscar cliente..." : "Buscar proveedor..."}
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

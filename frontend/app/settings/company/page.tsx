@@ -17,7 +17,7 @@ import { formatRUT, validateRUT } from "@/lib/utils/format"
 
 const companySchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
-    tax_id: z.string().min(1, "El RUT/Tax ID es requerido").refine(validateRUT, "RUT inválido"),
+    tax_id: z.string().min(1, "El RUT es requerido").refine(validateRUT, "RUT inválido"),
     address: z.string().optional(),
     phone: z.string().optional(),
     email: z.string().email("Email inválido").or(z.literal("")),
@@ -117,7 +117,7 @@ export default function CompanySettingsPage() {
                                     name="tax_id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>RUT / Tax ID</FormLabel>
+                                            <FormLabel>RUT</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     {...field}
