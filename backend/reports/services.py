@@ -35,17 +35,18 @@ class ReportService:
             return credit - debit
 
     @staticmethod
-    def build_account_tree(accounts, start_date=None, end_date=None):
+    def build_account_tree(accounts, start_date=None, end_date=None, comp_start=None, comp_end=None):
         """
         Builds a hierarchical tree of accounts with their balances.
+        Supports comparison if comp_start/comp_end are provided.
         """
         tree = []
-        # Pre-fetch balances to avoid N+1 queries ideally, but for now loop is simpler for logic
-        # Optimization: Fetch all balances in one query grouped by account_id? 
-        # For now, let's stick to simple logic as volume might not be huge yet.
         
         def process_account(account):
             balance = ReportService._get_account_balance(account, start_date, end_date)
+            comp_balance = 0
+            if comp_end:
+                comp_balance = ReportService._get_account_balance(account, comp_start, comp_end)
             
             node = {
                 'id': account.id,
@@ -53,6 +54,8 @@ class ReportService:
                 'name': account.name,
                 'type': account.account_type,
                 'balance': float(balance),
+                'comp_balance': float(comp_balance),
+                'variance': float(balance - comp_balance),
                 'children': []
             }
             
@@ -61,12 +64,9 @@ class ReportService:
             for child in children:
                 child_node = process_account(child)
                 node['children'].append(child_node)
-                # Accumulate balance from children only if this is a view/group account? 
-                # Currently models don't distinguish "View" accounts. 
-                # Assuming parent accounts might have their own postings OR just sum of children.
-                # In many systems, parents shouldn't have direct postings.
-                # Here we sum children balance into parent for reporting display purposes usually.
                 node['balance'] += child_node['balance']
+                node['comp_balance'] += child_node['comp_balance']
+                node['variance'] += child_node['variance']
                 
             return node
 
@@ -77,42 +77,48 @@ class ReportService:
         return tree
 
     @staticmethod
-    def get_balance_sheet(end_date, start_date=None):
+    def get_balance_sheet(end_date, start_date=None, comp_end=None, comp_start=None):
         """
         Returns the Balance Sheet structure.
         """
         # Assets
         assets = Account.objects.filter(account_type=AccountType.ASSET)
-        asset_tree = ReportService.build_account_tree(assets, end_date=end_date)
+        asset_tree = ReportService.build_account_tree(assets, end_date=end_date, comp_start=comp_start, comp_end=comp_end)
         total_assets = sum(node['balance'] for node in asset_tree)
+        total_assets_comp = sum(node['comp_balance'] for node in asset_tree)
 
         # Liabilities
         liabilities = Account.objects.filter(account_type=AccountType.LIABILITY)
-        liability_tree = ReportService.build_account_tree(liabilities, end_date=end_date)
+        liability_tree = ReportService.build_account_tree(liabilities, end_date=end_date, comp_start=comp_start, comp_end=comp_end)
         total_liabilities = sum(node['balance'] for node in liability_tree)
+        total_liabilities_comp = sum(node['comp_balance'] for node in liability_tree)
 
         # Equity
         equity = Account.objects.filter(account_type=AccountType.EQUITY)
-        equity_tree = ReportService.build_account_tree(equity, end_date=end_date)
+        equity_tree = ReportService.build_account_tree(equity, end_date=end_date, comp_start=comp_start, comp_end=comp_end)
         
-        # Calculate Current Year Earnings (Net Income) to add to Equity
-        # If start_date is provided, we calculate income for that period.
-        # Otherwise, default to beginning of the year of end_date.
+        # Calculate Current Year Earnings (Net Income)
         if not start_date:
             start_date = end_date.replace(month=1, day=1)
             
         income_accs = Account.objects.filter(account_type=AccountType.INCOME)
         expense_accs = Account.objects.filter(account_type=AccountType.EXPENSE)
         
-        total_income = 0
-        for acc in income_accs:
-            total_income += float(ReportService._get_account_balance(acc, start_date=start_date, end_date=end_date))
+        def get_earnings(s_date, e_date):
+            t_income = 0
+            for acc in income_accs:
+                t_income += float(ReportService._get_account_balance(acc, start_date=s_date, end_date=e_date))
+            t_expenses = 0
+            for acc in expense_accs:
+                t_expenses += float(ReportService._get_account_balance(acc, start_date=s_date, end_date=e_date))
+            return t_income - t_expenses
 
-        total_expenses = 0
-        for acc in expense_accs:
-            total_expenses += float(ReportService._get_account_balance(acc, start_date=start_date, end_date=end_date))
-            
-        current_earnings = total_income - total_expenses
+        current_earnings = get_earnings(start_date, end_date)
+        comp_earnings = 0
+        if comp_end:
+            if not comp_start:
+                comp_start = comp_end.replace(month=1, day=1)
+            comp_earnings = get_earnings(comp_start, comp_end)
         
         # Append "Resultado del Ejercicio" to Equity Tree artificially
         equity_tree.append({
@@ -121,40 +127,53 @@ class ReportService:
             'name': 'Resultado del Ejercicio (Calculado)',
             'type': 'EQUITY',
             'balance': current_earnings,
+            'comp_balance': comp_earnings,
+            'variance': current_earnings - comp_earnings,
             'children': []
         })
 
         total_equity = sum(node['balance'] for node in equity_tree)
+        total_equity_comp = sum(node['comp_balance'] for node in equity_tree)
 
         return {
             'assets': asset_tree,
             'total_assets': total_assets,
+            'total_assets_comp': total_assets_comp,
             'liabilities': liability_tree,
             'total_liabilities': total_liabilities,
+            'total_liabilities_comp': total_liabilities_comp,
             'equity': equity_tree,
             'total_equity': total_equity,
-            'check': total_assets - (total_liabilities + total_equity) # Should be 0
+            'total_equity_comp': total_equity_comp,
+            'check': total_assets - (total_liabilities + total_equity),
+            'check_comp': total_assets_comp - (total_liabilities_comp + total_equity_comp)
         }
 
     @staticmethod
-    def get_income_statement(start_date, end_date):
+    def get_income_statement(start_date, end_date, comp_start=None, comp_end=None):
         """
         Returns the Income Statement structure.
         """
         income = Account.objects.filter(account_type=AccountType.INCOME)
-        income_tree = ReportService.build_account_tree(income, start_date, end_date)
+        income_tree = ReportService.build_account_tree(income, start_date, end_date, comp_start, comp_end)
         total_income = sum(node['balance'] for node in income_tree)
+        total_income_comp = sum(node['comp_balance'] for node in income_tree)
 
         expenses = Account.objects.filter(account_type=AccountType.EXPENSE)
-        expense_tree = ReportService.build_account_tree(expenses, start_date, end_date)
+        expense_tree = ReportService.build_account_tree(expenses, start_date, end_date, comp_start, comp_end)
         total_expenses = sum(node['balance'] for node in expense_tree)
+        total_expenses_comp = sum(node['comp_balance'] for node in expense_tree)
 
         return {
             'income': income_tree,
             'total_income': total_income,
+            'total_income_comp': total_income_comp,
             'expenses': expense_tree,
             'total_expenses': total_expenses,
-            'net_income': total_income - total_expenses
+            'total_expenses_comp': total_expenses_comp,
+            'net_income': total_income - total_expenses,
+            'net_income_comp': total_income_comp - total_expenses_comp,
+            'net_income_variance': (total_income - total_expenses) - (total_income_comp - total_expenses_comp)
         }
 
     @staticmethod

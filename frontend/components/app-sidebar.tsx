@@ -104,9 +104,14 @@ const items = [
         ]
     },
     {
-        title: "Reportes",
-        url: "/reports",
+        title: "Finanzas",
+        url: "/finance",
         icon: FileText,
+        items: [
+            { title: "Estados Financieros", url: "/finance/statements" },
+            { title: "Análisis", url: "/finance/analysis" },
+            { title: "Presupuestos", url: "/finance/budgets" },
+        ]
     },
     {
         title: "Configuración",

@@ -153,29 +153,28 @@ class BudgetViewSet(viewsets.ModelViewSet):
     def set_items(self, request, pk=None):
         """
         Bulk update or replace budget items.
-        Expected payload: { items: [ { account: 1, amount: 1000 }, ... ] }
+        Expected payload: { items: [ { account: 1, month: 1, amount: 1000 }, ... ] }
         """
         budget = self.get_object()
         items_data = request.data.get('items', [])
         
         try:
-            # Transactional replace
             from django.db import transaction
             with transaction.atomic():
-                # Clear existing? Or update? 
-                # Simplest for "Editor" mode is replace all for this budget
-                # But maybe we only want to update sent ones?
-                # Let's go with: Delete all and re-create provided ones.
-                # Valid strategy for a "Full Save" form.
+                # For monthly editor, we might want to replace only specific account-month pairs 
+                # or replace everything for the budget. 
+                # Given we are building a "grid", a full save of provided ones is easier.
                 budget.items.all().delete()
                 
                 new_items = []
                 for item in items_data:
-                    if float(item.get('amount', 0)) != 0:
+                    amount = float(item.get('amount', 0))
+                    if amount != 0:
                         new_items.append(BudgetItem(
                             budget=budget,
                             account_id=item['account'],
-                            amount=item['amount']
+                            month=item.get('month', 1),
+                            amount=amount
                         ))
                 
                 BudgetItem.objects.bulk_create(new_items)
@@ -188,25 +187,26 @@ class BudgetViewSet(viewsets.ModelViewSet):
     def execution(self, request, pk=None):
         """
         Calculates the execution status of the budget.
-        Compares budgeted amounts vs actual journal items for the period.
+        Groups by account to show total execution vs total budgeted for the period.
         """
         budget = self.get_object()
-        items = budget.items.all().select_related('account')
+        # Aggregate budgeted amounts by account
+        budgeted_qs = budget.items.values('account').annotate(total_budgeted=Sum('amount'))
         
         report = []
         total_budgeted = 0
         total_actual = 0
         
-        for item in items:
-            account = item.account
+        for b_item in budgeted_qs:
+            account = Account.objects.get(id=b_item['account'])
+            budgeted_amount = float(b_item['total_budgeted'])
             
-            # Filter actual items
+            # Filter actual items for the entire budget period
             filters = Q(entry__state='POSTED', 
                         entry__date__gte=budget.start_date, 
                         entry__date__lte=budget.end_date,
                         account=account)
             
-            # Calculate balance for the period (movement)
             result = JournalItem.objects.filter(filters).aggregate(
                 debit=Sum('debit'),
                 credit=Sum('credit')
@@ -215,11 +215,6 @@ class BudgetViewSet(viewsets.ModelViewSet):
             debit = result['debit'] or 0
             credit = result['credit'] or 0
             
-            # Determine actual based on account type
-            # Income/Liability/Equity: Credit (positive effect) - Debit
-            # Expense/Asset: Debit (positive effect usually for expense) - Credit
-            
-            # For Budgeting, usually we budget Expenses (Debit) and Income (Credit).
             if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
                 actual = float(debit - credit)
             else:
@@ -229,13 +224,13 @@ class BudgetViewSet(viewsets.ModelViewSet):
                 'account_id': account.id,
                 'account_code': account.code,
                 'account_name': account.name,
-                'budgeted': float(item.amount),
+                'budgeted': budgeted_amount,
                 'actual': actual,
-                'variance': actual - float(item.amount),
-                'percentage': (actual / float(item.amount) * 100) if float(item.amount) != 0 else 0
+                'variance': actual - budgeted_amount,
+                'percentage': (actual / budgeted_amount * 100) if budgeted_amount != 0 else 0
             })
             
-            total_budgeted += float(item.amount)
+            total_budgeted += budgeted_amount
             total_actual += actual
             
         return Response({

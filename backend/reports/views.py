@@ -163,7 +163,33 @@ def get_balance_sheet_data(request):
         
     start_date = request.query_params.get('start_date') # can be None
     
-    data = ReportService.get_balance_sheet(end_date, start_date)
+    comp_end = request.query_params.get('comp_end_date')
+    comp_start = request.query_params.get('comp_start_date')
+    
+    if comp_end:
+        from datetime import datetime
+        comp_end = datetime.strptime(comp_end, '%yyyy-%mm-%dd').date() if isinstance(comp_end, str) else comp_end
+        if comp_start:
+            comp_start = datetime.strptime(comp_start, '%yyyy-%mm-%dd').date() if isinstance(comp_start, str) else comp_start
+
+    # Handle string dates from query_params if necessary (ReportService might expect date objects or strings depending on internal usage)
+    # Actually ReportService logic uses .replace so it expects date objects or we should convert them here.
+    
+    def to_date(d):
+        if not d: return None
+        if isinstance(d, date): return d
+        from datetime import datetime
+        try:
+            return datetime.strptime(d, '%Y-%m-%d').date()
+        except:
+            return None
+
+    end_date_obj = to_date(end_date)
+    start_date_obj = to_date(start_date)
+    comp_end_obj = to_date(comp_end)
+    comp_start_obj = to_date(comp_start)
+
+    data = ReportService.get_balance_sheet(end_date_obj, start_date_obj, comp_end_obj, comp_start_obj)
     return Response(data)
 
 @api_view(['GET'])
@@ -176,7 +202,24 @@ def get_income_statement_data(request):
     default_start = date(date.today().year, 1, 1)
     start_date = request.query_params.get('start_date', default_start)
     
-    data = ReportService.get_income_statement(start_date, end_date)
+    comp_end = request.query_params.get('comp_end_date')
+    comp_start = request.query_params.get('comp_start_date')
+
+    def to_date(d):
+        if not d: return None
+        if isinstance(d, date): return d
+        from datetime import datetime
+        try:
+            return datetime.strptime(d, '%Y-%m-%d').date()
+        except:
+            return None
+
+    data = ReportService.get_income_statement(
+        to_date(start_date), 
+        to_date(end_date), 
+        to_date(comp_start), 
+        to_date(comp_end)
+    )
     return Response(data)
 
 @api_view(['GET'])

@@ -322,11 +322,11 @@ class Budget(models.Model):
 class BudgetItem(models.Model):
     budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name='items')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='budget_items')
+    month = models.IntegerField(_("Mes"), default=1, help_text="Mes del presupuesto (1-12)")
     amount = models.DecimalField(_("Monto Presupuestado"), max_digits=20, decimal_places=2)
-    # Optional period breakdown could be added here (e.g., month), but for now assuming total for budget period.
     
     class Meta:
-        unique_together = ['budget', 'account']
+        unique_together = ['budget', 'account', 'month']
         verbose_name = _("Item de Presupuesto")
         verbose_name_plural = _("Items de Presupuesto")
 
