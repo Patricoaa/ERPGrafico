@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import api from '@/lib/api';
 
 interface BudgetEditorProps {
@@ -40,8 +47,8 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
     const loadData = async () => {
         setLoading(true);
         try {
-            // Load Accounts
-            const accRes = await api.get('/accounting/accounts/');
+            // Load only budgetable accounts
+            const accRes = await api.get('/accounting/accounts/budgetable/');
             // Load current budget items (we can get them from budget detail or execution endpoint, 
             // or just rely on parent passing them? Parent has "summary" maybe not full list depending on serializer)
             // Let's re-fetch budget to be safe or use execution endpoint which returns "budgeted"
@@ -122,12 +129,33 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                     <DialogTitle>Editar Presupuesto: {budget?.name}</DialogTitle>
                 </DialogHeader>
 
-                <div className="p-2">
-                    <Input
-                        placeholder="Buscar cuenta..."
-                        value={filter}
-                        onChange={e => setFilter(e.target.value)}
-                    />
+                <div className="px-4 py-2 border-b flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="flex items-center gap-4 flex-1 max-w-xl">
+                        <Input
+                            placeholder="Buscar cuenta por nombre o código..."
+                            value={filter}
+                            onChange={e => setFilter(e.target.value)}
+                            className="bg-white dark:bg-slate-950"
+                        />
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help hover:text-primary transition-colors">
+                                        <Info className="h-4 w-4" />
+                                        <span>Cuentas Presupuestables</span>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs">
+                                    <p className="font-semibold mb-1">Criterios de Filtrado:</p>
+                                    <ul className="list-disc pl-4 space-y-1">
+                                        <li>Cuentas de <strong>Ingresos</strong> y <strong>Gastos</strong>.</li>
+                                        <li>Cuentas de <strong>Activos Fijos</strong> (Inversiones).</li>
+                                        <li>Solo se muestran cuentas de último nivel (sin subcuentas).</li>
+                                    </ul>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                 </div>
 
                 <ScrollArea className="flex-1 border rounded-md">

@@ -87,10 +87,22 @@ class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
             'movements': ledger_data
         })
 
-    @action(detail=False, methods=['post'])
-    def populate_ifrs(self, request):
-        msg = AccountingService.populate_ifrs_coa()
-        return Response({'message': msg})
+    @action(detail=False, methods=['get'])
+    def budgetable(self, request):
+        """
+        Returns only accounts that are suitable for budgeting:
+        - Income and Expense accounts
+        - Assets mapped to Investing Activities (CAPEX)
+        - Only leaf accounts (those without children)
+        """
+        from .models import CFCategory
+        accounts = Account.objects.filter(
+            Q(account_type__in=[AccountType.INCOME, AccountType.EXPENSE]) |
+            Q(cf_category=CFCategory.INVESTING)
+        ).filter(children__isnull=True).order_by('code')
+        
+        serializer = self.get_serializer(accounts, many=True)
+        return Response(serializer.data)
 
 class JournalEntryViewSet(viewsets.ModelViewSet):
     queryset = JournalEntry.objects.all()
