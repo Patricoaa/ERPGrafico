@@ -149,6 +149,41 @@ class BudgetViewSet(viewsets.ModelViewSet):
     queryset = Budget.objects.all()
     serializer_class = BudgetSerializer
 
+    @action(detail=True, methods=['post'])
+    def set_items(self, request, pk=None):
+        """
+        Bulk update or replace budget items.
+        Expected payload: { items: [ { account: 1, amount: 1000 }, ... ] }
+        """
+        budget = self.get_object()
+        items_data = request.data.get('items', [])
+        
+        try:
+            # Transactional replace
+            from django.db import transaction
+            with transaction.atomic():
+                # Clear existing? Or update? 
+                # Simplest for "Editor" mode is replace all for this budget
+                # But maybe we only want to update sent ones?
+                # Let's go with: Delete all and re-create provided ones.
+                # Valid strategy for a "Full Save" form.
+                budget.items.all().delete()
+                
+                new_items = []
+                for item in items_data:
+                    if float(item.get('amount', 0)) != 0:
+                        new_items.append(BudgetItem(
+                            budget=budget,
+                            account_id=item['account'],
+                            amount=item['amount']
+                        ))
+                
+                BudgetItem.objects.bulk_create(new_items)
+            
+            return Response({'status': 'updated', 'count': len(new_items)})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['get'])
     def execution(self, request, pk=None):
         """

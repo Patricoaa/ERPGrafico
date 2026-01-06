@@ -18,11 +18,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { BudgetEditor } from './BudgetEditor';
+
 export const BudgetManager = () => {
     const [budgets, setBudgets] = useState<any[]>([]);
     const [selectedBudget, setSelectedBudget] = useState<any>(null);
     const [executionData, setExecutionData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+
+    // Editors
+    const [isEditorOpen, setIsEditorOpen] = useState(false);
+    const [budgetToEdit, setBudgetToEdit] = useState<any>(null);
+
 
     // Form Stats
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -132,6 +139,18 @@ export const BudgetManager = () => {
                             >
                                 <div className="font-semibold">{b.name}</div>
                                 <div className="text-xs text-muted-foreground">{b.start_date} - {b.end_date}</div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="mt-2 w-full text-xs border"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setBudgetToEdit(b);
+                                        setIsEditorOpen(true);
+                                    }}
+                                >
+                                    Editar Montos
+                                </Button>
                             </div>
                         ))}
                     </CardContent>
@@ -202,6 +221,17 @@ export const BudgetManager = () => {
                     </CardContent>
                 </Card>
             </div>
+
+            {budgetToEdit && (
+                <BudgetEditor
+                    open={isEditorOpen}
+                    onOpenChange={setIsEditorOpen}
+                    budget={budgetToEdit}
+                    onSave={() => {
+                        viewExecution(budgetToEdit); // Refresh view
+                    }}
+                />
+            )}
         </div>
     );
 };
