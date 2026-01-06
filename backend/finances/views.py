@@ -217,13 +217,17 @@ def get_income_statement_data(request):
 def get_cash_flow_data(request):
     """
     Returns the Cash Flow data as JSON.
-    Query Params: start_date, end_date (YYYY-MM-DD)
+    Query Params: start_date, end_date, comp_start_date, comp_end_date (YYYY-MM-DD)
     """
     end_date = request.query_params.get('end_date', date.today())
     default_start = date(date.today().year, 1, 1)
     start_date = request.query_params.get('start_date', default_start)
     
-    data = FinanceService.get_cash_flow(start_date, end_date)
+    # Get comparison dates if provided
+    comp_start = request.query_params.get('comp_start_date')
+    comp_end = request.query_params.get('comp_end_date')
+    
+    data = FinanceService.get_cash_flow(start_date, end_date, comp_start, comp_end)
     return Response(data)
 
 @api_view(['GET'])

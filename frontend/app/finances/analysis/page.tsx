@@ -1,15 +1,72 @@
 "use client"
 
-import React from "react"
-import { AnalysisDashboard } from "@/components/finances/AnalysisDashboard"
+import React, { useState } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { RatiosView } from "@/components/finances/RatiosView"
+import { BIAnalyticsView } from "@/components/finances/BIAnalyticsView"
+import { DateRangeSelector } from "@/components/finances/DateRangeSelector"
+import { DateRange } from "react-day-picker"
+import { startOfYear, subYears } from "date-fns"
 
 export default function AnalysisPage() {
+    const [showComparison, setShowComparison] = useState(false);
+
+    // Date State
+    const [date, setDate] = useState<DateRange | undefined>({
+        from: startOfYear(new Date()),
+        to: new Date(),
+    })
+
+    const [compDate, setCompDate] = useState<DateRange | undefined>({
+        from: startOfYear(subYears(new Date(), 1)),
+        to: subYears(new Date(), 1),
+    })
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Análisis Financiero</h2>
+            <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Análisis Financiero</h2>
+                    <p className="text-muted-foreground">Ratios financieros y Business Intelligence</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center space-x-2 border-l pl-4">
+                        <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
+                        <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                        <DateRangeSelector date={date} onDateChange={setDate} />
+                        {showComparison && (
+                            <div className="flex items-center space-x-2 border-l pl-4">
+                                <span className="text-xs text-muted-foreground">vs</span>
+                                <DateRangeSelector date={compDate} onDateChange={setCompDate} />
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-            <AnalysisDashboard />
+
+            <Tabs defaultValue="ratios" className="space-y-4">
+                <div className="flex justify-center">
+                    <TabsList className="grid w-full max-w-md grid-cols-2 bg-slate-100 dark:bg-slate-800 rounded-full h-11 p-1">
+                        <TabsTrigger value="ratios" className="rounded-full">Ratios Financieros</TabsTrigger>
+                        <TabsTrigger value="bi" className="rounded-full">Business Intelligence</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <div className="max-w-6xl mx-auto w-full pt-4">
+                    <TabsContent value="ratios">
+                        <RatiosView date={date} showComparison={showComparison} compDate={compDate} />
+                    </TabsContent>
+
+                    <TabsContent value="bi">
+                        <BIAnalyticsView date={date} />
+                    </TabsContent>
+                </div>
+            </Tabs>
         </div>
     )
 }

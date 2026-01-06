@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils"
 export default function StatementsPage() {
     const [loading, setLoading] = useState(false);
     const [showComparison, setShowComparison] = useState(false);
-    const [periodType, setPeriodType] = useState<'annual' | 'monthly'>('annual');
     const [activeTab, setActiveTab] = useState('bs');
 
     // Date State
@@ -73,20 +72,6 @@ export default function StatementsPage() {
             loadData();
         }
     }, [date, showComparison, compDate]);
-
-    const togglePeriod = (type: 'annual' | 'monthly') => {
-        setPeriodType(type);
-        if (type === 'monthly') {
-            const start = startOfMonth(new Date());
-            const end = endOfMonth(new Date());
-            setDate({ from: start, to: end });
-            setCompDate({ from: startOfMonth(subMonths(start, 1)), to: endOfMonth(subMonths(start, 1)) });
-        } else {
-            const start = startOfYear(new Date());
-            setDate({ from: start, to: new Date() });
-            setCompDate({ from: startOfYear(subYears(start, 1)), to: subYears(new Date(), 1) });
-        }
-    };
 
     const downloadPDF = async () => {
         const type = activeTab === 'bs' ? 'balance-sheet' : 'income-statement';
@@ -180,25 +165,6 @@ export default function StatementsPage() {
                     <p className="text-muted-foreground">Consulta el balance, resultados y flujos de tu empresa.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-lg">
-                        <Button
-                            variant={periodType === 'annual' ? 'secondary' : 'ghost'}
-                            size="sm"
-                            onClick={() => togglePeriod('annual')}
-                            className="text-xs h-8"
-                        >
-                            Anual
-                        </Button>
-                        <Button
-                            variant={periodType === 'monthly' ? 'secondary' : 'ghost'}
-                            size="sm"
-                            onClick={() => togglePeriod('monthly')}
-                            className="text-xs h-8"
-                        >
-                            Mensual
-                        </Button>
-                    </div>
-
                     <div className="flex items-center space-x-2 border-l pl-4">
                         <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
                         <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
@@ -213,9 +179,6 @@ export default function StatementsPage() {
                             </div>
                         )}
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => downloadPDF()} className="h-10 px-4 whitespace-nowrap">
-                        <Download className="mr-2 h-4 w-4" /> Exportar PDF
-                    </Button>
                 </div>
             </div>
 
@@ -235,8 +198,15 @@ export default function StatementsPage() {
                 <div className="max-w-5xl mx-auto w-full pt-4">
                     <TabsContent value="bs">
                         <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
-                            <CardContent className="p-10">
-                                <ReportHeader title="Balance General" dateRange={date} />
+                            <CardHeader className="flex flex-row items-center justify-between pb-0">
+                                <div className="invisible h-10 w-10" /> {/* Spacer */}
+                                <CardTitle className="text-center w-full">Balance General</CardTitle>
+                                <Button variant="outline" size="sm" onClick={() => downloadPDF()} className="h-9 whitespace-nowrap">
+                                    <Download className="mr-2 h-4 w-4" /> PDF
+                                </Button>
+                            </CardHeader>
+                            <CardContent className="p-10 pt-4">
+                                <ReportHeader title="Situación Financiera" dateRange={date} />
                                 {bsData ? (
                                     <div className="space-y-10">
                                         {!showComparison && renderBSDistribution()}
@@ -279,7 +249,14 @@ export default function StatementsPage() {
 
                     <TabsContent value="pl">
                         <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
-                            <CardContent className="p-10">
+                            <CardHeader className="flex flex-row items-center justify-between pb-0">
+                                <div className="invisible h-10 w-10" /> {/* Spacer */}
+                                <CardTitle className="text-center w-full">Estado de Resultados</CardTitle>
+                                <Button variant="outline" size="sm" onClick={() => downloadPDF()} className="h-9 whitespace-nowrap">
+                                    <Download className="mr-2 h-4 w-4" /> PDF
+                                </Button>
+                            </CardHeader>
+                            <CardContent className="p-10 pt-4">
                                 <ReportHeader title="Estado de Resultados" dateRange={date} />
                                 {plData ? (
                                     <div className="space-y-8">
@@ -332,10 +309,17 @@ export default function StatementsPage() {
 
                     <TabsContent value="cf">
                         <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
-                            <CardContent className="p-10">
+                            <CardHeader className="flex flex-row items-center justify-between pb-0">
+                                <div className="invisible h-10 w-10" /> {/* Spacer */}
+                                <CardTitle className="text-center w-full">Flujo de Efectivo</CardTitle>
+                                <Button variant="outline" size="sm" onClick={() => downloadPDF()} className="h-9 whitespace-nowrap" disabled>
+                                    <Download className="mr-2 h-4 w-4" /> PDF
+                                </Button>
+                            </CardHeader>
+                            <CardContent className="p-10 pt-4">
                                 <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
                                 {cfData ? (
-                                    <CashFlowTable data={cfData} embedded />
+                                    <CashFlowTable data={cfData} embedded showComparison={showComparison} />
                                 ) : (
                                     <div className="p-8 text-center animate-pulse">Cargando flujo de caja...</div>
                                 )}

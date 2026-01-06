@@ -117,7 +117,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+            <DialogContent className="max-w-[95vw] lg:max-w-7xl h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Editar Presupuesto: {budget?.name}</DialogTitle>
                 </DialogHeader>

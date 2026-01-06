@@ -33,7 +33,12 @@ export const BudgetManager = () => {
 
     // Form Stats
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [newBudget, setNewBudget] = useState({ name: '', start_date: '', end_date: '', description: '' });
+    const [newBudget, setNewBudget] = useState({
+        name: '',
+        start_date: `${new Date().getFullYear()}-01-01`,
+        end_date: `${new Date().getFullYear()}-12-31`,
+        description: ''
+    });
 
     const loadBudgets = async () => {
         setLoading(true);
@@ -86,30 +91,31 @@ export const BudgetManager = () => {
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label>Nombre</Label>
+                                <Label>Nombre o Referencia</Label>
                                 <Input
                                     value={newBudget.name}
                                     onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
-                                    placeholder="Ej: Presupuesto 2026"
+                                    placeholder="Ej: Presupuesto Operativo"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Inicio</Label>
-                                    <Input
-                                        type="date"
-                                        value={newBudget.start_date}
-                                        onChange={e => setNewBudget({ ...newBudget, start_date: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Fin</Label>
-                                    <Input
-                                        type="date"
-                                        value={newBudget.end_date}
-                                        onChange={e => setNewBudget({ ...newBudget, end_date: e.target.value })}
-                                    />
-                                </div>
+                            <div className="space-y-2">
+                                <Label>Año del Presupuesto</Label>
+                                <Input
+                                    type="number"
+                                    min={2020}
+                                    max={2100}
+                                    defaultValue={new Date().getFullYear()}
+                                    onChange={e => {
+                                        const year = e.target.value;
+                                        setNewBudget({
+                                            ...newBudget,
+                                            name: newBudget.name || `Presupuesto ${year}`,
+                                            start_date: `${year}-01-01`,
+                                            end_date: `${year}-12-31`
+                                        })
+                                    }}
+                                />
+                                <p className="text-[10px] text-muted-foreground">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
                             </div>
                             <div className="space-y-2">
                                 <Label>Descripción</Label>
@@ -118,7 +124,7 @@ export const BudgetManager = () => {
                                     onChange={e => setNewBudget({ ...newBudget, description: e.target.value })}
                                 />
                             </div>
-                            <Button onClick={handleCreate} className="w-full">Guardar</Button>
+                            <Button onClick={handleCreate} className="w-full">Crear Presupuesto Anual</Button>
                         </div>
                     </DialogContent>
                 </Dialog>
