@@ -105,12 +105,12 @@ const items = [
     },
     {
         title: "Finanzas",
-        url: "/finance",
+        url: "/finances",
         icon: FileText,
         items: [
-            { title: "Estados Financieros", url: "/finance/statements" },
-            { title: "Análisis", url: "/finance/analysis" },
-            { title: "Presupuestos", url: "/finance/budgets" },
+            { title: "Estados Financieros", url: "/finances/statements" },
+            { title: "Análisis", url: "/finances/analysis" },
+            { title: "Presupuestos", url: "/finances/budgets" },
         ]
     },
     {

@@ -8,7 +8,7 @@ from datetime import date
 from io import BytesIO
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .services import ReportService
+from .services import FinanceService
 
 # --- PDF Generation Classes (Legacy/Download) ---
 class PDFReport:
@@ -180,7 +180,7 @@ def get_balance_sheet_data(request):
     comp_end_obj = to_date(comp_end)
     comp_start_obj = to_date(comp_start)
 
-    data = ReportService.get_balance_sheet(end_date_obj, start_date_obj, comp_end_obj, comp_start_obj)
+    data = FinanceService.get_balance_sheet(end_date_obj, start_date_obj, comp_end_obj, comp_start_obj)
     return Response(data)
 
 @api_view(['GET'])
@@ -205,7 +205,7 @@ def get_income_statement_data(request):
         except:
             return None
 
-    data = ReportService.get_income_statement(
+    data = FinanceService.get_income_statement(
         to_date(start_date), 
         to_date(end_date), 
         to_date(comp_start), 
@@ -223,7 +223,7 @@ def get_cash_flow_data(request):
     default_start = date(date.today().year, 1, 1)
     start_date = request.query_params.get('start_date', default_start)
     
-    data = ReportService.get_cash_flow(start_date, end_date)
+    data = FinanceService.get_cash_flow(start_date, end_date)
     return Response(data)
 
 @api_view(['GET'])
@@ -237,8 +237,8 @@ def get_financial_analysis_data(request):
     
     start_date = request.query_params.get('start_date')
 
-    # We reuse basic reports logic to get totals
-    bs = ReportService.get_balance_sheet(end_date, start_date)
+    # We reuse basic finances logic to get totals
+    bs = FinanceService.get_balance_sheet(end_date, start_date)
     
     total_assets = bs['total_assets']
     total_liabilities = bs['total_liabilities']

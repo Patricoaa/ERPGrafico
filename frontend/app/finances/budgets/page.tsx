@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { BudgetManager } from "@/components/reports/BudgetManager"
+import { BudgetManager } from "@/components/finances/BudgetManager"
 
 export default function BudgetsPage() {
     return (

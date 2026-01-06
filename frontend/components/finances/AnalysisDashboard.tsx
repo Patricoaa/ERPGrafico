@@ -26,7 +26,7 @@ export const AnalysisDashboard = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const res = await api.get('/reports/api/analysis/');
+                const res = await api.get('/finances/api/analysis/');
                 setData(res.data);
             } catch (err) {
                 console.error(err);

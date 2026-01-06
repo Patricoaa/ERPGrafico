@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { AnalysisDashboard } from "@/components/reports/AnalysisDashboard"
+import { AnalysisDashboard } from "@/components/finances/AnalysisDashboard"
 
 export default function AnalysisPage() {
     return (

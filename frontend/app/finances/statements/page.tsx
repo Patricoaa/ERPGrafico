@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Download, CalendarIcon } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { FinancialStatementTable } from "@/components/reports/FinancialStatementTable"
-import { CashFlowTable } from "@/components/reports/CashFlowTable"
-import { DateRangeSelector } from "@/components/reports/DateRangeSelector"
+import { FinancialStatementTable } from "@/components/finances/FinancialStatementTable"
+import { CashFlowTable } from "@/components/finances/CashFlowTable"
+import { DateRangeSelector } from "@/components/finances/DateRangeSelector"
 import { DateRange } from "react-day-picker"
 import { format, startOfYear, subMonths, subYears, startOfMonth, endOfMonth } from "date-fns"
 import { es } from 'date-fns/locale'
@@ -53,16 +53,16 @@ export default function StatementsPage() {
             }
 
             const [bs, pl, cf] = await Promise.all([
-                api.get('/reports/api/balance-sheet/', { params }),
-                api.get('/reports/api/income-statement/', { params }),
-                api.get('/reports/api/cash-flow/', { params })
+                api.get('/finances/api/balance-sheet/', { params }),
+                api.get('/finances/api/income-statement/', { params }),
+                api.get('/finances/api/cash-flow/', { params })
             ]);
 
             setBsData(bs.data);
             setPlData(pl.data);
             setCfData(cf.data);
         } catch (error) {
-            console.error("Error loading reports", error);
+            console.error("Error loading finances", error);
         } finally {
             setLoading(false);
         }
@@ -96,8 +96,8 @@ export default function StatementsPage() {
         }
         try {
             let url = '';
-            if (type === 'balance-sheet') url = '/reports/balance-sheet/';
-            if (type === 'income-statement') url = '/reports/income-statement/';
+            if (type === 'balance-sheet') url = '/finances/balance-sheet/';
+            if (type === 'income-statement') url = '/finances/income-statement/';
             // ...
 
             if (url) {
