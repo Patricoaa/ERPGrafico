@@ -166,15 +166,6 @@ def get_balance_sheet_data(request):
     comp_end = request.query_params.get('comp_end_date')
     comp_start = request.query_params.get('comp_start_date')
     
-    if comp_end:
-        from datetime import datetime
-        comp_end = datetime.strptime(comp_end, '%yyyy-%mm-%dd').date() if isinstance(comp_end, str) else comp_end
-        if comp_start:
-            comp_start = datetime.strptime(comp_start, '%yyyy-%mm-%dd').date() if isinstance(comp_start, str) else comp_start
-
-    # Handle string dates from query_params if necessary (ReportService might expect date objects or strings depending on internal usage)
-    # Actually ReportService logic uses .replace so it expects date objects or we should convert them here.
-    
     def to_date(d):
         if not d: return None
         if isinstance(d, date): return d
