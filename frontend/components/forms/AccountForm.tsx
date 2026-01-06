@@ -41,6 +41,7 @@ const accountSchema = z.object({
     parent: z.string().optional().or(z.literal("")),
     is_category: z.string().optional().nullable().or(z.literal("")),
     cf_category: z.string().optional().nullable().or(z.literal("")),
+    bs_category: z.string().optional().nullable().or(z.literal("")),
 })
 
 type AccountFormValues = z.infer<typeof accountSchema>
@@ -65,6 +66,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
             parent: initialData?.parent || undefined,
             is_category: (initialData as any)?.is_category || "",
             cf_category: (initialData as any)?.cf_category || "",
+            bs_category: (initialData as any)?.bs_category || "",
         },
     })
 
@@ -79,6 +81,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
 
     const inheritedIsCategory = getInheritedCategory(form.watch("parent"), 'is_category');
     const inheritedCfCategory = getInheritedCategory(form.watch("parent"), 'cf_category');
+    const inheritedBsCategory = getInheritedCategory(form.watch("parent"), 'bs_category');
 
     const accountType = form.watch("account_type");
     const isPLAccount = accountType === "INCOME" || accountType === "EXPENSE";
@@ -103,6 +106,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                     parent: undefined,
                     is_category: "",
                     cf_category: "",
+                    bs_category: "",
                 })
             }
         }
@@ -117,6 +121,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                 parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? data.parent : null,
                 is_category: data.is_category || null,
                 cf_category: data.cf_category || null,
+                bs_category: data.bs_category || null,
             }
 
             if (initialData?.id) {
@@ -307,6 +312,35 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 )}
                             />
                         </div>
+
+                        <FormField
+                            control={form.control}
+                            name="bs_category"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Mapeo Balance (Ratios)</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                                        <FormControl>
+                                            <SelectTrigger className={cn(!field.value && inheritedBsCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                                <SelectValue placeholder={inheritedBsCategory ? "Heredado del padre" : "Sin mapeo"} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="none">Sin mapeo</SelectItem>
+                                            <SelectItem value="CURRENT_ASSET">Activo Corriente</SelectItem>
+                                            <SelectItem value="NON_CURRENT_ASSET">Activo No Corriente</SelectItem>
+                                            <SelectItem value="CURRENT_LIABILITY">Pasivo Corriente</SelectItem>
+                                            <SelectItem value="NON_CURRENT_LIABILITY">Pasivo No Corriente</SelectItem>
+                                            <SelectItem value="EQUITY">Patrimonio</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {!field.value && inheritedBsCategory && (
+                                        <p className="text-[10px] text-emerald-600 italic mt-1">Heredado del padre</p>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <div className="flex justify-end space-x-2">
                             <Button

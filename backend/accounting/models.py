@@ -24,6 +24,13 @@ class CFCategory(models.TextChoices):
     FINANCING = 'FINANCING', _('Actividades de Financiación')
     DEP_AMORT = 'DEP_AMORT', _('Depreciación y Amortización (No Efectivo)')
 
+class BSCategory(models.TextChoices):
+    CURRENT_ASSET = 'CURRENT_ASSET', _('Activo Corriente')
+    NON_CURRENT_ASSET = 'NON_CURRENT_ASSET', _('Activo No Corriente')
+    CURRENT_LIABILITY = 'CURRENT_LIABILITY', _('Pasivo Corriente')
+    NON_CURRENT_LIABILITY = 'NON_CURRENT_LIABILITY', _('Pasivo No Corriente')
+    EQUITY = 'EQUITY', _('Patrimonio')
+
 class Account(models.Model):
     code = models.CharField(_("Código"), max_length=20, unique=True, blank=True, help_text="Ej: 1.1.01.001")
     name = models.CharField(_("Nombre"), max_length=255)
@@ -41,6 +48,7 @@ class Account(models.Model):
     # Reporting Mapping
     is_category = models.CharField(_("Categoría Estado Resultados"), max_length=30, choices=ISCategory.choices, null=True, blank=True)
     cf_category = models.CharField(_("Categoría Flujo de Caja"), max_length=30, choices=CFCategory.choices, null=True, blank=True)
+    bs_category = models.CharField(_("Categoría Balance"), max_length=30, choices=BSCategory.choices, null=True, blank=True)
     
     @property
     def effective_is_category(self):
@@ -58,6 +66,15 @@ class Account(models.Model):
             return self.cf_category
         if self.parent:
             return self.parent.effective_cf_category
+        return None
+    
+    @property
+    def effective_bs_category(self):
+        """Returns the assigned BS category or inherits from parent."""
+        if self.bs_category:
+            return self.bs_category
+        if self.parent:
+            return self.parent.effective_bs_category
         return None
     
     class Meta:

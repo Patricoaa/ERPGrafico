@@ -3,6 +3,7 @@ from .models import Account, JournalEntry, JournalItem, AccountingSettings, Budg
 
 class AccountSerializer(serializers.ModelSerializer):
     account_type_display = serializers.CharField(source='get_account_type_display', read_only=True)
+    bs_category_display = serializers.CharField(source='get_bs_category_display', read_only=True)
     debit_total = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
     credit_total = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
     balance = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
@@ -11,6 +12,7 @@ class AccountSerializer(serializers.ModelSerializer):
         model = Account
         fields = [
             'id', 'code', 'name', 'account_type', 'account_type_display', 
+            'bs_category', 'bs_category_display',
             'parent', 'is_reconcilable', 'is_selectable', 'debit_total', 'credit_total', 
             'balance', 'is_category', 'cf_category'
         ]

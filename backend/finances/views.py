@@ -258,9 +258,21 @@ def get_financial_analysis_data(request):
     debt_to_equity = (total_liabilities / total_equity) if total_equity else 0
     
     # Liquidity (Current Ratio) = Current Assets / Current Liabilities
-    # We need to filter for Current (usually 1.1 and 2.1 in our simple tree check)
-    current_assets = sum(n['balance'] for n in bs['assets'] if n['code'].startswith('1.1'))
-    current_liabilities = sum(n['balance'] for n in bs['liabilities'] if n['code'].startswith('2.1'))
+    # We use the new bs_category mapping for dynamic calculation
+    from accounting.models import BSCategory, Account
+    
+    def get_category_total(cat, e_date):
+        # Find all leaf accounts that resolve to this category
+        # Using loop since effective_bs_category is a property with inheritance
+        total = 0
+        leaf_accs = Account.objects.filter(children__isnull=True)
+        for acc in leaf_accs:
+            if acc.effective_bs_category == cat:
+                total += float(FinanceService._get_account_balance(acc, end_date=e_date))
+        return total
+
+    current_assets = get_category_total(BSCategory.CURRENT_ASSET, end_date)
+    current_liabilities = get_category_total(BSCategory.CURRENT_LIABILITY, end_date)
     
     current_ratio = (current_assets / current_liabilities) if current_liabilities else 0
     

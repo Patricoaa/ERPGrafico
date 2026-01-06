@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
-from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem
+from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
 from inventory.models import ProductCategory, Product, Warehouse, StockMove
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
@@ -97,7 +97,7 @@ class Command(BaseCommand):
         # 9. Accounts (last, as everything else is gone)
         Account.objects.all().delete()
 
-    def _get_acc(self, code, name, account_type, parent=None, is_reconcilable=False, is_category=None, cf_category=None):
+    def _get_acc(self, code, name, account_type, parent=None, is_reconcilable=False, is_category=None, cf_category=None, bs_category=None):
         acc, _ = Account.objects.update_or_create(
             code=code,
             defaults={
@@ -107,6 +107,7 @@ class Command(BaseCommand):
                 'is_reconcilable': is_reconcilable,
                 'is_category': is_category,
                 'cf_category': cf_category,
+                'bs_category': bs_category,
             }
         )
         return acc
