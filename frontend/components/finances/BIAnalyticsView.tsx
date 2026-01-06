@@ -29,51 +29,19 @@ interface BIAnalyticsViewProps {
 }
 
 export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
-    const [salesData, setSalesData] = useState<any>(null);
-    const [inventoryData, setInventoryData] = useState<any>(null);
+    const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                // For now, we'll mock some data since we may not have all backend endpoints
-                // In production, these would be real API calls
+                const params: any = {};
+                if (date?.to) params.end_date = format(date.to, 'yyyy-MM-dd');
+                if (date?.from) params.start_date = format(date.from, 'yyyy-MM-dd');
 
-                // Mock sales data
-                setSalesData({
-                    total_sales: 15000000,
-                    sales_count: 45,
-                    average_ticket: 333333,
-                    growth: 12.5,
-                    monthly_trend: [
-                        { month: 'Ene', sales: 1200000 },
-                        { month: 'Feb', sales: 1400000 },
-                        { month: 'Mar', sales: 1600000 },
-                        { month: 'Abr', sales: 1500000 },
-                        { month: 'May', sales: 1800000 },
-                        { month: 'Jun', sales: 2000000 }
-                    ],
-                    top_customers: [
-                        { name: 'Cliente A', amount: 3500000 },
-                        { name: 'Cliente B', amount: 2800000 },
-                        { name: 'Cliente C', amount: 2200000 },
-                        { name: 'Cliente D', amount: 1900000 },
-                        { name: 'Cliente E', amount: 1500000 }
-                    ]
-                });
-
-                setInventoryData({
-                    total_value: 8500000,
-                    item_count: 234,
-                    turnover_ratio: 4.2,
-                    stock_distribution: [
-                        { category: 'Materia Prima', value: 3400000, items: 85 },
-                        { category: 'Productos Terminados', value: 3100000, items: 92 },
-                        { category: 'Insumos', value: 2000000, items: 57 }
-                    ],
-                    low_stock_alerts: 12
-                });
+                const res = await api.get('/finances/api/bi-analytics/', { params });
+                setData(res.data);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -84,6 +52,9 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
     }, [date]);
 
     if (loading) return <div className="p-8 text-center animate-pulse">Cargando analytics...</div>;
+    if (!data) return <div className="p-8 text-center text-muted-foreground">No hay datos disponibles</div>;
+
+    const { sales, inventory, performance } = data;
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-500">
@@ -96,11 +67,11 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {salesData?.total_sales.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                            {sales.total_sales.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <div className="flex items-center text-xs text-emerald-600 mt-1">
                             <TrendingUp className="h-3 w-3 mr-1" />
-                            +{salesData?.growth}% vs período anterior
+                            +{sales.growth}% vs período anterior
                         </div>
                     </CardContent>
                 </Card>
@@ -112,10 +83,10 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {salesData?.average_ticket.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                            {sales.average_ticket.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {salesData?.sales_count} ventas realizadas
+                            {sales.sales_count} ventas realizadas
                         </p>
                     </CardContent>
                 </Card>
@@ -127,10 +98,10 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {inventoryData?.total_value.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                            {inventory.total_value.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {inventoryData?.item_count} productos en stock
+                            {inventory.item_count} productos en stock
                         </p>
                     </CardContent>
                 </Card>
@@ -141,9 +112,9 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <TrendingUp className="h-4 w-4 text-orange-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{inventoryData?.turnover_ratio}x</div>
+                        <div className="text-2xl font-bold">{inventory.turnover_ratio}x</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {inventoryData?.low_stock_alerts} alertas de stock bajo
+                            {inventory.low_stock_alerts} alertas de stock bajo
                         </p>
                     </CardContent>
                 </Card>
@@ -157,7 +128,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                 </CardHeader>
                 <CardContent className="h-[350px]">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={salesData?.monthly_trend || []}>
+                        <LineChart data={sales.monthly_trend || []}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
@@ -187,7 +158,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={salesData?.top_customers || []} layout="vertical">
+                            <BarChart data={sales.top_customers || []} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" />
                                 <YAxis dataKey="name" type="category" width={100} />
@@ -208,16 +179,16 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={inventoryData?.stock_distribution || []}
+                                    data={inventory.stock_distribution || []}
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={(entry: any) => `${entry.category} (${entry.items})`}
+                                    label={(entry: any) => `${entry.category}`}
                                     outerRadius={80}
                                     fill="#8884d8"
                                     dataKey="value"
                                 >
-                                    {(inventoryData?.stock_distribution || []).map((entry: any, index: number) => (
+                                    {(inventory.stock_distribution || []).map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
@@ -229,7 +200,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                 </Card>
             </div>
 
-            {/* Additional Insights Section */}
+            {/* Performance Insights Section */}
             <div className="grid gap-6 md:grid-cols-3">
                 <Card className="shadow-md hover:shadow-lg transition-shadow">
                     <CardHeader>
@@ -238,16 +209,8 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     <CardContent>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Total Compras:</span>
-                                <span className="font-semibold">$12.5M</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Órdenes Abiertas:</span>
-                                <span className="font-semibold">8</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Proveedores Activos:</span>
-                                <span className="font-semibold">23</span>
+                                <span className="text-sm text-muted-foreground">Volumen de Compra:</span>
+                                <span className="font-semibold">{performance.purchase_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                             </div>
                         </div>
                     </CardContent>
@@ -260,16 +223,12 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     <CardContent>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Órdenes Completadas:</span>
-                                <span className="font-semibold">34</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">En Proceso:</span>
-                                <span className="font-semibold">12</span>
+                                <span className="text-sm text-muted-foreground">OTs Completadas:</span>
+                                <span className="font-semibold">{data.production.finished_wo} / {data.production.total_wo}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Eficiencia:</span>
-                                <span className="font-semibold text-emerald-600">94%</span>
+                                <span className="font-semibold text-emerald-600">{data.production.efficiency}%</span>
                             </div>
                         </div>
                     </CardContent>
@@ -282,16 +241,22 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     <CardContent>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Total Pendiente:</span>
-                                <span className="font-semibold">$8.2M</span>
+                                <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
+                                <span className="font-semibold text-blue-600">{performance.ar_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                             </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-md hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                        <CardTitle className="text-base">Cuentas por Pagar</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Vencidas:</span>
-                                <span className="font-semibold text-red-600">$1.3M</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Días Promedio:</span>
-                                <span className="font-semibold">42</span>
+                                <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
+                                <span className="font-semibold text-red-600">{performance.ap_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                             </div>
                         </div>
                     </CardContent>

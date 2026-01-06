@@ -286,3 +286,23 @@ def get_financial_analysis_data(request):
             'solvency_ratio': solvency_ratio
         }
     })
+
+@api_view(['GET'])
+def get_bi_analytics_data(request):
+    """
+    Returns real cross-module BI analytics data.
+    """
+    start_date = request.query_params.get('start_date')
+    end_date = request.query_params.get('end_date')
+    
+    def to_date(d):
+        if not d: return None
+        if isinstance(d, date): return d
+        from datetime import datetime
+        try:
+            return datetime.strptime(d, '%Y-%m-%d').date()
+        except:
+            return None
+
+    data = FinanceService.get_bi_analytics(to_date(start_date), to_date(end_date))
+    return Response(data)

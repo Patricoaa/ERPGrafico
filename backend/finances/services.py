@@ -1,6 +1,9 @@
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 from decimal import Decimal
 from accounting.models import Account, AccountType, JournalItem
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
+import datetime
 
 class FinanceService:
     @staticmethod
@@ -387,4 +390,124 @@ class FinanceService:
             'total_financing_comp': total_financing_comp,
             'net_increase': net_increase,
             'net_increase_comp': net_increase_comp
+        }
+
+    @staticmethod
+    def get_bi_analytics(start_date=None, end_date=None):
+        """
+        Aggregates cross-module data for BI Analytics.
+        """
+        from sales.models import SaleOrder
+        from inventory.models import Product, ProductCategory
+        from purchasing.models import PurchaseOrder
+        from billing.models import Invoice
+        
+        if not end_date:
+            end_date = timezone.now().date()
+        if not start_date:
+            start_date = end_date - datetime.timedelta(days=180) # Last 6 months by default
+
+        # 1. Sales Analytics
+        sales_qs = SaleOrder.objects.filter(date__range=(start_date, end_date), status__in=['CONFIRMED', 'INVOICED', 'PAID'])
+        total_sales = sales_qs.aggregate(total=Sum('total'))['total'] or Decimal('0.00')
+        sales_count = sales_qs.count()
+        avg_ticket = total_sales / sales_count if sales_count > 0 else Decimal('0.00')
+
+        # Monthly Trend
+        monthly_sales = sales_qs.annotate(month=TruncMonth('date')).values('month').annotate(total=Sum('total')).order_by('month')
+        trend = []
+        for ms in monthly_sales:
+            trend.append({
+                'month': ms['month'].strftime('%b'),
+                'sales': float(ms['total'])
+            })
+
+        # Top Customers
+        top_customers_qs = sales_qs.values('customer__name').annotate(total=Sum('total')).order_by('-total')[:5]
+        top_customers = [{'name': c['customer__name'], 'amount': float(c['total'])} for c in top_customers_qs]
+
+        # 2. Inventory Analytics
+        products = Product.objects.filter(product_type='STORABLE')
+        total_inv_value = 0
+        for p in products:
+            # Simple valuation: quantity * cost_price
+            # In a real scenario, we'd query StockMove balances per product
+            from inventory.models import StockMove
+            balance = StockMove.objects.filter(product=p, date__lte=end_date).aggregate(total=Sum('quantity'))['total'] or 0
+            total_inv_value += float(balance) * float(p.cost_price)
+
+        # Stock Distribution by Category
+        categories = ProductCategory.objects.all()
+        dist = []
+        for cat in categories:
+            cat_products = Product.objects.filter(category=cat, product_type='STORABLE')
+            cat_val = 0
+            items_count = 0
+            for p in cat_products:
+                from inventory.models import StockMove
+                balance = StockMove.objects.filter(product=p, date__lte=end_date).aggregate(total=Sum('quantity'))['total'] or 0
+                cat_val += float(balance) * float(p.cost_price)
+                if balance > 0:
+                    items_count += 1
+            if cat_val > 0:
+                dist.append({
+                    'category': cat.name,
+                    'value': cat_val,
+                    'items': items_count
+                })
+
+        # 3. Production Analytics
+        from production.models import WorkOrder
+        wo_qs = WorkOrder.objects.all()
+        wo_status_dist = wo_qs.values('status').annotate(count=Count('id'))
+        finished_wo = wo_qs.filter(status='FINISHED').count()
+        total_wo = wo_qs.count()
+        prod_efficiency = (finished_wo / total_wo * 100) if total_wo > 0 else 0
+
+        # 4. Performance / Finance Indicators
+        # Accounts Receivable (Invoices POSTED but not PAID)
+        ar_total = Invoice.objects.filter(
+            status='POSTED', 
+            sale_order__isnull=False
+        ).aggregate(total=Sum('total'))['total'] or 0
+        
+        # Accounts Payable
+        ap_total = Invoice.objects.filter(
+            status='POSTED', 
+            purchase_order__isnull=False
+        ).aggregate(total=Sum('total'))['total'] or 0
+
+        # Purchase Volume
+        purchase_vol = PurchaseOrder.objects.filter(
+            date__range=(start_date, end_date), 
+            status__in=['CONFIRMED', 'RECEIVED', 'INVOICED', 'PAID']
+        ).aggregate(total=Sum('total'))['total'] or 0
+
+        return {
+            'sales': {
+                'total_sales': float(total_sales),
+                'sales_count': sales_count,
+                'average_ticket': float(avg_ticket),
+                'monthly_trend': trend,
+                'top_customers': top_customers,
+                'growth': 0 
+            },
+            'inventory': {
+                'total_value': total_inv_value,
+                'item_count': products.count(),
+                'stock_distribution': dist,
+                'turnover_ratio': 0,
+                'low_stock_alerts': 0 
+            },
+            'production': {
+                'total_wo': total_wo,
+                'finished_wo': finished_wo,
+                'efficiency': round(prod_efficiency, 1),
+                'status_distribution': list(wo_status_dist)
+            },
+            'performance': {
+                'ar_total': float(ar_total),
+                'ap_total': float(ap_total),
+                'purchase_total': float(purchase_vol)
+            }
         }

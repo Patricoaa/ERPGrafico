@@ -154,7 +154,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-primary">
-                            {(data.liquidity.current_assets - (data.structure.total_liabilities - (data.structure.total_assets - data.liquidity.current_assets))).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                            {(data.liquidity.current_assets - data.liquidity.current_liabilities).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">Activo Corriente - Pasivo Corriente</p>
                     </CardContent>
@@ -258,7 +258,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                             <BarChart
                                 data={[
                                     { name: 'Activos Corrientes', value: data.liquidity.current_assets },
-                                    { name: 'Pasivos Corrientes', value: data.structure.total_liabilities - (data.structure.total_assets - data.liquidity.current_assets) }
+                                    { name: 'Pasivos Corrientes', value: data.liquidity.current_liabilities }
                                 ]}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />

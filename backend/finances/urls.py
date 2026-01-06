@@ -5,7 +5,8 @@ from .views import (
     get_balance_sheet_data,
     get_income_statement_data,
     get_cash_flow_data,
-    get_financial_analysis_data
+    get_financial_analysis_data,
+    get_bi_analytics_data
 )
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
     path('api/income-statement/', get_income_statement_data, name='api-income-statement'),
     path('api/cash-flow/', get_cash_flow_data, name='api-cash-flow'),
     path('api/analysis/', get_financial_analysis_data, name='api-analysis'),
+    path('api/bi-analytics/', get_bi_analytics_data, name='api-bi-analytics'),
 ]
