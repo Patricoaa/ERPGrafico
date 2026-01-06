@@ -79,7 +79,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                 const [supRes, catRes, accRes] = await Promise.all([
                     api.get('/contacts/?is_supplier=true'),
                     api.get('/services/categories/'),
-                    api.get('/accounting/accounts/?account_type=EXPENSE,LIABILITY') // Ideally filter
+                    api.get('/accounting/accounts/?account_type=EXPENSE,LIABILITY&is_leaf=true') // Filter leaf accounts
                 ])
                 setSuppliers(supRes.data.results || supRes.data)
                 setCategories(catRes.data.results || catRes.data)
@@ -155,7 +155,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     </FormItem>
                                 )}
                             />
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
                                     control={form.control}
                                     name="supplier"
@@ -203,13 +203,13 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                     {/* Recurrence & Amount */}
                     <Card>
                         <CardContent className="pt-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
                                     control={form.control}
                                     name="recurrence_type"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Frecuencia</FormLabel>
+                                            <FormLabel>Frecuencia de Facturación</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -230,7 +230,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     name="payment_day"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Día de Pago</FormLabel>
+                                            <FormLabel>Día de Pago sugerido</FormLabel>
                                             <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -238,7 +238,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-4">
                                 <FormField
                                     control={form.control}
                                     name="base_amount"
@@ -262,9 +262,10 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     control={form.control}
                                     name="is_amount_variable"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm mt-8">
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                                             <div className="space-y-0.5">
-                                                <FormLabel className="text-xs">Monto Variable</FormLabel>
+                                                <FormLabel className="text-sm">Monto Variable</FormLabel>
+                                                <FormDescription className="text-[10px]">El monto cambia cada mes</FormDescription>
                                             </div>
                                             <FormControl>
                                                 <Switch
@@ -286,7 +287,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                     <div className="space-y-6">
                         <Card>
                             <CardContent className="pt-6 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <FormField
                                         control={form.control}
                                         name="start_date"

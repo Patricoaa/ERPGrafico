@@ -64,7 +64,7 @@ export function ServiceCategoryDialog({ children, initialData, onSuccess }: Serv
     useEffect(() => {
         const loadAccounts = async () => {
             try {
-                const res = await api.get('/accounting/accounts/')
+                const res = await api.get('/accounting/accounts/?is_leaf=true')
                 setAccounts(res.data.results || res.data)
             } catch (e) {
                 console.error(e)

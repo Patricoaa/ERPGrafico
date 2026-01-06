@@ -52,7 +52,7 @@ export default function EntriesPage() {
 
     const fetchAccounts = async () => {
         try {
-            const response = await api.get('/accounting/accounts/')
+            const response = await api.get('/accounting/accounts/?is_leaf=true')
             setAccounts(response.data.results || response.data)
         } catch (error) {
             console.error("Failed to fetch accounts", error)

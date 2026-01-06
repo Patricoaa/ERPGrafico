@@ -26,9 +26,10 @@ interface AccountSelectorProps {
     onChange: (value: string | null) => void
     placeholder?: string
     accountType?: string | string[]
+    showAll?: boolean
 }
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [accounts, setAccounts] = useState<any[]>([])
@@ -41,8 +42,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
         const fetchAccounts = async () => {
             setLoading(true)
             try {
-                let url = '/accounting/accounts/'
-                // We could filter here if the API support it, or filter in memory
+                let url = `/accounting/accounts/${showAll ? '' : '?is_leaf=true'}`
                 const res = await api.get(url)
                 const allAccounts = res.data.results || res.data
 

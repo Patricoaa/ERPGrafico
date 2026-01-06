@@ -74,7 +74,7 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
         try {
             const [catsRes, accsRes] = await Promise.all([
                 api.get('/inventory/categories/'),
-                api.get('/accounting/accounts/')
+                api.get('/accounting/accounts/?is_leaf=true')
             ])
             setCategories(catsRes.data.results || catsRes.data)
             setAccounts(accsRes.data.results || accsRes.data)

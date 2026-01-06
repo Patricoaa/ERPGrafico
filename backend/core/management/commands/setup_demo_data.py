@@ -117,7 +117,7 @@ class Command(BaseCommand):
         settings, _ = AccountingSettings.objects.get_or_create(id=1)
 
         # 1.1 Current Assets (Now Roots in DB)
-        start_assets = self._get_acc(f"{settings.asset_prefix}.1", "Activos Corrientes", AccountType.ASSET, parent=None)
+        start_assets = self._get_acc(f"{settings.asset_prefix}.1", "Activos Corrientes", AccountType.ASSET, parent=None, bs_category=BSCategory.CURRENT_ASSET)
         
         # 1.1.01 Cash & Bank
         cash_grp = self._get_acc(f"{settings.asset_prefix}.1.01", "Efectivo y Equivalentes", AccountType.ASSET, start_assets)
@@ -146,7 +146,7 @@ class Command(BaseCommand):
         stock_output = self._get_acc(f"{settings.asset_prefix}.1.06.01", "Salida de Stock (Puente)", AccountType.ASSET, interim_asset_grp, is_reconcilable=True)
 
         # 2.1 Current Liabilities (Now Root in DB)
-        start_liabilities = self._get_acc(f"{settings.liability_prefix}.1", "Pasivos Corrientes", AccountType.LIABILITY, parent=None)
+        start_liabilities = self._get_acc(f"{settings.liability_prefix}.1", "Pasivos Corrientes", AccountType.LIABILITY, parent=None, bs_category=BSCategory.CURRENT_LIABILITY)
         
         # 2.1.01 Payables
         payable_grp = self._get_acc(f"{settings.liability_prefix}.1.01", "Cuentas por Pagar", AccountType.LIABILITY, start_liabilities)
@@ -165,7 +165,7 @@ class Command(BaseCommand):
         vat_debit = self._get_acc(f"{settings.liability_prefix}.1.03.01", "IVA Débito Fiscal", AccountType.LIABILITY, tax_liabilities)
 
         # 3.1 Equity (Now Root in DB)
-        equity_root = self._get_acc(f"{settings.equity_prefix}.1", "Patrimonio Neto", AccountType.EQUITY, parent=None)
+        equity_root = self._get_acc(f"{settings.equity_prefix}.1", "Patrimonio Neto", AccountType.EQUITY, parent=None, bs_category=BSCategory.EQUITY)
         capital = self._get_acc(f"{settings.equity_prefix}.1.01", "Capital Social", AccountType.EQUITY, equity_root)
         res_acum = self._get_acc(f"{settings.equity_prefix}.1.02", "Resultados Acumulados", AccountType.EQUITY, equity_root)
 

@@ -69,7 +69,7 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
 
     const fetchAccounts = async () => {
         try {
-            const response = await api.get('/accounting/accounts/')
+            const response = await api.get('/accounting/accounts/?is_leaf=true')
             const allAccounts = response.data.results || response.data
             setAccounts(allAccounts.filter((a: any) => a.account_type === 'ASSET'))
         } catch (error) {

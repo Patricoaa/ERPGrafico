@@ -33,6 +33,13 @@ class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
 
+    def get_queryset(self):
+        queryset = Account.objects.all()
+        is_leaf = self.request.query_params.get('is_leaf')
+        if is_leaf and is_leaf.lower() == 'true':
+            queryset = queryset.filter(children__isnull=True)
+        return queryset
+
     def create(self, request, *args, **kwargs):
         print("DEBUG: ACCOUNT CREATE CALLED")
         print("Data:", request.data)
