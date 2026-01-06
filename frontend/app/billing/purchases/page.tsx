@@ -363,8 +363,8 @@ export default function PurchaseInvoicesPage() {
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>
 
-                                                {/* Credit/Debit Note (Only for primary documents) */}
-                                                {doc.purchase_order && !isNote && (
+                                                {/* Credit/Debit Note (Only for primary documents with folio) */}
+                                                {doc.purchase_order && !isNote && doc.number && doc.status !== 'DRAFT' && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
