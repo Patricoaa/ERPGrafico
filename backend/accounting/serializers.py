@@ -9,7 +9,11 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ['id', 'code', 'name', 'account_type', 'account_type_display', 'parent', 'is_reconcilable', 'debit_total', 'credit_total', 'balance']
+        fields = [
+            'id', 'code', 'name', 'account_type', 'account_type_display', 
+            'parent', 'is_reconcilable', 'is_selectable', 'debit_total', 'credit_total', 
+            'balance', 'is_category', 'cf_category'
+        ]
         extra_kwargs = {
             'code': {'required': False, 'allow_blank': True}
         }

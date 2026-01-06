@@ -152,170 +152,105 @@ class ReportService:
     @staticmethod
     def get_income_statement(start_date, end_date, comp_start=None, comp_end=None):
         """
-        Returns the Income Statement structure.
+        Returns a structured Income Statement based on ISCategory mapping.
         """
-        income = Account.objects.filter(account_type=AccountType.INCOME)
-        income_tree = ReportService.build_account_tree(income, start_date, end_date, comp_start, comp_end)
-        total_income = sum(node['balance'] for node in income_tree)
-        total_income_comp = sum(node['comp_balance'] for node in income_tree)
+        from accounting.models import ISCategory
+        
+        def get_cat_data(cat):
+            accounts = Account.objects.filter(is_category=cat)
+            tree = ReportService.build_account_tree(accounts, start_date, end_date, comp_start, comp_end)
+            total = sum(item['balance'] for item in tree)
+            total_comp = sum(item['comp_balance'] for item in tree)
+            return tree, float(total), float(total_comp)
 
-        expenses = Account.objects.filter(account_type=AccountType.EXPENSE)
-        expense_tree = ReportService.build_account_tree(expenses, start_date, end_date, comp_start, comp_end)
-        total_expenses = sum(node['balance'] for node in expense_tree)
-        total_expenses_comp = sum(node['comp_balance'] for node in expense_tree)
+        revenue_tree, total_rev, total_rev_comp = get_cat_data(ISCategory.REVENUE)
+        cogs_tree, total_cogs, total_cogs_comp = get_cat_data(ISCategory.COST_OF_SALES)
+        opex_tree, total_opex, total_opex_comp = get_cat_data(ISCategory.OPERATING_EXPENSE)
+        non_rev_tree, total_non_rev, total_non_rev_comp = get_cat_data(ISCategory.NON_OPERATING_REVENUE)
+        non_exp_tree, total_non_exp, total_non_exp_comp = get_cat_data(ISCategory.NON_OPERATING_EXPENSE)
+        tax_tree, total_tax, total_tax_comp = get_cat_data(ISCategory.TAX_EXPENSE)
+
+        gross_result = total_rev - total_cogs
+        gross_result_comp = total_rev_comp - total_cogs_comp
+        
+        operating_result = gross_result - total_opex
+        operating_result_comp = gross_result_comp - total_opex_comp
+        
+        non_operating_result = total_non_rev - total_non_exp
+        non_operating_result_comp = total_non_rev_comp - total_non_exp_comp
+        
+        ebt = operating_result + non_operating_result
+        ebt_comp = operating_result_comp + non_operating_result_comp
+        
+        net_income = ebt - total_tax
+        net_income_comp = ebt_comp - total_tax_comp
 
         return {
-            'income': income_tree,
-            'total_income': total_income,
-            'total_income_comp': total_income_comp,
-            'expenses': expense_tree,
-            'total_expenses': total_expenses,
-            'total_expenses_comp': total_expenses_comp,
-            'net_income': total_income - total_expenses,
-            'net_income_comp': total_income_comp - total_expenses_comp,
-            'net_income_variance': (total_income - total_expenses) - (total_income_comp - total_expenses_comp)
+            'sections': [
+                {'name': 'Ingresos Operacionales', 'tree': revenue_tree, 'total': total_rev, 'total_comp': total_rev_comp},
+                {'name': 'Costo de Ventas', 'tree': cogs_tree, 'total': total_cogs, 'total_comp': total_cogs_comp},
+                {'name': 'Resultado Bruto', 'is_total': True, 'total': gross_result, 'total_comp': gross_result_comp},
+                {'name': 'Gastos Operacionales', 'tree': opex_tree, 'total': total_opex, 'total_comp': total_opex_comp},
+                {'name': 'Resultado Operacional', 'is_total': True, 'total': operating_result, 'total_comp': operating_result_comp},
+                {'name': 'Ingresos No Operacionales', 'tree': non_rev_tree, 'total': total_non_rev, 'total_comp': total_non_rev_comp},
+                {'name': 'Gastos No Operacionales', 'tree': non_exp_tree, 'total': total_non_exp, 'total_comp': total_non_exp_comp},
+                {'name': 'Resultado No Operacional', 'is_total': True, 'total': non_operating_result, 'total_comp': non_operating_result_comp},
+                {'name': 'Utilidad Antes de Impuestos', 'is_total': True, 'total': ebt, 'total_comp': ebt_comp},
+                {'name': 'Impuesto a la Renta', 'tree': tax_tree, 'total': total_tax, 'total_comp': total_tax_comp},
+                {'name': 'Utilidad Neta', 'is_total': True, 'total': net_income, 'total_comp': net_income_comp},
+            ],
+            'net_income': net_income,
+            'net_income_comp': net_income_comp
         }
 
     @staticmethod
     def get_cash_flow(start_date, end_date):
         """
-        Returns Cash Flow Statement (Indirect Method).
+        Returns Cash Flow Statement (Indirect Method) using CFCategory mapping.
         """
-        # 1. Operating Activities
-        # Net Income
-        pnl = ReportService.get_income_statement(start_date, end_date)
-        net_income = pnl['net_income']
+        from accounting.models import CFCategory
         
-        operating_activities = []
-        operating_activities.append({'name': 'Utilidad Neta', 'amount': net_income})
+        is_report = ReportService.get_income_statement(start_date, end_date)
+        net_income = is_report['net_income']
         
-        # Adjustments for Non-Cash items (Depreciation)
-        # Assuming we look for Expense accounts with "Depreciación" in name for now?
-        # A more robust way would be a tag or specific account types.
-        depreciation = 0
-        # Iterate expenses to find depreciation
-        def find_depreciation(nodes):
-            total = 0
-            for node in nodes:
-                if 'depreciaci' in node['name'].lower():
-                    # Add back depreciation (Exp is positive in P&L structure usually, but here balance returned is positive for Expense type)
-                    # Expense reduces Net Income. To add it back, we take the positive expense amount.
-                    # Wait, our _get_account_balance returns positive for Expense.
-                    # So we just add it.
-                    # HOWEVER, we need to be careful not to double count if we iterate tree which sums parents.
-                    # We should look at leaf nodes or flatten list.
-                    # Simplification: Query DB directly for accounts with name.
-                    pass
-                # But 'node' has the balance for the period.
-            return total
-
-        depreciation_accs = Account.objects.filter(
-            account_type=AccountType.EXPENSE, 
-            name__icontains='Depreciaci'
-        )
-        for acc in depreciation_accs:
-            val = ReportService._get_account_balance(acc, start_date, end_date)
-            if val > 0:
-                depreciation += float(val)
-                operating_activities.append({'name': f"Más: {acc.name}", 'amount': float(val)})
-
-        # Changes in Working Capital (Receivables, Inventory, Payables)
-        # We need the DELTA between start and end date (or previous end date vs current end date?)
-        # For Cash Flow per period: Delta = Balance(End) - Balance(Start-1)
-        # Essentially the movement during the period.
+        operating_activities = [{'name': 'Utilidad Neta', 'amount': net_income}]
         
-        # (Increase) in Assets -> Negative Cash
-        # Increase in Liabilities -> Positive Cash
-        
-        # Receivables (Asset)
-        receivables_acc = Account.objects.filter(code__startswith='1.1.02') # Standard IFRS simplified
-        receivables_delta = 0
-        for acc in receivables_acc:
-             # Movement for the period is what we want?
-             # _get_account_balance with start/end returns the net movement for Assets.
-             # e.g. Debit (increase) 100, Credit (payed) 80 -> Net 20 increase.
-             # Increase in Asset = Use of Cash -.
-             val = ReportService._get_account_balance(acc, start_date, end_date)
-             receivables_delta += float(val)
-        
-        if receivables_delta != 0:
-            # If Assets increased (positive val), cash decreased (negative)
-            operating_activities.append({'name': '(Aumento) Disminución Cuentas por Cobrar', 'amount': -receivables_delta})
+        # 1. Non-Cash Adjustments
+        dep_accs = Account.objects.filter(cf_category=CFCategory.DEP_AMORT)
+        for acc in dep_accs:
+            val = float(ReportService._get_account_balance(acc, start_date, end_date))
+            if val != 0:
+                operating_activities.append({'name': f"Más: {acc.name}", 'amount': val})
 
-        # Inventory (Asset)
-        inventory_acc = Account.objects.filter(code__startswith='1.1.03')
-        inventory_delta = 0
-        for acc in inventory_acc:
-             val = ReportService._get_account_balance(acc, start_date, end_date)
-             inventory_delta += float(val)
-             
-        if inventory_delta != 0:
-            operating_activities.append({'name': '(Aumento) Disminución Inventarios', 'amount': -inventory_delta})
-
-        # Payables (Liability)
-        payables_acc = Account.objects.filter(code__startswith='2.1.01')
-        payables_delta = 0
-        for acc in payables_acc:
-             # Liability: Credit increase (positive val in our helper)
-             # Increase in Liability = Source of Cash +.
-             val = ReportService._get_account_balance(acc, start_date, end_date)
-             payables_delta += float(val)
-             
-        if payables_delta != 0:
-             operating_activities.append({'name': 'Aumento (Disminución) Proveedores', 'amount': payables_delta})
-             
-        # Taxes Payable
-        tax_acc = Account.objects.filter(code__startswith='2.1.02')
-        tax_delta = 0
-        for acc in tax_acc:
-             val = ReportService._get_account_balance(acc, start_date, end_date)
-             tax_delta += float(val)
-        if tax_delta != 0:
-             operating_activities.append({'name': 'Aumento (Disminución) Impuestos', 'amount': tax_delta})
-
+        # 2. Operating activities (WC Changes)
+        op_accs = Account.objects.filter(cf_category=CFCategory.OPERATING)
+        for acc in op_accs:
+            val = float(ReportService._get_account_balance(acc, start_date, end_date))
+            if val != 0:
+                amount = -val if acc.account_type == AccountType.ASSET else val
+                operating_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount})
 
         total_operating = sum(item['amount'] for item in operating_activities)
 
-        # 2. Investing Activities
+        # 3. Investing Activities
         investing_activities = []
-        # Purchase of Property, Plant, Equipment (Non-Current Assets)
-        # Prefix 1.2 usually
-        ppe_acc = Account.objects.filter(code__startswith='1.2')
-        ppe_delta = 0
-        for acc in ppe_acc:
-            val = ReportService._get_account_balance(acc, start_date, end_date)
-            ppe_delta += float(val)
-        
-        if ppe_delta != 0:
-            # Asset Increase (Purchase) -> Cash Outflow
-            investing_activities.append({'name': 'Compra de Propiedad y Equipo', 'amount': -ppe_delta})
-            
+        inv_accs = Account.objects.filter(cf_category=CFCategory.INVESTING)
+        for acc in inv_accs:
+            val = float(ReportService._get_account_balance(acc, start_date, end_date))
+            if val != 0:
+                amount = -val if acc.account_type == AccountType.ASSET else val
+                investing_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount})
         total_investing = sum(item['amount'] for item in investing_activities)
 
-        # 3. Financing Activities
+        # 4. Financing Activities
         financing_activities = []
-        # Long Term Debt (2.2) + Equity (3.1 Capital) - Dividends
-        loans_acc = Account.objects.filter(code__startswith='2.2')
-        loans_delta = 0
-        for acc in loans_acc:
-            val = ReportService._get_account_balance(acc, start_date, end_date)
-            loans_delta += float(val)
-        
-        if loans_delta != 0:
-             financing_activities.append({'name': 'Préstamos a Largo Plazo', 'amount': loans_delta})
-
-        capital_acc = Account.objects.filter(code__startswith='3.1')
-        capital_delta = 0
-        for acc in capital_acc:
-            val = ReportService._get_account_balance(acc, start_date, end_date)
-            capital_delta += float(val)
-            
-        if capital_delta != 0:
-             financing_activities.append({'name': 'Aportes de Capital', 'amount': capital_delta})
-
+        fin_accs = Account.objects.filter(cf_category=CFCategory.FINANCING)
+        for acc in fin_accs:
+            val = float(ReportService._get_account_balance(acc, start_date, end_date))
+            if val != 0:
+                amount = -val if acc.account_type == AccountType.ASSET else val
+                financing_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount})
         total_financing = sum(item['amount'] for item in financing_activities)
-
-        net_cash_flow = total_operating + total_investing + total_financing
 
         return {
             'operating': operating_activities,
@@ -324,5 +259,5 @@ class ReportService:
             'total_investing': total_investing,
             'financing': financing_activities,
             'total_financing': total_financing,
-            'net_cash_flow': net_cash_flow
+            'net_increase': total_operating + total_investing + total_financing
         }

@@ -46,13 +46,16 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                 const res = await api.get(url)
                 const allAccounts = res.data.results || res.data
 
+                // Always filter by is_selectable (Structural accounts shouldn't be picked)
+                const selectableAccounts = allAccounts.filter((a: any) => a.is_selectable !== false)
+
                 // Filter by type if provided
                 const filteredByType = accountType
-                    ? allAccounts.filter((a: any) => {
+                    ? selectableAccounts.filter((a: any) => {
                         if (Array.isArray(accountType)) return accountType.includes(a.account_type)
                         return a.account_type === accountType
                     })
-                    : allAccounts
+                    : selectableAccounts
 
                 setAccounts(filteredByType)
                 setFilteredAccounts(filteredByType)

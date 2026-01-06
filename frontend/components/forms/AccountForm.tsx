@@ -30,13 +30,16 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import api from "@/lib/api"
 
 const accountSchema = z.object({
-    code: z.string().optional(),
+    code: z.string().optional().or(z.literal("")),
     name: z.string().min(1, "El nombre es requerido"),
     account_type: z.enum(["ASSET", "LIABILITY", "EQUITY", "INCOME", "EXPENSE"]),
-    parent: z.string().optional(),
+    parent: z.string().optional().or(z.literal("")),
+    is_category: z.string().optional().nullable().or(z.literal("")),
+    cf_category: z.string().optional().nullable().or(z.literal("")),
 })
 
 type AccountFormValues = z.infer<typeof accountSchema>
@@ -44,7 +47,7 @@ type AccountFormValues = z.infer<typeof accountSchema>
 interface AccountFormProps {
     onSuccess?: () => void
     accounts?: any[]
-    initialData?: AccountFormValues & { id: number }
+    initialData?: any // Use any for initialData to avoid strict prop widening issues
     triggerText?: string
 }
 
@@ -59,6 +62,8 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
             name: initialData?.name || "",
             account_type: (initialData?.account_type as any) || "ASSET",
             parent: initialData?.parent || undefined,
+            is_category: (initialData as any)?.is_category || "",
+            cf_category: (initialData as any)?.cf_category || "",
         },
     })
 
@@ -71,6 +76,8 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                     name: initialData.name,
                     account_type: initialData.account_type as any,
                     parent: initialData.parent || undefined,
+                    is_category: (initialData as any).is_category || "",
+                    cf_category: (initialData as any).cf_category || "",
                 })
             } else {
                 form.reset({
@@ -78,6 +85,8 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                     name: "",
                     account_type: "ASSET",
                     parent: undefined,
+                    is_category: "",
+                    cf_category: "",
                 })
             }
         }
@@ -90,6 +99,8 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
             const payload = {
                 ...data,
                 parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? data.parent : null,
+                is_category: data.is_category || null,
+                cf_category: data.cf_category || null,
             }
 
             if (initialData?.id) {
@@ -203,7 +214,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                         </FormControl>
                                         <SelectContent>
                                             <SelectItem value="__none__">Sin padre</SelectItem>
-                                            {accounts.filter(acc => acc.id).map((acc) => (
+                                            {accounts.filter((acc: any) => acc.id).map((acc: any) => (
                                                 <SelectItem key={acc.id} value={acc.id.toString()}>
                                                     {acc.code} - {acc.name}
                                                 </SelectItem>
@@ -214,6 +225,60 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 </FormItem>
                             )}
                         />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="is_category"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Mapeo Estado Resultados</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Sin mapeo" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="none">Sin mapeo</SelectItem>
+                                                <SelectItem value="REVENUE">Ingresos Operacionales</SelectItem>
+                                                <SelectItem value="COST_OF_SALES">Costo de Ventas</SelectItem>
+                                                <SelectItem value="OPERATING_EXPENSE">Gastos Operacionales</SelectItem>
+                                                <SelectItem value="NON_OPERATING_REVENUE">Ingresos No Operacionales</SelectItem>
+                                                <SelectItem value="NON_OPERATING_EXPENSE">Gastos No Operacionales</SelectItem>
+                                                <SelectItem value="TAX_EXPENSE">Impuesto a la Renta</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="cf_category"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Mapeo Flujo de Caja</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Sin mapeo" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="none">Sin mapeo</SelectItem>
+                                                <SelectItem value="OPERATING">Actividades Operativas</SelectItem>
+                                                <SelectItem value="INVESTING">Actividades Inversión</SelectItem>
+                                                <SelectItem value="FINANCING">Actividades Financiamiento</SelectItem>
+                                                <SelectItem value="DEP_AMORT">Depreciación (Ajuste)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
                         <div className="flex justify-end space-x-2">
                             <Button
                                 type="button"

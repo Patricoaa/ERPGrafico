@@ -27,7 +27,13 @@ interface FinancialStatementTableProps {
     totalValueComp?: number;
     title: string;
     showComparison?: boolean;
+    embedded?: boolean;
 }
+
+const formatCurrency = (val: number | undefined | null) => {
+    if (val === undefined || val === null) return '$0';
+    return val.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
+};
 
 const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, level?: number, showComparison?: boolean }) => {
     const [expanded, setExpanded] = useState(true);
@@ -52,15 +58,15 @@ const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, le
                     </div>
                 </TableCell>
                 <TableCell className="text-right p-2 font-mono">
-                    {node.balance.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                    {formatCurrency(node.balance)}
                 </TableCell>
                 {showComparison && (
                     <>
                         <TableCell className="text-right p-2 font-mono text-muted-foreground">
-                            {(node.comp_balance || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                            {formatCurrency(node.comp_balance)}
                         </TableCell>
                         <TableCell className={cn("text-right p-2 font-mono", (node.variance || 0) > 0 ? "text-emerald-600" : (node.variance || 0) < 0 ? "text-red-600" : "")}>
-                            {(node.variance || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                            {formatCurrency(node.variance)}
                         </TableCell>
                     </>
                 )}
@@ -72,49 +78,55 @@ const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, le
     );
 };
 
-export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = ({ data, totalLabel, totalValue, totalValueComp, title, showComparison }) => {
+export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = ({ data, totalLabel, totalValue, totalValueComp, title, showComparison, embedded }) => {
+    const tableContent = (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Cuenta</TableHead>
+                    <TableHead className="text-right w-[150px]">Saldo</TableHead>
+                    {showComparison && (
+                        <>
+                            <TableHead className="text-right w-[150px]">Anterior</TableHead>
+                            <TableHead className="text-right w-[150px]">Var.</TableHead>
+                        </>
+                    )}
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {data.map(node => (
+                    <AccountRow key={node.id} node={node} showComparison={showComparison} />
+                ))}
+                {totalLabel && totalValue !== undefined && (
+                    <TableRow className="bg-slate-100 dark:bg-slate-900 font-bold border-t-2">
+                        <TableCell className="p-4 text-primary">{totalLabel}</TableCell>
+                        <TableCell className="text-right p-4 font-mono text-lg">
+                            {formatCurrency(totalValue)}
+                        </TableCell>
+                        {showComparison && totalValueComp !== undefined && (
+                            <>
+                                <TableCell className="text-right p-4 font-mono text-lg text-muted-foreground">
+                                    {formatCurrency(totalValueComp)}
+                                </TableCell>
+                                <TableCell className={cn("text-right p-4 font-mono text-lg", (totalValue - totalValueComp) > 0 ? "text-emerald-600" : "text-red-600")}>
+                                    {formatCurrency(totalValue - totalValueComp)}
+                                </TableCell>
+                            </>
+                        )}
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
+    );
+
+    if (embedded) return tableContent;
+
     return (
         <div className="rounded-md border bg-white dark:bg-zinc-950 shadow-sm">
             <div className="p-4 border-b bg-slate-50 dark:bg-slate-900">
                 <h3 className="font-semibold text-lg">{title}</h3>
             </div>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Cuenta</TableHead>
-                        <TableHead className="text-right w-[150px]">Saldo</TableHead>
-                        {showComparison && (
-                            <>
-                                <TableHead className="text-right w-[150px]">Anterior</TableHead>
-                                <TableHead className="text-right w-[150px]">Var.</TableHead>
-                            </>
-                        )}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.map(node => (
-                        <AccountRow key={node.id} node={node} showComparison={showComparison} />
-                    ))}
-                    {totalLabel && totalValue !== undefined && (
-                        <TableRow className="bg-slate-100 dark:bg-slate-900 font-bold border-t-2">
-                            <TableCell className="p-4 text-primary">{totalLabel}</TableCell>
-                            <TableCell className="text-right p-4 font-mono text-lg">
-                                {totalValue.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                            </TableCell>
-                            {showComparison && totalValueComp !== undefined && (
-                                <>
-                                    <TableCell className="text-right p-4 font-mono text-lg text-muted-foreground">
-                                        {totalValueComp.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                    </TableCell>
-                                    <TableCell className={cn("text-right p-4 font-mono text-lg", (totalValue - totalValueComp) > 0 ? "text-emerald-600" : "text-red-600")}>
-                                        {(totalValue - totalValueComp).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                    </TableCell>
-                                </>
-                            )}
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+            {tableContent}
         </div>
     );
 };

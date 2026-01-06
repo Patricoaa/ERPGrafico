@@ -10,12 +10,37 @@ class AccountType(models.TextChoices):
     INCOME = 'INCOME', _('Ingresos')
     EXPENSE = 'EXPENSE', _('Gastos')
 
+class ISCategory(models.TextChoices):
+    REVENUE = 'REVENUE', _('Ingresos Operacionales')
+    COST_OF_SALES = 'COST_OF_SALES', _('Costo de Ventas')
+    OPERATING_EXPENSE = 'OPERATING_EXPENSE', _('Gastos Operacionales')
+    NON_OPERATING_REVENUE = 'NON_OPERATING_REVENUE', _('Ingresos No Operacionales')
+    NON_OPERATING_EXPENSE = 'NON_OPERATING_EXPENSE', _('Gastos No Operacionales')
+    TAX_EXPENSE = 'TAX_EXPENSE', _('Impuesto a la Renta')
+
+class CFCategory(models.TextChoices):
+    OPERATING = 'OPERATING', _('Actividades de Operación')
+    INVESTING = 'INVESTING', _('Actividades de Inversión')
+    FINANCING = 'FINANCING', _('Actividades de Financiación')
+    DEP_AMORT = 'DEP_AMORT', _('Depreciación y Amortización (No Efectivo)')
+
 class Account(models.Model):
     code = models.CharField(_("Código"), max_length=20, unique=True, blank=True, help_text="Ej: 1.1.01.001")
     name = models.CharField(_("Nombre"), max_length=255)
     account_type = models.CharField(_("Tipo"), max_length=20, choices=AccountType.choices)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Cuenta Padre"))
     is_reconcilable = models.BooleanField(_("Conciliable"), default=False)
+
+    @property
+    def is_selectable(self):
+        """
+        An account is selectable for postings if it has no children.
+        """
+        return not self.children.exists()
+    
+    # Reporting Mapping
+    is_category = models.CharField(_("Categoría Estado Resultados"), max_length=30, choices=ISCategory.choices, null=True, blank=True)
+    cf_category = models.CharField(_("Categoría Flujo de Caja"), max_length=30, choices=CFCategory.choices, null=True, blank=True)
     
     class Meta:
         ordering = ['code']
@@ -229,6 +254,9 @@ class JournalItem(models.Model):
     def clean(self):
         if self.debit > 0 and self.credit > 0:
             raise ValidationError(_("Un apunte no puede tener montos en Debe y Haber simultáneamente."))
+        if self.account and not self.account.is_selectable:
+            raise ValidationError(_("La cuenta %(account)s tiene subcuentas y no es seleccionable para asientos contables."),
+                                params={'account': self.account},)
 
 class InventoryValuationMethod(models.TextChoices):
     AVERAGE = 'AVERAGE', _('Promedio Ponderado')

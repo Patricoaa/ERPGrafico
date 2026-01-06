@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Download, CalendarIcon } from "lucide-react"
 import api from "@/lib/api"
+import { toast } from "sonner"
 import { FinancialStatementTable } from "@/components/reports/FinancialStatementTable"
 import { CashFlowTable } from "@/components/reports/CashFlowTable"
 import { DateRangeSelector } from "@/components/reports/DateRangeSelector"
@@ -20,6 +21,7 @@ export default function StatementsPage() {
     const [loading, setLoading] = useState(false);
     const [showComparison, setShowComparison] = useState(false);
     const [periodType, setPeriodType] = useState<'annual' | 'monthly'>('annual');
+    const [activeTab, setActiveTab] = useState('bs');
 
     // Date State
     const [date, setDate] = useState<DateRange | undefined>({
@@ -86,13 +88,17 @@ export default function StatementsPage() {
         }
     };
 
-    const downloadPDF = async (type: string) => {
-        // PDF implementation could be updated to support comparisons too if backend supported it, 
-        // but for now keeping it simple as per original
+    const downloadPDF = async () => {
+        const type = activeTab === 'bs' ? 'balance-sheet' : 'income-statement';
+        if (activeTab === 'cf') {
+            toast.error("Descarga PDF para Flujo de Caja no implementada aún.");
+            return;
+        }
         try {
             let url = '';
             if (type === 'balance-sheet') url = '/reports/balance-sheet/';
             if (type === 'income-statement') url = '/reports/income-statement/';
+            // ...
 
             if (url) {
                 const response = await api.get(url, { responseType: 'blob' });
@@ -110,32 +116,59 @@ export default function StatementsPage() {
         }
     };
 
+    const ReportHeader = ({ title, dateRange }: { title: string, dateRange?: DateRange }) => (
+        <div className="flex flex-col items-center text-center space-y-1 mb-8 pb-6 border-b">
+
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{title}</h2>
+            {dateRange?.from && dateRange?.to && (
+                <p className="text-sm text-muted-foreground font-medium">
+                    Período: {format(dateRange.from, 'dd MMMM yyyy', { locale: es })} al {format(dateRange.to, 'dd MMMM yyyy', { locale: es })}
+                </p>
+            )}
+            <div className="w-16 h-1 bg-primary mt-4 rounded-full" />
+        </div>
+    );
+
     const renderBSDistribution = () => {
         if (!bsData) return null;
-        const total = bsData.total_assets;
-        if (total === 0) return null;
-        const liabPercent = (bsData.total_liabilities / total) * 100;
-        const equityPercent = (bsData.total_equity / total) * 100;
+        const a = bsData.total_assets || 0;
+        const p = bsData.total_liabilities || 0;
+        const e = bsData.total_equity || 0;
+        const totalSum = a + p + e;
+        if (totalSum === 0) return null;
+
+        const aP = (a / totalSum) * 100;
+        const pP = (p / totalSum) * 100;
+        const eP = (e / totalSum) * 100;
+
+        const fmt = (val: number) => val.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 
         return (
-            <Card className="mb-6">
-                <CardContent className="pt-6">
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-sm font-medium">
-                            <span className="text-emerald-600">Activos ({bsData.total_assets.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })})</span>
-                            <div className="flex space-x-4">
-                                <span className="text-red-500">Pasivos ({bsData.total_liabilities.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })})</span>
-                                <span className="text-blue-500">Patrimonio ({bsData.total_equity.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })})</span>
-                            </div>
-                        </div>
-                        <div className="h-4 w-full rounded-full bg-slate-100 flex overflow-hidden">
-                            <div style={{ width: `${liabPercent}%` }} className="h-full bg-red-500 transition-all" title="Pasivos" />
-                            <div style={{ width: `${equityPercent}%` }} className="h-full bg-blue-500 transition-all" title="Patrimonio" />
-                        </div>
-                        <p className="text-xs text-muted-foreground text-center">Distribución de Estructura de Capital</p>
+            <div className="mb-10 overflow-hidden rounded-lg border shadow-sm">
+                <div className="h-10 w-full flex text-[10px] font-bold text-white uppercase tracking-tighter">
+                    <div
+                        style={{ width: `${aP}%` }}
+                        className="bg-emerald-500 flex items-center justify-center p-1 transition-all border-r border-white/20 whitespace-nowrap overflow-hidden"
+                        title={`Activos: ${fmt(a)}`}
+                    >
+                        Activos: {fmt(a)}
                     </div>
-                </CardContent>
-            </Card>
+                    <div
+                        style={{ width: `${pP}%` }}
+                        className="bg-red-500 flex items-center justify-center p-1 transition-all border-r border-white/20 whitespace-nowrap overflow-hidden"
+                        title={`Pasivos: ${fmt(p)}`}
+                    >
+                        Pasivos: {fmt(p)}
+                    </div>
+                    <div
+                        style={{ width: `${eP}%` }}
+                        className="bg-blue-600 flex items-center justify-center p-1 transition-all whitespace-nowrap overflow-hidden"
+                        title={`Patrimonio: ${fmt(e)}`}
+                    >
+                        Patrimonio: {fmt(e)}
+                    </div>
+                </div>
+            </div>
         )
     }
 
@@ -180,150 +213,136 @@ export default function StatementsPage() {
                             </div>
                         )}
                     </div>
+                    <Button variant="outline" size="sm" onClick={() => downloadPDF()} className="h-10 px-4 whitespace-nowrap">
+                        <Download className="mr-2 h-4 w-4" /> Exportar PDF
+                    </Button>
                 </div>
             </div>
 
-            <Tabs defaultValue="bs" className="space-y-4">
-                <TabsList className="grid w-full max-w-md grid-cols-3 bg-slate-100 dark:bg-slate-800">
-                    <TabsTrigger value="bs">Balance</TabsTrigger>
-                    <TabsTrigger value="pl">Resultados</TabsTrigger>
-                    <TabsTrigger value="cf">Flujos</TabsTrigger>
-                </TabsList>
+            <Tabs
+                defaultValue="bs"
+                onValueChange={setActiveTab}
+                className="space-y-4"
+            >
+                <div className="flex justify-center">
+                    <TabsList className="grid w-full max-sm:max-w-xs max-w-sm grid-cols-3 bg-slate-100 dark:bg-slate-800 rounded-full h-11 p-1">
+                        <TabsTrigger value="bs" className="rounded-full">Balance</TabsTrigger>
+                        <TabsTrigger value="pl" className="rounded-full">Resultados</TabsTrigger>
+                        <TabsTrigger value="cf" className="rounded-full">Flujos</TabsTrigger>
+                    </TabsList>
+                </div>
 
-                <TabsContent value="bs" className="space-y-4">
-                    <div className="flex justify-end mb-2">
-                        <Button variant="outline" size="sm" onClick={() => downloadPDF('balance-sheet')}>
-                            <Download className="mr-2 h-4 w-4" /> PDF
-                        </Button>
-                    </div>
-
-                    {bsData ? (
-                        <>
-                            {!showComparison && renderBSDistribution()}
-                            <div className="grid gap-6">
-                                <FinancialStatementTable
-                                    title="Activos"
-                                    data={bsData.assets}
-                                    totalLabel="Total Activos"
-                                    totalValue={bsData.total_assets}
-                                    totalValueComp={bsData.total_assets_comp}
-                                    showComparison={showComparison}
-                                />
-                                <FinancialStatementTable
-                                    title="Pasivos"
-                                    data={bsData.liabilities}
-                                    totalLabel="Total Pasivos"
-                                    totalValue={bsData.total_liabilities}
-                                    totalValueComp={bsData.total_liabilities_comp}
-                                    showComparison={showComparison}
-                                />
-                                <FinancialStatementTable
-                                    title="Patrimonio"
-                                    data={bsData.equity}
-                                    totalLabel="Total Patrimonio"
-                                    totalValue={bsData.total_equity}
-                                    totalValueComp={bsData.total_equity_comp}
-                                    showComparison={showComparison}
-                                />
-                                <Card className="bg-slate-50 dark:bg-slate-900 border-dashed">
-                                    <CardHeader className="py-2">
-                                        <CardTitle className="text-sm">Consistencia Contable (A = P + Pat)</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="py-2">
-                                        <div className="flex justify-between items-center text-sm font-mono">
-                                            <span>Diferencia Actual</span>
-                                            <span className={Math.abs(bsData.check) < 1 ? "text-green-600" : "text-red-600 font-bold"}>
-                                                {bsData.check.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                            </span>
+                <div className="max-w-5xl mx-auto w-full pt-4">
+                    <TabsContent value="bs">
+                        <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                            <CardContent className="p-10">
+                                <ReportHeader title="Balance General" dateRange={date} />
+                                {bsData ? (
+                                    <div className="space-y-10">
+                                        {!showComparison && renderBSDistribution()}
+                                        <div className="grid gap-12">
+                                            <FinancialStatementTable
+                                                title="Activos"
+                                                data={bsData.assets}
+                                                totalLabel="Total Activos"
+                                                totalValue={bsData.total_assets}
+                                                totalValueComp={bsData.total_assets_comp}
+                                                showComparison={showComparison}
+                                                embedded
+                                            />
+                                            <FinancialStatementTable
+                                                title="Pasivos"
+                                                data={bsData.liabilities}
+                                                totalLabel="Total Pasivos"
+                                                totalValue={bsData.total_liabilities}
+                                                totalValueComp={bsData.total_liabilities_comp}
+                                                showComparison={showComparison}
+                                                embedded
+                                            />
+                                            <FinancialStatementTable
+                                                title="Patrimonio"
+                                                data={bsData.equity}
+                                                totalLabel="Total Patrimonio"
+                                                totalValue={bsData.total_equity}
+                                                totalValueComp={bsData.total_equity_comp}
+                                                showComparison={showComparison}
+                                                embedded
+                                            />
                                         </div>
-                                        {showComparison && (
-                                            <div className="flex justify-between items-center text-sm font-mono mt-1 border-t pt-1">
-                                                <span>Diferencia Comparativa</span>
-                                                <span className={Math.abs(bsData.check_comp) < 1 ? "text-muted-foreground" : "text-red-400"}>
-                                                    {bsData.check_comp.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="p-8 text-center">Cargando datos...</div>
-                    )}
-                </TabsContent>
-
-                <TabsContent value="pl" className="space-y-4">
-                    <div className="flex justify-end mb-2">
-                        <Button variant="outline" size="sm" onClick={() => downloadPDF('income-statement')}>
-                            <Download className="mr-2 h-4 w-4" /> PDF
-                        </Button>
-                    </div>
-                    {plData ? (
-                        <div className="space-y-6">
-                            <FinancialStatementTable
-                                title="Ingresos"
-                                data={plData.income}
-                                totalLabel="Total Ingresos"
-                                totalValue={plData.total_income}
-                                totalValueComp={plData.total_income_comp}
-                                showComparison={showComparison}
-                            />
-                            <FinancialStatementTable
-                                title="Gastos"
-                                data={plData.expenses}
-                                totalLabel="Total Gastos"
-                                totalValue={plData.total_expenses}
-                                totalValueComp={plData.total_expenses_comp}
-                                showComparison={showComparison}
-                            />
-                            <Card className="bg-slate-100 dark:bg-slate-800 border-2 border-primary/20">
-                                <CardHeader>
-                                    <CardTitle>Resultado del Ejercicio</CardTitle>
-                                    <CardDescription>Utilidad (o Pérdida) Neta después de todos los conceptos.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex justify-around items-center">
-                                        <div className="text-center">
-                                            <div className="text-xs text-muted-foreground mb-1">Periodo Actual</div>
-                                            <div className="text-3xl font-bold font-mono">
-                                                {plData.net_income.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                            </div>
-                                        </div>
-                                        {showComparison && (
-                                            <>
-                                                <div className="text-center">
-                                                    <div className="text-xs text-muted-foreground mb-1">Periodo Anterior</div>
-                                                    <div className="text-2xl font-bold font-mono text-muted-foreground">
-                                                        {plData.net_income_comp.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                    </div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className="text-xs text-muted-foreground mb-1">Variación</div>
-                                                    <div className={cn("text-2xl font-bold font-mono", plData.net_income_variance > 0 ? "text-emerald-500" : "text-red-500")}>
-                                                        {plData.net_income_variance.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    ) : (
-                        <div className="p-8 text-center">Cargando datos...</div>
-                    )}
-                </TabsContent>
+                                ) : (
+                                    <div className="p-8 text-center animate-pulse">Cargando datos del balance...</div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-                <TabsContent value="cf">
-                    {cfData ? (
-                        <div className="max-w-4xl mx-auto">
-                            <CashFlowTable data={cfData} />
-                        </div>
-                    ) : (
-                        <div className="p-8 text-center">Cargando datos...</div>
-                    )}
-                </TabsContent>
+                    <TabsContent value="pl">
+                        <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                            <CardContent className="p-10">
+                                <ReportHeader title="Estado de Resultados" dateRange={date} />
+                                {plData ? (
+                                    <div className="space-y-8">
+                                        {(plData.sections || []).map((section: any, idx: number) => (
+                                            section.is_total ? (
+                                                <div key={idx} className={cn(
+                                                    "py-6 px-4 flex justify-between items-center rounded-lg my-4 transition-colors",
+                                                    idx === (plData.sections?.length || 0) - 1
+                                                        ? "bg-primary text-primary-foreground shadow-lg"
+                                                        : "bg-slate-50 dark:bg-slate-900 border"
+                                                )}>
+                                                    <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
+                                                    <div className="flex space-x-12 items-center">
+                                                        <div className="text-right">
+                                                            <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>Actual</div>
+                                                            <div className="text-2xl font-black font-mono">
+                                                                {(section.total || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                            </div>
+                                                        </div>
+                                                        {showComparison && (
+                                                            <div className={cn("text-right border-l pl-12", idx === (plData.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border-slate-300")}>
+                                                                <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>Anterior</div>
+                                                                <div className={cn("text-2xl font-black font-mono opacity-80", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
+                                                                    {(section.total_comp || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <FinancialStatementTable
+                                                    key={idx}
+                                                    title={section.name}
+                                                    data={section.tree}
+                                                    totalLabel={`Total ${section.name}`}
+                                                    totalValue={section.total}
+                                                    totalValueComp={section.total_comp}
+                                                    showComparison={showComparison}
+                                                    embedded
+                                                />
+                                            )
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-8 text-center animate-pulse">Cargando estado de resultados...</div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="cf">
+                        <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                            <CardContent className="p-10">
+                                <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
+                                {cfData ? (
+                                    <CashFlowTable data={cfData} embedded />
+                                ) : (
+                                    <div className="p-8 text-center animate-pulse">Cargando flujo de caja...</div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </div>
             </Tabs>
         </div>
     )
