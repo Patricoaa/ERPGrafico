@@ -201,10 +201,10 @@ export function PurchaseNoteModal({
                                                 className="h-8 text-center font-bold"
                                                 value={line.note_quantity}
                                                 min={0}
-                                                max={line.quantity}
+                                                max={noteType === 'NOTA_CREDITO' ? line.quantity : undefined}
                                                 onChange={(e) => {
                                                     const val = parseFloat(e.target.value) || 0;
-                                                    if (val <= line.quantity) {
+                                                    if (noteType === 'NOTA_DEBITO' || val <= line.quantity) {
                                                         handleLineChange(idx, 'note_quantity', e.target.value)
                                                     }
                                                 }}
@@ -215,10 +215,11 @@ export function PurchaseNoteModal({
                                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]">$</span>
                                                 <Input
                                                     type="number"
-                                                    className="h-8 pl-5 text-right font-bold bg-muted text-muted-foreground"
+                                                    className={`h-8 pl-5 text-right font-bold ${noteType === 'NOTA_CREDITO' ? 'bg-muted text-muted-foreground' : ''}`}
                                                     value={line.note_unit_cost}
-                                                    readOnly
-                                                    disabled
+                                                    readOnly={noteType === 'NOTA_CREDITO'}
+                                                    disabled={noteType === 'NOTA_CREDITO'}
+                                                    onChange={(e) => handleLineChange(idx, 'note_unit_cost', e.target.value)}
                                                 />
                                             </div>
                                         </td>
