@@ -154,10 +154,16 @@ def income_statement_view(request):
 def get_balance_sheet_data(request):
     """
     Returns the Balance Sheet data as JSON.
-    Query Params: date (YYYY-MM-DD), default today.
+    Query Params: end_date (YYYY-MM-DD), start_date (YYYY-MM-DD)
     """
-    end_date = request.query_params.get('date', date.today())
-    data = ReportService.get_balance_sheet(end_date)
+    end_date = request.query_params.get('end_date', date.today())
+    # Allow legacy 'date' param too
+    if request.query_params.get('date'):
+        end_date = request.query_params.get('date')
+        
+    start_date = request.query_params.get('start_date') # can be None
+    
+    data = ReportService.get_balance_sheet(end_date, start_date)
     return Response(data)
 
 @api_view(['GET'])
@@ -167,7 +173,6 @@ def get_income_statement_data(request):
     Query Params: start_date, end_date (YYYY-MM-DD)
     """
     end_date = request.query_params.get('end_date', date.today())
-    # Default start date: First day of current year
     default_start = date(date.today().year, 1, 1)
     start_date = request.query_params.get('start_date', default_start)
     
@@ -192,10 +197,14 @@ def get_financial_analysis_data(request):
     """
     Returns key financial ratios and structure for dashboards.
     """
-    end_date = request.query_params.get('date', date.today())
+    end_date = request.query_params.get('end_date', date.today())
+    if request.query_params.get('date'):
+         end_date = request.query_params.get('date')
     
+    start_date = request.query_params.get('start_date')
+
     # We reuse basic reports logic to get totals
-    bs = ReportService.get_balance_sheet(end_date)
+    bs = ReportService.get_balance_sheet(end_date, start_date)
     
     total_assets = bs['total_assets']
     total_liabilities = bs['total_liabilities']

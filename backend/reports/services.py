@@ -77,44 +77,40 @@ class ReportService:
         return tree
 
     @staticmethod
-    def get_balance_sheet(date):
+    def get_balance_sheet(end_date, start_date=None):
         """
         Returns the Balance Sheet structure.
         """
         # Assets
         assets = Account.objects.filter(account_type=AccountType.ASSET)
-        asset_tree = ReportService.build_account_tree(assets, end_date=date)
+        asset_tree = ReportService.build_account_tree(assets, end_date=end_date)
         total_assets = sum(node['balance'] for node in asset_tree)
 
         # Liabilities
         liabilities = Account.objects.filter(account_type=AccountType.LIABILITY)
-        liability_tree = ReportService.build_account_tree(liabilities, end_date=date)
+        liability_tree = ReportService.build_account_tree(liabilities, end_date=end_date)
         total_liabilities = sum(node['balance'] for node in liability_tree)
 
         # Equity
         equity = Account.objects.filter(account_type=AccountType.EQUITY)
-        equity_tree = ReportService.build_account_tree(equity, end_date=date)
+        equity_tree = ReportService.build_account_tree(equity, end_date=end_date)
         
         # Calculate Current Year Earnings (Net Income) to add to Equity
-        # This is strictly for the report display, not a journal entry.
-        # Income - Expenses up to this date
+        # If start_date is provided, we calculate income for that period.
+        # Otherwise, default to beginning of the year of end_date.
+        if not start_date:
+            start_date = end_date.replace(month=1, day=1)
+            
         income_accs = Account.objects.filter(account_type=AccountType.INCOME)
         expense_accs = Account.objects.filter(account_type=AccountType.EXPENSE)
         
         total_income = 0
         for acc in income_accs:
-            # Income is Credit normal. We want accumulated total for retained earnings calculation.
-            # Usually Retained Earnings includes previous years. 
-            # We assume "Resultados Acumulados" account handles previous years closing.
-            # We need "Profit for the Period" for the current unclosed period.
-            # For simplicity, calculate NET INCOME for ALL TIME if no closing entries are made?
-            # Or just for current fiscal year?
-            # Let's assume we sum all Income - Expenses that haven't been forcefully closed into Equity.
-            total_income += float(ReportService._get_account_balance(acc, end_date=date))
+            total_income += float(ReportService._get_account_balance(acc, start_date=start_date, end_date=end_date))
 
         total_expenses = 0
         for acc in expense_accs:
-            total_expenses += float(ReportService._get_account_balance(acc, end_date=date))
+            total_expenses += float(ReportService._get_account_balance(acc, start_date=start_date, end_date=end_date))
             
         current_earnings = total_income - total_expenses
         
