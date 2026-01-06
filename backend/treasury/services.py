@@ -152,7 +152,7 @@ class TreasuryService:
         is_purchase = False
         if purchase_order:
             is_purchase = True
-        elif invoice and invoice.purchase_order:
+        elif invoice and (invoice.purchase_order or invoice.service_obligation):
             is_purchase = True
         
         # Determine the counterpart account based on context and payment type

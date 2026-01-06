@@ -128,7 +128,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
                     {/* Basic Info */}
                     <Card>
