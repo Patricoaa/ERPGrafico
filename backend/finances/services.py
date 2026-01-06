@@ -35,18 +35,38 @@ class ReportService:
             return credit - debit
 
     @staticmethod
-    def build_account_tree(accounts, start_date=None, end_date=None, comp_start=None, comp_end=None):
+    def _get_aggregated_balance(account, category_type, category_value, start_date=None, end_date=None):
         """
-        Builds a hierarchical tree of accounts with their balances.
-        Supports comparison if comp_start/comp_end are provided.
+        Calculates balance including descendants that resolve to the same effective category.
+        category_type: 'is' or 'cf'
+        """
+        total = Decimal('0.00')
+        
+        # If it's a leaf account, just get its balance
+        if not account.children.exists():
+            eff = getattr(account, f'effective_{category_type}_category')
+            if eff == category_value:
+                return ReportService._get_account_balance(account, start_date, end_date)
+            return Decimal('0.00')
+
+        # If it's a group, sum up children but ONLY those that resolve to this category
+        for child in account.children.all():
+            total += ReportService._get_aggregated_balance(child, category_type, category_value, start_date, end_date)
+            
+        return total
+
+    @staticmethod
+    def build_account_tree(accounts, category_type, category_value, start_date=None, end_date=None, comp_start=None, comp_end=None):
+        """
+        Builds a hierarchical tree of accounts starting from the provided 'mapping roots'.
         """
         tree = []
         
         def process_account(account):
-            balance = ReportService._get_account_balance(account, start_date, end_date)
-            comp_balance = 0
+            balance = ReportService._get_aggregated_balance(account, category_type, category_value, start_date, end_date)
+            comp_balance = Decimal('0.00')
             if comp_end:
-                comp_balance = ReportService._get_account_balance(account, comp_start, comp_end)
+                comp_balance = ReportService._get_aggregated_balance(account, category_type, category_value, comp_start, comp_end)
             
             node = {
                 'id': account.id,
@@ -59,19 +79,43 @@ class ReportService:
                 'children': []
             }
             
-            # Recursively process children
-            children = account.children.all().order_by('code')
-            for child in children:
-                child_node = process_account(child)
-                node['children'].append(child_node)
-                node['balance'] += child_node['balance']
-                node['comp_balance'] += child_node['comp_balance']
-                node['variance'] += child_node['variance']
+            # Recursively process children who themselves OR their descendants resolve to this category
+            # but ONLY if the child itself isn't re-mapped to something else
+            for child in account.children.all().order_by('code'):
+                # Does the child or any of its descendants have this effective category?
+                # We check this by seeing if the aggregated balance is non-zero or if literal mapping exists
+                child_balance = ReportService._get_aggregated_balance(child, category_type, category_value, start_date, end_date)
+                
+                # Check if child is re-mapped to something ELSE
+                att_name = 'is_category' if category_type == 'is' else 'cf_category'
+                explicit_cat = getattr(child, att_name)
+                
+                if child_balance != 0 or (explicit_cat == category_value):
+                    if explicit_cat and explicit_cat != category_value:
+                        continue # Child is explicitly re-mapped elsewhere
+                    tree_child = process_account(child)
+                    node['children'].append(tree_child)
                 
             return node
 
-        # Start with top-level accounts (no parent)
-        for account in accounts.filter(parent__isnull=True).order_by('code'):
+        # Identify starting accounts for this category
+        # These are accounts explicitly mapped to category_value
+        # that don't have an ancestor also explicitly mapped to the same category_value
+        all_in_cat = accounts.filter(**{f"{'is_category' if category_type == 'is' else 'cf_category'}": category_value})
+        
+        start_accounts = []
+        for acc in all_in_cat:
+            has_parent_mapped_same = False
+            curr = acc.parent
+            while curr:
+                if getattr(curr, 'is_category' if category_type == 'is' else 'cf_category') == category_value:
+                    has_parent_mapped_same = True
+                    break
+                curr = curr.parent
+            if not has_parent_mapped_same:
+                start_accounts.append(acc)
+
+        for account in sorted(start_accounts, key=lambda x: x.code):
             tree.append(process_account(account))
             
         return tree
@@ -157,8 +201,8 @@ class ReportService:
         from accounting.models import ISCategory
         
         def get_cat_data(cat):
-            accounts = Account.objects.filter(is_category=cat)
-            tree = ReportService.build_account_tree(accounts, start_date, end_date, comp_start, comp_end)
+            accounts = Account.objects.all() # We need all to find mapping roots
+            tree = ReportService.build_account_tree(accounts, 'is', cat, start_date, end_date, comp_start, comp_end)
             total = sum(item['balance'] for item in tree)
             total_comp = sum(item['comp_balance'] for item in tree)
             return tree, float(total), float(total_comp)
@@ -223,9 +267,23 @@ class ReportService:
                 operating_activities.append({'name': f"Más: {acc.name}", 'amount': val})
 
         # 2. Operating activities (WC Changes)
-        op_accs = Account.objects.filter(cf_category=CFCategory.OPERATING)
+        op_accs = [acc for acc in Account.objects.filter(cf_category=CFCategory.OPERATING)]
+        # Filter to only 'Mapping Roots' to avoid double counting
+        op_roots = []
         for acc in op_accs:
-            val = float(ReportService._get_account_balance(acc, start_date, end_date))
+            # Manual fallback to find mapping roots
+            has_parent_mapped = False
+            curr = acc.parent
+            while curr:
+                if curr.cf_category == CFCategory.OPERATING:
+                    has_parent_mapped = True
+                    break
+                curr = curr.parent
+            if not has_parent_mapped:
+                op_roots.append(acc)
+
+        for acc in op_roots:
+            val = float(ReportService._get_aggregated_balance(acc, 'cf', CFCategory.OPERATING, start_date, end_date))
             if val != 0:
                 amount = -val if acc.account_type == AccountType.ASSET else val
                 operating_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount})
@@ -234,9 +292,21 @@ class ReportService:
 
         # 3. Investing Activities
         investing_activities = []
-        inv_accs = Account.objects.filter(cf_category=CFCategory.INVESTING)
-        for acc in inv_accs:
-            val = float(ReportService._get_account_balance(acc, start_date, end_date))
+        inv_roots = []
+        all_inv = Account.objects.filter(cf_category=CFCategory.INVESTING)
+        for acc in all_inv:
+            has_parent = False
+            curr = acc.parent
+            while curr:
+                if curr.cf_category == CFCategory.INVESTING:
+                    has_parent = True
+                    break
+                curr = curr.parent
+            if not has_parent:
+                inv_roots.append(acc)
+
+        for acc in inv_roots:
+            val = float(ReportService._get_aggregated_balance(acc, 'cf', CFCategory.INVESTING, start_date, end_date))
             if val != 0:
                 amount = -val if acc.account_type == AccountType.ASSET else val
                 investing_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount})
@@ -244,9 +314,21 @@ class ReportService:
 
         # 4. Financing Activities
         financing_activities = []
-        fin_accs = Account.objects.filter(cf_category=CFCategory.FINANCING)
-        for acc in fin_accs:
-            val = float(ReportService._get_account_balance(acc, start_date, end_date))
+        fin_roots = []
+        all_fin = Account.objects.filter(cf_category=CFCategory.FINANCING)
+        for acc in all_fin:
+            has_parent = False
+            curr = acc.parent
+            while curr:
+                if curr.cf_category == CFCategory.FINANCING:
+                    has_parent = True
+                    break
+                curr = curr.parent
+            if not has_parent:
+                fin_roots.append(acc)
+
+        for acc in fin_roots:
+            val = float(ReportService._get_aggregated_balance(acc, 'cf', CFCategory.FINANCING, start_date, end_date))
             if val != 0:
                 amount = -val if acc.account_type == AccountType.ASSET else val
                 financing_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount})

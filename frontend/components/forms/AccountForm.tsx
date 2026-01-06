@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import api from "@/lib/api"
+import { cn } from "@/lib/utils"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -66,6 +67,21 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
             cf_category: (initialData as any)?.cf_category || "",
         },
     })
+
+    // Helper to find inherited category
+    const getInheritedCategory = (parentId: string | undefined, type: 'is_category' | 'cf_category'): string | null => {
+        if (!parentId || parentId === "__none__" || parentId === "none") return null;
+        const parent = accounts.find(a => a.id.toString() === parentId);
+        if (!parent) return null;
+        if (parent[type]) return parent[type];
+        return getInheritedCategory(parent.parent?.toString(), type);
+    };
+
+    const inheritedIsCategory = getInheritedCategory(form.watch("parent"), 'is_category');
+    const inheritedCfCategory = getInheritedCategory(form.watch("parent"), 'cf_category');
+
+    const accountType = form.watch("account_type");
+    const isPLAccount = accountType === "INCOME" || accountType === "EXPENSE";
 
     // Reset form when opening or initialData changes
     useEffect(() => {
@@ -231,12 +247,19 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 control={form.control}
                                 name="is_category"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Mapeo Estado Resultados</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                    <FormItem className={cn(!isPLAccount && "opacity-50 pointer-events-none")}>
+                                        <FormLabel className="flex justify-between">
+                                            <span>Mapeo EERR</span>
+                                            {!isPLAccount && <span className="text-[10px] text-amber-600 font-normal">Solo Ingresos/Gastos</span>}
+                                        </FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value || ""}
+                                            disabled={!isPLAccount}
+                                        >
                                             <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Sin mapeo" />
+                                                <SelectTrigger className={cn(!field.value && inheritedIsCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                                    <SelectValue placeholder={inheritedIsCategory ? `Heredado (${inheritedIsCategory === 'REVENUE' ? 'Ingresos' : 'Ventas...'})` : "Sin mapeo"} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -249,6 +272,9 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                                 <SelectItem value="TAX_EXPENSE">Impuesto a la Renta</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        {!field.value && inheritedIsCategory && (
+                                            <p className="text-[10px] text-emerald-600 italic mt-1">Heredado del padre</p>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -258,11 +284,11 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 name="cf_category"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Mapeo Flujo de Caja</FormLabel>
+                                        <FormLabel>Mapeo Flujo Caja</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value || ""}>
                                             <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Sin mapeo" />
+                                                <SelectTrigger className={cn(!field.value && inheritedCfCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                                    <SelectValue placeholder={inheritedCfCategory ? "Heredado del padre" : "Sin mapeo"} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -273,6 +299,9 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                                 <SelectItem value="DEP_AMORT">Depreciación (Ajuste)</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        {!field.value && inheritedCfCategory && (
+                                            <p className="text-[10px] text-emerald-600 italic mt-1">Heredado del padre</p>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}

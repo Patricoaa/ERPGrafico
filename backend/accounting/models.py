@@ -42,6 +42,24 @@ class Account(models.Model):
     is_category = models.CharField(_("Categoría Estado Resultados"), max_length=30, choices=ISCategory.choices, null=True, blank=True)
     cf_category = models.CharField(_("Categoría Flujo de Caja"), max_length=30, choices=CFCategory.choices, null=True, blank=True)
     
+    @property
+    def effective_is_category(self):
+        """Returns the assigned IS category or inherits from parent."""
+        if self.is_category:
+            return self.is_category
+        if self.parent:
+            return self.parent.effective_is_category
+        return None
+
+    @property
+    def effective_cf_category(self):
+        """Returns the assigned CF category or inherits from parent."""
+        if self.cf_category:
+            return self.cf_category
+        if self.parent:
+            return self.parent.effective_cf_category
+        return None
+    
     class Meta:
         ordering = ['code']
         verbose_name = _("Cuenta Contable")
