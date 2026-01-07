@@ -27,11 +27,12 @@ interface ProductSelectorProps {
     onChange: (value: string | null) => void
     placeholder?: string
     productType?: string
+    allowedTypes?: string[]
     disabled?: boolean
     restrictStock?: boolean
 }
 
-export function ProductSelector({ value, onChange, placeholder = "Seleccionar producto...", productType, disabled = false, restrictStock = false }: ProductSelectorProps) {
+export function ProductSelector({ value, onChange, placeholder = "Seleccionar producto...", productType, allowedTypes, disabled = false, restrictStock = false }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
@@ -49,7 +50,11 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                     url += `?product_type=${productType}`
                 }
                 const res = await api.get(url)
-                const allProducts = res.data.results || res.data
+                let allProducts = res.data.results || res.data
+
+                if (allowedTypes && allowedTypes.length > 0) {
+                    allProducts = allProducts.filter((p: any) => allowedTypes.includes(p.product_type))
+                }
 
                 setProducts(allProducts)
                 setFilteredProducts(allProducts)

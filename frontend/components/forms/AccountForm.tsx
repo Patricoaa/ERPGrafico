@@ -71,7 +71,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
     })
 
     // Helper to find inherited category
-    const getInheritedCategory = (parentId: string | undefined, type: 'is_category' | 'cf_category'): string | null => {
+    const getInheritedCategory = (parentId: string | undefined, type: 'is_category' | 'cf_category' | 'bs_category'): string | null => {
         if (!parentId || parentId === "__none__" || parentId === "none") return null;
         const parent = accounts.find(a => a.id.toString() === parentId);
         if (!parent) return null;

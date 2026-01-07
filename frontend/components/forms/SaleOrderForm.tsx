@@ -53,7 +53,7 @@ const saleLineSchema = z.object({
     uom: z.string().min(1, "Unidad requerida"),
     unit_price: z.number().min(0, "El precio no puede ser negativo"),
     tax_rate: z.number().default(19),
-    custom_specs: z.record(z.any()).optional(),
+    custom_specs: z.record(z.string(), z.any()).optional(),
 })
 
 const saleOrderSchema = z.object({
@@ -141,7 +141,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [pricingRules, setPricingRules] = useState<any[]>([])
 
     const form = useForm<SaleOrderFormValues>({
-        resolver: zodResolver(saleOrderSchema),
+        resolver: zodResolver(saleOrderSchema) as any,
         defaultValues: initialData ? {
             ...initialData,
             customer: initialData.customer?.toString() || "",
@@ -276,7 +276,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
+                            <FormField<SaleOrderFormValues>
                                 control={form.control}
                                 name="customer"
                                 render={({ field }) => (
@@ -326,7 +326,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                         {fields.map((field, index) => (
                                             <TableRow key={field.id}>
                                                 <TableCell>
-                                                    <FormField
+                                                    <FormField<SaleOrderFormValues>
                                                         control={form.control}
                                                         name={`lines.${index}.product`}
                                                         render={({ field }) => (
@@ -367,7 +367,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                     return (
                                                                         <div className="space-y-2">
                                                                             {prod.product_type === 'MANUFACTURABLE_CUSTOM' && prod.custom_fields_schema && (
-                                                                                <FormField
+                                                                                <FormField<SaleOrderFormValues>
                                                                                     control={form.control}
                                                                                     name={`lines.${index}.custom_specs`}
                                                                                     render={({ field: specField }) => (
@@ -387,7 +387,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <FormField
+                                                    <FormField<SaleOrderFormValues>
                                                         control={form.control}
                                                         name={`lines.${index}.quantity`}
                                                         render={({ field }) => (
@@ -412,7 +412,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <FormField
+                                                    <FormField<SaleOrderFormValues>
                                                         control={form.control}
                                                         name={`lines.${index}.uom`}
                                                         render={({ field }) => {
@@ -451,7 +451,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <FormField
+                                                    <FormField<SaleOrderFormValues>
                                                         control={form.control}
                                                         name={`lines.${index}.unit_price`}
                                                         render={({ field }) => (
@@ -486,7 +486,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <FormField
+                            <FormField<SaleOrderFormValues>
                                 control={form.control}
                                 name="notes"
                                 render={({ field }) => (

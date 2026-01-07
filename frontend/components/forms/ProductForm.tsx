@@ -47,7 +47,7 @@ const productSchema = z.object({
     name: z.string().min(2, "Nombre requerido"),
     category: z.string().min(1, "Categoría requerida"),
     product_type: z.string().min(1, "Tipo requerido"),
-    sale_price: z.coerce.number().min(0, "Mínimo 0"),
+    sale_price: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
     uom: z.string().min(1, "Unidad de medida requerida"),
     purchase_uom: z.string().optional(),
     image: z.any().optional(),
@@ -77,7 +77,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
 
     const form = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema),
+        resolver: zodResolver(productSchema) as any,
         defaultValues: {
             code: "",
             name: "",
@@ -88,6 +88,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             purchase_uom: "",
             track_inventory: true,
             custom_fields_schema: "",
+            image: undefined,
         },
     })
 
@@ -332,7 +333,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                         <div className="md:col-span-9 space-y-8">
                                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                                 <div className="md:col-span-1">
-                                                    <FormField
+                                                    <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="code"
                                                         render={({ field }) => (
@@ -347,7 +348,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                     />
                                                 </div>
                                                 <div className="md:col-span-3">
-                                                    <FormField
+                                                    <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="name"
                                                         render={({ field }) => (
@@ -364,7 +365,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
 
                                                 {form.watch("product_type") === 'MANUFACTURABLE_CUSTOM' && (
                                                     <div className="md:col-span-4">
-                                                        <FormField
+                                                        <FormField<ProductFormValues>
                                                             control={form.control}
                                                             name="custom_fields_schema"
                                                             render={({ field }) => (
@@ -391,7 +392,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 )}
 
                                                 <div className="md:col-span-2">
-                                                    <FormField
+                                                    <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="category"
                                                         render={({ field }) => (
@@ -426,7 +427,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 </div>
 
                                                 <div className="md:col-span-1">
-                                                    <FormField
+                                                    <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="uom"
                                                         render={({ field }) => (
@@ -451,7 +452,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 </div>
 
                                                 <div className="md:col-span-1">
-                                                    <FormField
+                                                    <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="purchase_uom"
                                                         render={({ field }) => (
@@ -477,7 +478,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 rounded-2xl bg-primary/5 border border-primary/10">
-                                                <FormField
+                                                <FormField<ProductFormValues>
                                                     control={form.control}
                                                     name="sale_price"
                                                     render={({ field }) => (
