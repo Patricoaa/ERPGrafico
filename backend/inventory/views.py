@@ -59,8 +59,16 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
     def effective_price(self, request, pk=None):
         product = self.get_object()
         quantity = Decimal(request.query_params.get('quantity', 1))
+        uom_id = request.query_params.get('uom_id')
+        uom = None
+        if uom_id:
+            try:
+                uom = UoM.objects.get(pk=uom_id)
+            except UoM.DoesNotExist:
+                pass
+        
         from .services import PricingService
-        price = PricingService.get_product_price(product, quantity)
+        price = PricingService.get_product_price(product, quantity, uom=uom)
         return Response({'price': price})
 
 class CategoryViewSet(viewsets.ModelViewSet):

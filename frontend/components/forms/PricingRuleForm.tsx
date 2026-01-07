@@ -37,7 +37,10 @@ const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     product: z.number().nullable().optional(),
     category: z.number().nullable().optional(),
+    uom: z.number().nullable().optional(),
+    operator: z.enum(["GT", "LT", "EQ", "GE", "LE", "BT"]),
     min_quantity: z.string().or(z.number()),
+    max_quantity: z.string().or(z.number()).nullable().optional(),
     rule_type: z.enum(["FIXED", "DISCOUNT_PERCENTAGE"]),
     fixed_price: z.string().or(z.number()).nullable().optional(),
     discount_percentage: z.string().or(z.number()).nullable().optional(),
@@ -60,28 +63,21 @@ interface PricingRuleFormProps {
 export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, productId }: PricingRuleFormProps) {
     const [products, setProducts] = useState<any[]>([])
     const [categories, setCategories] = useState<any[]>([])
+    const [uoms, setUoms] = useState<any[]>([])
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: initialData ? {
-            name: "",
-            rule_type: "FIXED",
-            min_quantity: "1",
-            priority: 0,
-            active: true,
-            product: null,
-            category: null,
-            fixed_price: null,
-            discount_percentage: null,
-            start_date: null,
-            end_date: null,
             ...initialData,
+            operator: initialData.operator ?? "GE",
             min_quantity: initialData.min_quantity !== undefined ? String(initialData.min_quantity) : "1",
+            max_quantity: initialData.max_quantity ? String(initialData.max_quantity) : null,
             fixed_price: initialData.fixed_price ? String(initialData.fixed_price) : null,
             discount_percentage: initialData.discount_percentage ? String(initialData.discount_percentage) : null,
             priority: initialData.priority ?? 0,
             active: initialData.active ?? true,
             product: productId || initialData.product || null,
+            uom: initialData.uom || null,
         } : {
             name: "",
             rule_type: "FIXED",
@@ -90,6 +86,9 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             active: true,
             product: productId || null,
             category: null,
+            uom: null,
+            operator: "GE",
+            max_quantity: null,
             fixed_price: null,
             discount_percentage: null,
             start_date: null,
@@ -98,16 +97,19 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
     })
 
     const ruleType = form.watch("rule_type")
+    const operator = form.watch("operator")
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [prodRes, catRes] = await Promise.all([
+                const [prodRes, catRes, uomRes] = await Promise.all([
                     api.get('/inventory/products/'),
-                    api.get('/inventory/categories/')
+                    api.get('/inventory/categories/'),
+                    api.get('/inventory/uoms/')
                 ])
                 setProducts(prodRes.data.results || prodRes.data)
                 setCategories(catRes.data.results || catRes.data)
+                setUoms(uomRes.data.results || uomRes.data)
             } catch (error) {
                 console.error("Error fetching data", error)
             }
@@ -121,6 +123,8 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             const payload = { ...values }
             if (payload.product === null) delete payload.product
             if (payload.category === null) delete payload.category
+            if (payload.uom === null) delete payload.uom
+            if (payload.operator !== "BT") delete payload.max_quantity
 
             if (initialData) {
                 await api.put(`/inventory/pricing-rules/${initialData.id}/`, payload)
@@ -217,13 +221,26 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                         <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
-                                name="min_quantity"
+                                name="uom"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Cantidad Mínima</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" {...field} />
-                                        </FormControl>
+                                        <FormLabel>Unidad de Medida (Opcional)</FormLabel>
+                                        <Select
+                                            onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
+                                            value={field.value?.toString() || "none"}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Base del producto" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="none">Base del producto</SelectItem>
+                                                {uoms.map((u) => (
+                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -242,6 +259,65 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                 )}
                             />
                         </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="operator"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Condición (Operador)</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="GE">Mayor o Igual ( {">"}= )</SelectItem>
+                                                <SelectItem value="GT">Mayor que ( {">"} )</SelectItem>
+                                                <SelectItem value="LE">Menor o Igual ( {"<"}= )</SelectItem>
+                                                <SelectItem value="LT">Menor que ( {"<"} )</SelectItem>
+                                                <SelectItem value="EQ">Igual a ( = )</SelectItem>
+                                                <SelectItem value="BT">Entre (Rango)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="min_quantity"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{operator === "BT" ? "Desde" : "Cantidad"}</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {operator === "BT" && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="max_quantity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Hasta</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" {...field} value={field.value || ""} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                             <FormField

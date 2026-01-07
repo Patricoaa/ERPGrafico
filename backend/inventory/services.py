@@ -111,39 +111,89 @@ class StockService:
 
 class PricingService:
     @staticmethod
-    def get_product_price(product: Product, quantity: Decimal, date=None) -> Decimal:
+    def get_product_price(product: Product, quantity: Decimal, date=None, uom: UoM = None) -> Decimal:
         """
-        Calculates the best price for a product given a quantity and date.
+        Calculates the best price for a product given a quantity, date and specific UoM.
         """
         if date is None:
             date = timezone.now().date()
+        
+        if uom is None:
+            uom = product.uom
             
         base_price = product.sale_price
         
         # Find active rules
         rules = PricingRule.objects.filter(
-            active=True,
-            min_quantity__lte=quantity
+            active=True
         ).filter(
             Q(start_date__isnull=True) | Q(start_date__lte=date)
         ).filter(
             Q(end_date__isnull=True) | Q(end_date__gte=date)
         ).filter(
             Q(product=product) | Q(category=product.category)
-        ).order_by('-priority', 'min_quantity')
+        ).order_by('-priority')
         
-        # Best price logic: Highest priority rule first.
         best_price = base_price
         
         for rule in rules:
-            if rule.rule_type == PricingRule.RuleType.FIXED:
-                if rule.fixed_price is not None:
-                    best_price = rule.fixed_price
+            # Convert objective quantity to rule's UoM if specified
+            # Otherwise we use the provided quantity as is (assuming it's in product.uom if not specified)
+            check_qty = quantity
+            if rule.uom:
+                 try:
+                    # Convert from provided UoM to Rule UoM
+                    check_qty = StockService.convert_quantity(quantity, uom, rule.uom)
+                 except ValidationError:
+                    # If conversion fails (different categories), skip this rule
+                    continue
             else:
-                if rule.discount_percentage is not None:
-                    best_price = base_price * (1 - (rule.discount_percentage / 100))
+                # If rule doesn't specify UoM, we assume it's in the product's base UoM
+                # So we convert the provided quantity to base UoM
+                if uom != product.uom:
+                    try:
+                        check_qty = StockService.convert_quantity(quantity, uom, product.uom)
+                    except ValidationError:
+                        continue
+
+            # Check if quantity satisfies the rule operator
+            matches = False
+            op = rule.operator
+            min_q = rule.min_quantity
+            max_q = rule.max_quantity
+
+            if op == PricingRule.Operator.GE:
+                matches = check_qty >= min_q
+            elif op == PricingRule.Operator.GT:
+                matches = check_qty > min_q
+            elif op == PricingRule.Operator.LE:
+                matches = check_qty <= min_q
+            elif op == PricingRule.Operator.LT:
+                matches = check_qty < min_q
+            elif op == PricingRule.Operator.EQ:
+                matches = check_qty == min_q
+            elif op == PricingRule.Operator.BT:
+                if max_q is not None:
+                    matches = min_q <= check_qty <= max_q
+                else:
+                    matches = check_qty >= min_q # Fallback if max is null
             
-            # Usually we just take the first matching rule by priority
-            break
+            if matches:
+                # Calculate price
+                if rule.rule_type == PricingRule.RuleType.FIXED:
+                    if rule.fixed_price is not None:
+                        # If rule has a UoM, the fixed price might be per that UoM?
+                        # Usually sale prices are per product.uom. 
+                        # If the rule defines a price, it's usually what the user sees for the line.
+                        # However, if we store base price we might need to adjust.
+                        # For now, we assume the fixed price is the price per UNIT (product.uom)
+                        # but triggered by the rule's measure.
+                        best_price = rule.fixed_price
+                else:
+                    if rule.discount_percentage is not None:
+                        best_price = base_price * (1 - (rule.discount_percentage / 100))
+                
+                # Rule applied, stop (rules are ordered by priority)
+                break
             
         return best_price

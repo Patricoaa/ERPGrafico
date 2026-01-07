@@ -23,7 +23,12 @@ interface PricingRule {
     product_name: string | null
     category: number | null
     category_name: string | null
+    uom: number | null
+    uom_name: string | null
+    operator: string
+    operator_display: string
     min_quantity: string
+    max_quantity: string | null
     rule_type: "FIXED" | "DISCOUNT_PERCENTAGE"
     rule_type_display: string
     fixed_price: string | null
@@ -102,7 +107,8 @@ export default function PricingRulesPage() {
                         <TableRow>
                             <TableHead>Nombre</TableHead>
                             <TableHead>Aplica a</TableHead>
-                            <TableHead className="text-right">Min. Cantidad</TableHead>
+                            <TableHead className="text-right">Condición (Cantidad)</TableHead>
+                            <TableHead>UdM</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead className="text-right">Valor</TableHead>
                             <TableHead>Vigencia</TableHead>
@@ -124,14 +130,27 @@ export default function PricingRulesPage() {
                                         <Badge variant="secondary">Todos</Badge>
                                     )}
                                 </TableCell>
-                                <TableCell className="text-right font-mono">{Number(rule.min_quantity)}</TableCell>
+                                <TableCell className="text-right font-mono">
+                                    <span className="text-xs text-muted-foreground mr-1">{rule.operator_display}</span>
+                                    {Number(rule.min_quantity)}
+                                    {rule.operator === "BT" && rule.max_quantity && (
+                                        <> y {Number(rule.max_quantity)}</>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {rule.uom_name ? (
+                                        <Badge variant="outline">{rule.uom_name}</Badge>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground italic">Base</span>
+                                    )}
+                                </TableCell>
                                 <TableCell>{rule.rule_type_display}</TableCell>
                                 <TableCell className="text-right font-bold">
                                     {rule.rule_type === "FIXED"
                                         ? `$${Number(rule.fixed_price).toLocaleString()}`
                                         : `${Number(rule.discount_percentage)}%`}
                                 </TableCell>
-                                <TableCell className="text-xs">
+                                <TableCell className="text-xs whitespace-nowrap">
                                     {rule.start_date || '...'} a {rule.end_date || '...'}
                                 </TableCell>
                                 <TableCell className="text-center">{rule.priority}</TableCell>

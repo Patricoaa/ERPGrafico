@@ -222,6 +222,9 @@ class Command(BaseCommand):
         
         expense_grp = self._get_acc(f"{settings.expense_prefix}.2.01", "Gastos de Administración", AccountType.EXPENSE, parent=None)
         office_exp = self._get_acc(f"{settings.expense_prefix}.2.01.01", "Gastos de Oficina", AccountType.EXPENSE, expense_grp, is_category="OPERATING_EXPENSE", cf_category="OPERATING")
+        internet_exp = self._get_acc(f"{settings.expense_prefix}.2.01.02", "Gasto Internet y Teléfono", AccountType.EXPENSE, expense_grp, is_category="OPERATING_EXPENSE", cf_category="OPERATING")
+        utilities_exp = self._get_acc(f"{settings.expense_prefix}.2.01.03", "Gasto Electricidad y Agua", AccountType.EXPENSE, expense_grp, is_category="OPERATING_EXPENSE", cf_category="OPERATING")
+        rent_exp = self._get_acc(f"{settings.expense_prefix}.2.01.04", "Gasto Arriendo", AccountType.EXPENSE, expense_grp, is_category="OPERATING_EXPENSE", cf_category="OPERATING")
         
         # Mapping for Income Statement sections
         sales_merch.is_category = "REVENUE"
@@ -309,6 +312,14 @@ class Command(BaseCommand):
                 'expense_account': accounts['cogs']
             }
         )
+        cat_services, _ = ProductCategory.objects.get_or_create(
+            name="Servicios",
+            defaults={
+                'asset_account': accounts['stock_merch'],
+                'income_account': accounts['sales'],
+                'expense_account': accounts['cogs']
+            }
+        )
         
         # Products
         Product.objects.get_or_create(
@@ -344,7 +355,7 @@ class Command(BaseCommand):
                 'purchase_uom': uoms['box12'] # Assuming box of reels or similar context
             }
         )
-        Product.objects.get_or_create(
+        p4, _ = Product.objects.get_or_create(
             code="MAT-002",
             defaults={
                 'name': "Papel Oficina A4",
@@ -355,6 +366,22 @@ class Command(BaseCommand):
                 'purchase_uom': uoms['box12'] # box of 12 reams
             }
         )
+        
+        p5, _ = Product.objects.get_or_create(
+            code="SRV-INST",
+            defaults={
+                'name': "Instalación Técnica",
+                'category': cat_services,
+                'sale_price': 45000,
+                'product_type': Product.Type.SERVICE,
+                'uom': uoms['unit'],
+            }
+        )
+
+        return {
+            'products': [p1, p2, p3, p4, p5],
+            'categories': {'tech': cat_tech, 'supplies': cat_supplies, 'services': cat_services}
+        }
 
     def _create_opening_balance(self, accounts):
         if JournalEntry.objects.filter(reference="APERTURA-001").exists():
@@ -383,4 +410,47 @@ class Command(BaseCommand):
             label="Aporte de Capital Inicial",
             debit=0,
             credit=10000000
+        )
+
+    def _create_initial_stock(self, warehouse, products):
+        """Adds 100 units of each storable product to the warehouse."""
+        for prod in products:
+            if prod.product_type == Product.Type.STORABLE:
+                if not StockMove.objects.filter(product=prod, warehouse=warehouse, reference="CARGA-INICIAL").exists():
+                    StockMove.objects.create(
+                        product=prod,
+                        warehouse=warehouse,
+                        quantity=100,
+                        move_type=StockMove.Type.IN,
+                        description="Carga inicial de inventario",
+                        reference="CARGA-INICIAL"
+                    )
+
+    def _create_services(self, accounts):
+        """Seeds service categories and obligations."""
+        cat_infra, _ = ServiceCategory.objects.get_or_create(
+            name="Infraestructura y Redes",
+            defaults={
+                'expense_account': accounts['office_exp'],
+                'payable_account': accounts['payable']
+            }
+        )
+        cat_soft, _ = ServiceCategory.objects.get_or_create(
+            name="Suscripciones Software",
+            defaults={
+                'expense_account': accounts['office_exp'],
+                'payable_account': accounts['payable']
+            }
+        )
+
+        # Basic obligations
+        ServiceObligation.objects.get_or_create(
+            name="Suscripción Internet Fibra",
+            defaults={
+                'category': cat_infra,
+                'provider': Contact.objects.get(tax_id="88888888-8"),
+                'base_amount': 35000,
+                'billing_day': 5,
+                'is_active': True
+            }
         )

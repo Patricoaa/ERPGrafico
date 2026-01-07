@@ -182,11 +182,22 @@ class PricingRule(models.Model):
         FIXED = 'FIXED', _('Precio Fijo')
         DISCOUNT_PERCENTAGE = 'DISCOUNT_PERCENTAGE', _('Porcentaje de Descuento')
 
+    class Operator(models.TextChoices):
+        GT = 'GT', _('Mayor que (>)')
+        LT = 'LT', _('Menor que (<)')
+        EQ = 'EQ', _('Igual a (=)')
+        GE = 'GE', _('Mayor o Igual (>=)')
+        LE = 'LE', _('Menor o Igual (<=)')
+        BT = 'BT', _('Entre (Rango)')
+
     name = models.CharField(_("Nombre de la Regla"), max_length=100)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, related_name='pricing_rules')
     category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, null=True, blank=True, related_name='pricing_rules')
     
-    min_quantity = models.DecimalField(_("Cantidad Mínima"), max_digits=12, decimal_places=4, default=1.0)
+    uom = models.ForeignKey(UoM, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Unidad de Medida"))
+    operator = models.CharField(_("Operador"), max_length=5, choices=Operator.choices, default=Operator.GE)
+    min_quantity = models.DecimalField(_("Cantidad Mínima / Desde"), max_digits=12, decimal_places=4, default=1.0)
+    max_quantity = models.DecimalField(_("Cantidad Máxima / Hasta"), max_digits=12, decimal_places=4, null=True, blank=True, help_text=_("Solo usado para el operador 'Entre'"))
     
     rule_type = models.CharField(_("Tipo de Regla"), max_length=20, choices=RuleType.choices, default=RuleType.FIXED)
     fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=12, decimal_places=2, null=True, blank=True)
