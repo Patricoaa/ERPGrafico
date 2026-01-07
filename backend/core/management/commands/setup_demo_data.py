@@ -14,10 +14,6 @@ class Command(BaseCommand):
     help = 'Seeds database with coherent IFRS accounting data and sample products'
 
     def add_arguments(self, parser):
-        # Demo Data Phase
-        # - [x] Update `setup_demo_data.py` with UoM Categories and Units <!-- id: 23 -->
-        # - [x] Update demo products in `setup_demo_data.py` with `uom` and `purchase_uom` <!-- id: 24 -->
-        # - [x] Test `setup_demo_data` command <!-- id: 25 -->
         parser.add_argument(
             '--purge',
             action='store_true',

@@ -4,6 +4,7 @@ from accounting.models import Account, AccountType
 
 class ProductCategory(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
+    icon = models.CharField(_("Icono"), max_length=50, null=True, blank=True, help_text=_("Nombre del icono de Lucide (ej: Package, Coffee)"))
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     
     # Default Accounting Config for this category
@@ -91,6 +92,7 @@ class Product(models.Model):
     name = models.CharField(_("Nombre"), max_length=255)
     category = models.ForeignKey(ProductCategory, on_delete=models.PROTECT, related_name='products')
     product_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices, default=Type.STORABLE)
+    image = models.ImageField(_("Imagen"), upload_to='products/', null=True, blank=True)
     
     # Units of Measure
     uom = models.ForeignKey(

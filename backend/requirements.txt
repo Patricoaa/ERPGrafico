@@ -13,3 +13,4 @@ reportlab
 django-filter
 celery
 django-celery-beat
+Pillow

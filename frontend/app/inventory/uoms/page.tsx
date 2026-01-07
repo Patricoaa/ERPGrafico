@@ -68,37 +68,20 @@ export default function UoMPage() {
         try {
             const [resUoMs, resCats] = await Promise.all([
                 api.get('/inventory/uoms/'),
-                api.get('/inventory/uom-categories/') // I need to verify if this endpoint exists.
-                // Wait, I didn't verify if I created UoMCategoryViewSet.
-                // I'll check after this.
+                api.get('/inventory/uom-categories/')
             ])
             setUoMs(resUoMs.data.results || resUoMs.data)
             setCategories(resCats.data.results || resCats.data)
         } catch (error) {
             console.error(error)
-            // If category endpoint fails, maybe it doesn't exist yet.
+            toast.error("Error al cargar datos")
         } finally {
             setLoading(false)
         }
     }
 
-    // I need to create the endpoint for Categories if it doesn't exist.
-    // Assuming for now I might need to add it or fetch nested?
-    // UoM has category_name read only.
-    // I need a way to list categories to select one in the form.
-
     useEffect(() => {
-        // Just fetch UoMs for now to verify.
-        // I suspect UoMCategory ViewSet is missing.
-        // Proceeding with UoMs fetch.
-        const fetchUoMsOnly = async () => {
-            try {
-                const res = await api.get('/inventory/uoms/')
-                setUoMs(res.data.results || res.data)
-            } catch (e) { console.error(e) }
-            setLoading(false)
-        }
-        fetchUoMsOnly()
+        fetchData()
     }, [])
 
     const handleSaveUoM = async () => {
@@ -200,7 +183,22 @@ export default function UoMPage() {
                                 onChange={e => setCurrentUoM({ ...currentUoM, name: e.target.value })}
                             />
                         </div>
-                        {/* We need category selection here. But I don't have categories endpoint active maybe. */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Categoría</Label>
+                            <Select
+                                value={currentUoM.category?.toString()}
+                                onValueChange={(val) => setCurrentUoM({ ...currentUoM, category: parseInt(val) })}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Seleccionar categoría" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map(cat => (
+                                        <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Tipo</Label>
                             <Select

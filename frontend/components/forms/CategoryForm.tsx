@@ -33,6 +33,7 @@ import api from "@/lib/api"
 
 const categorySchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
+    icon: z.string().optional(),
     parent: z.string().optional(),
     asset_account: z.string().optional(),
     income_account: z.string().optional(),
@@ -166,6 +167,34 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                                     <FormControl>
                                         <Input placeholder="Insumos" {...field} />
                                     </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="icon"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Icono</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || "Package"}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccionar icono" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {[
+                                                "Package", "Coffee", "Briefcase", "Book", "Camera", "Car",
+                                                "Cloud", "Cpu", "Gamepad", "Gift", "HardDrive", "Headphones",
+                                                "Home", "Image", "Laptop", "LifeBuoy", "Mail", "Map", "Mic",
+                                                "Monitor", "Music", "Phone", "Printer", "Radio", "Smartphone",
+                                                "Speaker", "Sun", "Tablet", "Trash", "Tv", "Watch", "Zap", "Utensils", "Shirt"
+                                            ].map(iconName => (
+                                                <SelectItem key={iconName} value={iconName}>{iconName}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}

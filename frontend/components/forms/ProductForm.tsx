@@ -46,6 +46,7 @@ const productSchema = z.object({
     purchase_uom: z.string().optional(),
     sale_price: z.string().min(0),
     sync_variants_price: z.boolean().optional(),
+    image: z.any().optional(),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -65,6 +66,7 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
     const [uoms, setUoMs] = useState<any[]>([])
+    const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
 
     // Variants State
@@ -124,6 +126,11 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                     uom: initialData.uom?.toString() || "",
                     purchase_uom: initialData.purchase_uom?.toString() || "",
                 })
+                if (initialData.image) {
+                    setImagePreview(initialData.image)
+                } else {
+                    setImagePreview(null)
+                }
             } else {
                 form.reset({
                     code: "",
@@ -133,6 +140,7 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                     purchase_uom: "",
                     sale_price: "0",
                 })
+                setImagePreview(null)
             }
         }
     }, [open, initialData, form])
@@ -140,12 +148,35 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
     async function onSubmit(data: ProductFormValues) {
         setLoading(true)
         try {
-            let productId
+            const formData = new FormData()
+            formData.append('code', data.code)
+            formData.append('name', data.name)
+            formData.append('category', data.category)
+            formData.append('product_type', data.product_type)
+            formData.append('sale_price', data.sale_price)
+            // Assuming description might be added later or is implicitly handled
+            // if (data.description) formData.append('description', data.description) 
+            if (data.uom && data.uom !== "none") formData.append('uom', data.uom)
+            if (data.purchase_uom && data.purchase_uom !== "none") formData.append('purchase_uom', data.purchase_uom)
+
+            if (data.image && data.image instanceof File) {
+                formData.append('image', data.image)
+            } else if (data.image === null) {
+                // If image was explicitly set to null (e.g., removed by user)
+                formData.append('image', '') // Send empty string to clear image on backend
+            }
+
+
+            let productId: number
             if (initialData) {
-                await api.put(`/inventory/products/${initialData.id}/`, data)
-                productId = initialData.id
+                const res = await api.put(`/inventory/products/${initialData.id}/`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
+                productId = res.data.id
             } else {
-                const res = await api.post('/inventory/products/', data)
+                const res = await api.post('/inventory/products/', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 productId = res.data.id
             }
 
@@ -204,6 +235,52 @@ export function ProductForm({ onSuccess, initialData, open: openProp, onOpenChan
                                     <FormLabel>Código/SKU</FormLabel>
                                     <FormControl>
                                         <Input placeholder="PROD-001" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="image"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Imagen del Producto</FormLabel>
+                                    <FormControl>
+                                        <div className="flex flex-col gap-2">
+                                            {imagePreview && (
+                                                <div className="relative w-32 h-32 border rounded overflow-hidden">
+                                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        className="absolute top-0 right-0 h-6 w-6"
+                                                        onClick={() => {
+                                                            setImagePreview(null)
+                                                            field.onChange(null)
+                                                        }}
+                                                    >
+                                                        X
+                                                    </Button>
+                                                </div>
+                                            )}
+                                            <Input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0]
+                                                    if (file) {
+                                                        field.onChange(file)
+                                                        const reader = new FileReader()
+                                                        reader.onloadend = () => {
+                                                            setImagePreview(reader.result as string)
+                                                        }
+                                                        reader.readAsDataURL(file)
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

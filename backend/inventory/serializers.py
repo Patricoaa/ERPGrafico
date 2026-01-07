@@ -4,7 +4,7 @@ from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttri
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
-        fields = '__all__'
+        fields = ['id', 'name', 'icon', 'parent', 'asset_account', 'income_account', 'expense_account']
 
 class ProductAttributeValueSerializer(serializers.ModelSerializer):
     attribute_name = serializers.CharField(source='attribute.name', read_only=True)

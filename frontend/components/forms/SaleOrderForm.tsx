@@ -273,6 +273,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                             <div className="space-y-1">
                                                                 <ProductSelector
                                                                     value={field.value}
+                                                                    restrictStock={true}
                                                                     onChange={(value: string | null) => {
                                                                         field.onChange(value)
                                                                         // Auto-populate price, description and UoM from product

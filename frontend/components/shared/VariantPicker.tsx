@@ -19,9 +19,10 @@ interface VariantPickerProps {
     onOpenChange: (open: boolean) => void
     parentProduct: any
     onSelect: (variant: any) => void
+    restrictStock?: boolean
 }
 
-export function VariantPicker({ open, onOpenChange, parentProduct, onSelect }: VariantPickerProps) {
+export function VariantPicker({ open, onOpenChange, parentProduct, onSelect, restrictStock = false }: VariantPickerProps) {
     const [variants, setVariants] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({})
@@ -138,7 +139,7 @@ export function VariantPicker({ open, onOpenChange, parentProduct, onSelect }: V
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button
-                        disabled={!matchingVariant}
+                        disabled={!matchingVariant || (restrictStock && (matchingVariant.current_stock || 0) <= 0)}
                         onClick={() => {
                             onSelect(matchingVariant)
                             onOpenChange(false)

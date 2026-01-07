@@ -32,9 +32,10 @@ interface ProductSelectorProps {
     productType?: string
     showAllVariants?: boolean
     disabled?: boolean
+    restrictStock?: boolean
 }
 
-export function ProductSelector({ value, onChange, placeholder = "Seleccionar producto...", productType, showAllVariants = true, disabled = false }: ProductSelectorProps) {
+export function ProductSelector({ value, onChange, placeholder = "Seleccionar producto...", productType, showAllVariants = true, disabled = false, restrictStock = false }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
@@ -85,6 +86,10 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
             setPickingParent(product)
             setPickerOpen(true)
             return
+        }
+
+        if (restrictStock && (product.variants_count > 0 ? product.total_stock : (product.current_stock || 0)) <= 0) {
+            return; // Don't select if stock is restricted and 0
         }
 
         setSelectedProduct(product)
@@ -177,8 +182,9 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                                     return (
                                         <div
                                             key={product.id}
+                                            data-disabled={restrictStock && (product.variants_count > 0 ? product.total_stock : (product.current_stock || 0)) <= 0}
                                             className={cn(
-                                                "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                                                "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
                                                 selectedProduct?.id === product.id && "bg-accent",
                                                 isVariant && "pl-6"
                                             )}
@@ -266,7 +272,8 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                                             key={product.id}
                                             className={cn(
                                                 "cursor-pointer hover:bg-accent",
-                                                product.variant_of !== null && "opacity-80"
+                                                product.variant_of !== null && "opacity-80",
+                                                restrictStock && (product.variants_count > 0 ? product.total_stock : (product.current_stock || 0)) <= 0 && "opacity-50 pointer-events-none grayscale-[0.5]"
                                             )}
                                             onClick={() => handleSelect(product)}
                                         >
@@ -308,6 +315,7 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                 onOpenChange={setPickerOpen}
                 parentProduct={pickingParent}
                 onSelect={onVariantSelect}
+                restrictStock={restrictStock}
             />
         </div>
     )
