@@ -52,6 +52,7 @@ services:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/erpgrafico
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SKIP_MIGRATIONS=true
 
   celery_beat:
     build:
@@ -69,6 +70,7 @@ services:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/erpgrafico
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SKIP_MIGRATIONS=true
 
   frontend:
     build:
