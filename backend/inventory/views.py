@@ -28,7 +28,9 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
         """
         from django.db.models import Sum, Q
         
-        products = Product.objects.all().select_related('category')
+        products = Product.objects.filter(
+            product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]
+        ).select_related('category')
         report = []
         
         for p in products:

@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import transaction, models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
