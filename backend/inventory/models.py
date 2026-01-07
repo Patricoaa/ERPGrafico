@@ -112,6 +112,14 @@ class Product(models.Model):
     def __str__(self):
         return f"[{self.code}] {self.name}"
 
+    def save(self, *args, **kwargs):
+        # Automatically set track_inventory based on product_type
+        if self.product_type == self.Type.STORABLE:
+            self.track_inventory = True
+        else:
+            self.track_inventory = False
+        super().save(*args, **kwargs)
+
     # Helpers to get effective accounts (Product override > Category > None)
     @property
     def get_asset_account(self):

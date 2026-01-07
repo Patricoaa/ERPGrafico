@@ -43,7 +43,6 @@ import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { AttributeBadges } from "@/components/shared/AttributeBadges"
 
 const purchaseLineSchema = z.object({
     id: z.number().optional(),
@@ -310,16 +309,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                                         }
                                                                     }}
                                                                 />
-                                                                {field.value && (
-                                                                    <div className="pl-1">
-                                                                        {(() => {
-                                                                            const prod = products.find(p => p.id.toString() === field.value)
-                                                                            return prod?.attribute_values?.length > 0 && (
-                                                                                <AttributeBadges attributes={prod.attribute_values} />
-                                                                            )
-                                                                        })()}
-                                                                    </div>
-                                                                )}
                                                             </div>
                                                         )}
                                                     />

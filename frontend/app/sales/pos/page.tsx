@@ -12,8 +12,6 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
-import { VariantPicker } from "@/components/shared/VariantPicker"
-import { AttributeBadges } from "@/components/shared/AttributeBadges"
 import { Badge } from "@/components/ui/badge"
 import {
     Select,
@@ -32,8 +30,6 @@ interface Product {
     product_type?: string
     unit_price?: string
     variants_count?: number
-    variant_of?: number | null
-    attribute_values?: any[]
     image?: string | null
     category?: {
         id: number
@@ -79,9 +75,6 @@ export default function POSPage() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([])
 
-    // Variant Picker State
-    const [pickerOpen, setPickerOpen] = useState(false)
-    const [pickingParent, setPickingParent] = useState<Product | null>(null)
     const [pricingRules, setPricingRules] = useState<any[]>([])
 
     useEffect(() => {
@@ -112,7 +105,7 @@ export default function POSPage() {
         const categoryId = typeof p.category === 'object' ? p.category?.id : p.category
         const matchesCategory = selectedCategoryId === null || categoryId === selectedCategoryId
 
-        return matchesSearch && matchesCategory && p.variant_of === null
+        return matchesSearch && matchesCategory
     })
 
     const getEffectivePrice = (product: Product, qty: number) => {
@@ -144,11 +137,6 @@ export default function POSPage() {
     }
 
     const addToCart = (product: Product) => {
-        if ((product.variants_count || 0) > 0) {
-            setPickingParent(product)
-            setPickerOpen(true)
-            return
-        }
 
         const existing = items.find(i => i.id === product.id)
         if (existing) {
@@ -171,27 +159,6 @@ export default function POSPage() {
         }
     }
 
-    const onVariantSelect = (variant: any) => {
-        const existing = items.find(i => i.id === variant.id)
-        if (existing) {
-            const newQty = existing.qty + 1
-            const effectivePrice = getEffectivePrice(variant, newQty)
-            setItems(items.map(i => i.id === variant.id
-                ? { ...i, qty: newQty, unit_price: String(effectivePrice), total: Math.ceil(newQty * effectivePrice) }
-                : i
-            ))
-        } else {
-            const effectivePrice = getEffectivePrice(variant, 1)
-            setItems([...items, {
-                ...variant,
-                qty: 1,
-                uom: variant.uom,
-                uom_name: variant.uom_name,
-                unit_price: String(effectivePrice),
-                total: Math.ceil(effectivePrice)
-            }])
-        }
-    }
 
     const updateQty = (id: number, delta: number) => {
         setItems(items.map(i => {
@@ -227,7 +194,7 @@ export default function POSPage() {
             if (!term) return
 
             // 1. Try exact code match
-            const exactMatch = products.find(p => p.code.toLowerCase() === term && p.variant_of === null)
+            const exactMatch = products.find(p => p.code.toLowerCase() === term)
             if (exactMatch) {
                 addToCart(exactMatch)
                 setSearchTerm("")
@@ -416,11 +383,6 @@ export default function POSPage() {
                                                     <TableCell className="max-w-[120px]">
                                                         <div className="flex flex-col">
                                                             <span className="truncate font-medium">{item.name}</span>
-                                                            {item.attribute_values && item.attribute_values.length > 0 && (
-                                                                <div className="scale-75 origin-left -mt-1 -mb-1">
-                                                                    <AttributeBadges attributes={item.attribute_values} />
-                                                                </div>
-                                                            )}
                                                             <div className="mt-1">
                                                                 {categoryUoms.length > 1 ? (
                                                                     <Select
@@ -514,13 +476,6 @@ export default function POSPage() {
                 onConfirm={handleCheckoutConfirm}
             />
 
-            <VariantPicker
-                open={pickerOpen}
-                onOpenChange={setPickerOpen}
-                parentProduct={pickingParent}
-                onSelect={onVariantSelect}
-                restrictStock={true}
-            />
         </div>
     )
 }

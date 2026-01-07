@@ -54,9 +54,10 @@ interface PricingRuleFormProps {
     onSuccess?: () => void
     open: boolean
     onOpenChange: (open: boolean) => void
+    productId?: number
 }
 
-export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange }: PricingRuleFormProps) {
+export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, productId }: PricingRuleFormProps) {
     const [products, setProducts] = useState<any[]>([])
     const [categories, setCategories] = useState<any[]>([])
 
@@ -80,13 +81,14 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange }: 
             discount_percentage: initialData.discount_percentage ? String(initialData.discount_percentage) : null,
             priority: initialData.priority ?? 0,
             active: initialData.active ?? true,
+            product: productId || initialData.product || null,
         } : {
             name: "",
             rule_type: "FIXED",
             min_quantity: "1",
             priority: 0,
             active: true,
-            product: null,
+            product: productId || null,
             category: null,
             fixed_price: null,
             discount_percentage: null,
@@ -137,13 +139,6 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange }: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            {!initialData && (
-                <DialogTrigger asChild>
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" /> Nueva Regla
-                    </Button>
-                </DialogTrigger>
-            )}
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Regla" : "Nueva Regla de Precio"}</DialogTitle>

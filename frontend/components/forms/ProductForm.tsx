@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Package, Loader2, Pencil, X, Info } from "lucide-react"
+import { Plus, Package, Loader2, Pencil, X, Info, Trash2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -225,9 +225,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     <TabsTrigger value="general" className="px-8 flex gap-2">
                                         Información General
                                     </TabsTrigger>
-                                    <TabsTrigger value="pricing" className="px-8 flex gap-2">
-                                        Reglas de Precios
-                                    </TabsTrigger>
+                                    {initialData && (
+                                        <TabsTrigger value="pricing" className="px-8 flex gap-2">
+                                            Reglas de Precios
+                                        </TabsTrigger>
+                                    )}
                                 </TabsList>
 
                                 <TabsContent value="general" className="mt-0 space-y-8">
@@ -269,26 +271,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 )}
                                             />
 
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="track_inventory"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center justify-between rounded-xl border p-4 bg-muted/20">
-                                                        <div className="space-y-0.5">
-                                                            <FormLabel className="text-base font-bold">Control de Stock</FormLabel>
-                                                            <FormDescription className="text-[10px]">
-                                                                ¿Seguir existencias para este producto?
-                                                            </FormDescription>
-                                                        </div>
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
 
                                             <div className="pt-4 space-y-4">
                                                 <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Imagen del Producto</Label>
@@ -559,7 +541,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 variant="default"
                                                 size="sm"
                                                 onClick={() => setPricingRuleDialogOpen(true)}
-                                                disabled={!initialData}
                                             >
                                                 <Plus className="h-4 w-4 mr-2" />
                                                 Nueva Regla
@@ -629,19 +610,39 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                                                 {rule.active ? "Activa" : "Inactiva"}
                                                                             </div>
                                                                         </TableCell>
-                                                                        <TableCell className="text-right">
+                                                                        <TableCell className="text-right flex gap-1 justify-end">
                                                                             {isProductRule && (
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                                    onClick={() => {
-                                                                                        setSelectedPricingRule(rule)
-                                                                                        setPricingRuleDialogOpen(true)
-                                                                                    }}
-                                                                                >
-                                                                                    <Pencil className="h-3 w-3" />
-                                                                                </Button>
+                                                                                <>
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                        onClick={() => {
+                                                                                            setSelectedPricingRule(rule)
+                                                                                            setPricingRuleDialogOpen(true)
+                                                                                        }}
+                                                                                    >
+                                                                                        <Pencil className="h-3 w-3" />
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                        onClick={async () => {
+                                                                                            if (confirm("¿Estás seguro de eliminar esta regla?")) {
+                                                                                                try {
+                                                                                                    await api.delete(`/inventory/pricing-rules/${rule.id}/`)
+                                                                                                    toast.success("Regla eliminada")
+                                                                                                    fetchPricingRules()
+                                                                                                } catch (error) {
+                                                                                                    toast.error("Error al eliminar la regla")
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                    >
+                                                                                        <Trash2 className="h-3 w-3" />
+                                                                                    </Button>
+                                                                                </>
                                                                             )}
                                                                         </TableCell>
                                                                     </TableRow>
@@ -660,7 +661,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 </div>
 
                 <DialogFooter className="px-6 py-4 border-t gap-2 bg-muted/10 shrink-0">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button variant="outline" className="h-11 min-w-[120px] rounded-xl font-bold" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button
                         form="product-form"
                         type="submit"
@@ -679,6 +680,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     }}
                     initialData={selectedPricingRule}
                     onSuccess={fetchPricingRules}
+                    productId={initialData?.id}
                 />
 
                 <CategoryForm

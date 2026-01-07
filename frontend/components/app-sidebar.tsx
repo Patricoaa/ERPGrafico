@@ -61,6 +61,7 @@ const items = [
         icon: Package,
         items: [
             { title: "Productos", url: "/inventory/products" },
+            { title: "Unidades de Medida", url: "/inventory/uoms" },
             { title: "Stock", url: "/inventory/stock" },
             { title: "Reglas de Precio", url: "/inventory/pricing-rules" },
         ]
