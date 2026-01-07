@@ -105,6 +105,13 @@ class PurchaseLine(models.Model):
     order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='lines')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='purchase_lines')
     quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2)
+    uom = models.ForeignKey(
+        'inventory.UoM', 
+        on_delete=models.PROTECT, 
+        null=True, blank=True, 
+        related_name='purchase_lines',
+        verbose_name=_("Unidad")
+    )
     unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00)
     

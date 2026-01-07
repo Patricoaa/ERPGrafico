@@ -19,10 +19,11 @@ class SalesSettingsSerializer(serializers.ModelSerializer):
 class SaleLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
     quantity_pending = serializers.ReadOnlyField()
+    uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     
     class Meta:
         model = SaleLine
-        fields = ['id', 'product', 'product_name', 'description', 'quantity', 'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 'quantity_pending']
+        fields = ['id', 'product', 'product_name', 'description', 'quantity', 'uom', 'uom_name', 'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 'quantity_pending']
 
 class SaleOrderSerializer(serializers.ModelSerializer):
     lines = SaleLineSerializer(many=True, read_only=True)

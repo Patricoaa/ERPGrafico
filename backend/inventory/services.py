@@ -83,3 +83,26 @@ class StockService:
         move.save()
         
         return move
+
+    @staticmethod
+    def convert_quantity(quantity: Decimal, from_uom, to_uom) -> Decimal:
+        """
+        Converts quantity from one UoM to another.
+        """
+        if not from_uom or not to_uom:
+            return quantity
+            
+        if from_uom == to_uom:
+            return quantity
+            
+        if from_uom.category_id != to_uom.category_id:
+             # Fallback or error? For now we will assume if categories match we convert, else we might return as is or error
+             # But models constraints should prevent this.
+             if from_uom.category != to_uom.category:
+                raise ValidationError(f"No se puede convertir de {from_uom.name} a {to_uom.name} (Categorías distintas)")
+        
+        # Conversion: Qty * (FromRatio / ToRatio)
+        # 1 Box (12) -> Unit (1). 1.0 * (12.0 / 1.0) = 12.0
+        # 1 Unit (1) -> Box (12). 1.0 * (1.0 / 12.0) = 0.0833
+        
+        return (quantity * from_uom.ratio) / to_uom.ratio

@@ -80,9 +80,17 @@ class SaleOrder(models.Model):
 
 class SaleLine(models.Model):
     order = models.ForeignKey(SaleOrder, on_delete=models.CASCADE, related_name='lines')
+    first_name = models.CharField(_("Nombre"), max_length=100, blank=True) # Not relevant for context but matching context lines
     product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT, related_name='sale_lines', null=True, blank=True)
     description = models.CharField(_("Descripción"), max_length=255)
     quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2, default=1)
+    uom = models.ForeignKey(
+        'inventory.UoM', 
+        on_delete=models.PROTECT, 
+        null=True, blank=True,
+        related_name='sale_lines',
+        verbose_name=_("Unidad")
+    )
     unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00) # Chile default
     

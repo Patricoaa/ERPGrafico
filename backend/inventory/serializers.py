@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue
+from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue, UoM, UoMCategory
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,10 +16,29 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
     values = ProductAttributeValueSerializer(many=True, read_only=True)
     class Meta:
         model = ProductAttribute
+        class Meta:
+        model = ProductAttribute
         fields = ['id', 'name', 'values']
+
+class UoMCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UoMCategory
+        fields = '__all__'
+
+class UoMSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    
+    class Meta:
+        model = UoM
+        fields = '__all__'
 
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
+    
     current_stock = serializers.SerializerMethodField()
     attribute_values = ProductAttributeValueSerializer(many=True, read_only=True)
     variants_count = serializers.IntegerField(source='variants.count', read_only=True)

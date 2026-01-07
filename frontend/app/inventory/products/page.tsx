@@ -42,6 +42,8 @@ interface Product {
     variant_of: number | null
     variants_count: number
     attribute_values: any[]
+    uom_name: string
+    purchase_uom_name: string
 }
 
 export default function ProductsPage() {
@@ -222,6 +224,7 @@ export default function ProductsPage() {
                                 <TableHead>Nombre</TableHead>
                                 <TableHead>Categoría</TableHead>
                                 <TableHead>Tipo</TableHead>
+                                <TableHead>Unidad</TableHead>
                                 <TableHead className="text-right">Stock</TableHead>
                                 <TableHead className="text-right">Precio Venta</TableHead>
                                 <TableHead className="w-[100px] text-center">Acciones</TableHead>
@@ -263,6 +266,7 @@ export default function ProductsPage() {
                                             <TableCell>
                                                 <Badge variant="outline">{translateProductType(product.product_type)}</Badge>
                                             </TableCell>
+                                            <TableCell>{product.uom_name || '-'}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex flex-col items-end">
                                                     <span className="font-bold">{product.total_stock}</span>
@@ -309,6 +313,7 @@ export default function ProductsPage() {
                                                 <TableCell>
                                                     <Badge variant="outline" className="text-[10px]">{variant.product_type}</Badge>
                                                 </TableCell>
+                                                <TableCell className="text-sm">{variant.uom_name || '-'}</TableCell>
                                                 <TableCell className="text-right text-sm font-medium">{variant.current_stock}</TableCell>
                                                 <TableCell className="text-right text-sm">${Number(variant.sale_price).toLocaleString()}</TableCell>
                                                 <TableCell>

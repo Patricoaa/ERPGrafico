@@ -50,6 +50,36 @@ class ProductAttributeValue(models.Model):
     def __str__(self):
         return f"{self.attribute.name}: {self.value}"
 
+class UoMCategory(models.Model):
+    name = models.CharField(_("Nombre"), max_length=100)
+    
+    class Meta:
+        verbose_name = _("Categoría de Medida")
+        verbose_name_plural = _("Categorías de Medida")
+
+    def __str__(self):
+        return self.name
+
+class UoM(models.Model):
+    class Type(models.TextChoices):
+        REFERENCE = 'REFERENCE', _('Referencia para esta categoría')
+        BIGGER = 'BIGGER', _('Más grande que la referencia')
+        SMALLER = 'SMALLER', _('Más pequeño que la referencia')
+
+    name = models.CharField(_("Nombre"), max_length=100)
+    category = models.ForeignKey(UoMCategory, on_delete=models.CASCADE, related_name='uoms')
+    uom_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices, default=Type.REFERENCE)
+    ratio = models.DecimalField(_("Ratio"), max_digits=12, decimal_places=5, default=1.0)
+    rounding = models.DecimalField(_("Redondeo"), max_digits=12, decimal_places=5, default=0.01000)
+    active = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = _("Unidad de Medida")
+        verbose_name_plural = _("Unidades de Medida")
+
+    def __str__(self):
+        return self.name
+
 class Product(models.Model):
     class Type(models.TextChoices):
         STORABLE = 'STORABLE', _('Almacenable')
@@ -62,6 +92,20 @@ class Product(models.Model):
     category = models.ForeignKey(ProductCategory, on_delete=models.PROTECT, related_name='products')
     product_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices, default=Type.STORABLE)
     
+    # Units of Measure
+    uom = models.ForeignKey(
+        UoM, on_delete=models.PROTECT, related_name='products',
+        verbose_name=_("Unidad de Medida"), 
+        null=True, blank=True,
+        help_text=_("Unidad base para gestión de stock")
+    )
+    purchase_uom = models.ForeignKey(
+        UoM, on_delete=models.PROTECT, related_name='products_purchase',
+        verbose_name=_("UdM Compra"), 
+        null=True, blank=True,
+        help_text=_("Unidad por defecto para compras")
+    )
+
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=2, default=0)
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=2, default=0, editable=False)
 

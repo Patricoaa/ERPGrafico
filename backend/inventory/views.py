@@ -1,8 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .serializers import ProductSerializer, ProductCategorySerializer, WarehouseSerializer, StockMoveSerializer, ProductAttributeSerializer, ProductAttributeValueSerializer
-from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue
+from .serializers import ProductSerializer, ProductCategorySerializer, WarehouseSerializer, StockMoveSerializer, ProductAttributeSerializer, ProductAttributeValueSerializer, UoMSerializer, UoMCategorySerializer
+from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue, UoM, UoMCategory
 from .services import StockService
 from decimal import Decimal
 import itertools
@@ -126,6 +126,14 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class WarehouseViewSet(viewsets.ModelViewSet):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
+
+class UoMViewSet(viewsets.ModelViewSet):
+    queryset = UoM.objects.all()
+    serializer_class = UoMSerializer
+
+class UoMCategoryViewSet(viewsets.ModelViewSet):
+    queryset = UoMCategory.objects.all()
+    serializer_class = UoMCategorySerializer
 
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StockMove.objects.all()

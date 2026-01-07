@@ -9,10 +9,11 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     quantity_pending = serializers.ReadOnlyField()
     id = serializers.IntegerField(required=False) # Helper for updates
+    uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     
     class Meta:
         model = PurchaseLine
-        fields = ['id', 'product', 'product_name', 'quantity', 'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending']
+        fields = ['id', 'product', 'product_name', 'quantity', 'uom', 'uom_name', 'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending']
         read_only_fields = ['subtotal', 'quantity_received', 'quantity_pending']
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
