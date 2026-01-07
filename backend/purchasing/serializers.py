@@ -16,6 +16,17 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'product_name', 'quantity', 'uom', 'uom_name', 'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending']
         read_only_fields = ['subtotal', 'quantity_received', 'quantity_pending']
 
+    def validate(self, data):
+        product = data.get('product')
+        # During updates, product might not be in data if not changed. 
+        # But if it IS in data, we check.
+        # If it's a new line (no instance), product is required by model, so it will be in data.
+        if product and not product.uom:
+            raise serializers.ValidationError(
+                f"El producto '{product.name}' no tiene una Unidad de Medida (UoM) asignada."
+            )
+        return data
+
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseLineSerializer(many=True, read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)

@@ -225,48 +225,6 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                         <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
-                                name="uom"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Unidad de Medida (Opcional)</FormLabel>
-                                        <Select
-                                            onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
-                                            value={field.value?.toString() || "none"}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Base del producto" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="none">Base del producto</SelectItem>
-                                                {uoms.map((u) => (
-                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="priority"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Prioridad</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
                                 name="operator"
                                 render={({ field }) => (
                                     <FormItem>
@@ -292,6 +250,22 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                             />
                             <FormField
                                 control={form.control}
+                                name="priority"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Prioridad</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
                                 name="min_quantity"
                                 render={({ field }) => (
                                     <FormItem>
@@ -299,6 +273,32 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         <FormControl>
                                             <Input type="number" {...field} />
                                         </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="uom"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Unidad de Medida (Opcional)</FormLabel>
+                                        <Select
+                                            onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
+                                            value={field.value?.toString() || "none"}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Base del producto" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="none">Base del producto</SelectItem>
+                                                {uoms.map((u) => (
+                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -351,10 +351,26 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                     name="fixed_price"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Precio Fijo</FormLabel>
+                                            <FormLabel>Precio Fijo (Neto)</FormLabel>
                                             <FormControl>
                                                 <Input type="number" {...field} value={field.value || ""} />
                                             </FormControl>
+                                            {field.value && !isNaN(parseFloat(field.value.toString())) && (
+                                                <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border rounded p-2 bg-muted/50">
+                                                    <div className="flex justify-between">
+                                                        <span>Neto:</span>
+                                                        <span>{parseInt(field.value.toString()).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>IVA (19%):</span>
+                                                        <span>{Math.round(parseInt(field.value.toString()) * 0.19).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                                    </div>
+                                                    <div className="flex justify-between font-bold border-t pt-1 mt-1">
+                                                        <span>Total (Bruto):</span>
+                                                        <span>{Math.round(parseInt(field.value.toString()) * 1.19).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                             <FormMessage />
                                         </FormItem>
                                     )}

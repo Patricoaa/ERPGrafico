@@ -53,7 +53,10 @@ interface Customer {
 
 interface CartItem extends Product {
     qty: number
-    total: number
+    total_net: number
+    total_tax: number
+    total_gross: number
+    unit_price_net: number
     uom?: number
     uom_name?: string
 }
@@ -137,24 +140,32 @@ export default function POSPage() {
     }
 
     const addToCart = (product: Product) => {
-
         const existing = items.find(i => i.id === product.id)
+        const netPrice = getEffectivePrice(product, existing ? existing.qty + 1 : 1)
+
         if (existing) {
             const newQty = existing.qty + 1
-            const effectivePrice = getEffectivePrice(product, newQty)
             setItems(items.map(i => i.id === product.id
-                ? { ...i, qty: newQty, unit_price: String(effectivePrice), total: Math.ceil(newQty * effectivePrice) }
+                ? {
+                    ...i,
+                    qty: newQty,
+                    unit_price_net: netPrice,
+                    total_net: Math.round(newQty * netPrice),
+                    total_tax: Math.round(newQty * netPrice * 0.19),
+                    total_gross: Math.round(newQty * netPrice * 1.19)
+                }
                 : i
             ))
         } else {
-            const effectivePrice = getEffectivePrice(product, 1)
             setItems([...items, {
                 ...product,
                 qty: 1,
                 uom: product.uom,
                 uom_name: product.uom_name,
-                unit_price: String(effectivePrice),
-                total: Math.ceil(effectivePrice)
+                unit_price_net: netPrice,
+                total_net: Math.round(netPrice),
+                total_tax: Math.round(netPrice * 0.19),
+                total_gross: Math.round(netPrice * 1.19)
             }])
         }
     }
@@ -164,8 +175,15 @@ export default function POSPage() {
         setItems(items.map(i => {
             if (i.id === id) {
                 const newQty = Math.max(1, i.qty + delta)
-                const effectivePrice = getEffectivePrice(i, newQty)
-                return { ...i, qty: newQty, unit_price: String(effectivePrice), total: Math.ceil(newQty * effectivePrice) }
+                const netPrice = getEffectivePrice(i, newQty)
+                return {
+                    ...i,
+                    qty: newQty,
+                    unit_price_net: netPrice,
+                    total_net: Math.round(newQty * netPrice),
+                    total_tax: Math.round(newQty * netPrice * 0.19),
+                    total_gross: Math.round(newQty * netPrice * 1.19)
+                }
             }
             return i
         }))
@@ -221,7 +239,7 @@ export default function POSPage() {
                         description: i.name,
                         quantity: i.qty,
                         uom: i.uom,
-                        unit_price: parseFloat(i.unit_price || i.sale_price),
+                        unit_price: i.unit_price_net,
                         tax_rate: 19
                     }))
                 },
@@ -245,7 +263,9 @@ export default function POSPage() {
         }
     }
 
-    const total = items.reduce((acc, i) => acc + i.total, 0)
+    const total_gross_sum = items.reduce((acc, i) => acc + i.total_gross, 0)
+    const total_net_sum = items.reduce((acc, i) => acc + i.total_net, 0)
+    const total_tax_sum = items.reduce((acc, i) => acc + i.total_tax, 0)
 
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)] p-4 space-y-4">
@@ -325,7 +345,10 @@ export default function POSPage() {
                                             </div>
                                             <CardContent className="p-3 text-center flex-1 flex flex-col justify-center">
                                                 <div className="font-bold text-sm line-clamp-2">{product.name}</div>
-                                                <div className="text-primary font-semibold text-base mt-1">${Number(product.sale_price).toLocaleString()}</div>
+                                                <div className="text-primary font-semibold text-base mt-1">
+                                                    ${Math.round(Number(product.sale_price) * 1.19).toLocaleString()}
+                                                    <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
+                                                </div>
                                                 <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider">{product.code}</div>
                                             </CardContent>
                                         </Card>
@@ -368,9 +391,11 @@ export default function POSPage() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Producto</TableHead>
-                                            <TableHead className="w-[100px] text-center">Cant</TableHead>
+                                            <TableHead className="w-[80px] text-center">Cant</TableHead>
+                                            <TableHead className="text-right text-xs">Neto</TableHead>
+                                            <TableHead className="text-right text-xs">IVA</TableHead>
                                             <TableHead className="text-right">Total</TableHead>
-                                            <TableHead className="w-[40px]"></TableHead>
+                                            <TableHead className="w-[30px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -413,12 +438,14 @@ export default function POSPage() {
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center justify-center gap-1">
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(item.id, -1)}><Minus className="h-3 w-3" /></Button>
-                                                            <span>{item.qty}</span>
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(item.id, 1)}><Plus className="h-3 w-3" /></Button>
+                                                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => updateQty(item.id, -1)}><Minus className="h-3 w-3" /></Button>
+                                                            <span className="text-xs font-mono">{item.qty}</span>
+                                                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => updateQty(item.id, 1)}><Plus className="h-3 w-3" /></Button>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="text-right font-medium">${Number(item.total).toLocaleString()}</TableCell>
+                                                    <TableCell className="text-right text-xs text-muted-foreground">${Number(item.total_net).toLocaleString()}</TableCell>
+                                                    <TableCell className="text-right text-xs text-muted-foreground">${Number(item.total_tax).toLocaleString()}</TableCell>
+                                                    <TableCell className="text-right font-bold text-sm">${Number(item.total_gross).toLocaleString()}</TableCell>
                                                     <TableCell>
                                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeItem(item.id)}>
                                                             <Trash2 className="h-3 w-3" />
@@ -429,7 +456,7 @@ export default function POSPage() {
                                         })}
                                         {items.length === 0 && (
                                             <TableRow>
-                                                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                                     Carrito vacío
                                                 </TableCell>
                                             </TableRow>
@@ -441,15 +468,15 @@ export default function POSPage() {
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-muted-foreground">
                                         <span>Neto</span>
-                                        <span>${(total / 1.19).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                        <span>${total_net_sum.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-sm text-muted-foreground">
                                         <span>IVA (19%)</span>
-                                        <span>${(total - total / 1.19).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                        <span>${total_tax_sum.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-xl font-bold pt-2 border-t">
                                         <span>Total</span>
-                                        <span>${total.toLocaleString()}</span>
+                                        <span>${total_gross_sum.toLocaleString()}</span>
                                     </div>
                                 </div>
                                 <Button
@@ -470,8 +497,8 @@ export default function POSPage() {
             <PaymentDialog
                 open={checkoutOpen}
                 onOpenChange={setCheckoutOpen}
-                total={total}
-                pendingAmount={total}
+                total={total_gross_sum}
+                pendingAmount={total_gross_sum}
                 showDteSelector={true}
                 onConfirm={handleCheckoutConfirm}
             />

@@ -54,6 +54,20 @@ export function BomForm({ open, onOpenChange, onSuccess, initialData }: BomFormP
     const [lines, setLines] = useState<BomLine[]>([])
     const [loading, setLoading] = useState(false)
 
+    const [uoms, setUoms] = useState<any[]>([])
+
+    useEffect(() => {
+        const fetchUoms = async () => {
+            try {
+                const response = await api.get('/inventory/uoms/')
+                setUoms(response.data.results || response.data)
+            } catch (error) {
+                console.error("Error fetching UoMs:", error)
+            }
+        }
+        fetchUoms()
+    }, [])
+
     useEffect(() => {
         if (open) {
             if (initialData) {
@@ -231,10 +245,11 @@ export function BomForm({ open, onOpenChange, onSuccess, initialData }: BomFormP
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="UN">UN</SelectItem>
-                                                <SelectItem value="KG">KG</SelectItem>
-                                                <SelectItem value="M">M</SelectItem>
-                                                <SelectItem value="L">L</SelectItem>
+                                                {uoms.map((u) => (
+                                                    <SelectItem key={u.id} value={u.name}>
+                                                        {u.name}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>

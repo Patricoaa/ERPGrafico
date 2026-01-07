@@ -314,12 +314,14 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[30%]">Producto</TableHead>
+                                            <TableHead className="w-[25%]">Producto</TableHead>
                                             <TableHead className="w-[10%]">Cantidad</TableHead>
-                                            <TableHead className="w-[15%]">Unidad</TableHead>
-                                            <TableHead className="w-[15%]">Precio Unit.</TableHead>
-                                            <TableHead className="w-[15%]">Subtotal</TableHead>
-                                            <TableHead className="w-[10%]"></TableHead>
+                                            <TableHead className="w-[10%]">Unidad</TableHead>
+                                            <TableHead className="w-[10%]">P. Unit. (Neto)</TableHead>
+                                            <TableHead className="w-[10%]">Neto</TableHead>
+                                            <TableHead className="w-[10%]">IVA</TableHead>
+                                            <TableHead className="w-[10%]">Total</TableHead>
+                                            <TableHead className="w-[5%]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -464,8 +466,14 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         )}
                                                     />
                                                 </TableCell>
-                                                <TableCell className="text-right font-medium">
+                                                <TableCell className="text-right text-muted-foreground text-xs">
                                                     {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                </TableCell>
+                                                <TableCell className="text-right text-muted-foreground text-xs">
+                                                    {(Math.round((Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0) * 0.19)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                </TableCell>
+                                                <TableCell className="text-right font-bold text-sm">
+                                                    {(Math.round((Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0) * 1.19)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Button

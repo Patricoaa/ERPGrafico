@@ -25,6 +25,14 @@ class SaleLineSerializer(serializers.ModelSerializer):
         model = SaleLine
         fields = ['id', 'product', 'product_name', 'description', 'quantity', 'uom', 'uom_name', 'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 'quantity_pending']
 
+    def validate(self, data):
+        product = data.get('product')
+        if product and not product.uom:
+            raise serializers.ValidationError(
+                f"El producto '{product.name}' no tiene una Unidad de Medida (UoM) asignada."
+            )
+        return data
+
 class SaleOrderSerializer(serializers.ModelSerializer):
     lines = SaleLineSerializer(many=True, read_only=True)
     customer_name = serializers.CharField(source='customer.name', read_only=True)

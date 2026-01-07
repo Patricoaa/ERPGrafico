@@ -71,6 +71,14 @@ class StockMoveSerializer(serializers.ModelSerializer):
         model = StockMove
         fields = '__all__'
 
+    def validate(self, data):
+        product = data.get('product')
+        if product and not product.uom:
+            raise serializers.ValidationError(
+                f"El producto '{product.name}' no tiene una Unidad de Medida (UoM) asignada."
+            )
+        return data
+
     def get_related_documents(self, obj):
         docs = []
         # 1. Check via journal entry
