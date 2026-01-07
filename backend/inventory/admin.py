@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProductCategory, ProductAttribute, ProductAttributeValue, Product, Warehouse, StockMove, UoMCategory, UoM
+from .models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM
 
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):

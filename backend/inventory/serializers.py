@@ -1,22 +1,10 @@
 from rest_framework import serializers
-from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue, UoM, UoMCategory, PricingRule
+from .models import Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
         fields = ['id', 'name', 'icon', 'parent', 'asset_account', 'income_account', 'expense_account']
-
-class ProductAttributeValueSerializer(serializers.ModelSerializer):
-    attribute_name = serializers.CharField(source='attribute.name', read_only=True)
-    class Meta:
-        model = ProductAttributeValue
-        fields = ['id', 'attribute', 'attribute_name', 'value']
-
-class ProductAttributeSerializer(serializers.ModelSerializer):
-    values = ProductAttributeValueSerializer(many=True, read_only=True)
-    class Meta:
-        model = ProductAttribute
-        fields = ['id', 'name', 'values']
 
 class UoMCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,9 +33,6 @@ class ProductSerializer(serializers.ModelSerializer):
     purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
     
     current_stock = serializers.SerializerMethodField()
-    attribute_values = ProductAttributeValueSerializer(many=True, read_only=True)
-    variants_count = serializers.IntegerField(source='variants.count', read_only=True)
-    total_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
     
     class Meta:
@@ -59,22 +44,6 @@ class ProductSerializer(serializers.ModelSerializer):
         from django.db.models import Sum
         return obj.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
 
-    def get_total_stock(self, obj):
-        # For parents, sum all variant moves plus its own moves
-        # For variants/simple, it's the same as current_stock
-        from django.db.models import Sum, Q
-        from .models import StockMove
-        
-        if obj.variants.exists():
-            # Sum moves of this product AND all its variants
-            total = StockMove.objects.filter(
-                Q(product=obj) | Q(product__variant_of=obj)
-            ).aggregate(total=Sum('quantity'))['total'] or 0.0
-            return float(total)
-        
-
-        return self.get_current_stock(obj)
-    
     def get_effective_price(self, obj):
         from .services import PricingService
         return PricingService.get_product_price(obj, 1)

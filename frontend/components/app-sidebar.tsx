@@ -61,13 +61,8 @@ const items = [
         icon: Package,
         items: [
             { title: "Productos", url: "/inventory/products" },
-            { title: "Categorías", url: "/inventory/categories" },
-            { title: "Almacenes", url: "/inventory/warehouses" },
-            { title: "Movimientos", url: "/inventory/movements" },
-            { title: "Reporte de Stock", url: "/inventory/report" },
+            { title: "Stock", url: "/inventory/stock" },
             { title: "Reglas de Precio", url: "/inventory/pricing-rules" },
-            { title: "Categorías de Medida", url: "/inventory/uom-categories" },
-            { title: "Unidades de Medida", url: "/inventory/uoms" },
         ]
     },
     {
@@ -103,7 +98,6 @@ const items = [
         items: [
             { title: "Contratos", url: "/services/contracts" },
             { title: "Obligaciones", url: "/services/obligations" },
-            { title: "Categorías", url: "/services/categories" },
         ]
     },
     {
