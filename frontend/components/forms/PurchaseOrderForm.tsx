@@ -138,7 +138,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
         try {
             const [warehousesRes, productsRes, uomsRes] = await Promise.all([
                 api.get('/inventory/warehouses/'),
-                api.get('/inventory/warehouses/'),
                 api.get('/inventory/products/'),
                 api.get('/inventory/uoms/'),
             ])

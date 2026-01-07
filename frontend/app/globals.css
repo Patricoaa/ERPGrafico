@@ -1,16 +1,18 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
-@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.985 0 0); /* slate-50/white mix */
-  --foreground: oklch(0.145 0 0); /* slate-900 */
+  --background: oklch(0.985 0 0);
+  /* slate-50/white mix */
+  --foreground: oklch(0.145 0 0);
+  /* slate-900 */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.627 0.265 303.9); /* Blue-600 #3b82f6 equivalent approx */
+  --primary: oklch(0.627 0.265 303.9);
+  /* Blue-600 #3b82f6 equivalent approx */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -24,12 +26,16 @@
   --input: oklch(0.922 0 0);
   --ring: oklch(0.87 0 0);
   --radius: 0.5rem;
-  
-  --sidebar: oklch(0.205 0 0); /* slate-900 #0f172a */
-  --sidebar-foreground: oklch(0.985 0 0); /* white */
-  --sidebar-primary: oklch(0.627 0.265 303.9); /* Blue acccents */
+
+  --sidebar: oklch(0.205 0 0);
+  /* slate-900 #0f172a */
+  --sidebar-foreground: oklch(0.985 0 0);
+  /* white */
+  --sidebar-primary: oklch(0.627 0.265 303.9);
+  /* Blue acccents */
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0); /* slate-800 */
+  --sidebar-accent: oklch(0.269 0 0);
+  /* slate-800 */
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
@@ -69,7 +75,7 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -84,6 +90,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
