@@ -93,6 +93,12 @@ class Product(models.Model):
         null=True, blank=True,
         help_text=_("Unidad base para gestión de stock")
     )
+    sale_uom = models.ForeignKey(
+        UoM, on_delete=models.PROTECT, related_name='products_sale',
+        verbose_name=_("UdM Venta"),
+        null=True, blank=True,
+        help_text=_("Unidad por defecto para ventas")
+    )
     purchase_uom = models.ForeignKey(
         UoM, on_delete=models.PROTECT, related_name='products_purchase',
         verbose_name=_("UdM Compra"), 

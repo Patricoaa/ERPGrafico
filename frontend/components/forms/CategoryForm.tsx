@@ -1,4 +1,5 @@
-"use client"
+
+import { cn } from "@/lib/utils"
 
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
@@ -30,6 +31,95 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import * as LucideIcons from "lucide-react"
+import { Check } from "lucide-react"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Badge } from "@/components/ui/badge"
+
+const ICON_OPTIONS = [
+    { name: "Package", label: "Paquete" },
+    { name: "Coffee", label: "Café" },
+    { name: "Briefcase", label: "Maletín" },
+    { name: "Book", label: "Libro" },
+    { name: "Camera", label: "Cámara" },
+    { name: "Car", label: "Auto" },
+    { name: "Cloud", label: "Nube" },
+    { name: "Cpu", label: "CPU" },
+    { name: "Gamepad", label: "Juegos" },
+    { name: "Gift", label: "Regalo" },
+    { name: "HardDrive", label: "Disco Duro" },
+    { name: "Headphones", label: "Audífonos" },
+    { name: "Home", label: "Casa" },
+    { name: "Image", label: "Imagen" },
+    { name: "Laptop", label: "Laptop" },
+    { name: "LifeBuoy", label: "Salvavidas" },
+    { name: "Mail", label: "Correo" },
+    { name: "Map", label: "Mapa" },
+    { name: "Mic", label: "Micrófono" },
+    { name: "Monitor", label: "Monitor" },
+    { name: "Music", label: "Música" },
+    { name: "Phone", label: "Teléfono" },
+    { name: "Printer", label: "Impresora" },
+    { name: "Radio", label: "Radio" },
+    { name: "Smartphone", label: "Celular" },
+    { name: "Speaker", label: "Parlante" },
+    { name: "Sun", label: "Sol" },
+    { name: "Tablet", label: "Tablet" },
+    { name: "Trash", label: "Basura" },
+    { name: "Tv", label: "TV" },
+    { name: "Watch", label: "Reloj" },
+    { name: "Zap", label: "Energía" },
+    { name: "Utensils", label: "Utensilios" },
+    { name: "Shirt", label: "Ropa" },
+]
+
+function RichIconSelector({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+    const SelectedIcon = (LucideIcons as any)[value] || LucideIcons.Package
+    const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between px-3 h-10">
+                    <div className="flex items-center gap-2">
+                        <SelectedIcon className="h-4 w-4" />
+                        <span>{selectedLabel}</span>
+                    </div>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[300px] h-[300px]" align="start">
+                <DropdownMenuLabel>Seleccionar Icono</DropdownMenuLabel>
+                <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
+                    {ICON_OPTIONS.map((item) => {
+                        const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
+                        const isSelected = value === item.name
+                        return (
+                            <DropdownMenuItem
+                                key={item.name}
+                                className={cn(
+                                    "flex items-center gap-2 cursor-pointer p-2 rounded-sm",
+                                    isSelected && "bg-accent"
+                                )}
+                                onClick={() => onChange(item.name)}
+                            >
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span className="flex-1 truncate text-xs">{item.label}</span>
+                                {isSelected && <Check className="h-3 w-3 text-primary opacity-100" />}
+                            </DropdownMenuItem>
+                        )
+                    })}
+                </div>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 
 const categorySchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -177,24 +267,12 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Icono</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || "Package"}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccionar icono" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {[
-                                                "Package", "Coffee", "Briefcase", "Book", "Camera", "Car",
-                                                "Cloud", "Cpu", "Gamepad", "Gift", "HardDrive", "Headphones",
-                                                "Home", "Image", "Laptop", "LifeBuoy", "Mail", "Map", "Mic",
-                                                "Monitor", "Music", "Phone", "Printer", "Radio", "Smartphone",
-                                                "Speaker", "Sun", "Tablet", "Trash", "Tv", "Watch", "Zap", "Utensils", "Shirt"
-                                            ].map(iconName => (
-                                                <SelectItem key={iconName} value={iconName}>{iconName}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                        <RichIconSelector
+                                            value={field.value || "Package"}
+                                            onChange={field.onChange}
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

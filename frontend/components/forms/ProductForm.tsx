@@ -49,6 +49,7 @@ const productSchema = z.object({
     product_type: z.string().min(1, "Tipo requerido"),
     sale_price: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
     uom: z.string().min(1, "Unidad de medida requerida"),
+    sale_uom: z.string().min(1, "Unidad de venta requerida"),
     purchase_uom: z.string().optional(),
     image: z.any().optional(),
     track_inventory: z.boolean(),
@@ -136,6 +137,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     product_type: initialData.product_type || "STORABLE",
                     sale_price: Number(initialData.sale_price) || 0,
                     uom: initialData.uom?.id?.toString() || initialData.uom?.toString() || "",
+                    sale_uom: initialData.sale_uom?.id?.toString() || initialData.sale_uom?.toString() || "",
                     purchase_uom: initialData.purchase_uom?.id?.toString() || initialData.purchase_uom?.toString() || "",
                     track_inventory: initialData.track_inventory ?? true,
                     custom_fields_schema: typeof initialData.custom_fields_schema === 'object'
@@ -152,6 +154,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     product_type: "STORABLE",
                     sale_price: 0,
                     uom: "",
+                    sale_uom: "",
                     purchase_uom: "",
                     track_inventory: true,
                     custom_fields_schema: "",
@@ -172,6 +175,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('product_type', data.product_type)
             formData.append('sale_price', data.sale_price.toString())
             formData.append('uom', data.uom)
+            formData.append('sale_uom', data.sale_uom)
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
             formData.append('track_inventory', data.track_inventory ? 'true' : 'false')
             if (data.custom_fields_schema) {
@@ -391,42 +395,45 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                     </div>
                                                 )}
 
-                                                <div className="md:col-span-2">
+                                                <div className="md:col-span-4">
                                                     <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="category"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel className="flex justify-between items-center">
-                                                                    Categoría
+                                                                <FormLabel>Categoría</FormLabel>
+                                                                <div className="flex gap-2">
+                                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger className="flex-1">
+                                                                                <SelectValue placeholder="Seleccionar" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {categories.map((cat) => (
+                                                                                <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
                                                                     <Button
                                                                         type="button"
-                                                                        variant="link"
-                                                                        className="h-auto p-0 text-xs text-primary"
+                                                                        variant="outline"
+                                                                        size="icon"
+                                                                        className="shrink-0"
                                                                         onClick={() => setIsCategoryFormOpen(true)}
+                                                                        title="Nueva Categoría"
                                                                     >
-                                                                        <Plus className="h-3 w-3 mr-1" /> Nueva
+                                                                        <Plus className="h-4 w-4" />
                                                                     </Button>
-                                                                </FormLabel>
-                                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                                    <FormControl>
-                                                                        <SelectTrigger>
-                                                                            <SelectValue placeholder="Seleccionar" />
-                                                                        </SelectTrigger>
-                                                                    </FormControl>
-                                                                    <SelectContent>
-                                                                        {categories.map((cat) => (
-                                                                            <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                </div>
+
                                                                 <FormMessage />
                                                             </FormItem>
                                                         )}
                                                     />
                                                 </div>
 
-                                                <div className="md:col-span-1">
+                                                <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                                                     <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="uom"
@@ -449,9 +456,31 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                             </FormItem>
                                                         )}
                                                     />
-                                                </div>
 
-                                                <div className="md:col-span-1">
+                                                    <FormField<ProductFormValues>
+                                                        control={form.control}
+                                                        name="sale_uom"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>UdM Venta</FormLabel>
+                                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Requerido" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        {uoms.map((u) => (
+                                                                            <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+
                                                     <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="purchase_uom"

@@ -392,6 +392,7 @@ export default function POSPage() {
                                         <TableRow>
                                             <TableHead>Producto</TableHead>
                                             <TableHead className="w-[80px] text-center">Cant</TableHead>
+                                            <TableHead className="w-[70px] text-center">Unidad</TableHead>
                                             <TableHead className="text-right text-xs">Neto</TableHead>
                                             <TableHead className="text-right text-xs">IVA</TableHead>
                                             <TableHead className="text-right">Total</TableHead>
@@ -406,35 +407,7 @@ export default function POSPage() {
                                             return (
                                                 <TableRow key={item.id}>
                                                     <TableCell className="max-w-[120px]">
-                                                        <div className="flex flex-col">
-                                                            <span className="truncate font-medium">{item.name}</span>
-                                                            <div className="mt-1">
-                                                                {categoryUoms.length > 1 ? (
-                                                                    <Select
-                                                                        value={item.uom?.toString()}
-                                                                        onValueChange={(val) => {
-                                                                            const newUom = uoms.find(u => u.id.toString() === val)
-                                                                            setItems(items.map(i => i.id === item.id ? { ...i, uom: parseInt(val), uom_name: newUom?.name } : i))
-                                                                        }}
-                                                                    >
-                                                                        <SelectTrigger className="h-6 text-[10px] w-auto border-none bg-muted/50 py-0 px-2 min-h-0">
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {categoryUoms.map(u => (
-                                                                                <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
-                                                                                    {u.name}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                ) : (
-                                                                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                                        {item.uom_name}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
+                                                        <span className="truncate font-medium">{item.name}</span>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center justify-center gap-1">
@@ -442,6 +415,32 @@ export default function POSPage() {
                                                             <span className="text-xs font-mono">{item.qty}</span>
                                                             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => updateQty(item.id, 1)}><Plus className="h-3 w-3" /></Button>
                                                         </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {categoryUoms.length > 1 ? (
+                                                            <Select
+                                                                value={item.uom?.toString()}
+                                                                onValueChange={(val) => {
+                                                                    const newUom = uoms.find(u => u.id.toString() === val)
+                                                                    setItems(items.map(i => i.id === item.id ? { ...i, uom: parseInt(val), uom_name: newUom?.name } : i))
+                                                                }}
+                                                            >
+                                                                <SelectTrigger className="h-6 text-[10px] w-full border-none bg-muted/50 py-0 px-2 min-h-0">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {categoryUoms.map(u => (
+                                                                        <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
+                                                                            {u.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        ) : (
+                                                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                                                {item.uom_name}
+                                                            </span>
+                                                        )}
                                                     </TableCell>
                                                     <TableCell className="text-right text-xs text-muted-foreground">${Number(item.total_net).toLocaleString()}</TableCell>
                                                     <TableCell className="text-right text-xs text-muted-foreground">${Number(item.total_tax).toLocaleString()}</TableCell>

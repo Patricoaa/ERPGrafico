@@ -87,7 +87,9 @@ export function ProductList() {
                             <TableHead>Categoría</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead className="text-right">Stock</TableHead>
-                            <TableHead className="text-right">Precio</TableHead>
+                            <TableHead className="text-right">Neto</TableHead>
+                            <TableHead className="text-right">IVA (19%)</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
                             <TableHead className="w-[100px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -109,8 +111,14 @@ export function ProductList() {
                                         <span className="text-[10px] text-muted-foreground font-normal">No controlado</span>
                                     )}
                                 </TableCell>
-                                <TableCell className="text-right font-bold text-primary">
+                                <TableCell className="text-right font-bold text-muted-foreground">
                                     ${Number(product.sale_price).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-right text-muted-foreground text-xs">
+                                    ${Math.round(Number(product.sale_price) * 0.19).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-right font-bold text-primary">
+                                    ${Math.round(Number(product.sale_price) * 1.19).toLocaleString()}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center gap-1">

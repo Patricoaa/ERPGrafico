@@ -72,8 +72,12 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
         fetchProducts()
     }, [value, productType])
 
+    const isStockRestricted = (product: any) => {
+        return restrictStock && product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0
+    }
+
     const handleSelect = (product: any) => {
-        if (restrictStock && (product.current_stock || 0) <= 0) {
+        if (isStockRestricted(product)) {
             return;
         }
 
@@ -137,7 +141,7 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                                     return (
                                         <div
                                             key={product.id}
-                                            data-disabled={restrictStock && (product.current_stock || 0) <= 0}
+                                            data-disabled={isStockRestricted(product)}
                                             className={cn(
                                                 "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
                                                 selectedProduct?.id === product.id && "bg-accent"
@@ -158,7 +162,7 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                                                 </div>
                                                 <div className="flex justify-between mt-0.5">
                                                     <span className="text-[10px] text-muted-foreground">
-                                                        Stock: {(product.current_stock || 0)}
+                                                        {product.product_type === 'STORABLE' && `Stock: ${(product.current_stock || 0)}`}
                                                     </span>
                                                     <span className="text-[10px] font-bold">${Number(product.sale_price).toLocaleString()}</span>
                                                 </div>
@@ -217,7 +221,7 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                                             key={product.id}
                                             className={cn(
                                                 "cursor-pointer hover:bg-accent",
-                                                restrictStock && (product.current_stock || 0) <= 0 && "opacity-50 pointer-events-none grayscale-[0.5]"
+                                                isStockRestricted(product) && "opacity-50 pointer-events-none grayscale-[0.5]"
                                             )}
                                             onClick={() => handleSelect(product)}
                                         >

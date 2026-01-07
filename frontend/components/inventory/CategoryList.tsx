@@ -23,7 +23,10 @@ interface Category {
     asset_account: number | null
     income_account: number | null
     expense_account: number | null
+    icon?: string
 }
+
+import * as LucideIcons from "lucide-react"
 
 export function CategoryList() {
     const [categories, setCategories] = useState<Category[]>([])
@@ -72,6 +75,7 @@ export function CategoryList() {
                 <Table>
                     <TableHeader className="bg-muted/30">
                         <TableRow>
+                            <TableHead className="w-[50px]">Icono</TableHead>
                             <TableHead>Nombre</TableHead>
                             <TableHead>Categoría Padre</TableHead>
                             <TableHead className="w-[100px] text-center">Acciones</TableHead>
@@ -80,6 +84,16 @@ export function CategoryList() {
                     <TableBody>
                         {categories.map((category) => (
                             <TableRow key={category.id} className="group hover:bg-muted/20 transition-colors">
+                                <TableCell>
+                                    {category.icon && (
+                                        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/50">
+                                            {(() => {
+                                                const Icon = (LucideIcons as any)[category.icon] || LucideIcons.Package
+                                                return <Icon className="h-4 w-4 text-muted-foreground" />
+                                            })()}
+                                        </div>
+                                    )}
+                                </TableCell>
                                 <TableCell className="font-medium">{category.name}</TableCell>
                                 <TableCell className="text-sm text-muted-foreground">{category.parent_name || "-"}</TableCell>
                                 <TableCell>
