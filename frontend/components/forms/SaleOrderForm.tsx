@@ -22,7 +22,8 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-Select,
+import {
+    Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
