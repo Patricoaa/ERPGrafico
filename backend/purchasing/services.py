@@ -304,24 +304,67 @@ class PurchasingService:
             line.purchase_line.quantity_received += line.quantity_received
             line.purchase_line.save()
             
-            # 4. Accounting Debits (Asset)
-            asset_account = line.product.get_asset_account
-            if not asset_account:
-                 # Fallback to default inventory account
-                 pass 
-                 # raise ValidationError(f"El producto {line.product.name} no tiene cuenta de activo configurada.")
-            
+            # 4. Accounting Debits - DIFFERENT for CONSUMABLE vs other types
             line_total = line.total_cost
             total_amount += line_total
             
-            if asset_account:
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=asset_account,
-                    debit=line_total,
-                    credit=0,
-                    label=f"{line.product.code} x {line.quantity_received} {line.purchase_line.uom.name if line.purchase_line.uom else ''}"
-                )
+            # Check if product is CONSUMABLE
+            if line.product.product_type == 'CONSUMABLE':
+                # CONSUMABLE products: Expense directly, DON'T capitalize to inventory
+                # Priority: 1. Global settings, 2. Product category, 3. Any OPERATING_EXPENSE account
+                from accounting.models import AccountingSettings
+                settings = AccountingSettings.objects.first()
+                
+                expense_account = None
+                if settings and settings.default_consumable_account:
+                    # Highest priority: Global configuration
+                    expense_account = settings.default_consumable_account
+                elif line.product.get_expense_account:
+                    # Second priority: Category-level expense account
+                    expense_account = line.product.get_expense_account
+                else:
+                    # Fallback: Find any account marked as OPERATING_EXPENSE
+                    from accounting.models import ISCategory, Account
+                    expense_account = Account.objects.filter(
+                        is_category=ISCategory.OPERATING_EXPENSE
+                    ).first()
+                
+                if expense_account:
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=expense_account,
+                        debit=line_total,
+                        credit=0,
+                        label=f"Gasto Consumible: {line.product.code} x {line.quantity_received}"
+                    )
+                else:
+                    # If no expense account found, still use asset as fallback (not ideal)
+                    asset_account = line.product.get_asset_account
+                    if asset_account:
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=asset_account,
+                            debit=line_total,
+                            credit=0,
+                            label=f"{line.product.code} x {line.quantity_received} (Fallback Asset)"
+                        )
+            else:
+                # STORABLE, MANUFACTURABLE, SERVICE: Capitalize to inventory asset
+                asset_account = line.product.get_asset_account
+                if not asset_account:
+                     # Fallback to default inventory account
+                     pass 
+                     # raise ValidationError(f"El producto {line.product.name} no tiene cuenta de activo configurada.")
+                
+                if asset_account:
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=asset_account,
+                        debit=line_total,
+                        credit=0,
+                        label=f"{line.product.code} x {line.quantity_received} {line.purchase_line.uom.name if line.purchase_line.uom else ''}"
+                    )
+        
         
         # 5. Accounting Credit (Clearing Account)
         from accounting.models import AccountingSettings

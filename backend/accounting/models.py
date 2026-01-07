@@ -325,6 +325,17 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta de Salida de Stock (Puente)"),
         help_text=_("Cuenta usada como contrapartida en salidas no facturadas (si aplica).")
     )
+    
+    # Consumable Products Account
+    default_consumable_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_consumable',
+        verbose_name=_("Cuenta de Gastos Consumibles"),
+        help_text=_("Cuenta de gasto usada por defecto para productos consumibles (tintas, papel, etc.)")
+    )
+
 
 
     # Advanced Accounting

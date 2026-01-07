@@ -103,7 +103,7 @@ class ProductionService:
         """
         product = sale_line.product
         
-        if not product or product.product_type != 'MANUFACTURABLE':
+        if not product or product.product_type not in ['MANUFACTURABLE_STANDARD', 'MANUFACTURABLE_CUSTOM']:
             raise ValidationError("Solo se pueden crear OT para productos fabricables.")
         
         # Build specifications from product data
@@ -154,7 +154,7 @@ class ProductionService:
         
         product = work_order.sale_line.product
         
-        if product.product_type != 'MANUFACTURABLE':
+        if product.product_type not in ['MANUFACTURABLE_STANDARD', 'MANUFACTURABLE_CUSTOM']:
             raise ValidationError("El producto debe ser fabricable.")
         
         # Get active BOM

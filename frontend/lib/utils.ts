@@ -23,9 +23,12 @@ export function translateStatus(status: string): string {
 
 export function translateProductType(type: string): string {
   const map: Record<string, string> = {
-    'STORABLE': 'Almacenable',
     'CONSUMABLE': 'Consumible',
+    'STORABLE': 'Almacenable',
+    'MANUFACTURABLE_STANDARD': 'Fabricable Estándar',
+    'MANUFACTURABLE_CUSTOM': 'Fabricable Custom',
     'SERVICE': 'Servicio',
+    // Backward compatibility
     'MANUFACTURABLE': 'Fabricable',
   }
   return map[type.toUpperCase()] || type

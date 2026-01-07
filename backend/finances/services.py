@@ -427,20 +427,25 @@ class FinanceService:
         top_customers = [{'name': c['customer__name'], 'amount': float(c['total'])} for c in top_customers_qs]
 
         # 2. Inventory Analytics
-        products = Product.objects.filter(product_type='STORABLE')
-        total_inv_value = 0
-        for p in products:
-            # Simple valuation: quantity * cost_price
-            # In a real scenario, we'd query StockMove balances per product
-            from inventory.models import StockMove
-            balance = StockMove.objects.filter(product=p, date__lte=end_date).aggregate(total=Sum('quantity'))['total'] or 0
-            total_inv_value += float(balance) * float(p.cost_price)
+        # Get all storable products
+        products = Product.objects.filter(product_type='STORABLE', track_inventory=True)
+        
+        asset_vals = {}
+        for product in products:
+            total_qty = StockMove.objects.filter(product=product).aggregate(
+                total=Sum('quantity')
+            )['total'] or Decimal('0')
+            
+            if total_qty != Decimal('0'):
+                val = total_qty * product.cost_price
+                asset_vals[product.id] = val
 
-        # Stock Distribution by Category
+        # Breakdown by category
+        results = []
         categories = ProductCategory.objects.all()
-        dist = []
+        total_inventory_value = Decimal('0')
         for cat in categories:
-            cat_products = Product.objects.filter(category=cat, product_type='STORABLE')
+            cat_products = Product.objects.filter(category=cat, product_type='STORABLE', track_inventory=True)
             cat_val = 0
             items_count = 0
             for p in cat_products:

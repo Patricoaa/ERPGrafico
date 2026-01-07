@@ -107,7 +107,7 @@ class BillOfMaterials(models.Model):
         Product, 
         on_delete=models.CASCADE, 
         related_name='boms',
-        limit_choices_to={'product_type': 'MANUFACTURABLE'},
+        limit_choices_to={'product_type__in': ['MANUFACTURABLE_STANDARD', 'MANUFACTURABLE_CUSTOM']},
         help_text="Producto fabricable"
     )
     name = models.CharField(_("Nombre"), max_length=255, help_text="Ej: BOM Camiseta Roja v1")

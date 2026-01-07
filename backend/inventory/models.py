@@ -60,16 +60,31 @@ class UoM(models.Model):
 
 class Product(models.Model):
     class Type(models.TextChoices):
-        STORABLE = 'STORABLE', _('Almacenable')
         CONSUMABLE = 'CONSUMABLE', _('Consumible')
+        STORABLE = 'STORABLE', _('Almacenable')
+        MANUFACTURABLE_STANDARD = 'MANUFACTURABLE_STANDARD', _('Fabricable Estándar')
+        MANUFACTURABLE_CUSTOM = 'MANUFACTURABLE_CUSTOM', _('Fabricable Customizado')
         SERVICE = 'SERVICE', _('Servicio')
-        MANUFACTURABLE = 'MANUFACTURABLE', _('Fabricable')
 
     code = models.CharField(_("Código/SKU"), max_length=50, unique=True)
     name = models.CharField(_("Nombre"), max_length=255)
     category = models.ForeignKey(ProductCategory, on_delete=models.PROTECT, related_name='products')
-    product_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices, default=Type.STORABLE)
+    product_type = models.CharField(_("Tipo"), max_length=30, choices=Type.choices, default=Type.STORABLE)
     image = models.ImageField(_("Imagen"), upload_to='products/', null=True, blank=True)
+    
+    # Custom Fields Schema for MANUFACTURABLE_CUSTOM
+    custom_fields_schema = models.JSONField(
+        _("Esquema de Campos Customizados"),
+        null=True, blank=True,
+        help_text=_("Define campos adicionales requeridos al vender (ej: tamaño, copias, folio inicial)")
+    )
+    
+    # Inventory Tracking Control
+    track_inventory = models.BooleanField(
+        _("Controlar Stock"),
+        default=True,
+        help_text=_("Desactivar para productos que no requieren control de inventario (fabricables, servicios)")
+    )
     
     # Units of Measure
     uom = models.ForeignKey(
