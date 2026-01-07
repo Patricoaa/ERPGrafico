@@ -91,9 +91,11 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>Nuevo Almacén</Button>
-            </DialogTrigger>
+            {openProp === undefined && !initialData && (
+                <DialogTrigger asChild>
+                    <Button>Nuevo Almacén</Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Almacén" : "Crear Almacén"}</DialogTitle>

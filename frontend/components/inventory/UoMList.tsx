@@ -68,7 +68,7 @@ export function UoMList() {
             setCategories(resCats.data.results || resCats.data)
         } catch (error) {
             console.error(error)
-            toast.error("Error al cargar datos")
+            toast.error("Error al cargar unidades de medida")
         } finally {
             setLoading(false)
         }
@@ -99,13 +99,13 @@ export function UoMList() {
     }
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Eliminar unidad?")) return
+        if (!confirm("¿Eliminar unidad de medida?")) return
         try {
             await api.delete(`/inventory/uoms/${id}/`)
-            toast.success("Eliminada")
-            setUoMs(prev => prev.filter(u => u.id !== id))
+            toast.success("Eliminada correctamente")
+            fetchData()
         } catch (error) {
-            toast.error("No se puede eliminar (en uso?)")
+            toast.error("No se puede eliminar (puede estar en uso)")
         }
     }
 
@@ -125,7 +125,7 @@ export function UoMList() {
                             <TableHead>Nombre</TableHead>
                             <TableHead>Categoría</TableHead>
                             <TableHead>Tipo</TableHead>
-                            <TableHead>Ratio</TableHead>
+                            <TableHead className="text-right">Ratio</TableHead>
                             <TableHead className="w-[100px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -134,12 +134,12 @@ export function UoMList() {
                             <TableRow key={u.id} className="group hover:bg-muted/20 transition-colors">
                                 <TableCell className="font-medium">{u.name}</TableCell>
                                 <TableCell className="text-sm">{u.category_name}</TableCell>
-                                <TableCell className="text-sm">
-                                    {u.uom_type === 'REFERENCE' && <Badge variant="default">Referencia</Badge>}
-                                    {u.uom_type === 'BIGGER' && <Badge variant="outline">Más Grande</Badge>}
-                                    {u.uom_type === 'SMALLER' && <Badge variant="outline">Más Pequeña</Badge>}
+                                <TableCell>
+                                    {u.uom_type === 'REFERENCE' && <Badge variant="default" className="text-[10px]">Referencia</Badge>}
+                                    {u.uom_type === 'BIGGER' && <Badge variant="secondary" className="text-[10px]">Mayor</Badge>}
+                                    {u.uom_type === 'SMALLER' && <Badge variant="outline" className="text-[10px]">Menor</Badge>}
                                 </TableCell>
-                                <TableCell className="text-sm tabular-nums">{parseFloat(u.ratio).toString()}</TableCell>
+                                <TableCell className="text-right font-mono text-xs tabular-nums text-muted-foreground">{parseFloat(u.ratio).toString()}</TableCell>
                                 <TableCell>
                                     <div className="flex justify-center gap-1">
                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setCurrentUoM(u); setIsUoMModalOpen(true) }}>
@@ -152,6 +152,12 @@ export function UoMList() {
                                 </TableCell>
                             </TableRow>
                         ))}
+                        {loading && (
+                            <TableRow><TableCell colSpan={5} className="text-center py-10">Cargando unidades...</TableCell></TableRow>
+                        )}
+                        {!loading && uoms.length === 0 && (
+                            <TableRow><TableCell colSpan={5} className="text-center py-10 italic text-muted-foreground">No hay unidades registradas.</TableCell></TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </div>
@@ -166,6 +172,7 @@ export function UoMList() {
                             <Label className="text-right">Nombre</Label>
                             <Input
                                 className="col-span-3"
+                                placeholder="Ej: Kilogramo, Metro, Litro"
                                 value={currentUoM.name || ''}
                                 onChange={e => setCurrentUoM({ ...currentUoM, name: e.target.value })}
                             />
@@ -196,7 +203,7 @@ export function UoMList() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="REFERENCE">Referencia (Base)</SelectItem>
+                                    <SelectItem value="REFERENCE">Referencia (Base de la categoría)</SelectItem>
                                     <SelectItem value="BIGGER">Más Grande que la base</SelectItem>
                                     <SelectItem value="SMALLER">Más Pequeña que la base</SelectItem>
                                 </SelectContent>
@@ -212,6 +219,11 @@ export function UoMList() {
                                     value={currentUoM.ratio || ''}
                                     onChange={e => setCurrentUoM({ ...currentUoM, ratio: e.target.value })}
                                 />
+                                <p className="col-start-2 col-span-3 text-[10px] text-muted-foreground italic">
+                                    {currentUoM.uom_type === 'BIGGER'
+                                        ? 'Cuántas unidades base equivalen a esta unidad'
+                                        : 'Cuántas unidades de estas equivalen a la unidad base'}
+                                </p>
                             </div>
                         )}
                     </div>

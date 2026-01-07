@@ -144,7 +144,7 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {!openProp && !initialData && (
+            {openProp === undefined && !initialData && (
                 <DialogTrigger asChild>
                     <Button>Nueva Categoría</Button>
                 </DialogTrigger>
