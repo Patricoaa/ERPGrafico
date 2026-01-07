@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Trash2, Box } from "lucide-react"
+import { Plus, Trash2, Box, Info } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -44,7 +44,6 @@ import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { AttributeBadges } from "@/components/shared/AttributeBadges"
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
@@ -53,7 +52,8 @@ const saleLineSchema = z.object({
     quantity: z.number().min(0.01, "La cantidad debe ser mayor a 0"),
     uom: z.string().min(1, "Unidad requerida"),
     unit_price: z.number().min(0, "El precio no puede ser negativo"),
-    tax_rate: z.number(),
+    tax_rate: z.number().default(19),
+    custom_specs: z.record(z.any()).optional(),
 })
 
 const saleOrderSchema = z.object({
@@ -100,6 +100,36 @@ const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => 
     )
 }
 
+const DynamicFieldsRenderer = ({ schema, value, onChange }: { schema: any, value: any, onChange: (val: any) => void }) => {
+    if (!schema) return null
+
+    let fields = {}
+    try {
+        fields = typeof schema === 'string' ? JSON.parse(schema) : schema
+    } catch (e) {
+        console.error("Invalid JSON schema", schema)
+        return null
+    }
+
+    if (typeof fields !== 'object' || fields === null) return null
+
+    return (
+        <div className="grid grid-cols-2 gap-2 p-2 bg-muted/30 rounded-md mt-2">
+            {Object.keys(fields).map((key) => (
+                <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-muted-foreground">{key}</label>
+                    <Input
+                        className="h-8 text-xs font-medium"
+                        value={value?.[key] || ""}
+                        onChange={(e) => onChange({ ...value, [key]: e.target.value })}
+                        placeholder={`Ingrese ${key}...`}
+                    />
+                </div>
+            ))}
+        </div>
+    )
+}
+
 export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenChange }: SaleOrderFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
@@ -123,12 +153,13 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 uom: l.uom?.toString() || "",
                 unit_price: parseFloat(l.unit_price) || 0,
                 tax_rate: parseFloat(l.tax_rate) || 19,
+                custom_specs: l.custom_specs || {},
             }))
         } : {
             customer: "",
             payment_method: "CREDIT",
             notes: "",
-            lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19 }],
+            lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {} }],
         },
     })
 
@@ -192,6 +223,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         uom: l.uom?.toString() || "",
                         unit_price: parseFloat(l.unit_price) || 0,
                         tax_rate: parseFloat(l.tax_rate) || 19,
+                        custom_specs: l.custom_specs || {},
                     }))
                 })
             } else {
@@ -199,7 +231,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     customer: "",
                     payment_method: "CREDIT",
                     notes: "",
-                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19 }],
+                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {} }],
                 })
             }
         }
@@ -271,7 +303,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19 })}
+                                    onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {} })}
                                 >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Agregar Línea
@@ -303,28 +335,53 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                     value={field.value}
                                                                     restrictStock={true}
                                                                     onChange={(value: string | null) => {
+                                                                        const selectedProduct = products.find(p => p.id.toString() === value)
+
+                                                                        if (selectedProduct?.product_type === 'CONSUMABLE') {
+                                                                            toast.error("Producto no vendible", {
+                                                                                description: "Los productos consumibles son para uso interno y no pueden venderse directamente."
+                                                                            })
+                                                                            return
+                                                                        }
+
                                                                         field.onChange(value)
                                                                         // Auto-populate price, description and UoM from product
-                                                                        const selectedProduct = products.find(p => p.id.toString() === value)
                                                                         if (selectedProduct) {
                                                                             const qty = form.getValues(`lines.${index}.quantity`) || 1
                                                                             const price = getEffectivePrice(selectedProduct, qty)
                                                                             form.setValue(`lines.${index}.unit_price`, price)
                                                                             form.setValue(`lines.${index}.description`, selectedProduct.name)
                                                                             form.setValue(`lines.${index}.uom`, selectedProduct.uom?.toString() || "")
+
+                                                                            // Reset custom specs if not custom manufacturable
+                                                                            if (selectedProduct.product_type !== 'MANUFACTURABLE_CUSTOM') {
+                                                                                form.setValue(`lines.${index}.custom_specs`, {})
+                                                                            }
                                                                         }
                                                                     }}
                                                                 />
-                                                                {field.value && (
-                                                                    <div className="pl-1">
-                                                                        {(() => {
-                                                                            const prod = products.find(p => p.id.toString() === field.value)
-                                                                            return prod?.attribute_values?.length > 0 && (
-                                                                                <AttributeBadges attributes={prod.attribute_values} />
-                                                                            )
-                                                                        })()}
-                                                                    </div>
-                                                                )}
+                                                                {(() => {
+                                                                    const prod = products.find(p => p.id.toString() === field.value)
+                                                                    if (!prod) return null
+
+                                                                    return (
+                                                                        <div className="space-y-2">
+                                                                            {prod.product_type === 'MANUFACTURABLE_CUSTOM' && prod.custom_fields_schema && (
+                                                                                <FormField
+                                                                                    control={form.control}
+                                                                                    name={`lines.${index}.custom_specs`}
+                                                                                    render={({ field: specField }) => (
+                                                                                        <DynamicFieldsRenderer
+                                                                                            schema={prod.custom_fields_schema}
+                                                                                            value={specField.value}
+                                                                                            onChange={specField.onChange}
+                                                                                        />
+                                                                                    )}
+                                                                                />
+                                                                            )}
+                                                                        </div>
+                                                                    )
+                                                                })()}
                                                             </div>
                                                         )}
                                                     />

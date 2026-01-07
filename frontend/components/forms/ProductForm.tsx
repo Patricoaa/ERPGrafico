@@ -5,7 +5,7 @@ import { Plus, Package, Loader2, Pencil, X, Info } from "lucide-react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import api from "@/lib/api"
 
 import {
@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { PricingRuleForm } from "./PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
@@ -50,6 +51,8 @@ const productSchema = z.object({
     uom: z.string().min(1, "Unidad de medida requerida"),
     purchase_uom: z.string().optional(),
     image: z.any().optional(),
+    track_inventory: z.boolean(),
+    custom_fields_schema: z.string().optional(),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -83,6 +86,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             sale_price: 0,
             uom: "",
             purchase_uom: "",
+            track_inventory: true,
+            custom_fields_schema: "",
         },
     })
 
@@ -131,6 +136,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     sale_price: Number(initialData.sale_price) || 0,
                     uom: initialData.uom?.id?.toString() || initialData.uom?.toString() || "",
                     purchase_uom: initialData.purchase_uom?.id?.toString() || initialData.purchase_uom?.toString() || "",
+                    track_inventory: initialData.track_inventory ?? true,
+                    custom_fields_schema: typeof initialData.custom_fields_schema === 'object'
+                        ? JSON.stringify(initialData.custom_fields_schema, null, 2)
+                        : initialData.custom_fields_schema || "",
                 })
                 setImagePreview(initialData.image || null)
                 fetchPricingRules()
@@ -143,7 +152,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     sale_price: 0,
                     uom: "",
                     purchase_uom: "",
-                })
+                    track_inventory: true,
+                    custom_fields_schema: "",
+                } as ProductFormValues)
                 setImagePreview(null)
                 setPricingRules([])
             }
@@ -161,6 +172,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('sale_price', data.sale_price.toString())
             formData.append('uom', data.uom)
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
+            formData.append('track_inventory', data.track_inventory ? 'true' : 'false')
+            if (data.custom_fields_schema) {
+                formData.append('custom_fields_schema', data.custom_fields_schema)
+            }
 
             if (data.image instanceof File) {
                 formData.append('image', data.image)
@@ -173,21 +188,19 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 await api.put(`/inventory/products/${initialData.id}/`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 })
-                toast({ title: "Producto actualizado", description: "Cambios guardados correctamente." })
+                toast.success("Producto actualizado", { description: "Cambios guardados correctamente." })
             } else {
                 await api.post('/inventory/products/', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 })
-                toast({ title: "Producto creado", description: "El producto ha sido registrado." })
+                toast.success("Producto creado", { description: "El producto ha sido registrado." })
             }
             onSuccess()
             onOpenChange(false)
         } catch (error: any) {
             console.error("Error saving product", error)
-            toast({
-                title: "Error",
+            toast.error("Error", {
                 description: error.response?.data?.detail || "No se pudo guardar el producto.",
-                variant: "destructive"
             })
         } finally {
             setLoading(false)
@@ -221,7 +234,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                         {/* Left Column: Radio Group & Details */}
                                         <div className="md:col-span-3 space-y-6 border-r pr-8">
-                                            <FormField
+                                            <FormField<ProductFormValues>
                                                 control={form.control}
                                                 name="product_type"
                                                 render={({ field }) => (
@@ -230,18 +243,22 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                         <FormControl>
                                                             <RadioGroup
                                                                 onValueChange={field.onChange}
-                                                                defaultValue={field.value}
+                                                                value={field.value}
                                                                 className="flex flex-col space-y-2"
                                                             >
-                                                                {['STORABLE', 'SERVICE', 'CONSUMABLE', 'MANUFACTURABLE'].map((type) => (
-                                                                    <FormItem key={type} className="flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all cursor-pointer">
+                                                                {[
+                                                                    { id: 'STORABLE', label: 'Almacenable' },
+                                                                    { id: 'CONSUMABLE', label: 'Consumible' },
+                                                                    { id: 'MANUFACTURABLE_STANDARD', label: 'Fabricable Estándar' },
+                                                                    { id: 'MANUFACTURABLE_CUSTOM', label: 'Fabricable Custom' },
+                                                                    { id: 'SERVICE', label: 'Servicio' }
+                                                                ].map((t) => (
+                                                                    <FormItem key={t.id} className="flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all cursor-pointer">
                                                                         <FormControl>
-                                                                            <RadioGroupItem value={type} />
+                                                                            <RadioGroupItem value={t.id} />
                                                                         </FormControl>
                                                                         <FormLabel className="font-medium cursor-pointer flex-1 text-sm">
-                                                                            {type === 'STORABLE' ? 'Almacenable' :
-                                                                                type === 'SERVICE' ? 'Servicio' :
-                                                                                    type === 'CONSUMABLE' ? 'Consumible' : 'Fabricable'}
+                                                                            {t.label}
                                                                         </FormLabel>
                                                                     </FormItem>
                                                                 ))}
@@ -252,9 +269,30 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 )}
                                             />
 
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="track_inventory"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center justify-between rounded-xl border p-4 bg-muted/20">
+                                                        <div className="space-y-0.5">
+                                                            <FormLabel className="text-base font-bold">Control de Stock</FormLabel>
+                                                            <FormDescription className="text-[10px]">
+                                                                ¿Seguir existencias para este producto?
+                                                            </FormDescription>
+                                                        </div>
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+
                                             <div className="pt-4 space-y-4">
                                                 <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Imagen del Producto</Label>
-                                                <FormField
+                                                <FormField<ProductFormValues>
                                                     control={form.control}
                                                     name="image"
                                                     render={({ field }) => (
@@ -341,6 +379,34 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                         )}
                                                     />
                                                 </div>
+
+                                                {form.watch("product_type") === 'MANUFACTURABLE_CUSTOM' && (
+                                                    <div className="md:col-span-4">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="custom_fields_schema"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel className="flex gap-2 items-center">
+                                                                        Esquema de Campos Personalizados (JSON)
+                                                                        <Info className="h-3 w-3 text-muted-foreground" />
+                                                                    </FormLabel>
+                                                                    <FormControl>
+                                                                        <textarea
+                                                                            {...field}
+                                                                            className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-mono"
+                                                                            placeholder='{"color": "text", "tamaño": "text"}'
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormDescription className="text-[10px]">
+                                                                        Define los campos dinámicos que se pedirán en la venta.
+                                                                    </FormDescription>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+                                                )}
 
                                                 <div className="md:col-span-2">
                                                     <FormField
@@ -612,8 +678,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                         if (!open) setSelectedPricingRule(null)
                     }}
                     initialData={selectedPricingRule}
-                    productId={initialData?.id || null}
-                    productData={initialData}
                     onSuccess={fetchPricingRules}
                 />
 
