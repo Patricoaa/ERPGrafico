@@ -22,6 +22,7 @@ interface StockMove {
     product_name: string
     warehouse_name: string
     quantity: string
+    uom_name: string
     move_type: string
     description: string
     related_documents: Array<{
@@ -67,6 +68,7 @@ export default function MovementsPage() {
                             <TableHead>Producto</TableHead>
                             <TableHead>Almacén</TableHead>
                             <TableHead>Cant.</TableHead>
+                            <TableHead>Unidad</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Documentos</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
@@ -75,11 +77,11 @@ export default function MovementsPage() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center py-10">Cargando movimientos...</TableCell>
+                                <TableCell colSpan={9} className="text-center py-10">Cargando movimientos...</TableCell>
                             </TableRow>
                         ) : moves.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
+                                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
                             </TableRow>
                         ) : moves.map((move) => (
                             <TableRow key={move.id}>
@@ -90,6 +92,7 @@ export default function MovementsPage() {
                                 <TableCell className={parseFloat(move.quantity) > 0 ? "text-green-600 font-medium" : "text-red-600 font-bold"}>
                                     {Math.round(Math.abs(parseFloat(move.quantity)))}
                                 </TableCell>
+                                <TableCell className="text-muted-foreground text-xs">{move.uom_name}</TableCell>
                                 <TableCell>
                                     <Badge variant={move.move_type === 'IN' ? 'default' : move.move_type === 'OUT' ? 'destructive' : 'outline'}>
                                         {move.move_type === 'IN' ? 'Entrada' : move.move_type === 'OUT' ? 'Salida' : 'Ajuste'}

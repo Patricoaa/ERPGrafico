@@ -173,12 +173,20 @@ class SalesService:
         
         # Process each delivery line
         for line in delivery.lines.all():
+            from inventory.services import StockService
+            # Convert to base UoM
+            base_qty = StockService.convert_quantity(
+                line.quantity_delivered,
+                from_uom=line.sale_line.uom,
+                to_uom=line.product.uom
+            )
+
             # 1. Create stock move (OUT)
             stock_move = StockMove.objects.create(
                 date=delivery.delivery_date,
                 product=line.product,
                 warehouse=delivery.warehouse,
-                quantity=-line.quantity_delivered,  # Negative for OUT
+                quantity=-base_qty,  # Negative for OUT
                 move_type=StockMove.Type.OUT,
                 description=f"Despacho-{delivery.number} (NV-{delivery.sale_order.number})",
                 journal_entry=entry

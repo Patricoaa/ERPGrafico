@@ -49,6 +49,7 @@ const purchaseLineSchema = z.object({
     id: z.number().optional(),
     product: z.string().min(1, "El producto es requerido"),
     quantity: z.number().min(0.01, "La cantidad debe ser mayor a 0"),
+    uom: z.string().min(1, "Unidad requerida"),
     unit_cost: z.number().min(0, "El costo no puede ser negativo"),
     tax_rate: z.number(),
 })
@@ -103,9 +104,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    // const [suppliers, setSuppliers] = useState<any[]>([])
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [products, setProducts] = useState<any[]>([])
+    const [uoms, setUoMs] = useState<any[]>([])
 
     const form = useForm<PurchaseOrderFormValues>({
         resolver: zodResolver(purchaseOrderSchema),
@@ -117,6 +118,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 id: l.id,
                 product: l.product?.id?.toString() || l.product?.toString() || "",
                 quantity: parseFloat(l.quantity) || 0,
+                uom: l.uom?.toString() || "",
                 unit_cost: parseFloat(l.unit_cost) || 0,
                 tax_rate: parseFloat(l.tax_rate) || 19,
             }))
@@ -124,7 +126,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
             supplier: "",
             warehouse: "",
             notes: "",
-            lines: [{ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 }],
+            lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
         },
     })
 
@@ -135,13 +137,14 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
 
     const fetchData = async () => {
         try {
-            const [warehousesRes, productsRes] = await Promise.all([
+            const [warehousesRes, productsRes, uomsRes] = await Promise.all([
                 api.get('/inventory/warehouses/'),
                 api.get('/inventory/products/'),
+                api.get('/inventory/uoms/'),
             ])
-            // setSuppliers(suppliersRes.data.results || suppliersRes.data)
             setWarehouses(warehousesRes.data.results || warehousesRes.data)
             setProducts(productsRes.data.results || productsRes.data)
+            setUoMs(uomsRes.data.results || uomsRes.data)
         } catch (error) {
             console.error("Error fetching data:", error)
         }
@@ -159,6 +162,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                         id: l.id,
                         product: l.product?.id?.toString() || l.product?.toString() || "",
                         quantity: parseFloat(l.quantity) || 0,
+                        uom: l.uom?.toString() || "",
                         unit_cost: parseFloat(l.unit_cost) || 0,
                         tax_rate: parseFloat(l.tax_rate) || 19,
                     }))
@@ -168,7 +172,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                     supplier: "",
                     warehouse: "",
                     notes: "",
-                    lines: [{ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 }],
+                    lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
                 })
             }
         }
@@ -264,7 +268,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ product: "", quantity: 1, unit_cost: 0, tax_rate: 19 })}
+                                    onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
                                 >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Agregar Producto
@@ -275,10 +279,11 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[40%]">Producto</TableHead>
-                                            <TableHead className="w-[15%]">Cantidad</TableHead>
-                                            <TableHead className="w-[20%]">costo Unit.</TableHead>
-                                            <TableHead className="w-[15%]">Subtotal</TableHead>
+                                            <TableHead className="w-[35%]">Producto</TableHead>
+                                            <TableHead className="w-[10%]">Cantidad</TableHead>
+                                            <TableHead className="w-[20%]">Unidad</TableHead>
+                                            <TableHead className="w-[15%]">costo Unit.</TableHead>
+                                            <TableHead className="w-[10%]">Subtotal</TableHead>
                                             <TableHead className="w-[10%]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -295,11 +300,12 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                                     value={field.value}
                                                                     onChange={(val) => {
                                                                         field.onChange(val)
-                                                                        // Automatically set unit_cost if product selected
+                                                                        // Automatically set unit_cost and UoM if product selected
                                                                         if (val) {
                                                                             const prod = products.find(p => p.id.toString() === val)
                                                                             if (prod) {
                                                                                 form.setValue(`lines.${index}.unit_cost`, parseFloat(prod.sale_price) || 0)
+                                                                                form.setValue(`lines.${index}.uom`, (prod.purchase_uom || prod.uom)?.toString() || "")
                                                                             }
                                                                         }
                                                                     }}
@@ -325,11 +331,50 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                         render={({ field }) => (
                                                             <Input
                                                                 type="number"
-                                                                step="1"
+                                                                step="0.01"
                                                                 {...field}
-                                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
+                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                             />
                                                         )}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`lines.${index}.uom`}
+                                                        render={({ field }) => {
+                                                            const productId = form.watch(`lines.${index}.product`)
+                                                            const selectedProduct = products.find(p => p.id.toString() === productId)
+
+                                                            // Find category of product's base uom
+                                                            const baseUoM = uoms.find(u => u.id === selectedProduct?.uom)
+                                                            const categoryId = baseUoM?.category
+
+                                                            const filteredUoMs = categoryId
+                                                                ? uoms.filter(u => u.category === categoryId)
+                                                                : uoms
+
+                                                            return (
+                                                                <Select
+                                                                    onValueChange={field.onChange}
+                                                                    value={field.value}
+                                                                    disabled={!productId}
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Unidad" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        {filteredUoMs.map((u) => (
+                                                                            <SelectItem key={u.id} value={u.id.toString()}>
+                                                                                {u.name}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            )
+                                                        }}
                                                     />
                                                 </TableCell>
                                                 <TableCell>

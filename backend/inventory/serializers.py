@@ -16,8 +16,6 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
     values = ProductAttributeValueSerializer(many=True, read_only=True)
     class Meta:
         model = ProductAttribute
-        class Meta:
-        model = ProductAttribute
         fields = ['id', 'name', 'values']
 
 class UoMCategorySerializer(serializers.ModelSerializer):
@@ -34,8 +32,6 @@ class UoMSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
-    uom_name = serializers.CharField(source='uom.name', read_only=True)
-    purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
     purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
     
@@ -76,6 +72,7 @@ class WarehouseSerializer(serializers.ModelSerializer):
 class StockMoveSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_code = serializers.CharField(source='product.code', read_only=True)
+    uom_name = serializers.CharField(source='product.uom.name', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     move_type_display = serializers.CharField(source='get_move_type_display', read_only=True)
     journal_entry_number = serializers.CharField(source='journal_entry.number', read_only=True, allow_null=True)

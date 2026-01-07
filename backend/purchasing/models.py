@@ -128,6 +128,13 @@ class PurchaseLine(models.Model):
 
     def save(self, *args, **kwargs):
         self.subtotal = self.quantity * self.unit_cost
+        
+        # Validation: UoM Category must match product category
+        if self.product and self.uom and self.product.uom:
+            if self.product.uom.category_id != self.uom.category_id:
+                from django.core.exceptions import ValidationError
+                raise ValidationError(f"La unidad {self.uom.name} no pertenece a la categoría {self.product.uom.category.name}")
+
         super().save(*args, **kwargs)
     
     @property

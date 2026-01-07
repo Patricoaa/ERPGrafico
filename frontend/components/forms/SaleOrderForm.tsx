@@ -51,6 +51,7 @@ const saleLineSchema = z.object({
     product: z.string().optional(),
     description: z.string().min(1, "La descripción es requerida"),
     quantity: z.number().min(0.01, "La cantidad debe ser mayor a 0"),
+    uom: z.string().min(1, "Unidad requerida"),
     unit_price: z.number().min(0, "El precio no puede ser negativo"),
     tax_rate: z.number(),
 })
@@ -105,8 +106,8 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    // const [customers, setCustomers] = useState<any[]>([])
     const [products, setProducts] = useState<any[]>([])
+    const [uoms, setUoMs] = useState<any[]>([])
 
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema),
@@ -118,6 +119,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 product: l.product?.toString() || "",
                 description: l.description,
                 quantity: parseFloat(l.quantity) || 0,
+                uom: l.uom?.toString() || "",
                 unit_price: parseFloat(l.unit_price) || 0,
                 tax_rate: parseFloat(l.tax_rate) || 19,
             }))
@@ -125,7 +127,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             customer: "",
             payment_method: "CREDIT",
             notes: "",
-            lines: [{ product: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
+            lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19 }],
         },
     })
 
@@ -134,13 +136,14 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         name: "lines",
     })
 
-    const fetchCustomers = async () => {
+    const fetchData = async () => {
         try {
-            const [productsRes] = await Promise.all([
-                api.get('/inventory/products/')
+            const [productsRes, uomsRes] = await Promise.all([
+                api.get('/inventory/products/'),
+                api.get('/inventory/uoms/')
             ])
-            // setCustomers(customersRes.data.results || customersRes.data)
             setProducts(productsRes.data.results || productsRes.data)
+            setUoMs(uomsRes.data.results || uomsRes.data)
         } catch (error) {
             console.error("Error fetching data:", error)
         }
@@ -148,7 +151,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     useEffect(() => {
         if (open) {
-            fetchCustomers()
+            fetchData()
             if (initialData) {
                 form.reset({
                     ...initialData,
@@ -158,6 +161,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         product: l.product?.toString() || "",
                         description: l.description,
                         quantity: parseFloat(l.quantity) || 0,
+                        uom: l.uom?.toString() || "",
                         unit_price: parseFloat(l.unit_price) || 0,
                         tax_rate: parseFloat(l.tax_rate) || 19,
                     }))
@@ -167,7 +171,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     customer: "",
                     payment_method: "CREDIT",
                     notes: "",
-                    lines: [{ product: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 }],
+                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19 }],
                 })
             }
         }
@@ -239,7 +243,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ product: "", description: "", quantity: 1, unit_price: 0, tax_rate: 19 })}
+                                    onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19 })}
                                 >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Agregar Línea
@@ -250,8 +254,9 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[35%]">Producto</TableHead>
+                                            <TableHead className="w-[30%]">Producto</TableHead>
                                             <TableHead className="w-[10%]">Cantidad</TableHead>
+                                            <TableHead className="w-[15%]">Unidad</TableHead>
                                             <TableHead className="w-[15%]">Precio Unit.</TableHead>
                                             <TableHead className="w-[15%]">Subtotal</TableHead>
                                             <TableHead className="w-[10%]"></TableHead>
@@ -270,11 +275,12 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                     value={field.value}
                                                                     onChange={(value: string | null) => {
                                                                         field.onChange(value)
-                                                                        // Auto-populate price and description from product
+                                                                        // Auto-populate price, description and UoM from product
                                                                         const selectedProduct = products.find(p => p.id.toString() === value)
                                                                         if (selectedProduct) {
                                                                             form.setValue(`lines.${index}.unit_price`, parseFloat(selectedProduct.sale_price))
                                                                             form.setValue(`lines.${index}.description`, selectedProduct.name)
+                                                                            form.setValue(`lines.${index}.uom`, selectedProduct.uom?.toString() || "")
                                                                         }
                                                                     }}
                                                                 />
@@ -299,11 +305,50 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         render={({ field }) => (
                                                             <Input
                                                                 type="number"
-                                                                step="1"
+                                                                step="0.01"
                                                                 {...field}
-                                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
+                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                             />
                                                         )}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`lines.${index}.uom`}
+                                                        render={({ field }) => {
+                                                            const productId = form.watch(`lines.${index}.product`)
+                                                            const selectedProduct = products.find(p => p.id.toString() === productId)
+
+                                                            // Find category of product's base uom
+                                                            const baseUoM = uoms.find(u => u.id === selectedProduct?.uom)
+                                                            const categoryId = baseUoM?.category
+
+                                                            const filteredUoMs = categoryId
+                                                                ? uoms.filter(u => u.category === categoryId)
+                                                                : uoms
+
+                                                            return (
+                                                                <Select
+                                                                    onValueChange={field.onChange}
+                                                                    value={field.value}
+                                                                    disabled={!productId}
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Unidad" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        {filteredUoMs.map((u) => (
+                                                                            <SelectItem key={u.id} value={u.id.toString()}>
+                                                                                {u.name}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            )
+                                                        }}
                                                     />
                                                 </TableCell>
                                                 <TableCell>

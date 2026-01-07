@@ -60,6 +60,7 @@ export default function StockReportPage() {
                                     <TableHead>Producto</TableHead>
                                     <TableHead>Categoría</TableHead>
                                     <TableHead className="text-right">Stock Actual</TableHead>
+                                    <TableHead>Unidad</TableHead>
                                     <TableHead className="text-right">Costo Unit.</TableHead>
                                     <TableHead className="text-right">Valorización</TableHead>
                                     <TableHead className="text-right text-green-600">Entradas</TableHead>
@@ -68,9 +69,9 @@ export default function StockReportPage() {
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
-                                    <TableRow><TableCell colSpan={8} className="text-center py-10">Cargando...</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={9} className="text-center py-10">Cargando...</TableCell></TableRow>
                                 ) : filtered.length === 0 ? (
-                                    <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
                                 ) : filtered.map((item) => (
                                     <TableRow key={item.id}>
                                         <TableCell className="font-mono">{item.code}</TableCell>
@@ -79,6 +80,7 @@ export default function StockReportPage() {
                                         <TableCell className="text-right font-bold">
                                             {Math.round(item.stock_qty).toLocaleString()}
                                         </TableCell>
+                                        <TableCell className="text-muted-foreground text-xs">{item.uom_name}</TableCell>
                                         <TableCell className="text-right">
                                             ${Math.round(item.unit_cost).toLocaleString()}
                                         </TableCell>

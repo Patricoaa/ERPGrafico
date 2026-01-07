@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
-from inventory.models import ProductCategory, Product, Warehouse, StockMove
+from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
@@ -14,6 +14,10 @@ class Command(BaseCommand):
     help = 'Seeds database with coherent IFRS accounting data and sample products'
 
     def add_arguments(self, parser):
+        # Demo Data Phase
+        # - [x] Update `setup_demo_data.py` with UoM Categories and Units <!-- id: 23 -->
+        # - [x] Update demo products in `setup_demo_data.py` with `uom` and `purchase_uom` <!-- id: 24 -->
+        # - [x] Test `setup_demo_data` command <!-- id: 25 -->
         parser.add_argument(
             '--purge',
             action='store_true',
@@ -42,8 +46,11 @@ class Command(BaseCommand):
         self.stdout.write('Creating Partners...')
         partners = self._create_partners(accounts)
 
+        self.stdout.write('Creating Units of Measure...')
+        uoms = self._create_uoms()
+
         self.stdout.write('Creating Inventory Data...')
-        self._create_inventory(accounts)
+        self._create_inventory(accounts, uoms)
 
         self.stdout.write('Creating Opening Balance...')
         self._create_opening_balance(accounts)
@@ -94,8 +101,47 @@ class Command(BaseCommand):
         TreasuryAccount.objects.all().delete()
         AccountingSettings.objects.all().delete()
         
+        # 8.5 Units of Measure
+        UoM.objects.all().delete()
+        UoMCategory.objects.all().delete()
+
         # 9. Accounts (last, as everything else is gone)
         Account.objects.all().delete()
+
+    def _create_uoms(self):
+        # Categories
+        cat_units, _ = UoMCategory.objects.get_or_create(name="Unidades")
+        cat_weight, _ = UoMCategory.objects.get_or_create(name="Peso")
+        cat_volume, _ = UoMCategory.objects.get_or_create(name="Volumen")
+        cat_length, _ = UoMCategory.objects.get_or_create(name="Longitud")
+        
+        # Units
+        uom_unit, _ = UoM.objects.get_or_create(name="Unidades", defaults={'category': cat_units, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
+        uom_box12, _ = UoM.objects.get_or_create(name="Caja x12", defaults={'category': cat_units, 'ratio': 12.0, 'uom_type': UoM.Type.BIGGER})
+        uom_box24, _ = UoM.objects.get_or_create(name="Caja x24", defaults={'category': cat_units, 'ratio': 24.0, 'uom_type': UoM.Type.BIGGER})
+        
+        uom_kg, _ = UoM.objects.get_or_create(name="Kilogramos (kg)", defaults={'category': cat_weight, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
+        uom_g, _ = UoM.objects.get_or_create(name="Gramos (g)", defaults={'category': cat_weight, 'ratio': 0.001, 'uom_type': UoM.Type.SMALLER})
+        uom_ton, _ = UoM.objects.get_or_create(name="Toneladas (ton)", defaults={'category': cat_weight, 'ratio': 1000.0, 'uom_type': UoM.Type.BIGGER})
+
+        uom_l, _ = UoM.objects.get_or_create(name="Litros (L)", defaults={'category': cat_volume, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
+        uom_ml, _ = UoM.objects.get_or_create(name="Mililitros (ml)", defaults={'category': cat_volume, 'ratio': 0.001, 'uom_type': UoM.Type.SMALLER})
+
+        uom_m, _ = UoM.objects.get_or_create(name="Metros (m)", defaults={'category': cat_length, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
+        uom_cm, _ = UoM.objects.get_or_create(name="Centímetros (cm)", defaults={'category': cat_length, 'ratio': 0.01, 'uom_type': UoM.Type.SMALLER})
+
+        return {
+            'unit': uom_unit,
+            'box12': uom_box12,
+            'box24': uom_box24,
+            'kg': uom_kg,
+            'g': uom_g,
+            'ton': uom_ton,
+            'l': uom_l,
+            'ml': uom_ml,
+            'm': uom_m,
+            'cm': uom_cm
+        }
 
     def _get_acc(self, code, name, account_type, parent=None, is_reconcilable=False, is_category=None, cf_category=None, bs_category=None):
         acc, _ = Account.objects.update_or_create(
@@ -246,13 +292,21 @@ class Command(BaseCommand):
         Contact.objects.get_or_create(tax_id="77777777-7", defaults={'name': "Proveedor Mayorista", 'email': "proveedor@ejemplo.com", 'account_payable': accounts['payable']})
         Contact.objects.get_or_create(tax_id="88888888-8", defaults={'name': "Servicios Profesionales SpA", 'email': "servicios@ejemplo.com", 'account_payable': accounts['payable']})
 
-    def _create_inventory(self, accounts):
+    def _create_inventory(self, accounts, uoms):
         # Warehouse
         wh, _ = Warehouse.objects.get_or_create(code="WH-MAIN", defaults={'name': "Bodega Central"})
 
         # Categories
         cat_tech, _ = ProductCategory.objects.get_or_create(
             name="Tecnología",
+            defaults={
+                'asset_account': accounts['stock_merch'],
+                'income_account': accounts['sales'],
+                'expense_account': accounts['cogs']
+            }
+        )
+        cat_supplies, _ = ProductCategory.objects.get_or_create(
+            name="Suministros",
             defaults={
                 'asset_account': accounts['stock_merch'],
                 'income_account': accounts['sales'],
@@ -267,7 +321,9 @@ class Command(BaseCommand):
                 'name': "Notebook Gamer",
                 'category': cat_tech,
                 'sale_price': 1500000,
-                'product_type': Product.Type.STORABLE
+                'product_type': Product.Type.STORABLE,
+                'uom': uoms['unit'],
+                'purchase_uom': uoms['unit']
             }
         )
         Product.objects.get_or_create(
@@ -276,7 +332,31 @@ class Command(BaseCommand):
                 'name': "Mouse Óptico",
                 'category': cat_tech,
                 'sale_price': 15000,
-                'product_type': Product.Type.STORABLE
+                'product_type': Product.Type.STORABLE,
+                'uom': uoms['unit'],
+                'purchase_uom': uoms['box24'] # Buy by boxes
+            }
+        )
+        Product.objects.get_or_create(
+            code="MAT-001",
+            defaults={
+                'name': "Cable UTP Cat6",
+                'category': cat_supplies,
+                'sale_price': 800,
+                'product_type': Product.Type.STORABLE,
+                'uom': uoms['m'],
+                'purchase_uom': uoms['box12'] # Assuming box of reels or similar context
+            }
+        )
+        Product.objects.get_or_create(
+            code="MAT-002",
+            defaults={
+                'name': "Papel Oficina A4",
+                'category': cat_supplies,
+                'sale_price': 5000,
+                'product_type': Product.Type.STORABLE,
+                'uom': uoms['unit'], # per ream
+                'purchase_uom': uoms['box12'] # box of 12 reams
             }
         )
 

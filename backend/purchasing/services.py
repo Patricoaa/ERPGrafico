@@ -268,15 +268,31 @@ class PurchasingService:
                 tax_rate = line.purchase_line.tax_rate
                 effective_unit_cost = line.unit_cost * (Decimal('1') + (tax_rate / Decimal('100.0')))
             
-            # 1. Update Product Cost (Weighted Average) with effective cost
-            PurchasingService._update_product_cost(line.product, line.quantity_received, effective_unit_cost)
+            # Base quantity and unit cost conversion
+            from inventory.services import StockService
+            base_qty = StockService.convert_quantity(
+                line.quantity_received,
+                from_uom=line.purchase_line.uom,
+                to_uom=line.product.uom
+            )
+            # Cost per base unit = total_cost / base_qty
+            # line.total_cost is (line.quantity_received * line.unit_cost)
+            # We want cost per base unit with tax if applicable
+            effective_total_cost = base_qty * 0 # placeholder
+            if base_qty > 0:
+                cost_per_base_unit = (line.quantity_received * effective_unit_cost) / base_qty
+            else:
+                cost_per_base_unit = effective_unit_cost # Should not happen in receipt
+
+            # 1. Update Product Cost (Weighted Average) with cost per base unit
+            PurchasingService._update_product_cost(line.product, base_qty, cost_per_base_unit)
             
             # 2. Create Stock Move (IN)
             stock_move = StockMove.objects.create(
                 date=receipt.receipt_date,
                 product=line.product,
                 warehouse=receipt.warehouse,
-                quantity=line.quantity_received,
+                quantity=base_qty,
                 move_type=StockMove.Type.IN,
                 description=f"Recepción OC-{receipt.purchase_order.number}",
                 journal_entry=entry
@@ -304,7 +320,7 @@ class PurchasingService:
                     account=asset_account,
                     debit=line_total,
                     credit=0,
-                    label=f"{line.product.code} x {line.quantity_received}"
+                    label=f"{line.product.code} x {line.quantity_received} {line.purchase_line.uom.name if line.purchase_line.uom else ''}"
                 )
         
         # 5. Accounting Credit (Clearing Account)
@@ -355,14 +371,15 @@ class PurchasingService:
     @staticmethod
     def _update_product_cost(product, quantity, unit_cost):
         """
-        Updates product cost price using Weighted Average Cost
+        Updates product cost price using Weighted Average Cost.
+        Quantity and unit_cost MUST be in base units.
         """
         # Get current total stock across all warehouses (simplified)
         # Ideally we should use accurate stock at that moment.
         # Check if StockService has get_total_stock
-        current_stock = 0
+        current_stock = Decimal('0')
         moves = StockMove.objects.filter(product=product)
-        current_stock = sum(m.quantity for m in moves)
+        current_stock = moves.aggregate(total=models.Sum('quantity'))['total'] or Decimal('0')
         
         # If stock is negative (bad data) or zero, new cost = unit_cost
         if current_stock <= 0:

@@ -49,6 +49,7 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
                 'code': p.code,
                 'name': p.name,
                 'category_name': p.category.name,
+                'uom_name': p.uom.name if p.uom else '',
                 'stock_qty': float(stock_qty),
                 'unit_cost': float(p.cost_price),
                 'total_value': float(stock_qty * p.cost_price),
