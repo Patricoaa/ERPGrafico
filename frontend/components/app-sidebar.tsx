@@ -65,6 +65,7 @@ const items = [
             { title: "Almacenes", url: "/inventory/warehouses" },
             { title: "Movimientos", url: "/inventory/movements" },
             { title: "Reporte de Stock", url: "/inventory/report" },
+            { title: "Reglas de Precio", url: "/inventory/pricing-rules" },
             { title: "Categorías de Medida", url: "/inventory/uom-categories" },
             { title: "Unidades de Medida", url: "/inventory/uoms" },
         ]

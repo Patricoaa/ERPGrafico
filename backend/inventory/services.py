@@ -1,7 +1,8 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Product, Warehouse, StockMove
+from django.db.models import Q
+from .models import Product, Warehouse, StockMove, PricingRule
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from decimal import Decimal
@@ -105,4 +106,44 @@ class StockService:
         # 1 Box (12) -> Unit (1). 1.0 * (12.0 / 1.0) = 12.0
         # 1 Unit (1) -> Box (12). 1.0 * (1.0 / 12.0) = 0.0833
         
+
         return (quantity * from_uom.ratio) / to_uom.ratio
+
+class PricingService:
+    @staticmethod
+    def get_product_price(product: Product, quantity: Decimal, date=None) -> Decimal:
+        """
+        Calculates the best price for a product given a quantity and date.
+        """
+        if date is None:
+            date = timezone.now().date()
+            
+        base_price = product.sale_price
+        
+        # Find active rules
+        rules = PricingRule.objects.filter(
+            active=True,
+            min_quantity__lte=quantity
+        ).filter(
+            Q(start_date__isnull=True) | Q(start_date__lte=date)
+        ).filter(
+            Q(end_date__isnull=True) | Q(end_date__gte=date)
+        ).filter(
+            Q(product=product) | Q(category=product.category)
+        ).order_by('-priority', 'min_quantity')
+        
+        # Best price logic: Highest priority rule first.
+        best_price = base_price
+        
+        for rule in rules:
+            if rule.rule_type == PricingRule.RuleType.FIXED:
+                if rule.fixed_price is not None:
+                    best_price = rule.fixed_price
+            else:
+                if rule.discount_percentage is not None:
+                    best_price = base_price * (1 - (rule.discount_percentage / 100))
+            
+            # Usually we just take the first matching rule by priority
+            break
+            
+        return best_price

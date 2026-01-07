@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue, UoM, UoMCategory
+from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue, UoM, UoMCategory, PricingRule
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,6 +30,15 @@ class UoMSerializer(serializers.ModelSerializer):
         model = UoM
         fields = '__all__'
 
+class PricingRuleSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    rule_type_display = serializers.CharField(source='get_rule_type_display', read_only=True)
+
+    class Meta:
+        model = PricingRule
+        fields = '__all__'
+
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
@@ -39,6 +48,7 @@ class ProductSerializer(serializers.ModelSerializer):
     attribute_values = ProductAttributeValueSerializer(many=True, read_only=True)
     variants_count = serializers.IntegerField(source='variants.count', read_only=True)
     total_stock = serializers.SerializerMethodField()
+    effective_price = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
@@ -62,7 +72,12 @@ class ProductSerializer(serializers.ModelSerializer):
             ).aggregate(total=Sum('quantity'))['total'] or 0.0
             return float(total)
         
+
         return self.get_current_stock(obj)
+    
+    def get_effective_price(self, obj):
+        from .services import PricingService
+        return PricingService.get_product_price(obj, 1)
 
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:

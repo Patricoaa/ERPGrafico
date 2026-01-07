@@ -82,18 +82,21 @@ export default function POSPage() {
     // Variant Picker State
     const [pickerOpen, setPickerOpen] = useState(false)
     const [pickingParent, setPickingParent] = useState<Product | null>(null)
+    const [pricingRules, setPricingRules] = useState<any[]>([])
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [prodRes, catRes, uomRes] = await Promise.all([
+                const [prodRes, catRes, uomRes, rulesRes] = await Promise.all([
                     api.get('/inventory/products/'),
                     api.get('/inventory/categories/'),
                     api.get('/inventory/uoms/'),
+                    api.get('/inventory/pricing-rules/?active=true'),
                 ])
                 setProducts(prodRes.data.results || prodRes.data)
                 setCategories(catRes.data.results || catRes.data)
                 setUoMs(uomRes.data.results || uomRes.data)
+                setPricingRules(rulesRes.data.results || rulesRes.data)
             } catch (error) {
                 console.error("Failed to fetch POS data", error)
                 toast.error("Error al cargar datos del POS")
@@ -112,6 +115,34 @@ export default function POSPage() {
         return matchesSearch && matchesCategory && p.variant_of === null
     })
 
+    const getEffectivePrice = (product: Product, qty: number) => {
+        const basePrice = parseFloat(product.sale_price)
+        const date = new Date().toISOString().split('T')[0]
+
+        const categoryId = typeof product.category === 'object' ? product.category?.id : product.category
+
+        const applicableRules = pricingRules.filter(rule => {
+            const matchesProduct = rule.product === product.id
+            const matchesCategory = rule.category === categoryId
+            const matchesQty = qty >= parseFloat(rule.min_quantity)
+            const matchesDate = (!rule.start_date || rule.start_date <= date) &&
+                (!rule.end_date || rule.end_date >= date)
+
+            return (matchesProduct || matchesCategory) && matchesQty && matchesDate
+        }).sort((a, b) => b.priority - a.priority || parseFloat(b.min_quantity) - parseFloat(a.min_quantity))
+
+        if (applicableRules.length > 0) {
+            const rule = applicableRules[0]
+            if (rule.rule_type === "FIXED") {
+                return parseFloat(rule.fixed_price || "0")
+            } else {
+                return basePrice * (1 - (parseFloat(rule.discount_percentage || "0") / 100))
+            }
+        }
+
+        return basePrice
+    }
+
     const addToCart = (product: Product) => {
         if ((product.variants_count || 0) > 0) {
             setPickingParent(product)
@@ -121,17 +152,21 @@ export default function POSPage() {
 
         const existing = items.find(i => i.id === product.id)
         if (existing) {
+            const newQty = existing.qty + 1
+            const effectivePrice = getEffectivePrice(product, newQty)
             setItems(items.map(i => i.id === product.id
-                ? { ...i, qty: i.qty + 1, total: Math.ceil((i.qty + 1) * parseFloat(i.sale_price)) }
+                ? { ...i, qty: newQty, unit_price: String(effectivePrice), total: Math.ceil(newQty * effectivePrice) }
                 : i
             ))
         } else {
+            const effectivePrice = getEffectivePrice(product, 1)
             setItems([...items, {
                 ...product,
                 qty: 1,
                 uom: product.uom,
                 uom_name: product.uom_name,
-                total: Math.ceil(parseFloat(product.sale_price))
+                unit_price: String(effectivePrice),
+                total: Math.ceil(effectivePrice)
             }])
         }
     }
@@ -139,17 +174,21 @@ export default function POSPage() {
     const onVariantSelect = (variant: any) => {
         const existing = items.find(i => i.id === variant.id)
         if (existing) {
+            const newQty = existing.qty + 1
+            const effectivePrice = getEffectivePrice(variant, newQty)
             setItems(items.map(i => i.id === variant.id
-                ? { ...i, qty: i.qty + 1, total: Math.ceil((i.qty + 1) * parseFloat(i.sale_price)) }
+                ? { ...i, qty: newQty, unit_price: String(effectivePrice), total: Math.ceil(newQty * effectivePrice) }
                 : i
             ))
         } else {
+            const effectivePrice = getEffectivePrice(variant, 1)
             setItems([...items, {
                 ...variant,
                 qty: 1,
                 uom: variant.uom,
                 uom_name: variant.uom_name,
-                total: Math.ceil(parseFloat(variant.sale_price))
+                unit_price: String(effectivePrice),
+                total: Math.ceil(effectivePrice)
             }])
         }
     }
@@ -158,7 +197,8 @@ export default function POSPage() {
         setItems(items.map(i => {
             if (i.id === id) {
                 const newQty = Math.max(1, i.qty + delta)
-                return { ...i, qty: newQty, total: Math.ceil(newQty * parseFloat(i.sale_price)) }
+                const effectivePrice = getEffectivePrice(i, newQty)
+                return { ...i, qty: newQty, unit_price: String(effectivePrice), total: Math.ceil(newQty * effectivePrice) }
             }
             return i
         }))

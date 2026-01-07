@@ -1,8 +1,12 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .serializers import ProductSerializer, ProductCategorySerializer, WarehouseSerializer, StockMoveSerializer, ProductAttributeSerializer, ProductAttributeValueSerializer, UoMSerializer, UoMCategorySerializer
-from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue, UoM, UoMCategory
+from .serializers import (
+    ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
+    StockMoveSerializer, ProductAttributeSerializer, ProductAttributeValueSerializer, 
+    UoMSerializer, UoMCategorySerializer, PricingRuleSerializer
+)
+from .models import Product, ProductCategory, Warehouse, StockMove, ProductAttribute, ProductAttributeValue, UoM, UoMCategory, PricingRule
 from .services import StockService
 from decimal import Decimal
 import itertools
@@ -112,6 +116,14 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
             
         return Response({"message": f"{len(variants_created)} variantes creadas", "variants": variants_created})
 
+    @action(detail=True, methods=['get'])
+    def effective_price(self, request, pk=None):
+        product = self.get_object()
+        quantity = Decimal(request.query_params.get('quantity', 1))
+        from .services import PricingService
+        price = PricingService.get_product_price(product, quantity)
+        return Response({'price': price})
+
 class ProductAttributeViewSet(viewsets.ModelViewSet):
     queryset = ProductAttribute.objects.all()
     serializer_class = ProductAttributeSerializer
@@ -160,3 +172,8 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class PricingRuleViewSet(viewsets.ModelViewSet):
+    queryset = PricingRule.objects.all()
+    serializer_class = PricingRuleSerializer
+    filterset_fields = ['product', 'category', 'active']

@@ -108,6 +108,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [loading, setLoading] = useState(false)
     const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoMs] = useState<any[]>([])
+    const [pricingRules, setPricingRules] = useState<any[]>([])
 
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema),
@@ -138,15 +139,42 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     const fetchData = async () => {
         try {
-            const [productsRes, uomsRes] = await Promise.all([
+            const [productsRes, uomsRes, rulesRes] = await Promise.all([
                 api.get('/inventory/products/'),
-                api.get('/inventory/uoms/')
+                api.get('/inventory/uoms/'),
+                api.get('/inventory/pricing-rules/?active=true')
             ])
             setProducts(productsRes.data.results || productsRes.data)
             setUoMs(uomsRes.data.results || uomsRes.data)
+            setPricingRules(rulesRes.data.results || rulesRes.data)
         } catch (error) {
             console.error("Error fetching data:", error)
         }
+    }
+
+    const getEffectivePrice = (product: any, qty: number) => {
+        const basePrice = parseFloat(product.sale_price)
+        const date = new Date().toISOString().split('T')[0]
+        const categoryId = typeof product.category === 'object' ? product.category?.id : product.category
+
+        const applicableRules = pricingRules.filter(rule => {
+            const matchesProduct = rule.product === product.id
+            const matchesCategory = rule.category === categoryId
+            const matchesQty = qty >= parseFloat(rule.min_quantity)
+            const matchesDate = (!rule.start_date || rule.start_date <= date) &&
+                (!rule.end_date || rule.end_date >= date)
+            return (matchesProduct || matchesCategory) && matchesQty && matchesDate
+        }).sort((a, b) => b.priority - a.priority || parseFloat(a.min_quantity) - parseFloat(b.min_quantity))
+
+        if (applicableRules.length > 0) {
+            const rule = applicableRules[0]
+            if (rule.rule_type === "FIXED") {
+                return parseFloat(rule.fixed_price || "0")
+            } else {
+                return basePrice * (1 - (parseFloat(rule.discount_percentage || "0") / 100))
+            }
+        }
+        return basePrice
     }
 
     useEffect(() => {
@@ -279,7 +307,9 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                         // Auto-populate price, description and UoM from product
                                                                         const selectedProduct = products.find(p => p.id.toString() === value)
                                                                         if (selectedProduct) {
-                                                                            form.setValue(`lines.${index}.unit_price`, parseFloat(selectedProduct.sale_price))
+                                                                            const qty = form.getValues(`lines.${index}.quantity`) || 1
+                                                                            const price = getEffectivePrice(selectedProduct, qty)
+                                                                            form.setValue(`lines.${index}.unit_price`, price)
                                                                             form.setValue(`lines.${index}.description`, selectedProduct.name)
                                                                             form.setValue(`lines.${index}.uom`, selectedProduct.uom?.toString() || "")
                                                                         }
@@ -308,7 +338,18 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                 type="number"
                                                                 step="0.01"
                                                                 {...field}
-                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                                onChange={(e) => {
+                                                                    const val = parseFloat(e.target.value) || 0
+                                                                    field.onChange(val)
+
+                                                                    // Re-evaluate price
+                                                                    const productId = form.getValues(`lines.${index}.product`)
+                                                                    const product = products.find(p => p.id.toString() === productId)
+                                                                    if (product) {
+                                                                        const price = getEffectivePrice(product, val)
+                                                                        form.setValue(`lines.${index}.unit_price`, price)
+                                                                    }
+                                                                }}
                                                             />
                                                         )}
                                                     />

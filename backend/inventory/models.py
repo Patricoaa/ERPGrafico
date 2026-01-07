@@ -186,3 +186,32 @@ class StockMove(models.Model):
 
     def __str__(self):
         return f"{self.date} - {self.product.code} ({self.quantity})"
+
+class PricingRule(models.Model):
+    class RuleType(models.TextChoices):
+        FIXED = 'FIXED', _('Precio Fijo')
+        DISCOUNT_PERCENTAGE = 'DISCOUNT_PERCENTAGE', _('Porcentaje de Descuento')
+
+    name = models.CharField(_("Nombre de la Regla"), max_length=100)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, related_name='pricing_rules')
+    category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, null=True, blank=True, related_name='pricing_rules')
+    
+    min_quantity = models.DecimalField(_("Cantidad Mínima"), max_digits=12, decimal_places=4, default=1.0)
+    
+    rule_type = models.CharField(_("Tipo de Regla"), max_length=20, choices=RuleType.choices, default=RuleType.FIXED)
+    fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=12, decimal_places=2, null=True, blank=True)
+    discount_percentage = models.DecimalField(_("Descuento %"), max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    start_date = models.DateField(_("Fecha Inicio"), null=True, blank=True)
+    end_date = models.DateField(_("Fecha Fin"), null=True, blank=True)
+    
+    priority = models.IntegerField(_("Prioridad"), default=0, help_text=_("Prioridad más alta se aplica primero"))
+    active = models.BooleanField(_("Activo"), default=True)
+
+    class Meta:
+        verbose_name = _("Regla de Precio")
+        verbose_name_plural = _("Reglas de Precio")
+        ordering = ['-priority', 'min_quantity']
+
+    def __str__(self):
+        return self.name
