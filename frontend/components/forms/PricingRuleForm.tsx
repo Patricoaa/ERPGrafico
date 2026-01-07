@@ -43,27 +43,55 @@ const formSchema = z.object({
     discount_percentage: z.string().or(z.number()).nullable().optional(),
     start_date: z.string().nullable().optional(),
     end_date: z.string().nullable().optional(),
-    priority: z.number().default(0),
-    active: z.boolean().default(true),
+    priority: z.number(),
+    active: z.boolean(),
 })
 
-export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange }: any) {
+type FormValues = z.infer<typeof formSchema>
+
+interface PricingRuleFormProps {
+    initialData?: any
+    onSuccess?: () => void
+    open: boolean
+    onOpenChange: (open: boolean) => void
+}
+
+export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange }: PricingRuleFormProps) {
     const [products, setProducts] = useState<any[]>([])
     const [categories, setCategories] = useState<any[]>([])
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: initialData ? {
+            name: "",
+            rule_type: "FIXED",
+            min_quantity: "1",
+            priority: 0,
+            active: true,
+            product: null,
+            category: null,
+            fixed_price: null,
+            discount_percentage: null,
+            start_date: null,
+            end_date: null,
             ...initialData,
-            min_quantity: String(initialData.min_quantity),
+            min_quantity: initialData.min_quantity !== undefined ? String(initialData.min_quantity) : "1",
             fixed_price: initialData.fixed_price ? String(initialData.fixed_price) : null,
             discount_percentage: initialData.discount_percentage ? String(initialData.discount_percentage) : null,
+            priority: initialData.priority ?? 0,
+            active: initialData.active ?? true,
         } : {
             name: "",
             rule_type: "FIXED",
             min_quantity: "1",
             priority: 0,
             active: true,
+            product: null,
+            category: null,
+            fixed_price: null,
+            discount_percentage: null,
+            start_date: null,
+            end_date: null,
         },
     })
 
@@ -85,7 +113,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange }: 
         fetchData()
     }, [])
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: FormValues) {
         try {
             // Clean up null values or strings that should be null
             const payload = { ...values }

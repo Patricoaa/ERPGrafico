@@ -77,7 +77,7 @@ export default function PricingRulesPage() {
                     <PricingRuleForm
                         onSuccess={fetchRules}
                         open={isFormOpen && !editingRule}
-                        onOpenChange={(open) => {
+                        onOpenChange={(open: boolean) => {
                             setIsFormOpen(open)
                             if (!open) setEditingRule(null)
                         }}
@@ -86,7 +86,7 @@ export default function PricingRulesPage() {
                         <PricingRuleForm
                             initialData={editingRule}
                             open={isFormOpen && !!editingRule}
-                            onOpenChange={(open) => {
+                            onOpenChange={(open: boolean) => {
                                 setIsFormOpen(open)
                                 if (!open) setEditingRule(null)
                             }}
