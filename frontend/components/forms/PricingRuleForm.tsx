@@ -68,7 +68,8 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: initialData ? {
-            ...initialData,
+            name: initialData.name || "",
+            rule_type: initialData.rule_type || "FIXED",
             operator: initialData.operator ?? "GE",
             min_quantity: initialData.min_quantity !== undefined ? String(initialData.min_quantity) : "1",
             max_quantity: initialData.max_quantity ? String(initialData.max_quantity) : null,
@@ -77,7 +78,10 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             priority: initialData.priority ?? 0,
             active: initialData.active ?? true,
             product: productId || initialData.product || null,
+            category: initialData.category || null,
             uom: initialData.uom || null,
+            start_date: initialData.start_date || null,
+            end_date: initialData.end_date || null,
         } : {
             name: "",
             rule_type: "FIXED",

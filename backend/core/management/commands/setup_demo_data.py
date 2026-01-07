@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
-from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM
+from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, PricingRule
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
@@ -54,55 +54,64 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data!'))
 
     def _purge_data(self):
+        def _safe_delete(model_class, name):
+            self.stdout.write(f"  Deleting {name}...")
+            try:
+                model_class.objects.all().delete()
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e)}"))
+                raise e
+
         # 1. Budgeting (Child of Account)
-        BudgetItem.objects.all().delete()
-        Budget.objects.all().delete()
+        _safe_delete(BudgetItem, "BudgetItem")
+        _safe_delete(Budget, "Budget")
 
         # 2. Services (Linked to Contact and Account with PROTECT)
-        ServiceObligation.objects.all().delete()
-        ServiceContract.objects.all().delete()
-        ServiceCategory.objects.all().delete()
+        _safe_delete(ServiceObligation, "ServiceObligation")
+        _safe_delete(ServiceContract, "ServiceContract")
+        _safe_delete(ServiceCategory, "ServiceCategory")
 
         # 3. Transactional documents in correct order (Children first)
-        Payment.objects.all().delete()
-        Invoice.objects.all().delete()
+        _safe_delete(Payment, "Payment")
+        _safe_delete(Invoice, "Invoice")
         
         # Purchasing children
-        PurchaseReceiptLine.objects.all().delete()
-        PurchaseReceipt.objects.all().delete()
-        PurchaseLine.objects.all().delete()
+        _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
+        _safe_delete(PurchaseReceipt, "PurchaseReceipt")
+        _safe_delete(PurchaseLine, "PurchaseLine")
         
         # Sales children
-        SaleDeliveryLine.objects.all().delete()
-        SaleDelivery.objects.all().delete()
-        SaleLine.objects.all().delete()
+        _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
+        _safe_delete(SaleDelivery, "SaleDelivery")
+        _safe_delete(SaleLine, "SaleLine")
         
         # 4. Parent orders (linked to Contact/Warehouse with PROTECT)
-        PurchaseOrder.objects.all().delete()
-        SaleOrder.objects.all().delete()
+        _safe_delete(PurchaseOrder, "PurchaseOrder")
+        _safe_delete(SaleOrder, "SaleOrder")
         
         # 5. Inventory & Accounting Moves (links to Product/Account with PROTECT)
-        StockMove.objects.all().delete()
-        JournalEntry.objects.all().delete() # JournalItem are CASCADE from entry
+        _safe_delete(StockMove, "StockMove")
+        _safe_delete(JournalEntry, "JournalEntry") # JournalItem are CASCADE from entry
         
-        # 6. Master Data
-        Product.objects.all().delete()
-        ProductCategory.objects.all().delete()
-        Warehouse.objects.all().delete()
+        # 6. Master Data & Rules
+        _safe_delete(PricingRule, "PricingRule")
+        _safe_delete(Product, "Product")
+        _safe_delete(ProductCategory, "ProductCategory")
+        _safe_delete(Warehouse, "Warehouse")
         
         # 7. Contacts (often protected by Orders, now safe)
-        Contact.objects.all().delete()
+        _safe_delete(Contact, "Contact")
         
         # 8. Treasury & Configuration
-        TreasuryAccount.objects.all().delete()
-        AccountingSettings.objects.all().delete()
+        _safe_delete(TreasuryAccount, "TreasuryAccount")
+        _safe_delete(AccountingSettings, "AccountingSettings")
         
         # 8.5 Units of Measure
-        UoM.objects.all().delete()
-        UoMCategory.objects.all().delete()
+        _safe_delete(UoM, "UoM")
+        _safe_delete(UoMCategory, "UoMCategory")
 
         # 9. Accounts (last, as everything else is gone)
-        Account.objects.all().delete()
+        _safe_delete(Account, "Account")
 
     def _create_uoms(self):
         # Categories
@@ -322,7 +331,7 @@ class Command(BaseCommand):
         )
         
         # Products
-        Product.objects.get_or_create(
+        p1, _ = Product.objects.get_or_create(
             code="DEV-001",
             defaults={
                 'name': "Notebook Gamer",
@@ -333,7 +342,7 @@ class Command(BaseCommand):
                 'purchase_uom': uoms['unit']
             }
         )
-        Product.objects.get_or_create(
+        p2, _ = Product.objects.get_or_create(
             code="PER-001",
             defaults={
                 'name': "Mouse Óptico",
@@ -344,7 +353,7 @@ class Command(BaseCommand):
                 'purchase_uom': uoms['box24'] # Buy by boxes
             }
         )
-        Product.objects.get_or_create(
+        p3, _ = Product.objects.get_or_create(
             code="MAT-001",
             defaults={
                 'name': "Cable UTP Cat6",

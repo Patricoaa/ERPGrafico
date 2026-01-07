@@ -2,7 +2,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
-from .models import Product, Warehouse, StockMove, PricingRule
+from .models import Product, Warehouse, StockMove, PricingRule, UoM
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from decimal import Decimal
