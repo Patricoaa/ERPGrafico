@@ -313,7 +313,7 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, is_pending_registration=False, amount=None, treasury_account_id=None):
+    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, is_pending_registration=False, amount=None, treasury_account_id=None, document_number=None, document_date=None, document_attachment=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment.
         """
@@ -341,7 +341,12 @@ class BillingService:
         invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
         if not invoice:
             status = Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED
-            invoice = BillingService.create_sale_invoice(order, dte_type, payment_method, status=status)
+            invoice = BillingService.create_sale_invoice(order, dte_type, payment_method, status=status, number=document_number)
+            if document_date:
+                invoice.date = document_date
+            if document_attachment:
+                invoice.document_attachment = document_attachment
+            invoice.save()
         
         # 4. Create Payment (if not credit)
         if payment_method != 'CREDIT':

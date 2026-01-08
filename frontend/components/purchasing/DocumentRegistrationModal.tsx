@@ -115,16 +115,6 @@ export function DocumentRegistrationModal({
                         </Select>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="issue-date">Fecha de Emisión</Label>
-                        <Input
-                            id="issue-date"
-                            type="date"
-                            value={issueDate}
-                            onChange={(e) => setIssueDate(e.target.value)}
-                        />
-                    </div>
-
                     <div className="flex items-center space-x-2 py-2">
                         <input
                             type="checkbox"
@@ -136,6 +126,17 @@ export function DocumentRegistrationModal({
                         <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
                             Aún no recibo el documento físico / digital
                         </Label>
+                    </div>
+
+                    <div className={`space-y-2 ${isPending ? 'opacity-50' : ''}`}>
+                        <Label htmlFor="issue-date" className={isPending ? 'text-muted-foreground' : ''}>Fecha de Emisión</Label>
+                        <Input
+                            id="issue-date"
+                            type="date"
+                            value={issueDate}
+                            onChange={(e) => setIssueDate(e.target.value)}
+                            disabled={isPending}
+                        />
                     </div>
 
                     <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>

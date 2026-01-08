@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck } from "lucide-react"
+import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck, Calendar, FileUp } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
@@ -24,6 +24,7 @@ interface PaymentDialogProps {
         is_pending_registration?: boolean,
         treasury_account_id?: string | null,
         documentReference?: string,
+        documentDate?: string,
         documentAttachment?: File | null
     }) => void
     showDteSelector?: boolean
@@ -54,6 +55,7 @@ export function PaymentDialog({
     const [amount, setAmount] = useState(pendingAmount.toString())
     const [transactionNumber, setTransactionNumber] = useState("")
     const [documentReference, setDocumentReference] = useState("")
+    const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isPending, setIsPending] = useState(false)
     const [treasuryAccount, setTreasuryAccount] = useState<string | null>(null)
@@ -63,6 +65,7 @@ export function PaymentDialog({
             setAmount(pendingAmount.toString())
             setTransactionNumber("")
             setDocumentReference(existingInvoice?.number || "")
+            setDocumentDate(new Date().toISOString().split('T')[0])
             setDocumentAttachment(null)
             setIsPending(false)
             setTreasuryAccount(null)
@@ -115,9 +118,8 @@ export function PaymentDialog({
                                             </>
                                         ) : (
                                             <>
-                                                <SelectItem value="NONE">Aún no emitiré el documento</SelectItem>
-                                                <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
-                                                <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
+                                                <SelectItem value="BOLETA">Emitiré una boleta</SelectItem>
+                                                <SelectItem value="FACTURA">Emitiré una factura</SelectItem>
                                             </>
                                         )}
                                     </SelectContent>
@@ -130,19 +132,52 @@ export function PaymentDialog({
                             </div>
                         )}
 
-                        {!hideDteFields && isPurchase && (dteType === "BOLETA" || dteType === "FACTURA") && (
-                            <div className="space-y-3 p-3 bg-muted/30 rounded-lg border border-dashed">
-                                <div className="grid gap-2">
-                                    <Label className="text-[10px] font-bold uppercase">N° de Folio / Referencia (Obligatorio)</Label>
+                        {!hideDteFields && (dteType === "BOLETA" || dteType === "FACTURA") && (
+                            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed">
+                                <div className="flex items-center space-x-2 py-1">
+                                    <Checkbox
+                                        id="pending-doc-check"
+                                        checked={isPending}
+                                        onCheckedChange={(checked: boolean) => setIsPending(!!checked)}
+                                    />
+                                    <Label htmlFor="pending-doc-check" className="text-xs font-bold cursor-pointer">
+                                        {isPurchase
+                                            ? "Aún no recibo el documento físico / digital"
+                                            : dteType === "FACTURA"
+                                                ? "Emitiré la factura luego"
+                                                : "Emitiré la boleta luego"
+                                        }
+                                    </Label>
+                                </div>
+
+                                <div className={`grid gap-2 ${isPending ? 'opacity-50' : ''}`}>
+                                    <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" /> Fecha de Emisión
+                                    </Label>
+                                    <Input
+                                        type="date"
+                                        className="h-9"
+                                        value={documentDate}
+                                        onChange={(e) => setDocumentDate(e.target.value)}
+                                        disabled={isPending}
+                                    />
+                                </div>
+
+                                <div className={`grid gap-2 ${isPending ? 'opacity-50' : ''}`}>
+                                    <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
+                                        <Hash className="h-3 w-3" /> N° de Folio / Referencia {isPurchase && <span className="text-destructive">*</span>}
+                                    </Label>
                                     <Input
                                         placeholder="Ej: 12345"
                                         value={documentReference}
                                         onChange={(e) => setDocumentReference(e.target.value)}
-                                        disabled={!!existingInvoice}
+                                        disabled={!!existingInvoice || isPending}
                                     />
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label className="text-[10px] font-bold uppercase">
+
+                                <div className={`grid gap-2 ${isPending ? 'opacity-50' : ''}`}>
+                                    <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
+                                        <FileUp className="h-3 w-3" />
                                         {existingInvoice ? "Documento Adjunto" : "Adjuntar Documento (Opcional)"}
                                     </Label>
                                     {!existingInvoice ? (
@@ -150,28 +185,19 @@ export function PaymentDialog({
                                             <Input
                                                 type="file"
                                                 onChange={(e) => setDocumentAttachment(e.target.files?.[0] || null)}
-                                                className="text-xs h-9 py-1"
+                                                className="text-xs h-9 py-1 cursor-pointer"
+                                                disabled={isPending}
                                             />
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2 text-xs text-blue-600 font-medium p-2 bg-blue-50 rounded border border-blue-100">
                                             <Receipt className="h-4 w-4" />
-                                            <span>Documento cargado correctamente</span>
+                                            <span>Documento cargado</span>
                                             {existingInvoice.document_attachment && (
-                                                <a
-                                                    href={existingInvoice.document_attachment}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="ml-auto underline"
-                                                >
+                                                <a href={existingInvoice.document_attachment} target="_blank" rel="noreferrer" className="ml-auto underline">
                                                     Ver
                                                 </a>
                                             )}
-                                        </div>
-                                    )}
-                                    {documentAttachment && (
-                                        <div className="text-[10px] text-emerald-600 font-medium">
-                                            ✓ {documentAttachment.name}
                                         </div>
                                     )}
                                 </div>
@@ -282,8 +308,9 @@ export function PaymentDialog({
                             paymentMethod,
                             amount: parseFloat(amount),
                             dteType: (showDteSelector && dteType !== 'NONE') ? dteType : undefined,
-                            documentReference: (isPurchase && dteType !== 'NONE') ? documentReference : undefined,
-                            documentAttachment: (isPurchase && dteType !== 'NONE') ? documentAttachment : undefined,
+                            documentReference: (dteType !== 'NONE') ? documentReference : undefined,
+                            documentDate: (dteType !== 'NONE') ? documentDate : undefined,
+                            documentAttachment: (dteType !== 'NONE') ? documentAttachment : undefined,
                             transaction_number: transactionNumber,
                             is_pending_registration: !!isPending,
                             treasury_account_id: treasuryAccount

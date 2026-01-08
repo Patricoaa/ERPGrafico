@@ -120,6 +120,7 @@ export default function PurchaseInvoicesPage() {
             if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
             if (data.dteType) formData.append('dte_type', data.dteType)
             if (data.documentReference) formData.append('document_reference', data.documentReference)
+            if (data.documentDate) formData.append('document_date', data.documentDate)
             if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
 
             await api.post('/treasury/payments/', formData, {

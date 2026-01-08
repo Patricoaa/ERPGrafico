@@ -112,22 +112,32 @@ export default function SalesOrdersPage() {
         amount: number,
         dteType?: string,
         transaction_number?: string,
-        is_pending_registration?: boolean
+        is_pending_registration?: boolean,
+        documentReference?: string,
+        documentDate?: string,
+        documentAttachment?: File | null,
+        treasury_account_id?: string | null
     }) => {
         if (!payingOrder) return
         try {
-            // We use the pos_checkout endpoint which handles everything safely
-            // (Order confirmation, invoice creation if needed, and payment registration)
-            await api.post('/billing/invoices/pos_checkout/', {
-                order_data: {
-                    id: payingOrder.id,
-                    customer: payingOrder.customer,
-                },
-                dte_type: data.dteType || 'BOLETA',
-                payment_method: data.paymentMethod,
-                amount: data.amount,
-                transaction_number: data.transaction_number,
-                is_pending_registration: data.is_pending_registration
+            const formData = new FormData()
+            formData.append('order_data', JSON.stringify({
+                id: payingOrder.id,
+                customer: payingOrder.customer,
+            }))
+            formData.append('dte_type', data.dteType || 'BOLETA')
+            formData.append('payment_method', data.paymentMethod)
+            formData.append('amount', data.amount.toString())
+
+            if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
+            if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
+            if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
+            if (data.documentReference) formData.append('document_number', data.documentReference)
+            if (data.documentDate) formData.append('document_date', data.documentDate)
+            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
+
+            await api.post('/billing/invoices/pos_checkout/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             })
 
             toast.success("Operación procesada correctamente")

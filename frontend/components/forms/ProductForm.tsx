@@ -943,24 +943,47 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                         <FormField<ProductFormValues>
                                                             control={form.control}
                                                             name="sale_uom"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Unidad de Medida de Venta por Defecto</FormLabel>
-                                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Requerido para ventas" />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            {uoms.map((u) => (
-                                                                                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
+                                                            render={({ field }) => {
+                                                                const productType = form.watch("product_type");
+                                                                const baseUomId = form.watch("uom");
+                                                                const baseUom = uoms.find(u => u.id.toString() === baseUomId);
+                                                                const isStorable = productType === 'STORABLE';
+                                                                const isDisabled = isStorable && !baseUomId;
+
+                                                                // Filter by base category if storable
+                                                                const filteredUoms = isStorable && baseUom
+                                                                    ? uoms.filter(u => u.category === baseUom.category)
+                                                                    : uoms;
+
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>Unidad de Medida de Venta por Defecto</FormLabel>
+                                                                        <Select
+                                                                            onValueChange={field.onChange}
+                                                                            value={field.value}
+                                                                            disabled={isDisabled}
+                                                                        >
+                                                                            <FormControl>
+                                                                                <SelectTrigger className={cn(isDisabled && "opacity-50 grayscale bg-muted/20")}>
+                                                                                    <SelectValue placeholder={isDisabled ? "Seleccione unidad base primero" : "Requerido para ventas"} />
+                                                                                </SelectTrigger>
+                                                                            </FormControl>
+                                                                            <SelectContent>
+                                                                                {filteredUoms.map((u) => (
+                                                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                                                ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                        {isStorable && baseUom && (
+                                                                            <FormDescription className="text-[9px] flex items-center gap-1 text-primary/70">
+                                                                                <Info className="h-3 w-3" />
+                                                                                Filtrado por categoría: {baseUom.category_name}
+                                                                            </FormDescription>
+                                                                        )}
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
                                                         />
                                                     )}
                                                 </div>
@@ -983,12 +1006,14 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                         name="allowed_sale_uoms"
                                                         render={({ field }) => {
                                                             const selectedIds = field.value || [];
-                                                            const firstSelected = uoms.find(u => selectedIds.includes(u.id.toString()));
-                                                            const categoryId = firstSelected?.category;
+                                                            const saleUomId = form.watch("sale_uom");
+                                                            const saleUom = uoms.find(u => u.id.toString() === saleUomId);
+                                                            const categoryId = saleUom?.category;
+                                                            const isDisabled = !saleUomId;
 
                                                             return (
                                                                 <FormItem>
-                                                                    <div className="space-y-3">
+                                                                    <div className={cn("space-y-3", isDisabled && "opacity-50 pointer-events-none")}>
                                                                         <div className="flex flex-wrap gap-2 mb-2">
                                                                             {selectedIds.map((id: string) => {
                                                                                 const uom = uoms.find((u: any) => u.id.toString() === id);
@@ -1008,14 +1033,17 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                                                 );
                                                                             })}
                                                                             {selectedIds.length === 0 && (
-                                                                                <span className="text-[10px] text-muted-foreground italic">Ninguna seleccionada. Se usará la unidad por defecto.</span>
+                                                                                <span className="text-[10px] text-muted-foreground italic">
+                                                                                    {isDisabled ? "Seleccione unidad por defecto primero." : "Ninguna seleccionada. Se usará la unidad por defecto."}
+                                                                                </span>
                                                                             )}
                                                                         </div>
 
                                                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto max-h-[300px] p-1 border rounded-xl bg-muted/20">
                                                                             {uoms.map((u: any) => {
                                                                                 const isSelected = selectedIds.includes(u.id.toString());
-                                                                                const isDisabled = categoryId !== undefined && u.category !== categoryId;
+                                                                                const isDifferentCategory = categoryId !== undefined && u.category !== categoryId;
+                                                                                const itemDisabled = isDisabled || isDifferentCategory;
 
                                                                                 return (
                                                                                     <div
@@ -1023,10 +1051,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                                                         className={cn(
                                                                                             "flex items-center space-x-2 p-2 rounded-lg border transition-all cursor-pointer",
                                                                                             isSelected ? "bg-primary/10 border-primary/30" : "bg-background border-transparent hover:border-muted-foreground/30",
-                                                                                            isDisabled && "opacity-30 cursor-not-allowed grayscale pointer-events-none"
+                                                                                            itemDisabled && "opacity-30 cursor-not-allowed grayscale pointer-events-none"
                                                                                         )}
                                                                                         onClick={() => {
-                                                                                            if (isDisabled) return;
+                                                                                            if (itemDisabled) return;
                                                                                             if (isSelected) {
                                                                                                 field.onChange(selectedIds.filter((id: string) => id !== u.id.toString()));
                                                                                             } else {
@@ -1036,7 +1064,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                                                     >
                                                                                         <Checkbox
                                                                                             checked={isSelected}
-                                                                                            disabled={isDisabled}
+                                                                                            disabled={itemDisabled}
                                                                                             className="rounded"
                                                                                         />
                                                                                         <div className="flex flex-col">
@@ -1047,10 +1075,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                                                 );
                                                                             })}
                                                                         </div>
-                                                                        {categoryId !== undefined && (
+                                                                        {saleUom && (
                                                                             <p className="text-[10px] text-primary font-medium flex items-center gap-1">
                                                                                 <Info className="h-3 w-3" />
-                                                                                Filtrado por categoría: {firstSelected?.category_name}
+                                                                                Filtrado por categoría de venta: {saleUom.category_name}
                                                                             </p>
                                                                         )}
                                                                     </div>

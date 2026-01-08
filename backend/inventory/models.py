@@ -92,6 +92,23 @@ class Product(models.Model):
         help_text=_("Habilita campos personalizados al vender este producto desde POS o notas de venta")
     )
     
+    # Manufacturing Display Controls
+    mfg_show_design_needed = models.BooleanField(
+        _("Mostrar 'Necesidad de Diseño'"),
+        default=True,
+        help_text=_("Indica si se debe preguntar por diseño en el modal de venta")
+    )
+    mfg_show_contacts = models.BooleanField(
+        _("Mostrar 'Contactos Asociados'"),
+        default=True,
+        help_text=_("Indica si se debe permitir asociar contactos en el modal de venta")
+    )
+    mfg_default_delivery_days = models.IntegerField(
+        _("Días de Entrega por Defecto"),
+        default=3,
+        help_text=_("Días a sumar a la fecha actual para la fecha estimada de entrega")
+    )
+    
     # Inventory Tracking Control
     track_inventory = models.BooleanField(
         _("Controlar Stock"),

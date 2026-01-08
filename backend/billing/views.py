@@ -79,8 +79,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         is_pending_registration = request.data.get('is_pending_registration', False)
         if isinstance(is_pending_registration, str):
             is_pending_registration = is_pending_registration.lower() == 'true'
-        amount = request.data.get('amount')
-        treasury_account_id = request.data.get('treasury_account_id') or request.data.get('treasury_account')
+        document_number = request.data.get('document_number') or request.data.get('document_reference')
+        document_date = request.data.get('document_date')
+        document_attachment = request.FILES.get('document_attachment')
         
         if not all([order_data, dte_type, payment_method]):
             return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
@@ -91,7 +92,10 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration,
                 amount=amount,
-                treasury_account_id=treasury_account_id
+                treasury_account_id=treasury_account_id,
+                document_number=document_number,
+                document_date=document_date,
+                document_attachment=document_attachment
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
