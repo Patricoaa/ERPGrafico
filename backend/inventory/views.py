@@ -11,6 +11,7 @@ from .models import (
     CustomFieldTemplate, ProductCustomField
 )
 from .services import StockService
+from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin
@@ -20,6 +21,7 @@ from .filters import ProductFilter, StockMoveFilter
 class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend]
     filterset_class = ProductFilter
 
     def perform_update(self, serializer):
@@ -96,6 +98,7 @@ class UoMCategoryViewSet(viewsets.ModelViewSet):
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StockMove.objects.all()
     serializer_class = StockMoveSerializer
+    filter_backends = [DjangoFilterBackend]
     filterset_class = StockMoveFilter
 
     @action(detail=False, methods=['post'])
@@ -122,6 +125,7 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet):
 class PricingRuleViewSet(viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
+    filter_backends = [DjangoFilterBackend]
     filterset_fields = ['product', 'category', 'active']
 
 class CustomFieldTemplateViewSet(viewsets.ModelViewSet):

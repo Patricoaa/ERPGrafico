@@ -11,11 +11,6 @@ class SalesSettingsSerializer(serializers.ModelSerializer):
         model = SalesSettings
         fields = '__all__'
 
-class SalesSettingsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SalesSettings
-        fields = '__all__'
-
 class SaleLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
     quantity_pending = serializers.ReadOnlyField()
@@ -72,7 +67,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             docs['deliveries'].append({
                 'id': deliv.id,
                 'number': deliv.id, # Deliveries might not have a public number yet
-                'date': deliv.date
+                'date': deliv.delivery_date
             })
 
         for pay in obj.payments.all():
