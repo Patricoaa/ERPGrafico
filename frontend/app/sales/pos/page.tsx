@@ -463,7 +463,7 @@ export default function POSPage() {
                                     </TableBody>
                                 </Table>
                             </div>
-                            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t space-y-4">
+                            <div className="p-4 bg-muted/50 border-t space-y-4">
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-muted-foreground">
                                         <span>Neto</span>

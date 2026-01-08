@@ -44,7 +44,7 @@ const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, le
 
     return (
         <>
-            <TableRow className={cn("hover:bg-slate-50 dark:hover:bg-slate-800", level === 0 ? "font-bold" : "")}>
+            <TableRow className={cn("hover:bg-muted", level === 0 ? "font-bold" : "")}>
                 <TableCell className="p-2">
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {hasChildren && (
@@ -98,7 +98,7 @@ export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = (
                     <AccountRow key={node.id} node={node} showComparison={showComparison} />
                 ))}
                 {totalLabel && totalValue !== undefined && (
-                    <TableRow className="bg-slate-100 dark:bg-slate-900 font-bold border-t-2">
+                    <TableRow className="bg-muted/50 font-bold border-t-2">
                         <TableCell className="p-4 text-primary">{totalLabel}</TableCell>
                         <TableCell className="text-right p-4 font-mono text-lg">
                             {formatCurrency(totalValue)}
@@ -123,7 +123,7 @@ export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = (
 
     return (
         <div className="rounded-md border bg-white dark:bg-zinc-950 shadow-sm">
-            <div className="p-4 border-b bg-slate-50 dark:bg-slate-900">
+            <div className="p-4 border-b bg-muted/30">
                 <h3 className="font-semibold text-lg">{title}</h3>
             </div>
             {tableContent}

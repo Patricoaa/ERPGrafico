@@ -129,7 +129,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                     <DialogTitle>Editar Presupuesto: {budget?.name}</DialogTitle>
                 </DialogHeader>
 
-                <div className="px-4 py-2 border-b flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="px-4 py-2 border-b flex items-center justify-between bg-muted/30">
                     <div className="flex items-center gap-4 flex-1 max-w-xl">
                         <Input
                             placeholder="Buscar cuenta por nombre o código..."
@@ -160,7 +160,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
 
                 <ScrollArea className="flex-1 border rounded-md">
                     <div className="min-w-[1200px]">
-                        <div className="flex bg-slate-50 dark:bg-slate-900 border-b sticky top-0 z-10 font-medium">
+                        <div className="flex bg-muted border-b sticky top-0 z-10 font-medium">
                             <div className="w-[300px] p-2 border-r">Cuenta</div>
                             {monthNames.map(m => (
                                 <div key={m} className="flex-1 p-2 text-center text-xs border-r">{m}</div>
@@ -173,7 +173,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                         {!loading && filteredAccounts.map(acc => {
                             const accountTotal = months.reduce((sum, m) => sum + (items[acc.id]?.[m] || 0), 0);
                             return (
-                                <div key={acc.id} className="flex items-center border-b hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                <div key={acc.id} className="flex items-center border-b hover:bg-muted transition-colors">
                                     <div className="w-[300px] p-2 border-r">
                                         <div className="font-semibold text-sm truncate" title={`${acc.code} - ${acc.name}`}>
                                             {acc.code} - {acc.name}

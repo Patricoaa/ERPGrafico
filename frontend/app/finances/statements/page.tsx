@@ -188,7 +188,7 @@ export default function StatementsPage() {
                 className="space-y-4"
             >
                 <div className="flex justify-center">
-                    <TabsList className="grid w-full max-sm:max-w-xs max-w-sm grid-cols-3 bg-slate-100 dark:bg-slate-800 rounded-full h-11 p-1">
+                    <TabsList className="grid w-full max-sm:max-w-xs max-w-sm grid-cols-3 bg-muted rounded-full h-11 p-1">
                         <TabsTrigger value="bs" className="rounded-full">Balance</TabsTrigger>
                         <TabsTrigger value="pl" className="rounded-full">Resultados</TabsTrigger>
                         <TabsTrigger value="cf" className="rounded-full">Flujos</TabsTrigger>
@@ -266,7 +266,7 @@ export default function StatementsPage() {
                                                     "py-6 px-4 flex justify-between items-center rounded-lg my-4 transition-colors",
                                                     idx === (plData.sections?.length || 0) - 1
                                                         ? "bg-primary text-primary-foreground shadow-lg"
-                                                        : "bg-slate-50 dark:bg-slate-900 border"
+                                                        : "bg-muted/50 border"
                                                 )}>
                                                     <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
                                                     <div className="flex space-x-12 items-center">

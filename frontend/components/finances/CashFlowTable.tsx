@@ -41,7 +41,7 @@ const formatCurrency = (val: number | undefined | null) => {
 };
 
 const SectionHeader = ({ title, showComparison }: { title: string, showComparison?: boolean }) => (
-    <TableRow className="bg-slate-100 dark:bg-slate-900 font-bold">
+    <TableRow className="bg-muted/50 font-bold">
         <TableCell colSpan={showComparison ? 4 : 2} className="py-2">{title}</TableCell>
     </TableRow>
 );
@@ -139,7 +139,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 <SectionTotal title="Flujo Neto de Actividades de Financiamiento" amount={data.total_financing} amountComp={data.total_financing_comp} showComparison={showComparison} />
 
                 {/* Total */}
-                <TableRow className="bg-slate-200 dark:bg-slate-800 font-bold border-t-2 text-lg">
+                <TableRow className="bg-muted font-bold border-t-2 text-lg">
                     <TableCell className="pt-4">Aumento (Disminución) Neto de Efectivo</TableCell>
                     <TableCell className="text-right pt-4 font-mono">
                         {formatCurrency(data.net_increase)}
@@ -164,7 +164,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
 
     return (
         <div className="rounded-md border bg-white dark:bg-zinc-950 shadow-sm">
-            <div className="p-4 border-b bg-slate-50 dark:bg-slate-900">
+            <div className="p-4 border-b bg-muted/30">
                 <h3 className="font-semibold text-lg">Estado de Flujo de Efectivo (Método Indirecto)</h3>
             </div>
             {tableContent}
