@@ -92,17 +92,65 @@ class Product(models.Model):
         help_text=_("Habilita campos personalizados al vender este producto desde POS o notas de venta")
     )
     
-    # Manufacturing Display Controls
-    mfg_show_design_needed = models.BooleanField(
-        _("Mostrar 'Necesidad de Diseño'"),
-        default=True,
-        help_text=_("Indica si se debe preguntar por diseño en el modal de venta")
+    # Print Shop Workflow - Stage Enablers
+    mfg_enable_prepress = models.BooleanField(
+        _("Habilitar Pre-Impresión"),
+        default=False,
+        help_text=_("Activa la etapa de pre-impresión en el flujo de fabricación")
     )
-    mfg_show_contacts = models.BooleanField(
-        _("Mostrar 'Contactos Asociados'"),
-        default=True,
-        help_text=_("Indica si se debe permitir asociar contactos en el modal de venta")
+    mfg_enable_press = models.BooleanField(
+        _("Habilitar Impresión"),
+        default=False,
+        help_text=_("Activa la etapa de impresión en el flujo de fabricación")
     )
+    mfg_enable_postpress = models.BooleanField(
+        _("Habilitar Post-Impresión"),
+        default=False,
+        help_text=_("Activa la etapa de post-impresión en el flujo de fabricación")
+    )
+    
+    # Pre-Press Options
+    mfg_prepress_design = models.BooleanField(
+        _("Pre-Impresión: Diseño Requerido"),
+        default=False,
+        help_text=_("Solicitar diseño en la etapa de pre-impresión")
+    )
+    mfg_prepress_specs = models.BooleanField(
+        _("Pre-Impresión: Especificaciones"),
+        default=False,
+        help_text=_("Solicitar especificaciones en la etapa de pre-impresión")
+    )
+    mfg_prepress_folio = models.BooleanField(
+        _("Pre-Impresión: Folio"),
+        default=False,
+        help_text=_("Solicitar folio en la etapa de pre-impresión")
+    )
+    
+    # Press Options
+    mfg_press_offset = models.BooleanField(
+        _("Impresión: Offset"),
+        default=False,
+        help_text=_("Solicitar información de impresión offset")
+    )
+    mfg_press_digital = models.BooleanField(
+        _("Impresión: Digital"),
+        default=False,
+        help_text=_("Solicitar información de impresión digital")
+    )
+    
+    # Post-Press Options
+    mfg_postpress_finishing = models.BooleanField(
+        _("Post-Impresión: Acabados"),
+        default=False,
+        help_text=_("Solicitar información de acabados")
+    )
+    mfg_postpress_binding = models.BooleanField(
+        _("Post-Impresión: Encuadernación/Troquelado"),
+        default=False,
+        help_text=_("Solicitar información de encuadernación o troquelado")
+    )
+    
+    # Delivery Configuration
     mfg_default_delivery_days = models.IntegerField(
         _("Días de Entrega por Defecto"),
         default=3,
