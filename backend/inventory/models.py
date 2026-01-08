@@ -203,16 +203,13 @@ class Product(models.Model):
     def __str__(self):
         return f"[{self.code}] {self.name}"
 
-    def save(self, *args, **kwargs):
-        # Handle empty code strings as NULL to avoid uniqueness collision
         if self.code == "" or (isinstance(self.code, str) and not self.code.strip()):
             self.code = None
 
-        # Automatically set track_inventory based on product_type
-        if self.product_type == self.Type.STORABLE:
-            self.track_inventory = True
-        else:
-            self.track_inventory = False
+        # Logic for track_inventory is now handled by the frontend/API.
+        # We default to True for STORABLE if not specified, otherwise respect input.
+        if self.pk is None and self.track_inventory is None:
+             self.track_inventory = (self.product_type == self.Type.STORABLE)
             
         if not self.internal_code:
             prefix = self.category.prefix or "PROD"
@@ -268,7 +265,7 @@ class Product(models.Model):
         
         # If no active BOM, treat as "Available" (no constraints)
         if not active_bom or not active_bom.lines.exists():
-            return float('inf')
+            return None
         
         # Calculate available quantity for each component
         from django.db.models import Sum

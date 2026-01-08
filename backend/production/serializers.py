@@ -29,6 +29,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_code = serializers.CharField(source='component.code', read_only=True)
     component_name = serializers.CharField(source='component.name', read_only=True)
+    bom = serializers.PrimaryKeyRelatedField(read_only=True)
     
     class Meta:
         model = BillOfMaterialsLine
@@ -57,9 +58,9 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         if not product and self.instance:
             product = self.instance.product
             
-        if product and not product.uom:
+        if product and (product.track_inventory or product.product_type == 'STORABLE') and not product.uom:
             raise serializers.ValidationError(
-                f"El producto '{product.name}' no tiene una Unidad de Medida (UoM) asignada."
+                f"El producto '{product.name}' debe tener una Unidad de Medida (UoM) asignada porque controla stock."
             )
         return data
 

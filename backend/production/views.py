@@ -60,12 +60,14 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
     queryset = BillOfMaterials.objects.all()
     serializer_class = BillOfMaterialsSerializer
     
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        product_id = self.request.query_params.get('product_id')
-        if product_id:
-            queryset = queryset.filter(product_id=product_id)
-        return queryset
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print("ERROR VALIDATING BOM:", serializer.errors)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class BillOfMaterialsLineViewSet(viewsets.ModelViewSet):
     queryset = BillOfMaterialsLine.objects.all()
