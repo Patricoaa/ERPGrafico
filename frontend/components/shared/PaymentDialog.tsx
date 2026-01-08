@@ -49,7 +49,7 @@ export function PaymentDialog({
     isRefund = false,
     existingInvoice = null
 }: PaymentDialogProps) {
-    const [dteType, setDteType] = useState(isPurchase ? "NONE" : "BOLETA")
+    const [dteType, setDteType] = useState("NONE")
     const [paymentMethod, setPaymentMethod] = useState("CASH")
     const [amount, setAmount] = useState(pendingAmount.toString())
     const [transactionNumber, setTransactionNumber] = useState("")
@@ -67,12 +67,10 @@ export function PaymentDialog({
             setIsPending(false)
             setTreasuryAccount(null)
 
-            if (isPurchase) {
-                if (existingInvoice) {
-                    setDteType(existingInvoice.dte_type)
-                } else {
-                    setDteType("NONE")
-                }
+            if (existingInvoice) {
+                setDteType(existingInvoice.dte_type)
+            } else {
+                setDteType("NONE")
             }
         }
     }, [open, pendingAmount, isPurchase, existingInvoice])
@@ -117,6 +115,7 @@ export function PaymentDialog({
                                             </>
                                         ) : (
                                             <>
+                                                <SelectItem value="NONE">Aún no emitiré el documento</SelectItem>
                                                 <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
                                                 <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
                                             </>

@@ -128,6 +128,49 @@ class SaleOrderViewSet(viewsets.ModelViewSet):
         deliveries = order.deliveries.all()
         return Response(SaleDeliverySerializer(deliveries, many=True).data)
 
+    @action(detail=True, methods=['post'])
+    def register_note(self, request, pk=None):
+        order = self.get_object()
+        
+        # Manually handle multipart/form-data requiring json parsing for complex fields
+        data = request.data.dict() if hasattr(request.data, 'dict') else request.data.copy()
+        
+        # If accessing via multipart, lists might be strings
+        if 'return_items' in data and isinstance(data['return_items'], str):
+            import json
+            try:
+                data['return_items'] = json.loads(data['return_items'])
+            except:
+                pass
+                
+        from purchasing.serializers import NoteCreationSerializer
+        serializer = NoteCreationSerializer(data=data)
+        
+        if serializer.is_valid():
+            try:
+                val = serializer.validated_data
+                invoice = SalesService.create_note(
+                    order=order,
+                    note_type=val['note_type'],
+                    amount_net=val['amount_net'],
+                    amount_tax=val['amount_tax'],
+                    document_number=val['document_number'],
+                    document_attachment=request.FILES.get('document_attachment'),
+                    return_items=val.get('return_items'),
+                    original_invoice_id=val.get('original_invoice_id')
+                )
+                
+                from billing.serializers import InvoiceSerializer
+                return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+            except ValidationError as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class SaleDeliveryViewSet(viewsets.ModelViewSet):
     queryset = SaleDelivery.objects.all()
     serializer_class = SaleDeliverySerializer

@@ -43,7 +43,7 @@ class BillingService:
     
     @staticmethod
     @transaction.atomic
-    def create_sale_invoice(order: SaleOrder, dte_type: str, payment_method: str = 'CREDIT'):
+    def create_sale_invoice(order: SaleOrder, dte_type: str, payment_method: str = 'CREDIT', status: str = Invoice.Status.POSTED, number: str = None):
         """
         Creates a Sale Invoice (Factura/Boleta) from a SaleOrder.
         """
@@ -54,13 +54,14 @@ class BillingService:
         # 1. Create Invoice Record
         invoice = Invoice.objects.create(
             dte_type=dte_type,
+            number=number,
             date=timezone.now().date(),
             sale_order=order,
             payment_method=payment_method,
             total_net=order.total_net,
             total_tax=order.total_tax,
             total=order.total,
-            status=Invoice.Status.POSTED
+            status=status
         )
 
         # 2. Accounting Entry
@@ -109,7 +110,9 @@ class BillingService:
                 label=f"IVA {invoice.dte_type}"
             )
 
-        JournalEntryService.post_entry(entry)
+        if status == Invoice.Status.POSTED:
+            JournalEntryService.post_entry(entry)
+            
         invoice.journal_entry = entry
         invoice.save()
 
@@ -337,7 +340,8 @@ class BillingService:
         # 3. Create Invoice (if not already invoiced)
         invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
         if not invoice:
-            invoice = BillingService.create_sale_invoice(order, dte_type, payment_method)
+            status = Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED
+            invoice = BillingService.create_sale_invoice(order, dte_type, payment_method, status=status)
         
         # 4. Create Payment (if not credit)
         if payment_method != 'CREDIT':
@@ -381,10 +385,12 @@ class BillingService:
             # 1. Update Description
             if invoice.purchase_order:
                 entry.description = f"{invoice.get_dte_type_display()} Compra {number} - OC {invoice.purchase_order.number}"
+            elif invoice.sale_order:
+                entry.description = f"{invoice.get_dte_type_display()} {number} - Pedido {invoice.sale_order.number}"
             elif invoice.service_obligation:
                 entry.description = f"Gasto Servicio {invoice.service_obligation.contract.name} - {invoice.get_dte_type_display()} {number}"
             
-            entry.reference = f"{'FCP' if invoice.purchase_order else 'SVC'}-{number}"
+            entry.reference = f"{invoice.dte_type[:3]}-{number}"
             entry.save()
 
 

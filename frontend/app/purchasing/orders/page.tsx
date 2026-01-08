@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, FileBadge } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
-import { DocumentCompletionModal } from "@/components/purchasing/DocumentCompletionModal"
+import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 
 interface PurchaseOrder {
     id: number

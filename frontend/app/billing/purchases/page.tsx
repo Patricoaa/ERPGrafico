@@ -14,7 +14,7 @@ import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 import { DocumentEditModal } from "../../../components/purchasing/DocumentEditModal"
 import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
-import { DocumentCompletionModal } from "@/components/purchasing/DocumentCompletionModal"
+import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
 
 interface PurchaseDocument {

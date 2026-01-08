@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -18,7 +18,9 @@ import { Badge } from "@/components/ui/badge"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DeliveryModal } from "@/components/sales/DeliveryModal"
-import { Progress } from "../../../components/ui/progress"
+import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
+import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
+import { Progress } from "@/components/ui/progress"
 
 
 interface SaleOrder {
@@ -32,6 +34,7 @@ interface SaleOrder {
     pending_amount: number
     customer: number
     channel_display: string
+    delivery_status: 'PENDING' | 'PARTIAL' | 'DELIVERED'
     related_documents?: {
         invoices: any[]
         notes: any[]
@@ -56,6 +59,8 @@ export default function SalesOrdersPage() {
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
     const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
+    const [completingFolio, setCompletingFolio] = useState<SaleOrder | null>(null)
+    const [addingNote, setAddingNote] = useState<SaleOrder | null>(null)
 
     const fetchOrders = async () => {
         try {
@@ -128,6 +133,11 @@ export default function SalesOrdersPage() {
             toast.success("Operación procesada correctamente")
             setPayingOrder(null)
             fetchOrders()
+
+            // If it was a pending registration, maybe prompt something or just refresh
+            if (data.is_pending_registration) {
+                toast.info("El pago se registró, pero el documento quedó pendiente de folio.")
+            }
         } catch (error: any) {
             console.error("Error in handlePayment:", error)
             toast.error(error.response?.data?.error || "Error al procesar el pago")
@@ -280,7 +290,19 @@ export default function SalesOrdersPage() {
                                             </Button>
                                         )}
 
-                                        {['CONFIRMED', 'INVOICED', 'PAID'].includes(order.status) && (
+                                        {order.status === 'CONFIRMED' && !order.related_documents?.invoices?.length && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-blue-600"
+                                                onClick={() => setCompletingFolio(order)}
+                                                title="Completar Folio"
+                                            >
+                                                <FileEdit className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {['CONFIRMED', 'INVOICED', 'PAID'].includes(order.status) && order.delivery_status !== 'DELIVERED' && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -289,6 +311,18 @@ export default function SalesOrdersPage() {
                                                 title="Despachar"
                                             >
                                                 <Truck className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {['INVOICED', 'PAID'].includes(order.status) && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-purple-600"
+                                                onClick={() => setAddingNote(order)}
+                                                title="Registrar Nota Crédito/Débito"
+                                            >
+                                                <FileBadge className="h-4 w-4" />
                                             </Button>
                                         )}
 
@@ -357,6 +391,27 @@ export default function SalesOrdersPage() {
                     open={!!dispatchingOrder}
                     onOpenChange={(open) => !open && setDispatchingOrder(null)}
                     orderId={dispatchingOrder}
+                    onSuccess={fetchOrders}
+                />
+            )}
+
+            {completingFolio && (
+                <DocumentCompletionModal
+                    open={!!completingFolio}
+                    onOpenChange={(open) => !open && setCompletingFolio(null)}
+                    invoiceId={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
+                    invoiceType={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.type || "BOLETA"}
+                    onSuccess={fetchOrders}
+                />
+            )}
+
+            {addingNote && (
+                <SaleNoteModal
+                    open={!!addingNote}
+                    onOpenChange={(open) => !open && setAddingNote(null)}
+                    orderId={addingNote.id}
+                    orderNumber={addingNote.number}
+                    invoiceId={addingNote.related_documents?.invoices?.[0]?.id}
                     onSuccess={fetchOrders}
                 />
             )}

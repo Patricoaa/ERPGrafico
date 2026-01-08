@@ -285,3 +285,170 @@ class SalesService:
             
         # 4. Delete Order
         order.delete()
+    @staticmethod
+    @transaction.atomic
+    def create_note(order: SaleOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
+                    document_number: str, document_attachment=None, return_items=None, original_invoice_id=None):
+        """
+        Creation of a Credit or Debit Note linked to a Sale Order.
+        - note_type: NOTA_CREDITO or NOTA_DEBITO
+        - return_items: list of { 'product_id': int, 'quantity': Decimal }
+        """
+        from billing.models import Invoice
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem, AccountType
+        from inventory.models import StockMove
+        
+        # 1. Create Invoice Note
+        total_amount = amount_net + amount_tax
+        invoice = Invoice.objects.create(
+            dte_type=note_type,
+            number=document_number,
+            document_attachment=document_attachment,
+            sale_order=order,
+            date=timezone.now().date(),
+            total_net=amount_net,
+            total_tax=amount_tax,
+            total=total_amount,
+            status=Invoice.Status.POSTED
+        )
+
+        # 2. Accounting Entry
+        settings = AccountingSettings.objects.first()
+        if not settings:
+            raise ValidationError("Debe configurar la contabilidad primero.")
+
+        entry = JournalEntry.objects.create(
+            date=timezone.now().date(),
+            description=f"{invoice.get_dte_type_display()} {document_number} (Ref NV-{order.number})",
+            reference=f"SNOTE-{invoice.id}",
+            state=JournalEntry.State.DRAFT
+        )
+
+        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        revenue_account = settings.default_revenue_account
+        tax_account = settings.default_tax_payable_account
+        
+        if not all([receivable_account, revenue_account, tax_account]):
+            raise ValidationError("Faltan cuentas predeterminadas en la configuración contable.")
+
+        # 3. Entries based on note_type
+        if note_type == Invoice.DTEType.NOTA_CREDITO:
+            # Credit Note (Return/Discount)
+            # Credit: Receivable (Total)
+            JournalItem.objects.create(
+                entry=entry,
+                account=receivable_account,
+                debit=0,
+                credit=total_amount,
+                partner=order.customer.name,
+                label=f"NC {document_number} - NV {order.number}"
+            )
+            # Debit: Revenue (Net)
+            JournalItem.objects.create(
+                entry=entry,
+                account=revenue_account,
+                debit=amount_net,
+                credit=0,
+                label=f"Reverso Venta Net - NC {document_number}"
+            )
+            # Debit: Tax (IVA Débito)
+            if amount_tax > 0:
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=tax_account,
+                    debit=amount_tax,
+                    credit=0,
+                    label=f"Reverso IVA - NC {document_number}"
+                )
+        else:
+            # Debit Note (Charge)
+            # Debit: Receivable (Total)
+            JournalItem.objects.create(
+                entry=entry,
+                account=receivable_account,
+                debit=total_amount,
+                credit=0,
+                partner=order.customer.name,
+                label=f"ND {document_number} - NV {order.number}"
+            )
+            # Credit: Revenue (Net)
+            JournalItem.objects.create(
+                entry=entry,
+                account=revenue_account,
+                debit=0,
+                credit=amount_net,
+                label=f"Cargo Adicional Net - ND {document_number}"
+            )
+            # Credit: Tax (IVA Débito)
+            if amount_tax > 0:
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=tax_account,
+                    debit=0,
+                    credit=amount_tax,
+                    label=f"IVA Cargo Adicional - ND {document_number}"
+                )
+
+        # 4. Inventory Moves (for Credit Note with returns)
+        if note_type == Invoice.DTEType.NOTA_CREDITO and return_items:
+            # We assume returns go back to the original warehouse or a default one
+            # For simplicity, we use the first warehouse or require one. 
+            # In SaleDelivery we know the warehouse.
+            default_warehouse = Warehouse.objects.first()
+            
+            for item in return_items:
+                product_id = item.get('product_id')
+                quantity = Decimal(str(item.get('quantity', 0)))
+                
+                if quantity <= 0:
+                    continue
+                
+                from inventory.models import Product
+                product = Product.objects.get(id=product_id)
+                
+                # Check for COGS reversal
+                # We need to find the unit cost. Use current cost or original sold unit cost?
+                # Usually we reverse at the cost it was sold.
+                unit_cost = product.cost_price 
+                
+                # Stock Move (IN)
+                StockMove.objects.create(
+                    date=timezone.now().date(),
+                    product=product,
+                    warehouse=default_warehouse,
+                    quantity=quantity,
+                    move_type=StockMove.Type.IN,
+                    description=f"Devolución NC {document_number} - NV {order.number}",
+                    journal_entry=entry
+                )
+                
+                # Reverse COGS entry
+                cogs_account = Account.objects.filter(code='5.1.01').first() or \
+                               Account.objects.filter(account_type=AccountType.EXPENSE).first()
+                inventory_account = settings.default_inventory_account
+                
+                line_cogs = (quantity * unit_cost).quantize(Decimal('0.01'), rounding='ROUND_HALF_UP')
+                
+                if line_cogs > 0 and cogs_account and inventory_account:
+                    # Debit: Inventory (Asset)
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=inventory_account,
+                        debit=line_cogs,
+                        credit=0,
+                        label=f"Reincorporación Stock - {product.code}"
+                    )
+                    # Credit: COGS (Expense)
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=cogs_account,
+                        debit=0,
+                        credit=line_cogs,
+                        label=f"Reverso COGS - {product.code}"
+                    )
+
+        JournalEntryService.post_entry(entry)
+        invoice.journal_entry = entry
+        invoice.save()
+        
+        return invoice
