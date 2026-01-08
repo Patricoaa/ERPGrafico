@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
-    CalendarIcon, User, Paintbrush, FileText, Plus, X, Clock
+    CalendarIcon, User, Paintbrush, FileText, Plus, X, Clock, Settings2
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { format, addDays } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -32,6 +33,11 @@ export function AdvancedManufacturingDialog({
     const [description, setDescription] = useState("")
     const [productDescription, setProductDescription] = useState("")
     const [customValues, setCustomValues] = useState<Record<string, any>>({})
+
+    // Phase Switches
+    const [enablePrepress, setEnablePrepress] = useState(false)
+    const [enablePress, setEnablePress] = useState(false)
+    const [enablePostpress, setEnablePostpress] = useState(false)
 
     useEffect(() => {
         if (open && product) {
@@ -59,6 +65,11 @@ export function AdvancedManufacturingDialog({
             setDescription("")
             setProductDescription("")
             setCustomValues({})
+
+            // Initialize switches from product configuration
+            setEnablePrepress(!!product.mfg_enable_prepress)
+            setEnablePress(!!product.mfg_enable_press)
+            setEnablePostpress(!!product.mfg_enable_postpress)
         }
     }, [open, product])
 
@@ -67,8 +78,14 @@ export function AdvancedManufacturingDialog({
             design_needed: designNeeded,
             contact: contact ? { id: contact.id, name: contact.name } : null,
             delivery_date: deliveryDateTime,
-            description,
+            description, // Internal notes
             product_description: productDescription,
+            // Include phase capability flags in the result
+            phases: {
+                prepress: enablePrepress,
+                press: enablePress,
+                postpress: enablePostpress
+            },
             custom_values: customValues
         })
         onOpenChange(false)
@@ -134,8 +151,7 @@ export function AdvancedManufacturingDialog({
                         </div>
                     </div>
 
-                    {/* Conditional: Workflow and Product Description */}
-                    {product.requires_advanced_manufacturing && (
+                    {product.product_type === 'MANUFACTURABLE' && (
                         <>
                             <div className="space-y-2 pt-2 border-t font-medium text-xs text-primary flex items-center gap-2 uppercase tracking-wider">
                                 <FileText className="h-3 w-3" /> Descripción del Trabajo
@@ -153,89 +169,125 @@ export function AdvancedManufacturingDialog({
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {/* Pre-Press Column */}
-                                <div className="space-y-3 p-4 rounded-lg border bg-muted/20">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2 flex items-center gap-1">
-                                        <Paintbrush className="h-3 w-3" /> Pre-Impresión
-                                    </h4>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-medium">Diseño Requerido</Label>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant={designNeeded ? "default" : "outline"}
-                                                size="sm"
-                                                className="flex-1 h-8 text-xs"
-                                                onClick={() => setDesignNeeded(true)}>
-                                                Sí
-                                            </Button>
-                                            <Button
-                                                variant={!designNeeded ? "default" : "outline"}
-                                                size="sm"
-                                                className="flex-1 h-8 text-xs"
-                                                onClick={() => setDesignNeeded(false)}>
-                                                No
-                                            </Button>
+                                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePrepress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
+                                            <Paintbrush className="h-3 w-3" /> Pre-Impresión
+                                        </h4>
+                                        <Switch
+                                            checked={enablePrepress}
+                                            onCheckedChange={setEnablePrepress}
+                                            className="scale-75"
+                                        />
+                                    </div>
+
+                                    {enablePrepress && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-medium">Diseño Requerido</Label>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        variant={designNeeded ? "default" : "outline"}
+                                                        size="sm"
+                                                        className="flex-1 h-8 text-xs"
+                                                        onClick={() => setDesignNeeded(true)}>
+                                                        Sí
+                                                    </Button>
+                                                    <Button
+                                                        variant={!designNeeded ? "default" : "outline"}
+                                                        size="sm"
+                                                        className="flex-1 h-8 text-xs"
+                                                        onClick={() => setDesignNeeded(false)}>
+                                                        No
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] uppercase text-muted-foreground">Especificaciones</Label>
+                                                <Input
+                                                    placeholder="Detalles técnicos..."
+                                                    className="h-8 text-xs bg-background"
+                                                    value={customValues.specs || ""}
+                                                    onChange={(e) => setCustomValues({ ...customValues, specs: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] uppercase text-muted-foreground">Folio</Label>
+                                                <Input
+                                                    placeholder="N° Folio..."
+                                                    className="h-8 text-xs bg-background"
+                                                    value={customValues.folio || ""}
+                                                    onChange={(e) => setCustomValues({ ...customValues, folio: e.target.value })}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="text-[10px] uppercase text-muted-foreground">Especificaciones</Label>
-                                        <Input
-                                            placeholder="Detalles técnicos..."
-                                            className="h-8 text-xs bg-background"
-                                            value={customValues.specs || ""}
-                                            onChange={(e) => setCustomValues({ ...customValues, specs: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="text-[10px] uppercase text-muted-foreground">Folio</Label>
-                                        <Input
-                                            placeholder="N° Folio..."
-                                            className="h-8 text-xs bg-background"
-                                            value={customValues.folio || ""}
-                                            onChange={(e) => setCustomValues({ ...customValues, folio: e.target.value })}
-                                        />
-                                    </div>
+                                    )}
                                 </div>
 
                                 {/* Press Column */}
-                                <div className="space-y-3 p-4 rounded-lg border bg-muted/20">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2 flex items-center gap-1">
-                                        <Plus className="h-3 w-3" /> Impresión
-                                    </h4>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-medium">Tipo de Impresión</Label>
-                                        <div className="flex gap-1">
-                                            <Button
-                                                variant={customValues.print_type === 'offset' ? "default" : "outline"}
-                                                size="sm"
-                                                className="flex-1 h-8 text-[10px]"
-                                                onClick={() => setCustomValues({ ...customValues, print_type: 'offset' })}>
-                                                Offset
-                                            </Button>
-                                            <Button
-                                                variant={customValues.print_type === 'digital' ? "default" : "outline"}
-                                                size="sm"
-                                                className="flex-1 h-8 text-[10px]"
-                                                onClick={() => setCustomValues({ ...customValues, print_type: 'digital' })}>
-                                                Digital
-                                            </Button>
-                                        </div>
+                                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
+                                            <Plus className="h-3 w-3" /> Impresión
+                                        </h4>
+                                        <Switch
+                                            checked={enablePress}
+                                            onCheckedChange={setEnablePress}
+                                            className="scale-75"
+                                        />
                                     </div>
+
+                                    {enablePress && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-medium">Tipo de Impresión</Label>
+                                                <div className="flex gap-1">
+                                                    <Button
+                                                        variant={customValues.print_type === 'offset' ? "default" : "outline"}
+                                                        size="sm"
+                                                        className="flex-1 h-8 text-[10px]"
+                                                        onClick={() => setCustomValues({ ...customValues, print_type: 'offset' })}>
+                                                        Offset
+                                                    </Button>
+                                                    <Button
+                                                        variant={customValues.print_type === 'digital' ? "default" : "outline"}
+                                                        size="sm"
+                                                        className="flex-1 h-8 text-[10px]"
+                                                        onClick={() => setCustomValues({ ...customValues, print_type: 'digital' })}>
+                                                        Digital
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Post-Press Column */}
-                                <div className="space-y-3 p-4 rounded-lg border bg-muted/20">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2 flex items-center gap-1">
-                                        <FileText className="h-3 w-3" /> Post-Impresión
-                                    </h4>
-                                    <div className="space-y-1">
-                                        <Label className="text-[10px] uppercase text-muted-foreground">Acabados</Label>
-                                        <Input
-                                            placeholder="Barniz, laminado, etc..."
-                                            className="h-8 text-xs bg-background"
-                                            value={customValues.finishing || ""}
-                                            onChange={(e) => setCustomValues({ ...customValues, finishing: e.target.value })}
+                                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePostpress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
+                                            <FileText className="h-3 w-3" /> Post-Impresión
+                                        </h4>
+                                        <Switch
+                                            checked={enablePostpress}
+                                            onCheckedChange={setEnablePostpress}
+                                            className="scale-75"
                                         />
                                     </div>
+
+                                    {enablePostpress && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] uppercase text-muted-foreground">Acabados</Label>
+                                                <Input
+                                                    placeholder="Barniz, laminado, etc..."
+                                                    className="h-8 text-xs bg-background"
+                                                    value={customValues.finishing || ""}
+                                                    onChange={(e) => setCustomValues({ ...customValues, finishing: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </>

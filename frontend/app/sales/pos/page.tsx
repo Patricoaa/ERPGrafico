@@ -28,6 +28,7 @@ interface Product {
     name: string
     sale_price: string
     current_stock?: number
+    manufacturable_quantity?: number | null
     product_type?: string
     unit_price?: string
     variants_count?: number
@@ -367,7 +368,10 @@ export default function POSPage() {
                                             key={product.id}
                                             className={cn(
                                                 "cursor-pointer hover:border-primary transition-all active:scale-95 relative flex flex-col overflow-hidden group",
-                                                product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0 && "opacity-50 pointer-events-none grayscale-[0.5]"
+                                                // Disable if STORABLE with no stock
+                                                product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0 && "opacity-50 pointer-events-none grayscale-[0.5]",
+                                                // Disable if MANUFACTURABLE with no manufacturable quantity
+                                                product.product_type === 'MANUFACTURABLE' && (product.manufacturable_quantity === 0 || product.manufacturable_quantity === null) && "opacity-50 pointer-events-none grayscale-[0.5]"
                                             )}
                                             onClick={() => addToCart(product)}
                                         >
@@ -378,10 +382,23 @@ export default function POSPage() {
                                                     <DynamicIcon name={categoryIcon || "Package"} className="h-12 w-12 text-muted-foreground/40 group-hover:scale-110 transition-transform" />
                                                 )}
 
+                                                {/* Stock/Availability Badge */}
                                                 {product.product_type === 'STORABLE' && (
                                                     <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                                         <div className={`h-2 w-2 rounded-full ${(product.current_stock || 0) > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
                                                         {product.current_stock || 0}
+                                                    </div>
+                                                )}
+                                                {product.product_type === 'MANUFACTURABLE' && (
+                                                    <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
+                                                        <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity || 0) > 0 ? 'bg-blue-500' : 'bg-red-500'}`} />
+                                                        {product.manufacturable_quantity !== null ? `${product.manufacturable_quantity} fab.` : 'Sin BOM'}
+                                                    </div>
+                                                )}
+                                                {product.product_type === 'SERVICE' && (
+                                                    <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
+                                                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                                                        Disponible
                                                     </div>
                                                 )}
                                             </div>

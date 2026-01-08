@@ -252,6 +252,52 @@ class Product(models.Model):
     def get_expense_account(self):
         return self.category.expense_account
 
+    def get_manufacturable_quantity(self):
+        """
+        Calculate how many units of this product can be manufactured
+        based on available component stock.
+        Returns None if product is not MANUFACTURABLE or has no active BOM.
+        Returns float for the maximum manufacturable quantity.
+        """
+        if self.product_type != self.Type.MANUFACTURABLE:
+            return None
+        
+        # Get active BOM
+        from production.models import BillOfMaterials
+        active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
+        
+        if not active_bom or not active_bom.lines.exists():
+            return None
+        
+        # Calculate available quantity for each component
+        from django.db.models import Sum
+        min_manufacturable = float('inf')
+        
+        for line in active_bom.lines.all():
+            component = line.component
+            required_qty = float(line.quantity)
+            
+            if required_qty <= 0:
+                continue
+            
+            # Get component's current stock
+            component_stock = component.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
+            component_stock = float(component_stock)
+            
+            # Calculate how many units we can make with this component
+            available_units = component_stock / required_qty
+            
+            # Track the minimum (bottleneck component)
+            min_manufacturable = min(min_manufacturable, available_units)
+        
+        # If no valid components found, return 0
+        if min_manufacturable == float('inf'):
+            return 0.0
+        
+        # Return floor value (can't manufacture partial units)
+        import math
+        return math.floor(min_manufacturable)
+
 class Warehouse(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, unique=True)

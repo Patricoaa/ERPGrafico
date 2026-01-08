@@ -63,6 +63,7 @@ class ProductSerializer(serializers.ModelSerializer):
     current_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
     last_purchase_price = serializers.SerializerMethodField()
+    manufacturable_quantity = serializers.SerializerMethodField()
     
     # Manufacturing fields
     bom_lines = BillOfMaterialsLineSerializer(many=True, required=False)
@@ -98,6 +99,11 @@ class ProductSerializer(serializers.ModelSerializer):
         from purchasing.models import PurchaseLine
         last_line = PurchaseLine.objects.filter(product=obj).order_by('-order__date', '-id').first()
         return float(last_line.unit_cost) if last_line else 0.0
+
+    def get_manufacturable_quantity(self, obj):
+        """Return the calculated manufacturable quantity for MANUFACTURABLE products."""
+        qty = obj.get_manufacturable_quantity()
+        return float(qty) if qty is not None else None
 
     def create(self, validated_data):
         bom_data = validated_data.pop('bom_lines', [])
