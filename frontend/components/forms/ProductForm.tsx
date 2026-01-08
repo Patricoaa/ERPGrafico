@@ -35,6 +35,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { BOMManager } from "@/components/production/BOMManager"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -1118,6 +1119,15 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 </div>
                                             </div>
                                         )}
+                                        {/* END Manufacturing Flags */}
+
+                                        {/* BOM Manager Section */}
+                                        {(form.watch("product_type") === 'MANUFACTURABLE') && initialData?.id && (
+                                            <div className="mt-8">
+                                                <BOMManager product={initialData} />
+                                            </div>
+                                        )}
+
                                     </div>
                                 </TabsContent>
 
