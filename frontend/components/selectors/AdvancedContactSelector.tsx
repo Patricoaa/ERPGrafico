@@ -27,13 +27,15 @@ interface AdvancedContactSelectorProps {
     onChange: (value: string | null) => void
     placeholder?: string
     contactType?: 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'NONE'
+    onSelectContact?: (contact: Contact) => void
 }
 
 export function AdvancedContactSelector({
     value,
     onChange,
     placeholder = "Seleccionar contacto...",
-    contactType
+    contactType,
+    onSelectContact
 }: AdvancedContactSelectorProps) {
     const [open, setOpen] = useState(false)
 
@@ -90,6 +92,9 @@ export function AdvancedContactSelector({
     const handleSelect = (contact: Contact) => {
         setSelectedContact(contact)
         onChange(contact.id.toString())
+        if (onSelectContact) {
+            onSelectContact(contact)
+        }
         setOpen(false)
         setSearchTerm("")
     }

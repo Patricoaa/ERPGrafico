@@ -9,15 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
-    CalendarIcon, User, Paintbrush, FileText, Plus, X
+    CalendarIcon, User, Paintbrush, FileText, Plus, X, Clock
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import {
-    Popover, PopoverContent, PopoverTrigger
-} from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { format } from "date-fns"
+import { format, addDays } from "date-fns"
 import { cn } from "@/lib/utils"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
 interface AdvancedManufacturingDialogProps {
     open: boolean
@@ -30,38 +27,54 @@ export function AdvancedManufacturingDialog({
     open, onOpenChange, product, onConfirm
 }: AdvancedManufacturingDialogProps) {
     const [designNeeded, setDesignNeeded] = useState(false)
-    const [contacts, setContacts] = useState<string[]>([])
-    const [newContact, setNewContact] = useState("")
-    const [deliveryDate, setDeliveryDate] = useState<Date>()
+    const [contacts, setContacts] = useState<any[]>([]) // Changed to support object contacts
+    const [deliveryDateTime, setDeliveryDateTime] = useState("")
     const [description, setDescription] = useState("")
     const [customValues, setCustomValues] = useState<Record<string, any>>({})
 
     useEffect(() => {
-        if (open) {
+        if (open && product) {
             setDesignNeeded(false)
             setContacts([])
-            setDeliveryDate(undefined)
+
+            // Set default delivery date-time
+            const daysOffset = product.mfg_default_delivery_days ?? 3
+            const defaultDate = addDays(new Date(), daysOffset)
+            // Set time to standard end of day 18:00
+            defaultDate.setHours(18, 0, 0, 0)
+
+            // Format for datetime-local input: YYYY-MM-DDTHH:mm
+            try {
+                const year = defaultDate.getFullYear()
+                const month = String(defaultDate.getMonth() + 1).padStart(2, '0')
+                const day = String(defaultDate.getDate()).padStart(2, '0')
+                const hours = String(defaultDate.getHours()).padStart(2, '0')
+                const minutes = String(defaultDate.getMinutes()).padStart(2, '0')
+                setDeliveryDateTime(`${year}-${month}-${day}T${hours}:${minutes}`)
+            } catch (e) {
+                console.error("Error setting default date", e)
+            }
+
             setDescription("")
             setCustomValues({})
         }
-    }, [open])
+    }, [open, product])
 
-    const handleAddContact = () => {
-        if (newContact.trim()) {
-            setContacts([...contacts, newContact.trim()])
-            setNewContact("")
+    const handleAddContact = (contact: any) => {
+        if (contact && !contacts.some(c => c.id === contact.id)) {
+            setContacts([...contacts, contact])
         }
     }
 
-    const handleRemoveContact = (index: number) => {
-        setContacts(contacts.filter((_, i) => i !== index))
+    const handleRemoveContact = (id: number) => {
+        setContacts(contacts.filter(c => c.id !== id))
     }
 
     const handleConfirm = () => {
         onConfirm({
             design_needed: designNeeded,
-            contacts,
-            delivery_date: deliveryDate ? format(deliveryDate, 'yyyy-MM-dd') : null,
+            contacts: contacts.map(c => ({ id: c.id, name: c.name })),
+            delivery_date: deliveryDateTime, // Sending the full date-time string
             description,
             custom_values: customValues
         })
@@ -69,6 +82,9 @@ export function AdvancedManufacturingDialog({
     }
 
     if (!product) return null
+
+    const showDesign = product.mfg_show_design_needed ?? true
+    const showContacts = product.mfg_show_contacts ?? true
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,82 +103,67 @@ export function AdvancedManufacturingDialog({
 
                 <div className="grid gap-6 py-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground">Necesidad de Diseño</Label>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant={designNeeded ? "default" : "outline"}
-                                    className="flex-1"
-                                    onClick={() => setDesignNeeded(true)}
-                                >
-                                    Sí
-                                </Button>
-                                <Button
-                                    variant={!designNeeded ? "default" : "outline"}
-                                    className="flex-1"
-                                    onClick={() => setDesignNeeded(false)}
-                                >
-                                    No
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground">Fecha Estimada Entrega</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
+                        {showDesign && (
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Necesidad de Diseño</Label>
+                                <div className="flex gap-2">
                                     <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !deliveryDate && "text-muted-foreground"
-                                        )}
+                                        variant={designNeeded ? "default" : "outline"}
+                                        className="flex-1"
+                                        onClick={() => setDesignNeeded(true)}
                                     >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {deliveryDate ? format(deliveryDate, "PPP") : <span>Seleccionar fecha</span>}
+                                        Sí
                                     </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={deliveryDate}
-                                        onSelect={setDeliveryDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    </div>
+                                    <Button
+                                        variant={!designNeeded ? "default" : "outline"}
+                                        className="flex-1"
+                                        onClick={() => setDesignNeeded(false)}
+                                    >
+                                        No
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
 
-                    <div className="space-y-3">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground">Contactos Asociados / Referencias</Label>
-                        <div className="flex gap-2">
-                            <div className="relative flex-1">
-                                <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <div className={cn("space-y-2", !showDesign && "col-span-2")}>
+                            <Label className="text-xs font-bold uppercase text-muted-foreground">Fecha y Hora de Entrega</Label>
+                            <div className="relative">
+                                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                                 <Input
-                                    placeholder="Nombre o ID de contacto"
-                                    className="pl-9"
-                                    value={newContact}
-                                    onChange={(e) => setNewContact(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleAddContact()}
+                                    type="datetime-local"
+                                    className="pl-9 h-10"
+                                    value={deliveryDateTime}
+                                    onChange={(e) => setDeliveryDateTime(e.target.value)}
                                 />
                             </div>
-                            <Button variant="secondary" onClick={handleAddContact}>
-                                <Plus className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-lg bg-muted/30 border border-dashed">
-                            {contacts.length === 0 && (
-                                <span className="text-[10px] text-muted-foreground italic flex items-center px-2">Sin contactos asociados</span>
-                            )}
-                            {contacts.map((contact, i) => (
-                                <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
-                                    {contact}
-                                    <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => handleRemoveContact(i)} />
-                                </Badge>
-                            ))}
                         </div>
                     </div>
+
+                    {showContacts && (
+                        <div className="space-y-3">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground">Contactos Asociados / Referencias</Label>
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <AdvancedContactSelector
+                                        onSelectContact={handleAddContact}
+                                        onChange={() => { }}
+                                        placeholder="Buscar contacto del sistema..."
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-lg bg-muted/30 border border-dashed">
+                                {contacts.length === 0 && (
+                                    <span className="text-[10px] text-muted-foreground italic flex items-center px-2">Sin contactos asociados</span>
+                                )}
+                                {contacts.map((contact) => (
+                                    <Badge key={contact.id} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
+                                        {contact.name}
+                                        <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => handleRemoveContact(contact.id)} />
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label className="text-xs font-bold uppercase text-muted-foreground">Instrucciones / Observaciones</Label>

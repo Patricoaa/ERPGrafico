@@ -63,6 +63,9 @@ const productSchema = z.object({
     // Manufacturing fields
     has_bom: z.boolean().default(false),
     requires_advanced_manufacturing: z.boolean().default(false),
+    mfg_show_design_needed: z.boolean().default(true),
+    mfg_show_contacts: z.boolean().default(true),
+    mfg_default_delivery_days: z.preprocess((v) => Number(v) || 3, z.number().min(0)),
     bom_name: z.string().optional().or(z.literal("")),
     bom_lines: z.array(z.object({
         component: z.string().min(1, "Componente requerido"),
@@ -128,6 +131,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             image: undefined,
             has_bom: false,
             requires_advanced_manufacturing: false,
+            mfg_show_design_needed: true,
+            mfg_show_contacts: true,
+            mfg_default_delivery_days: 3,
             bom_name: "",
             bom_lines: [],
             product_custom_fields: [],
@@ -220,6 +226,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                         : initialData.custom_fields_schema || "",
                     has_bom: initialData.has_bom ?? false,
                     requires_advanced_manufacturing: initialData.requires_advanced_manufacturing ?? false,
+                    mfg_show_design_needed: initialData.mfg_show_design_needed ?? true,
+                    mfg_show_contacts: initialData.mfg_show_contacts ?? true,
+                    mfg_default_delivery_days: initialData.mfg_default_delivery_days ?? 3,
                     bom_name: initialData.boms?.find((b: any) => b.active)?.name || "",
                     bom_lines: initialData.boms?.find((b: any) => b.active)?.lines.map((l: any) => ({
                         component: l.component?.toString() || "",
@@ -251,6 +260,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     image: undefined,
                     has_bom: false,
                     requires_advanced_manufacturing: false,
+                    mfg_show_design_needed: true,
+                    mfg_show_contacts: true,
+                    mfg_default_delivery_days: 3,
                     bom_name: "",
                     bom_lines: [],
                     product_custom_fields: [],
@@ -284,6 +296,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             // Manufacturing fields
             formData.append('has_bom', data.has_bom ? 'true' : 'false')
             formData.append('requires_advanced_manufacturing', data.requires_advanced_manufacturing ? 'true' : 'false')
+            formData.append('mfg_show_design_needed', data.mfg_show_design_needed ? 'true' : 'false')
+            formData.append('mfg_show_contacts', data.mfg_show_contacts ? 'true' : 'false')
+            formData.append('mfg_default_delivery_days', data.mfg_default_delivery_days.toString())
 
             if (data.bom_name) formData.append('bom_name', data.bom_name)
             if (data.bom_lines && data.bom_lines.length > 0) {
@@ -643,68 +658,118 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             </div>
 
                                             {form.watch("requires_advanced_manufacturing") && (
-                                                <div className="space-y-4 p-4 border rounded-xl bg-muted/20">
-                                                    <div className="flex items-center justify-between">
-                                                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campos Personalizados (Plantillas)</h4>
-                                                        <div className="flex gap-2">
-                                                            <Select onValueChange={(val) => {
-                                                                const templateId = parseInt(val);
-                                                                if (!pcfFields.some(pcf => pcf.template === templateId)) {
-                                                                    appendPcf({ template: templateId, order: pcfFields.length });
-                                                                }
-                                                            }}>
-                                                                <SelectTrigger className="w-full h-8 text-[10px]">
-                                                                    <SelectValue placeholder="Añadir Campo..." />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {fieldTemplates.map(t => (
-                                                                        <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-8 w-8 shrink-0"
-                                                                onClick={() => setShowTemplateForm(true)}
-                                                                title="Nueva Plantilla"
-                                                            >
-                                                                <Plus className="h-3 w-3" />
-                                                            </Button>
-                                                        </div>
+                                                <div className="space-y-6 p-4 border rounded-xl bg-muted/20">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <FormField<ProductFormValues>
+                                                            control={form.control}
+                                                            name="mfg_show_design_needed"
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-background">
+                                                                    <div className="space-y-0.5">
+                                                                        <FormLabel className="text-xs">Diseño Requerido</FormLabel>
+                                                                        <FormDescription className="text-[9px]">Solicitar en POS</FormDescription>
+                                                                    </div>
+                                                                    <FormControl>
+                                                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField<ProductFormValues>
+                                                            control={form.control}
+                                                            name="mfg_show_contacts"
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-background">
+                                                                    <div className="space-y-0.5">
+                                                                        <FormLabel className="text-xs">Contactos</FormLabel>
+                                                                        <FormDescription className="text-[9px]">Solicitar en POS</FormDescription>
+                                                                    </div>
+                                                                    <FormControl>
+                                                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
                                                     </div>
 
-                                                    <div className="space-y-2">
-                                                        {pcfFields.length > 0 ? (
-                                                            pcfFields.map((field, index) => {
-                                                                const template = fieldTemplates.find(t => t.id === Number(field.template));
-                                                                return (
-                                                                    <div key={field.id} className="flex items-center justify-between p-2 rounded-lg bg-background border text-[11px] group">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center font-bold text-[10px]">
-                                                                                {index + 1}
-                                                                            </div>
-                                                                            <span>{template?.name || "Cargando..."}</span>
-                                                                            <Badge variant="outline" className="text-[9px] h-4">
-                                                                                {template?.field_type === 'TEXT' ? 'Texto' : 'Selección'}
-                                                                            </Badge>
-                                                                        </div>
-                                                                        <Button
-                                                                            type="button"
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                            onClick={() => removePcf(index)}
-                                                                        >
-                                                                            <X className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </div>
-                                                                );
-                                                            })
-                                                        ) : (
-                                                            <p className="text-[10px] text-muted-foreground italic text-center py-4">No hay campos personalizados asociados.</p>
+                                                    <FormField<ProductFormValues>
+                                                        control={form.control}
+                                                        name="mfg_default_delivery_days"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="text-xs">Días de Entrega por Defecto</FormLabel>
+                                                                <FormControl>
+                                                                    <Input type="number" {...field} className="h-8 text-xs" />
+                                                                </FormControl>
+                                                                <FormDescription className="text-[9px]">Tiempo estimado de producción estándar.</FormDescription>
+                                                                <FormMessage />
+                                                            </FormItem>
                                                         )}
+                                                    />
+
+                                                    <div className="space-y-4 pt-2 border-t mt-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campos Personalizados (Plantillas)</h4>
+                                                            <div className="flex gap-2">
+                                                                <Select onValueChange={(val) => {
+                                                                    const templateId = parseInt(val);
+                                                                    if (!pcfFields.some(pcf => pcf.template === templateId)) {
+                                                                        appendPcf({ template: templateId, order: pcfFields.length });
+                                                                    }
+                                                                }}>
+                                                                    <SelectTrigger className="w-full h-8 text-[10px]">
+                                                                        <SelectValue placeholder="Añadir Campo..." />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {fieldTemplates.map(t => (
+                                                                            <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 shrink-0"
+                                                                    onClick={() => setShowTemplateForm(true)}
+                                                                    title="Nueva Plantilla"
+                                                                >
+                                                                    <Plus className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-2">
+                                                            {pcfFields.length > 0 ? (
+                                                                pcfFields.map((field, index) => {
+                                                                    const template = fieldTemplates.find(t => t.id === Number(field.template));
+                                                                    return (
+                                                                        <div key={field.id} className="flex items-center justify-between p-2 rounded-lg bg-background border text-[11px] group">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center font-bold text-[10px]">
+                                                                                    {index + 1}
+                                                                                </div>
+                                                                                <span>{template?.name || "Cargando..."}</span>
+                                                                                <Badge variant="outline" className="text-[9px] h-4">
+                                                                                    {template?.field_type === 'TEXT' ? 'Texto' : 'Selección'}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                onClick={() => removePcf(index)}
+                                                                            >
+                                                                                <X className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <p className="text-[10px] text-muted-foreground italic text-center py-4">No hay campos personalizados asociados.</p>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
@@ -1240,7 +1305,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                         {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...</> : (initialData ? 'Guardar Cambios' : 'Crear Producto')}
                     </Button>
                 </DialogFooter>
-            </DialogContent>
+            </DialogContent >
 
             <PricingRuleForm
                 open={pricingRuleDialogOpen}
@@ -1269,6 +1334,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     setFieldTemplates(prev => [...prev, newTemplate])
                 }}
             />
-        </Dialog>
+        </Dialog >
     )
 }

@@ -73,6 +73,18 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
 
+    def to_internal_value(self, data):
+        # Handle JSON strings for list fields when using multipart/form-data
+        import json
+        ret = data.copy()
+        for field in ['bom_lines', 'product_custom_fields', 'allowed_sale_uoms']:
+            if field in ret and isinstance(ret[field], str):
+                try:
+                    ret[field] = json.loads(ret[field])
+                except (ValueError, TypeError):
+                    pass
+        return super().to_internal_value(ret)
+
     def get_current_stock(self, obj):
         # Calculate stock based on sum of moves for this specific product
         from django.db.models import Sum

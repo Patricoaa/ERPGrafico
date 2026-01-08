@@ -148,7 +148,7 @@ export default function POSPage() {
     }
 
     const addToCart = (product: Product, mfgData?: any) => {
-        if (product.requires_advanced_manufacturing && !mfgData) {
+        if (product.product_type === 'MANUFACTURABLE' && !mfgData) {
             setPendingProduct(product)
             setAdvMfgDialogOpen(true)
             return
