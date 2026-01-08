@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package } from "lucide-react"
+import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Paintbrush, Info } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -148,7 +148,7 @@ export default function POSPage() {
     }
 
     const addToCart = (product: Product, mfgData?: any) => {
-        if (product.product_type === 'MANUFACTURABLE' && !mfgData) {
+        if (product.requires_advanced_manufacturing && !mfgData) {
             setPendingProduct(product)
             setAdvMfgDialogOpen(true)
             return
@@ -424,7 +424,27 @@ export default function POSPage() {
                                             return (
                                                 <TableRow key={item.id}>
                                                     <TableCell className="max-w-[120px]">
-                                                        <span className="truncate font-medium">{item.name}</span>
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className="truncate font-medium">{item.name}</span>
+                                                            {item.manufacturing_data && (
+                                                                <div className="flex items-center gap-1 text-[9px] text-primary font-bold uppercase">
+                                                                    <Info className="h-2 w-2" /> Mfg Ok
+                                                                </div>
+                                                            )}
+                                                            {item.requires_advanced_manufacturing && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className={cn("h-6 w-6 mt-1", item.manufacturing_data ? "text-primary" : "text-muted-foreground")}
+                                                                    onClick={() => {
+                                                                        setPendingProduct(item as Product)
+                                                                        setAdvMfgDialogOpen(true)
+                                                                    }}
+                                                                >
+                                                                    <Paintbrush className="h-3 w-3" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center justify-center gap-1">
@@ -517,6 +537,18 @@ export default function POSPage() {
                 pendingAmount={total_gross_sum}
                 showDteSelector={true}
                 onConfirm={handleCheckoutConfirm}
+            />
+
+            <AdvancedManufacturingDialog
+                open={advMfgDialogOpen}
+                onOpenChange={setAdvMfgDialogOpen}
+                product={pendingProduct}
+                onConfirm={(data) => {
+                    if (pendingProduct) {
+                        addToCart(pendingProduct, data)
+                        setPendingProduct(null)
+                    }
+                }}
             />
 
         </div>

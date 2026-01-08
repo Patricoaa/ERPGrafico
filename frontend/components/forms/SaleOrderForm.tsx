@@ -5,7 +5,8 @@ import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Trash2, Box, Info } from "lucide-react"
+import { Plus, Trash2, Box, Info, Paintbrush } from "lucide-react"
+import { cn } from "@/lib/utils"
 import {
     Dialog,
     DialogContent,
@@ -343,48 +344,88 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         name={`lines.${index}.product`}
                                                         render={({ field }) => (
                                                             <div className="space-y-1">
-                                                                <ProductSelector
-                                                                    value={field.value}
-                                                                    restrictStock={true}
-                                                                    onChange={(value: string | null) => {
-                                                                        const selectedProduct = products.find(p => p.id.toString() === value)
+                                                                <div className="flex gap-2 items-start">
+                                                                    <div className="flex-1">
+                                                                        <ProductSelector
+                                                                            value={field.value}
+                                                                            restrictStock={true}
+                                                                            showSearch={false}
+                                                                            onChange={(value: string | null) => {
+                                                                                const selectedProduct = products.find(p => p.id.toString() === value)
 
-                                                                        if (selectedProduct?.product_type === 'CONSUMABLE') {
-                                                                            toast.error("Producto no vendible", {
-                                                                                description: "Los productos consumibles son para uso interno y no pueden venderse directamente."
-                                                                            })
-                                                                            return
-                                                                        }
+                                                                                if (selectedProduct?.product_type === 'CONSUMABLE') {
+                                                                                    toast.error("Producto no vendible", {
+                                                                                        description: "Los productos consumibles son para uso interno y no pueden venderse directamente."
+                                                                                    })
+                                                                                    return
+                                                                                }
 
-                                                                        field.onChange(value)
-                                                                        // Auto-populate price, description and UoM from product
-                                                                        if (selectedProduct) {
-                                                                            const qty = form.getValues(`lines.${index}.quantity`) || 1
-                                                                            const price = getEffectivePrice(selectedProduct, qty)
-                                                                            form.setValue(`lines.${index}.unit_price`, price)
-                                                                            form.setValue(`lines.${index}.description`, selectedProduct.name)
-                                                                            form.setValue(`lines.${index}.uom`, selectedProduct.uom?.toString() || "")
+                                                                                field.onChange(value)
+                                                                                // Auto-populate price, description and UoM from product
+                                                                                if (selectedProduct) {
+                                                                                    const qty = form.getValues(`lines.${index}.quantity`) || 1
+                                                                                    const price = getEffectivePrice(selectedProduct, qty)
+                                                                                    form.setValue(`lines.${index}.unit_price`, price)
+                                                                                    form.setValue(`lines.${index}.description`, selectedProduct.name)
+                                                                                    form.setValue(`lines.${index}.uom`, selectedProduct.uom?.toString() || "")
 
-                                                                            // Reset custom specs if not custom manufacturable
-                                                                            if (selectedProduct.product_type !== 'MANUFACTURABLE_CUSTOM') {
-                                                                                form.setValue(`lines.${index}.custom_specs`, {})
-                                                                            }
+                                                                                    // Reset custom specs if not custom manufacturable
+                                                                                    if (selectedProduct.product_type !== 'MANUFACTURABLE_CUSTOM') {
+                                                                                        form.setValue(`lines.${index}.custom_specs`, {})
+                                                                                    }
 
-                                                                            // Trigger Advanced Manufacturing Dialog if required
-                                                                            if (selectedProduct.requires_advanced_manufacturing) {
-                                                                                setPendingProduct(selectedProduct)
-                                                                                setPendingItemIndex(index)
-                                                                                setAdvMfgDialogOpen(true)
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                />
+                                                                                    // Trigger Advanced Manufacturing Dialog if required
+                                                                                    if (selectedProduct.requires_advanced_manufacturing) {
+                                                                                        setPendingProduct(selectedProduct)
+                                                                                        setPendingItemIndex(index)
+                                                                                        setAdvMfgDialogOpen(true)
+                                                                                    }
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    {(() => {
+                                                                        const prod = products.find(p => p.id.toString() === field.value)
+                                                                        if (!prod?.requires_advanced_manufacturing) return null
+
+                                                                        const hasData = !!form.watch(`lines.${index}.manufacturing_data`)
+
+                                                                        return (
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant={hasData ? "default" : "outline"}
+                                                                                size="icon"
+                                                                                className={cn("h-9 w-9 shrink-0", hasData && "bg-primary text-primary-foreground")}
+                                                                                onClick={() => {
+                                                                                    setPendingProduct(prod)
+                                                                                    setPendingItemIndex(index)
+                                                                                    setAdvMfgDialogOpen(true)
+                                                                                }}
+                                                                                title="Configurar fabricación"
+                                                                            >
+                                                                                <Paintbrush className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )
+                                                                    })()}
+                                                                </div>
                                                                 {(() => {
                                                                     const prod = products.find(p => p.id.toString() === field.value)
                                                                     if (!prod) return null
 
+                                                                    const mfgData = form.watch(`lines.${index}.manufacturing_data`)
+
                                                                     return (
                                                                         <div className="space-y-2">
+                                                                            {mfgData && (
+                                                                                <div className="px-2 py-1 rounded bg-primary/10 border border-primary/20 text-[10px] font-medium text-primary flex items-center gap-1">
+                                                                                    <Info className="h-3 w-3" /> Fabricación Configurada
+                                                                                    {mfgData.delivery_date && (
+                                                                                        <span className="opacity-70 ml-1">
+                                                                                            • Entrega: {new Date(mfgData.delivery_date).toLocaleDateString()}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
                                                                             {prod.product_type === 'MANUFACTURABLE_CUSTOM' && prod.custom_fields_schema && (
                                                                                 <FormField<SaleOrderFormValues>
                                                                                     control={form.control}

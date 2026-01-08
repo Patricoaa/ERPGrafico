@@ -30,9 +30,19 @@ interface ProductSelectorProps {
     allowedTypes?: string[]
     disabled?: boolean
     restrictStock?: boolean
+    showSearch?: boolean
 }
 
-export function ProductSelector({ value, onChange, placeholder = "Seleccionar producto...", productType, allowedTypes, disabled = false, restrictStock = false }: ProductSelectorProps) {
+export function ProductSelector({
+    value,
+    onChange,
+    placeholder = "Seleccionar producto...",
+    productType,
+    allowedTypes,
+    disabled = false,
+    restrictStock = false,
+    showSearch = true
+}: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
@@ -181,74 +191,76 @@ export function ProductSelector({ value, onChange, placeholder = "Seleccionar pr
                 </PopoverContent>
             </Popover>
 
-            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="icon" title="Búsqueda Avanzada" className="h-9 w-9 shrink-0">
-                        <Search className="h-4 w-4" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle>Búsqueda Avanzada de Productos</DialogTitle>
-                        <DialogDescription>
-                            Filtre por código o nombre para encontrar el producto exacto.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4 flex-1 overflow-hidden flex flex-col">
-                        <div className="flex gap-2">
-                            <Input
-                                autoFocus
-                                placeholder="Filtrar por código o nombre..."
-                                value={searchTerm}
-                                onChange={(e) => searchProducts(e.target.value)}
-                                className="flex-1"
-                            />
-                        </div>
-                        <div className="border rounded-md flex-1 overflow-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-1/4">Código</TableHead>
-                                        <TableHead>Nombre</TableHead>
-                                        <TableHead>Categoría</TableHead>
-                                        <TableHead className="text-right">Precio</TableHead>
-                                        <TableHead className="text-right">Stock</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredProducts.map((product) => (
-                                        <TableRow
-                                            key={product.id}
-                                            className={cn(
-                                                "cursor-pointer hover:bg-accent",
-                                                isStockRestricted(product) && "opacity-50 pointer-events-none grayscale-[0.5]"
-                                            )}
-                                            onClick={() => handleSelect(product)}
-                                        >
-                                            <TableCell className="font-mono text-xs">
-                                                {product.code}
-                                            </TableCell>
-                                            <TableCell>
-                                                <span className="font-medium">{product.name}</span>
-                                            </TableCell>
-                                            <TableCell className="text-sm">{product.category_name}</TableCell>
-                                            <TableCell className="text-right font-medium">${Number(product.sale_price).toLocaleString()}</TableCell>
-                                            <TableCell className="text-right">{(product.current_stock || 0)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {filteredProducts.length === 0 && (
+            {showSearch && (
+                <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="icon" title="Búsqueda Avanzada" className="h-9 w-9 shrink-0">
+                            <Search className="h-4 w-4" />
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle>Búsqueda Avanzada de Productos</DialogTitle>
+                            <DialogDescription>
+                                Filtre por código o nombre para encontrar el producto exacto.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4 flex-1 overflow-hidden flex flex-col">
+                            <div className="flex gap-2">
+                                <Input
+                                    autoFocus
+                                    placeholder="Filtrar por código o nombre..."
+                                    value={searchTerm}
+                                    onChange={(e) => searchProducts(e.target.value)}
+                                    className="flex-1"
+                                />
+                            </div>
+                            <div className="border rounded-md flex-1 overflow-auto">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                                                No se encontraron resultados.
-                                            </TableCell>
+                                            <TableHead className="w-1/4">Código</TableHead>
+                                            <TableHead>Nombre</TableHead>
+                                            <TableHead>Categoría</TableHead>
+                                            <TableHead className="text-right">Precio</TableHead>
+                                            <TableHead className="text-right">Stock</TableHead>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredProducts.map((product) => (
+                                            <TableRow
+                                                key={product.id}
+                                                className={cn(
+                                                    "cursor-pointer hover:bg-accent",
+                                                    isStockRestricted(product) && "opacity-50 pointer-events-none grayscale-[0.5]"
+                                                )}
+                                                onClick={() => handleSelect(product)}
+                                            >
+                                                <TableCell className="font-mono text-xs">
+                                                    {product.code}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="font-medium">{product.name}</span>
+                                                </TableCell>
+                                                <TableCell className="text-sm">{product.category_name}</TableCell>
+                                                <TableCell className="text-right font-medium">${Number(product.sale_price).toLocaleString()}</TableCell>
+                                                <TableCell className="text-right">{(product.current_stock || 0)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {filteredProducts.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                                                    No se encontraron resultados.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     )
 }
