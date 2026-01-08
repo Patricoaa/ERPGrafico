@@ -212,21 +212,25 @@ class Product(models.Model):
             
         if not self.internal_code:
             prefix = self.category.prefix or "PROD"
-            # Simple sequence: getting the last ID + 1 for this prefix
-            last_product = Product.objects.filter(internal_code__startswith=prefix).order_by('id').last()
-            if last_product and last_product.internal_code:
-                try:
-                    parts = last_product.internal_code.split('-')
-                    if len(parts) > 1:
-                        last_num = int(parts[-1])
-                        new_num = str(last_num + 1).zfill(4)
-                    else:
-                        # Case where internal_code exists but doesn't have a dash or number
-                        new_num = "0001"
-                except (ValueError, IndexError):
-                    new_num = "0001"
-            else:
-                new_num = "0001"
+            # More robust sequence generation: 
+            # 1. Filter products whose internal_code follows the pattern PREFIX-####
+            import re
+            pattern = rf"^{re.escape(prefix)}-\d+$"
+            
+            # Find all products with this category and prefix-like codes
+            # We fetch all candidates to ensure we don't collide with non-standard codes
+            candidates = Product.objects.filter(internal_code__startswith=f"{prefix}-")
+            max_num = 0
+            
+            for p in candidates:
+                if p.internal_code and re.match(pattern, p.internal_code):
+                    try:
+                        num_part = p.internal_code.split('-')[-1]
+                        max_num = max(max_num, int(num_part))
+                    except (ValueError, IndexError):
+                        continue
+            
+            new_num = str(max_num + 1).zfill(4)
             self.internal_code = f"{prefix}-{new_num}"
             
         super().save(*args, **kwargs)

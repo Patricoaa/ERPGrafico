@@ -90,21 +90,46 @@ export default function POSPage() {
 
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true)
+
+            // Fetch Products
             try {
-                const [prodRes, catRes, uomRes, rulesRes] = await Promise.all([
-                    api.get('/inventory/products/'),
-                    api.get('/inventory/categories/'),
-                    api.get('/inventory/uoms/'),
-                    api.get('/inventory/pricing-rules/?active=true'),
-                ])
-                setProducts(prodRes.data.results || prodRes.data)
-                setCategories(catRes.data.results || catRes.data)
-                setUoMs(uomRes.data.results || uomRes.data)
-                setPricingRules(rulesRes.data.results || rulesRes.data)
+                const res = await api.get('/inventory/products/')
+                setProducts(res.data.results || res.data)
             } catch (error) {
-                console.error("Failed to fetch POS data", error)
-                toast.error("Error al cargar datos del POS")
+                console.error("Failed to fetch products", error)
+                toast.error("Error al cargar productos")
+                setProducts([])
             }
+
+            // Fetch Categories
+            try {
+                const res = await api.get('/inventory/categories/')
+                setCategories(res.data.results || res.data)
+            } catch (error) {
+                console.error("Failed to fetch categories", error)
+                setCategories([])
+            }
+
+            // Fetch UoMs
+            try {
+                const res = await api.get('/inventory/uoms/')
+                setUoMs(res.data.results || res.data)
+            } catch (error) {
+                console.error("Failed to fetch UoMs", error)
+                setUoMs([])
+            }
+
+            // Fetch Pricing Rules
+            try {
+                const res = await api.get('/inventory/pricing-rules/?active=true')
+                setPricingRules(res.data.results || res.data)
+            } catch (error) {
+                console.error("Failed to fetch pricing rules", error)
+                setPricingRules([])
+            }
+
+            setLoading(false)
         }
         fetchData()
     }, [])

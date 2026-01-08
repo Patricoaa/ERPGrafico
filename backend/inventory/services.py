@@ -119,7 +119,11 @@ class PricingService:
             date = timezone.now().date()
         
         if uom is None:
-            uom = product.uom
+            uom = product.uom if hasattr(product, 'uom') else None
+            
+        if uom is None:
+            # If still no UoM, we can't do advanced pricing rules that depend on it
+            return product.sale_price
             
         base_price = product.sale_price
         
