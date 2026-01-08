@@ -122,7 +122,10 @@ export function ProductSelector({
                     >
                         <div className="flex items-center gap-2 truncate">
                             {selectedProduct ? (
-                                <span className="font-medium truncate">{selectedProduct.code} - {selectedProduct.name}</span>
+                                <span className="truncate">
+                                    <span className="font-mono text-muted-foreground mr-2">{selectedProduct.internal_code || selectedProduct.code}</span>
+                                    {selectedProduct.name}
+                                </span>
                             ) : (
                                 <span className="text-muted-foreground truncate">{placeholder}</span>
                             )}
@@ -237,9 +240,9 @@ export function ProductSelector({
                                                 onClick={() => handleSelect(product)}
                                             >
                                                 <TableCell className="font-mono text-xs">
-                                                    {product.code}
-                                                </TableCell>
-                                                <TableCell>
+                                                    <span className="font-mono text-xs text-muted-foreground mr-2">
+                                                        {product.internal_code || product.code}
+                                                    </span>
                                                     <span className="font-medium">{product.name}</span>
                                                 </TableCell>
                                                 <TableCell className="text-sm">{product.category_name}</TableCell>

@@ -25,6 +25,7 @@ import {
 interface Product {
     id: number
     code: string
+    internal_code?: string
     name: string
     sale_price: string
     current_stock?: number
@@ -411,7 +412,7 @@ export default function POSPage() {
                                                     ${Math.round(Number(product.sale_price) * 1.19).toLocaleString()}
                                                     <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
                                                 </div>
-                                                <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider">{product.code}</div>
+                                                <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{product.internal_code || product.code}</div>
                                             </CardContent>
                                         </Card>
                                     )
