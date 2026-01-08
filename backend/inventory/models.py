@@ -204,6 +204,10 @@ class Product(models.Model):
         return f"[{self.code}] {self.name}"
 
     def save(self, *args, **kwargs):
+        # Handle empty code strings as NULL to avoid uniqueness collision
+        if self.code == "" or (isinstance(self.code, str) and not self.code.strip()):
+            self.code = None
+
         # Automatically set track_inventory based on product_type
         if self.product_type == self.Type.STORABLE:
             self.track_inventory = True

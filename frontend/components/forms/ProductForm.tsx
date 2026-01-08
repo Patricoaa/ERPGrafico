@@ -310,7 +310,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         setLoading(true)
         try {
             const formData = new FormData()
-            formData.append('code', data.code || '')
+            if (data.code && data.code.trim()) {
+                formData.append('code', data.code.trim())
+            }
             formData.append('name', data.name)
             formData.append('category', data.category)
             formData.append('product_type', data.product_type)
@@ -733,150 +735,149 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 </div>
                                             </div>
                                             {form.watch("has_bom") && (
-                                                <FormField
-                                                    control={form.control}
-                                                    name="bom_name"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel className="text-xs">Nombre de la Lista</FormLabel>
-                                                            <FormControl>
-                                                                <Input placeholder="Ej: Receta Estándar" {...field} className="h-9" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
+                                                <div className="space-y-6 mt-4 pt-4 border-t">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="bom_name"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="text-xs">Nombre de la Lista</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Ej: Receta Estándar" {...field} className="h-9" />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <div>
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <h4 className="text-sm font-bold">Componentes</h4>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-8 text-[10px] gap-1"
+                                                                onClick={() => appendBom({ component: "", quantity: 1, unit: "UN", notes: "" })}
+                                                            >
+                                                                <Plus className="h-3 w-3" /> Añadir Componente
+                                                            </Button>
+                                                        </div>
+                                                        <div className="rounded-md border bg-background overflow-hidden">
+                                                            <Table>
+                                                                <TableHeader className="bg-muted/30">
+                                                                    <TableRow className="h-8">
+                                                                        <TableHead className="text-[10px] h-8">Componente</TableHead>
+                                                                        <TableHead className="text-[10px] h-8 w-[80px]">Cant.</TableHead>
+                                                                        <TableHead className="text-[10px] h-8 w-[90px]">UdM</TableHead>
+                                                                        <TableHead className="text-[10px] h-8">Notas</TableHead>
+                                                                        <TableHead className="text-[10px] h-8 w-[40px]"></TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {bomFields.length > 0 ? (
+                                                                        bomFields.map((field, index) => (
+                                                                            <TableRow key={field.id} className="h-10 hover:bg-muted/10">
+                                                                                <TableCell className="p-1">
+                                                                                    <FormField
+                                                                                        control={form.control}
+                                                                                        name={`bom_lines.${index}.component`}
+                                                                                        render={({ field: selectField }) => (
+                                                                                            <ProductSelector
+                                                                                                value={selectField.value}
+                                                                                                onChange={(val) => {
+                                                                                                    selectField.onChange(val);
+                                                                                                    const selectedProd = products.find((p: any) => p.id.toString() === val);
+                                                                                                    if (selectedProd) {
+                                                                                                        form.setValue(`bom_lines.${index}.unit`, (selectedProd.uom?.name || selectedProd.uom_name || "UN"));
+                                                                                                        if (!form.getValues(`bom_lines.${index}.quantity`)) {
+                                                                                                            form.setValue(`bom_lines.${index}.quantity`, 1);
+                                                                                                        }
+                                                                                                    }
+                                                                                                }}
+                                                                                                placeholder="Buscar..."
+                                                                                            />
+                                                                                        )}
+                                                                                    />
+                                                                                </TableCell>
+                                                                                <TableCell className="p-1">
+                                                                                    <FormField
+                                                                                        control={form.control}
+                                                                                        name={`bom_lines.${index}.quantity`}
+                                                                                        render={({ field: qField }) => (
+                                                                                            <Input
+                                                                                                type="number"
+                                                                                                step="0.0001"
+                                                                                                {...qField}
+                                                                                                className="h-7 text-[10px] font-mono px-2"
+                                                                                                onChange={(e) => qField.onChange(parseFloat(e.target.value) || 0)}
+                                                                                            />
+                                                                                        )}
+                                                                                    />
+                                                                                </TableCell>
+                                                                                <TableCell className="p-1">
+                                                                                    <FormField
+                                                                                        control={form.control}
+                                                                                        name={`bom_lines.${index}.unit`}
+                                                                                        render={({ field: uField }) => (
+                                                                                            <Select onValueChange={uField.onChange} value={uField.value}>
+                                                                                                <FormControl>
+                                                                                                    <SelectTrigger className="h-7 text-[10px] px-2 min-w-[70px]">
+                                                                                                        <SelectValue />
+                                                                                                    </SelectTrigger>
+                                                                                                </FormControl>
+                                                                                                <SelectContent>
+                                                                                                    <SelectItem value="UN">UN</SelectItem>
+                                                                                                    <SelectItem value="KG">KG</SelectItem>
+                                                                                                    <SelectItem value="MT">MT</SelectItem>
+                                                                                                    <SelectItem value="LT">LT</SelectItem>
+                                                                                                    <SelectItem value="PL">PL</SelectItem>
+                                                                                                </SelectContent>
+                                                                                            </Select>
+                                                                                        )}
+                                                                                    />
+                                                                                </TableCell>
+                                                                                <TableCell className="p-1">
+                                                                                    <FormField
+                                                                                        control={form.control}
+                                                                                        name={`bom_lines.${index}.notes`}
+                                                                                        render={({ field: nField }) => (
+                                                                                            <Input
+                                                                                                {...nField}
+                                                                                                className="h-7 text-[10px] px-2"
+                                                                                                placeholder="..."
+                                                                                            />
+                                                                                        )}
+                                                                                    />
+                                                                                </TableCell>
+                                                                                <TableCell className="p-1 text-center">
+                                                                                    <Button
+                                                                                        type="button"
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-6 w-6 text-destructive"
+                                                                                        onClick={() => removeBom(index)}
+                                                                                    >
+                                                                                        <Trash2 className="h-3 w-3" />
+                                                                                    </Button>
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        ))
+                                                                    ) : (
+                                                                        <TableRow>
+                                                                            <TableCell colSpan={5} className="text-center py-4 text-[10px] text-muted-foreground italic">
+                                                                                No se han definido componentes.
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    )}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* BOM Table - Full Width if enabled */}
-                                    {form.watch("has_bom") && (
-                                        <div className="p-6 rounded-2xl border bg-card">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h4 className="text-sm font-bold">Componentes</h4>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-8 text-[10px] gap-1"
-                                                    onClick={() => appendBom({ component: "", quantity: 1, unit: "UN", notes: "" })}
-                                                >
-                                                    <Plus className="h-3 w-3" /> Añadir Componente
-                                                </Button>
-                                            </div>
-                                            <div className="rounded-md border bg-background overflow-hidden">
-                                                <Table>
-                                                    <TableHeader className="bg-muted/30">
-                                                        <TableRow className="h-8">
-                                                            <TableHead className="text-[10px] h-8">Componente</TableHead>
-                                                            <TableHead className="text-[10px] h-8 w-[80px]">Cant.</TableHead>
-                                                            <TableHead className="text-[10px] h-8 w-[90px]">UdM</TableHead>
-                                                            <TableHead className="text-[10px] h-8">Notas</TableHead>
-                                                            <TableHead className="text-[10px] h-8 w-[40px]"></TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {bomFields.length > 0 ? (
-                                                            bomFields.map((field, index) => (
-                                                                <TableRow key={field.id} className="h-10 hover:bg-muted/10">
-                                                                    <TableCell className="p-1">
-                                                                        <FormField
-                                                                            control={form.control}
-                                                                            name={`bom_lines.${index}.component`}
-                                                                            render={({ field: selectField }) => (
-                                                                                <ProductSelector
-                                                                                    value={selectField.value}
-                                                                                    onChange={(val) => {
-                                                                                        selectField.onChange(val);
-                                                                                        const selectedProd = products.find((p: any) => p.id.toString() === val);
-                                                                                        if (selectedProd) {
-                                                                                            form.setValue(`bom_lines.${index}.unit`, (selectedProd.uom?.name || selectedProd.uom_name || "UN"));
-                                                                                            if (!form.getValues(`bom_lines.${index}.quantity`)) {
-                                                                                                form.setValue(`bom_lines.${index}.quantity`, 1);
-                                                                                            }
-                                                                                        }
-                                                                                    }}
-                                                                                    placeholder="Buscar..."
-                                                                                />
-                                                                            )}
-                                                                        />
-                                                                    </TableCell>
-                                                                    <TableCell className="p-1">
-                                                                        <FormField
-                                                                            control={form.control}
-                                                                            name={`bom_lines.${index}.quantity`}
-                                                                            render={({ field: qField }) => (
-                                                                                <Input
-                                                                                    type="number"
-                                                                                    step="0.0001"
-                                                                                    {...qField}
-                                                                                    className="h-7 text-[10px] font-mono px-2"
-                                                                                    onChange={(e) => qField.onChange(parseFloat(e.target.value) || 0)}
-                                                                                />
-                                                                            )}
-                                                                        />
-                                                                    </TableCell>
-                                                                    <TableCell className="p-1">
-                                                                        <FormField
-                                                                            control={form.control}
-                                                                            name={`bom_lines.${index}.unit`}
-                                                                            render={({ field: uField }) => (
-                                                                                <Select onValueChange={uField.onChange} value={uField.value}>
-                                                                                    <FormControl>
-                                                                                        <SelectTrigger className="h-7 text-[10px] px-2 min-w-[70px]">
-                                                                                            <SelectValue />
-                                                                                        </SelectTrigger>
-                                                                                    </FormControl>
-                                                                                    <SelectContent>
-                                                                                        <SelectItem value="UN">UN</SelectItem>
-                                                                                        <SelectItem value="KG">KG</SelectItem>
-                                                                                        <SelectItem value="MT">MT</SelectItem>
-                                                                                        <SelectItem value="LT">LT</SelectItem>
-                                                                                        <SelectItem value="PL">PL</SelectItem>
-                                                                                    </SelectContent>
-                                                                                </Select>
-                                                                            )}
-                                                                        />
-                                                                    </TableCell>
-                                                                    <TableCell className="p-1">
-                                                                        <FormField
-                                                                            control={form.control}
-                                                                            name={`bom_lines.${index}.notes`}
-                                                                            render={({ field: nField }) => (
-                                                                                <Input
-                                                                                    {...nField}
-                                                                                    className="h-7 text-[10px] px-2"
-                                                                                    placeholder="..."
-                                                                                />
-                                                                            )}
-                                                                        />
-                                                                    </TableCell>
-                                                                    <TableCell className="p-1 text-center">
-                                                                        <Button
-                                                                            type="button"
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 text-destructive"
-                                                                            onClick={() => removeBom(index)}
-                                                                        >
-                                                                            <Trash2 className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))
-                                                        ) : (
-                                                            <TableRow>
-                                                                <TableCell colSpan={5} className="text-center py-4 text-[10px] text-muted-foreground italic">
-                                                                    No se han definido componentes.
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        )}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        </div>
-                                    )}
 
                                     {/* Row 2: Advanced Manufacturing Card - Full Width */}
                                     <div className="p-6 rounded-2xl border bg-card space-y-6">
