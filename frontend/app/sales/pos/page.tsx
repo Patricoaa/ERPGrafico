@@ -42,6 +42,7 @@ interface Product {
     } | number
     uom?: number
     uom_name?: string
+    allowed_sale_uoms?: number[]
 }
 
 interface Category {
@@ -462,17 +463,32 @@ export default function POSPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {items.map((item) => {
+                                            // Need to find the product in the full list to get allowed_sale_uoms
+                                            const originalProduct = products.find(p => p.id === item.id)
                                             const itemUom = uoms.find(u => u.id === item.uom)
-                                            const categoryUoms = itemUom ? uoms.filter(u => u.category === itemUom.category) : []
+
+                                            // Logic: allowed_sale_uoms (if any) + default sale UoM OR Category fallback
+                                            // The 'product' interface in this file needs to include allowed_sale_uoms for this to work.
+                                            // I will assume the API returns it (ProductSerializer does), I need to update the interface above too.
+
+                                            let allowedUoMs = []
+                                            if (originalProduct && (originalProduct as any).allowed_sale_uoms?.length > 0) {
+                                                const allowedIds = (originalProduct as any).allowed_sale_uoms
+                                                const saleUoMId = (originalProduct as any).sale_uom
+                                                allowedUoMs = uoms.filter(u => allowedIds.includes(u.id) || u.id === saleUoMId)
+                                            } else if (itemUom) {
+                                                allowedUoMs = uoms.filter(u => u.category === itemUom.category)
+                                            }
 
                                             return (
                                                 <TableRow key={item.id}>
                                                     <TableCell className="max-w-[120px]">
                                                         <div className="flex flex-col gap-1">
                                                             <span className="truncate font-medium">{item.name}</span>
-                                                            {item.manufacturing_data && (
-                                                                <div className="flex items-center gap-1 text-[9px] text-primary font-bold uppercase">
-                                                                    <Info className="h-2 w-2" /> Mfg Ok
+                                                            {item.manufacturing_data && item.manufacturable_quantity && (
+                                                                <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                                    <Package className="h-3 w-3" />
+                                                                    Mfg: {item.manufacturable_quantity || 0}
                                                                 </div>
                                                             )}
                                                             {item.requires_advanced_manufacturing && (
@@ -498,7 +514,7 @@ export default function POSPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-center">
-                                                        {categoryUoms.length > 1 ? (
+                                                        {allowedUoMs.length > 1 ? (
                                                             <Select
                                                                 value={item.uom?.toString()}
                                                                 onValueChange={(val) => {
@@ -510,7 +526,7 @@ export default function POSPage() {
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    {categoryUoms.map(u => (
+                                                                    {allowedUoMs.map(u => (
                                                                         <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
                                                                             {u.name}
                                                                         </SelectItem>

@@ -483,9 +483,16 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                             const baseUoM = uoms.find(u => u.id === selectedProduct?.uom)
                                                             const categoryId = baseUoM?.category
 
-                                                            const filteredUoMs = categoryId
-                                                                ? uoms.filter(u => u.category === categoryId)
-                                                                : uoms
+                                                            const allowedUoMIds = selectedProduct?.allowed_sale_uoms || []
+                                                            const saleUoMId = selectedProduct?.sale_uom
+
+                                                            // If specific allowed UoMs are defined, use strictly those + default sale UoM
+                                                            // Otherwise, fall back to Category-based filtering
+                                                            const filteredUoMs = (allowedUoMIds.length > 0)
+                                                                ? uoms.filter(u => allowedUoMIds.includes(u.id) || u.id === saleUoMId)
+                                                                : (categoryId
+                                                                    ? uoms.filter(u => u.category === categoryId)
+                                                                    : uoms)
 
                                                             return (
                                                                 <Select

@@ -82,6 +82,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         document_number = request.data.get('document_number') or request.data.get('document_reference')
         document_date = request.data.get('document_date')
         document_attachment = request.FILES.get('document_attachment')
+        amount = request.data.get('amount')
+        treasury_account_id = request.data.get('treasury_account_id')
         
         if not all([order_data, dte_type, payment_method]):
             return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
