@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, BillOfMaterials
+    CustomFieldTemplate, ProductCustomField
 )
+from production.models import BillOfMaterials, BillOfMaterialsLine
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,14 +45,14 @@ class ProductCustomFieldSerializer(serializers.ModelSerializer):
         model = ProductCustomField
         fields = ['id', 'template', 'template_data', 'order']
 
-class BillOfMaterialsSerializer(serializers.ModelSerializer):
+class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_code = serializers.CharField(source='component.code', read_only=True)
     component_name = serializers.CharField(source='component.name', read_only=True)
-    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    # Note: We use component (ID) for writes
     
     class Meta:
-        model = BillOfMaterials
-        fields = ['id', 'component', 'component_code', 'component_name', 'quantity', 'uom', 'uom_name']
+        model = BillOfMaterialsLine
+        fields = ['id', 'component', 'component_code', 'component_name', 'quantity', 'unit', 'notes']
 
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
@@ -63,7 +64,8 @@ class ProductSerializer(serializers.ModelSerializer):
     effective_price = serializers.SerializerMethodField()
     
     # Manufacturing fields
-    bom_lines = BillOfMaterialsSerializer(many=True, required=False)
+    bom_lines = BillOfMaterialsLineSerializer(many=True, required=False)
+    bom_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     product_custom_fields = ProductCustomFieldSerializer(many=True, required=False)
     
     class Meta:
@@ -81,13 +83,19 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         bom_data = validated_data.pop('bom_lines', [])
+        bom_name = validated_data.pop('bom_name', None)
         pcf_data = validated_data.pop('product_custom_fields', [])
         
-        # Handle prefixes and internal_code (already handled in model save, but just in case)
         product = Product.objects.create(**validated_data)
         
-        for bom in bom_data:
-            BillOfMaterials.objects.create(product=product, **bom)
+        if bom_data:
+            bom_header = BillOfMaterials.objects.create(
+                product=product,
+                name=bom_name or f"BOM {product.name}",
+                active=True
+            )
+            for line in bom_data:
+                BillOfMaterialsLine.objects.create(bom=bom_header, **line)
             
         for pcf in pcf_data:
             ProductCustomField.objects.create(product=product, **pcf)
@@ -96,16 +104,30 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         bom_data = validated_data.pop('bom_lines', None)
+        bom_name = validated_data.pop('bom_name', None)
         pcf_data = validated_data.pop('product_custom_fields', None)
         
         # Standard update
         instance = super().update(instance, validated_data)
         
         if bom_data is not None:
-            # Simple replace strategy: delete old and create new
-            instance.bom_lines.all().delete()
-            for bom in bom_data:
-                BillOfMaterials.objects.create(product=instance, **bom)
+            # Get or create active BOM
+            bom_header = BillOfMaterials.objects.filter(product=instance, active=True).first()
+            if not bom_header and (bom_data or bom_name):
+                bom_header = BillOfMaterials.objects.create(
+                    product=instance,
+                    name=bom_name or f"BOM {instance.name}",
+                    active=True
+                )
+            elif bom_header and bom_name:
+                bom_header.name = bom_name
+                bom_header.save()
+
+            if bom_header:
+                # Replace lines
+                bom_header.lines.all().delete()
+                for line in bom_data:
+                    BillOfMaterialsLine.objects.create(bom=bom_header, **line)
                 
         if pcf_data is not None:
             # Simple replace strategy

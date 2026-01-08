@@ -4,11 +4,11 @@ from rest_framework.response import Response
 from .serializers import (
     ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
-    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, BillOfMaterialsSerializer
+    CustomFieldTemplateSerializer, ProductCustomFieldSerializer
 )
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, BillOfMaterials
+    CustomFieldTemplate, ProductCustomField
 )
 from .services import StockService
 from decimal import Decimal
@@ -132,7 +132,3 @@ class ProductCustomFieldViewSet(viewsets.ModelViewSet):
     serializer_class = ProductCustomFieldSerializer
     filterset_fields = ['product']
 
-class BillOfMaterialsViewSet(viewsets.ModelViewSet):
-    queryset = BillOfMaterials.objects.all()
-    serializer_class = BillOfMaterialsSerializer
-    filterset_fields = ['product']

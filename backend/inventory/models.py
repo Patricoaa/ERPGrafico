@@ -305,30 +305,4 @@ class ProductCustomField(models.Model):
     def __str__(self):
         return f"{self.product.code} - {self.template.name}"
 
-class BillOfMaterials(models.Model):
-    """Bill of Materials - Components required to manufacture a product"""
-    product = models.ForeignKey(
-        Product, 
-        on_delete=models.CASCADE, 
-        related_name='bom_lines',
-        verbose_name=_("Producto Fabricable"),
-        limit_choices_to={'product_type': 'MANUFACTURABLE'}
-    )
-    component = models.ForeignKey(
-        Product,
-        on_delete=models.PROTECT,
-        related_name='used_in_bom',
-        verbose_name=_("Componente/Material")
-    )
-    quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
-    uom = models.ForeignKey(UoM, on_delete=models.PROTECT, verbose_name=_("Unidad"))
-    
-    class Meta:
-        verbose_name = _("Línea de Lista de Materiales")
-        verbose_name_plural = _("Listas de Materiales")
-        unique_together = ['product', 'component']
-        ordering = ['product', 'component']
-    
-    def __str__(self):
-        return f"{self.product.code} → {self.component.code} ({self.quantity} {self.uom})"
 

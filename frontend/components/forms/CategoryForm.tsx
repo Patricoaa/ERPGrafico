@@ -147,7 +147,7 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>
 
 interface CategoryFormProps {
-    onSuccess?: () => void
+    onSuccess?: (category: any) => void
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
@@ -226,14 +226,15 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                 expense_account: (data.expense_account && data.expense_account !== "__none__" && data.expense_account !== "none") ? data.expense_account : null,
             }
 
+            let response;
             if (initialData) {
-                await api.put(`/inventory/categories/${initialData.id}/`, payload)
+                response = await api.put(`/inventory/categories/${initialData.id}/`, payload)
             } else {
-                await api.post('/inventory/categories/', payload)
+                response = await api.post('/inventory/categories/', payload)
             }
             form.reset()
             setOpen(false)
-            if (onSuccess) onSuccess()
+            if (onSuccess) onSuccess(response.data)
         } catch (error: any) {
             console.error("Error saving category:", error)
             alert(error.response?.data?.detail || "Error al guardar la categoría")
