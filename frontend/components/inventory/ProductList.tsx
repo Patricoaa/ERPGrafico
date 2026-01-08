@@ -21,6 +21,7 @@ import { cn, translateProductType } from "@/lib/utils"
 interface Product {
     id: number
     code: string
+    internal_code: string
     name: string
     product_type: string
     category_id: number
@@ -82,7 +83,8 @@ export function ProductList() {
                 <Table>
                     <TableHeader className="bg-muted/30">
                         <TableRow>
-                            <TableHead>Código</TableHead>
+                            <TableHead>Código Int.</TableHead>
+                            <TableHead>SKU/Código</TableHead>
                             <TableHead>Nombre</TableHead>
                             <TableHead>Categoría</TableHead>
                             <TableHead>Tipo</TableHead>
@@ -96,7 +98,8 @@ export function ProductList() {
                     <TableBody>
                         {products.map((product) => (
                             <TableRow key={product.id} className="group hover:bg-muted/20 transition-colors">
-                                <TableCell className="font-mono text-xs">{product.code}</TableCell>
+                                <TableCell className="font-mono text-[10px] font-bold text-primary">{product.internal_code}</TableCell>
+                                <TableCell className="font-mono text-xs">{product.code || '-'}</TableCell>
                                 <TableCell className="font-medium">{product.name}</TableCell>
                                 <TableCell className="text-sm">{product.category_name}</TableCell>
                                 <TableCell>

@@ -35,6 +35,7 @@ interface SaleOrderLine {
     quantity_delivered: number
     quantity_pending: number
     unit_price: number
+    uom_name: string
 }
 
 interface SaleOrder {
@@ -122,9 +123,12 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
             const productIds = order.lines.map(line => line.product)
             const stockPromises = productIds.map(async (productId) => {
                 try {
-                    const response = await api.get(`/inventory/stock/?product_id=${productId}&warehouse_id=${selectedWarehouse}`)
-                    const stockData = response.data.results || response.data
-                    const totalStock = stockData.reduce((sum: number, move: any) => sum + parseFloat(move.quantity || 0), 0)
+                    // Correct endpoint and use filter
+                    const response = await api.get(`/inventory/moves/?product_id=${productId}&warehouse_id=${selectedWarehouse}`)
+                    // Handle paginated or non-paginated response
+                    const moves = response.data.results || response.data
+                    // The results might be a list of moves, we need to sum their quantities
+                    const totalStock = moves.reduce((sum: number, move: any) => sum + parseFloat(move.quantity || 0), 0)
                     return { productId, stock: totalStock }
                 } catch (error) {
                     return { productId, stock: 0 }
@@ -232,7 +236,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1200px] w-[90vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5" />
@@ -297,6 +301,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Producto</TableHead>
+                                        <TableHead className="text-center">Unidad</TableHead>
                                         <TableHead className="text-center">Pendiente</TableHead>
                                         <TableHead className="text-center">Stock</TableHead>
                                         <TableHead className="text-center">A Despachar</TableHead>
@@ -315,6 +320,9 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                         <div className="font-medium">{line.product_name}</div>
                                                         <div className="text-xs text-muted-foreground">{line.description}</div>
                                                     </div>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Badge variant="outline">{line.quantity_pending}</Badge>

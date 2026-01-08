@@ -15,7 +15,7 @@ from decimal import Decimal
 
 from core.mixins import BulkImportMixin
 
-from .filters import ProductFilter
+from .filters import ProductFilter, StockMoveFilter
 
 class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -96,6 +96,7 @@ class UoMCategoryViewSet(viewsets.ModelViewSet):
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StockMove.objects.all()
     serializer_class = StockMoveSerializer
+    filterset_class = StockMoveFilter
 
     @action(detail=False, methods=['post'])
     def adjust(self, request):

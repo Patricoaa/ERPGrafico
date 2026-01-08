@@ -62,6 +62,7 @@ class ProductSerializer(serializers.ModelSerializer):
     
     current_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
+    last_purchase_price = serializers.SerializerMethodField()
     
     # Manufacturing fields
     bom_lines = BillOfMaterialsLineSerializer(many=True, required=False)
@@ -80,6 +81,11 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_effective_price(self, obj):
         from .services import PricingService
         return PricingService.get_product_price(obj, 1)
+
+    def get_last_purchase_price(self, obj):
+        from purchasing.models import PurchaseLine
+        last_line = PurchaseLine.objects.filter(product=obj).order_by('-order__date', '-id').first()
+        return float(last_line.unit_cost) if last_line else 0.0
 
     def create(self, validated_data):
         bom_data = validated_data.pop('bom_lines', [])

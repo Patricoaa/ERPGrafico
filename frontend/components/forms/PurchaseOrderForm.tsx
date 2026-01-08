@@ -310,7 +310,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                                         if (val) {
                                                                             const prod = products.find(p => p.id.toString() === val)
                                                                             if (prod) {
-                                                                                form.setValue(`lines.${index}.unit_cost`, parseFloat(prod.sale_price) || 0)
+                                                                                form.setValue(`lines.${index}.unit_cost`, parseFloat(prod.last_purchase_price) || 0)
                                                                                 form.setValue(`lines.${index}.uom`, (prod.purchase_uom || prod.uom)?.toString() || "")
                                                                             }
                                                                         }

@@ -47,6 +47,7 @@ import { CustomFieldTemplateForm } from "./CustomFieldTemplateForm"
 
 const productSchema = z.object({
     code: z.string().optional().or(z.literal("")),
+    internal_code: z.string().optional().or(z.literal("")),
     name: z.string().min(2, "Nombre requerido"),
     category: z.string().min(1, "Categoría requerida"),
     product_type: z.string().min(1, "Tipo requerido"),
@@ -111,6 +112,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         resolver: zodResolver(productSchema) as any,
         defaultValues: {
             code: "",
+            internal_code: "",
             name: "",
             category: "",
             product_type: "STORABLE",
@@ -200,6 +202,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             if (initialData) {
                 form.reset({
                     code: initialData.code || "",
+                    internal_code: initialData.internal_code || "",
                     name: initialData.name || "",
                     category: initialData.category?.id?.toString() || initialData.category?.toString() || "",
                     product_type: initialData.product_type || "STORABLE",
@@ -230,6 +233,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             } else {
                 form.reset({
                     code: "",
+                    internal_code: "",
                     name: "",
                     category: "",
                     product_type: "STORABLE",
@@ -441,6 +445,20 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                         <div className="md:col-span-9 space-y-8">
                                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                                 <div className="md:col-span-1">
+                                                    {initialData && (
+                                                        <FormField<ProductFormValues>
+                                                            control={form.control}
+                                                            name="internal_code"
+                                                            render={({ field }) => (
+                                                                <FormItem className="mb-4">
+                                                                    <FormLabel className="text-primary font-bold">Código Interno</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input {...field} readOnly className="bg-primary/5 font-mono font-bold border-primary/20" />
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    )}
                                                     <FormField<ProductFormValues>
                                                         control={form.control}
                                                         name="code"
@@ -615,19 +633,46 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <Label className="text-primary font-bold">Total con IVA</Label>
-                                                    <div className="h-10 flex items-center px-3 rounded-md bg-primary/10 border border-primary/20 font-extrabold text-primary text-lg">
-                                                        $ {totalCalculated.toLocaleString()}
+                                                    <Label className="text-primary font-bold">Total con IVA (Bruto)</Label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-2.5 text-primary/50">$</span>
+                                                        <Input
+                                                            type="number"
+                                                            className="pl-7 bg-primary/10 border-primary/30 font-extrabold text-primary text-lg"
+                                                            value={totalCalculated || ""}
+                                                            onChange={(e) => {
+                                                                const gross = Number(e.target.value);
+                                                                const net = Math.round(gross / 1.19);
+                                                                form.setValue("sale_price", net);
+                                                            }}
+                                                        />
                                                     </div>
                                                 </div>
 
-                                                {initialData && (
+                                                {(initialData || Number(form.watch("sale_price")) > 0) && (
                                                     <div className="space-y-2">
-                                                        <Label className="text-muted-foreground">Costo Actual</Label>
-                                                        <div className="h-10 flex items-center justify-between px-3 rounded-md bg-muted/30 border border-muted text-sm font-semibold">
-                                                            <span>$ {Number(initialData.cost_price).toLocaleString()}</span>
-                                                            <Badge variant="outline" className="h-5 text-[10px]">
-                                                                {Math.round((1 - (Number(initialData.cost_price) / Number(initialData.sale_price))) * 100)}% mg
+                                                        <Label className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Análisis de Margen</Label>
+                                                        <div className={cn(
+                                                            "h-10 flex items-center justify-between px-4 rounded-xl border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
+                                                            (1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100 > 30
+                                                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                                                : (1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100 > 15
+                                                                    ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
+                                                                    : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                                                        )}>
+                                                            <div className="flex items-center gap-2">
+                                                                <Info className="h-4 w-4 opacity-70" />
+                                                                <span>Costo: ${Number(initialData?.cost_price || 0).toLocaleString()}</span>
+                                                            </div>
+                                                            <Badge className={cn(
+                                                                "px-2 py-0.5 rounded-lg text-[11px] font-black border-none shadow-none uppercase tracking-tighter",
+                                                                (1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100 > 30
+                                                                    ? "bg-emerald-500 text-white"
+                                                                    : (1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100 > 15
+                                                                        ? "bg-amber-500 text-white"
+                                                                        : "bg-rose-500 text-white"
+                                                            )}>
+                                                                {Math.round((1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100)}% MARGEN
                                                             </Badge>
                                                         </div>
                                                     </div>

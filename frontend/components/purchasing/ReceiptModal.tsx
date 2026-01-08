@@ -34,6 +34,7 @@ interface PurchaseOrderLine {
     quantity_received: number
     quantity_pending: number
     unit_cost: number
+    uom_name: string
 }
 
 interface PurchaseOrder {
@@ -288,6 +289,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess, isRefund 
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Producto</TableHead>
+                                        <TableHead className="text-center">Unidad</TableHead>
                                         <TableHead className="text-center">Pendiente</TableHead>
                                         <TableHead className="text-center w-24">A {isRefund ? 'Devolver' : 'Recibir'}</TableHead>
                                         <TableHead className="text-center w-32">Costo (Unit)</TableHead>
@@ -305,6 +307,9 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess, isRefund 
                                                         <div className="font-medium">{line.product_name}</div>
                                                         <div className="text-xs text-muted-foreground">Original: ${line.unit_cost}</div>
                                                     </div>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Badge variant="outline">{line.quantity_pending}</Badge>
