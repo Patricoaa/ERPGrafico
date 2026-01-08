@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { AdvancedManufacturingDialog } from "@/components/forms/AdvancedManufacturingDialog"
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
@@ -54,6 +55,7 @@ const saleLineSchema = z.object({
     unit_price: z.number().min(0, "El precio no puede ser negativo"),
     tax_rate: z.number().default(19),
     custom_specs: z.record(z.string(), z.any()).optional(),
+    manufacturing_data: z.any().optional(),
 })
 
 const saleOrderSchema = z.object({
@@ -140,6 +142,11 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [uoms, setUoMs] = useState<any[]>([])
     const [pricingRules, setPricingRules] = useState<any[]>([])
 
+    // Advanced Manufacturing State
+    const [advMfgDialogOpen, setAdvMfgDialogOpen] = useState(false)
+    const [pendingProduct, setPendingProduct] = useState<any>(null)
+    const [pendingItemIndex, setPendingItemIndex] = useState<number | null>(null)
+
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema) as any,
         defaultValues: initialData ? {
@@ -154,12 +161,13 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 unit_price: parseFloat(l.unit_price) || 0,
                 tax_rate: parseFloat(l.tax_rate) || 19,
                 custom_specs: l.custom_specs || {},
+                manufacturing_data: l.manufacturing_data || null,
             }))
         } : {
             customer: "",
             payment_method: "CREDIT",
             notes: "",
-            lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {} }],
+            lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
         },
     })
 
@@ -167,6 +175,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         control: form.control,
         name: "lines",
     })
+
 
     const fetchData = async () => {
         try {
@@ -224,6 +233,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         unit_price: parseFloat(l.unit_price) || 0,
                         tax_rate: parseFloat(l.tax_rate) || 19,
                         custom_specs: l.custom_specs || {},
+                        manufacturing_data: l.manufacturing_data || null,
                     }))
                 })
             } else {
@@ -231,7 +241,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     customer: "",
                     payment_method: "CREDIT",
                     notes: "",
-                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {} }],
+                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
                 })
             }
         }
@@ -303,7 +313,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {} })}
+                                    onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null })}
                                 >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Agregar Línea
@@ -358,6 +368,13 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                             // Reset custom specs if not custom manufacturable
                                                                             if (selectedProduct.product_type !== 'MANUFACTURABLE_CUSTOM') {
                                                                                 form.setValue(`lines.${index}.custom_specs`, {})
+                                                                            }
+
+                                                                            // Trigger Advanced Manufacturing Dialog if required
+                                                                            if (selectedProduct.requires_advanced_manufacturing) {
+                                                                                setPendingProduct(selectedProduct)
+                                                                                setPendingItemIndex(index)
+                                                                                setAdvMfgDialogOpen(true)
                                                                             }
                                                                         }
                                                                     }}
@@ -528,6 +545,18 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         </div>
                     </form>
                 </Form>
+                <AdvancedManufacturingDialog
+                    open={advMfgDialogOpen}
+                    onOpenChange={setAdvMfgDialogOpen}
+                    product={pendingProduct}
+                    onConfirm={(data) => {
+                        if (pendingItemIndex !== null) {
+                            form.setValue(`lines.${pendingItemIndex}.manufacturing_data`, data)
+                            setPendingItemIndex(null)
+                            setPendingProduct(null)
+                        }
+                    }}
+                />
             </DialogContent>
         </Dialog>
     )

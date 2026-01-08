@@ -79,6 +79,18 @@ class Product(models.Model):
         help_text=_("Define campos adicionales requeridos al vender (ej: tamaño, copias, folio inicial)")
     )
     
+    # Manufacturing Configuration (for MANUFACTURABLE_STANDARD)
+    has_bom = models.BooleanField(
+        _("Tiene Lista de Materiales"),
+        default=False,
+        help_text=_("Indica si este producto tiene componentes definidos que se asignarán a órdenes de trabajo")
+    )
+    requires_advanced_manufacturing = models.BooleanField(
+        _("Requiere Fabricación Avanzada"),
+        default=False,
+        help_text=_("Habilita campos personalizados al vender este producto desde POS o notas de venta")
+    )
+    
     # Inventory Tracking Control
     track_inventory = models.BooleanField(
         _("Controlar Stock"),
@@ -222,3 +234,80 @@ class PricingRule(models.Model):
 
     def __str__(self):
         return self.name
+
+class CustomFieldTemplate(models.Model):
+    """Reusable custom field definitions for advanced manufacturing products"""
+    class FieldType(models.TextChoices):
+        TEXT = 'TEXT', _('Texto')
+        SELECT_SINGLE = 'SELECT_SINGLE', _('Selección Única')
+        SELECT_MULTIPLE = 'SELECT_MULTIPLE', _('Selección Múltiple')
+    
+    name = models.CharField(_("Nombre del Campo"), max_length=100)
+    field_type = models.CharField(_("Tipo"), max_length=20, choices=FieldType.choices)
+    description = models.TextField(_("Descripción/Ayuda"), blank=True)
+    options = models.JSONField(
+        _("Opciones"),
+        null=True, blank=True,
+        help_text=_("Lista de opciones para campos de selección (ej: ['Opción 1', 'Opción 2'])")
+    )
+    is_required = models.BooleanField(_("Obligatorio"), default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = _("Plantilla de Campo Personalizado")
+        verbose_name_plural = _("Plantillas de Campos Personalizados")
+        ordering = ['name']
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_field_type_display()})"
+
+class ProductCustomField(models.Model):
+    """Association between products and custom field templates"""
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_custom_fields'
+    )
+    template = models.ForeignKey(
+        CustomFieldTemplate,
+        on_delete=models.CASCADE,
+        related_name='product_associations'
+    )
+    order = models.IntegerField(_("Orden"), default=0)
+    
+    class Meta:
+        verbose_name = _("Campo Personalizado del Producto")
+        verbose_name_plural = _("Campos Personalizados del Producto")
+        ordering = ['order', 'template__name']
+        unique_together = ['product', 'template']
+    
+    def __str__(self):
+        return f"{self.product.code} - {self.template.name}"
+
+class BillOfMaterials(models.Model):
+    """Bill of Materials - Components required to manufacture a product"""
+    product = models.ForeignKey(
+        Product, 
+        on_delete=models.CASCADE, 
+        related_name='bom_lines',
+        verbose_name=_("Producto Fabricable"),
+        limit_choices_to={'product_type__in': ['MANUFACTURABLE_STANDARD', 'MANUFACTURABLE_CUSTOM']}
+    )
+    component = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name='used_in_bom',
+        verbose_name=_("Componente/Material")
+    )
+    quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
+    uom = models.ForeignKey(UoM, on_delete=models.PROTECT, verbose_name=_("Unidad"))
+    
+    class Meta:
+        verbose_name = _("Línea de Lista de Materiales")
+        verbose_name_plural = _("Listas de Materiales")
+        unique_together = ['product', 'component']
+        ordering = ['product', 'component']
+    
+    def __str__(self):
+        return f"{self.product.code} → {self.component.code} ({self.quantity} {self.uom})"
+

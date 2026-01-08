@@ -23,7 +23,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SaleLine
-        fields = ['id', 'product', 'product_name', 'description', 'quantity', 'uom', 'uom_name', 'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 'quantity_pending']
+        fields = ['id', 'product', 'product_name', 'description', 'quantity', 'uom', 'uom_name', 'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 'quantity_pending', 'manufacturing_data']
 
     def validate(self, data):
         product = data.get('product')

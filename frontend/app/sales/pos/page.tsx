@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { Badge } from "@/components/ui/badge"
+import { AdvancedManufacturingDialog } from "@/components/forms/AdvancedManufacturingDialog"
 import {
     Select,
     SelectContent,
@@ -31,6 +32,8 @@ interface Product {
     unit_price?: string
     variants_count?: number
     image?: string | null
+    requires_advanced_manufacturing?: boolean
+    has_bom?: boolean
     category?: {
         id: number
         name: string
@@ -58,6 +61,7 @@ interface CartItem extends Product {
     total_gross: number
     unit_price_net: number
     uom?: number
+    manufacturing_data?: any // Add this line
     uom_name?: string
 }
 
@@ -77,6 +81,10 @@ export default function POSPage() {
     const [categories, setCategories] = useState<Category[]>([])
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([])
+
+    // Advanced Manufacturing State
+    const [advMfgDialogOpen, setAdvMfgDialogOpen] = useState(false)
+    const [pendingProduct, setPendingProduct] = useState<Product | null>(null)
 
     const [pricingRules, setPricingRules] = useState<any[]>([])
 
@@ -139,7 +147,13 @@ export default function POSPage() {
         return basePrice
     }
 
-    const addToCart = (product: Product) => {
+    const addToCart = (product: Product, mfgData?: any) => {
+        if (product.requires_advanced_manufacturing && !mfgData) {
+            setPendingProduct(product)
+            setAdvMfgDialogOpen(true)
+            return
+        }
+
         const existing = items.find(i => i.id === product.id)
         const netPrice = getEffectivePrice(product, existing ? existing.qty + 1 : 1)
 
@@ -152,7 +166,8 @@ export default function POSPage() {
                     unit_price_net: netPrice,
                     total_net: Math.round(newQty * netPrice),
                     total_tax: Math.round(newQty * netPrice * 0.19),
-                    total_gross: Math.round(newQty * netPrice * 1.19)
+                    total_gross: Math.round(newQty * netPrice * 1.19),
+                    manufacturing_data: mfgData || i.manufacturing_data
                 }
                 : i
             ))
@@ -165,7 +180,8 @@ export default function POSPage() {
                 unit_price_net: netPrice,
                 total_net: Math.round(netPrice),
                 total_tax: Math.round(netPrice * 0.19),
-                total_gross: Math.round(netPrice * 1.19)
+                total_gross: Math.round(netPrice * 1.19),
+                manufacturing_data: mfgData
             }])
         }
     }
@@ -240,7 +256,8 @@ export default function POSPage() {
                         quantity: i.qty,
                         uom: i.uom,
                         unit_price: i.unit_price_net,
-                        tax_rate: 19
+                        tax_rate: 19,
+                        manufacturing_data: i.manufacturing_data
                     }))
                 },
                 dte_type: data.dteType || 'BOLETA',

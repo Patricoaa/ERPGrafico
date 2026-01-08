@@ -105,6 +105,13 @@ class SaleLine(models.Model):
         help_text="Cantidad total despachada de esta línea"
     )
 
+    manufacturing_data = models.JSONField(
+        _("Datos de Fabricación"),
+        null=True, blank=True,
+        help_text=_("Metadatos capturados para fabricación avanzada (diseño, fechas, contactos, etc.)")
+    )
+
+
     def save(self, *args, **kwargs):
         self.subtotal = self.quantity * self.unit_price
         # Auto-fill description from product if not provided

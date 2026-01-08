@@ -3,9 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import (
     ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
-    StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer
+    StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
+    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, BillOfMaterialsSerializer
 )
-from .models import Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule
+from .models import (
+    Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
+    CustomFieldTemplate, ProductCustomField, BillOfMaterials
+)
 from .services import StockService
 from decimal import Decimal
 
@@ -118,3 +122,17 @@ class PricingRuleViewSet(viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
     filterset_fields = ['product', 'category', 'active']
+
+class CustomFieldTemplateViewSet(viewsets.ModelViewSet):
+    queryset = CustomFieldTemplate.objects.all()
+    serializer_class = CustomFieldTemplateSerializer
+
+class ProductCustomFieldViewSet(viewsets.ModelViewSet):
+    queryset = ProductCustomField.objects.all()
+    serializer_class = ProductCustomFieldSerializer
+    filterset_fields = ['product']
+
+class BillOfMaterialsViewSet(viewsets.ModelViewSet):
+    queryset = BillOfMaterials.objects.all()
+    serializer_class = BillOfMaterialsSerializer
+    filterset_fields = ['product']

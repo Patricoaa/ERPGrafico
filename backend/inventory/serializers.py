@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule
+from .models import (
+    Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
+    CustomFieldTemplate, ProductCustomField, BillOfMaterials
+)
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,6 +32,27 @@ class PricingRuleSerializer(serializers.ModelSerializer):
         model = PricingRule
         fields = '__all__'
 
+class CustomFieldTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomFieldTemplate
+        fields = '__all__'
+
+class ProductCustomFieldSerializer(serializers.ModelSerializer):
+    template_data = CustomFieldTemplateSerializer(source='template', read_only=True)
+    
+    class Meta:
+        model = ProductCustomField
+        fields = ['id', 'template', 'template_data', 'order']
+
+class BillOfMaterialsSerializer(serializers.ModelSerializer):
+    component_code = serializers.CharField(source='component.code', read_only=True)
+    component_name = serializers.CharField(source='component.name', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    
+    class Meta:
+        model = BillOfMaterials
+        fields = ['id', 'product', 'component', 'component_code', 'component_name', 'quantity', 'uom', 'uom_name']
+
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
@@ -37,6 +61,10 @@ class ProductSerializer(serializers.ModelSerializer):
     
     current_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
+    
+    # Manufacturing fields
+    bom_lines = BillOfMaterialsSerializer(many=True, read_only=True)
+    product_custom_fields = ProductCustomFieldSerializer(many=True, read_only=True)
     
     class Meta:
         model = Product
