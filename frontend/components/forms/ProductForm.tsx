@@ -7,6 +7,7 @@ import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { cn } from "@/lib/utils"
 
 import {
     Dialog,
@@ -55,6 +56,7 @@ const productSchema = z.object({
     uom: z.string().optional().or(z.literal("")),
     sale_uom: z.string().optional().or(z.literal("")),
     purchase_uom: z.string().optional().or(z.literal("")),
+    allowed_sale_uoms: z.array(z.string()).default([]),
     image: z.any().optional(),
     track_inventory: z.boolean(),
     custom_fields_schema: z.string().optional(),
@@ -120,6 +122,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             uom: "",
             sale_uom: "",
             purchase_uom: "",
+            allowed_sale_uoms: [],
             track_inventory: true,
             custom_fields_schema: "",
             image: undefined,
@@ -210,6 +213,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     uom: initialData.uom?.id?.toString() || initialData.uom?.toString() || "",
                     sale_uom: initialData.sale_uom?.id?.toString() || initialData.sale_uom?.toString() || "",
                     purchase_uom: initialData.purchase_uom?.id?.toString() || initialData.purchase_uom?.toString() || "",
+                    allowed_sale_uoms: initialData.allowed_sale_uoms?.map((u: any) => u.id?.toString() || u.toString()) || [],
                     track_inventory: initialData.track_inventory ?? true,
                     custom_fields_schema: typeof initialData.custom_fields_schema === 'object'
                         ? JSON.stringify(initialData.custom_fields_schema, null, 2)
@@ -241,6 +245,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     uom: "",
                     sale_uom: "",
                     purchase_uom: "",
+                    allowed_sale_uoms: [],
                     track_inventory: true,
                     custom_fields_schema: "",
                     image: undefined,
@@ -268,6 +273,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('uom', data.uom || '')
             formData.append('sale_uom', data.sale_uom || '')
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
+            if (data.allowed_sale_uoms && data.allowed_sale_uoms.length > 0) {
+                // M2M needs multiple appends or a comma separated string if backend handles it, 
+                // but usually DRF expects multiple fields with same name or list in JSON.
+                // Since this is Multipart, we append each ID.
+                data.allowed_sale_uoms.forEach(id => formData.append('allowed_sale_uoms', id))
+            }
             formData.append('track_inventory', data.track_inventory ? 'true' : 'false')
 
             // Manufacturing fields
@@ -344,6 +355,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             Reglas de Precios
                                         </TabsTrigger>
                                     )}
+                                    <TabsTrigger value="uoms" className="px-8 flex gap-2">
+                                        Und. de Medida
+                                    </TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="general" className="mt-0 space-y-8">
@@ -528,83 +542,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                     />
                                                 </div>
 
-                                                <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                    {form.watch("product_type") === 'STORABLE' && (
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="uom"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>UdM Stock</FormLabel>
-                                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Base" />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            {uoms.map((u) => (
-                                                                                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    )}
-
-                                                    {(form.watch("product_type") === 'STORABLE' || form.watch("product_type") === 'MANUFACTURABLE' || form.watch("product_type") === 'SERVICE') && (
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="sale_uom"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>UdM Venta</FormLabel>
-                                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Requerido" />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            {uoms.map((u) => (
-                                                                                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    )}
-
-
-                                                    {(form.watch("product_type") === 'STORABLE' || form.watch("product_type") === 'CONSUMABLE') && (
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="purchase_uom"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>UdM Compra</FormLabel>
-                                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Opcional" />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            {uoms.map((u) => (
-                                                                                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    )}
-                                                </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 rounded-2xl bg-primary/5 border border-primary/10">
@@ -934,6 +871,194 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                             </TableBody>
                                                         </Table>
                                                     </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="uoms" className="mt-0 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-6">
+                                            <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
+                                                <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
+                                                    <Info className="h-4 w-4" />
+                                                    Gestión de Unidades
+                                                </h3>
+                                                <div className="space-y-4">
+                                                    {form.watch("product_type") === 'STORABLE' && (
+                                                        <FormField<ProductFormValues>
+                                                            control={form.control}
+                                                            name="uom"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Unidad de Medida de Stock (Base)</FormLabel>
+                                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Seleccionar unidad base" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {uoms.map((u) => (
+                                                                                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormDescription className="text-[10px]">
+                                                                        Esta unidad se utilizará para el conteo de inventario y valoración.
+                                                                    </FormDescription>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    )}
+
+                                                    {(form.watch("product_type") === 'STORABLE' || form.watch("product_type") === 'CONSUMABLE') && (
+                                                        <FormField<ProductFormValues>
+                                                            control={form.control}
+                                                            name="purchase_uom"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Unidad de Medida de Compra</FormLabel>
+                                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Opcional" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {uoms.map((u) => (
+                                                                                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    )}
+
+                                                    {(form.watch("product_type") === 'STORABLE' || form.watch("product_type") === 'MANUFACTURABLE' || form.watch("product_type") === 'SERVICE') && (
+                                                        <FormField<ProductFormValues>
+                                                            control={form.control}
+                                                            name="sale_uom"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Unidad de Medida de Venta por Defecto</FormLabel>
+                                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Requerido para ventas" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {uoms.map((u) => (
+                                                                                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            {(form.watch("product_type") === 'STORABLE' || form.watch("product_type") === 'MANUFACTURABLE' || form.watch("product_type") === 'SERVICE') && (
+                                                <div className="p-6 rounded-2xl border bg-card/50">
+                                                    <h3 className="text-sm font-bold flex items-center gap-2 mb-2">
+                                                        Unidades de Venta Permitidas
+                                                    </h3>
+                                                    <p className="text-[11px] text-muted-foreground mb-4">
+                                                        Define explícitamente qué unidades estarán disponibles al vender.
+                                                        Una vez seleccionada la primera, las demás deben ser de la misma categoría.
+                                                    </p>
+
+                                                    <FormField<ProductFormValues>
+                                                        control={form.control}
+                                                        name="allowed_sale_uoms"
+                                                        render={({ field }) => {
+                                                            const selectedIds = field.value || [];
+                                                            const firstSelected = uoms.find(u => selectedIds.includes(u.id.toString()));
+                                                            const categoryId = firstSelected?.category;
+
+                                                            return (
+                                                                <FormItem>
+                                                                    <div className="space-y-3">
+                                                                        <div className="flex flex-wrap gap-2 mb-2">
+                                                                            {selectedIds.map((id: string) => {
+                                                                                const uom = uoms.find((u: any) => u.id.toString() === id);
+                                                                                return (
+                                                                                    <Badge key={id} variant="secondary" className="pl-3 pr-1 py-1 gap-2 rounded-lg">
+                                                                                        {uom?.name}
+                                                                                        <Button
+                                                                                            type="button"
+                                                                                            variant="ghost"
+                                                                                            size="icon"
+                                                                                            className="h-4 w-4 rounded-full hover:bg-destructive hover:text-white"
+                                                                                            onClick={() => field.onChange(selectedIds.filter((i: string) => i !== id))}
+                                                                                        >
+                                                                                            <X className="h-2 w-2" />
+                                                                                        </Button>
+                                                                                    </Badge>
+                                                                                );
+                                                                            })}
+                                                                            {selectedIds.length === 0 && (
+                                                                                <span className="text-[10px] text-muted-foreground italic">Ninguna seleccionada. Se usará la unidad por defecto.</span>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto max-h-[300px] p-1 border rounded-xl bg-muted/20">
+                                                                            {uoms.map((u: any) => {
+                                                                                const isSelected = selectedIds.includes(u.id.toString());
+                                                                                const isDisabled = categoryId !== undefined && u.category !== categoryId;
+
+                                                                                return (
+                                                                                    <div
+                                                                                        key={u.id}
+                                                                                        className={cn(
+                                                                                            "flex items-center space-x-2 p-2 rounded-lg border transition-all cursor-pointer",
+                                                                                            isSelected ? "bg-primary/10 border-primary/30" : "bg-background border-transparent hover:border-muted-foreground/30",
+                                                                                            isDisabled && "opacity-30 cursor-not-allowed grayscale pointer-events-none"
+                                                                                        )}
+                                                                                        onClick={() => {
+                                                                                            if (isDisabled) return;
+                                                                                            if (isSelected) {
+                                                                                                field.onChange(selectedIds.filter((id: string) => id !== u.id.toString()));
+                                                                                            } else {
+                                                                                                field.onChange([...selectedIds, u.id.toString()]);
+                                                                                            }
+                                                                                        }}
+                                                                                    >
+                                                                                        <Checkbox
+                                                                                            checked={isSelected}
+                                                                                            disabled={isDisabled}
+                                                                                            className="rounded"
+                                                                                        />
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className="text-[11px] font-medium leading-tight">{u.name}</span>
+                                                                                            <span className="text-[9px] text-muted-foreground leading-tight">{u.category_name}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                        {categoryId !== undefined && (
+                                                                            <p className="text-[10px] text-primary font-medium flex items-center gap-1">
+                                                                                <Info className="h-3 w-3" />
+                                                                                Filtrado por categoría: {firstSelected?.category_name}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            );
+                                                        }}
+                                                    />
                                                 </div>
                                             )}
                                         </div>

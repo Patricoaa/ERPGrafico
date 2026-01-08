@@ -91,8 +91,12 @@ class ProductSerializer(serializers.ModelSerializer):
         bom_data = validated_data.pop('bom_lines', [])
         bom_name = validated_data.pop('bom_name', None)
         pcf_data = validated_data.pop('product_custom_fields', [])
+        allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', [])
         
         product = Product.objects.create(**validated_data)
+        
+        if allowed_sale_uoms:
+            product.allowed_sale_uoms.set(allowed_sale_uoms)
         
         if bom_data:
             bom_header = BillOfMaterials.objects.create(
@@ -112,9 +116,12 @@ class ProductSerializer(serializers.ModelSerializer):
         bom_data = validated_data.pop('bom_lines', None)
         bom_name = validated_data.pop('bom_name', None)
         pcf_data = validated_data.pop('product_custom_fields', None)
+        allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', None)
         
-        # Standard update
-        instance = super().update(instance, validated_data)
+        product = super().update(instance, validated_data)
+        
+        if allowed_sale_uoms is not None:
+            product.allowed_sale_uoms.set(allowed_sale_uoms)
         
         if bom_data is not None:
             # Get or create active BOM

@@ -119,6 +119,13 @@ class Product(models.Model):
         help_text=_("Unidad por defecto para compras")
     )
 
+    allowed_sale_uoms = models.ManyToManyField(
+        UoM, related_name='allowed_sale_products',
+        blank=True,
+        verbose_name=_("Unidades de Venta Permitidas"),
+        help_text=_("Unidades de medida explícitas permitidas para la venta de este producto.")
+    )
+
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=2, default=0)
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=2, default=0, editable=False)
 
