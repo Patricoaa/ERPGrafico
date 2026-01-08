@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Plus, Package, Loader2, Pencil, X, Info, Trash2 } from "lucide-react"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -40,10 +40,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { PricingRuleForm } from "./PricingRuleForm"
+import { Switch } from "@/components/ui/switch"
 import { CategoryForm } from "./CategoryForm"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 const productSchema = z.object({
-    code: z.string().min(1, "Código requerido"),
+    code: z.string().optional().or(z.literal("")),
     name: z.string().min(2, "Nombre requerido"),
     category: z.string().min(1, "Categoría requerida"),
     product_type: z.string().min(1, "Tipo requerido"),
@@ -57,6 +59,15 @@ const productSchema = z.object({
     // Manufacturing fields
     has_bom: z.boolean().default(false),
     requires_advanced_manufacturing: z.boolean().default(false),
+    bom_lines: z.array(z.object({
+        component: z.string().min(1, "Componente requerido"),
+        quantity: z.preprocess((v) => Number(v) || 0, z.number().min(0.0001, "Mínimo 0.0001")),
+        uom: z.string().min(1, "Unidad requerida")
+    })).default([]),
+    product_custom_fields: z.array(z.object({
+        template: z.preprocess((v) => Number(v), z.number()),
+        order: z.number().default(0)
+    })).default([]),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -79,6 +90,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     const [hasBom, setHasBom] = useState(initialData?.has_bom ?? false);
     const [requiresAdvanced, setRequiresAdvanced] = useState(initialData?.requires_advanced_manufacturing ?? false);
     const [advancedDialogOpen, setAdvancedDialogOpen] = useState(false);
+    const [fieldTemplates, setFieldTemplates] = useState<any[]>([])
+    const [products, setProducts] = useState<any[]>([])
 
     // Add Manufacturing tab to TabsList
     // Insert after existing tabs (assume after "General" tab)
@@ -100,11 +113,26 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             product_type: "STORABLE",
             sale_price: 0,
             uom: "",
+            sale_uom: "",
             purchase_uom: "",
             track_inventory: true,
             custom_fields_schema: "",
             image: undefined,
+            has_bom: false,
+            requires_advanced_manufacturing: false,
+            bom_lines: [],
+            product_custom_fields: [],
         },
+    })
+
+    const { fields: bomFields, append: appendBom, remove: removeBom } = useFieldArray({
+        control: form.control,
+        name: "bom_lines"
+    })
+
+    const { fields: pcfFields, append: appendPcf, remove: removePcf } = useFieldArray({
+        control: form.control,
+        name: "product_custom_fields"
     })
 
     const salePrice = form.watch("sale_price") || 0
@@ -129,6 +157,15 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         }
     }
 
+    const fetchProducts = async () => {
+        try {
+            const res = await api.get('/inventory/products/')
+            setProducts(res.data.results || res.data)
+        } catch (error) {
+            console.error("Error fetching products", error)
+        }
+    }
+
     const fetchPricingRules = async () => {
         if (!initialData?.id) return
         try {
@@ -139,10 +176,21 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         }
     }
 
+    const fetchTemplates = async () => {
+        try {
+            const res = await api.get('/inventory/custom-field-templates/')
+            setFieldTemplates(res.data.results || res.data)
+        } catch (error) {
+            console.error("Error fetching templates", error)
+        }
+    }
+
     useEffect(() => {
         if (open) {
             fetchCategories()
             fetchUoMs()
+            fetchTemplates()
+            fetchProducts()
             if (initialData) {
                 form.reset({
                     code: initialData.code || "",
@@ -159,6 +207,15 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                         : initialData.custom_fields_schema || "",
                     has_bom: initialData.has_bom ?? false,
                     requires_advanced_manufacturing: initialData.requires_advanced_manufacturing ?? false,
+                    bom_lines: initialData.bom_lines?.map((l: any) => ({
+                        component: l.component?.toString() || "",
+                        quantity: parseFloat(l.quantity) || 0,
+                        uom: l.uom?.toString() || "",
+                    })) || [],
+                    product_custom_fields: initialData.product_custom_fields?.map((pcf: any) => ({
+                        template: pcf.template,
+                        order: pcf.order || 0
+                    })) || [],
                 })
                 setImagePreview(initialData.image || null)
                 fetchPricingRules()
@@ -175,10 +232,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     track_inventory: true,
                     custom_fields_schema: "",
                     image: undefined,
-                    // Manufacturing fields
                     has_bom: false,
                     requires_advanced_manufacturing: false,
-                } as ProductFormValues)
+                    bom_lines: [],
+                    product_custom_fields: [],
+                })
                 setImagePreview(null)
                 setPricingRules([])
             }
@@ -189,7 +247,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         setLoading(true)
         try {
             const formData = new FormData()
-            formData.append('code', data.code)
+            formData.append('code', data.code || '')
             formData.append('name', data.name)
             formData.append('category', data.category)
             formData.append('product_type', data.product_type)
@@ -202,6 +260,13 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             // Manufacturing fields
             formData.append('has_bom', data.has_bom ? 'true' : 'false')
             formData.append('requires_advanced_manufacturing', data.requires_advanced_manufacturing ? 'true' : 'false')
+
+            if (data.bom_lines && data.bom_lines.length > 0) {
+                formData.append('bom_lines', JSON.stringify(data.bom_lines))
+            }
+            if (data.product_custom_fields && data.product_custom_fields.length > 0) {
+                formData.append('product_custom_fields', JSON.stringify(data.product_custom_fields))
+            }
 
             if (data.custom_fields_schema) {
                 formData.append('custom_fields_schema', data.custom_fields_schema)
@@ -255,7 +320,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     <TabsTrigger value="general" className="px-8 flex gap-2">
                                         Información General
                                     </TabsTrigger>
-                                    {(form.watch("product_type") === 'MANUFACTURABLE_STANDARD' || form.watch("product_type") === 'MANUFACTURABLE_CUSTOM') && (
+                                    {form.watch("product_type") === 'MANUFACTURABLE' && (
                                         <TabsTrigger value="manufacturing" className="px-8 flex gap-2">
                                             Fabricación
                                         </TabsTrigger>
@@ -286,15 +351,14 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                                 {[
                                                                     { id: 'STORABLE', label: 'Almacenable' },
                                                                     { id: 'CONSUMABLE', label: 'Consumible' },
-                                                                    { id: 'MANUFACTURABLE_STANDARD', label: 'Fabricable Estándar' },
-                                                                    { id: 'MANUFACTURABLE_CUSTOM', label: 'Fabricable Custom' },
+                                                                    { id: 'MANUFACTURABLE', label: 'Fabricable' },
                                                                     { id: 'SERVICE', label: 'Servicio' }
                                                                 ].map((t) => (
-                                                                    <FormItem key={t.id} className="flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all cursor-pointer">
+                                                                    <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all ${!!initialData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                                                                         <FormControl>
-                                                                            <RadioGroupItem value={t.id} />
+                                                                            <RadioGroupItem value={t.id} disabled={!!initialData} />
                                                                         </FormControl>
-                                                                        <FormLabel className="font-medium cursor-pointer flex-1 text-sm">
+                                                                        <FormLabel className={`font-medium flex-1 text-sm ${!!initialData ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                                                                             {t.label}
                                                                         </FormLabel>
                                                                     </FormItem>
@@ -397,33 +461,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                     />
                                                 </div>
 
-                                                {form.watch("product_type") === 'MANUFACTURABLE_CUSTOM' && (
-                                                    <div className="md:col-span-4">
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="custom_fields_schema"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className="flex gap-2 items-center">
-                                                                        Esquema de Campos Personalizados (JSON)
-                                                                        <Info className="h-3 w-3 text-muted-foreground" />
-                                                                    </FormLabel>
-                                                                    <FormControl>
-                                                                        <textarea
-                                                                            {...field}
-                                                                            className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-mono"
-                                                                            placeholder='{"color": "text", "tamaño": "text"}'
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormDescription className="text-[10px]">
-                                                                        Define los campos dinámicos que se pedirán en la venta.
-                                                                    </FormDescription>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
-                                                )}
 
                                                 <div className="md:col-span-4">
                                                     <FormField<ProductFormValues>
@@ -433,7 +470,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                             <FormItem>
                                                                 <FormLabel>Categoría</FormLabel>
                                                                 <div className="flex gap-2">
-                                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                                    <Select onValueChange={field.onChange} value={field.value} disabled={!!initialData}>
                                                                         <FormControl>
                                                                             <SelectTrigger className="flex-1">
                                                                                 <SelectValue placeholder="Seleccionar" />
@@ -585,128 +622,215 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                 </TabsContent>
 
                                 <TabsContent value="manufacturing" className="mt-0 space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="p-6 border rounded-2xl bg-muted/30 space-y-6">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                                    <Package className="h-5 w-5" />
-                                                </div>
-                                                <h3 className="font-bold">Opciones de Fabricación</h3>
-                                            </div>
-
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="has_bom"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-background">
-                                                        <div className="space-y-0.5">
-                                                            <FormLabel className="text-base font-semibold">Tiene Lista de Materiales (BOM)</FormLabel>
-                                                            <FormDescription className="text-xs">
-                                                                Define componentes para ser consumidos en producción.
-                                                            </FormDescription>
-                                                        </div>
-                                                        <FormControl>
-                                                            <Checkbox
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Left: Custom Fields (Templates) */}
+                                        <div className="space-y-6">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="requires_advanced_manufacturing"
+                                                        render={({ field }) => (
+                                                            <Switch
                                                                 checked={field.value}
                                                                 onCheckedChange={field.onChange}
                                                             />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="requires_advanced_manufacturing"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-background">
-                                                        <div className="space-y-0.5">
-                                                            <FormLabel className="text-base font-semibold">Requiere Fabricación Avanzada</FormLabel>
-                                                            <FormDescription className="text-xs">
-                                                                Pide detalles específicos (diseño, contacto, etc.) al vender.
-                                                            </FormDescription>
-                                                        </div>
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-
-                                        <div className="p-6 border rounded-2xl bg-primary/5 space-y-4">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                                    <Info className="h-5 w-5" />
-                                                </div>
-                                                <h3 className="font-bold">Información</h3>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                                Los productos marcados como fabricables permiten un seguimiento detallado en el taller.
-                                                Si activa la fabricación avanzada, el POS mostrará un formulario adicional al seleccionar este producto.
-                                            </p>
-                                            {form.watch("requires_advanced_manufacturing") && (
-                                                <div className="pt-4 p-4 bg-white dark:bg-slate-950 rounded-xl border border-primary/20 space-y-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <h4 className="text-[12px] font-bold uppercase text-primary">Campos Personalizados (Plantillas)</h4>
-                                                        <Button type="button" variant="ghost" size="sm" className="h-7 text-[10px] gap-1">
-                                                            <Plus className="h-3 w-3" /> Gestionar
-                                                        </Button>
+                                                        )}
+                                                    />
+                                                    <div>
+                                                        <h3 className="font-bold text-sm">Requiere Fabricación Avanzada</h3>
+                                                        <p className="text-[10px] text-muted-foreground">Captura datos adicionales al vender este producto.</p>
                                                     </div>
+                                                </div>
+                                            </div>
+
+                                            {form.watch("requires_advanced_manufacturing") && (
+                                                <div className="space-y-4 p-4 border rounded-xl bg-muted/20">
+                                                    <div className="flex items-center justify-between">
+                                                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campos Personalizados (Plantillas)</h4>
+                                                        <Select onValueChange={(val) => {
+                                                            const templateId = parseInt(val);
+                                                            if (!pcfFields.some(pcf => pcf.template === templateId)) {
+                                                                appendPcf({ template: templateId, order: pcfFields.length });
+                                                            }
+                                                        }}>
+                                                            <SelectTrigger className="w-[180px] h-8 text-[10px]">
+                                                                <SelectValue placeholder="Añadir Campo..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {fieldTemplates.map(t => (
+                                                                    <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
                                                     <div className="space-y-2">
-                                                        {initialData?.product_custom_fields?.length > 0 ? (
-                                                            initialData.product_custom_fields.map((pcf: any) => (
-                                                                <div key={pcf.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 text-xs border">
-                                                                    <div className="flex gap-2 items-center">
-                                                                        <span className="font-bold">{pcf.template_data.name}</span>
-                                                                        <Badge variant="outline" className="text-[9px] h-4">
-                                                                            {pcf.template_data.field_type}
-                                                                        </Badge>
+                                                        {pcfFields.length > 0 ? (
+                                                            pcfFields.map((field, index) => {
+                                                                const template = fieldTemplates.find(t => t.id === Number(field.template));
+                                                                return (
+                                                                    <div key={field.id} className="flex items-center justify-between p-2 rounded-lg bg-background border text-[11px] group">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center font-bold text-[10px]">
+                                                                                {index + 1}
+                                                                            </div>
+                                                                            <span>{template?.name || "Cargando..."}</span>
+                                                                            <Badge variant="outline" className="text-[9px] h-4">
+                                                                                {template?.field_type === 'TEXT' ? 'Texto' : 'Selección'}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                            onClick={() => removePcf(index)}
+                                                                        >
+                                                                            <X className="h-3 w-3" />
+                                                                        </Button>
                                                                     </div>
-                                                                    <span className="text-muted-foreground">Opcional</span>
-                                                                </div>
-                                                            ))
+                                                                );
+                                                            })
                                                         ) : (
-                                                            <p className="text-[10px] text-muted-foreground italic">No hay plantillas de campos asociadas.</p>
+                                                            <p className="text-[10px] text-muted-foreground italic text-center py-4">No hay campos personalizados asociados.</p>
                                                         )}
                                                     </div>
                                                 </div>
                                             )}
+                                        </div>
+
+                                        {/* Right: BOM */}
+                                        <div className="space-y-6">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="has_bom"
+                                                        render={({ field }) => (
+                                                            <Switch
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        )}
+                                                    />
+                                                    <div>
+                                                        <h3 className="font-bold text-sm">Gestionar Materiales (BOM)</h3>
+                                                        <p className="text-[10px] text-muted-foreground">Define componentes para control de stock en fabricación.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
 
                                             {form.watch("has_bom") && (
-                                                <div className="pt-4 p-4 bg-white dark:bg-slate-950 rounded-xl border border-primary/20 space-y-4">
+                                                <div className="space-y-4 p-4 border rounded-xl bg-muted/20">
                                                     <div className="flex items-center justify-between">
-                                                        <h4 className="text-[12px] font-bold uppercase text-primary">Lista de Materiales (BOM)</h4>
-                                                        <Button type="button" variant="ghost" size="sm" className="h-7 text-[10px] gap-1">
-                                                            <Pencil className="h-3 w-3" /> Editar BOM
+                                                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Lista de Materiales</h4>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-8 text-[10px] gap-1"
+                                                            onClick={() => appendBom({ component: "", quantity: 1, uom: "" })}
+                                                        >
+                                                            <Plus className="h-3 w-3" /> Añadir Componente
                                                         </Button>
                                                     </div>
-                                                    <div className="space-y-1">
-                                                        {initialData?.bom_lines?.length > 0 ? (
-                                                            <div className="max-h-[150px] overflow-y-auto pr-1">
-                                                                <Table>
-                                                                    <TableHeader className="bg-muted/50">
-                                                                        <TableRow className="h-7">
-                                                                            <TableHead className="text-[10px] h-7">Componente</TableHead>
-                                                                            <TableHead className="text-[10px] h-7 text-right">Cant</TableHead>
+
+                                                    <div className="rounded-md border bg-background overflow-hidden shadow-sm">
+                                                        <Table>
+                                                            <TableHeader className="bg-muted/30">
+                                                                <TableRow className="h-8">
+                                                                    <TableHead className="text-[10px] h-8">Componente</TableHead>
+                                                                    <TableHead className="text-[10px] h-8 w-[80px]">Cant.</TableHead>
+                                                                    <TableHead className="text-[10px] h-8 w-[100px]">UoM</TableHead>
+                                                                    <TableHead className="text-[10px] h-8 w-[40px]"></TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {bomFields.length > 0 ? (
+                                                                    bomFields.map((field, index) => (
+                                                                        <TableRow key={field.id} className="h-10 hover:bg-muted/10 transition-colors">
+                                                                            <TableCell className="p-1">
+                                                                                <FormField
+                                                                                    control={form.control}
+                                                                                    name={`bom_lines.${index}.component`}
+                                                                                    render={({ field: selectField }) => (
+                                                                                        <ProductSelector
+                                                                                            value={selectField.value}
+                                                                                            onChange={(val) => {
+                                                                                                selectField.onChange(val);
+                                                                                                // Auto set UoM
+                                                                                                const selectedProd = products.find((p: any) => p.id.toString() === val);
+                                                                                                if (selectedProd) {
+                                                                                                    form.setValue(`bom_lines.${index}.uom`, (selectedProd.uom?.id || selectedProd.uom)?.toString() || "");
+                                                                                                    // Also set quantity to 1 if empty
+                                                                                                    if (!form.getValues(`bom_lines.${index}.quantity`)) {
+                                                                                                        form.setValue(`bom_lines.${index}.quantity`, 1);
+                                                                                                    }
+                                                                                                }
+                                                                                            }}
+                                                                                            placeholder="Buscar..."
+                                                                                        />
+                                                                                    )}
+                                                                                />
+                                                                            </TableCell>
+                                                                            <TableCell className="p-1">
+                                                                                <FormField
+                                                                                    control={form.control}
+                                                                                    name={`bom_lines.${index}.quantity`}
+                                                                                    render={({ field: qField }) => (
+                                                                                        <Input
+                                                                                            type="number"
+                                                                                            step="0.0001"
+                                                                                            {...qField}
+                                                                                            className="h-7 text-[10px] font-mono px-2"
+                                                                                            onChange={(e) => qField.onChange(parseFloat(e.target.value) || 0)}
+                                                                                        />
+                                                                                    )}
+                                                                                />
+                                                                            </TableCell>
+                                                                            <TableCell className="p-1">
+                                                                                <FormField
+                                                                                    control={form.control}
+                                                                                    name={`bom_lines.${index}.uom`}
+                                                                                    render={({ field: uomField }) => (
+                                                                                        <Select onValueChange={uomField.onChange} value={uomField.value}>
+                                                                                            <FormControl>
+                                                                                                <SelectTrigger className="h-7 text-[10px]">
+                                                                                                    <SelectValue placeholder="Unidad" />
+                                                                                                </SelectTrigger>
+                                                                                            </FormControl>
+                                                                                            <SelectContent>
+                                                                                                {uoms.map(u => (
+                                                                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                                                                ))}
+                                                                                            </SelectContent>
+                                                                                        </Select>
+                                                                                    )}
+                                                                                />
+                                                                            </TableCell>
+                                                                            <TableCell className="p-1 text-center">
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6 text-destructive"
+                                                                                    onClick={() => removeBom(index)}
+                                                                                >
+                                                                                    <Trash2 className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </TableCell>
                                                                         </TableRow>
-                                                                    </TableHeader>
-                                                                    <TableBody>
-                                                                        {initialData.bom_lines.map((bom: any) => (
-                                                                            <TableRow key={bom.id} className="h-7">
-                                                                                <TableCell className="text-[10px] py-1">{bom.component_name}</TableCell>
-                                                                                <TableCell className="text-[10px] py-1 text-right font-mono">{bom.quantity} {bom.uom_name}</TableCell>
-                                                                            </TableRow>
-                                                                        ))}
-                                                                    </TableBody>
-                                                                </Table>
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-[10px] text-muted-foreground italic">No se han definido componentes para este producto.</p>
-                                                        )}
+                                                                    ))
+                                                                ) : (
+                                                                    <TableRow>
+                                                                        <TableCell colSpan={4} className="text-center py-4 text-[10px] text-muted-foreground italic">
+                                                                            No se han definido componentes.
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                )}
+                                                            </TableBody>
+                                                        </Table>
                                                     </div>
                                                 </div>
                                             )}

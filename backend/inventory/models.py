@@ -4,6 +4,7 @@ from accounting.models import Account, AccountType
 
 class ProductCategory(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
+    prefix = models.CharField(_("Prefijo"), max_length=10, null=True, blank=True, help_text=_("Usado para generar el código interno (ej: IMP, DIS)"))
     icon = models.CharField(_("Icono"), max_length=50, null=True, blank=True, help_text=_("Nombre del icono de Lucide (ej: Package, Coffee)"))
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     
@@ -62,11 +63,11 @@ class Product(models.Model):
     class Type(models.TextChoices):
         CONSUMABLE = 'CONSUMABLE', _('Consumible')
         STORABLE = 'STORABLE', _('Almacenable')
-        MANUFACTURABLE_STANDARD = 'MANUFACTURABLE_STANDARD', _('Fabricable Estándar')
-        MANUFACTURABLE_CUSTOM = 'MANUFACTURABLE_CUSTOM', _('Fabricable Customizado')
+        MANUFACTURABLE = 'MANUFACTURABLE', _('Fabricable')
         SERVICE = 'SERVICE', _('Servicio')
 
-    code = models.CharField(_("Código/SKU"), max_length=50, unique=True)
+    internal_code = models.CharField(_("Código Interno"), max_length=50, unique=True, editable=False, null=True, blank=True)
+    code = models.CharField(_("Código/SKU"), max_length=50, unique=True, null=True, blank=True)
     name = models.CharField(_("Nombre"), max_length=255)
     category = models.ForeignKey(ProductCategory, on_delete=models.PROTECT, related_name='products')
     product_type = models.CharField(_("Tipo"), max_length=30, choices=Type.choices, default=Type.STORABLE)
@@ -136,6 +137,26 @@ class Product(models.Model):
             self.track_inventory = True
         else:
             self.track_inventory = False
+            
+        if not self.internal_code:
+            prefix = self.category.prefix or "PROD"
+            # Simple sequence: getting the last ID + 1 for this prefix
+            last_product = Product.objects.filter(internal_code__startswith=prefix).order_by('id').last()
+            if last_product and last_product.internal_code:
+                try:
+                    parts = last_product.internal_code.split('-')
+                    if len(parts) > 1:
+                        last_num = int(parts[-1])
+                        new_num = str(last_num + 1).zfill(4)
+                    else:
+                        # Case where internal_code exists but doesn't have a dash or number
+                        new_num = "0001"
+                except (ValueError, IndexError):
+                    new_num = "0001"
+            else:
+                new_num = "0001"
+            self.internal_code = f"{prefix}-{new_num}"
+            
         super().save(*args, **kwargs)
 
     # Helpers to get effective accounts (Product override > Category > None)
@@ -291,7 +312,7 @@ class BillOfMaterials(models.Model):
         on_delete=models.CASCADE, 
         related_name='bom_lines',
         verbose_name=_("Producto Fabricable"),
-        limit_choices_to={'product_type__in': ['MANUFACTURABLE_STANDARD', 'MANUFACTURABLE_CUSTOM']}
+        limit_choices_to={'product_type': 'MANUFACTURABLE'}
     )
     component = models.ForeignKey(
         Product,
