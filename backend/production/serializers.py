@@ -43,7 +43,7 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
         return data
 
 class BillOfMaterialsSerializer(serializers.ModelSerializer):
-    lines = BillOfMaterialsLineSerializer(many=True, read_only=True)
+    lines = BillOfMaterialsLineSerializer(many=True, required=False)
     product_code = serializers.CharField(source='product.code', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
     
@@ -53,8 +53,38 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         product = data.get('product')
+        # product might be None on update if not provided
+        if not product and self.instance:
+            product = self.instance.product
+            
         if product and not product.uom:
             raise serializers.ValidationError(
                 f"El producto '{product.name}' no tiene una Unidad de Medida (UoM) asignada."
             )
         return data
+
+    def create(self, validated_data):
+        lines_data = validated_data.pop('lines', [])
+        bom = BillOfMaterials.objects.create(**validated_data)
+        
+        for line_data in lines_data:
+            BillOfMaterialsLine.objects.create(bom=bom, **line_data)
+            
+        return bom
+
+    def update(self, instance, validated_data):
+        lines_data = validated_data.pop('lines', None)
+        
+        # Update standard fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update lines if provided
+        if lines_data is not None:
+            # Simple strategy: Delete all and recreate to ensure sequence and sync
+            instance.lines.all().delete()
+            for line_data in lines_data:
+                BillOfMaterialsLine.objects.create(bom=instance, **line_data)
+                
+        return instance

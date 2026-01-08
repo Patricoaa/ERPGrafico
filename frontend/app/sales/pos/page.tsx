@@ -370,8 +370,8 @@ export default function POSPage() {
                                                 "cursor-pointer hover:border-primary transition-all active:scale-95 relative flex flex-col overflow-hidden group",
                                                 // Disable if STORABLE with no stock
                                                 product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0 && "opacity-50 pointer-events-none grayscale-[0.5]",
-                                                // Disable if MANUFACTURABLE with no manufacturable quantity
-                                                product.product_type === 'MANUFACTURABLE' && (product.manufacturable_quantity === 0 || product.manufacturable_quantity === null) && "opacity-50 pointer-events-none grayscale-[0.5]"
+                                                // Disable if MANUFACTURABLE and quantity is 0 (specifically 0, not null/infinity)
+                                                product.product_type === 'MANUFACTURABLE' && (product.manufacturable_quantity === 0) && "opacity-50 pointer-events-none grayscale-[0.5]"
                                             )}
                                             onClick={() => addToCart(product)}
                                         >
@@ -392,7 +392,9 @@ export default function POSPage() {
                                                 {product.product_type === 'MANUFACTURABLE' && (
                                                     <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                                         <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity || 0) > 0 ? 'bg-blue-500' : 'bg-red-500'}`} />
-                                                        {product.manufacturable_quantity !== null ? `${product.manufacturable_quantity} fab.` : 'Sin BOM'}
+                                                        {product.manufacturable_quantity === null || product.manufacturable_quantity === Infinity || product.manufacturable_quantity > 999999
+                                                            ? 'Disponible'
+                                                            : `${product.manufacturable_quantity} fab.`}
                                                     </div>
                                                 )}
                                                 {product.product_type === 'SERVICE' && (

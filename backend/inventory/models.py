@@ -266,8 +266,9 @@ class Product(models.Model):
         from production.models import BillOfMaterials
         active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
         
+        # If no active BOM, treat as "Available" (no constraints)
         if not active_bom or not active_bom.lines.exists():
-            return None
+            return float('inf')
         
         # Calculate available quantity for each component
         from django.db.models import Sum
