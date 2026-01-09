@@ -22,9 +22,10 @@ class SaleLineSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         product = data.get('product')
-        if product and not product.uom:
+        # Check if product has either a stock UoM or a Sale UoM
+        if product and not (product.uom or product.sale_uom):
             raise serializers.ValidationError(
-                f"El producto '{product.name}' no tiene una Unidad de Medida (UoM) asignada."
+                f"El producto '{product.name}' no tiene configurada una Unidad de Venta ni Unidad de Medida base."
             )
         return data
 

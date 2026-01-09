@@ -73,7 +73,7 @@ export function PaymentDialog({
             if (existingInvoice) {
                 setDteType(existingInvoice.dte_type)
             } else {
-                setDteType("NONE")
+                setDteType(isPurchase ? "NONE" : "BOLETA")
             }
         }
     }, [open, pendingAmount, isPurchase, existingInvoice])
@@ -134,21 +134,21 @@ export function PaymentDialog({
 
                         {!hideDteFields && (dteType === "BOLETA" || dteType === "FACTURA") && (
                             <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed">
-                                <div className="flex items-center space-x-2 py-1">
-                                    <Checkbox
-                                        id="pending-doc-check"
-                                        checked={isPending}
-                                        onCheckedChange={(checked: boolean) => setIsPending(!!checked)}
-                                    />
-                                    <Label htmlFor="pending-doc-check" className="text-xs font-bold cursor-pointer">
-                                        {isPurchase
-                                            ? "Aún no recibo el documento físico / digital"
-                                            : dteType === "FACTURA"
-                                                ? "Emitiré la factura luego"
-                                                : "Emitiré la boleta luego"
-                                        }
-                                    </Label>
-                                </div>
+                                {dteType === 'FACTURA' && (
+                                    <div className="flex items-center space-x-2 py-1">
+                                        <Checkbox
+                                            id="pending-doc-check"
+                                            checked={isPending}
+                                            onCheckedChange={(checked: boolean) => setIsPending(!!checked)}
+                                        />
+                                        <Label htmlFor="pending-doc-check" className="text-xs font-bold cursor-pointer">
+                                            {isPurchase
+                                                ? "Aún no recibo el documento físico / digital"
+                                                : "Emitiré la factura luego"
+                                            }
+                                        </Label>
+                                    </div>
+                                )}
 
                                 <div className={`grid gap-2 ${isPending ? 'opacity-50' : ''}`}>
                                     <Label className="text-[10px] font-bold uppercase flex items-center gap-1">

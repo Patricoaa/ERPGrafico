@@ -200,11 +200,18 @@ export default function POSPage() {
                 : i
             ))
         } else {
+            // Prioritize sale_uom if available
+            const saleUoMId = (product as any).sale_uom
+            const defaultUoM = saleUoMId || product.uom
+
+            // Find name for the UoM
+            const uomName = uoms?.find(u => u.id === defaultUoM)?.name || product.uom_name
+
             setItems([...items, {
                 ...product,
                 qty: 1,
-                uom: product.uom,
-                uom_name: product.uom_name,
+                uom: defaultUoM,
+                uom_name: uomName,
                 unit_price_net: netPrice,
                 total_net: Math.round(netPrice),
                 total_tax: Math.round(netPrice * 0.19),

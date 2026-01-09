@@ -207,6 +207,7 @@ class SaleDeliveryLine(models.Model):
         _("Cantidad"), 
         max_digits=10, 
         decimal_places=2,
+        default=0,
         help_text="Cantidad despachada en este despacho"
     )
     unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=2, default=0)
