@@ -312,8 +312,11 @@ class BillingService:
         
         # 4. Create Payment (if not credit)
         if payment_method != 'CREDIT':
+            # Ensure amount is Decimal (from request it might be string)
+            payment_amount = Decimal(str(amount)) if amount else order.total
+            
             TreasuryService.register_payment(
-                amount=amount or order.total,
+                amount=payment_amount,
                 payment_type='INBOUND',
                 payment_method=payment_method,
                 reference=f"NV-{order.number}",
