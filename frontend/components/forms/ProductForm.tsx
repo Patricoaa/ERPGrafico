@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Package, Loader2, Pencil, X, Info, Trash2 } from "lucide-react"
+import { Plus, Package, Loader2, Pencil, X, Info, Trash2, Check, Layers, ChevronDown, ChevronUp } from "lucide-react"
 import { useForm, useFieldArray } from "react-hook-form"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -76,12 +76,17 @@ const productSchema = z.object({
     mfg_postpress_finishing: z.boolean().default(false),
     mfg_postpress_binding: z.boolean().default(false),
     mfg_default_delivery_days: z.preprocess((v) => Number(v) || 3, z.number().min(0)),
-    bom_name: z.string().optional().or(z.literal("")),
-    bom_lines: z.array(z.object({
-        component: z.string().min(1, "Componente requerido"),
-        quantity: z.preprocess((v) => Number(v) || 0, z.number().min(0.0001, "Mínimo 0.0001")),
-        unit: z.string().default("UN"),
-        notes: z.string().optional(),
+    boms: z.array(z.object({
+        id: z.number().optional(),
+        name: z.string().min(1, "Nombre requerido"),
+        active: z.boolean().default(false),
+        lines: z.array(z.object({
+            id: z.number().optional(),
+            component: z.string().min(1, "Componente requerido"),
+            quantity: z.preprocess((v) => Number(v) || 0, z.number().min(0.0001, "Mínimo 0.0001")),
+            unit: z.string().default("UN"),
+            notes: z.string().optional(),
+        })).default([]),
     })).default([]),
     product_custom_fields: z.array(z.object({
         template: z.preprocess((v) => Number(v), z.number()),
@@ -152,15 +157,14 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             mfg_postpress_finishing: false,
             mfg_postpress_binding: false,
             mfg_default_delivery_days: 3,
-            bom_name: "",
-            bom_lines: [],
+            boms: [],
             product_custom_fields: [],
         },
     })
 
-    const { fields: bomFields, append: appendBom, remove: removeBom } = useFieldArray({
+    const { fields: bomsFields, append: appendBom, remove: removeBom, update: updateBom } = useFieldArray({
         control: form.control,
-        name: "bom_lines"
+        name: "boms"
     })
 
     const { fields: pcfFields, append: appendPcf, remove: removePcf } = useFieldArray({
@@ -255,12 +259,17 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     mfg_postpress_finishing: initialData.mfg_postpress_finishing ?? false,
                     mfg_postpress_binding: initialData.mfg_postpress_binding ?? false,
                     mfg_default_delivery_days: initialData.mfg_default_delivery_days ?? 3,
-                    bom_name: initialData.boms?.find((b: any) => b.active)?.name || "",
-                    bom_lines: initialData.boms?.find((b: any) => b.active)?.lines.map((l: any) => ({
-                        component: l.component?.toString() || "",
-                        quantity: parseFloat(l.quantity) || 0,
-                        unit: l.unit || "UN",
-                        notes: l.notes || ""
+                    boms: initialData.boms?.map((b: any) => ({
+                        id: b.id,
+                        name: b.name || "",
+                        active: b.active || false,
+                        lines: b.lines.map((l: any) => ({
+                            id: l.id,
+                            component: l.component?.toString() || "",
+                            quantity: parseFloat(l.quantity) || 0,
+                            unit: l.unit || "UN",
+                            notes: l.notes || ""
+                        }))
                     })) || [],
                     product_custom_fields: initialData.product_custom_fields?.map((pcf: any) => ({
                         template: pcf.template,
@@ -297,8 +306,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     mfg_postpress_finishing: false,
                     mfg_postpress_binding: false,
                     mfg_default_delivery_days: 3,
-                    bom_name: "",
-                    bom_lines: [],
+                    boms: [],
                     product_custom_fields: [],
                 })
                 setImagePreview(null)
@@ -344,9 +352,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('mfg_postpress_binding', data.mfg_postpress_binding ? 'true' : 'false')
             formData.append('mfg_default_delivery_days', data.mfg_default_delivery_days.toString())
 
-            if (data.bom_name) formData.append('bom_name', data.bom_name)
-            if (data.bom_lines && data.bom_lines.length > 0) {
-                formData.append('bom_lines', JSON.stringify(data.bom_lines))
+            if (data.boms && data.boms.length > 0) {
+                formData.append('boms', JSON.stringify(data.boms))
             }
             if (data.product_custom_fields && data.product_custom_fields.length > 0) {
                 formData.append('product_custom_fields', JSON.stringify(data.product_custom_fields))
@@ -748,9 +755,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             )}
                                         </div>
 
-                                        {/* BOM Card */}
-                                        <div className="p-6 rounded-2xl border bg-card">
-                                            <div className="flex items-center justify-between mb-4">
+                                        <div className="p-6 rounded-2xl border bg-card md:col-span-2">
+                                            <div className="flex items-center justify-between mb-6">
                                                 <div className="flex items-center gap-2">
                                                     <FormField
                                                         control={form.control}
@@ -763,150 +769,52 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                         )}
                                                     />
                                                     <div>
-                                                        <h3 className="font-bold text-sm">Gestionar Materiales (BOM)</h3>
-                                                        <p className="text-[10px] text-muted-foreground">Define componentes para control de stock</p>
+                                                        <h3 className="font-bold text-sm">Listas de Materiales (BOM)</h3>
+                                                        <p className="text-[10px] text-muted-foreground">Gestiona múltiples recetas y selecciona la predeterminada</p>
                                                     </div>
                                                 </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    className="h-8 gap-1"
+                                                    onClick={() => appendBom({ name: `Nueva Lista ${bomsFields.length + 1}`, active: bomsFields.length === 0, lines: [] })}
+                                                >
+                                                    <Plus className="h-3.5 w-3.5" /> Nueva Receta
+                                                </Button>
                                             </div>
-                                            {form.watch("has_bom") && (
-                                                <div className="space-y-6 mt-4 pt-4 border-t">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="bom_name"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className="text-xs">Nombre de la Lista</FormLabel>
-                                                                <FormControl>
-                                                                    <Input placeholder="Ej: Receta Estándar" {...field} className="h-9" />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
 
-                                                    <div>
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <h4 className="text-sm font-bold">Componentes</h4>
+                                            {form.watch("has_bom") && (
+                                                <div className="space-y-4">
+                                                    {bomsFields.length === 0 && (
+                                                        <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/20">
+                                                            <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+                                                            <p className="text-sm text-muted-foreground">No hay listas de materiales definidas</p>
                                                             <Button
                                                                 type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="h-8 text-[10px] gap-1"
-                                                                onClick={() => appendBom({ component: "", quantity: 1, unit: "UN", notes: "" })}
+                                                                variant="link"
+                                                                className="text-primary text-xs"
+                                                                onClick={() => appendBom({ name: "Lista Estándar", active: true, lines: [] })}
                                                             >
-                                                                <Plus className="h-3 w-3" /> Añadir Componente
+                                                                Crear la primera
                                                             </Button>
                                                         </div>
-                                                        <div className="rounded-md border bg-background overflow-hidden">
-                                                            <Table>
-                                                                <TableHeader className="bg-muted/30">
-                                                                    <TableRow className="h-8">
-                                                                        <TableHead className="text-[10px] h-8">Componente</TableHead>
-                                                                        <TableHead className="text-[10px] h-8 w-[80px]">Cant.</TableHead>
-                                                                        <TableHead className="text-[10px] h-8 w-[90px]">UdM</TableHead>
-                                                                        <TableHead className="text-[10px] h-8">Notas</TableHead>
-                                                                        <TableHead className="text-[10px] h-8 w-[40px]"></TableHead>
-                                                                    </TableRow>
-                                                                </TableHeader>
-                                                                <TableBody>
-                                                                    {bomFields.length > 0 ? (
-                                                                        bomFields.map((field, index) => (
-                                                                            <TableRow key={field.id} className="h-10 hover:bg-muted/10">
-                                                                                <TableCell className="p-1">
-                                                                                    <FormField
-                                                                                        control={form.control}
-                                                                                        name={`bom_lines.${index}.component`}
-                                                                                        render={({ field: selectField }) => (
-                                                                                            <ProductSelector
-                                                                                                value={selectField.value}
-                                                                                                onChange={(val) => {
-                                                                                                    selectField.onChange(val);
-                                                                                                    const selectedProd = products.find((p: any) => p.id.toString() === val);
-                                                                                                    if (selectedProd) {
-                                                                                                        form.setValue(`bom_lines.${index}.unit`, (selectedProd.uom?.name || selectedProd.uom_name || "UN"));
-                                                                                                        if (!form.getValues(`bom_lines.${index}.quantity`)) {
-                                                                                                            form.setValue(`bom_lines.${index}.quantity`, 1);
-                                                                                                        }
-                                                                                                    }
-                                                                                                }}
-                                                                                                placeholder="Buscar..."
-                                                                                            />
-                                                                                        )}
-                                                                                    />
-                                                                                </TableCell>
-                                                                                <TableCell className="p-1">
-                                                                                    <FormField
-                                                                                        control={form.control}
-                                                                                        name={`bom_lines.${index}.quantity`}
-                                                                                        render={({ field: qField }) => (
-                                                                                            <Input
-                                                                                                type="number"
-                                                                                                step="0.0001"
-                                                                                                {...qField}
-                                                                                                className="h-7 text-[10px] font-mono px-2"
-                                                                                                onChange={(e) => qField.onChange(parseFloat(e.target.value) || 0)}
-                                                                                            />
-                                                                                        )}
-                                                                                    />
-                                                                                </TableCell>
-                                                                                <TableCell className="p-1">
-                                                                                    <FormField
-                                                                                        control={form.control}
-                                                                                        name={`bom_lines.${index}.unit`}
-                                                                                        render={({ field: uField }) => (
-                                                                                            <Select onValueChange={uField.onChange} value={uField.value}>
-                                                                                                <FormControl>
-                                                                                                    <SelectTrigger className="h-7 text-[10px] px-2 min-w-[70px]">
-                                                                                                        <SelectValue />
-                                                                                                    </SelectTrigger>
-                                                                                                </FormControl>
-                                                                                                <SelectContent>
-                                                                                                    <SelectItem value="UN">UN</SelectItem>
-                                                                                                    <SelectItem value="KG">KG</SelectItem>
-                                                                                                    <SelectItem value="MT">MT</SelectItem>
-                                                                                                    <SelectItem value="LT">LT</SelectItem>
-                                                                                                    <SelectItem value="PL">PL</SelectItem>
-                                                                                                </SelectContent>
-                                                                                            </Select>
-                                                                                        )}
-                                                                                    />
-                                                                                </TableCell>
-                                                                                <TableCell className="p-1">
-                                                                                    <FormField
-                                                                                        control={form.control}
-                                                                                        name={`bom_lines.${index}.notes`}
-                                                                                        render={({ field: nField }) => (
-                                                                                            <Input
-                                                                                                {...nField}
-                                                                                                className="h-7 text-[10px] px-2"
-                                                                                                placeholder="..."
-                                                                                            />
-                                                                                        )}
-                                                                                    />
-                                                                                </TableCell>
-                                                                                <TableCell className="p-1 text-center">
-                                                                                    <Button
-                                                                                        type="button"
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        className="h-6 w-6 text-destructive"
-                                                                                        onClick={() => removeBom(index)}
-                                                                                    >
-                                                                                        <Trash2 className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                </TableCell>
-                                                                            </TableRow>
-                                                                        ))
-                                                                    ) : (
-                                                                        <TableRow>
-                                                                            <TableCell colSpan={5} className="text-center py-4 text-[10px] text-muted-foreground italic">
-                                                                                No se han definido componentes.
-                                                                            </TableCell>
-                                                                        </TableRow>
-                                                                    )}
-                                                                </TableBody>
-                                                            </Table>
-                                                        </div>
+                                                    )}
+
+                                                    <div className="grid grid-cols-1 gap-3">
+                                                        {bomsFields.map((bom, bomIndex) => (
+                                                            <BOMItemField
+                                                                key={bom.id || bomIndex}
+                                                                form={form}
+                                                                bomIndex={bomIndex}
+                                                                onRemove={() => removeBom(bomIndex)}
+                                                                onSetDefault={() => {
+                                                                    bomsFields.forEach((_, idx) => {
+                                                                        form.setValue(`boms.${idx}.active`, idx === bomIndex);
+                                                                    });
+                                                                }}
+                                                            />
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
@@ -1526,5 +1434,177 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 }}
             />
         </Dialog >
+    )
+}
+
+function BOMItemField({ form, bomIndex, onRemove, onSetDefault }: any) {
+    const [isExpanded, setIsExpanded] = useState(false)
+    const { fields: lineFields, append, remove } = useFieldArray({
+        control: form.control,
+        name: `boms.${bomIndex}.lines`
+    })
+
+    const isActive = form.watch(`boms.${bomIndex}.active`)
+    const bomName = form.watch(`boms.${bomIndex}.name`)
+
+    return (
+        <div className={cn(
+            "rounded-xl border transition-all duration-200",
+            isActive ? "border-primary/50 bg-primary/[0.02]" : "bg-background shadow-sm hover:border-muted-foreground/30"
+        )}>
+            <div className="p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 shrink-0">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                            "h-8 w-8 rounded-full transition-colors",
+                            isActive ? "bg-primary text-white hover:bg-primary/90" : "bg-muted text-muted-foreground hover:bg-muted-foreground/10"
+                        )}
+                        onClick={onSetDefault}
+                    >
+                        {isActive ? <Check className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
+                    </Button>
+                    <div className="flex flex-col">
+                        <FormField
+                            control={form.control}
+                            name={`boms.${bomIndex}.name`}
+                            render={({ field }) => (
+                                <Input
+                                    {...field}
+                                    placeholder="Nombre de la receta"
+                                    className="h-7 text-xs font-bold bg-transparent border-transparent focus-visible:border-primary/30 w-[200px] px-0"
+                                />
+                            )}
+                        />
+                        <span className="text-[10px] text-muted-foreground">
+                            {lineFields.length} componentes • {isActive ? 'Predeterminada' : 'Respaldo'}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                        onClick={onRemove}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+
+            {isExpanded && (
+                <div className="px-4 pb-4 pt-0 border-t animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between mt-4 mb-2">
+                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Componentes de la Receta</h4>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 text-[10px] gap-1 px-2"
+                            onClick={() => append({ component: "", quantity: 1, unit: "UN", notes: "" })}
+                        >
+                            <Plus className="h-3 w-3" /> Añadir
+                        </Button>
+                    </div>
+
+                    <div className="rounded-lg border overflow-hidden">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="h-8 hover:bg-transparent">
+                                    <TableHead className="text-[10px] h-8 px-2 font-bold">Componente</TableHead>
+                                    <TableHead className="text-[10px] h-8 w-[70px] px-2 font-bold text-center">Cant.</TableHead>
+                                    <TableHead className="text-[10px] h-8 w-[80px] px-2 font-bold text-center">Unidad</TableHead>
+                                    <TableHead className="text-[10px] h-8 w-[32px] px-2"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {lineFields.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center py-4 text-[10px] text-muted-foreground italic">
+                                            No hay componentes definidos
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    lineFields.map((field, index) => (
+                                        <TableRow key={field.id} className="h-10 hover:bg-muted/5 border-b last:border-0">
+                                            <TableCell className="p-1 px-2">
+                                                <ProductSelector
+                                                    value={form.watch(`boms.${bomIndex}.lines.${index}.component`)}
+                                                    onChange={(val) => form.setValue(`boms.${bomIndex}.lines.${index}.component`, val)}
+                                                    placeholder="Sel. componente"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="p-1 px-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`boms.${bomIndex}.lines.${index}.quantity`}
+                                                    render={({ field }) => (
+                                                        <Input
+                                                            type="number"
+                                                            step="0.0001"
+                                                            {...field}
+                                                            className="h-8 text-center text-[11px] font-mono px-1"
+                                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                        />
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell className="p-1 px-2 text-center">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`boms.${bomIndex}.lines.${index}.unit`}
+                                                    render={({ field }) => (
+                                                        <Select onValueChange={field.onChange} value={field.value}>
+                                                            <FormControl>
+                                                                <SelectTrigger className="h-8 text-[10px] px-1 justify-center">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="UN">UN</SelectItem>
+                                                                <SelectItem value="KG">KG</SelectItem>
+                                                                <SelectItem value="MT">MT</SelectItem>
+                                                                <SelectItem value="LT">LT</SelectItem>
+                                                                <SelectItem value="PL">PL</SelectItem>
+                                                                <SelectItem value="ML">ML</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell className="p-1 px-1 text-center">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                    onClick={() => remove(index)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
+        </div>
     )
 }

@@ -65,9 +65,8 @@ class ProductSerializer(serializers.ModelSerializer):
     last_purchase_price = serializers.SerializerMethodField()
     manufacturable_quantity = serializers.SerializerMethodField()
     
-    # Manufacturing fields
-    bom_lines = BillOfMaterialsLineSerializer(many=True, required=False)
-    bom_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    # Manufacturing fields: Support multiple BOMs
+    boms = BillOfMaterialsSerializer(many=True, required=False)
     product_custom_fields = ProductCustomFieldSerializer(many=True, required=False)
     
     class Meta:
@@ -78,7 +77,7 @@ class ProductSerializer(serializers.ModelSerializer):
         # Handle JSON strings for list fields when using multipart/form-data
         import json
         ret = data.copy()
-        for field in ['bom_lines', 'product_custom_fields', 'allowed_sale_uoms']:
+        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms']:
             if field in ret and isinstance(ret[field], str):
                 try:
                     ret[field] = json.loads(ret[field])
@@ -106,8 +105,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return float(qty) if qty is not None else None
 
     def create(self, validated_data):
-        bom_data = validated_data.pop('bom_lines', [])
-        bom_name = validated_data.pop('bom_name', None)
+        boms_data = validated_data.pop('boms', [])
         pcf_data = validated_data.pop('product_custom_fields', [])
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', [])
         
@@ -116,14 +114,12 @@ class ProductSerializer(serializers.ModelSerializer):
         if allowed_sale_uoms:
             product.allowed_sale_uoms.set(allowed_sale_uoms)
         
-        if bom_data:
-            bom_header = BillOfMaterials.objects.create(
-                product=product,
-                name=bom_name or f"BOM {product.name}",
-                active=True
-            )
-            for line in bom_data:
-                BillOfMaterialsLine.objects.create(bom=bom_header, **line)
+        for bom_data in boms_data:
+            lines_data = bom_data.pop('lines', [])
+            bom = BillOfMaterials.objects.create(product=product, **bom_data)
+            for line_data in lines_data:
+                line_data.pop('id', None)
+                BillOfMaterialsLine.objects.create(bom=bom, **line_data)
             
         for pcf in pcf_data:
             ProductCustomField.objects.create(product=product, **pcf)
@@ -131,8 +127,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return product
 
     def update(self, instance, validated_data):
-        bom_data = validated_data.pop('bom_lines', None)
-        bom_name = validated_data.pop('bom_name', None)
+        boms_data = validated_data.pop('boms', None)
         pcf_data = validated_data.pop('product_custom_fields', None)
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', None)
         
@@ -141,24 +136,42 @@ class ProductSerializer(serializers.ModelSerializer):
         if allowed_sale_uoms is not None:
             product.allowed_sale_uoms.set(allowed_sale_uoms)
         
-        if bom_data is not None:
-            # Get or create active BOM
-            bom_header = BillOfMaterials.objects.filter(product=instance, active=True).first()
-            if not bom_header and (bom_data or bom_name):
-                bom_header = BillOfMaterials.objects.create(
-                    product=instance,
-                    name=bom_name or f"BOM {instance.name}",
-                    active=True
-                )
-            elif bom_header and bom_name:
-                bom_header.name = bom_name
-                bom_header.save()
-
-            if bom_header:
-                # Replace lines
-                bom_header.lines.all().delete()
-                for line in bom_data:
-                    BillOfMaterialsLine.objects.create(bom=bom_header, **line)
+        if boms_data is not None:
+            # Simple sync: Delete missing BOMs, update existing ones, create new ones.
+            # However, for nested data in DRF, it's safer to either match by ID or 
+            # replace if it's a manageable list. Considering users might just want to 
+            # overwrite/sync the whole set of BOMs for a product.
+            existing_boms = {b.id: b for b in instance.boms.all()}
+            incoming_ids = [b.get('id') for b in boms_data if b.get('id')]
+            
+            # Delete removed ones
+            for bom_id, bom_obj in existing_boms.items():
+                if bom_id not in incoming_ids:
+                    bom_obj.delete()
+            
+            for bom_item in boms_data:
+                bom_id = bom_item.get('id')
+                lines_data = bom_item.pop('lines', [])
+                bom_item.pop('id', None) # Remove ID if present to avoid conflicts
+                
+                if bom_id and bom_id in existing_boms:
+                    # Update existing
+                    bom = existing_boms[bom_id]
+                    for attr, value in bom_item.items():
+                        setattr(bom, attr, value)
+                    bom.save()
+                    
+                    # Update lines (replace all)
+                    bom.lines.all().delete()
+                    for line_data in lines_data:
+                        line_data.pop('id', None)
+                        BillOfMaterialsLine.objects.create(bom=bom, **line_data)
+                else:
+                    # Create new
+                    bom = BillOfMaterials.objects.create(product=instance, **bom_item)
+                    for line_data in lines_data:
+                        line_data.pop('id', None)
+                        BillOfMaterialsLine.objects.create(bom=bom, **line_data)
                 
         if pcf_data is not None:
             # Simple replace strategy
@@ -167,6 +180,7 @@ class ProductSerializer(serializers.ModelSerializer):
                 ProductCustomField.objects.create(product=instance, **pcf)
                 
         return instance
+
 
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
