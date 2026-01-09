@@ -137,8 +137,14 @@ class SalesService:
         if not product:
             raise ValidationError(f"La línea '{sale_line.description}' no tiene producto asociado.")
         
-        # Get current cost price
-        unit_cost = product.cost_price
+        # Determine unit cost
+        if product.product_type == 'MANUFACTURABLE':
+            unit_cost = product.get_bom_cost()
+            # If unit_cost is 0, it means no BOM or components have 0 cost.
+            # This aligns with "postponing" COGS for manufacturable products.
+        else:
+            # Get current cost price (weighted average)
+            unit_cost = product.cost_price
         
         # Create delivery line
         delivery_line = SaleDeliveryLine.objects.create(

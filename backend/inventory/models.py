@@ -247,6 +247,24 @@ class Product(models.Model):
     def get_expense_account(self):
         return self.category.expense_account
 
+    def get_bom_cost(self):
+        """
+        Calculates the total cost of materials from the active BOM.
+        Returns Decimal('0.00') if no active BOM or no lines.
+        """
+        from production.models import BillOfMaterials
+        from decimal import Decimal
+        active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
+        if not active_bom:
+            return Decimal('0.00')
+        
+        total_bom_cost = Decimal('0.00')
+        for line in active_bom.lines.all():
+            # Use component's cost_price (weighted average)
+            total_bom_cost += line.quantity * line.component.cost_price
+            
+        return total_bom_cost
+
     def get_manufacturable_quantity(self):
         """
         Calculate how many units of this product can be manufactured

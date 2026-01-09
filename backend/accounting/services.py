@@ -202,20 +202,27 @@ class AccountingMapper:
         """
         SaleOrder: Receivable (Dr) vs Revenue (Cr) + Tax (Cr)
         """
-        revenue_account = getattr(order.customer.category, 'revenue_account', None) or settings.default_revenue_account
         receivable_account = order.customer.account_receivable or settings.default_receivable_account
-        
-        if not revenue_account or not receivable_account:
-             raise ValidationError("Falta configuración de cuentas para Ventas.")
+        if not receivable_account:
+             raise ValidationError("Falta configuración de cuenta por cobrar.")
+
+        revenue_grouping = {} # Account -> Amount
+        for line in order.lines.all():
+            rev_acc = line.product.get_income_account or settings.default_revenue_account
+            if not rev_acc:
+                raise ValidationError(f"Falta configurar cuenta de ingresos para el producto {line.product.code}.")
+            revenue_grouping[rev_acc] = revenue_grouping.get(rev_acc, Decimal('0.00')) + line.subtotal
 
         items = [
             {'account': receivable_account, 'debit': order.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
-            {'account': revenue_account, 'debit': Decimal('0.00'), 'credit': order.total_net}
         ]
         
+        for acc, amount in revenue_grouping.items():
+            items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': amount, 'label': f"Venta {order.number}"})
+        
         if order.total_tax > 0:
-            tax_acc = settings.default_tax_payable_account # For Sales it is usually Payable (IVA Débito)
-            items.append({'account': tax_acc, 'debit': Decimal('0.00'), 'credit': order.total_tax})
+            tax_acc = settings.default_tax_payable_account
+            items.append({'account': tax_acc, 'debit': Decimal('0.00'), 'credit': order.total_tax, 'label': "IVA Débito Fiscal"})
             
         return f"Venta NV-{order.number}", f"SO-{order.id}", items
 
@@ -247,18 +254,41 @@ class AccountingMapper:
         """
         SaleDelivery: Inventory (Cr) vs COGS (Dr)
         """
-        # This usually involves moving from Inventory to Cost of Sales
-        inventory_account = settings.default_inventory_account
-        cogs_account = settings.cost_of_sales_account or settings.default_expense_account
+        from decimal import Decimal
+        debits = {}  # account object -> amount (for COGS)
+        credits = {} # account object -> amount (for Inventory)
         
-        if not inventory_account or not cogs_account:
-            raise ValidationError("Falta configuración de cuentas para Despacho (Inventario/Costo).")
+        for line in delivery.lines.all():
+            if line.total_cost <= 0:
+                continue
+                
+            product = line.product
+            # COGS Account
+            cogs_account = product.get_expense_account or settings.default_expense_account
+            if not cogs_account:
+                raise ValidationError(f"Falta configuración de cuenta de costo/gasto para el producto {product.code}.")
+            
+            # Inventory Account
+            inventory_account = product.get_asset_account or settings.default_inventory_account
+            if not inventory_account:
+                raise ValidationError(f"Falta configuración de cuenta de inventario para el producto {product.code}.")
+                
+            # Add to groupings
+            debits[cogs_account] = debits.get(cogs_account, Decimal('0.00')) + line.total_cost
+            credits[inventory_account] = credits.get(inventory_account, Decimal('0.00')) + line.total_cost
+            
+        if not debits:
+            # No cost to record (e.g., manufacturable products without BOM)
+            return f"Costo de Venta GD-{delivery.number} (Diferido)", f"SD-{delivery.id}", []
 
-        items = [
-            {'account': cogs_account, 'debit': delivery.total_cost, 'credit': Decimal('0.00')},
-            {'account': inventory_account, 'debit': Decimal('0.00'), 'credit': delivery.total_cost}
-        ]
-        
+        items = []
+        # Create summarized items
+        for account, amount in debits.items():
+            items.append({'account': account, 'debit': amount, 'credit': Decimal('0.00'), 'label': f"COGS: GD-{delivery.number}"})
+            
+        for account, amount in credits.items():
+            items.append({'account': account, 'debit': Decimal('0.00'), 'credit': amount, 'label': f"Inv: GD-{delivery.number}"})
+            
         return f"Costo de Venta GD-{delivery.number}", f"SD-{delivery.id}", items
 
     @staticmethod
@@ -267,20 +297,27 @@ class AccountingMapper:
         Sale Invoice: Receivable (Dr) vs Revenue (Cr) + Tax (Cr)
         """
         order = invoice.sale_order
-        revenue_account = getattr(order.customer.category, 'revenue_account', None) or settings.default_revenue_account
         receivable_account = order.customer.account_receivable or settings.default_receivable_account
-        
-        if not revenue_account or not receivable_account:
-             raise ValidationError("Falta configuración de cuentas para Factura de Venta.")
+        if not receivable_account:
+             raise ValidationError("Falta configuración de cuenta por cobrar.")
+
+        revenue_grouping = {} # Account -> Amount
+        for line in order.lines.all():
+            rev_acc = line.product.get_income_account or settings.default_revenue_account
+            if not rev_acc:
+                raise ValidationError(f"Falta configurar cuenta de ingresos para el producto {line.product.code}.")
+            revenue_grouping[rev_acc] = revenue_grouping.get(rev_acc, Decimal('0.00')) + line.subtotal
 
         items = [
             {'account': receivable_account, 'debit': invoice.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
-            {'account': revenue_account, 'debit': Decimal('0.00'), 'credit': invoice.total_net}
         ]
+        
+        for acc, amount in revenue_grouping.items():
+            items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': amount, 'label': f"Factura {invoice.number or ''}"})
         
         if invoice.total_tax > 0:
             tax_acc = settings.default_tax_payable_account
-            items.append({'account': tax_acc, 'debit': Decimal('0.00'), 'credit': invoice.total_tax})
+            items.append({'account': tax_acc, 'debit': Decimal('0.00'), 'credit': invoice.total_tax, 'label': "IVA Débito Fiscal"})
             
         return f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}", f"{invoice.dte_type[:3]}-{order.number}", items
 
