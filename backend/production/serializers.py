@@ -29,11 +29,10 @@ class WorkOrderSerializer(serializers.ModelSerializer):
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_code = serializers.CharField(source='component.code', read_only=True)
     component_name = serializers.CharField(source='component.name', read_only=True)
-    bom = serializers.PrimaryKeyRelatedField(read_only=True)
     
     class Meta:
         model = BillOfMaterialsLine
-        fields = '__all__'
+        fields = ['id', 'component', 'component_code', 'component_name', 'quantity', 'unit', 'notes']
 
     def validate(self, data):
         component = data.get('component')
@@ -54,7 +53,6 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         product = data.get('product')
-        # product might be None on update if not provided
         if not product and self.instance:
             product = self.instance.product
             
@@ -67,25 +65,18 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         lines_data = validated_data.pop('lines', [])
         bom = BillOfMaterials.objects.create(**validated_data)
-        
         for line_data in lines_data:
             BillOfMaterialsLine.objects.create(bom=bom, **line_data)
-            
         return bom
 
     def update(self, instance, validated_data):
         lines_data = validated_data.pop('lines', None)
-        
-        # Update standard fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         
-        # Update lines if provided
         if lines_data is not None:
-            # Simple strategy: Delete all and recreate to ensure sequence and sync
             instance.lines.all().delete()
             for line_data in lines_data:
                 BillOfMaterialsLine.objects.create(bom=instance, **line_data)
-                
         return instance

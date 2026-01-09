@@ -32,7 +32,7 @@ export function BOMManager({ product }: BOMManagerProps) {
         if (!product?.id) return
         setLoading(true)
         try {
-            const res = await api.get(`/production/bom/?product_id=${product.id}`)
+            const res = await api.get(`/production/boms/?product_id=${product.id}`)
             setBoms(res.data)
         } catch (error) {
             console.error("Error fetching BOMs:", error)
@@ -59,7 +59,7 @@ export function BOMManager({ product }: BOMManagerProps) {
     const handleDelete = async (id: number) => {
         if (!confirm("¿Está seguro de eliminar esta lista de materiales?")) return;
         try {
-            await api.delete(`/production/bom/${id}/`)
+            await api.delete(`/production/boms/${id}/`)
             toast.success("BOM eliminada")
             fetchBoms()
         } catch (error) {
@@ -73,7 +73,7 @@ export function BOMManager({ product }: BOMManagerProps) {
 
         try {
             // Setting this one to active will automatically deactivate others via backend model logic
-            await api.patch(`/production/bom/${bom.id}/`, { active: true })
+            await api.patch(`/production/boms/${bom.id}/`, { active: true })
             toast.success("BOM establecida como activa")
             fetchBoms()
         } catch (error) {

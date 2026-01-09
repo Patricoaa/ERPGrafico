@@ -352,7 +352,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('mfg_postpress_binding', data.mfg_postpress_binding ? 'true' : 'false')
             formData.append('mfg_default_delivery_days', data.mfg_default_delivery_days.toString())
 
-            if (data.boms && data.boms.length > 0) {
+            if (!initialData && data.boms && data.boms.length > 0) {
                 formData.append('boms', JSON.stringify(data.boms))
             }
             if (data.product_custom_fields && data.product_custom_fields.length > 0) {
@@ -786,36 +786,44 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
 
                                             {form.watch("has_bom") && (
                                                 <div className="space-y-4">
-                                                    {bomsFields.length === 0 && (
-                                                        <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/20">
-                                                            <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
-                                                            <p className="text-sm text-muted-foreground">No hay listas de materiales definidas</p>
-                                                            <Button
-                                                                type="button"
-                                                                variant="link"
-                                                                className="text-primary text-xs"
-                                                                onClick={() => appendBom({ name: "Lista Estándar", active: true, lines: [] })}
-                                                            >
-                                                                Crear la primera
-                                                            </Button>
-                                                        </div>
-                                                    )}
+                                                    {initialData ? (
+                                                        <BOMManager product={initialData} />
+                                                    ) : (
+                                                        <>
+                                                            {bomsFields.length === 0 && (
+                                                                <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/20">
+                                                                    <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+                                                                    <p className="text-sm text-muted-foreground">No hay listas de materiales definidas</p>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="link"
+                                                                        className="text-primary text-xs"
+                                                                        onClick={() => appendBom({ name: "Lista Estándar", active: true, lines: [] })}
+                                                                    >
+                                                                        Crear la primera
+                                                                    </Button>
+                                                                </div>
+                                                            )}
 
-                                                    <div className="grid grid-cols-1 gap-3">
-                                                        {bomsFields.map((bom, bomIndex) => (
-                                                            <BOMItemField
-                                                                key={bom.id || bomIndex}
-                                                                form={form}
-                                                                bomIndex={bomIndex}
-                                                                onRemove={() => removeBom(bomIndex)}
-                                                                onSetDefault={() => {
-                                                                    bomsFields.forEach((_, idx) => {
-                                                                        form.setValue(`boms.${idx}.active`, idx === bomIndex);
-                                                                    });
-                                                                }}
-                                                            />
-                                                        ))}
-                                                    </div>
+                                                            <div className="grid grid-cols-1 gap-3">
+                                                                {bomsFields.map((bom, bomIndex) => (
+                                                                    <BOMItemField
+                                                                        key={bom.id || bomIndex}
+                                                                        form={form}
+                                                                        bomIndex={bomIndex}
+                                                                        products={products}
+                                                                        uoms={uoms}
+                                                                        onRemove={() => removeBom(bomIndex)}
+                                                                        onSetDefault={() => {
+                                                                            bomsFields.forEach((_, idx) => {
+                                                                                form.setValue(`boms.${idx}.active`, idx === bomIndex);
+                                                                            });
+                                                                        }}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -1437,7 +1445,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     )
 }
 
-function BOMItemField({ form, bomIndex, onRemove, onSetDefault }: any) {
+function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }: any) {
     const [isExpanded, setIsExpanded] = useState(false)
     const { fields: lineFields, append, remove } = useFieldArray({
         control: form.control,
@@ -1544,7 +1552,14 @@ function BOMItemField({ form, bomIndex, onRemove, onSetDefault }: any) {
                                             <TableCell className="p-1 px-2">
                                                 <ProductSelector
                                                     value={form.watch(`boms.${bomIndex}.lines.${index}.component`)}
-                                                    onChange={(val) => form.setValue(`boms.${bomIndex}.lines.${index}.component`, val)}
+                                                    onChange={(val) => {
+                                                        form.setValue(`boms.${bomIndex}.lines.${index}.component`, val)
+                                                        // Auto-set unit if empty or default
+                                                        const p = products.find((prod: any) => prod.id.toString() === val?.toString());
+                                                        if (p && p.uom_name) {
+                                                            form.setValue(`boms.${bomIndex}.lines.${index}.unit`, p.uom_name);
+                                                        }
+                                                    }}
                                                     placeholder="Sel. componente"
                                                 />
                                             </TableCell>
@@ -1567,23 +1582,43 @@ function BOMItemField({ form, bomIndex, onRemove, onSetDefault }: any) {
                                                 <FormField
                                                     control={form.control}
                                                     name={`boms.${bomIndex}.lines.${index}.unit`}
-                                                    render={({ field }) => (
-                                                        <Select onValueChange={field.onChange} value={field.value}>
-                                                            <FormControl>
-                                                                <SelectTrigger className="h-8 text-[10px] px-1 justify-center">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                <SelectItem value="UN">UN</SelectItem>
-                                                                <SelectItem value="KG">KG</SelectItem>
-                                                                <SelectItem value="MT">MT</SelectItem>
-                                                                <SelectItem value="LT">LT</SelectItem>
-                                                                <SelectItem value="PL">PL</SelectItem>
-                                                                <SelectItem value="ML">ML</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    )}
+                                                    render={({ field }) => {
+                                                        const componentId = form.watch(`boms.${bomIndex}.lines.${index}.component`);
+                                                        const product = products.find((p: any) => p.id.toString() === componentId?.toString());
+
+                                                        const unitNames = new Set<string>();
+                                                        if (product) {
+                                                            if (product.uom_name) unitNames.add(product.uom_name);
+                                                            if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
+                                                            if (product.allowed_sale_uoms) {
+                                                                product.allowed_sale_uoms.forEach((uomId: any) => {
+                                                                    const foundUom = uoms.find((u: any) => u.id.toString() === uomId.toString());
+                                                                    if (foundUom) unitNames.add(foundUom.name);
+                                                                });
+                                                            }
+                                                        }
+
+                                                        const options = Array.from(unitNames);
+                                                        if (options.length === 0 && !product) {
+                                                            // Fallback only if no product selected
+                                                            options.push("UN", "KG", "MT", "LT", "PL", "ML");
+                                                        }
+
+                                                        return (
+                                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger className="h-8 text-[10px] px-1 justify-center">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {options.map(u => (
+                                                                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        );
+                                                    }}
                                                 />
                                             </TableCell>
                                             <TableCell className="p-1 px-1 text-center">

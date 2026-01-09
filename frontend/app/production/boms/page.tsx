@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search, Pencil, Trash2, Layers, CheckCircle2, XCircle } from "lucide-react"
 import api from "@/lib/api"
-import { BomForm } from "@/components/production/BomForm"
+import { BOMFormDialog } from "@/components/production/BOMFormDialog"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 
@@ -168,11 +168,12 @@ export default function BOMsPage() {
                 </Table>
             </div>
 
-            <BomForm
+            <BOMFormDialog
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}
                 onSuccess={fetchBoms}
-                initialData={editingBom}
+                bomToEdit={editingBom}
+                product={editingBom?.product_id || editingBom?.product}
             />
         </div>
     )

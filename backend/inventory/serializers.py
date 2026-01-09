@@ -4,6 +4,7 @@ from .models import (
     CustomFieldTemplate, ProductCustomField
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
+from production.serializers import BillOfMaterialsSerializer
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,14 +46,6 @@ class ProductCustomFieldSerializer(serializers.ModelSerializer):
         model = ProductCustomField
         fields = ['id', 'template', 'template_data', 'order']
 
-class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
-    component_code = serializers.CharField(source='component.code', read_only=True)
-    component_name = serializers.CharField(source='component.name', read_only=True)
-    # Note: We use component (ID) for writes
-    
-    class Meta:
-        model = BillOfMaterialsLine
-        fields = ['id', 'component', 'component_code', 'component_name', 'quantity', 'unit', 'notes']
 
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)

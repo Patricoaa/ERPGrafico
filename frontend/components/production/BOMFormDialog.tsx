@@ -17,8 +17,16 @@ import { Switch } from "@/components/ui/switch"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
-import { Plus, Trash2, Save, Loader2, Info } from "lucide-react"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Plus, Trash2, Save, Loader2, Info, Workflow } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -56,7 +64,7 @@ type BOMFormValues = {
 interface BOMFormDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    product: any
+    product?: any // Optional, if null, allow selection
     bomToEdit?: any
     onSuccess: () => void
 }
@@ -64,11 +72,34 @@ interface BOMFormDialogProps {
 export function BOMFormDialog({
     open,
     onOpenChange,
-    product,
+    product: initialProduct,
     bomToEdit,
     onSuccess
 }: BOMFormDialogProps) {
     const [loading, setLoading] = useState(false)
+    const [selectedProduct, setSelectedProduct] = useState<any>(initialProduct)
+    const [products, setProducts] = useState<any[]>([])
+    const [uoms, setUoms] = useState<any[]>([])
+
+    useEffect(() => {
+        setSelectedProduct(initialProduct)
+    }, [initialProduct])
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [pRes, uRes] = await Promise.all([
+                    api.get('/inventory/products/'),
+                    api.get('/inventory/uoms/')
+                ])
+                setProducts(pRes.data.results || pRes.data)
+                setUoms(uRes.data.results || uRes.data)
+            } catch (error) {
+                console.error("Error fetching dependencies for BOMForm:", error)
+            }
+        }
+        fetchData()
+    }, [])
 
     // Form
     const form = useForm<BOMFormValues>({
@@ -115,11 +146,14 @@ export function BOMFormDialog({
     }, [open, bomToEdit, form])
 
     const onSubmit = async (data: BOMFormValues) => {
-        if (!product) return
+        if (!selectedProduct) {
+            toast.error("Debe seleccionar un producto")
+            return
+        }
         setLoading(true)
         try {
             const payload = {
-                product: product.id,
+                product: selectedProduct.id || selectedProduct,
                 ...data,
                 lines: data.lines.map(l => ({
                     component: parseInt(l.component),
@@ -130,10 +164,10 @@ export function BOMFormDialog({
             }
 
             if (bomToEdit) {
-                await api.patch(`/production/bom/${bomToEdit.id}/`, payload)
+                await api.patch(`/production/boms/${bomToEdit.id}/`, payload)
                 toast.success("BOM actualizada correctamente")
             } else {
-                await api.post("/production/bom/", payload)
+                await api.post("/production/boms/", payload)
                 toast.success("BOM creada correctamente")
             }
             onSuccess()
@@ -149,13 +183,28 @@ export function BOMFormDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>
-                        {bomToEdit ? `Editar BOM: ${bomToEdit.name}` : "Crear Nueva Lista de Materiales"}
+                <DialogHeader className="pr-12">
+                    <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                        <Workflow className="h-5 w-5 text-primary" />
+                        {bomToEdit ? `Editar BOM: ${bomToEdit.name}` : "Nueva Lista de Materiales"}
                     </DialogTitle>
-                    <DialogDescription>
-                        {product?.name} ({product?.code})
+                    <DialogDescription className="text-xs">
+                        {selectedProduct ? `Definiendo componentes para: ${selectedProduct.name} (${selectedProduct.internal_code || selectedProduct.code})` : 'Seleccione el producto para el cual desea crear la lista de materiales.'}
                     </DialogDescription>
+                    {!initialProduct && (
+                        <div className="mt-4 pb-2 border-b">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground">Producto a fabricar</Label>
+                            <ProductSelector
+                                value={selectedProduct?.id || selectedProduct}
+                                onChange={(val) => {
+                                    const p = products.find(prod => prod.id.toString() === val?.toString())
+                                    setSelectedProduct(p)
+                                }}
+                                placeholder="Seleccionar producto..."
+                                allowedTypes={['MANUFACTURABLE']}
+                            />
+                        </div>
+                    )}
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto px-1">
@@ -256,10 +305,16 @@ export function BOMFormDialog({
                                                                     <FormControl>
                                                                         <ProductSelector
                                                                             value={propField.value}
-                                                                            onChange={(val) => propField.onChange(val)}
+                                                                            onChange={(val: string | null) => {
+                                                                                propField.onChange(val)
+                                                                                // Auto-set unit if empty
+                                                                                const p = products.find((prod: any) => prod.id.toString() === val?.toString());
+                                                                                if (p && p.uom_name) {
+                                                                                    form.setValue(`lines.${index}.unit`, p.uom_name);
+                                                                                }
+                                                                            }}
                                                                             placeholder="Buscar componente..."
                                                                             allowedTypes={['STORABLE', 'CONSUMABLE', 'MANUFACTURABLE']}
-                                                                        // Avoid circular dependency if possible, but basic list is ok
                                                                         />
                                                                     </FormControl>
                                                                     <FormMessage />
@@ -285,14 +340,45 @@ export function BOMFormDialog({
                                                         <FormField
                                                             control={form.control}
                                                             name={`lines.${index}.unit`}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <Input {...field} placeholder="Unidad" />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
+                                                            render={({ field }) => {
+                                                                const componentId = form.watch(`lines.${index}.component`);
+                                                                const product = products.find((p: any) => p.id.toString() === componentId?.toString());
+
+                                                                const unitNames = new Set<string>();
+                                                                if (product) {
+                                                                    if (product.uom_name) unitNames.add(product.uom_name);
+                                                                    if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
+                                                                    if (product.allowed_sale_uoms) {
+                                                                        product.allowed_sale_uoms.forEach((uomId: any) => {
+                                                                            const foundUom = uoms.find((u: any) => u.id.toString() === uomId.toString());
+                                                                            if (foundUom) unitNames.add(foundUom.name);
+                                                                        });
+                                                                    }
+                                                                }
+
+                                                                const options = Array.from(unitNames);
+                                                                if (options.length === 0 && !product) {
+                                                                    options.push("UN", "KG", "MT", "LT", "PL", "ML");
+                                                                }
+
+                                                                return (
+                                                                    <FormItem>
+                                                                        <Select onValueChange={field.onChange} value={field.value}>
+                                                                            <FormControl>
+                                                                                <SelectTrigger className="h-9">
+                                                                                    <SelectValue />
+                                                                                </SelectTrigger>
+                                                                            </FormControl>
+                                                                            <SelectContent>
+                                                                                {options.map(u => (
+                                                                                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                                                                                ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
                                                         />
                                                     </TableCell>
                                                     <TableCell>
