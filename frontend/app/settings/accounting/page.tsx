@@ -11,10 +11,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { ChevronLeft, Loader2 } from "lucide-react"
+import { ChevronLeft, Loader2, Save, Database, Settings2, BarChart3, Calculator } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const accountingSchema = z.object({
     default_receivable_account: z.string().nullable(),
@@ -45,6 +46,7 @@ export default function AccountingSettingsPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [populating, setPopulating] = useState(false)
 
     const form = useForm<AccountingFormValues>({
         resolver: zodResolver(accountingSchema),
@@ -107,16 +109,16 @@ export default function AccountingSettingsPage() {
     }
 
     const handlePopulateIFRS = async () => {
-        if (!confirm("¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas básicas si no existen.")) return
-        setSaving(true)
+        if (!confirm("¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas detalladas y configurará todos los mapeos predeterminados automáticamente.")) return
+        setPopulating(true)
         try {
             const res = await api.post('/accounting/accounts/populate_ifrs/')
             toast.success(res.data.message)
-            window.location.reload() // Reload to fetch new accounts and updated settings
+            window.location.reload()
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al poblar plan de cuentas")
         } finally {
-            setSaving(false)
+            setPopulating(false)
         }
     }
 
@@ -129,122 +131,187 @@ export default function AccountingSettingsPage() {
     }
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <h2 className="text-3xl font-bold tracking-tight">Configuración Contable</h2>
+        <div className="flex-1 space-y-6 p-8 pt-6 max-w-6xl mx-auto">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div>
+                        <h2 className="text-3xl font-bold tracking-tight">Configuración Contable</h2>
+                        <p className="text-muted-foreground mt-1">Gestione el plan de cuentas, mapeos predeterminados y reglas de negocio.</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <Button 
+                        variant="outline" 
+                        onClick={handlePopulateIFRS} 
+                        disabled={populating || saving}
+                        className="gap-2"
+                    >
+                        {populating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                        Poblar Plan IFRS
+                    </Button>
+                    <Button 
+                        onClick={form.handleSubmit(onSubmit)} 
+                        disabled={saving || populating}
+                        className="gap-2"
+                    >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Guardar Cambios
+                    </Button>
+                </div>
             </div>
 
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Cuentas Predeterminadas</CardTitle>
-                            <CardDescription>Defina las cuentas que se utilizarán automáticamente en las operaciones del sistema.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
+            <Tabs defaultValue="mapping" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+                    <TabsTrigger value="mapping" className="gap-2">
+                        <BarChart3 className="h-4 w-4" /> Mapeos Base
+                    </TabsTrigger>
+                    <TabsTrigger value="structure" className="gap-2">
+                        <Settings2 className="h-4 w-4" /> Estructura y Prefijos
+                    </TabsTrigger>
+                    <TabsTrigger value="business" className="gap-2">
+                        <Calculator className="h-4 w-4" /> Reglas de Negocio
+                    </TabsTrigger>
+                </TabsList>
+
+                <Form {...form}>
+                    <form className="space-y-6 overflow-visible">
+                        <TabsContent value="mapping" className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <AccountField form={form} name="default_receivable_account" label="Cuenta por Cobrar (Clientes)" accountType="ASSET" />
-                                <AccountField form={form} name="default_payable_account" label="Cuenta por Pagar (Proveedores)" accountType="LIABILITY" />
-                                <AccountField form={form} name="default_revenue_account" label="Cuenta de Ingresos (Ventas)" accountType="INCOME" />
-                                <AccountField form={form} name="default_expense_account" label="Cuenta de Gastos (Compras)" accountType="EXPENSE" />
-                                <AccountField form={form} name="default_tax_receivable_account" label="IVA Crédito (Compras)" accountType="ASSET" />
-                                <AccountField form={form} name="default_tax_payable_account" label="IVA Débito (Ventas)" accountType="LIABILITY" />
-                                <AccountField form={form} name="default_inventory_account" label="Cuenta de Inventario" accountType="ASSET" />
-                                <AccountField form={form} name="stock_input_account" label="Entrada Stock (Puente/Pasivo)" accountType="LIABILITY" />
-                                <AccountField form={form} name="stock_output_account" label="Salida Stock (Puente/Activo)" accountType="ASSET" />
-                                <AccountField form={form} name="default_consumable_account" label="Gastos Consumibles (Tintas, Papel)" accountType="EXPENSE" />
-                                <AccountField form={form} name="default_prepayment_account" label="Anticipos a Proveedores (Activo)" accountType="ASSET" />
-                                <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">Operaciones Comerciales</CardTitle>
+                                        <CardDescription>Cuentas utilizadas en Ventas y Compras.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <AccountField form={form} name="default_receivable_account" label="CxC Clientes (Activo)" accountType="ASSET" />
+                                        <AccountField form={form} name="default_payable_account" label="CxP Proveedores (Pasivo)" accountType="LIABILITY" />
+                                        <AccountField form={form} name="default_revenue_account" label="Ingresos por Ventas (Ingreso)" accountType="INCOME" />
+                                        <AccountField form={form} name="default_expense_account" label="Gastos Generales (Gasto)" accountType="EXPENSE" />
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">Impuestos y Otros</CardTitle>
+                                        <CardDescription>Cuentas de IVA y Anticipos.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <AccountField form={form} name="default_tax_receivable_account" label="IVA Crédito Fiscal (Activo)" accountType="ASSET" />
+                                        <AccountField form={form} name="default_tax_payable_account" label="IVA Débito Fiscal (Pasivo)" accountType="LIABILITY" />
+                                        <AccountField form={form} name="default_prepayment_account" label="Anticipos a Proveedores (Activo)" accountType="ASSET" />
+                                        <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="md:col-span-2">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">Gestión de Inventario</CardTitle>
+                                        <CardDescription>Configuración de cuentas para control de stock.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-4">
+                                                <AccountField form={form} name="default_inventory_account" label="Inventario (Activo)" accountType="ASSET" />
+                                                <AccountField form={form} name="default_consumable_account" label="Gastos Consumibles (Gasto)" accountType="EXPENSE" />
+                                            </div>
+                                            <div className="space-y-4">
+                                                <AccountField form={form} name="stock_input_account" label="Puente Recepciones (Pasivo)" accountType="LIABILITY" />
+                                                <AccountField form={form} name="stock_output_account" label="Puente Despachos (Activo)" accountType="ASSET" />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </div>
+                        </TabsContent>
 
-                        </CardContent>
-                    </Card>
+                        <TabsContent value="structure" className="space-y-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Jerarquía del Plan de Cuentas</CardTitle>
+                                    <CardDescription>Defina cómo se construyen los códigos de cuenta y sus prefijos.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="code_format"
+                                        render={({ field }) => (
+                                            <FormItem className="max-w-md">
+                                                <FormLabel>Formato de Código</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="Ej: X.X.XX.XXX" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Formato y Jerarquía</CardTitle>
-                            <CardDescription>Configure la estructura del plan de cuentas y prefijos por tipo.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="code_format"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Formato de Código</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} placeholder="Ej: X.X.XX.XXX" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                        <FormField control={form.control} name="asset_prefix" render={({ field }) => (
+                                            <FormItem><FormLabel>Activos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="liability_prefix" render={({ field }) => (
+                                            <FormItem><FormLabel>Pasivos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="equity_prefix" render={({ field }) => (
+                                            <FormItem><FormLabel>Patrimonio</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="income_prefix" render={({ field }) => (
+                                            <FormItem><FormLabel>Ingresos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="expense_prefix" render={({ field }) => (
+                                            <FormItem><FormLabel>Gastos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                        )} />
+                                    </div>
+                                    
+                                    <Alert>
+                                        <Settings2 className="h-4 w-4" />
+                                        <AlertTitle>Nota sobre prefijos</AlertTitle>
+                                        <AlertDescription>
+                                            El sistema utiliza estos prefijos para sugerir códigos al crear nuevas cuentas en el nivel raíz.
+                                        </AlertDescription>
+                                    </Alert>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                <FormField control={form.control} name="asset_prefix" render={({ field }) => (
-                                    <FormItem><FormLabel>Activos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                                )} />
-                                <FormField control={form.control} name="liability_prefix" render={({ field }) => (
-                                    <FormItem><FormLabel>Pasivos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                                )} />
-                                <FormField control={form.control} name="equity_prefix" render={({ field }) => (
-                                    <FormItem><FormLabel>Patrimonio</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                                )} />
-                                <FormField control={form.control} name="income_prefix" render={({ field }) => (
-                                    <FormItem><FormLabel>Ingresos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                                )} />
-                                <FormField control={form.control} name="expense_prefix" render={({ field }) => (
-                                    <FormItem><FormLabel>Gastos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                                )} />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Inventario</CardTitle>
-                            <CardDescription>Configure el comportamiento de la valoración de existencias.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <FormField
-                                control={form.control}
-                                name="inventory_valuation_method"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Método de Valoración</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || "AVERAGE"}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione método" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="AVERAGE">Promedio Ponderado</SelectItem>
-                                                <SelectItem value="FIFO">FIFO (Primero en entrar, primero en salir)</SelectItem>
-                                                <SelectItem value="LIFO">LIFO (Último en entrar, primero en salir)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    <div className="flex justify-between items-center">
-                        <Button type="button" variant="outline" onClick={handlePopulateIFRS} disabled={saving}>
-                            Cargar Plan de Cuentas IFRS
-                        </Button>
-                        <Button type="submit" disabled={saving}>
-                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Guardar Configuración
-                        </Button>
-                    </div>
-                </form>
-            </Form>
+                        <TabsContent value="business" className="space-y-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Valoración de Inventario</CardTitle>
+                                    <CardDescription>Determine cómo el sistema calcula el costo de sus existencias.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <FormField
+                                        control={form.control}
+                                        name="inventory_valuation_method"
+                                        render={({ field }) => (
+                                            <FormItem className="max-w-md">
+                                                <FormLabel>Método de Valoración</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || "AVERAGE"}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Seleccione método" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="AVERAGE">Promedio Ponderado</SelectItem>
+                                                        <SelectItem value="FIFO">FIFO (Primero en entrar, primero en salir)</SelectItem>
+                                                        <SelectItem value="LIFO">LIFO (Último en entrar, primero en salir)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </form>
+                </Form>
+            </Tabs>
         </div>
     )
 }
@@ -263,7 +330,7 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
             name={name}
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>{label}</FormLabel>
+                    <FormLabel className="text-xs font-semibold uppercase text-muted-foreground">{label}</FormLabel>
                     <FormControl>
                         <AccountSelector
                             value={field.value}
@@ -277,5 +344,3 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
         />
     )
 }
-
-

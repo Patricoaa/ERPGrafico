@@ -394,7 +394,7 @@ export default function POSPage() {
                                                 {product.product_type === 'MANUFACTURABLE' && (
                                                     <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                                         <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity || 0) > 0 ? 'bg-blue-500' : 'bg-red-500'}`} />
-                                                        {product.manufacturable_quantity === null || product.manufacturable_quantity === Infinity || product.manufacturable_quantity > 999999
+                                                        {(product.manufacturable_quantity === null || product.manufacturable_quantity === undefined || product.manufacturable_quantity > 999999)
                                                             ? 'Disponible'
                                                             : `${product.manufacturable_quantity} fab.`}
                                                     </div>
@@ -485,7 +485,10 @@ export default function POSPage() {
                                                 <TableRow key={item.id}>
                                                     <TableCell className="max-w-[120px]">
                                                         <div className="flex flex-col gap-1">
-                                                            <span className="truncate font-medium">{item.name}</span>
+                                                            <span className="truncate font-medium">
+                                                                <span className="font-mono text-[10px] text-muted-foreground mr-1">{item.internal_code || item.code}</span>
+                                                                {item.name}
+                                                            </span>
                                                             {item.manufacturing_data && item.manufacturable_quantity && (
                                                                 <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
                                                                     <Package className="h-3 w-3" />

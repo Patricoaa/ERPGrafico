@@ -1,7 +1,11 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
+from decimal import Decimal
+import random
+
 from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
+from accounting.services import AccountingService
 from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, PricingRule
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
@@ -9,9 +13,10 @@ from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, Purc
 from treasury.models import TreasuryAccount, Payment
 from billing.models import Invoice
 from services.models import ServiceCategory, ServiceContract, ServiceObligation
+from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
 
 class Command(BaseCommand):
-    help = 'Seeds database with coherent IFRS accounting data and sample products'
+    help = 'Seeds database with comprehensive graphic industry data using IFRS CoA'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -33,11 +38,12 @@ class Command(BaseCommand):
                 self.stdout.write(traceback.format_exc())
                 return
 
-        self.stdout.write('Creating Accounting Chart...')
-        accounts = self._create_accounts()
+        self.stdout.write('Populating IFRS Chart of Accounts...')
+        result_msg = AccountingService.populate_ifrs_coa()
+        self.stdout.write(f"  {result_msg}")
         
-        self.stdout.write('Configuring Settings...')
-        self._configure_settings(accounts)
+        # Get references to key accounts for further seeding
+        accounts = self._get_account_references()
         
         self.stdout.write('Creating Partners...')
         partners = self._create_partners(accounts)
@@ -45,13 +51,20 @@ class Command(BaseCommand):
         self.stdout.write('Creating Units of Measure...')
         uoms = self._create_uoms()
 
-        self.stdout.write('Creating Inventory Data...')
-        self._create_inventory(accounts, uoms)
+        self.stdout.write('Creating Inventory & Manufacturing Data...')
+        inventory = self._create_inventory(accounts, uoms)
+
+        self.stdout.write('Creating Service Contracts...')
+        self._create_contracts(accounts, partners['suppliers'])
 
         self.stdout.write('Creating Opening Balance...')
         self._create_opening_balance(accounts)
+        
+        # Add initial stock for raw materials
+        self.stdout.write('Adding Initial Stock...')
+        self._create_initial_stock(inventory['warehouse'], inventory['raw_materials'])
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded demo data!'))
+        self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
 
     def _purge_data(self):
         def _safe_delete(model_class, name):
@@ -62,404 +75,230 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e)}"))
                 raise e
 
-        # 1. Budgeting (Child of Account)
+        # Production child records
+        _safe_delete(ProductionConsumption, "ProductionConsumption")
+        _safe_delete(WorkOrder, "WorkOrder")
+        _safe_delete(BillOfMaterialsLine, "BillOfMaterialsLine")
+        _safe_delete(BillOfMaterials, "BillOfMaterials")
+
+        # 1. Budgeting
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
 
-        # 2. Services (Linked to Contact and Account with PROTECT)
+        # 2. Services
         _safe_delete(ServiceObligation, "ServiceObligation")
         _safe_delete(ServiceContract, "ServiceContract")
         _safe_delete(ServiceCategory, "ServiceCategory")
 
-        # 3. Transactional documents in correct order (Children first)
+        # 3. Transactional documents
         _safe_delete(Payment, "Payment")
         _safe_delete(Invoice, "Invoice")
         
-        # Purchasing children
+        # Purchasing
         _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
         _safe_delete(PurchaseReceipt, "PurchaseReceipt")
         _safe_delete(PurchaseLine, "PurchaseLine")
+        _safe_delete(PurchaseOrder, "PurchaseOrder")
         
-        # Sales children
+        # Sales
         _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
         _safe_delete(SaleDelivery, "SaleDelivery")
         _safe_delete(SaleLine, "SaleLine")
-        
-        # 4. Parent orders (linked to Contact/Warehouse with PROTECT)
-        _safe_delete(PurchaseOrder, "PurchaseOrder")
         _safe_delete(SaleOrder, "SaleOrder")
         
-        # 5. Inventory & Accounting Moves (links to Product/Account with PROTECT)
+        # 4. Inventory & Accounting
         _safe_delete(StockMove, "StockMove")
-        _safe_delete(JournalEntry, "JournalEntry") # JournalItem are CASCADE from entry
+        _safe_delete(JournalEntry, "JournalEntry")
         
-        # 6. Master Data & Rules
+        # 5. Master Data
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(Product, "Product")
         _safe_delete(ProductCategory, "ProductCategory")
         _safe_delete(Warehouse, "Warehouse")
-        
-        # 7. Contacts (often protected by Orders, now safe)
         _safe_delete(Contact, "Contact")
         
-        # 8. Treasury & Configuration
+        # 6. Treasury & Configuration
         _safe_delete(TreasuryAccount, "TreasuryAccount")
         _safe_delete(AccountingSettings, "AccountingSettings")
-        
-        # 8.5 Units of Measure
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
-
-        # 9. Accounts (last, as everything else is gone)
+        
+        # 7. Accounts
         _safe_delete(Account, "Account")
 
-    def _create_uoms(self):
-        # Categories
-        cat_units, _ = UoMCategory.objects.get_or_create(name="Unidades")
-        cat_weight, _ = UoMCategory.objects.get_or_create(name="Peso")
-        cat_volume, _ = UoMCategory.objects.get_or_create(name="Volumen")
-        cat_length, _ = UoMCategory.objects.get_or_create(name="Longitud")
-        
-        # Units
-        uom_unit, _ = UoM.objects.get_or_create(name="Unidades", defaults={'category': cat_units, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
-        uom_box12, _ = UoM.objects.get_or_create(name="Caja x12", defaults={'category': cat_units, 'ratio': 12.0, 'uom_type': UoM.Type.BIGGER})
-        uom_box24, _ = UoM.objects.get_or_create(name="Caja x24", defaults={'category': cat_units, 'ratio': 24.0, 'uom_type': UoM.Type.BIGGER})
-        
-        uom_kg, _ = UoM.objects.get_or_create(name="Kilogramos (kg)", defaults={'category': cat_weight, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
-        uom_g, _ = UoM.objects.get_or_create(name="Gramos (g)", defaults={'category': cat_weight, 'ratio': 0.001, 'uom_type': UoM.Type.SMALLER})
-        uom_ton, _ = UoM.objects.get_or_create(name="Toneladas (ton)", defaults={'category': cat_weight, 'ratio': 1000.0, 'uom_type': UoM.Type.BIGGER})
-
-        uom_l, _ = UoM.objects.get_or_create(name="Litros (L)", defaults={'category': cat_volume, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
-        uom_ml, _ = UoM.objects.get_or_create(name="Mililitros (ml)", defaults={'category': cat_volume, 'ratio': 0.001, 'uom_type': UoM.Type.SMALLER})
-
-        uom_m, _ = UoM.objects.get_or_create(name="Metros (m)", defaults={'category': cat_length, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
-        uom_cm, _ = UoM.objects.get_or_create(name="Centímetros (cm)", defaults={'category': cat_length, 'ratio': 0.01, 'uom_type': UoM.Type.SMALLER})
-
+    def _get_account_references(self):
+        # We fetch accounts by code as defined in the modernize IFRS service
         return {
-            'unit': uom_unit,
-            'box12': uom_box12,
-            'box24': uom_box24,
-            'kg': uom_kg,
-            'g': uom_g,
-            'ton': uom_ton,
-            'l': uom_l,
-            'ml': uom_ml,
-            'm': uom_m,
-            'cm': uom_cm
+            'cash': Account.objects.get(code='1.1.01.01'),
+            'bank': Account.objects.get(code='1.1.01.02'),
+            'receivable': Account.objects.get(code='1.1.02.01'),
+            'payable': Account.objects.get(code='2.1.01.01'),
+            'inventory_raw': Account.objects.get(code='1.1.03.02'),
+            'inventory_finished': Account.objects.get(code='1.1.03.01'),
+            'vat_credit': Account.objects.get(code='1.1.04.01'),
+            'vat_debit': Account.objects.get(code='2.1.02.01'),
+            'capital': Account.objects.get(code='3.1.01'),
+            'sales_product': Account.objects.get(code='4.1.01'),
+            'sales_service': Account.objects.get(code='4.1.02'),
+            'cogs_product': Account.objects.get(code='5.1.01'),
+            'cogs_service': Account.objects.get(code='5.1.02'),
+            'expense_general': Account.objects.get(code='5.2.06'),
+            'expense_utilities': Account.objects.get(code='5.2.03'),
+            'expense_rent': Account.objects.get(code='5.2.02'),
         }
-
-    def _get_acc(self, code, name, account_type, parent=None, is_reconcilable=False, is_category=None, cf_category=None, bs_category=None):
-        acc, _ = Account.objects.update_or_create(
-            code=code,
-            defaults={
-                'name': name,
-                'account_type': account_type,
-                'parent': parent,
-                'is_reconcilable': is_reconcilable,
-                'is_category': is_category,
-                'cf_category': cf_category,
-                'bs_category': bs_category,
-            }
-        )
-        return acc
-
-    def _create_accounts(self):
-        # 0. Ensure Settings exist to get prefixes
-        settings, _ = AccountingSettings.objects.get_or_create(id=1)
-
-        # 1.1 Current Assets (Now Roots in DB)
-        start_assets = self._get_acc(f"{settings.asset_prefix}.1", "Activos Corrientes", AccountType.ASSET, parent=None, bs_category=BSCategory.CURRENT_ASSET)
-        
-        # 1.1.01 Cash & Bank
-        cash_grp = self._get_acc(f"{settings.asset_prefix}.1.01", "Efectivo y Equivalentes", AccountType.ASSET, start_assets)
-        cash_box = self._get_acc(f"{settings.asset_prefix}.1.01.01", "Caja General", AccountType.ASSET, cash_grp, is_reconcilable=True, cf_category="OPERATING")
-        bank_main = self._get_acc(f"{settings.asset_prefix}.1.01.02", "Banco Principal", AccountType.ASSET, cash_grp, is_reconcilable=True, cf_category="OPERATING")
-
-        # 1.1.02 Receivables
-        receivable_grp = self._get_acc(f"{settings.asset_prefix}.1.02", "Deudores Comerciales", AccountType.ASSET, start_assets)
-        receivables = self._get_acc(f"{settings.asset_prefix}.1.02.01", "Clientes Nacionales", AccountType.ASSET, receivable_grp, is_reconcilable=True)
-
-        # 1.1.03 Inventory
-        inventory_grp = self._get_acc(f"{settings.asset_prefix}.1.03", "Inventarios", AccountType.ASSET, start_assets)
-        stock_materials = self._get_acc(f"{settings.asset_prefix}.1.03.01", "Mercaderías", AccountType.ASSET, inventory_grp)
-        stock_raw = self._get_acc(f"{settings.asset_prefix}.1.03.02", "Materias Primas", AccountType.ASSET, inventory_grp)
-        
-        # 1.1.04 Tax Assets
-        tax_assets = self._get_acc(f"{settings.asset_prefix}.1.04", "Impuestos por Recuperar", AccountType.ASSET, start_assets)
-        vat_credit = self._get_acc(f"{settings.asset_prefix}.1.04.01", "IVA Crédito Fiscal", AccountType.ASSET, tax_assets)
-
-        # 1.1.05 Prepayments
-        prepay_grp = self._get_acc(f"{settings.asset_prefix}.1.05", "Anticipos", AccountType.ASSET, start_assets)
-        prepayments = self._get_acc(f"{settings.asset_prefix}.1.05.01", "Anticipos a Proveedores", AccountType.ASSET, prepay_grp, is_reconcilable=True)
-
-        # 1.1.06 Interim Assets
-        interim_asset_grp = self._get_acc(f"{settings.asset_prefix}.1.06", "Cuentas Puente Activos", AccountType.ASSET, start_assets)
-        stock_output = self._get_acc(f"{settings.asset_prefix}.1.06.01", "Salida de Stock (Puente)", AccountType.ASSET, interim_asset_grp, is_reconcilable=True)
-
-        # 2.1 Current Liabilities (Now Root in DB)
-        start_liabilities = self._get_acc(f"{settings.liability_prefix}.1", "Pasivos Corrientes", AccountType.LIABILITY, parent=None, bs_category=BSCategory.CURRENT_LIABILITY)
-        
-        # 2.1.01 Payables
-        payable_grp = self._get_acc(f"{settings.liability_prefix}.1.01", "Cuentas por Pagar", AccountType.LIABILITY, start_liabilities)
-        payables = self._get_acc(f"{settings.liability_prefix}.1.01.01", "Proveedores Nacionales", AccountType.LIABILITY, payable_grp, is_reconcilable=True)
-
-        # 2.1.04 Customer Advances
-        advance_grp = self._get_acc(f"{settings.liability_prefix}.1.04", "Anticipos de Clientes", AccountType.LIABILITY, start_liabilities)
-        advances = self._get_acc(f"{settings.liability_prefix}.1.04.01", "Anticipos de Clientes", AccountType.LIABILITY, advance_grp, is_reconcilable=True)
-        
-        # 2.1.02 Stock Interim
-        stock_interim_grp = self._get_acc(f"{settings.liability_prefix}.1.02", "Cuentas Puente Pasivos", AccountType.LIABILITY, start_liabilities)
-        stock_input = self._get_acc(f"{settings.liability_prefix}.1.02.01", "Facturas Pendientes de Recepción", AccountType.LIABILITY, stock_interim_grp, is_reconcilable=True)
-        
-        # 2.1.03 Tax Liabilities
-        tax_liabilities = self._get_acc(f"{settings.liability_prefix}.1.03", "Impuestos por Pagar", AccountType.LIABILITY, start_liabilities)
-        vat_debit = self._get_acc(f"{settings.liability_prefix}.1.03.01", "IVA Débito Fiscal", AccountType.LIABILITY, tax_liabilities)
-
-        # 3.1 Equity (Now Root in DB)
-        equity_root = self._get_acc(f"{settings.equity_prefix}.1", "Patrimonio Neto", AccountType.EQUITY, parent=None, bs_category=BSCategory.EQUITY)
-        capital = self._get_acc(f"{settings.equity_prefix}.1.01", "Capital Social", AccountType.EQUITY, equity_root)
-        res_acum = self._get_acc(f"{settings.equity_prefix}.1.02", "Resultados Acumulados", AccountType.EQUITY, equity_root)
-
-        # 4.1 Income (Now Root in DB)
-        sales_grp = self._get_acc(f"{settings.income_prefix}.1.01", "Ingresos de Explotación", AccountType.INCOME, parent=None)
-        sales_merch = self._get_acc(f"{settings.income_prefix}.1.01.01", "Venta de Mercaderías", AccountType.INCOME, sales_grp)
-        sales_service = self._get_acc(f"{settings.income_prefix}.1.01.02", "Venta de Servicios", AccountType.INCOME, sales_grp)
-        
-        # 5.1 Expenses (Now Root in DB)
-        cost_grp = self._get_acc(f"{settings.expense_prefix}.1.01", "Costo de Ventas", AccountType.EXPENSE, parent=None)
-        cogs = self._get_acc(f"{settings.expense_prefix}.1.01.01", "Costo de Venta", AccountType.EXPENSE, cost_grp)
-        
-        expense_grp = self._get_acc(f"{settings.expense_prefix}.2.01", "Gastos de Administración", AccountType.EXPENSE, parent=None)
-        office_exp = self._get_acc(f"{settings.expense_prefix}.2.01.01", "Gastos de Oficina", AccountType.EXPENSE, expense_grp, is_category="OPERATING_EXPENSE", cf_category="OPERATING")
-        internet_exp = self._get_acc(f"{settings.expense_prefix}.2.01.02", "Gasto Internet y Teléfono", AccountType.EXPENSE, expense_grp, is_category="OPERATING_EXPENSE", cf_category="OPERATING")
-        utilities_exp = self._get_acc(f"{settings.expense_prefix}.2.01.03", "Gasto Electricidad y Agua", AccountType.EXPENSE, expense_grp, is_category="OPERATING_EXPENSE", cf_category="OPERATING")
-        rent_exp = self._get_acc(f"{settings.expense_prefix}.2.01.04", "Gasto Arriendo", AccountType.EXPENSE, expense_grp, is_category="OPERATING_EXPENSE", cf_category="OPERATING")
-        
-        # Mapping for Income Statement sections
-        sales_merch.is_category = "REVENUE"
-        sales_merch.cf_category = "OPERATING"
-        sales_merch.save()
-        
-        cogs.is_category = "COST_OF_SALES"
-        cogs.cf_category = "OPERATING"
-        cogs.save()
-
-        capital.cf_category = "FINANCING"
-        capital.save()
-
-        receivables.cf_category = "OPERATING"
-        receivables.save()
-        
-        payables.cf_category = "OPERATING"
-        payables.save()
-        
-        stock_materials.cf_category = "OPERATING"
-        stock_materials.save()
-
-        return {
-            'cash': cash_box,
-            'bank': bank_main,
-            'capital': capital,
-            'receivable': receivables,
-            'payable': payables,
-            'stock_merch': stock_materials,
-            'stock_input': stock_input,
-            'stock_output': stock_output,
-            'vat_credit': vat_credit,
-            'vat_debit': vat_debit,
-            'sales': sales_merch,
-            'cogs': cogs,
-            'office_exp': office_exp,
-            'prepayments': prepayments,
-            'advances': advances
-        }
-
-    def _configure_settings(self, accounts):
-        settings, created = AccountingSettings.objects.get_or_create(id=1)
-        settings.default_receivable_account = accounts['receivable']
-        settings.default_payable_account = accounts['payable']
-        settings.default_revenue_account = accounts['sales']
-        settings.default_expense_account = accounts['office_exp']
-        settings.default_tax_receivable_account = accounts['vat_credit']
-        settings.default_tax_payable_account = accounts['vat_debit']
-        settings.default_inventory_account = accounts['stock_merch']
-        
-        settings.stock_input_account = accounts['stock_input']
-        settings.stock_output_account = accounts['stock_output']
-        settings.default_prepayment_account = accounts['prepayments']
-        settings.default_advance_payment_account = accounts['advances']
-        
-        settings.save()
-        
-        # Treasury Accounts
-        TreasuryAccount.objects.get_or_create(code="C01", defaults={'name': "Caja Chica", 'currency': "CLP", 'account': accounts['cash'], 'account_type': TreasuryAccount.Type.CASH})
-        TreasuryAccount.objects.get_or_create(code="B01", defaults={'name': "Banco Santander", 'currency': "CLP", 'account': accounts['bank'], 'account_type': TreasuryAccount.Type.BANK})
 
     def _create_partners(self, accounts):
-        Contact.objects.get_or_create(tax_id="66666666-6", defaults={'name': "Cliente Mostrador", 'email': "cliente@ejemplo.com", 'account_receivable': accounts['receivable']})
-        Contact.objects.get_or_create(tax_id="77777777-7", defaults={'name': "Proveedor Mayorista", 'email': "proveedor@ejemplo.com", 'account_payable': accounts['payable']})
-        Contact.objects.get_or_create(tax_id="88888888-8", defaults={'name': "Servicios Profesionales SpA", 'email': "servicios@ejemplo.com", 'account_payable': accounts['payable']})
-
-    def _create_inventory(self, accounts, uoms):
-        # Warehouse
-        wh, _ = Warehouse.objects.get_or_create(code="WH-MAIN", defaults={'name': "Bodega Central"})
-
-        # Categories
-        cat_tech, _ = ProductCategory.objects.get_or_create(
-            name="Tecnología",
-            defaults={
-                'asset_account': accounts['stock_merch'],
-                'income_account': accounts['sales'],
-                'expense_account': accounts['cogs']
-            }
-        )
-        cat_supplies, _ = ProductCategory.objects.get_or_create(
-            name="Suministros",
-            defaults={
-                'asset_account': accounts['stock_merch'],
-                'income_account': accounts['sales'],
-                'expense_account': accounts['cogs']
-            }
-        )
-        cat_services, _ = ProductCategory.objects.get_or_create(
-            name="Servicios",
-            defaults={
-                'asset_account': accounts['stock_merch'],
-                'income_account': accounts['sales'],
-                'expense_account': accounts['cogs']
-            }
-        )
+        c1, _ = Contact.objects.get_or_create(tax_id="76111222-3", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl", 'account_receivable': accounts['receivable']})
+        c2, _ = Contact.objects.get_or_create(tax_id="77333444-5", defaults={'name': "Publicidad Creativa Ltda", 'email': "ventas@pubcreativa.cl", 'account_receivable': accounts['receivable']})
         
-        # Products
-        p1, _ = Product.objects.get_or_create(
-            code="DEV-001",
-            defaults={
-                'name': "Notebook Gamer",
-                'category': cat_tech,
-                'sale_price': 1500000,
-                'product_type': Product.Type.STORABLE,
-                'uom': uoms['unit'],
-                'purchase_uom': uoms['unit']
-            }
-        )
-        p2, _ = Product.objects.get_or_create(
-            code="PER-001",
-            defaults={
-                'name': "Mouse Óptico",
-                'category': cat_tech,
-                'sale_price': 15000,
-                'product_type': Product.Type.STORABLE,
-                'uom': uoms['unit'],
-                'purchase_uom': uoms['box24'] # Buy by boxes
-            }
-        )
-        p3, _ = Product.objects.get_or_create(
-            code="MAT-001",
-            defaults={
-                'name': "Cable UTP Cat6",
-                'category': cat_supplies,
-                'sale_price': 800,
-                'product_type': Product.Type.STORABLE,
-                'uom': uoms['m'],
-                'purchase_uom': uoms['box12'] # Assuming box of reels or similar context
-            }
-        )
-        p4, _ = Product.objects.get_or_create(
-            code="MAT-002",
-            defaults={
-                'name': "Papel Oficina A4",
-                'category': cat_supplies,
-                'sale_price': 5000,
-                'product_type': Product.Type.STORABLE,
-                'uom': uoms['unit'], # per ream
-                'purchase_uom': uoms['box12'] # box of 12 reams
-            }
-        )
-        
-        p5, _ = Product.objects.get_or_create(
-            code="SRV-INST",
-            defaults={
-                'name': "Instalación Técnica",
-                'category': cat_services,
-                'sale_price': 45000,
-                'product_type': Product.Type.SERVICE,
-                'uom': uoms['unit'],
-            }
-        )
+        s1, _ = Contact.objects.get_or_create(tax_id="88222333-k", defaults={'name': "Distribuidora de Papeles S.A.", 'email': "pedidos@papelessa.cl", 'account_payable': accounts['payable']})
+        s2, _ = Contact.objects.get_or_create(tax_id="99555666-0", defaults={'name': "Tintas Gráficas SpA", 'email': "tintas@graficas.cl", 'account_payable': accounts['payable']})
+        s3, _ = Contact.objects.get_or_create(tax_id="76444555-8", defaults={'name': "Servicios Eléctricos Enel", 'email': "factura@enel.cl", 'account_payable': accounts['payable']})
 
         return {
-            'products': [p1, p2, p3, p4, p5],
-            'categories': {'tech': cat_tech, 'supplies': cat_supplies, 'services': cat_services}
+            'customers': [c1, c2],
+            'suppliers': [s1, s2, s3]
         }
 
+    def _create_uoms(self):
+        cat_units, _ = UoMCategory.objects.get_or_create(name="Unidades")
+        cat_weight, _ = UoMCategory.objects.get_or_create(name="Peso")
+        cat_graphic, _ = UoMCategory.objects.get_or_create(name="Medidas Gráficas")
+        
+        # Basic
+        uom_un, _ = UoM.objects.get_or_create(name="Unidad", defaults={'category': cat_units, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
+        uom_kg, _ = UoM.objects.get_or_create(name="Kilogramo (kg)", defaults={'category': cat_weight, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
+        
+        # Graphic specifics
+        uom_pliego, _ = UoM.objects.get_or_create(name="Pliego", defaults={'category': cat_graphic, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
+        uom_millar, _ = UoM.objects.get_or_create(name="Millar (1000u)", defaults={'category': cat_units, 'ratio': 1000.0, 'uom_type': UoM.Type.BIGGER})
+        uom_resma, _ = UoM.objects.get_or_create(name="Resma (500 pliegos)", defaults={'category': cat_graphic, 'ratio': 500.0, 'uom_type': UoM.Type.BIGGER})
+        uom_paquete, _ = UoM.objects.get_or_create(name="Paquete (100u)", defaults={'category': cat_units, 'ratio': 100.0, 'uom_type': UoM.Type.BIGGER})
+
+        return {
+            'un': uom_un,
+            'kg': uom_kg,
+            'pliego': uom_pliego,
+            'millar': uom_millar,
+            'resma': uom_resma,
+            'paquete': uom_paquete
+        }
+
+    def _create_inventory(self, accounts, uoms):
+        wh, _ = Warehouse.objects.get_or_create(code="WH-CITY", defaults={'name': "Bodega Taller Central"})
+
+        cat_raw, _ = ProductCategory.objects.get_or_create(name="Materias Primas", defaults={'asset_account': accounts['inventory_raw'], 'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'MP'})
+        cat_supplies, _ = ProductCategory.objects.get_or_create(name="Insumos", defaults={'asset_account': accounts['inventory_raw'], 'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'INS'})
+        cat_finished, _ = ProductCategory.objects.get_or_create(name="Productos Terminados", defaults={'asset_account': accounts['inventory_finished'], 'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'PT'})
+        cat_services, _ = ProductCategory.objects.get_or_create(name="Servicios Gráficos", defaults={'asset_account': accounts['inventory_finished'], 'income_account': accounts['sales_service'], 'expense_account': accounts['cogs_service'], 'prefix': 'SRV'})
+
+        # RAW MATERIALS
+        p_papel, _ = Product.objects.get_or_create(code="MP-COU-170", defaults={'name': "Papel Couche 170g (Pliego 72x102)", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['pliego'], 'purchase_uom': uoms['resma'], 'sale_price': 150})
+        p_tinta_c, _ = Product.objects.get_or_create(code="MP-TIN-CYA", defaults={'name': "Tinta Offset Cyan 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
+        p_tinta_m, _ = Product.objects.get_or_create(code="MP-TIN-MAG", defaults={'name': "Tinta Offset Magenta 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
+        p_tinta_y, _ = Product.objects.get_or_create(code="MP-TIN-YEL", defaults={'name': "Tinta Offset Yellow 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
+        p_tinta_k, _ = Product.objects.get_or_create(code="MP-TIN-BLA", defaults={'name': "Tinta Offset Black 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 10000})
+
+        # FINISHED PRODUCTS (Fabricables)
+        p_flyers, _ = Product.objects.get_or_create(code="PT-FLY-1015", defaults={
+            'name': "Flyers 10x15cm (Couche 170g)", 
+            'category': cat_finished, 
+            'product_type': Product.Type.MANUFACTURABLE, 
+            'uom': uoms['un'], 
+            'sale_uom': uoms['millar'],
+            'sale_price': 45000,
+            'track_inventory': True,
+            'mfg_enable_press': True,
+            'mfg_enable_postpress': True
+        })
+        
+        p_tarjetas, _ = Product.objects.get_or_create(code="PT-TAR-STAN", defaults={
+            'name': "Tarjetas Personalizadas (Polimate)", 
+            'category': cat_finished, 
+            'product_type': Product.Type.MANUFACTURABLE, 
+            'uom': uoms['un'], 
+            'sale_uom': uoms['un'], 
+            'sale_price': 150,
+            'track_inventory': True
+        })
+
+        # BOMs
+        if not BillOfMaterials.objects.filter(product=p_flyers).exists():
+            bom_flyer = BillOfMaterials.objects.create(product=p_flyers, name="BOM Flyer Estándar 10x15", active=True)
+            # Para 1 flyer 10x15, asumiendo 32 flyers por pliego (con merma)
+            BillOfMaterialsLine.objects.create(bom=bom_flyer, component=p_papel, quantity=Decimal('0.03125'), unit='PLIEGO')
+            BillOfMaterialsLine.objects.create(bom=bom_flyer, component=p_tinta_k, quantity=Decimal('0.0005'), unit='KG') # Referencial
+        
+        # SERVICES
+        Product.objects.get_or_create(code="SRV-DIS-GRA", defaults={'name': "Servicio Diseño Gráfico", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 25000})
+        Product.objects.get_or_create(code="SRV-PRE-PRE", defaults={'name': "Pre-Prensa y Planchas", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 15000})
+
+        # Treasury Accounts
+        TreasuryAccount.objects.get_or_create(code="CAJA01", defaults={'name': "Caja Taller", 'currency': "CLP", 'account': accounts['cash'], 'account_type': TreasuryAccount.Type.CASH})
+        TreasuryAccount.objects.get_or_create(code="BCO01", defaults={'name': "Banco Estado Empresa", 'currency': "CLP", 'account': accounts['bank'], 'account_type': TreasuryAccount.Type.BANK})
+
+        return {
+            'warehouse': wh,
+            'raw_materials': [p_papel, p_tinta_c, p_tinta_m, p_tinta_y, p_tinta_k]
+        }
+
+    def _create_contracts(self, accounts, suppliers):
+        cat_maint, _ = ServiceCategory.objects.get_or_create(code="MNT", defaults={'name': "Mantenimiento Máquinas", 'expense_account': accounts['expense_general'], 'payable_account': accounts['payable']})
+        cat_rent, _ = ServiceCategory.objects.get_or_create(code="ARR", defaults={'name': "Arriendo de Local", 'expense_account': accounts['expense_rent'], 'payable_account': accounts['payable']})
+        cat_utilities, _ = ServiceCategory.objects.get_or_create(code="SB", defaults={'name': "Servicios Básicos", 'expense_account': accounts['expense_utilities'], 'payable_account': accounts['payable']})
+        
+        # Contract for Machine maintenance
+        ServiceContract.objects.get_or_create(
+            name="Mantención Preventiva Offset",
+            defaults={
+                'supplier': suppliers[1], # Tintas/Servicios
+                'category': cat_maint,
+                'recurrence_type': ServiceContract.RecurrenceType.MONTHLY,
+                'base_amount': 250000,
+                'payment_day': 5,
+                'start_date': timezone.now().date(),
+                'status': ServiceContract.Status.ACTIVE
+            }
+        )
+        
+        # Contract for Electricity (Variable)
+        ServiceContract.objects.get_or_create(
+            name="Suministro Eléctrico Taller",
+            defaults={
+                'supplier': suppliers[2], # Enel
+                'category': cat_utilities,
+                'recurrence_type': ServiceContract.RecurrenceType.MONTHLY,
+                'base_amount': 0,
+                'is_amount_variable': True,
+                'payment_day': 20,
+                'start_date': timezone.now().date(),
+                'status': ServiceContract.Status.ACTIVE
+            }
+        )
+
     def _create_opening_balance(self, accounts):
-        if JournalEntry.objects.filter(reference="APERTURA-001").exists():
+        if JournalEntry.objects.filter(reference="OPEN-2026").exists():
             return
             
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description="Asiento de Apertura de Capital",
-            reference="APERTURA-001",
+            description="Asiento de Apertura 2026",
+            reference="OPEN-2026",
             state=JournalEntry.State.POSTED,
         )
         
-        # Debit: Bank
-        JournalItem.objects.create(
-            entry=entry,
-            account=accounts['bank'],
-            label="Aporte de Capital Inicial",
-            debit=10000000,
-            credit=0
-        )
-        
-        # Credit: Capital
-        JournalItem.objects.create(
-            entry=entry,
-            account=accounts['capital'],
-            label="Aporte de Capital Inicial",
-            debit=0,
-            credit=10000000
-        )
+        # Initial Bank Capital
+        JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Aporte Inicial", debit=50000000, credit=0)
+        JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social", debit=0, credit=50000000)
 
     def _create_initial_stock(self, warehouse, products):
-        """Adds 100 units of each storable product to the warehouse."""
         for prod in products:
-            if prod.product_type == Product.Type.STORABLE:
-                if not StockMove.objects.filter(product=prod, warehouse=warehouse, reference="CARGA-INICIAL").exists():
-                    StockMove.objects.create(
-                        product=prod,
-                        warehouse=warehouse,
-                        quantity=100,
-                        move_type=StockMove.Type.IN,
-                        description="Carga inicial de inventario",
-                        reference="CARGA-INICIAL"
-                    )
-
-    def _create_services(self, accounts):
-        """Seeds service categories and obligations."""
-        cat_infra, _ = ServiceCategory.objects.get_or_create(
-            name="Infraestructura y Redes",
-            defaults={
-                'expense_account': accounts['office_exp'],
-                'payable_account': accounts['payable']
-            }
-        )
-        cat_soft, _ = ServiceCategory.objects.get_or_create(
-            name="Suscripciones Software",
-            defaults={
-                'expense_account': accounts['office_exp'],
-                'payable_account': accounts['payable']
-            }
-        )
-
-        # Basic obligations
-        ServiceObligation.objects.get_or_create(
-            name="Suscripción Internet Fibra",
-            defaults={
-                'category': cat_infra,
-                'provider': Contact.objects.get(tax_id="88888888-8"),
-                'base_amount': 35000,
-                'billing_day': 5,
-                'is_active': True
-            }
-        )
+            if not StockMove.objects.filter(product=prod, warehouse=warehouse, description="SEED-STOCK").exists():
+                StockMove.objects.create(
+                    product=prod,
+                    warehouse=warehouse,
+                    quantity=500, # Start with 500 units/pliegos/kg
+                    move_type=StockMove.Type.IN,
+                    description="SEED-STOCK",
+                    date=timezone.now().date()
+                )
