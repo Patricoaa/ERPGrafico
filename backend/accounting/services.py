@@ -36,10 +36,13 @@ class JournalEntryService:
         with transaction.atomic():
             entry = JournalEntry.objects.create(**data)
             for item in items_data:
-                # Handle account_id since we receive the ID as string
-                account_id = item.pop('account', None)
-                if account_id:
-                     JournalItem.objects.create(entry=entry, account_id=account_id, **item)
+                # Handle account (could be ID or Account instance)
+                account_val = item.pop('account', None)
+                if account_val:
+                     if hasattr(account_val, 'id'):
+                         JournalItem.objects.create(entry=entry, account=account_val, **item)
+                     else:
+                         JournalItem.objects.create(entry=entry, account_id=account_val, **item)
             return entry
 
 class AccountingService:
@@ -300,12 +303,15 @@ class AccountingMapper:
         ]
         
         # Handle Taxes vs Capitalization
-        is_boleta = invoice.dte_type == 'BOLETA' # Assuming string or model constant
+        is_boleta = invoice.dte_type == 'BOLETA'
         
         if is_boleta:
             # BOLETAS: Always capitalize VAT into product cost
             for line in order.lines.all():
-                asset_account = line.product.get_asset_account() or settings.default_inventory_account
+                asset_account = line.product.get_asset_account() if callable(line.product.get_asset_account) else line.product.get_asset_account
+                if not asset_account:
+                    asset_account = settings.default_inventory_account
+                
                 line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                 if line_tax > 0 and asset_account:
                     items.append({
@@ -325,3 +331,57 @@ class AccountingMapper:
                  })
 
         return f"{invoice.get_dte_type_display()} Compra {invoice.number or '(Pendiente)'} - OC {order.number}", f"FCP-{invoice.id}", items
+
+    @staticmethod
+    def get_entries_for_receipt(receipt, settings):
+        """
+        Purchase Receipt: Inventory (Dr) vs Stock Input Bridge (Cr)
+        """
+        order = receipt.purchase_order
+        stock_input_account = settings.stock_input_account or settings.default_inventory_account
+        
+        if not stock_input_account:
+             raise ValidationError("Falta configuración de cuenta puente de entrada de stock.")
+
+        items = []
+        total_amount = Decimal('0.00')
+        
+        for line in receipt.lines.all():
+            # Choose account based on product type
+            if line.product.product_type == 'CONSUMABLE':
+                target_account = settings.default_consumable_account or line.product.get_expense_account
+                if not target_account:
+                    # Fallback to asset if no expense account found
+                    target_account = line.product.get_asset_account if not callable(line.product.get_asset_account) else line.product.get_asset_account()
+            else:
+                target_account = line.product.get_asset_account if not callable(line.product.get_asset_account) else line.product.get_asset_account()
+            
+            if not target_account:
+                target_account = settings.default_inventory_account
+            
+            if not target_account:
+                continue
+
+            line_total = line.total_cost
+            total_amount += line_total
+            
+            label = f"Ingreso Inventario: {line.product.code}"
+            if line.product.product_type == 'CONSUMABLE':
+                label = f"Gasto Consumible: {line.product.code}"
+
+            items.append({
+                'account': target_account,
+                'debit': line_total,
+                'credit': Decimal('0.00'),
+                'label': label
+            })
+            
+        if total_amount > 0:
+            items.append({
+                'account': stock_input_account,
+                'debit': Decimal('0.00'),
+                'credit': total_amount,
+                'label': f"Contrapartida Recepción OC-{order.number}"
+            })
+            
+        return f"Recepción OC-{order.number}", f"REC-{receipt.id}", items

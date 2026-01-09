@@ -74,6 +74,7 @@ class BillingService:
         )
 
         # 2. Accounting Entry via Mapper
+        settings = AccountingSettings.objects.first()
         description, reference, items = AccountingMapper.get_entries_for_sale_invoice(invoice, settings)
         entry = JournalEntryService.create_entry(
             {
@@ -103,6 +104,7 @@ class BillingService:
                 state=JournalEntry.State.DRAFT
             )
             
+            receivable_account = order.customer.account_receivable or settings.default_receivable_account
             advance_account = settings.default_advance_payment_account or receivable_account
             
             # Debit: Advance Account (Clear the liability)
@@ -202,6 +204,7 @@ class BillingService:
                 state=JournalEntry.State.DRAFT
             )
             
+            payable_account = order.supplier.account_payable or settings.default_payable_account
             prepayment_account = settings.default_prepayment_account or payable_account
             
             # Debit: Payable Account (Reduce what we owe)

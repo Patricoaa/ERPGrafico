@@ -100,7 +100,7 @@ export default function ContactsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Nombre</TableHead>
-                            <TableHead>Identificación</TableHead>
+                            <TableHead>RUT / Identificación</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Contacto</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
