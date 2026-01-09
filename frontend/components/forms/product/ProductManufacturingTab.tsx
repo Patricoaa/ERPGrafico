@@ -85,6 +85,173 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                                 </FormItem>
                             )}
                         />
+
+                        <FormField<ProductFormValues>
+                            control={form.control}
+                            name="requires_advanced_manufacturing"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="font-bold">Fabricación Avanzada</FormLabel>
+                                        <FormDescription className="text-[10px]">
+                                            Habilita flujo de trabajo personalizado.
+                                        </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
+                        {form.watch("requires_advanced_manufacturing") && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="space-y-3">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Etapas del Flujo</h4>
+
+                                    <FormField<ProductFormValues>
+                                        control={form.control}
+                                        name="mfg_enable_prepress"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                <FormLabel className="text-xs font-medium">Pre-Impresión</FormLabel>
+                                                <FormControl>
+                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {form.watch("mfg_enable_prepress") && (
+                                        <div className="ml-4 space-y-2 pl-4 border-l-2 border-primary/20">
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="mfg_prepress_design"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-between">
+                                                        <FormLabel className="text-[11px] font-normal">Diseño Requerido</FormLabel>
+                                                        <FormControl>
+                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="mfg_prepress_specs"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-between">
+                                                        <FormLabel className="text-[11px] font-normal">Especificaciones</FormLabel>
+                                                        <FormControl>
+                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="mfg_prepress_folio"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-between">
+                                                        <FormLabel className="text-[11px] font-normal">Folio</FormLabel>
+                                                        <FormControl>
+                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <FormField<ProductFormValues>
+                                        control={form.control}
+                                        name="mfg_enable_press"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                <FormLabel className="text-xs font-medium">Impresión</FormLabel>
+                                                <FormControl>
+                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {form.watch("mfg_enable_press") && (
+                                        <div className="ml-4 space-y-2 pl-4 border-l-2 border-primary/20">
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="mfg_press_offset"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-between">
+                                                        <FormLabel className="text-[11px] font-normal">Offset</FormLabel>
+                                                        <FormControl>
+                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="mfg_press_digital"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-between">
+                                                        <FormLabel className="text-[11px] font-normal">Digital</FormLabel>
+                                                        <FormControl>
+                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <FormField<ProductFormValues>
+                                        control={form.control}
+                                        name="mfg_enable_postpress"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                <FormLabel className="text-xs font-medium">Post-Impresión</FormLabel>
+                                                <FormControl>
+                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {form.watch("mfg_enable_postpress") && (
+                                        <div className="ml-4 space-y-2 pl-4 border-l-2 border-primary/20">
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="mfg_postpress_finishing"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-between">
+                                                        <FormLabel className="text-[11px] font-normal">Acabados</FormLabel>
+                                                        <FormControl>
+                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="mfg_postpress_binding"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-between">
+                                                        <FormLabel className="text-[11px] font-normal">Encuadernación/Troquelado</FormLabel>
+                                                        <FormControl>
+                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 

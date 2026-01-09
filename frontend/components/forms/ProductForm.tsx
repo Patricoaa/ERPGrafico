@@ -28,12 +28,10 @@ import { ProductPricingSection } from "./product/ProductPricingSection"
 import { ProductInventoryTab } from "./product/ProductInventoryTab"
 import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
-import { ProductCustomFieldsTab } from "./product/ProductCustomFieldsTab"
 
 // Import dialogs
 import { PricingRuleForm } from "./PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
-import { CustomFieldTemplateForm } from "./CustomFieldTemplateForm"
 
 interface ProductFormProps {
     open: boolean
@@ -48,12 +46,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     const [uoms, setUoms] = useState<any[]>([])
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
-    const [fieldTemplates, setFieldTemplates] = useState<any[]>([])
     const [products, setProducts] = useState<any[]>([])
     const [pricingRules, setPricingRules] = useState<any[]>([])
     const [selectedPricingRule, setSelectedPricingRule] = useState<any>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
-    const [showTemplateForm, setShowTemplateForm] = useState(false)
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -126,20 +122,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         }
     }
 
-    const fetchTemplates = async () => {
-        try {
-            const res = await api.get('/inventory/custom-field-templates/')
-            setFieldTemplates(res.data.results || res.data)
-        } catch (error) {
-            console.error("Error fetching templates", error)
-        }
-    }
+
 
     useEffect(() => {
         if (open) {
             fetchCategories()
             fetchUoMs()
-            fetchTemplates()
             fetchProducts()
             if (initialData) {
                 form.reset({
@@ -329,9 +317,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     <TabsTrigger value="pricing" className="px-8 flex gap-2">
                                         Reglas de Precios
                                     </TabsTrigger>
-                                    <TabsTrigger value="custom" className="px-8 flex gap-2">
-                                        Campos Personalizados
-                                    </TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="general" className="mt-0 space-y-8">
@@ -382,12 +367,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                         setPricingRuleDialogOpen(true)
                                     }}
                                 />
-
-                                <ProductCustomFieldsTab
-                                    form={form as any}
-                                    fieldTemplates={fieldTemplates}
-                                    onShowTemplateForm={() => setShowTemplateForm(true)}
-                                />
                             </Tabs>
                         </form>
                     </Form>
@@ -421,14 +400,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 onSuccess={(newCat: any) => {
                     setCategories(prev => [...prev, newCat])
                     form.setValue("category", newCat.id.toString())
-                }}
-            />
-
-            <CustomFieldTemplateForm
-                open={showTemplateForm}
-                onOpenChange={setShowTemplateForm}
-                onSuccess={(newTemplate: any) => {
-                    setFieldTemplates(prev => [...prev, newTemplate])
                 }}
             />
         </Dialog>
