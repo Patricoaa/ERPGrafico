@@ -15,6 +15,7 @@ import { Step3_Delivery } from "./checkout/Step3_Delivery"
 import { OrderSummaryCard } from "./checkout/OrderSummaryCard"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { Step0_Customer } from "./checkout/Step0_Customer"
 import { Check, ChevronRight, ChevronLeft, Loader2 } from "lucide-react"
 
 interface SalesCheckoutWizardProps {
@@ -24,7 +25,9 @@ interface SalesCheckoutWizardProps {
     orderLines: any[]
     total: number
     onComplete: () => void
-    customerName?: string
+    // customerName and customerId no longer strictly needed as props if selection is inside
+    initialCustomerName?: string
+    initialCustomerId?: string
 }
 
 export function SalesCheckoutWizard({
@@ -34,10 +37,14 @@ export function SalesCheckoutWizard({
     orderLines,
     total,
     onComplete,
-    customerName
+    initialCustomerName = "",
+    initialCustomerId = ""
 }: SalesCheckoutWizardProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+
+    const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
+    const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
 
     const [dteData, setDteData] = useState({
         type: 'BOLETA',
@@ -73,11 +80,15 @@ export function SalesCheckoutWizard({
     }, [orderLines]);
 
     const handleNext = () => {
-        if (step === 1 && dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
+        if (step === 1 && !selectedCustomerId) {
+            toast.error("Debe seleccionar un cliente para continuar.")
+            return
+        }
+        if (step === 2 && dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
             toast.error("Debe ingresar el número de folio para la factura.")
             return
         }
-        if (step === 2 && (paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
+        if (step === 3 && (paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
             toast.error("Debe seleccionar una cuenta de destino.")
             return
         }
@@ -87,18 +98,28 @@ export function SalesCheckoutWizard({
     const handleBack = () => setStep(prev => prev - 1)
 
     const handleFinish = async () => {
+        if (!selectedCustomerId) {
+            toast.error("Debe seleccionar un cliente.")
+            setStep(1)
+            return
+        }
+
         setLoading(true)
         try {
             const formData = new FormData()
 
             // Order data
             const payloadOrder = order ? { id: order.id } : {
-                customer: (orderLines[0] as any).customer, // If it's a new order from POS, we need customer ID
+                customer: parseInt(selectedCustomerId),
+                payment_method: paymentData.method, // Important for the order record too
                 lines: orderLines.map(l => ({
                     product: l.id,
+                    description: l.name || l.product_name || l.description,
                     quantity: l.qty || l.quantity,
                     unit_price: l.unit_price_net || l.unit_price,
                     uom: l.uom,
+                    tax_rate: 19,
+                    manufacturing_data: l.manufacturing_data
                 }))
             }
             formData.append('order_data', JSON.stringify(payloadOrder))
@@ -137,11 +158,11 @@ export function SalesCheckoutWizard({
     }
 
     const isOnlyService = orderLines.every(line => line.product_type === 'SERVICE');
-    const totalSteps = isOnlyService ? 2 : 3;
+    const totalSteps = isOnlyService ? 3 : 4; // Step 1: Customer, Step 2: DTE, Step 3: Payment, Step 4: Delivery (if not service)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background">
+            <DialogContent className="sm:max-w-[95vw] lg:max-w-[1200px] p-0 overflow-hidden bg-background">
                 <div className="flex h-[600px]">
                     {/* Main Content */}
                     <div className="flex-1 flex flex-col min-w-0">
@@ -149,7 +170,7 @@ export function SalesCheckoutWizard({
                             <div className="flex items-center justify-between">
                                 <DialogTitle className="text-xl font-bold">Cerrar Venta</DialogTitle>
                                 <div className="flex items-center gap-2">
-                                    {[1, 2, totalSteps].map((s) => (
+                                    {[1, 2, 3, totalSteps].map((s) => (
                                         <div
                                             key={s}
                                             className={`h-2 w-8 rounded-full transition-all ${step === s ? 'bg-primary w-12' : 'bg-muted'}`}
@@ -160,9 +181,16 @@ export function SalesCheckoutWizard({
                         </DialogHeader>
 
                         <div className="flex-1 overflow-auto p-6">
-                            {step === 1 && <Step1_DTE dteData={dteData} setDteData={setDteData} />}
-                            {step === 2 && <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
-                            {step === 3 && <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={orderLines} />}
+                            {step === 1 && (
+                                <Step0_Customer
+                                    selectedCustomerId={selectedCustomerId}
+                                    setSelectedCustomerId={setSelectedCustomerId}
+                                    setSelectedCustomerName={setSelectedCustomerName}
+                                />
+                            )}
+                            {step === 2 && <Step1_DTE dteData={dteData} setDteData={setDteData} />}
+                            {step === 3 && <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
+                            {step === 4 && <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={orderLines} />}
                         </div>
 
                         <DialogFooter className="p-6 border-t bg-muted/5">
@@ -204,7 +232,7 @@ export function SalesCheckoutWizard({
                         <OrderSummaryCard
                             orderLines={orderLines}
                             total={total}
-                            customerName={customerName}
+                            customerName={selectedCustomerName}
                         />
                     </div>
                 </div>

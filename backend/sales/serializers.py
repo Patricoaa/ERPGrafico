@@ -15,6 +15,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
     quantity_pending = serializers.ReadOnlyField()
     uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
+    description = serializers.CharField(required=False, allow_blank=True)
     
     class Meta:
         model = SaleLine

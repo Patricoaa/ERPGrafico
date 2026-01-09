@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+db.sqlite3
+.git/
+.vscode/
+.dockerignore
+Dockerfile
+docker-compose.yml
+backend_error.log
+.idea/

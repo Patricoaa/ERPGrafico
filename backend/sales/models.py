@@ -170,6 +170,11 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     notes = models.TextField(_("Notas"), blank=True)
     
+    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=2, default=0)
+    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=2, default=0)
+    total_cost = models.DecimalField(_("Costo Total (COGS)"), max_digits=12, decimal_places=2, default=0)
+
     # Link to Accounting (for COGS entry)
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',

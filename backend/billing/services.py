@@ -253,6 +253,9 @@ class BillingService:
         
         # 1. Get or Create Order
         order = None
+        if isinstance(order_data, list):
+            order_data = order_data[0]
+            
         if isinstance(order_data, str):
             import json
             order_data = json.loads(order_data)
@@ -264,7 +267,9 @@ class BillingService:
                 order_data['payment_method'] = payment_method
                 
             order_serializer = CreateSaleOrderSerializer(data=order_data)
+            print(f"DEBUG: order_data before validation: {order_data}")
             if not order_serializer.is_valid():
+                print(f"DEBUG: serializer errors: {order_serializer.errors}")
                 raise ValidationError(order_serializer.errors)
             order = order_serializer.save(channel='POS')
         

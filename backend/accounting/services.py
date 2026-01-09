@@ -261,8 +261,8 @@ class AccountingMapper:
             raise ValidationError("Falta configuración de cuentas para Despacho (Inventario/Costo).")
 
         items = [
-            {'account': cogs_account, 'debit': delivery.total_net, 'credit': Decimal('0.00')},
-            {'account': inventory_account, 'debit': Decimal('0.00'), 'credit': delivery.total_net}
+            {'account': cogs_account, 'debit': delivery.total_cost, 'credit': Decimal('0.00')},
+            {'account': inventory_account, 'debit': Decimal('0.00'), 'credit': delivery.total_cost}
         ]
         
         return f"Costo de Venta GD-{delivery.number}", f"SD-{delivery.id}", items

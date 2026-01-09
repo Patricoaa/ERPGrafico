@@ -76,8 +76,6 @@ const DynamicIcon = ({ name, className }: { name: string, className?: string }) 
 export default function POSPage() {
     const [products, setProducts] = useState<Product[]>([])
     // const [customers, setCustomers] = useState<Customer[]>([]) // Removed in favor of async selector
-    const [selectedCustomer, setSelectedCustomer] = useState<string>("")
-    const [selectedCustomerName, setSelectedCustomerName] = useState<string>("")
     const [items, setItems] = useState<CartItem[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [loading, setLoading] = useState(false)
@@ -246,10 +244,6 @@ export default function POSPage() {
     }
 
     const handleConfirm = () => {
-        if (!selectedCustomer) {
-            toast.error("Seleccione un cliente")
-            return
-        }
         if (items.length === 0) {
             toast.error("El carrito está vacío")
             return
@@ -276,45 +270,6 @@ export default function POSPage() {
                 addToCart(filteredProducts[0])
                 setSearchTerm("")
             }
-        }
-    }
-
-    const handleCheckoutConfirm = async (data: { dteType?: string, paymentMethod: string, amount?: number, transaction_number?: string, is_pending_registration?: boolean, treasury_account_id?: string | null }) => {
-        setCheckoutOpen(false)
-        setLoading(true)
-        try {
-            const payload = {
-                order_data: {
-                    customer: parseInt(selectedCustomer),
-                    lines: items.map(i => ({
-                        product: i.id,
-                        description: i.name,
-                        quantity: i.qty,
-                        uom: i.uom,
-                        unit_price: i.unit_price_net,
-                        tax_rate: 19,
-                        manufacturing_data: i.manufacturing_data
-                    }))
-                },
-                dte_type: data.dteType || 'BOLETA',
-                payment_method: data.paymentMethod,
-                amount: data.amount,
-                transaction_number: data.transaction_number,
-                is_pending_registration: data.is_pending_registration,
-                treasury_account_id: data.treasury_account_id,
-                document_number: (data as any).documentReference,
-                document_date: (data as any).documentDate
-            }
-            await api.post('/billing/invoices/pos_checkout/', payload)
-
-            toast.success("Venta procesada correctamente")
-            setItems([])
-            setSelectedCustomer("")
-        } catch (error) {
-            console.error("Error in POS checkout:", error)
-            toast.error("Error al procesar el pago")
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -441,20 +396,10 @@ export default function POSPage() {
                 <div className="flex flex-col space-y-4 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                            <div className="p-4 border-b space-y-3 bg-muted/20">
-                                <div className="flex items-center gap-2 justify-between">
-                                    <div className="flex-1">
-                                        <AdvancedContactSelector
-                                            value={selectedCustomer}
-                                            onChange={(val) => setSelectedCustomer(val || "")}
-                                            onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
-                                            placeholder="Buscar Cliente (Nombre o Rut)..."
-                                        />
-                                    </div>
-                                    <Button variant="ghost" size="icon" onClick={() => setItems([])} title="Limpiar Carrito" className="hover:bg-destructive/10 hover:text-destructive">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                            <div className="p-4 border-b flex justify-end bg-muted/20">
+                                <Button variant="ghost" size="icon" onClick={() => setItems([])} title="Limpiar Carrito" className="hover:bg-destructive/10 hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
                             </div>
                             <div className="p-4 border-b font-medium bg-muted/50 flex justify-between items-center">
                                 <span>Resumen de Venta</span>
@@ -612,11 +557,8 @@ export default function POSPage() {
                     order={null}
                     orderLines={items}
                     total={total_gross_sum}
-                    customerName={selectedCustomerName}
                     onComplete={() => {
                         setItems([])
-                        setSelectedCustomer("")
-                        setSelectedCustomerName("")
                     }}
                 />
             )}

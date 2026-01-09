@@ -145,7 +145,7 @@ class SalesService:
             delivery=delivery,
             sale_line=sale_line,
             product=product,
-            quantity_delivered=quantity,
+            quantity=quantity,
             unit_cost=unit_cost
         )
         
@@ -189,19 +189,13 @@ class SalesService:
             line.sale_line.save()
 
         # 2. Accounting Entry via Mapper (using total_cost for COGS)
-        delivery.recalculate_totals()
+        delivery.total_cost = sum(line.total_cost for line in delivery.lines.all())
+        delivery.recalculate_totals() # This will now work without ValueError
         
         from accounting.models import AccountingSettings
         settings = AccountingSettings.objects.first()
         
-        # Calculate total COGS
-        total_cogs = sum(line.total_cost for line in delivery.lines.all())
-        
-        if total_cogs > 0:
-            # Override total_net for COGS calculation in mapper
-            original_net = delivery.total_net
-            delivery.total_net = total_cogs
-            
+        if delivery.total_cost > 0:
             description, reference, items = AccountingMapper.get_entries_for_delivery(delivery, settings)
             entry = JournalEntryService.create_entry(
                 {
@@ -212,7 +206,6 @@ class SalesService:
                 },
                 items
             )
-            delivery.total_net = original_net # Restore
             
             JournalEntryService.post_entry(entry)
             delivery.journal_entry = entry
