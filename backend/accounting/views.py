@@ -111,6 +111,17 @@ class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(accounts, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'])
+    def populate_ifrs(self, request):
+        """
+        Populares standard IFRS Chart of Accounts and default settings.
+        """
+        try:
+            message = AccountingService.populate_ifrs_coa()
+            return Response({'message': message})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 class JournalEntryViewSet(viewsets.ModelViewSet):
     queryset = JournalEntry.objects.all()
     serializer_class = JournalEntrySerializer

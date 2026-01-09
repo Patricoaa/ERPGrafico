@@ -53,11 +53,8 @@ class AccountingService:
 
         coa_data = [
             # CODE, NAME, TYPE, PARENT, IS_CAT, CF_CAT, BS_CAT
-            # 1. ASSETS
-            ('1', 'Activos', AccountType.ASSET, None, None, None, None),
-            
             # 1.1 Current Assets
-            ('1.1', 'Activos Corrientes', AccountType.ASSET, '1', None, None, BSCategory.CURRENT_ASSET),
+            ('1.1', 'Activos Corrientes', AccountType.ASSET, None, None, None, BSCategory.CURRENT_ASSET),
             ('1.1.01', 'Efectivo y Equivalentes', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, None),
             ('1.1.01.01', 'Caja General', AccountType.ASSET, '1.1.01', None, None, None),
             ('1.1.01.02', 'Banco Principal', AccountType.ASSET, '1.1.01', None, None, None),
@@ -78,7 +75,7 @@ class AccountingService:
             ('1.1.06.01', 'Salida de Stock (Pendiente de Facturar)', AccountType.ASSET, '1.1.06', None, None, None),
 
             # 1.2 Non-Current Assets
-            ('1.2', 'Activos No Corrientes', AccountType.ASSET, '1', None, None, BSCategory.NON_CURRENT_ASSET),
+            ('1.2', 'Activos No Corrientes', AccountType.ASSET, None, None, None, BSCategory.NON_CURRENT_ASSET),
             ('1.2.01', 'Propiedades, Planta y Equipo', AccountType.ASSET, '1.2', None, CFCategory.INVESTING, None),
             ('1.2.01.01', 'Maquinaria y Equipos', AccountType.ASSET, '1.2.01', None, None, None),
             ('1.2.01.02', 'Vehículos', AccountType.ASSET, '1.2.01', None, None, None),
@@ -86,11 +83,8 @@ class AccountingService:
             ('1.2.02', 'Depreciación Acumulada', AccountType.ASSET, '1.2', None, CFCategory.DEP_AMORT, None),
             ('1.2.02.01', 'Depreciación Acumulada PPE', AccountType.ASSET, '1.2.02', None, None, None),
 
-            # 2. LIABILITIES
-            ('2', 'Pasivos', AccountType.LIABILITY, None, None, None, None),
-            
             # 2.1 Current Liabilities
-            ('2.1', 'Pasivos Corrientes', AccountType.LIABILITY, '2', None, None, BSCategory.CURRENT_LIABILITY),
+            ('2.1', 'Pasivos Corrientes', AccountType.LIABILITY, None, None, None, BSCategory.CURRENT_LIABILITY),
             ('2.1.01', 'Cuentas por Pagar Comerciales', AccountType.LIABILITY, '2.1', None, CFCategory.OPERATING, None),
             ('2.1.01.01', 'Proveedores Locales', AccountType.LIABILITY, '2.1.01', None, None, None),
             ('2.1.01.02', 'Anticipos de Clientes', AccountType.LIABILITY, '2.1.01', None, None, None),
@@ -106,29 +100,26 @@ class AccountingService:
             ('2.1.06', 'Cuentas Puente Pasivo', AccountType.LIABILITY, '2.1', None, None, None),
             ('2.1.06.01', 'Entrada de Stock (Pendiente de Recibir Factura)', AccountType.LIABILITY, '2.1.06', None, None, None),
 
-            # 3. EQUITY
-            ('3', 'Patrimonio', AccountType.EQUITY, None, None, None, BSCategory.EQUITY),
-            ('3.1', 'Capital Pagado', AccountType.EQUITY, '3', None, CFCategory.FINANCING, None),
+            # 3.1 Paid-in Capital
+            ('3.1', 'Capital Pagado', AccountType.EQUITY, None, None, CFCategory.FINANCING, None),
             ('3.1.01', 'Capital Social', AccountType.EQUITY, '3.1', None, None, None),
-            ('3.2', 'Ganancias y Pérdidas', AccountType.EQUITY, '3', None, None, None),
+            ('3.2', 'Ganancias y Pérdidas', AccountType.EQUITY, None, None, None, None),
             ('3.2.01', 'Resultados de Ejercicios Anteriores', AccountType.EQUITY, '3.2', None, None, None),
             ('3.2.02', 'Resultado del Ejercicio', AccountType.EQUITY, '3.2', None, None, None),
 
-            # 4. INCOME
-            ('4', 'Ingresos', AccountType.INCOME, None, ISCategory.REVENUE, CFCategory.OPERATING, None),
-            ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, '4', None, None, None),
+            # 4.1 Ordinary Activities Revenue
+            ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, None, None, None),
             ('4.1.01', 'Venta de Productos', AccountType.INCOME, '4.1', None, None, None),
             ('4.1.02', 'Venta de Servicios', AccountType.INCOME, '4.1', None, None, None),
-            ('4.2', 'Otros Ingresos', AccountType.INCOME, '4', ISCategory.NON_OPERATING_REVENUE, None, None),
+            ('4.2', 'Otros Ingresos', AccountType.INCOME, None, ISCategory.NON_OPERATING_REVENUE, None, None),
             ('4.2.01', 'Intereses Ganados', AccountType.INCOME, '4.2', None, None, None),
 
-            # 5. EXPENSES
-            ('5', 'Gastos', AccountType.EXPENSE, None, None, CFCategory.OPERATING, None),
-            ('5.1', 'Costo de Ventas', AccountType.EXPENSE, '5', ISCategory.COST_OF_SALES, None, None),
+            # 5.1 Cost of Sales
+            ('5.1', 'Costo de Ventas', AccountType.EXPENSE, None, ISCategory.COST_OF_SALES, None, None),
             ('5.1.01', 'Costo de Productos Vendidos', AccountType.EXPENSE, '5.1', None, None, None),
             ('5.1.02', 'Costo de Servicios Prestados', AccountType.EXPENSE, '5.1', None, None, None),
             
-            ('5.2', 'Gastos de Administración y Ventas', AccountType.EXPENSE, '5', ISCategory.OPERATING_EXPENSE, None, None),
+            ('5.2', 'Gastos de Administración y Ventas', AccountType.EXPENSE, None, ISCategory.OPERATING_EXPENSE, None, None),
             ('5.2.01', 'Sueldos y Remuneraciones', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.02', 'Arriendos', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.03', 'Servicios Básicos (Agua, Luz, Tel)', AccountType.EXPENSE, '5.2', None, None, None),
