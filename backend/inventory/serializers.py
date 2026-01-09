@@ -9,7 +9,7 @@ from production.serializers import BillOfMaterialsSerializer
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
-        fields = ['id', 'name', 'icon', 'parent', 'asset_account', 'income_account', 'expense_account']
+        fields = ['id', 'name', 'prefix', 'icon', 'parent', 'asset_account', 'income_account', 'expense_account']
 
 class UoMCategorySerializer(serializers.ModelSerializer):
     class Meta:

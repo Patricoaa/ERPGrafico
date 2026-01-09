@@ -137,6 +137,7 @@ function RichIconSelector({ value, onChange }: { value: string, onChange: (val: 
 
 const categorySchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
+    prefix: z.string().max(10, "El prefijo no puede exceder 10 caracteres").optional().nullable(),
     icon: z.string().optional(),
     parent: z.string().optional(),
     asset_account: z.string().optional(),
@@ -206,6 +207,7 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
             } else {
                 form.reset({
                     name: "",
+                    prefix: "",
                     parent: "none",
                     asset_account: "none",
                     income_account: "none",
@@ -271,6 +273,19 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                                     <FormLabel>Nombre</FormLabel>
                                     <FormControl>
                                         <Input placeholder="Insumos" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="prefix"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Siglas (Prefijo)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Ej: IMP, DIS, MER" {...field} value={field.value || ""} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

@@ -104,7 +104,14 @@ export function BOMManager({ product }: BOMManagerProps) {
                             Defina los componentes necesarios para fabricar este producto.
                         </CardDescription>
                     </div>
-                    <Button onClick={handleCreate} size="sm" className="gap-2">
+                    <Button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleCreate()
+                        }}
+                        size="sm"
+                        className="gap-2"
+                    >
                         <Plus className="h-4 w-4" />
                         Nueva Lista
                     </Button>

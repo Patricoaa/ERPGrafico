@@ -275,7 +275,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                                         className="rounded-xl font-bold gap-2"
                                         onClick={() => appendBom({ name: `Receta ${bomFields.length + 1}`, active: bomFields.length === 0, lines: [] })}
                                     >
-                                        <Plus className="h-4 w-4" /> Nueva Receta
+                                        <Plus className="h-4 w-4" /> Nueva lista de materiales
                                     </Button>
                                 )}
                             </div>

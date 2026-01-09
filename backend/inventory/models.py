@@ -200,9 +200,7 @@ class Product(models.Model):
         verbose_name = _("Producto")
         verbose_name_plural = _("Productos")
 
-    def __str__(self):
-        return f"[{self.code}] {self.name}"
-
+    def save(self, *args, **kwargs):
         if self.code == "" or (isinstance(self.code, str) and not self.code.strip()):
             self.code = None
 
