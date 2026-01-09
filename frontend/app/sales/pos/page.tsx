@@ -300,7 +300,9 @@ export default function POSPage() {
                 amount: data.amount,
                 transaction_number: data.transaction_number,
                 is_pending_registration: data.is_pending_registration,
-                treasury_account_id: data.treasury_account_id
+                treasury_account_id: data.treasury_account_id,
+                document_number: (data as any).documentReference,
+                document_date: (data as any).documentDate
             }
             await api.post('/billing/invoices/pos_checkout/', payload)
 

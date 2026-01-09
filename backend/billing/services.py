@@ -54,7 +54,7 @@ class BillingService:
         # 1. Create Invoice Record
         invoice = Invoice.objects.create(
             dte_type=dte_type,
-            number=number,
+            number=number or '',
             date=timezone.now().date(),
             sale_order=order,
             payment_method=payment_method,

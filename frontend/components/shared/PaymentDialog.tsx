@@ -132,7 +132,7 @@ export function PaymentDialog({
                             </div>
                         )}
 
-                        {!hideDteFields && (dteType === "BOLETA" || dteType === "FACTURA") && (
+                        {!hideDteFields && ((isPurchase && (dteType === "BOLETA" || dteType === "FACTURA")) || (!isPurchase && dteType === "FACTURA")) && (
                             <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed">
                                 {dteType === 'FACTURA' && (
                                     <div className="flex items-center space-x-2 py-1">
