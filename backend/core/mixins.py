@@ -43,3 +43,46 @@ class BulkImportMixin:
             
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class TotalsCalculationMixin:
+    """
+    Mixin to automatically calculate totals based on related lines.
+    Expects:
+    - a 'lines' reverse relationship.
+    - fields: total_net, total_tax, total.
+    """
+    def recalculate_totals(self, commit=True):
+        from decimal import Decimal
+        import math
+        
+        total_net = Decimal('0.00')
+        total_tax = Decimal('0.00')
+        
+        # We use .all() but be aware of prefetch/selection if called frequently
+        for line in self.lines.all():
+            # If line has it's own calculation logic, trigger it
+            if hasattr(line, 'calculate_subtotal'):
+                line.calculate_subtotal()
+            
+            line_net = getattr(line, 'subtotal', Decimal('0.00'))
+            line_tax_rate = getattr(line, 'tax_rate', Decimal('0.00'))
+            
+            # Tax calculation (Chilean style: round up)
+            line_tax = line_net * (line_tax_rate / Decimal('100.0'))
+            
+            total_net += line_net
+            total_tax += line_tax
+            
+        self.total_net = total_net
+        self.total_tax = Decimal(str(math.ceil(total_tax)))
+        self.total = self.total_net + self.total_tax
+        
+        if commit:
+            # We only update total fields to avoids recursion or side effects
+            self.save(update_fields=['total_net', 'total_tax', 'total'])
+        
+        return {
+            'net': self.total_net,
+            'tax': self.total_tax,
+            'total': self.total
+        }

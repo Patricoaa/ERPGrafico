@@ -195,3 +195,142 @@ class AccountingService:
         
         return f"Plan de cuentas IFRS robusto cargado. {created_count} nuevas cuentas creadas. Mapeos de configuración actualizados."
 
+
+from decimal import Decimal
+
+class AccountingMapper:
+    """
+    Centralized mapper to generate standard Accounting Entries (JournalItems)
+    from business entities (Orders, Deliveries, etc).
+    """
+    @staticmethod
+    def get_entries_for_sale_order(order, settings):
+        """
+        SaleOrder: Receivable (Dr) vs Revenue (Cr) + Tax (Cr)
+        """
+        revenue_account = getattr(order.customer.category, 'revenue_account', None) or settings.default_revenue_account
+        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        
+        if not revenue_account or not receivable_account:
+             raise ValidationError("Falta configuración de cuentas para Ventas.")
+
+        items = [
+            {'account': receivable_account, 'debit': order.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
+            {'account': revenue_account, 'debit': Decimal('0.00'), 'credit': order.total_net}
+        ]
+        
+        if order.total_tax > 0:
+            tax_acc = settings.default_tax_payable_account # For Sales it is usually Payable (IVA Débito)
+            items.append({'account': tax_acc, 'debit': Decimal('0.00'), 'credit': order.total_tax})
+            
+        return f"Venta NV-{order.number}", f"SO-{order.id}", items
+
+    @staticmethod
+    def get_entries_for_purchase_order(order, settings):
+        """
+        PurchaseOrder: Stock Input Bridge (Cr) vs Expense/Inventory (Dr) + Tax (Dr)
+        """
+        payable_account = order.supplier.account_payable or settings.default_payable_account
+        # For Orders we usually use the "Stock Input Bridge" or direct inventory
+        clearing_account = settings.stock_input_account or settings.default_payable_account
+        
+        if not payable_account or not clearing_account:
+             raise ValidationError("Falta configuración de cuentas para Compras.")
+
+        items = [
+            {'account': payable_account, 'debit': Decimal('0.00'), 'credit': order.total, 'partner': order.supplier.name},
+            {'account': clearing_account, 'debit': order.total_net, 'credit': Decimal('0.00')}
+        ]
+        
+        if order.total_tax > 0:
+            tax_acc = settings.default_tax_receivable_account # For Purchases it is Usually Receivable (IVA Crédito)
+            items.append({'account': tax_acc, 'debit': order.total_tax, 'credit': Decimal('0.00')})
+
+        return f"Compra OC-{order.number}", f"PO-{order.id}", items
+
+    @staticmethod
+    def get_entries_for_delivery(delivery, settings):
+        """
+        SaleDelivery: Inventory (Cr) vs COGS (Dr)
+        """
+        # This usually involves moving from Inventory to Cost of Sales
+        inventory_account = settings.default_inventory_account
+        cogs_account = settings.cost_of_sales_account or settings.default_expense_account
+        
+        if not inventory_account or not cogs_account:
+            raise ValidationError("Falta configuración de cuentas para Despacho (Inventario/Costo).")
+
+        items = [
+            {'account': cogs_account, 'debit': delivery.total_net, 'credit': Decimal('0.00')},
+            {'account': inventory_account, 'debit': Decimal('0.00'), 'credit': delivery.total_net}
+        ]
+        
+        return f"Costo de Venta GD-{delivery.number}", f"SD-{delivery.id}", items
+
+    @staticmethod
+    def get_entries_for_sale_invoice(invoice, settings):
+        """
+        Sale Invoice: Receivable (Dr) vs Revenue (Cr) + Tax (Cr)
+        """
+        order = invoice.sale_order
+        revenue_account = getattr(order.customer.category, 'revenue_account', None) or settings.default_revenue_account
+        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        
+        if not revenue_account or not receivable_account:
+             raise ValidationError("Falta configuración de cuentas para Factura de Venta.")
+
+        items = [
+            {'account': receivable_account, 'debit': invoice.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
+            {'account': revenue_account, 'debit': Decimal('0.00'), 'credit': invoice.total_net}
+        ]
+        
+        if invoice.total_tax > 0:
+            tax_acc = settings.default_tax_payable_account
+            items.append({'account': tax_acc, 'debit': Decimal('0.00'), 'credit': invoice.total_tax})
+            
+        return f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}", f"{invoice.dte_type[:3]}-{order.number}", items
+
+    @staticmethod
+    def get_entries_for_purchase_bill(invoice, settings):
+        """
+        Purchase Bill: Payable (Cr) vs Clearing (Dr) + Tax (Dr) or Capitalized Tax (Dr)
+        """
+        order = invoice.purchase_order
+        payable_account = order.supplier.account_payable or settings.default_payable_account
+        stock_input_account = settings.stock_input_account or settings.default_inventory_account
+        tax_account = settings.default_tax_receivable_account
+        
+        if not payable_account or not stock_input_account:
+             raise ValidationError("Falta configuración de cuentas para Factura de Compra.")
+
+        items = [
+            {'account': payable_account, 'debit': Decimal('0.00'), 'credit': invoice.total, 'partner': order.supplier.name},
+            {'account': stock_input_account, 'debit': invoice.total_net, 'credit': Decimal('0.00'), 'label': "Limpieza Cuenta Puente Recepción"}
+        ]
+        
+        # Handle Taxes vs Capitalization
+        is_boleta = invoice.dte_type == 'BOLETA' # Assuming string or model constant
+        
+        if is_boleta:
+            # BOLETAS: Always capitalize VAT into product cost
+            for line in order.lines.all():
+                asset_account = line.product.get_asset_account() or settings.default_inventory_account
+                line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                if line_tax > 0 and asset_account:
+                    items.append({
+                        'account': asset_account,
+                        'debit': line_tax,
+                        'credit': Decimal('0.00'),
+                        'label': f"IVA Capitalizado - {line.product.code}"
+                    })
+        else:
+            # FACTURAS: Record VAT as tax receivable
+            if invoice.total_tax > 0 and tax_account:
+                 items.append({
+                    'account': tax_account,
+                    'debit': invoice.total_tax,
+                    'credit': Decimal('0.00'),
+                    'label': "IVA Compras (Crédito Fiscal)"
+                 })
+
+        return f"{invoice.get_dte_type_display()} Compra {invoice.number or '(Pendiente)'} - OC {order.number}", f"FCP-{invoice.id}", items

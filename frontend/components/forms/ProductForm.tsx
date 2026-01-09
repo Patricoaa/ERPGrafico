@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Package, Loader2, Pencil, X, Info, Trash2, Check, Layers, ChevronDown, ChevronUp } from "lucide-react"
-import { useForm, useFieldArray } from "react-hook-form"
-import * as z from "zod"
+import { Package, Loader2 } from "lucide-react"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { productSchema, type ProductFormValues } from "./product/schema"
 
 import {
     Dialog,
@@ -16,85 +15,25 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-    FormDescription,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { Form } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { BOMManager } from "@/components/production/BOMManager"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+
+// Import modular components
+import { ProductTypeSelector } from "./product/ProductTypeSelector"
+import { ProductInventorySwitch } from "./product/ProductInventorySwitch"
+import { ProductImageUpload } from "./product/ProductImageUpload"
+import { ProductBasicInfo } from "./product/ProductBasicInfo"
+import { ProductPricingSection } from "./product/ProductPricingSection"
+import { ProductInventoryTab } from "./product/ProductInventoryTab"
+import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
+import { ProductPricingTab } from "./product/ProductPricingTab"
+import { ProductCustomFieldsTab } from "./product/ProductCustomFieldsTab"
+
+// Import dialogs
 import { PricingRuleForm } from "./PricingRuleForm"
-import { Switch } from "@/components/ui/switch"
 import { CategoryForm } from "./CategoryForm"
-import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { CustomFieldTemplateForm } from "./CustomFieldTemplateForm"
-
-const productSchema = z.object({
-    code: z.string().optional().or(z.literal("")),
-    internal_code: z.string().optional().or(z.literal("")),
-    name: z.string().min(2, "Nombre requerido"),
-    category: z.string().min(1, "Categoría requerida"),
-    product_type: z.string().min(1, "Tipo requerido"),
-    sale_price: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
-    uom: z.string().optional().or(z.literal("")),
-    sale_uom: z.string().optional().or(z.literal("")),
-    purchase_uom: z.string().optional().or(z.literal("")),
-    allowed_sale_uoms: z.array(z.string()).default([]),
-    image: z.any().optional(),
-    track_inventory: z.boolean(),
-    custom_fields_schema: z.string().optional(),
-    // Manufacturing fields
-    has_bom: z.boolean().default(false),
-    requires_advanced_manufacturing: z.boolean().default(false),
-    // Print Shop Workflow
-    mfg_enable_prepress: z.boolean().default(false),
-    mfg_enable_press: z.boolean().default(false),
-    mfg_enable_postpress: z.boolean().default(false),
-    mfg_prepress_design: z.boolean().default(false),
-    mfg_prepress_specs: z.boolean().default(false),
-    mfg_prepress_folio: z.boolean().default(false),
-    mfg_press_offset: z.boolean().default(false),
-    mfg_press_digital: z.boolean().default(false),
-    mfg_postpress_finishing: z.boolean().default(false),
-    mfg_postpress_binding: z.boolean().default(false),
-    mfg_default_delivery_days: z.preprocess((v) => Number(v) || 3, z.number().min(0)),
-    boms: z.array(z.object({
-        id: z.number().optional(),
-        name: z.string().min(1, "Nombre requerido"),
-        active: z.boolean().default(false),
-        lines: z.array(z.object({
-            id: z.number().optional(),
-            component: z.string().min(1, "Componente requerido"),
-            quantity: z.preprocess((v) => Number(v) || 0, z.number().min(0.0001, "Mínimo 0.0001")),
-            unit: z.string().default("UN"),
-            notes: z.string().optional(),
-        })).default([]),
-    })).default([]),
-    product_custom_fields: z.array(z.object({
-        template: z.preprocess((v) => Number(v), z.number()),
-        order: z.number().default(0)
-    })).default([]),
-})
-
-type ProductFormValues = z.infer<typeof productSchema>
 
 interface ProductFormProps {
     open: boolean
@@ -109,24 +48,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     const [uoms, setUoms] = useState<any[]>([])
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
-
-    // Manufacturing state
-    const [hasBom, setHasBom] = useState(initialData?.has_bom ?? false);
-    const [requiresAdvanced, setRequiresAdvanced] = useState(initialData?.requires_advanced_manufacturing ?? false);
-    const [advancedDialogOpen, setAdvancedDialogOpen] = useState(false);
     const [fieldTemplates, setFieldTemplates] = useState<any[]>([])
     const [products, setProducts] = useState<any[]>([])
-
-    // Add Manufacturing tab to TabsList
-    // Insert after existing tabs (assume after "General" tab)
-    // We'll locate the TabsList rendering and add a new TabsTrigger
-    // Also add TabsContent for manufacturing fields
-    // Add import for AdvancedManufacturingDialog at top
-    // Include dialog component at end of return
-
+    const [pricingRules, setPricingRules] = useState<any[]>([])
     const [selectedPricingRule, setSelectedPricingRule] = useState<any>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
-    const [pricingRules, setPricingRules] = useState<any[]>([])
+    const [showTemplateForm, setShowTemplateForm] = useState(false)
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -161,20 +88,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             product_custom_fields: [],
         },
     })
-
-    const { fields: bomsFields, append: appendBom, remove: removeBom, update: updateBom } = useFieldArray({
-        control: form.control,
-        name: "boms"
-    })
-
-    const { fields: pcfFields, append: appendPcf, remove: removePcf } = useFieldArray({
-        control: form.control,
-        name: "product_custom_fields"
-    })
-
-    const salePrice = form.watch("sale_price") || 0
-    const ivaCalculated = Math.round(Number(salePrice) * 0.19)
-    const totalCalculated = Math.round(Number(salePrice) + ivaCalculated)
 
     const fetchCategories = async () => {
         try {
@@ -212,8 +125,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             console.error("Error fetching pricing rules", error)
         }
     }
-
-    const [showTemplateForm, setShowTemplateForm] = useState(false)
 
     const fetchTemplates = async () => {
         try {
@@ -329,15 +240,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('uom', data.uom || '')
             formData.append('sale_uom', data.sale_uom || '')
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
+
             if (data.allowed_sale_uoms && data.allowed_sale_uoms.length > 0) {
-                // M2M needs multiple appends or a comma separated string if backend handles it, 
-                // but usually DRF expects multiple fields with same name or list in JSON.
-                // Since this is Multipart, we append each ID.
                 data.allowed_sale_uoms.forEach(id => formData.append('allowed_sale_uoms', id))
             }
             formData.append('track_inventory', data.track_inventory ? 'true' : 'false')
 
-            // Manufacturing fields
             formData.append('has_bom', data.has_bom ? 'true' : 'false')
             formData.append('requires_advanced_manufacturing', data.requires_advanced_manufacturing ? 'true' : 'false')
             formData.append('mfg_enable_prepress', data.mfg_enable_prepress ? 'true' : 'false')
@@ -366,7 +274,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             if (data.image instanceof File) {
                 formData.append('image', data.image)
             } else if (imagePreview === null && initialData?.image) {
-                // Image was cleared
                 formData.append('image', '')
             }
 
@@ -374,12 +281,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 await api.put(`/inventory/products/${initialData.id}/`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 })
-                toast.success("Producto actualizado", { description: "Cambios guardados correctamente." })
+                toast.success("Producto actualizado")
             } else {
                 await api.post('/inventory/products/', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 })
-                toast.success("Producto creado", { description: "El producto ha sido registrado." })
+                toast.success("Producto creado")
             }
             onSuccess()
             onOpenChange(false)
@@ -411,1008 +318,91 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     <TabsTrigger value="general" className="px-8 flex gap-2">
                                         Información General
                                     </TabsTrigger>
-                                    {form.watch("product_type") === 'MANUFACTURABLE' && (
+                                    {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
                                         <TabsTrigger value="manufacturing" className="px-8 flex gap-2">
                                             Fabricación
-                                        </TabsTrigger>
-                                    )}
-                                    {initialData && (
-                                        <TabsTrigger value="pricing" className="px-8 flex gap-2">
-                                            Reglas de Precios
                                         </TabsTrigger>
                                     )}
                                     <TabsTrigger value="uoms" className="px-8 flex gap-2">
                                         Und. de Medida
                                     </TabsTrigger>
+                                    <TabsTrigger value="pricing" className="px-8 flex gap-2">
+                                        Reglas de Precios
+                                    </TabsTrigger>
+                                    <TabsTrigger value="custom" className="px-8 flex gap-2">
+                                        Campos Personalizados
+                                    </TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="general" className="mt-0 space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                        {/* Left Column: Radio Group & Details */}
                                         <div className="md:col-span-3 space-y-6 border-r pr-8">
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="product_type"
-                                                render={({ field }) => (
-                                                    <FormItem className="space-y-4">
-                                                        <FormLabel className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tipo de Producto</FormLabel>
-                                                        <FormControl>
-                                                            <RadioGroup
-                                                                onValueChange={(val) => {
-                                                                    field.onChange(val);
-                                                                    // Update track_inventory based on type
-                                                                    if (val === 'STORABLE') {
-                                                                        form.setValue('track_inventory', true);
-                                                                    } else if (val === 'CONSUMABLE' || val === 'SERVICE') {
-                                                                        form.setValue('track_inventory', false);
-                                                                    }
-                                                                    // MANUFACTURABLE retains current value or defaults
-                                                                }}
-                                                                value={field.value}
-                                                                className="flex flex-col space-y-2"
-                                                            >
-                                                                {[
-                                                                    { id: 'STORABLE', label: 'Almacenable' },
-                                                                    { id: 'CONSUMABLE', label: 'Consumible' },
-                                                                    { id: 'MANUFACTURABLE', label: 'Fabricable' },
-                                                                    { id: 'SERVICE', label: 'Servicio' }
-                                                                ].map((t) => (
-                                                                    <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all ${!!initialData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-                                                                        <FormControl>
-                                                                            <RadioGroupItem value={t.id} disabled={!!initialData} />
-                                                                        </FormControl>
-                                                                        <FormLabel className={`font-medium flex-1 text-sm ${!!initialData ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                                                                            {t.label}
-                                                                        </FormLabel>
-                                                                    </FormItem>
-                                                                ))}
-                                                            </RadioGroup>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
+                                            <ProductTypeSelector form={form as any} disabled={!!initialData} />
+                                            <ProductInventorySwitch form={form as any} />
+                                            <ProductImageUpload
+                                                form={form as any}
+                                                imagePreview={imagePreview}
+                                                setImagePreview={setImagePreview}
                                             />
-
-                                            <div className="pt-2 pb-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="track_inventory"
-                                                    render={({ field }) => (
-                                                        <div className="flex items-center justify-between p-3 rounded-xl border bg-card">
-                                                            <div className="flex flex-col gap-1">
-                                                                <Label className="text-sm font-bold">¿Controlar Stock?</Label>
-                                                                <span className="text-[10px] text-muted-foreground">Gestionar niveles de inventario</span>
-                                                            </div>
-                                                            <Switch
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                                disabled={
-                                                                    form.watch("product_type") === 'STORABLE' ||
-                                                                    form.watch("product_type") === 'CONSUMABLE' ||
-                                                                    form.watch("product_type") === 'SERVICE'
-                                                                }
-                                                            />
-                                                        </div>
-                                                    )}
-                                                />
-                                            </div>
-
-
-                                            <div className="pt-4 space-y-4">
-                                                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Imagen del Producto</Label>
-                                                <FormField<ProductFormValues>
-                                                    control={form.control}
-                                                    name="image"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <div className="relative group aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted/10 flex items-center justify-center transition-all hover:border-primary/50">
-                                                                {imagePreview ? (
-                                                                    <>
-                                                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                                            <Button
-                                                                                type="button"
-                                                                                variant="destructive"
-                                                                                size="icon"
-                                                                                className="rounded-full"
-                                                                                onClick={() => {
-                                                                                    setImagePreview(null)
-                                                                                    field.onChange(null)
-                                                                                }}
-                                                                            >
-                                                                                <X className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </div>
-                                                                    </>
-                                                                ) : (
-                                                                    <label className="flex flex-col items-center gap-2 cursor-pointer p-6 text-center">
-                                                                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                                            <Plus className="h-6 w-6 text-primary" />
-                                                                        </div>
-                                                                        <span className="text-xs font-medium text-muted-foreground">Subir imagen</span>
-                                                                        <input
-                                                                            type="file"
-                                                                            className="hidden"
-                                                                            accept="image/*"
-                                                                            onChange={(e) => {
-                                                                                const file = e.target.files?.[0]
-                                                                                if (file) {
-                                                                                    field.onChange(file)
-                                                                                    const reader = new FileReader()
-                                                                                    reader.onloadend = () => setImagePreview(reader.result as string)
-                                                                                    reader.readAsDataURL(file)
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </label>
-                                                                )}
-                                                            </div>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
                                         </div>
 
-                                        {/* Right Column: Information Grid */}
                                         <div className="md:col-span-9 space-y-8">
-                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                                <div className="md:col-span-1">
-                                                    {initialData && (
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="internal_code"
-                                                            render={({ field }) => (
-                                                                <FormItem className="mb-4">
-                                                                    <FormLabel className="text-primary font-bold">Código Interno</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input {...field} readOnly className="bg-primary/5 font-mono font-bold border-primary/20" />
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    )}
-                                                    <FormField<ProductFormValues>
-                                                        control={form.control}
-                                                        name="code"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Código / SKU</FormLabel>
-                                                                <FormControl>
-                                                                    <Input placeholder="AUTO-GEN" {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                                <div className="md:col-span-3">
-                                                    <FormField<ProductFormValues>
-                                                        control={form.control}
-                                                        name="name"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Nombre Comercial</FormLabel>
-                                                                <FormControl>
-                                                                    <Input placeholder="Ej: Camiseta de Algodón Premium" {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-
-
-                                                <div className="md:col-span-4">
-                                                    <FormField<ProductFormValues>
-                                                        control={form.control}
-                                                        name="category"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Categoría</FormLabel>
-                                                                <div className="flex gap-2">
-                                                                    <Select onValueChange={field.onChange} value={field.value} disabled={!!initialData}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger className="flex-1">
-                                                                                <SelectValue placeholder="Seleccionar" />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            {categories.map((cat) => (
-                                                                                <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="outline"
-                                                                        size="icon"
-                                                                        className="shrink-0"
-                                                                        onClick={() => setIsCategoryFormOpen(true)}
-                                                                        title="Nueva Categoría"
-                                                                    >
-                                                                        <Plus className="h-4 w-4" />
-                                                                    </Button>
-                                                                </div>
-
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 rounded-2xl bg-primary/5 border border-primary/10">
-                                                <FormField<ProductFormValues>
-                                                    control={form.control}
-                                                    name="sale_price"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Precio Venta Neto</FormLabel>
-                                                            <FormControl>
-                                                                <div className="relative">
-                                                                    <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                                                    <Input type="number" className="pl-7 font-bold text-lg" {...field} />
-                                                                </div>
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <div className="space-y-2">
-                                                    <Label className="text-muted-foreground">IVA (19%)</Label>
-                                                    <div className="h-10 flex items-center px-3 rounded-md bg-muted/50 font-medium text-muted-foreground">
-                                                        $ {ivaCalculated.toLocaleString()}
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <Label className="text-primary font-bold">Total con IVA (Bruto)</Label>
-                                                    <div className="relative">
-                                                        <span className="absolute left-3 top-2.5 text-primary/50">$</span>
-                                                        <Input
-                                                            type="number"
-                                                            className="pl-7 bg-primary/10 border-primary/30 font-extrabold text-primary text-lg"
-                                                            value={totalCalculated || ""}
-                                                            onChange={(e) => {
-                                                                const gross = Number(e.target.value);
-                                                                const net = Math.round(gross / 1.19);
-                                                                form.setValue("sale_price", net);
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {(initialData || Number(form.watch("sale_price")) > 0) && (
-                                                    <div className="space-y-2">
-                                                        <Label className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Análisis de Margen</Label>
-                                                        <div className={cn(
-                                                            "h-10 flex items-center justify-between px-4 rounded-xl border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
-                                                            (1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100 > 30
-                                                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                                                                : (1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100 > 15
-                                                                    ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
-                                                                    : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
-                                                        )}>
-                                                            <div className="flex items-center gap-2">
-                                                                <Info className="h-4 w-4 opacity-70" />
-                                                                <span>Costo: ${Number(initialData?.cost_price || 0).toLocaleString()}</span>
-                                                            </div>
-                                                            <Badge className={cn(
-                                                                "px-2 py-0.5 rounded-lg text-[11px] font-black border-none shadow-none uppercase tracking-tighter",
-                                                                (1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100 > 30
-                                                                    ? "bg-emerald-500 text-white"
-                                                                    : (1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100 > 15
-                                                                        ? "bg-amber-500 text-white"
-                                                                        : "bg-rose-500 text-white"
-                                                            )}>
-                                                                {Math.round((1 - (Number(initialData?.cost_price || 0) / Number(salePrice))) * 100)}% MARGEN
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <ProductBasicInfo
+                                                form={form as any}
+                                                categories={categories}
+                                                isEditing={!!initialData}
+                                                onAddCategory={() => setIsCategoryFormOpen(true)}
+                                            />
+                                            <ProductPricingSection
+                                                form={form as any}
+                                                initialData={initialData}
+                                            />
                                         </div>
                                     </div>
                                 </TabsContent>
 
-                                <TabsContent value="manufacturing" className="mt-0 space-y-6">
-                                    {/* Row 1: Delivery Date Card + BOM Card */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* Delivery Date Card */}
-                                        <div className="p-6 rounded-2xl border bg-card">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <Switch
-                                                        checked={!!form.watch("mfg_default_delivery_days") && form.watch("mfg_default_delivery_days") > 0}
-                                                        onCheckedChange={(checked) => {
-                                                            form.setValue("mfg_default_delivery_days", checked ? 3 : 0)
-                                                        }}
-                                                    />
-                                                    <div>
-                                                        <h3 className="font-bold text-sm">Fecha de Entrega</h3>
-                                                        <p className="text-[10px] text-muted-foreground">Configurar tiempo de producción</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {form.watch("mfg_default_delivery_days") > 0 && (
-                                                <FormField
-                                                    control={form.control}
-                                                    name="mfg_default_delivery_days"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel className="text-xs">Días de Entrega por Defecto</FormLabel>
-                                                            <FormControl>
-                                                                <Input type="number" {...field} className="h-9" />
-                                                            </FormControl>
-                                                            <FormDescription className="text-[9px]">Tiempo estimado de producción estándar.</FormDescription>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            )}
-                                        </div>
+                                <ProductManufacturingTab
+                                    form={form as any}
+                                    initialData={initialData}
+                                    products={products}
+                                    uoms={uoms}
+                                />
 
-                                        <div className="p-6 rounded-2xl border bg-card md:col-span-2">
-                                            <div className="flex items-center justify-between mb-6">
-                                                <div className="flex items-center gap-2">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="has_bom"
-                                                        render={({ field }) => (
-                                                            <Switch
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        )}
-                                                    />
-                                                    <div>
-                                                        <h3 className="font-bold text-sm">Listas de Materiales (BOM)</h3>
-                                                        <p className="text-[10px] text-muted-foreground">Gestiona múltiples recetas y selecciona la predeterminada</p>
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    className="h-8 gap-1"
-                                                    onClick={() => appendBom({ name: `Nueva Lista ${bomsFields.length + 1}`, active: bomsFields.length === 0, lines: [] })}
-                                                >
-                                                    <Plus className="h-3.5 w-3.5" /> Nueva Receta
-                                                </Button>
-                                            </div>
+                                <ProductInventoryTab
+                                    form={form as any}
+                                    uoms={uoms}
+                                />
 
-                                            {form.watch("has_bom") && (
-                                                <div className="space-y-4">
-                                                    {initialData ? (
-                                                        <BOMManager product={initialData} />
-                                                    ) : (
-                                                        <>
-                                                            {bomsFields.length === 0 && (
-                                                                <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/20">
-                                                                    <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
-                                                                    <p className="text-sm text-muted-foreground">No hay listas de materiales definidas</p>
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="link"
-                                                                        className="text-primary text-xs"
-                                                                        onClick={() => appendBom({ name: "Lista Estándar", active: true, lines: [] })}
-                                                                    >
-                                                                        Crear la primera
-                                                                    </Button>
-                                                                </div>
-                                                            )}
+                                <ProductPricingTab
+                                    initialData={initialData}
+                                    pricingRules={pricingRules}
+                                    fetchPricingRules={fetchPricingRules}
+                                    onOpenRuleDialog={(rule) => {
+                                        setSelectedPricingRule(rule || null)
+                                        setPricingRuleDialogOpen(true)
+                                    }}
+                                />
 
-                                                            <div className="grid grid-cols-1 gap-3">
-                                                                {bomsFields.map((bom, bomIndex) => (
-                                                                    <BOMItemField
-                                                                        key={bom.id || bomIndex}
-                                                                        form={form}
-                                                                        bomIndex={bomIndex}
-                                                                        products={products}
-                                                                        uoms={uoms}
-                                                                        onRemove={() => removeBom(bomIndex)}
-                                                                        onSetDefault={() => {
-                                                                            bomsFields.forEach((_, idx) => {
-                                                                                form.setValue(`boms.${idx}.active`, idx === bomIndex);
-                                                                            });
-                                                                        }}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Row 2: Advanced Manufacturing Card - Full Width */}
-                                    <div className="p-6 rounded-2xl border bg-card space-y-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="requires_advanced_manufacturing"
-                                                    render={({ field }) => (
-                                                        <Switch
-                                                            checked={field.value}
-                                                            onCheckedChange={field.onChange}
-                                                        />
-                                                    )}
-                                                />
-                                                <div>
-                                                    <h3 className="font-bold text-sm">Requiere Fabricación Avanzada</h3>
-                                                    <p className="text-[10px] text-muted-foreground">Captura datos adicionales al vender este producto (Imprenta)</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {form.watch("requires_advanced_manufacturing") && (
-                                            <div className="space-y-6">
-                                                {/* 3 Stage Switches */}
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="mfg_enable_prepress"
-                                                        render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-background">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Pre-Impresión</FormLabel>
-                                                                    <FormDescription className="text-[9px]">Diseño y preparación</FormDescription>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="mfg_enable_press"
-                                                        render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-background">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Impresión</FormLabel>
-                                                                    <FormDescription className="text-[9px]">Proceso de impresión</FormDescription>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="mfg_enable_postpress"
-                                                        render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-background">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Post-Impresión</FormLabel>
-                                                                    <FormDescription className="text-[9px]">Acabados finales</FormDescription>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-
-                                                {/* Stage-Specific Options */}
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                    <div className="space-y-3 p-4 rounded-lg border bg-muted/20">
-                                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Pre-Impresión</h4>
-                                                        <div className="space-y-2">
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="mfg_prepress_design"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                disabled={!form.watch("mfg_enable_prepress")}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="text-xs font-normal cursor-pointer">Diseño Requerido</FormLabel>
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="mfg_prepress_specs"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                disabled={!form.watch("mfg_enable_prepress")}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="text-xs font-normal cursor-pointer">Especificaciones</FormLabel>
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="mfg_prepress_folio"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                disabled={!form.watch("mfg_enable_prepress")}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="text-xs font-normal cursor-pointer">Folio</FormLabel>
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-3 p-4 rounded-lg border bg-muted/20">
-                                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Impresión</h4>
-                                                        <div className="space-y-2">
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="mfg_press_offset"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                disabled={!form.watch("mfg_enable_press")}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="text-xs font-normal cursor-pointer">Offset</FormLabel>
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="mfg_press_digital"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                disabled={!form.watch("mfg_enable_press")}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="text-xs font-normal cursor-pointer">Digital</FormLabel>
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-3 p-4 rounded-lg border bg-muted/20">
-                                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Post-Impresión</h4>
-                                                        <div className="space-y-2">
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="mfg_postpress_finishing"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                disabled={!form.watch("mfg_enable_postpress")}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="text-xs font-normal cursor-pointer">Acabados</FormLabel>
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="mfg_postpress_binding"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                disabled={!form.watch("mfg_enable_postpress")}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="text-xs font-normal cursor-pointer">Encuadernación / Troquelado</FormLabel>
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {/* END Manufacturing Flags */}
-
-                                        {/* BOM Manager Section */}
-                                        {(form.watch("product_type") === 'MANUFACTURABLE') && initialData?.id && (
-                                            <div className="mt-8">
-                                                <BOMManager product={initialData} />
-                                            </div>
-                                        )}
-
-                                    </div>
-                                </TabsContent>
-
-                                <TabsContent value="uoms" className="mt-0 space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-6">
-                                            <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
-                                                <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
-                                                    <Info className="h-4 w-4" />
-                                                    Gestión de Unidades
-                                                </h3>
-                                                <div className="space-y-4">
-                                                    {/* Stock UoM: Only if tracking inventory */}
-                                                    {form.watch("track_inventory") && (
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="uom"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Unidad de Medida de Stock (Base)</FormLabel>
-                                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Seleccionar unidad base" />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            {uoms.map((u) => (
-                                                                                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <FormDescription className="text-[10px]">
-                                                                        Esta unidad se utilizará para el conteo de inventario y valoración.
-                                                                    </FormDescription>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    )}
-
-                                                    {/* Purchase UoM: Storable, Consumable, or Manufacturable with Stock */}
-                                                    {(form.watch("product_type") === 'STORABLE' ||
-                                                        form.watch("product_type") === 'CONSUMABLE' ||
-                                                        (form.watch("product_type") === 'MANUFACTURABLE' && form.watch("track_inventory"))) && (
-                                                            <FormField<ProductFormValues>
-                                                                control={form.control}
-                                                                name="purchase_uom"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>Unidad de Medida de Compra</FormLabel>
-                                                                        <Select onValueChange={field.onChange} value={field.value}>
-                                                                            <FormControl>
-                                                                                <SelectTrigger>
-                                                                                    <SelectValue placeholder="Opcional" />
-                                                                                </SelectTrigger>
-                                                                            </FormControl>
-                                                                            <SelectContent>
-                                                                                {uoms.map((u) => (
-                                                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                                ))}
-                                                                            </SelectContent>
-                                                                        </Select>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        )}
-
-                                                    {/* Sale UoM: Storable, Service, Manufacturable */}
-                                                    {(form.watch("product_type") === 'STORABLE' ||
-                                                        form.watch("product_type") === 'MANUFACTURABLE' ||
-                                                        form.watch("product_type") === 'SERVICE') && (
-                                                            <FormField<ProductFormValues>
-                                                                control={form.control}
-                                                                name="sale_uom"
-                                                                render={({ field }) => {
-                                                                    const filteredUoms = uoms;
-                                                                    const isDisabled = false;
-
-                                                                    return (
-                                                                        <FormItem>
-                                                                            <FormLabel>Unidad de Medida de Venta por Defecto</FormLabel>
-                                                                            <Select
-                                                                                onValueChange={field.onChange}
-                                                                                value={field.value}
-                                                                                disabled={isDisabled}
-                                                                            >
-                                                                                <FormControl>
-                                                                                    <SelectTrigger>
-                                                                                        <SelectValue placeholder="Requerido para ventas" />
-                                                                                    </SelectTrigger>
-                                                                                </FormControl>
-                                                                                <SelectContent>
-                                                                                    {filteredUoms.map((u) => (
-                                                                                        <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                                    ))}
-                                                                                </SelectContent>
-                                                                            </Select>
-                                                                            {/* Removed dependency on Stock UoM */}
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    );
-                                                                }}
-                                                            />
-                                                        )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            {(form.watch("product_type") === 'STORABLE' ||
-                                                form.watch("product_type") === 'MANUFACTURABLE' ||
-                                                form.watch("product_type") === 'SERVICE') && (
-                                                    <div className="p-6 rounded-2xl border bg-card/50">
-                                                        <h3 className="text-sm font-bold flex items-center gap-2 mb-2">
-                                                            Unidades de Venta Permitidas
-                                                        </h3>
-                                                        <p className="text-[11px] text-muted-foreground mb-4">
-                                                            Define explícitamente qué unidades estarán disponibles al vender.
-                                                            Una vez seleccionada la primera, las demás deben ser de la misma categoría.
-                                                        </p>
-
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="allowed_sale_uoms"
-                                                            render={({ field }) => {
-                                                                const selectedIds = field.value || [];
-                                                                const saleUomId = form.watch("sale_uom");
-                                                                const saleUom = uoms.find(u => u.id.toString() === saleUomId);
-                                                                const categoryId = saleUom?.category;
-                                                                const isDisabled = !saleUomId;
-
-                                                                const sortedUoms = [...uoms].sort((a, b) => {
-                                                                    const catCompare = (a.category_name || "").localeCompare(b.category_name || "");
-                                                                    if (catCompare !== 0) return catCompare;
-                                                                    return a.name.localeCompare(b.name);
-                                                                });
-
-                                                                return (
-                                                                    <FormItem>
-                                                                        <div className={cn("space-y-3", isDisabled && "opacity-50 pointer-events-none")}>
-                                                                            <div className="flex flex-wrap gap-2 mb-2">
-                                                                                {selectedIds.map((id: string) => {
-                                                                                    const uom = uoms.find((u: any) => u.id.toString() === id);
-                                                                                    return (
-                                                                                        <Badge key={id} variant="secondary" className="pl-3 pr-1 py-1 gap-2 rounded-lg">
-                                                                                            {uom?.name}
-                                                                                            <Button
-                                                                                                type="button"
-                                                                                                variant="ghost"
-                                                                                                size="icon"
-                                                                                                className="h-4 w-4 rounded-full hover:bg-destructive hover:text-white"
-                                                                                                onClick={() => field.onChange(selectedIds.filter((i: string) => i !== id))}
-                                                                                            >
-                                                                                                <X className="h-2 w-2" />
-                                                                                            </Button>
-                                                                                        </Badge>
-                                                                                    );
-                                                                                })}
-                                                                                {selectedIds.length === 0 && (
-                                                                                    <span className="text-[10px] text-muted-foreground italic">
-                                                                                        {isDisabled ? "Seleccione unidad por defecto primero." : "Ninguna seleccionada. Se usará la unidad por defecto."}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-
-                                                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto max-h-[300px] p-1 border rounded-xl bg-muted/20">
-                                                                                {sortedUoms.map((u: any) => {
-                                                                                    const isSelected = selectedIds.includes(u.id.toString());
-                                                                                    const isDifferentCategory = categoryId !== undefined && u.category !== categoryId;
-                                                                                    const itemDisabled = isDisabled || isDifferentCategory;
-
-                                                                                    return (
-                                                                                        <div
-                                                                                            key={u.id}
-                                                                                            className={cn(
-                                                                                                "flex items-center space-x-2 p-2 rounded-lg border transition-all cursor-pointer",
-                                                                                                isSelected ? "bg-primary/10 border-primary/30" : "bg-background border-transparent hover:border-muted-foreground/30",
-                                                                                                itemDisabled && "opacity-30 cursor-not-allowed grayscale pointer-events-none"
-                                                                                            )}
-                                                                                            onClick={() => {
-                                                                                                if (itemDisabled) return;
-                                                                                                if (isSelected) {
-                                                                                                    field.onChange(selectedIds.filter((id: string) => id !== u.id.toString()));
-                                                                                                } else {
-                                                                                                    field.onChange([...selectedIds, u.id.toString()]);
-                                                                                                }
-                                                                                            }}
-                                                                                        >
-                                                                                            <Checkbox
-                                                                                                checked={isSelected}
-                                                                                                disabled={itemDisabled}
-                                                                                                className="rounded"
-                                                                                            />
-                                                                                            <div className="flex flex-col">
-                                                                                                <span className="text-[11px] font-medium leading-tight">{u.name}</span>
-                                                                                                <span className="text-[9px] text-muted-foreground leading-tight">{u.category_name}</span>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                            {saleUom && (
-                                                                                <p className="text-[10px] text-primary font-medium flex items-center gap-1">
-                                                                                    <Info className="h-3 w-3" />
-                                                                                    Filtrado por categoría de venta: {saleUom.category_name}
-                                                                                </p>
-                                                                            )}
-                                                                        </div>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-                                                    </div>
-                                                )}
-                                        </div>
-                                    </div>
-                                </TabsContent>
-
-                                <TabsContent value="pricing" className="mt-0">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between bg-muted/30 p-4 rounded-xl border">
-                                            <div className="flex gap-4 items-center">
-                                                <div className="p-2 rounded-lg bg-primary/10">
-                                                    <Info className="h-5 w-5 text-primary" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-semibold">Políticas de Precios Dinámicas</h3>
-                                                    <p className="text-xs text-muted-foreground">Las reglas se aplican automáticamente según la cantidad y vigencia.</p>
-                                                </div>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="default"
-                                                size="sm"
-                                                onClick={() => setPricingRuleDialogOpen(true)}
-                                            >
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Nueva Regla
-                                            </Button>
-                                        </div>
-
-                                        {!initialData && (
-                                            <div className="py-12 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center text-center px-6">
-                                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                                                    <Pencil className="h-6 w-6 text-muted-foreground" />
-                                                </div>
-                                                <h4 className="font-medium text-muted-foreground">Debe crear el producto primero</h4>
-                                                <p className="text-xs text-muted-foreground/60 max-w-xs mt-1">Las reglas de precios específicas requieren que el producto esté registrado en el sistema.</p>
-                                            </div>
-                                        )}
-
-                                        {initialData && (
-                                            <div className="border rounded-2xl overflow-hidden shadow-sm">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow className="bg-muted/50 hover:bg-muted/50 border-none">
-                                                            <TableHead>Nivel</TableHead>
-                                                            <TableHead>Descripción / Vigencia</TableHead>
-                                                            <TableHead>Cant. Mín</TableHead>
-                                                            <TableHead className="text-right">Precio / Descuento</TableHead>
-                                                            <TableHead className="text-center w-[100px]">Estado</TableHead>
-                                                            <TableHead className="text-right w-[60px]"></TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {pricingRules.length === 0 ? (
-                                                            <TableRow>
-                                                                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground italic">
-                                                                    No hay reglas personalizadas para este producto.
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ) : (
-                                                            pricingRules.map((rule) => {
-                                                                const isProductRule = rule.product !== null;
-                                                                return (
-                                                                    <TableRow key={rule.id} className="group transition-colors">
-                                                                        <TableCell>
-                                                                            <Badge variant={isProductRule ? "default" : "outline"} className="text-[10px] uppercase font-bold px-1.5">
-                                                                                {isProductRule ? "Producto" : "Categoría"}
-                                                                            </Badge>
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex flex-col">
-                                                                                <span className="font-bold text-sm">{rule.name}</span>
-                                                                                {(rule.start_date || rule.end_date) && (
-                                                                                    <span className="text-[10px] text-muted-foreground font-medium flex gap-2">
-                                                                                        <span>📅 {rule.start_date || '∞'}</span>
-                                                                                        <span>➜</span>
-                                                                                        <span>{rule.end_date || '∞'}</span>
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell className="text-sm font-semibold tabular-nums">{Number(rule.min_quantity)} unidad(es)</TableCell>
-                                                                        <TableCell className="text-right font-black text-primary">
-                                                                            {rule.rule_type === 'FIXED'
-                                                                                ? `$ ${Number(rule.fixed_price).toLocaleString()}`
-                                                                                : `-${Number(rule.discount_percentage)}%`}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-center">
-                                                                            <div className={`inline-flex px-2 py-1 rounded-full text-[9px] font-black uppercase ${rule.active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                                                                                {rule.active ? "Activa" : "Inactiva"}
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right flex gap-1 justify-end">
-                                                                            {isProductRule && (
-                                                                                <>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                                        onClick={() => {
-                                                                                            setSelectedPricingRule(rule)
-                                                                                            setPricingRuleDialogOpen(true)
-                                                                                        }}
-                                                                                    >
-                                                                                        <Pencil className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                                        onClick={async () => {
-                                                                                            if (confirm("¿Estás seguro de eliminar esta regla?")) {
-                                                                                                try {
-                                                                                                    await api.delete(`/inventory/pricing-rules/${rule.id}/`)
-                                                                                                    toast.success("Regla eliminada")
-                                                                                                    fetchPricingRules()
-                                                                                                } catch (error) {
-                                                                                                    toast.error("Error al eliminar la regla")
-                                                                                                }
-                                                                                            }
-                                                                                        }}
-                                                                                    >
-                                                                                        <Trash2 className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                </>
-                                                                            )}
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                )
-                                                            })
-                                                        )}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        )}
-                                    </div>
-                                </TabsContent>
+                                <ProductCustomFieldsTab
+                                    form={form as any}
+                                    fieldTemplates={fieldTemplates}
+                                    onShowTemplateForm={() => setShowTemplateForm(true)}
+                                />
                             </Tabs>
                         </form>
                     </Form>
                 </div>
 
-                <DialogFooter className="px-6 py-4 border-t gap-2 bg-muted/10 shrink-0">
-                    <Button variant="outline" className="h-11 min-w-[120px] rounded-xl font-bold" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button
-                        form="product-form"
-                        type="submit"
-                        disabled={loading}
-                        className="min-w-[160px] rounded-xl h-11 font-bold shadow-lg shadow-primary/20"
-                    >
-                        {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...</> : (initialData ? 'Guardar Cambios' : 'Crear Producto')}
+                <DialogFooter className="px-6 py-4 border-t bg-muted/20 shrink-0">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" form="product-form" disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {initialData ? 'Guardar Cambios' : 'Crear Producto'}
                     </Button>
                 </DialogFooter>
-            </DialogContent >
+            </DialogContent>
 
             <PricingRuleForm
                 open={pricingRuleDialogOpen}
@@ -1441,205 +431,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     setFieldTemplates(prev => [...prev, newTemplate])
                 }}
             />
-        </Dialog >
-    )
-}
-
-function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }: any) {
-    const [isExpanded, setIsExpanded] = useState(false)
-    const { fields: lineFields, append, remove } = useFieldArray({
-        control: form.control,
-        name: `boms.${bomIndex}.lines`
-    })
-
-    const isActive = form.watch(`boms.${bomIndex}.active`)
-    const bomName = form.watch(`boms.${bomIndex}.name`)
-
-    return (
-        <div className={cn(
-            "rounded-xl border transition-all duration-200",
-            isActive ? "border-primary/50 bg-primary/[0.02]" : "bg-background shadow-sm hover:border-muted-foreground/30"
-        )}>
-            <div className="p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 shrink-0">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                            "h-8 w-8 rounded-full transition-colors",
-                            isActive ? "bg-primary text-white hover:bg-primary/90" : "bg-muted text-muted-foreground hover:bg-muted-foreground/10"
-                        )}
-                        onClick={onSetDefault}
-                    >
-                        {isActive ? <Check className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
-                    </Button>
-                    <div className="flex flex-col">
-                        <FormField
-                            control={form.control}
-                            name={`boms.${bomIndex}.name`}
-                            render={({ field }) => (
-                                <Input
-                                    {...field}
-                                    placeholder="Nombre de la receta"
-                                    className="h-7 text-xs font-bold bg-transparent border-transparent focus-visible:border-primary/30 w-[200px] px-0"
-                                />
-                            )}
-                        />
-                        <span className="text-[10px] text-muted-foreground">
-                            {lineFields.length} componentes • {isActive ? 'Predeterminada' : 'Respaldo'}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-1">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground"
-                        onClick={() => setIsExpanded(!isExpanded)}
-                    >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                        onClick={onRemove}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-
-            {isExpanded && (
-                <div className="px-4 pb-4 pt-0 border-t animate-in fade-in slide-in-from-top-2">
-                    <div className="flex items-center justify-between mt-4 mb-2">
-                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Componentes de la Receta</h4>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            className="h-7 text-[10px] gap-1 px-2"
-                            onClick={() => append({ component: "", quantity: 1, unit: "UN", notes: "" })}
-                        >
-                            <Plus className="h-3 w-3" /> Añadir
-                        </Button>
-                    </div>
-
-                    <div className="rounded-lg border overflow-hidden">
-                        <Table>
-                            <TableHeader className="bg-muted/30">
-                                <TableRow className="h-8 hover:bg-transparent">
-                                    <TableHead className="text-[10px] h-8 px-2 font-bold">Componente</TableHead>
-                                    <TableHead className="text-[10px] h-8 w-[70px] px-2 font-bold text-center">Cant.</TableHead>
-                                    <TableHead className="text-[10px] h-8 w-[80px] px-2 font-bold text-center">Unidad</TableHead>
-                                    <TableHead className="text-[10px] h-8 w-[32px] px-2"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {lineFields.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-4 text-[10px] text-muted-foreground italic">
-                                            No hay componentes definidos
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    lineFields.map((field, index) => (
-                                        <TableRow key={field.id} className="h-10 hover:bg-muted/5 border-b last:border-0">
-                                            <TableCell className="p-1 px-2">
-                                                <ProductSelector
-                                                    value={form.watch(`boms.${bomIndex}.lines.${index}.component`)}
-                                                    onChange={(val) => {
-                                                        form.setValue(`boms.${bomIndex}.lines.${index}.component`, val)
-                                                        // Auto-set unit if empty or default
-                                                        const p = products.find((prod: any) => prod.id.toString() === val?.toString());
-                                                        if (p && p.uom_name) {
-                                                            form.setValue(`boms.${bomIndex}.lines.${index}.unit`, p.uom_name);
-                                                        }
-                                                    }}
-                                                    placeholder="Sel. componente"
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-1 px-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`boms.${bomIndex}.lines.${index}.quantity`}
-                                                    render={({ field }) => (
-                                                        <Input
-                                                            type="number"
-                                                            step="0.0001"
-                                                            {...field}
-                                                            className="h-8 text-center text-[11px] font-mono px-1"
-                                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                        />
-                                                    )}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-1 px-2 text-center">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`boms.${bomIndex}.lines.${index}.unit`}
-                                                    render={({ field }) => {
-                                                        const componentId = form.watch(`boms.${bomIndex}.lines.${index}.component`);
-                                                        const product = products.find((p: any) => p.id.toString() === componentId?.toString());
-
-                                                        const unitNames = new Set<string>();
-                                                        if (product) {
-                                                            if (product.uom_name) unitNames.add(product.uom_name);
-                                                            if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
-                                                            if (product.allowed_sale_uoms) {
-                                                                product.allowed_sale_uoms.forEach((uomId: any) => {
-                                                                    const foundUom = uoms.find((u: any) => u.id.toString() === uomId.toString());
-                                                                    if (foundUom) unitNames.add(foundUom.name);
-                                                                });
-                                                            }
-                                                        }
-
-                                                        const options = Array.from(unitNames);
-                                                        if (options.length === 0 && !product) {
-                                                            // Fallback only if no product selected
-                                                            options.push("UN", "KG", "MT", "LT", "PL", "ML");
-                                                        }
-
-                                                        return (
-                                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                                <FormControl>
-                                                                    <SelectTrigger className="h-8 text-[10px] px-1 justify-center">
-                                                                        <SelectValue />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    {options.map(u => (
-                                                                        <SelectItem key={u} value={u}>{u}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        );
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-1 px-1 text-center">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                                    onClick={() => remove(index)}
-                                                >
-                                                    <X className="h-3 w-3" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
-            )}
-        </div>
+        </Dialog>
     )
 }

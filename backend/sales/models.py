@@ -2,8 +2,10 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from core.models import User
 from accounting.models import Account
+from core.mixins import TotalsCalculationMixin
+from core.services import SequenceService
 
-class SaleOrder(models.Model):
+class SaleOrder(models.Model, TotalsCalculationMixin):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
@@ -70,12 +72,7 @@ class SaleOrder(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.number:
-            # Simple auto-numbering
-            last_order = SaleOrder.objects.all().order_by('id').last()
-            if last_order:
-                self.number = str(int(last_order.number) + 1).zfill(6)
-            else:
-                self.number = '000001'
+            self.number = SequenceService.get_next_number(SaleOrder)
         super().save(*args, **kwargs)
 
 class SaleLine(models.Model):
@@ -112,8 +109,11 @@ class SaleLine(models.Model):
     )
 
 
-    def save(self, *args, **kwargs):
+    def calculate_subtotal(self):
         self.subtotal = self.quantity * self.unit_price
+
+    def save(self, *args, **kwargs):
+        self.calculate_subtotal()
         # Auto-fill description from product if not provided
         if self.product and not self.description:
             self.description = self.product.name
@@ -147,7 +147,7 @@ class SalesSettings(models.Model):
         return "Configuración de Ventas"
 # Append to sales/models.py - SaleDelivery and SaleDeliveryLine models
 
-class SaleDelivery(models.Model):
+class SaleDelivery(models.Model, TotalsCalculationMixin):
     """
     Represents a delivery/dispatch of a sale order.
     Can be partial or complete.
@@ -191,11 +191,7 @@ class SaleDelivery(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.number:
-            last_delivery = SaleDelivery.objects.all().order_by('id').last()
-            if last_delivery and last_delivery.number.isdigit():
-                self.number = str(int(last_delivery.number) + 1).zfill(6)
-            else:
-                self.number = '000001'
+            self.number = SequenceService.get_next_number(SaleDelivery)
         super().save(*args, **kwargs)
 
 class SaleDeliveryLine(models.Model):
@@ -207,12 +203,16 @@ class SaleDeliveryLine(models.Model):
     sale_line = models.ForeignKey(SaleLine, on_delete=models.PROTECT, related_name='delivery_lines')
     product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT, related_name='delivery_lines')
     
-    quantity_delivered = models.DecimalField(
-        _("Cantidad Despachada"), 
+    quantity = models.DecimalField(
+        _("Cantidad"), 
         max_digits=10, 
         decimal_places=2,
         help_text="Cantidad despachada en este despacho"
     )
+    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=2, default=0)
+    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=2, default=0)
+    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=2, editable=False, default=0)
+    total_cost = models.DecimalField(_("Costo Total"), max_digits=12, decimal_places=2, editable=False, default=0)
     
     # Link to Stock Move
     stock_move = models.OneToOneField(
@@ -222,27 +222,17 @@ class SaleDeliveryLine(models.Model):
         related_name='sale_delivery_line'
     )
     
-    # Cost tracking for COGS
-    unit_cost = models.DecimalField(
-        _("Costo Unitario"), 
-        max_digits=12, 
-        decimal_places=2,
-        help_text="Costo unitario del producto al momento del despacho"
-    )
-    total_cost = models.DecimalField(
-        _("Costo Total"), 
-        max_digits=12, 
-        decimal_places=2,
-        editable=False
-    )
-    
     class Meta:
         verbose_name = _("Línea de Despacho")
         verbose_name_plural = _("Líneas de Despacho")
     
     def __str__(self):
-        return f"{self.product.code} x {self.quantity_delivered}"
+        return f"{self.product.code} x {self.quantity}"
     
+    def calculate_subtotal(self):
+        self.subtotal = self.quantity * self.unit_price
+        self.total_cost = self.quantity * self.unit_cost
+
     def save(self, *args, **kwargs):
-        self.total_cost = self.quantity_delivered * self.unit_cost
+        self.calculate_subtotal()
         super().save(*args, **kwargs)

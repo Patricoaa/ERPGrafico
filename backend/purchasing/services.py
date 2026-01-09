@@ -2,8 +2,9 @@ from django.db import transaction, models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
-from accounting.models import JournalEntry, JournalItem, Account, AccountType
-from accounting.services import JournalEntryService
+from accounting.models import JournalEntry, JournalItem, Account, AccountType, AccountingSettings
+from accounting.services import JournalEntryService, AccountingMapper
+from core.services import SequenceService, BaseNoteService
 from inventory.models import StockMove, Warehouse
 from inventory.services import StockService
 from decimal import Decimal
@@ -348,64 +349,23 @@ class PurchasingService:
                             credit=0,
                             label=f"{line.product.code} x {line.quantity_received} (Fallback Asset)"
                         )
-            else:
-                # STORABLE, MANUFACTURABLE, SERVICE: Capitalize to inventory asset
-                asset_account = line.product.get_asset_account
-                if not asset_account:
-                     # Fallback to default inventory account
-                     pass 
-                     # raise ValidationError(f"El producto {line.product.name} no tiene cuenta de activo configurada.")
-                
-                if asset_account:
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=asset_account,
-                        debit=line_total,
-                        credit=0,
-                        label=f"{line.product.code} x {line.quantity_received} {line.purchase_line.uom.name if line.purchase_line.uom else ''}"
-                    )
-        
-        
-        # 5. Accounting Credit (Clearing Account)
+        # 5. Accounting Entry via Mapper
         from accounting.models import AccountingSettings
         settings = AccountingSettings.objects.first()
-        clearing_account = settings.default_inventory_account if settings else None
+        if not settings:
+            raise ValidationError("No se encontró configuración contable.")
+
+        description, reference, items = AccountingMapper.get_entries_for_receipt(receipt, settings)
+        entry = JournalEntryService.create_entry(
+            {
+                'date': receipt.receipt_date,
+                'description': description,
+                'reference': reference,
+                'state': JournalEntry.State.DRAFT
+            },
+            items
+        )
         
-        if clearing_account and total_amount > 0:
-             # If we didn't create debits above because of missing asset account, we might have an unbalanced entry.
-             # Ideally validation should prevent this.
-             if not entry.items.exists():
-                 # Create Debit to Inventory (clearing) as fallback if product has no asset account?
-                 # Or assume all goes to Inventory Account
-                 JournalItem.objects.create(
-                    entry=entry,
-                    account=clearing_account,
-                    debit=total_amount,
-                    credit=0,
-                    label="Inventario (Fallback)"
-                )
-
-             # Debit: Asset Account (Real Inventory)
-             # Credit: "Facturas por Recibir" (Liability) - Pending Bill (stock_input_account)
-             
-             credit_account = settings.stock_input_account if settings else None
-             
-             if not credit_account and settings:
-                 # Fallback to default payable if no specific stock input account
-                 credit_account = settings.default_payable_account
-                 
-             if not credit_account:
-                 # Ultimate fallback to clearing (inventory) but warn it's bad practice
-                 credit_account = clearing_account
-
-             if credit_account:
-                 JournalItem.objects.create(
-                    entry=entry,
-                    account=credit_account, 
-                    debit=0,
-                    credit=total_amount,
-                    label=f"Contrapartida Recepción OC-{receipt.purchase_order.number}"
-                 )
         JournalEntryService.post_entry(entry)
         receipt.journal_entry = entry
         receipt.status = PurchaseReceipt.Status.CONFIRMED
@@ -497,29 +457,15 @@ class PurchasingService:
         
         total_amount = amount_net + amount_tax
         
-        # 1. Create Invoice Note
-        invoice = Invoice.objects.create(
-            dte_type=note_type,
-            number=document_number,
+        # 1 & 2. Create Invoice Note and Journal Entry via BaseNoteService
+        invoice, entry = BaseNoteService.create_document_note(
+            order=order,
+            note_type=note_type,
+            amount_net=amount_net,
+            amount_tax=amount_tax,
+            document_number=document_number,
             document_attachment=document_attachment,
-            purchase_order=order,
-            date=timezone.now().date(),
-            total_net=amount_net,
-            total_tax=amount_tax,
-            total=total_amount,
-            status=Invoice.Status.POSTED
-        )
-
-        # 2. Create Accounting Entry
-        settings = AccountingSettings.objects.first()
-        if not settings:
-            raise ValidationError("No se encontró configuración contable.")
-            
-        entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
-            description=f"{invoice.get_dte_type_display()} {document_number} (Ref OC-{order.number})",
-            reference=f"NOTE-{invoice.id}",
-            state=JournalEntry.State.DRAFT
+            partner_name=order.supplier.name
         )
 
         payable_account = order.supplier.account_payable or settings.default_payable_account
@@ -538,6 +484,18 @@ class PurchasingService:
         stock_input_account = settings.stock_input_account or settings.default_inventory_account
         if not stock_input_account:
             raise ValidationError("No se encontró cuenta de entrada de stock.")
+
+        # 2. Create Accounting Entry via Mapper
+        description, reference, items = AccountingMapper.get_entries_for_purchase_order(order, settings)
+        entry = JournalEntryService.create_entry(
+            {
+                'date': timezone.now().date(),
+                'description': description,
+                'reference': reference,
+                'state': JournalEntry.State.DRAFT
+            },
+            items
+        )
 
         # 3. Accounts Payable Entry (opposite for credit vs debit)
         if note_type == Invoice.DTEType.NOTA_CREDITO:

@@ -119,21 +119,10 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         lines_data = validated_data.pop('lines')
         order = SaleOrder.objects.create(**validated_data)
         
-        total_net = 0
-        total_tax = 0
-        
         for line_data in lines_data:
-            line = SaleLine.objects.create(order=order, **line_data)
-            # Simple tax calc
-            line_net = line.subtotal
-            line_tax = line_net * (line.tax_rate / 100)
-            
-            total_net += line_net
-            total_tax += line_tax
-
-        order.total_net = total_net
-        order.total_tax = Decimal(str(math.ceil(total_tax)))
-        order.total = Decimal(str(math.ceil(total_net + total_tax)))
+            SaleLine.objects.create(order=order, **line_data)
+        
+        order.recalculate_totals()
         order.save()
         
         return order

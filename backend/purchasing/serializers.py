@@ -145,7 +145,7 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
         order = PurchaseOrder.objects.create(**validated_data)
         
         self._save_lines(order, lines_data)
-        self._update_totals(order)
+        order.recalculate_totals()
         
         return order
 
@@ -158,7 +158,7 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
             
         if lines_data is not None:
             self._save_lines(instance, lines_data)
-            self._update_totals(instance)
+            instance.recalculate_totals()
             
         instance.save()
         return instance
@@ -190,22 +190,6 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
                     del line_data['id'] # Avoid passing explicit ID for creation
                 PurchaseLine.objects.create(order=order, **line_data)
 
-    def _update_totals(self, order):
-        total_net = 0
-        total_tax = 0
-        
-        # Refresh lines to calculate total
-        for line in order.lines.all(): # .all() hits DB again to get fresh calculated subtotals
-            line_net = line.subtotal
-            line_tax = line_net * (line.tax_rate / 100)
-            
-            total_net += line_net
-            total_tax += line_tax
-            
-        order.total_net = total_net
-        order.total_tax = Decimal(str(math.ceil(total_tax)))
-        order.total = Decimal(str(math.ceil(total_net + total_tax)))
-        order.save()
 
 class PurchaseReceiptLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)

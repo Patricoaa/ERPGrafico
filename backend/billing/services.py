@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import Invoice
 from accounting.models import JournalEntry, JournalItem, AccountingSettings, AccountType
-from accounting.services import JournalEntryService
+from accounting.services import JournalEntryService, AccountingMapper
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from decimal import Decimal
@@ -64,51 +64,17 @@ class BillingService:
             status=status
         )
 
-        # 2. Accounting Entry
-        settings = AccountingSettings.objects.first()
-        if not settings:
-            raise ValidationError("Debe configurar la contabilidad primero.")
-
-        receivable_account = order.customer.account_receivable or settings.default_receivable_account
-        revenue_account = settings.default_revenue_account
-        tax_account = settings.default_tax_payable_account
-        
-        if not all([receivable_account, revenue_account, tax_account]):
-            raise ValidationError("Faltan cuentas predeterminadas en la configuración contable.")
-
-        entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
-            description=f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}",
-            reference=f"{invoice.dte_type[:3]}-{order.number}",
-            state=JournalEntry.State.DRAFT
+        # 2. Accounting Entry via Mapper
+        description, reference, items = AccountingMapper.get_entries_for_sale_invoice(invoice, settings)
+        entry = JournalEntryService.create_entry(
+            {
+                'date': timezone.now().date(),
+                'description': description,
+                'reference': reference,
+                'state': JournalEntry.State.DRAFT
+            },
+            items
         )
-
-        # Debit: Receivable (Total)
-        JournalItem.objects.create(
-            entry=entry,
-            account=receivable_account,
-            debit=invoice.total,
-            credit=0,
-            partner=order.customer.name
-        )
-
-        # Credit: Revenue (Net)
-        JournalItem.objects.create(
-            entry=entry,
-            account=revenue_account,
-            debit=0,
-            credit=invoice.total_net
-        )
-
-        # Credit: Tax (IVA Débito)
-        if invoice.total_tax > 0:
-            JournalItem.objects.create(
-                entry=entry,
-                account=tax_account,
-                debit=0,
-                credit=invoice.total_tax,
-                label=f"IVA {invoice.dte_type}"
-            )
 
         if status == Invoice.Status.POSTED:
             JournalEntryService.post_entry(entry)
@@ -187,73 +153,25 @@ class BillingService:
             status=status
         )
 
+        # 2. Accounting Entry via Mapper (includes tax capitalization logic for Boletas)
         settings = AccountingSettings.objects.first()
-        payable_account = order.supplier.account_payable or (settings.default_payable_account if settings else None)
-        tax_account = settings.default_tax_receivable_account if settings else None
-        
-        # We need to clear the Stock Interim (Received Not Billed)
-        stock_input_account = settings.stock_input_account if settings else None
-        if not stock_input_account:
-            stock_input_account = settings.default_inventory_account
-
-        entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
-            description=f"{invoice.get_dte_type_display()} Compra {'(Pendiente)' if status == Invoice.Status.DRAFT else supplier_invoice_number} - OC {order.number}",
-            reference=f"FCP-{invoice.id}", # Use ID as reference until we have folio
-            state=JournalEntry.State.DRAFT
+        description, reference, items = AccountingMapper.get_entries_for_purchase_bill(invoice, settings)
+        entry = JournalEntryService.create_entry(
+            {
+                'date': timezone.now().date(),
+                'description': description,
+                'reference': reference,
+                'state': JournalEntry.State.DRAFT
+            },
+            items
         )
 
-        # Credit: Accounts Payable (Total real debt)
-        JournalItem.objects.create(
-            entry=entry,
-            account=payable_account,
-            debit=0,
-            credit=invoice.total,
-            partner=order.supplier.name
-        )
-
-        # Debit: Stock Interim (Clear clearing account from reception)
-        JournalItem.objects.create(
-            entry=entry,
-            account=stock_input_account,
-            debit=invoice.total_net,
-            credit=0,
-            label="Limpieza Cuenta Puente Recepción"
-        )
-
-        # Handle Taxes vs Capitalization
-        is_boleta = dte_type == Invoice.DTEType.BOLETA
-
-        if is_boleta:
-            # BOLETAS: Always capitalize VAT into product cost (no tax credit)
+        # Keep cost capitalization update for Boletas
+        if dte_type == Invoice.DTEType.BOLETA:
             for line in order.lines.all():
-                asset_account = line.product.get_asset_account or settings.default_inventory_account
                 line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
-                
-                if line_tax > 0:
-                    # Create accounting entry only if we have an asset account
-                    if asset_account:
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=asset_account,
-                            debit=line_tax,
-                            credit=0,
-                            label=f"IVA Capitalizado - {line.product.code}"
-                        )
-                    
-                    # Update Product Cost Price (always, even if no asset account)
-                    if line.quantity > 0:
-                        BillingService._capitalize_tax_to_product_cost(line.product, line_tax, line.unit_cost, line.quantity)
-        else:
-            # FACTURAS (both DRAFT and POSTED): Record VAT as tax receivable
-            if invoice.total_tax > 0 and tax_account:
-                 JournalItem.objects.create(
-                    entry=entry,
-                    account=tax_account,
-                    debit=invoice.total_tax,
-                    credit=0,
-                    label="IVA Compras (Crédito Fiscal)"
-                 )
+                if line_tax > 0 and line.quantity > 0:
+                    BillingService._capitalize_tax_to_product_cost(line.product, line_tax, line.unit_cost, line.quantity)
 
         # Only post the entry if the invoice is POSTED, not DRAFT
         if status == Invoice.Status.POSTED:

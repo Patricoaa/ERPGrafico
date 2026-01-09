@@ -3,9 +3,11 @@ from django.utils.translation import gettext_lazy as _
 from core.models import User
 from accounting.models import Account, AccountType
 from inventory.models import Product, Warehouse
+from core.mixins import TotalsCalculationMixin
+from core.services import SequenceService
 from decimal import Decimal
 
-class PurchaseOrder(models.Model):
+class PurchaseOrder(models.Model, TotalsCalculationMixin):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
@@ -94,11 +96,7 @@ class PurchaseOrder(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.number:
-            last_order = PurchaseOrder.objects.all().order_by('id').last()
-            if last_order and last_order.number.isdigit():
-                self.number = str(int(last_order.number) + 1).zfill(6)
-            else:
-                self.number = '000001'
+            self.number = SequenceService.get_next_number(PurchaseOrder)
         super().save(*args, **kwargs)
 
 class PurchaseLine(models.Model):
@@ -126,8 +124,11 @@ class PurchaseLine(models.Model):
         help_text="Cantidad total recibida de esta línea"
     )
 
-    def save(self, *args, **kwargs):
+    def calculate_subtotal(self):
         self.subtotal = self.quantity * self.unit_cost
+
+    def save(self, *args, **kwargs):
+        self.calculate_subtotal()
         
         # Validation: UoM Category must match product category
         if self.product and self.uom and self.product.uom:
@@ -142,7 +143,7 @@ class PurchaseLine(models.Model):
         """Returns the quantity still pending receipt"""
         return self.quantity - self.quantity_received
 
-class PurchaseReceipt(models.Model):
+class PurchaseReceipt(models.Model, TotalsCalculationMixin):
     """
     Represents a receipt of a purchase order.
     Can be partial or complete.
@@ -187,11 +188,7 @@ class PurchaseReceipt(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.number:
-            last_receipt = PurchaseReceipt.objects.all().order_by('id').last()
-            if last_receipt and last_receipt.number.isdigit():
-                self.number = str(int(last_receipt.number) + 1).zfill(6)
-            else:
-                self.number = '000001'
+            self.number = SequenceService.get_next_number(PurchaseReceipt)
         super().save(*args, **kwargs)
 
 class PurchaseReceiptLine(models.Model):
@@ -239,7 +236,9 @@ class PurchaseReceiptLine(models.Model):
     def __str__(self):
         return f"{self.product.code} x {self.quantity_received}"
     
-    def save(self, *args, **kwargs):
+    def calculate_total_cost(self):
         self.total_cost = self.quantity_received * self.unit_cost
-        super().save(*args, **kwargs)
 
+    def save(self, *args, **kwargs):
+        self.calculate_total_cost()
+        super().save(*args, **kwargs)

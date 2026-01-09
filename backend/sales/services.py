@@ -3,7 +3,9 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import SaleOrder, SaleDelivery, SaleDeliveryLine
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
-from accounting.services import JournalEntryService
+from accounting.services import JournalEntryService, AccountingMapper
+from core.mixins import TotalsCalculationMixin
+from core.services import SequenceService, BaseNoteService
 from inventory.models import StockMove, Warehouse
 from decimal import Decimal
 
@@ -158,86 +160,62 @@ class SalesService:
         2. Creates COGS accounting entry
         3. Updates sale line quantities
         """
-        if delivery.status != SaleDelivery.Status.DRAFT:
-            raise ValidationError("Solo se pueden confirmar despachos en borrador.")
-        
-        # Create master COGS journal entry
-        entry = JournalEntry.objects.create(
-            date=delivery.delivery_date,
-            description=f"Costo de Venta - Despacho-{delivery.number} (NV-{delivery.sale_order.number})",
-            reference=f"Despacho-{delivery.number}",
-            state=JournalEntry.State.DRAFT
-        )
-        
-        total_cogs = Decimal('0.00')
-        
-        # Process each delivery line
+        # 1. Process lines for stock moves and quantity updates
         for line in delivery.lines.all():
             from inventory.services import StockService
             # Convert to base UoM
             base_qty = StockService.convert_quantity(
-                line.quantity_delivered,
+                line.quantity, # Changed from quantity_delivered to quantity
                 from_uom=line.sale_line.uom,
                 to_uom=line.product.uom
             )
 
-            # 1. Create stock move (OUT)
+            # Create stock move (OUT)
             stock_move = StockMove.objects.create(
                 date=delivery.delivery_date,
                 product=line.product,
                 warehouse=delivery.warehouse,
-                quantity=-base_qty,  # Negative for OUT
+                quantity=-base_qty,
                 move_type=StockMove.Type.OUT,
-                description=f"Despacho-{delivery.number} (NV-{delivery.sale_order.number})",
-                journal_entry=entry
+                description=f"Despacho-{delivery.number} (NV-{delivery.sale_order.number})"
             )
             
             # Link stock move to delivery line
             line.stock_move = stock_move
             line.save()
             
-            # 2. Update sale line delivered quantity
-            line.sale_line.quantity_delivered += line.quantity_delivered
+            # Update sale line delivered quantity
+            line.sale_line.quantity_delivered += line.quantity
             line.sale_line.save()
-            
-            # 3. Accumulate COGS
-            total_cogs += line.total_cost
+
+        # 2. Accounting Entry via Mapper (using total_cost for COGS)
+        delivery.recalculate_totals()
         
-        # 4. Create COGS accounting entries
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
+        
+        # Calculate total COGS
+        total_cogs = sum(line.total_cost for line in delivery.lines.all())
+        
         if total_cogs > 0:
-            # Get accounts
-            try:
-                cogs_account = Account.objects.get(code='5.1.01')  # Cost of Goods Sold
-            except Account.DoesNotExist:
-                cogs_account = Account.objects.filter(account_type=AccountType.EXPENSE).first()
+            # Override total_net for COGS calculation in mapper
+            original_net = delivery.total_net
+            delivery.total_net = total_cogs
             
-            from accounting.models import AccountingSettings
-            settings = AccountingSettings.objects.first()
-            inventory_account = settings.default_inventory_account if settings else None
-            
-            if not cogs_account or not inventory_account:
-                raise ValidationError("Faltan cuentas contables (COGS o Inventario) configuradas.")
-            
-            # Debit: Cost of Goods Sold
-            JournalItem.objects.create(
-                entry=entry,
-                account=cogs_account,
-                debit=total_cogs,
-                credit=0,
-                label=f"Costo de Venta Despacho-{delivery.number}"
+            description, reference, items = AccountingMapper.get_entries_for_delivery(delivery, settings)
+            entry = JournalEntryService.create_entry(
+                {
+                    'date': delivery.delivery_date,
+                    'description': description,
+                    'reference': reference,
+                    'state': JournalEntry.State.DRAFT
+                },
+                items
             )
+            delivery.total_net = original_net # Restore
             
-            # Credit: Inventory
-            JournalItem.objects.create(
-                entry=entry,
-                account=inventory_account,
-                debit=0,
-                credit=total_cogs,
-                label=f"Reducción Inventario Despacho-{delivery.number}"
-            )
-            
-            # Post entry
             JournalEntryService.post_entry(entry)
+            delivery.journal_entry = entry
         
         # Link entry to delivery
         delivery.journal_entry = entry
@@ -298,30 +276,19 @@ class SalesService:
         from accounting.models import AccountingSettings, JournalEntry, JournalItem, AccountType
         from inventory.models import StockMove
         
-        # 1. Create Invoice Note
-        total_amount = amount_net + amount_tax
-        invoice = Invoice.objects.create(
-            dte_type=note_type,
-            number=document_number,
-            document_attachment=document_attachment,
-            sale_order=order,
-            date=timezone.now().date(),
-            total_net=amount_net,
-            total_tax=amount_tax,
-            total=total_amount,
-            status=Invoice.Status.POSTED
-        )
-
-        # 2. Accounting Entry
+        # 1 & 2. Create Invoice Note and Journal Entry via BaseNoteService
         settings = AccountingSettings.objects.first()
         if not settings:
             raise ValidationError("Debe configurar la contabilidad primero.")
 
-        entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
-            description=f"{invoice.get_dte_type_display()} {document_number} (Ref NV-{order.number})",
-            reference=f"SNOTE-{invoice.id}",
-            state=JournalEntry.State.DRAFT
+        invoice, entry = BaseNoteService.create_document_note(
+            order=order,
+            note_type=note_type,
+            amount_net=amount_net,
+            amount_tax=amount_tax,
+            document_number=document_number,
+            document_attachment=document_attachment,
+            partner_name=order.customer.name
         )
 
         receivable_account = order.customer.account_receivable or settings.default_receivable_account
@@ -332,6 +299,7 @@ class SalesService:
             raise ValidationError("Faltan cuentas predeterminadas en la configuración contable.")
 
         # 3. Entries based on note_type
+        total_amount = amount_net + amount_tax
         if note_type == Invoice.DTEType.NOTA_CREDITO:
             # Credit Note (Return/Discount)
             # Credit: Receivable (Total)
