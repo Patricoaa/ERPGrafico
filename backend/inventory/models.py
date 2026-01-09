@@ -209,6 +209,13 @@ class Product(models.Model):
         if self.pk is None and self.track_inventory is None:
              self.track_inventory = (self.product_type == self.Type.STORABLE)
             
+        # Fallback for base UoM if missing but others are present
+        if not self.uom:
+            if self.sale_uom:
+                self.uom = self.sale_uom
+            elif self.purchase_uom:
+                self.uom = self.purchase_uom
+
         if not self.internal_code:
             prefix = self.category.prefix or "PROD"
             # More robust sequence generation: 

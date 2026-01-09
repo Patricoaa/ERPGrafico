@@ -1,6 +1,7 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { Info, X, Package } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
@@ -32,8 +33,8 @@ export function ProductInventoryTab({ form, uoms }: ProductInventoryTabProps) {
                         </h3>
 
                         <div className="space-y-4">
-                            {/* Stock UoM: Only for Storable and Consumable */}
-                            {(productType === 'STORABLE' || productType === 'CONSUMABLE') && (
+                            {/* Stock UoM: Storable, Consumable and Manufacturable */}
+                            {(productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'MANUFACTURABLE') && (
                                 <FormField<ProductFormValues>
                                     control={form.control}
                                     name="uom"
@@ -57,6 +58,27 @@ export function ProductInventoryTab({ form, uoms }: ProductInventoryTabProps) {
                                     )}
                                 />
                             )}
+
+                            <FormField<ProductFormValues>
+                                control={form.control}
+                                name="track_inventory"
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-xs font-bold">Controlar Inventario</FormLabel>
+                                            <FormDescription className="text-[10px]">
+                                                Habilitar para productos que se almacenan físicamente.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
                         </div>
                     </div>
                 </div>

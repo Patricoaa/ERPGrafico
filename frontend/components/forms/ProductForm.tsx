@@ -21,7 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Import modular components
 import { ProductTypeSelector } from "./product/ProductTypeSelector"
-import { ProductInventorySwitch } from "./product/ProductInventorySwitch"
 import { ProductImageUpload } from "./product/ProductImageUpload"
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
 import { ProductPricingSection } from "./product/ProductPricingSection"
@@ -189,7 +188,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     sale_uom: "",
                     purchase_uom: "",
                     allowed_sale_uoms: [],
-                    track_inventory: true,
+                    track_inventory: false,
                     custom_fields_schema: "",
                     image: undefined,
                     has_bom: false,
@@ -340,7 +339,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                         <div className="md:col-span-3 space-y-6 border-r pr-8">
                                             <ProductTypeSelector form={form as any} disabled={!!initialData} />
-                                            <ProductInventorySwitch form={form as any} />
                                             <ProductImageUpload
                                                 form={form as any}
                                                 imagePreview={imagePreview}

@@ -20,10 +20,10 @@ export function ProductTypeSelector({ form, disabled }: ProductTypeSelectorProps
                         <RadioGroup
                             onValueChange={(val) => {
                                 field.onChange(val);
-                                // Update track_inventory based on type
+                                // Storable usually wants inventory, others don't by default
                                 if (val === 'STORABLE') {
                                     form.setValue('track_inventory', true);
-                                } else if (val === 'CONSUMABLE' || val === 'SERVICE') {
+                                } else {
                                     form.setValue('track_inventory', false);
                                 }
                             }}

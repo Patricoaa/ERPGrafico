@@ -130,6 +130,14 @@ class ProductSerializer(serializers.ModelSerializer):
         qty = obj.get_manufacturable_quantity()
         return float(qty) if qty is not None else None
 
+    def validate(self, data):
+        # Fallback for base UoM if missing but others are present
+        if not data.get('uom'):
+            fallback = data.get('sale_uom') or data.get('purchase_uom')
+            if fallback:
+                data['uom'] = fallback
+        return data
+
     def create(self, validated_data):
         boms_data = validated_data.pop('boms', [])
         pcf_data = validated_data.pop('product_custom_fields', [])

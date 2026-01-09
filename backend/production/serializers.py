@@ -56,9 +56,11 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         if not product and self.instance:
             product = self.instance.product
             
-        if product and (product.track_inventory or product.product_type == 'STORABLE') and not product.uom:
+        effective_uom = product.uom or product.sale_uom or product.purchase_uom
+        if product and product.track_inventory and not effective_uom:
             raise serializers.ValidationError(
-                f"El producto '{product.name}' debe tener una Unidad de Medida (UoM) asignada porque controla stock."
+                f"El producto '{product.name}' requiere una Unidad de Medida (UoM) porque tiene activado 'Controlar Inventario'. "
+                f"Asigne una unidad o desactive el control de inventario en la ficha del producto."
             )
         return data
 
