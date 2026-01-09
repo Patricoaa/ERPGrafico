@@ -51,6 +51,15 @@ class BillingService:
              # Allow from draft if POS immediate
              pass
         
+        from core.services import SequenceService
+        
+        # Auto-generate folio for Boletas if empty
+        if dte_type == Invoice.DTEType.BOLETA and not number:
+            number = SequenceService.get_next_number(
+                Invoice, 
+                filter_kwargs={'dte_type': Invoice.DTEType.BOLETA}
+            )
+
         # 1. Create Invoice Record
         invoice = Invoice.objects.create(
             dte_type=dte_type,
@@ -231,15 +240,23 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, is_pending_registration=False, amount=None, treasury_account_id=None, document_number=None, document_date=None, document_attachment=None):
+    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, 
+                     is_pending_registration=False, amount=None, treasury_account_id=None, 
+                     document_number=None, document_date=None, document_attachment=None,
+                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes=''):
         """
-        Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment.
+        Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         """
         from sales.serializers import CreateSaleOrderSerializer
         from treasury.services import TreasuryService
+        from inventory.models import Warehouse
         
         # 1. Get or Create Order
         order = None
+        if isinstance(order_data, str):
+            import json
+            order_data = json.loads(order_data)
+
         if 'id' in order_data:
             order = SaleOrder.objects.get(id=order_data['id'])
         else:
@@ -251,11 +268,30 @@ class BillingService:
                 raise ValidationError(order_serializer.errors)
             order = order_serializer.save(channel='POS')
         
-        # 2. Confirm Order (Inventory deduction happen here if implemented)
+        # 2. Confirm Order
         from sales.services import SalesService
         SalesService.confirm_sale(order)
         
-        # 3. Create Invoice (if not already invoiced)
+        # 3. Handle Delivery Scheduling / Action
+        if delivery_type == 'IMMEDIATE':
+            # Dispatch everything right now from the first available warehouse
+            warehouse = Warehouse.objects.first()
+            if not warehouse:
+                raise ValidationError("Debe existir al menos una bodega para realizar despachos.")
+            SalesService.dispatch_order(order, warehouse)
+        elif delivery_type == 'SCHEDULED':
+            order.delivery_status = SaleOrder.DeliveryStatus.PENDING
+            if delivery_date:
+                order.delivery_date = delivery_date
+            if delivery_notes:
+                order.notes = f"{order.notes}\nNotas Despacho: {delivery_notes}".strip()
+            order.save()
+        elif delivery_type == 'PICKUP':
+            # Could be handled similarly to IMMEDIATE or just marked as PENDING for now
+            order.delivery_status = SaleOrder.DeliveryStatus.PENDING
+            order.save()
+
+        # 4. Create Invoice (if not already invoiced)
         invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
         if not invoice:
             status = Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED

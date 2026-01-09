@@ -85,6 +85,11 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         amount = request.data.get('amount')
         treasury_account_id = request.data.get('treasury_account_id')
         
+        # New delivery parameters
+        delivery_type = request.data.get('delivery_type', 'IMMEDIATE')
+        delivery_date = request.data.get('delivery_date')
+        delivery_notes = request.data.get('delivery_notes', '')
+
         if not all([order_data, dte_type, payment_method]):
             return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -97,7 +102,10 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 treasury_account_id=treasury_account_id,
                 document_number=document_number,
                 document_date=document_date,
-                document_attachment=document_attachment
+                document_attachment=document_attachment,
+                delivery_type=delivery_type,
+                delivery_date=delivery_date,
+                delivery_notes=delivery_notes
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

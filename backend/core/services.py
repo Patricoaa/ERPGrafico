@@ -8,19 +8,28 @@ class SequenceService:
     Example: NV-000001, OC-000001, etc.
     """
     @staticmethod
-    def get_next_number(model_class, field_name='number', padding=6):
+    def get_next_number(model_class, field_name='number', padding=6, filter_kwargs=None):
         """
         Calculates the next numeric value for a given model and field.
         """
-        last_instance = model_class.objects.all().order_by('id').last()
+        queryset = model_class.objects.all()
+        if filter_kwargs:
+            queryset = queryset.filter(**filter_kwargs)
+            
+        last_instance = queryset.order_by('id').last()
         if last_instance:
             curr_number = getattr(last_instance, field_name)
-            if curr_number and curr_number.isdigit():
-                try:
-                    next_val = int(curr_number) + 1
-                    return str(next_val).zfill(padding)
-                except ValueError:
-                    pass
+            # Try to extract numbers from common patterns (e.g., BOL-123 -> 123)
+            # if curr_number is not purely digits
+            if curr_number:
+                import re
+                nums = re.findall(r'\d+', str(curr_number))
+                if nums:
+                    try:
+                        next_val = int(nums[-1]) + 1
+                        return str(next_val).zfill(padding)
+                    except (ValueError, IndexError):
+                        pass
         
         return '1'.zfill(padding)
 

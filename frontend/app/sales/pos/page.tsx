@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { SalesCheckoutWizard } from "@/components/sales/SalesCheckoutWizard"
 import { Badge } from "@/components/ui/badge"
 import { AdvancedManufacturingDialog } from "@/components/forms/AdvancedManufacturingDialog"
 import {
@@ -603,14 +603,20 @@ export default function POSPage() {
                 </div>
             </div>
 
-            <PaymentDialog
-                open={checkoutOpen}
-                onOpenChange={setCheckoutOpen}
-                total={total_gross_sum}
-                pendingAmount={total_gross_sum}
-                showDteSelector={true}
-                onConfirm={handleCheckoutConfirm}
-            />
+            {isCheckoutOpen && (
+                <SalesCheckoutWizard
+                    open={isCheckoutOpen}
+                    onOpenChange={setIsCheckoutOpen}
+                    order={null}
+                    orderLines={items}
+                    total={total_gross_sum}
+                    customerName={customers.find(c => c.id.toString() === selectedCustomer)?.name}
+                    onComplete={() => {
+                        setItems([])
+                        setSelectedCustomer("")
+                    }}
+                />
+            )}
 
             <AdvancedManufacturingDialog
                 open={advMfgDialogOpen}

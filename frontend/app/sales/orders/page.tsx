@@ -15,7 +15,7 @@ import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { SalesCheckoutWizard } from "@/components/sales/SalesCheckoutWizard"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DeliveryModal } from "@/components/sales/DeliveryModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
@@ -293,7 +293,10 @@ export default function SalesOrdersPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-emerald-600"
-                                                onClick={() => setPayingOrder(order)}
+                                                onClick={async () => {
+                                                    const res = await api.get(`/sales/orders/${order.id}/`)
+                                                    setPayingOrder(res.data)
+                                                }}
                                                 title="Registrar Pago"
                                             >
                                                 <Banknote className="h-4 w-4" />
@@ -386,13 +389,14 @@ export default function SalesOrdersPage() {
             )}
 
             {payingOrder && (
-                <PaymentDialog
+                <SalesCheckoutWizard
                     open={!!payingOrder}
                     onOpenChange={(open) => !open && setPayingOrder(null)}
+                    order={payingOrder}
+                    orderLines={payingOrder.related_documents?.lines || []}
                     total={parseFloat(payingOrder.total)}
-                    pendingAmount={payingOrder.pending_amount}
-                    showDteSelector={payingOrder.status === 'CONFIRMED'}
-                    onConfirm={handlePayment}
+                    customerName={payingOrder.customer_name}
+                    onComplete={fetchOrders}
                 />
             )}
 
