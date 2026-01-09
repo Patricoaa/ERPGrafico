@@ -241,120 +241,63 @@ class PurchasingService:
         Confirms receipt:
         1. Creates Stock Moves (IN)
         2. Updates Product Cost Price (Weighted Average)
-        3. Creates Accounting Entry (Debit Inventory, Credit Received Not Billed)
+        3. Creates Accounting Entry (via Mapper)
         4. Updates Purchase Line received qty
         """
         if receipt.status != PurchaseReceipt.Status.DRAFT:
             raise ValidationError("Solo se pueden confirmar recepciones en borrador.")
             
-        # Create Accounting Entry
-        entry = JournalEntry.objects.create(
-            date=receipt.receipt_date,
-            description=f"Recepción OC-{receipt.purchase_order.number} (Recep-{receipt.number})",
-            reference=f"Recep-{receipt.number}",
-            state=JournalEntry.State.DRAFT
-        )
-        
-        total_amount = Decimal('0.00')
-        
-        # Check if this PO has a Boleta invoice (VAT should be capitalized)
-        order = receipt.purchase_order
-        has_boleta = order.invoices.filter(dte_type='BOLETA').exists()
+        from accounting.models import AccountingSettings
+        from inventory.services import StockService
+        from inventory.models import StockMove
+        from accounting.services import JournalEntryService, AccountingMapper
+
+        settings = AccountingSettings.objects.first()
+        if not settings:
+            raise ValidationError("No se encontró configuración contable.")
+
+        # 1 & 2 & 4. Business Logic: Stock, Costs, and PO status
+        has_boleta = receipt.purchase_order.invoices.filter(dte_type='BOLETA').exists()
         
         for line in receipt.lines.all():
             # Determine the effective unit cost (including VAT if Boleta)
             effective_unit_cost = line.unit_cost
             if has_boleta:
-                # Find the tax rate from the purchase line
                 tax_rate = line.purchase_line.tax_rate
                 effective_unit_cost = line.unit_cost * (Decimal('1') + (tax_rate / Decimal('100.0')))
             
-            # Base quantity and unit cost conversion
-            from inventory.services import StockService
+            # Base quantity conversion
             base_qty = StockService.convert_quantity(
                 line.quantity_received,
                 from_uom=line.purchase_line.uom,
                 to_uom=line.product.uom
             )
-            # Cost per base unit = total_cost / base_qty
-            # line.total_cost is (line.quantity_received * line.unit_cost)
-            # We want cost per base unit with tax if applicable
-            effective_total_cost = base_qty * 0 # placeholder
+            
             if base_qty > 0:
                 cost_per_base_unit = (line.quantity_received * effective_unit_cost) / base_qty
             else:
-                cost_per_base_unit = effective_unit_cost # Should not happen in receipt
+                cost_per_base_unit = effective_unit_cost
 
-            # 1. Update Product Cost (Weighted Average) with cost per base unit
+            # Update Product Cost (Weighted Average)
             PurchasingService._update_product_cost(line.product, base_qty, cost_per_base_unit)
             
-            # 2. Create Stock Move (IN)
+            # Create Stock Move (IN) - Placeholder for journal_entry
             stock_move = StockMove.objects.create(
                 date=receipt.receipt_date,
                 product=line.product,
                 warehouse=receipt.warehouse,
                 quantity=base_qty,
                 move_type=StockMove.Type.IN,
-                description=f"Recepción OC-{receipt.purchase_order.number}",
-                journal_entry=entry
+                description=f"Recepción OC-{receipt.purchase_order.number}"
             )
             line.stock_move = stock_move
             line.save()
             
-            # 3. Update Purchase Line
+            # Update Purchase Line
             line.purchase_line.quantity_received += line.quantity_received
             line.purchase_line.save()
-            
-            # 4. Accounting Debits - DIFFERENT for CONSUMABLE vs other types
-            line_total = line.total_cost
-            total_amount += line_total
-            
-            # Check if product is CONSUMABLE
-            if line.product.product_type == 'CONSUMABLE':
-                # CONSUMABLE products: Expense directly, DON'T capitalize to inventory
-                # Priority: 1. Global settings, 2. Product category, 3. Any OPERATING_EXPENSE account
-                from accounting.models import AccountingSettings
-                settings = AccountingSettings.objects.first()
-                
-                expense_account = None
-                if settings and settings.default_consumable_account:
-                    # Highest priority: Global configuration
-                    expense_account = settings.default_consumable_account
-                elif line.product.get_expense_account:
-                    # Second priority: Category-level expense account
-                    expense_account = line.product.get_expense_account
-                else:
-                    # Fallback: Find any account marked as OPERATING_EXPENSE
-                    from accounting.models import ISCategory, Account
-                    expense_account = Account.objects.filter(
-                        is_category=ISCategory.OPERATING_EXPENSE
-                    ).first()
-                
-                if expense_account:
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=expense_account,
-                        debit=line_total,
-                        credit=0,
-                        label=f"Gasto Consumible: {line.product.code} x {line.quantity_received}"
-                    )
-                else:
-                    # If no expense account found, still use asset as fallback (not ideal)
-                    asset_account = line.product.get_asset_account
-                    if asset_account:
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=asset_account,
-                            debit=line_total,
-                            credit=0,
-                            label=f"{line.product.code} x {line.quantity_received} (Fallback Asset)"
-                        )
-        # 5. Accounting Entry via Mapper
-        from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
-        if not settings:
-            raise ValidationError("No se encontró configuración contable.")
 
+        # 3. Final Accounting Entry via Mapper (includes Consumable logic)
         description, reference, items = AccountingMapper.get_entries_for_receipt(receipt, settings)
         entry = JournalEntryService.create_entry(
             {
@@ -366,6 +309,13 @@ class PurchasingService:
             items
         )
         
+        # Link Stock Moves to the Entry
+        for line in receipt.lines.all():
+            if line.stock_move:
+                line.stock_move.journal_entry = entry
+                line.stock_move.save()
+
+        # Finalize
         JournalEntryService.post_entry(entry)
         receipt.journal_entry = entry
         receipt.status = PurchaseReceipt.Status.CONFIRMED
