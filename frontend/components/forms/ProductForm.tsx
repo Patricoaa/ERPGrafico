@@ -280,8 +280,25 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             onOpenChange(false)
         } catch (error: any) {
             console.error("Error saving product", error)
-            toast.error("Error", {
-                description: error.response?.data?.detail || "No se pudo guardar el producto.",
+
+            let errorMessage = "No se pudo guardar el producto."
+            const errorData = error.response?.data
+
+            if (errorData) {
+                if (typeof errorData === 'object') {
+                    // Extract first field error if available
+                    const firstError = Object.entries(errorData)[0]
+                    if (firstError) {
+                        const [field, message] = firstError
+                        errorMessage = `${field}: ${Array.isArray(message) ? message[0] : message}`
+                    }
+                } else if (typeof errorData === 'string') {
+                    errorMessage = errorData
+                }
+            }
+
+            toast.error("Error al guardar", {
+                description: errorMessage,
             })
         } finally {
             setLoading(false)

@@ -457,22 +457,29 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                         const componentId = form.watch(`boms.${bomIndex}.lines.${index}.component`);
                                                         const product = products.find((p: any) => p.id.toString() === componentId?.toString());
 
-                                                        const unitNames = new Set<string>();
-                                                        if (product) {
-                                                            if (product.uom_name) unitNames.add(product.uom_name);
-                                                            if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
-                                                            if (product.allowed_sale_uoms) {
-                                                                product.allowed_sale_uoms.forEach((uomId: any) => {
-                                                                    const foundUom = uoms.find((u: any) => u.id.toString() === uomId.toString());
-                                                                    if (foundUom) unitNames.add(foundUom.name);
-                                                                });
-                                                            }
-                                                        }
-
-                                                        const options = Array.from(unitNames);
-                                                        if (options.length === 0 && !product) {
-                                                            options.push("UN", "KG", "MT", "LT", "PL", "ML");
-                                                        }
+                                                         const unitNames = new Set<string>();
+                                                         if (product) {
+                                                             if (product.uom_name) unitNames.add(product.uom_name);
+                                                             if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
+                                                             if (product.purchase_uom_name) unitNames.add(product.purchase_uom_name);
+                                                             
+                                                             if (product.allowed_sale_uoms) {
+                                                                 product.allowed_sale_uoms.forEach((uomInfo: any) => {
+                                                                     // Handle both ID list and object list
+                                                                     if (typeof uomInfo === 'object' && uomInfo.name) {
+                                                                         unitNames.add(uomInfo.name);
+                                                                     } else {
+                                                                         const foundUom = uoms.find((u: any) => u.id.toString() === uomInfo.toString());
+                                                                         if (foundUom) unitNames.add(foundUom.name);
+                                                                     }
+                                                                 });
+                                                             }
+                                                         }
+ 
+                                                         const options = Array.from(unitNames);
+                                                         if (options.length === 0 && !product) {
+                                                             options.push("UN", "KG", "MT", "LT", "PL", "ML");
+                                                         }
 
                                                         return (
                                                             <Select onValueChange={field.onChange} value={field.value}>

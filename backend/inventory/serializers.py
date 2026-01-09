@@ -67,15 +67,48 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_internal_value(self, data):
-        # Handle JSON strings for list fields when using multipart/form-data
+        # Handle JSON strings and multiple values for list fields when using multipart/form-data
         import json
-        ret = data.copy()
+        from django.http import QueryDict
+        
+        # Convert QueryDict to a dict that preserves lists for our specific fields
+        if isinstance(data, QueryDict):
+            ret = data.dict()  # Start with standard dict (last-value)
+            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms']:
+                if field in data:
+                    ret[field] = data.getlist(field)
+        else:
+            ret = data.copy() if hasattr(data, 'copy') else data
+        
+        # Process the list fields (handle JSON strings if necessary)
         for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms']:
-            if field in ret and isinstance(ret[field], str):
-                try:
-                    ret[field] = json.loads(ret[field])
-                except (ValueError, TypeError):
-                    pass
+            if field in ret:
+                raw_value = ret[field]
+                
+                if isinstance(raw_value, list):
+                    processed_list = []
+                    for item in raw_value:
+                        if isinstance(item, str):
+                            try:
+                                # Try to parse as JSON (for BOMs or nested objects)
+                                processed_list.append(json.loads(item))
+                            except (ValueError, TypeError):
+                                # If it's a simple ID string, it will be handled by the field itself or we can cast to int
+                                # Casting to int is safer for Many-to-Many IDs
+                                if field == 'allowed_sale_uoms' and item.isdigit():
+                                    processed_list.append(int(item))
+                                else:
+                                    processed_list.append(item)
+                        else:
+                            processed_list.append(item)
+                    ret[field] = processed_list
+                elif isinstance(raw_value, str):
+                    try:
+                        ret[field] = json.loads(raw_value)
+                    except (ValueError, TypeError):
+                        if field == 'allowed_sale_uoms' and raw_value.isdigit():
+                            ret[field] = [int(raw_value)]
+                        
         return super().to_internal_value(ret)
 
     def get_current_stock(self, obj):
