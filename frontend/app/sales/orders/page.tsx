@@ -41,6 +41,7 @@ interface SaleOrder {
         payments: any[]
         deliveries: any[]
     }
+    lines?: any[]
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
@@ -393,7 +394,7 @@ export default function SalesOrdersPage() {
                     open={!!payingOrder}
                     onOpenChange={(open) => !open && setPayingOrder(null)}
                     order={payingOrder}
-                    orderLines={payingOrder.related_documents?.lines || []}
+                    orderLines={payingOrder.lines || []}
                     total={parseFloat(payingOrder.total)}
                     customerName={payingOrder.customer_name}
                     onComplete={fetchOrders}

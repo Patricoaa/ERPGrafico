@@ -77,6 +77,7 @@ export default function POSPage() {
     const [products, setProducts] = useState<Product[]>([])
     // const [customers, setCustomers] = useState<Customer[]>([]) // Removed in favor of async selector
     const [selectedCustomer, setSelectedCustomer] = useState<string>("")
+    const [selectedCustomerName, setSelectedCustomerName] = useState<string>("")
     const [items, setItems] = useState<CartItem[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [loading, setLoading] = useState(false)
@@ -446,6 +447,7 @@ export default function POSPage() {
                                         <AdvancedContactSelector
                                             value={selectedCustomer}
                                             onChange={(val) => setSelectedCustomer(val || "")}
+                                            onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
                                             placeholder="Buscar Cliente (Nombre o Rut)..."
                                         />
                                     </div>
@@ -603,17 +605,18 @@ export default function POSPage() {
                 </div>
             </div>
 
-            {isCheckoutOpen && (
+            {checkoutOpen && (
                 <SalesCheckoutWizard
-                    open={isCheckoutOpen}
-                    onOpenChange={setIsCheckoutOpen}
+                    open={checkoutOpen}
+                    onOpenChange={setCheckoutOpen}
                     order={null}
                     orderLines={items}
                     total={total_gross_sum}
-                    customerName={customers.find(c => c.id.toString() === selectedCustomer)?.name}
+                    customerName={selectedCustomerName}
                     onComplete={() => {
                         setItems([])
                         setSelectedCustomer("")
+                        setSelectedCustomerName("")
                     }}
                 />
             )}
