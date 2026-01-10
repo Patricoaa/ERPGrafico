@@ -44,12 +44,16 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
     const [uoms, setUoms] = useState<any[]>([])
+    const [warehouses, setWarehouses] = useState<any[]>([])
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
     const [pricingRules, setPricingRules] = useState<any[]>([])
     const [selectedPricingRule, setSelectedPricingRule] = useState<any>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
+
+    // State for Replenishment Rules
+    const [reorderingRules, setReorderingRules] = useState<any[]>([])
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -116,6 +120,15 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         }
     }
 
+    const fetchWarehouses = async () => {
+        try {
+            const res = await api.get('/inventory/warehouses/')
+            setWarehouses(res.data.results || res.data)
+        } catch (error) {
+            console.error("Error fetching Warehouses", error)
+        }
+    }
+
     const fetchProducts = async () => {
         try {
             const res = await api.get('/inventory/products/')
@@ -135,13 +148,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         }
     }
 
-
-
     useEffect(() => {
         if (open) {
             fetchCategories()
             fetchUoMs()
             fetchProducts()
+            fetchWarehouses()
             if (initialData) {
                 form.reset({
                     code: initialData.code || "",
@@ -192,6 +204,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 })
                 setImagePreview(initialData.image || null)
                 fetchPricingRules()
+                setReorderingRules(initialData.reordering_rules || [])
             } else {
                 form.reset({
                     code: "",
@@ -204,7 +217,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     sale_uom: "",
                     purchase_uom: "",
                     allowed_sale_uoms: [],
-                    track_inventory: true, // Default for new form is STORABLE implicitly? Or handled by useEffect.
+                    track_inventory: true,
                     can_be_sold: true,
                     can_be_purchased: true,
                     custom_fields_schema: "",
@@ -227,6 +240,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 })
                 setImagePreview(null)
                 setPricingRules([])
+                setReorderingRules([])
             }
         }
     }, [open, initialData])
@@ -272,6 +286,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             }
             if (data.product_custom_fields && data.product_custom_fields.length > 0) {
                 formData.append('product_custom_fields', JSON.stringify(data.product_custom_fields))
+            }
+
+            // Append Replenishment Rules
+            if (reorderingRules && reorderingRules.length > 0) {
+                formData.append('reordering_rules', JSON.stringify(reorderingRules))
             }
 
             if (data.custom_fields_schema) {
@@ -398,6 +417,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                 <ProductInventoryTab
                                     form={form as any}
                                     initialData={initialData}
+                                    reorderingRules={reorderingRules}
+                                    setReorderingRules={setReorderingRules}
+                                    warehouses={warehouses}
                                 />
 
                                 <ProductUoMTab
