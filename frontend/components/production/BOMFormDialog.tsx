@@ -321,15 +321,16 @@ export function BOMFormDialog({
                                                                                 // Auto-set uom and cost if empty
                                                                                 const p = products.find((prod: any) => prod.id.toString() === val?.toString());
                                                                                 if (p && p.uom) {
-                                                                                    form.setValue(`lines.${index}.uom`, p.uom.toString());
+                                                                                    form.setValue(`lines.${index}.uom`, p.uom.toString(), { shouldValidate: true });
                                                                                     form.setValue(`lines.${index}.uom_name`, p.uom_name);
                                                                                     // Store base cost (cost in base UoM)
-                                                                                    const baseCost = p.cost_price || 0;
+                                                                                    const baseCost = Number(p.cost_price || 0);
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost);
                                                                                 }
                                                                             }}
                                                                             placeholder="Buscar componente..."
                                                                             allowedTypes={['STORABLE', 'CONSUMABLE', 'MANUFACTURABLE']}
+                                                                            excludeIds={selectedProduct ? [selectedProduct.id] : []}
                                                                         />
                                                                     </FormControl>
                                                                     <FormMessage />
@@ -361,22 +362,59 @@ export function BOMFormDialog({
                                                                 const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1;
 
                                                                 return (
-                                                                    <UoMSelector
-                                                                        product={component || null}
-                                                                        context="bom"
-                                                                        value={field.value || ""}
-                                                                        onChange={(val) => {
-                                                                            field.onChange(val);
-                                                                            const selectedUom = uoms.find((u: any) => u.id.toString() === val);
-                                                                            if (selectedUom) {
-                                                                                form.setValue(`lines.${index}.uom_name`, selectedUom.name);
-                                                                            }
-                                                                        }}
-                                                                        uoms={uoms}
-                                                                        showConversionHint={false}
-                                                                        quantity={quantity}
-                                                                        label=""
-                                                                    />
+                                                                    <FormItem>
+                                                                        <FormControl>
+                                                                            <UoMSelector
+                                                                                product={component || null}
+                                                                                context="bom"
+                                                                                value={field.value || ""}
+                                                                                onChange={(val) => {
+                                                                                    field.onChange(val); // This should trigger validation automatically
+                                                                                    const selectedUom = uoms.find((u: any) => u.id.toString() === val);
+
+                                                                                    if (selectedUom && component) {
+                                                                                        form.setValue(`lines.${index}.uom_name`, selectedUom.name);
+
+                                                                                        // Calculate new unit cost based on conversion ratio
+                                                                                        // Cost_New = Cost_Base * (Ratio_New / Ratio_Base)
+                                                                                        // Since prices are usually stored in Base UoM (where ratio=1 or reference), 
+                                                                                        // and UoM ratio is "how many base units in this unit" (e.g. kg=1, g=0.001)
+                                                                                        // Cost per kg = $1000
+                                                                                        // Cost per g = $1000 * 0.001 = $1
+
+                                                                                        const baseCost = Number(component.cost_price || 0);
+
+                                                                                        // Find component's base UoM ratio (usually the reference one in category, or the one assigned to product)
+                                                                                        // Assuming component.uom is the base ID. We need its ratio.
+                                                                                        const baseUomId = component.uom;
+                                                                                        const baseUom = uoms.find(u => u.id === baseUomId);
+
+                                                                                        if (baseUom) {
+                                                                                            const baseRatio = Number(baseUom.ratio);
+                                                                                            const newRatio = Number(selectedUom.ratio);
+
+                                                                                            if (baseRatio > 0) {
+                                                                                                // Standard conversion: Convert base cost to Reference (div by baseRatio), then to New (mult by newRatio)
+                                                                                                // Price is inversely proportional to quantity ratio? 
+                                                                                                // No. If 1 Box (10 units) costs $100. 1 Unit costs $10.
+                                                                                                // Ratio Box = 10. Ratio Unit = 1.
+                                                                                                // Cost Box = Cost Unit * 10.
+                                                                                                // So Cost = BaseCost * (NewRatio / BaseRatio)
+
+                                                                                                const newCost = baseCost * (newRatio / baseRatio);
+                                                                                                form.setValue(`lines.${index}.component_cost`, newCost);
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }}
+                                                                                uoms={uoms}
+                                                                                showConversionHint={false}
+                                                                                quantity={quantity}
+                                                                                label=""
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
                                                                 );
                                                             }}
                                                         />
@@ -426,6 +464,8 @@ export function BOMFormDialog({
 
                                 {form.formState.errors.lines && (
                                     <div className="rounded-md bg-destructive/10 p-3 text-sm font-medium text-destructive mt-4">
+
+
                                         {form.formState.errors.lines.root?.message
                                             ? form.formState.errors.lines.root.message
                                             : `Hay errores en ${Object.keys(form.formState.errors.lines).length} componente(s). Verifique los campos en rojo.`

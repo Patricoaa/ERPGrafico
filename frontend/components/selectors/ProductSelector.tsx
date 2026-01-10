@@ -31,6 +31,7 @@ interface ProductSelectorProps {
     disabled?: boolean
     restrictStock?: boolean
     showSearch?: boolean
+    excludeIds?: (string | number)[]
 }
 
 export function ProductSelector({
@@ -41,7 +42,8 @@ export function ProductSelector({
     allowedTypes,
     disabled = false,
     restrictStock = false,
-    showSearch = true
+    showSearch = true,
+    excludeIds = []
 }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
@@ -64,6 +66,10 @@ export function ProductSelector({
 
                 if (allowedTypes && allowedTypes.length > 0) {
                     allProducts = allProducts.filter((p: any) => allowedTypes.includes(p.product_type))
+                }
+
+                if (excludeIds && excludeIds.length > 0) {
+                    allProducts = allProducts.filter((p: any) => !excludeIds.map(id => id.toString()).includes(p.id.toString()))
                 }
 
                 setProducts(allProducts)
