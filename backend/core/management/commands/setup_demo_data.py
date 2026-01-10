@@ -226,8 +226,8 @@ class Command(BaseCommand):
         if not BillOfMaterials.objects.filter(product=p_flyers).exists():
             bom_flyer = BillOfMaterials.objects.create(product=p_flyers, name="BOM Flyer Estándar 10x15", active=True)
             # Para 1 flyer 10x15, asumiendo 32 flyers por pliego (con merma)
-            BillOfMaterialsLine.objects.create(bom=bom_flyer, component=p_papel, quantity=Decimal('0.03125'), unit='PLIEGO')
-            BillOfMaterialsLine.objects.create(bom=bom_flyer, component=p_tinta_k, quantity=Decimal('0.0005'), unit='KG') # Referencial
+            BillOfMaterialsLine.objects.create(bom=bom_flyer, component=p_papel, quantity=Decimal('0.03125'), uom=uoms['pliego'])
+            BillOfMaterialsLine.objects.create(bom=bom_flyer, component=p_tinta_k, quantity=Decimal('0.0005'), uom=uoms['kg']) # Referencial
         
         # SERVICES
         Product.objects.get_or_create(code="SRV-DIS-GRA", defaults={'name': "Servicio Diseño Gráfico", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 25000})
