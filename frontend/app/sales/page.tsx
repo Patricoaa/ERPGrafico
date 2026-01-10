@@ -21,27 +21,15 @@ export default function SalesPage() {
                         </CardContent>
                     </Card>
                 </Link>
-                <Link href="/sales/orders">
+                <Link href="/sales/history">
                     <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Historial</CardTitle>
                             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">Pedidos</div>
-                            <p className="text-xs text-muted-foreground">Ver notas de venta</p>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/sales/customers">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">CRM</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Clientes</div>
-                            <p className="text-xs text-muted-foreground">Administrar cartera</p>
+                            <div className="text-2xl font-bold">Notas de Venta</div>
+                            <p className="text-xs text-muted-foreground">Ver historial y estados</p>
                         </CardContent>
                     </Card>
                 </Link>

@@ -38,7 +38,7 @@ const items = [
     },
     {
         title: "Ventas",
-        url: "#",
+        url: "/sales",
         icon: ShoppingCart,
         items: [
             { title: "Notas de Venta", url: "/sales/orders" },
@@ -48,7 +48,7 @@ const items = [
     },
     {
         title: "Facturación",
-        url: "#",
+        url: "/billing",
         icon: FileText,
         items: [
             { title: "Documentos Emitidos", url: "/billing/sales" },
@@ -57,7 +57,7 @@ const items = [
     },
     {
         title: "Inventario",
-        url: "#",
+        url: "/inventory",
         icon: Package,
         items: [
             { title: "Productos", url: "/inventory/products" },
@@ -77,7 +77,7 @@ const items = [
     },
     {
         title: "Tesorería",
-        url: "#",
+        url: "/treasury",
         icon: Banknote,
         items: [
             { title: "Cajas y Bancos", url: "/treasury/accounts" },
@@ -86,7 +86,7 @@ const items = [
     },
     {
         title: "Compras",
-        url: "#",
+        url: "/purchasing",
         icon: ShoppingBag,
         items: [
             { title: "Ordenes de Compra", url: "/purchasing/orders" },
@@ -94,7 +94,7 @@ const items = [
     },
     {
         title: "Servicios",
-        url: "#",
+        url: "/services",
         icon: Calendar,
         items: [
             { title: "Contratos", url: "/services/contracts" },
@@ -129,17 +129,10 @@ export function AppSidebar() {
                             {items.map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                                        {item.items ? (
-                                            <div className="flex items-center gap-2 w-full cursor-default">
-                                                <item.icon className="h-4 w-4" />
-                                                <span className="font-semibold">{item.title}</span>
-                                            </div>
-                                        ) : (
-                                            <Link href={item.url}>
-                                                <item.icon className="h-4 w-4" />
-                                                <span>{item.title}</span>
-                                            </Link>
-                                        )}
+                                        <Link href={item.url}>
+                                            <item.icon className="h-4 w-4" />
+                                            <span className={item.items ? "font-semibold" : ""}>{item.title}</span>
+                                        </Link>
                                     </SidebarMenuButton>
                                     {item.items && (
                                         <SidebarMenuSub>
