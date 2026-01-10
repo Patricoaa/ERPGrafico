@@ -1,4 +1,4 @@
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Info } from "lucide-react"
@@ -6,13 +6,16 @@ import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>
     initialData?: any
+    canBeSold?: boolean
+    uoms: any[]
 }
 
-export function ProductPricingSection({ form, initialData }: ProductPricingSectionProps) {
+export function ProductPricingSection({ form, initialData, canBeSold, uoms }: ProductPricingSectionProps) {
     const salePrice = form.watch("sale_price") || 0
     const ivaCalculated = Math.round(Number(salePrice) * 0.19)
     const totalCalculated = Math.round(Number(salePrice) + ivaCalculated)
@@ -21,6 +24,8 @@ export function ProductPricingSection({ form, initialData }: ProductPricingSecti
     const marginPercentage = salePrice > 0
         ? Math.round((1 - (costPrice / salePrice)) * 100)
         : 0
+
+    if (!canBeSold) return null;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 rounded-2xl bg-primary/5 border border-primary/10">
@@ -65,8 +70,42 @@ export function ProductPricingSection({ form, initialData }: ProductPricingSecti
                 </div>
             </div>
 
+            {/* Relocated Sale UoM Field */}
+            <FormField<ProductFormValues>
+                control={form.control}
+                name="sale_uom"
+                render={({ field }) => {
+                    const allowedIds = form.watch("allowed_sale_uoms") || [];
+                    const allowedUoms = uoms.filter(u => allowedIds.includes(u.id.toString()));
+                    const isDisabled = allowedIds.length === 0;
+
+                    return (
+                        <FormItem>
+                            <FormLabel className="text-primary font-bold">Unidad de Venta</FormLabel>
+                            <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={isDisabled}
+                            >
+                                <FormControl>
+                                    <SelectTrigger className="bg-primary/5 border-primary/20 h-10">
+                                        <SelectValue placeholder={isDisabled ? "Añadir UdM primero" : "Predeterminada"} />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {allowedUoms.map((u) => (
+                                        <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    );
+                }}
+            />
+
             {(initialData || Number(salePrice) > 0) && (
-                <div className="space-y-2">
+                <div className="md:col-span-4 space-y-2">
                     <Label className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Análisis de Margen</Label>
                     <div className={cn(
                         "h-10 flex items-center justify-between px-4 rounded-xl border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",

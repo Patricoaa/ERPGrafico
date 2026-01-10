@@ -146,20 +146,22 @@ export default function POSPage() {
         return matchesSearch && matchesCategory
     })
 
-    const getEffectivePrice = (product: Product, qty: number) => {
+    const getEffectivePrice = (product: Product, qty: number, selectedUomId?: number) => {
         const basePrice = parseFloat(product.sale_price)
         const date = new Date().toISOString().split('T')[0]
 
         const categoryId = typeof product.category === 'object' ? product.category?.id : product.category
 
+        // 1. Check for specific pricing rules
         const applicableRules = pricingRules.filter(rule => {
             const matchesProduct = rule.product === product.id
             const matchesCategory = rule.category === categoryId
             const matchesQty = qty >= parseFloat(rule.min_quantity)
+            const matchesUom = !rule.uom || rule.uom === selectedUomId
             const matchesDate = (!rule.start_date || rule.start_date <= date) &&
                 (!rule.end_date || rule.end_date >= date)
 
-            return (matchesProduct || matchesCategory) && matchesQty && matchesDate
+            return (matchesProduct || matchesCategory) && matchesQty && matchesDate && matchesUom
         }).sort((a, b) => b.priority - a.priority || parseFloat(b.min_quantity) - parseFloat(a.min_quantity))
 
         if (applicableRules.length > 0) {
@@ -168,6 +170,19 @@ export default function POSPage() {
                 return parseFloat(rule.fixed_price || "0")
             } else {
                 return basePrice * (1 - (parseFloat(rule.discount_percentage || "0") / 100))
+            }
+        }
+
+        // 2. Proportional pricing based on UoM if no rule
+        if (selectedUomId && selectedUomId !== product.uom) {
+            const baseUom = uoms.find(u => u.id === product.uom)
+            const targetUom = uoms.find(u => u.id === selectedUomId)
+
+            if (baseUom && targetUom) {
+                // If target is BIGGER, ratio is > 1. If SMALLER, ratio is < 1? 
+                // Depends on how ratio is stored. Usually: base_qty = qty * (target_ratio / base_ratio)
+                const ratio = parseFloat(targetUom.ratio) / parseFloat(baseUom.ratio)
+                return basePrice * ratio
             }
         }
 
@@ -182,10 +197,15 @@ export default function POSPage() {
         }
 
         const existing = items.find(i => i.id === product.id)
-        const netPrice = getEffectivePrice(product, existing ? existing.qty + 1 : 1)
+
+        // Prioritize sale_uom if available
+        const saleUoMId = (product as any).sale_uom
+        const defaultUoM = saleUoMId || product.uom
+        const uomName = uoms?.find(u => u.id === defaultUoM)?.name || product.uom_name
 
         if (existing) {
             const newQty = existing.qty + 1
+            const netPrice = getEffectivePrice(product, newQty, existing.uom)
             setItems(items.map(i => i.id === product.id
                 ? {
                     ...i,
@@ -199,13 +219,7 @@ export default function POSPage() {
                 : i
             ))
         } else {
-            // Prioritize sale_uom if available
-            const saleUoMId = (product as any).sale_uom
-            const defaultUoM = saleUoMId || product.uom
-
-            // Find name for the UoM
-            const uomName = uoms?.find(u => u.id === defaultUoM)?.name || product.uom_name
-
+            const netPrice = getEffectivePrice(product, 1, defaultUoM)
             setItems([...items, {
                 ...product,
                 qty: 1,
@@ -221,11 +235,13 @@ export default function POSPage() {
     }
 
 
-    const updateQty = (id: number, delta: number) => {
+    const updateQty = (id: number, qty: number | string) => {
         setItems(items.map(i => {
             if (i.id === id) {
-                const newQty = Math.max(1, i.qty + delta)
-                const netPrice = getEffectivePrice(i, newQty)
+                let newQty = typeof qty === 'string' ? parseInt(qty) : qty
+                if (isNaN(newQty) || newQty < 1) newQty = 1
+
+                const netPrice = getEffectivePrice(i, newQty, i.uom)
                 return {
                     ...i,
                     qty: newQty,
@@ -286,9 +302,9 @@ export default function POSPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full overflow-hidden">
                 {/* Left: Product List / Search */}
-                <div className="md:col-span-2 flex flex-col space-y-4 overflow-hidden">
+                <div className="md:col-span-12 lg:col-span-7 flex flex-col space-y-4 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden">
                         <CardHeader className="pb-3 border-b">
                             <div className="flex flex-col gap-4">
@@ -393,7 +409,7 @@ export default function POSPage() {
                 </div>
 
                 {/* Right: Cart & Totals */}
-                <div className="flex flex-col space-y-4 overflow-hidden">
+                <div className="md:col-span-12 lg:col-span-5 flex flex-col space-y-4 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                             <div className="p-4 border-b font-medium bg-muted/50 flex justify-between items-center">
@@ -463,9 +479,13 @@ export default function POSPage() {
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center justify-center gap-1">
-                                                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => updateQty(item.id, -1)}><Minus className="h-3 w-3" /></Button>
-                                                            <span className="text-xs font-mono">{item.qty}</span>
-                                                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => updateQty(item.id, 1)}><Plus className="h-3 w-3" /></Button>
+                                                            <Input
+                                                                type="number"
+                                                                className="h-8 w-16 text-center text-xs font-mono"
+                                                                value={item.qty}
+                                                                onChange={(e) => updateQty(item.id, e.target.value)}
+                                                                min="1"
+                                                            />
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-center">

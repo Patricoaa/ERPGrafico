@@ -336,9 +336,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     <TabsTrigger value="uoms" className="px-8 flex gap-2">
                                         Und. de Medida
                                     </TabsTrigger>
-                                    <TabsTrigger value="pricing" className="px-8 flex gap-2">
-                                        Reglas de Precios
-                                    </TabsTrigger>
+                                    {form.watch("can_be_sold") && (
+                                        <TabsTrigger value="pricing" className="px-8 flex gap-2">
+                                            Reglas de Precios
+                                        </TabsTrigger>
+                                    )}
                                 </TabsList>
 
                                 <TabsContent value="general" className="mt-0 space-y-8">
@@ -362,6 +364,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             <ProductPricingSection
                                                 form={form as any}
                                                 initialData={initialData}
+                                                canBeSold={form.watch("can_be_sold")}
+                                                uoms={uoms}
                                             />
                                         </div>
                                     </div>
@@ -377,6 +381,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                 <ProductInventoryTab
                                     form={form as any}
                                     uoms={uoms}
+                                    canBeSold={form.watch("can_be_sold")}
                                 />
 
                                 <ProductPricingTab

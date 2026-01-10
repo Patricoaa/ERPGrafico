@@ -97,6 +97,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                         </FormItem>
                     )}
                 />
+
                 <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/20 p-4 rounded-lg border border-dashed mt-6">
                     <FormField<ProductFormValues>
                         control={form.control}
@@ -147,5 +148,6 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                     />
                 </div>
             </div>
-            )
+        </div>
+    )
 }

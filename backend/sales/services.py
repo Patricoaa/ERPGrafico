@@ -162,41 +162,98 @@ class SalesService:
     def confirm_delivery(delivery: SaleDelivery):
         """
         Confirms a delivery:
-        1. Creates stock movements (OUT)
+        1. Creates stock movements (OUT) - Handles BOM explosion for non-tracked manufactured products.
         2. Creates COGS accounting entry
         3. Updates sale line quantities
         """
+        from inventory.services import UoMService
+        from inventory.models import StockMove
+        from production.models import BillOfMaterials
+
         # 1. Process lines for stock moves and quantity updates
         for line in delivery.lines.all():
-            from inventory.services import StockService, UoMService
-            # Convert quantity from sale UoM to product base UoM
-            base_qty = UoMService.convert_quantity(
-                line.quantity, 
-                from_uom=line.sale_line.uom,
-                to_uom=line.product.uom
-            )
+            product = line.product
+            
+            # PATH A: Product tracks inventory directly
+            if product.track_inventory:
+                # Convert quantity from sale UoM to product base UoM
+                base_qty = UoMService.convert_quantity(
+                    line.quantity, 
+                    from_uom=line.sale_line.uom,
+                    to_uom=product.uom
+                )
 
-            # Create stock move (OUT)
-            stock_move = StockMove.objects.create(
-                date=delivery.delivery_date,
-                product=line.product,
-                warehouse=delivery.warehouse,
-                quantity=-base_qty,
-                move_type=StockMove.Type.OUT,
-                description=f"Despacho-{delivery.number} (NV-{delivery.sale_order.number})"
-            )
+                # Create stock move (OUT)
+                stock_move = StockMove.objects.create(
+                    date=delivery.delivery_date,
+                    product=product,
+                    warehouse=delivery.warehouse,
+                    quantity=-base_qty,
+                    move_type=StockMove.Type.OUT,
+                    description=f"Despacho-{delivery.number} (NV-{delivery.sale_order.number})"
+                )
+                
+                # Link stock move to delivery line
+                line.stock_move = stock_move
+                # Ensure unit_cost is the product's current cost
+                line.unit_cost = product.cost_price
+                line.save()
             
-            # Link stock move to delivery line
-            line.stock_move = stock_move
-            line.save()
-            
+            # PATH B: Product DOES NOT track inventory (Service or Non-tracked Manufactured)
+            else:
+                if product.product_type == 'MANUFACTURABLE':
+                    active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
+                    
+                    if active_bom:
+                        # BOM Explosion: Consume components instead of the product
+                        line_total_cost = Decimal('0.00')
+                        for bom_line in active_bom.lines.all():
+                            # Total quantity of component to consume (sale_qty * qty_per_unit_in_bom)
+                            comp_qty = line.quantity * bom_line.quantity
+                            
+                            # Convert to component's base UoM
+                            base_comp_qty = UoMService.convert_quantity(
+                                comp_qty,
+                                from_uom=bom_line.uom,
+                                to_uom=bom_line.component.uom
+                            )
+                            
+                            # Create stock move (OUT) for the COMPONENT
+                            StockMove.objects.create(
+                                date=delivery.delivery_date,
+                                product=bom_line.component,
+                                warehouse=delivery.warehouse,
+                                quantity=-base_comp_qty,
+                                move_type=StockMove.Type.OUT,
+                                description=f"Consumo BOM p/Despacho {delivery.number} ({product.name})"
+                            )
+                            
+                            # Calculate component cost contribution
+                            line_total_cost += base_comp_qty * bom_line.component.cost_price
+                        
+                        # Set unit_cost for accounting based on component consumption
+                        if line.quantity > 0:
+                            line.unit_cost = (line_total_cost / line.quantity).quantize(Decimal('0.01'))
+                        else:
+                            line.unit_cost = 0
+                        line.save()
+                    else:
+                        # No BOM and no tracking: usually 0 cost (Service/Consumable)
+                        line.unit_cost = 0
+                        line.save()
+                else:
+                    # Service or other non-tracked product
+                    line.unit_cost = 0
+                    line.save()
+
             # Update sale line delivered quantity
             line.sale_line.quantity_delivered += line.quantity
             line.sale_line.save()
 
         # 2. Accounting Entry via Mapper (using total_cost for COGS)
+        # Recalculate totals after updating line costs
         delivery.total_cost = sum(line.total_cost for line in delivery.lines.all())
-        delivery.recalculate_totals() # This will now work without ValueError
+        delivery.recalculate_totals()
         
         from accounting.models import AccountingSettings
         settings = AccountingSettings.objects.first()

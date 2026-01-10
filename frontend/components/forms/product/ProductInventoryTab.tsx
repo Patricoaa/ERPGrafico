@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils"
 interface ProductInventoryTabProps {
     form: UseFormReturn<ProductFormValues>
     uoms: any[]
+    canBeSold?: boolean
 }
 
-export function ProductInventoryTab({ form, uoms }: ProductInventoryTabProps) {
+export function ProductInventoryTab({ form, uoms, canBeSold }: ProductInventoryTabProps) {
     const productType = form.watch("product_type")
 
     const sortedUoms = [...uoms].sort((a, b) => {
@@ -84,7 +85,7 @@ export function ProductInventoryTab({ form, uoms }: ProductInventoryTabProps) {
                 </div>
 
                 <div className="space-y-6">
-                    {(productType === 'STORABLE' || productType === 'MANUFACTURABLE' || productType === 'SERVICE') && (
+                    {canBeSold && (productType === 'STORABLE' || productType === 'MANUFACTURABLE' || productType === 'SERVICE') && (
                         <div className="p-6 rounded-2xl border bg-card/50 space-y-8">
                             {/* 1. Permitted Units Selection */}
                             <div className="space-y-4">
@@ -127,17 +128,9 @@ export function ProductInventoryTab({ form, uoms }: ProductInventoryTabProps) {
                                                                     if (isSelected) {
                                                                         const newList = selectedIds.filter((id: string) => id !== u.id.toString());
                                                                         field.onChange(newList);
-                                                                        // If we deselect the default sale unit, update it
-                                                                        if (form.getValues("sale_uom") === u.id.toString()) {
-                                                                            form.setValue("sale_uom", newList[0] || "");
-                                                                        }
                                                                     } else {
                                                                         const newList = [...selectedIds, u.id.toString()];
                                                                         field.onChange(newList);
-                                                                        // Auto-set as default if it's the first one
-                                                                        if (!form.getValues("sale_uom")) {
-                                                                            form.setValue("sale_uom", u.id.toString());
-                                                                        }
                                                                     }
                                                                 }}
                                                             >
@@ -159,45 +152,6 @@ export function ProductInventoryTab({ form, uoms }: ProductInventoryTabProps) {
                                                         Categoría: {firstSelectedUom.category_name}
                                                     </p>
                                                 )}
-                                                <FormMessage />
-                                            </FormItem>
-                                        );
-                                    }}
-                                />
-                            </div>
-
-                            {/* 2. Default Sale Unit (Selection from Allowed) */}
-                            <div className="pt-6 border-t">
-                                <FormField<ProductFormValues>
-                                    control={form.control}
-                                    name="sale_uom"
-                                    render={({ field }) => {
-                                        const allowedIds = form.watch("allowed_sale_uoms") || [];
-                                        const allowedUoms = uoms.filter(u => allowedIds.includes(u.id.toString()));
-                                        const isDisabled = allowedIds.length === 0;
-
-                                        return (
-                                            <FormItem>
-                                                <FormLabel className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Venta por Defecto</FormLabel>
-                                                <Select
-                                                    onValueChange={field.onChange}
-                                                    value={field.value}
-                                                    disabled={isDisabled}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger className="mt-2 bg-background border-primary/20">
-                                                            <SelectValue placeholder={isDisabled ? "Primero añade unidades arriba" : "Selecciona la predeterminada"} />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {allowedUoms.map((u) => (
-                                                            <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormDescription className="text-[10px]">
-                                                    Unidad pre-seleccionada en ventas y POS.
-                                                </FormDescription>
                                                 <FormMessage />
                                             </FormItem>
                                         );

@@ -13,13 +13,34 @@ class SalesSettingsSerializer(serializers.ModelSerializer):
 
 class SaleLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
+    product_type = serializers.SerializerMethodField()
+    track_inventory = serializers.SerializerMethodField()
+    manufacturable_quantity = serializers.SerializerMethodField()
+    
     quantity_pending = serializers.ReadOnlyField()
     uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     description = serializers.CharField(required=False, allow_blank=True)
     
     class Meta:
         model = SaleLine
-        fields = ['id', 'product', 'product_name', 'description', 'quantity', 'uom', 'uom_name', 'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 'quantity_pending', 'manufacturing_data']
+        fields = [
+            'id', 'product', 'product_name', 'product_type', 'track_inventory', 
+            'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
+            'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 
+            'quantity_pending', 'manufacturing_data'
+        ]
+
+    def get_product_type(self, obj):
+        return obj.product.product_type if obj.product else None
+
+    def get_track_inventory(self, obj):
+        return obj.product.track_inventory if obj.product else False
+
+    def get_manufacturable_quantity(self, obj):
+        if obj.product and obj.product.product_type == 'MANUFACTURABLE':
+            qty = obj.product.get_manufacturable_quantity()
+            return float(qty) if qty is not None else None
+        return None
 
     def validate(self, data):
         product = data.get('product')

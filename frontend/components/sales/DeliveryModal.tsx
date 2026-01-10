@@ -36,6 +36,9 @@ interface SaleOrderLine {
     quantity_pending: number
     unit_price: number
     uom_name: string
+    product_type: string
+    track_inventory: boolean
+    manufacturable_quantity: number | null
 }
 
 interface SaleOrder {
@@ -169,7 +172,16 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
         // Validate stock
         const insufficientStock = order?.lines.some(line => {
             const requestedQty = deliveryQuantities[line.id] || 0
-            const availableStock = stockLevels[line.product] || 0
+
+            let availableStock = stockLevels[line.product] || 0
+            if (!line.track_inventory) {
+                if (line.product_type === 'MANUFACTURABLE') {
+                    availableStock = line.manufacturable_quantity ?? 0
+                } else {
+                    return false // Services/Others skip check
+                }
+            }
+
             return requestedQty > 0 && requestedQty > availableStock
         })
 
@@ -222,9 +234,19 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
 
     const getStockStatus = (line: SaleOrderLine) => {
         const requestedQty = deliveryQuantities[line.id] || 0
-        const availableStock = stockLevels[line.product] || 0
+
+        let availableStock = stockLevels[line.product] || 0
+        if (!line.track_inventory && line.product_type === 'MANUFACTURABLE') {
+            availableStock = line.manufacturable_quantity ?? 0
+        }
 
         if (requestedQty === 0) return null
+
+        // Skip stock check for non-tracked services or products without BOM
+        if (!line.track_inventory && line.product_type !== 'MANUFACTURABLE') {
+            return { type: 'success', message: 'Servicio/Sin stock' }
+        }
+
         if (requestedQty > availableStock) {
             return { type: 'error', message: `Stock insuficiente (${availableStock} disponibles)` }
         }
@@ -328,9 +350,24 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                     <Badge variant="outline">{line.quantity_pending}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant={availableStock >= line.quantity_pending ? "success" : "destructive"}>
-                                                        {availableStock}
-                                                    </Badge>
+                                                    {line.track_inventory ? (
+                                                        <Badge variant={availableStock >= line.quantity_pending ? "success" : "destructive"}>
+                                                            {availableStock}
+                                                        </Badge>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            {line.product_type === 'MANUFACTURABLE' ? (
+                                                                <>
+                                                                    <Badge variant="outline" className="text-[9px] border-blue-200 bg-blue-50 text-blue-700">Fabricable</Badge>
+                                                                    <Badge variant={(line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "success" : "destructive"} className="text-[10px]">
+                                                                        {line.manufacturable_quantity ?? 0}
+                                                                    </Badge>
+                                                                </>
+                                                            ) : (
+                                                                <Badge variant="outline" className="text-[9px] border-emerald-200 bg-emerald-50 text-emerald-700">Disponible</Badge>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Input

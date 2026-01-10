@@ -29,6 +29,7 @@ interface Product {
     sale_price: string
     current_stock: number
     total_stock: number
+    manufacturable_quantity?: number | null
     uom_name: string
     purchase_uom_name: string
     track_inventory: boolean
@@ -94,8 +95,7 @@ export function ProductList() {
                             <TableHead className="text-right">Neto</TableHead>
                             <TableHead className="text-right">IVA (19%)</TableHead>
                             <TableHead className="text-right">Total</TableHead>
-                            <TableHead className="text-center">Venta</TableHead>
-                            <TableHead className="text-center">Compra</TableHead>
+                            <TableHead className="text-center">Atributos</TableHead>
                             <TableHead className="w-[100px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -111,11 +111,28 @@ export function ProductList() {
                                 </TableCell>
                                 <TableCell className="text-right font-bold tabular-nums">
                                     {product.track_inventory ? (
-                                        <>
-                                            {product.total_stock} <span className="text-[10px] text-muted-foreground font-normal">{product.uom_name}</span>
-                                        </>
+                                        <div className="flex flex-col items-end">
+                                            <span>
+                                                {product.current_stock || 0} <span className="text-[10px] text-muted-foreground font-normal">{product.uom_name}</span>
+                                            </span>
+                                        </div>
                                     ) : (
-                                        <span className="text-[10px] text-muted-foreground font-normal">No controlado</span>
+                                        <div className="flex flex-col items-end">
+                                            {product.product_type === 'MANUFACTURABLE' ? (
+                                                <div className="flex flex-col items-end gap-0.5">
+                                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 h-4">Fabricable</Badge>
+                                                    <span className="text-[10px] text-blue-600 font-medium">
+                                                        {product.manufacturable_quantity !== null && product.manufacturable_quantity !== undefined
+                                                            ? `${product.manufacturable_quantity} disp.`
+                                                            : 'Disponible'}
+                                                    </span>
+                                                </div>
+                                            ) : product.product_type === 'SERVICE' ? (
+                                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-200 bg-emerald-50 text-emerald-700 h-4">Disponible</Badge>
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground font-normal">No controlado</span>
+                                            )}
+                                        </div>
                                     )}
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-muted-foreground">
@@ -126,6 +143,19 @@ export function ProductList() {
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-primary">
                                     ${Math.round(Number(product.sale_price) * 1.19).toLocaleString()}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex justify-center gap-1">
+                                        {product.can_be_sold && (
+                                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-200 bg-emerald-50 text-emerald-700 h-4">Venta</Badge>
+                                        )}
+                                        {product.can_be_purchased && (
+                                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 h-4">Compra</Badge>
+                                        )}
+                                        {!product.can_be_sold && !product.can_be_purchased && (
+                                            <span className="text-[10px] text-muted-foreground italic">Ninguno</span>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center gap-1">
