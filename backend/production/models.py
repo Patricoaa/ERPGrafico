@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from sales.models import SaleOrder
-from inventory.models import Product, Warehouse
+from inventory.models import Product, Warehouse, UoM
 
 class WorkOrder(models.Model):
     class Status(models.TextChoices):
@@ -150,7 +150,13 @@ class BillOfMaterialsLine(models.Model):
         decimal_places=4,
         help_text="Cantidad necesaria por unidad producida"
     )
-    unit = models.CharField(_("Unidad"), max_length=20, default='UN')
+    uom = models.ForeignKey(
+        UoM, 
+        on_delete=models.PROTECT, 
+        related_name='bom_lines',
+        verbose_name=_("Unidad de Medida"),
+        null=True, blank=True
+    )
     notes = models.TextField(_("Notas"), blank=True)
     
     sequence = models.IntegerField(_("Secuencia"), default=10, help_text="Orden de visualización")
@@ -162,4 +168,4 @@ class BillOfMaterialsLine(models.Model):
         unique_together = [['bom', 'component']]
 
     def __str__(self):
-        return f"{self.component.code} x {self.quantity} {self.unit}"
+        return f"{self.component.code} x {self.quantity} {self.uom.name if self.uom else ''}"

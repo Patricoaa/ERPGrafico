@@ -29,17 +29,30 @@ class WorkOrderSerializer(serializers.ModelSerializer):
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_code = serializers.CharField(source='component.code', read_only=True)
     component_name = serializers.CharField(source='component.name', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
     
     class Meta:
         model = BillOfMaterialsLine
-        fields = ['id', 'component', 'component_code', 'component_name', 'quantity', 'unit', 'notes']
+        fields = ['id', 'component', 'component_code', 'component_name', 'quantity', 'uom', 'uom_name', 'notes']
 
     def validate(self, data):
         component = data.get('component')
+        uom = data.get('uom')
+        
+        # Validate component has base UoM
         if component and not component.uom:
             raise serializers.ValidationError(
                 f"El componente '{component.name}' no tiene una Unidad de Medida (UoM) asignada."
             )
+            
+        # Validate compatibility if both present
+        if component and uom:
+            if component.uom.category != uom.category:
+                 raise serializers.ValidationError(
+                    f"La unidad '{uom.name}' no es compatible con la unidad base del componente '{component.uom.name}' "
+                    f"(Categorías diferentes: {uom.category.name} vs {component.uom.category.name})"
+                )
+                
         return data
 
 class BillOfMaterialsSerializer(serializers.ModelSerializer):

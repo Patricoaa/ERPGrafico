@@ -301,12 +301,34 @@ class Product(models.Model):
             if required_qty <= 0:
                 continue
             
-            # Get component's current stock
+            # Get component's current stock (in Base UoM)
             component_stock = component.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
             component_stock = float(component_stock)
             
+            # Unit Conversion Logic
+            # We need to express "required_qty" (which is in line.uom) into Component Base UoM
+            conversion_factor = 1.0
+            
+            if line.uom and component.uom:
+                if line.uom != component.uom:
+                    if line.uom.category == component.uom.category:
+                         # Conversion: Qty_Base = Qty_Line * (Line_Ratio / Base_Ratio)
+                         # Example: Line=50cm (0.01), Base=m (1.0). Qty_Base = 50 * (0.01 / 1.0) = 0.5m
+                         line_ratio = float(line.uom.ratio)
+                         base_ratio = float(component.uom.ratio)
+                         if base_ratio != 0:
+                             conversion_factor = line_ratio / base_ratio
+                    else:
+                        # Incompatible categories (should be caught by serializer, but fail safe here)
+                        pass
+            
+            required_qty_in_base = required_qty * conversion_factor
+            
+            if required_qty_in_base <= 0:
+                 continue
+
             # Calculate how many units we can make with this component
-            available_units = component_stock / required_qty
+            available_units = component_stock / required_qty_in_base
             
             # Track the minimum (bottleneck component)
             min_manufacturable = min(min_manufacturable, available_units)
