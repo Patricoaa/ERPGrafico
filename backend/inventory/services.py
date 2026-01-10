@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q, QuerySet
@@ -548,7 +548,7 @@ class ProcurementService:
                 p.save()
             
             # Recalculate totals
-            po.calculate_totals()
+            po.recalculate_totals()
             po.save()
             created_pos.append(po)
             
