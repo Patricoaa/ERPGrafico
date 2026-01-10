@@ -130,6 +130,12 @@ class BillOfMaterials(models.Model):
         # If this BOM is being set as active, deactivate other BOMs for the same product
         if self.active:
             BillOfMaterials.objects.filter(product=self.product, active=True).exclude(pk=self.pk).update(active=False)
+            
+            # Sync product has_bom flag
+            if not self.product.has_bom:
+                self.product.has_bom = True
+                self.product.save(update_fields=['has_bom'])
+                
         super().save(*args, **kwargs)
 
 class BillOfMaterialsLine(models.Model):

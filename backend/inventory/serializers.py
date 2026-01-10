@@ -136,6 +136,34 @@ class ProductSerializer(serializers.ModelSerializer):
             fallback = data.get('sale_uom') or data.get('purchase_uom')
             if fallback:
                 data['uom'] = fallback
+        
+        uom = data.get('uom')
+        if uom:
+            uom_category = uom.category
+            
+            # Validate sale_uom
+            sale_uom = data.get('sale_uom')
+            if sale_uom and sale_uom.category != uom_category:
+                raise serializers.ValidationError({
+                    "sale_uom": f"La unidad de venta ({sale_uom.name}) debe pertenecer a la misma categoría que la unidad de stock ({uom.category.name})."
+                })
+            
+            # Validate purchase_uom
+            purchase_uom = data.get('purchase_uom')
+            if purchase_uom and purchase_uom.category != uom_category:
+                raise serializers.ValidationError({
+                    "purchase_uom": f"La unidad de compra ({purchase_uom.name}) debe pertenecer a la misma categoría que la unidad de stock ({uom.category.name})."
+                })
+            
+            # Validate allowed_sale_uoms
+            allowed_sale_uoms = data.get('allowed_sale_uoms')
+            if allowed_sale_uoms:
+                for a_uom in allowed_sale_uoms:
+                    if a_uom.category != uom_category:
+                        raise serializers.ValidationError({
+                            "allowed_sale_uoms": f"La unidad '{a_uom.name}' no pertenece a la categoría '{uom.category.name}' de la unidad base."
+                        })
+        
         return data
 
     def create(self, validated_data):

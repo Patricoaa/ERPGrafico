@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Info, X, Package } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
+import { useEffect } from "react"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
@@ -22,6 +23,38 @@ export function ProductInventoryTab({ form, uoms, canBeSold }: ProductInventoryT
         if (catCompare !== 0) return catCompare;
         return a.name.localeCompare(b.name);
     });
+
+    // Auto-sync category and clear incompatible sale UoMs
+    const stockUomId = form.watch("uom")
+    useEffect(() => {
+        if (!stockUomId) return
+
+        const stockUom = uoms.find(u => u.id.toString() === stockUomId.toString())
+        if (!stockUom) return
+
+        const currentAllowed = form.getValues("allowed_sale_uoms") || []
+        const currentSaleUom = form.getValues("sale_uom")
+
+        // Filter out UoMs that are not in the same category
+        const filteredAllowed = currentAllowed.filter(id => {
+            const u = uoms.find(uom => uom.id.toString() === id.toString())
+            return u?.category === stockUom.category
+        })
+
+        // Ensure stock UoM is always in allowed_sale_uoms
+        if (!filteredAllowed.includes(stockUomId.toString())) {
+            filteredAllowed.push(stockUomId.toString())
+        }
+
+        if (filteredAllowed.length !== currentAllowed.length) {
+            form.setValue("allowed_sale_uoms", filteredAllowed)
+        }
+
+        // If current sale_uom is no longer allowed, reset it
+        if (currentSaleUom && !filteredAllowed.includes(currentSaleUom.toString())) {
+            form.setValue("sale_uom", stockUomId.toString())
+        }
+    }, [stockUomId, uoms])
 
     return (
         <TabsContent value="uoms" className="mt-0 space-y-8">
@@ -68,7 +101,7 @@ export function ProductInventoryTab({ form, uoms, canBeSold }: ProductInventoryT
                                         <div className="space-y-0.5">
                                             <FormLabel className="text-xs font-bold">Controlar Inventario</FormLabel>
                                             <FormDescription className="text-[10px]">
-                                                Habilitar para productos que se almacenan físicamente.
+                                                Habilitar para productos que necesitan un control de inventario estricto.
                                             </FormDescription>
                                         </div>
                                         <FormControl>
@@ -101,55 +134,66 @@ export function ProductInventoryTab({ form, uoms, canBeSold }: ProductInventoryT
                                     control={form.control}
                                     name="allowed_sale_uoms"
                                     render={({ field }) => {
+                                        const stockUomId = form.watch("uom");
+                                        const stockUom = uoms.find(u => u.id.toString() === stockUomId?.toString());
+                                        const stockCategoryId = stockUom?.category;
+
                                         const selectedIds = field.value || [];
-                                        const firstSelectedId = selectedIds[0];
-                                        const firstSelectedUom = uoms.find(u => u.id.toString() === firstSelectedId);
-                                        const categoryId = firstSelectedUom?.category;
 
                                         return (
                                             <FormItem className="space-y-4">
                                                 <div className="flex flex-wrap gap-2 p-4 rounded-xl border bg-muted/10 min-h-[60px] items-center">
-                                                    {sortedUoms.map((u: any) => {
-                                                        const isSelected = selectedIds.includes(u.id.toString());
-                                                        const isDifferentCategory = categoryId !== undefined && u.category !== categoryId;
-
-                                                        if (isDifferentCategory && !isSelected) return null;
-
-                                                        return (
-                                                            <Badge
-                                                                key={u.id}
-                                                                variant={isSelected ? "default" : "outline"}
-                                                                className={cn(
-                                                                    "cursor-pointer px-3 py-1.5 transition-all hover:scale-105 active:scale-95 border-primary/20",
-                                                                    isSelected ? "bg-primary text-white shadow-md" : "bg-background hover:bg-muted font-normal text-muted-foreground",
-                                                                    isDifferentCategory && "opacity-50 grayscale pointer-events-none"
-                                                                )}
-                                                                onClick={() => {
-                                                                    if (isSelected) {
-                                                                        const newList = selectedIds.filter((id: string) => id !== u.id.toString());
-                                                                        field.onChange(newList);
-                                                                    } else {
-                                                                        const newList = [...selectedIds, u.id.toString()];
-                                                                        field.onChange(newList);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {u.name}
-                                                                {isSelected && <X className="ml-2 h-3 w-3 inline-block" />}
-                                                            </Badge>
-                                                        );
-                                                    })}
-                                                    {selectedIds.length === 0 && (
+                                                    {!stockCategoryId ? (
                                                         <span className="text-[11px] text-muted-foreground italic px-2">
-                                                            Añade unidades para habilitar la venta.
+                                                            Seleccione primero una Unidad de Medida de Stock.
                                                         </span>
+                                                    ) : (
+                                                        <>
+                                                            {sortedUoms
+                                                                .filter(u => u.category === stockCategoryId)
+                                                                .map((u: any) => {
+                                                                    const isSelected = selectedIds.includes(u.id.toString());
+                                                                    const isBaseUom = u.id.toString() === stockUomId?.toString();
+
+                                                                    return (
+                                                                        <Badge
+                                                                            key={u.id}
+                                                                            variant={isSelected ? "default" : "outline"}
+                                                                            className={cn(
+                                                                                "cursor-pointer px-3 py-1.5 transition-all hover:scale-105 active:scale-95 border-primary/20",
+                                                                                isSelected ? "bg-primary text-white shadow-md font-bold" : "bg-background hover:bg-muted font-normal text-muted-foreground",
+                                                                                isBaseUom && "ring-2 ring-primary ring-offset-1"
+                                                                            )}
+                                                                            onClick={() => {
+                                                                                if (isSelected) {
+                                                                                    const newList = selectedIds.filter((id: string) => id !== u.id.toString());
+                                                                                    field.onChange(newList);
+                                                                                } else {
+                                                                                    const newList = [...selectedIds, u.id.toString()];
+                                                                                    field.onChange(newList);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            {u.name}
+                                                                            {isBaseUom && <span className="ml-1.5 text-[8px] opacity-70">(BASE)</span>}
+                                                                            {isSelected && !isBaseUom && <X className="ml-2 h-3 w-3 inline-block" />}
+                                                                        </Badge>
+                                                                    );
+                                                                })
+                                                            }
+                                                            {sortedUoms.filter(u => u.category === stockCategoryId).length === 0 && (
+                                                                <span className="text-[11px] text-muted-foreground italic px-2">
+                                                                    No hay otras unidades en esta categoría.
+                                                                </span>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
 
-                                                {firstSelectedUom && (
+                                                {stockUom && (
                                                     <p className="text-[10px] text-primary/70 font-medium flex items-center gap-1.5 px-1 uppercase tracking-wider">
                                                         <Info className="h-3 w-3" />
-                                                        Categoría: {firstSelectedUom.category_name}
+                                                        Categoría: {stockUom.category_name}
                                                     </p>
                                                 )}
                                                 <FormMessage />
