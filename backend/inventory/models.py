@@ -381,7 +381,7 @@ class Product(models.Model):
         """Current physical stock (sum of all moves)."""
         from django.db.models import Sum
         from decimal import Decimal
-        return self.moves.aggregate(total=Sum('quantity'))['total'] or Decimal('0.0')
+        return self.stock_moves.aggregate(total=Sum('quantity'))['total'] or Decimal('0.0')
 
     @property
     def qty_reserved(self):

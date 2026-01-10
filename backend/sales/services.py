@@ -299,8 +299,7 @@ class SalesService:
             JournalEntryService.post_entry(entry)
             delivery.journal_entry = entry
         
-        # Link entry to delivery
-        delivery.journal_entry = entry
+        # Confirm delivery
         delivery.status = SaleDelivery.Status.CONFIRMED
         delivery.save()
         
