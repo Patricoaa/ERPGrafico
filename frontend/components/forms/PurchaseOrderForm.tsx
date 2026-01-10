@@ -43,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { UoMSelector } from "@/components/selectors/UoMSelector"
 
 const purchaseLineSchema = z.object({
     id: z.number().optional(),
@@ -339,36 +340,21 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                         control={form.control}
                                                         name={`lines.${index}.uom`}
                                                         render={({ field }) => {
-                                                            const productId = form.watch(`lines.${index}.product`)
+                                                            const productId = form.watch(`lines.${index}.product`) || ""
                                                             const selectedProduct = products.find(p => p.id.toString() === productId)
-
-                                                            // Find category of product's base uom
-                                                            const baseUoM = uoms.find(u => u.id === selectedProduct?.uom)
-                                                            const categoryId = baseUoM?.category
-
-                                                            const filteredUoMs = categoryId
-                                                                ? uoms.filter(u => u.category === categoryId)
-                                                                : uoms
+                                                            const quantity = parseFloat(form.watch(`lines.${index}.quantity`) || "1")
 
                                                             return (
-                                                                <Select
-                                                                    onValueChange={field.onChange}
-                                                                    value={field.value}
-                                                                    disabled={!productId}
-                                                                >
-                                                                    <FormControl>
-                                                                        <SelectTrigger>
-                                                                            <SelectValue placeholder="Unidad" />
-                                                                        </SelectTrigger>
-                                                                    </FormControl>
-                                                                    <SelectContent>
-                                                                        {filteredUoMs.map((u) => (
-                                                                            <SelectItem key={u.id} value={u.id.toString()}>
-                                                                                {u.name}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                <UoMSelector
+                                                                    product={selectedProduct || null}
+                                                                    context="purchase"
+                                                                    value={field.value || ""}
+                                                                    onChange={field.onChange}
+                                                                    uoms={uoms}
+                                                                    showConversionHint={true}
+                                                                    quantity={quantity}
+                                                                    label="Unidad"
+                                                                />
                                                             )
                                                         }}
                                                     />

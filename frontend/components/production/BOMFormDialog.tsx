@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select"
 import { Plus, Trash2, Save, Loader2, Info, Workflow } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -354,62 +355,27 @@ export function BOMFormDialog({
                                                             control={form.control}
                                                             name={`lines.${index}.uom`}
                                                             render={({ field }) => {
-                                                                const componentId = form.watch(`lines.${index}.component`);
-                                                                const product = products.find((p: any) => p.id.toString() === componentId?.toString());
-
-                                                                // Build list of allowed UoMs for this component
-                                                                const allowedUoms: any[] = [];
-                                                                if (product) {
-                                                                    // Add base UoM
-                                                                    if (product.uom) {
-                                                                        const baseUom = uoms.find((u: any) => u.id === product.uom);
-                                                                        if (baseUom) allowedUoms.push(baseUom);
-                                                                    }
-                                                                    // Add sale UoM if different
-                                                                    if (product.sale_uom && product.sale_uom !== product.uom) {
-                                                                        const saleUom = uoms.find((u: any) => u.id === product.sale_uom);
-                                                                        if (saleUom && !allowedUoms.find(u => u.id === saleUom.id)) {
-                                                                            allowedUoms.push(saleUom);
-                                                                        }
-                                                                    }
-                                                                    // Add allowed sale UoMs
-                                                                    if (product.allowed_sale_uoms && product.allowed_sale_uoms.length > 0) {
-                                                                        product.allowed_sale_uoms.forEach((uomId: any) => {
-                                                                            const foundUom = uoms.find((u: any) => u.id === uomId);
-                                                                            if (foundUom && !allowedUoms.find(u => u.id === foundUom.id)) {
-                                                                                allowedUoms.push(foundUom);
-                                                                            }
-                                                                        });
-                                                                    }
-                                                                }
+                                                                const componentId = form.watch(`lines.${index}.component`) || "";
+                                                                const component = products.find((p: any) => p.id.toString() === componentId);
+                                                                const quantity = parseFloat(form.watch(`lines.${index}.quantity`) || "1");
 
                                                                 return (
-                                                                    <FormItem>
-                                                                        <Select
-                                                                            onValueChange={(val) => {
-                                                                                field.onChange(val);
-                                                                                const selectedUom = uoms.find((u: any) => u.id.toString() === val);
-                                                                                if (selectedUom) {
-                                                                                    form.setValue(`lines.${index}.uom_name`, selectedUom.name);
-                                                                                }
-                                                                            }}
-                                                                            value={field.value}
-                                                                        >
-                                                                            <FormControl>
-                                                                                <SelectTrigger className="h-9">
-                                                                                    <SelectValue placeholder="Seleccionar...">
-                                                                                        {field.value ? uoms.find((u: any) => u.id.toString() === field.value)?.name : "Seleccionar..."}
-                                                                                    </SelectValue>
-                                                                                </SelectTrigger>
-                                                                            </FormControl>
-                                                                            <SelectContent>
-                                                                                {allowedUoms.map(u => (
-                                                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                                ))}
-                                                                            </SelectContent>
-                                                                        </Select>
-                                                                        <FormMessage />
-                                                                    </FormItem>
+                                                                    <UoMSelector
+                                                                        product={component || null}
+                                                                        context="bom"
+                                                                        value={field.value || ""}
+                                                                        onChange={(val) => {
+                                                                            field.onChange(val);
+                                                                            const selectedUom = uoms.find((u: any) => u.id.toString() === val);
+                                                                            if (selectedUom) {
+                                                                                form.setValue(`lines.${index}.uom_name`, selectedUom.name);
+                                                                            }
+                                                                        }}
+                                                                        uoms={uoms}
+                                                                        showConversionHint={false}
+                                                                        quantity={quantity}
+                                                                        label=""
+                                                                    />
                                                                 );
                                                             }}
                                                         />
