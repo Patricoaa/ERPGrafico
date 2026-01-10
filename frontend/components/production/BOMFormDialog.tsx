@@ -352,15 +352,30 @@ export function BOMFormDialog({
                                                                 const componentId = form.watch(`lines.${index}.component`);
                                                                 const product = products.find((p: any) => p.id.toString() === componentId?.toString());
 
-                                                                // Build list of compatible UoMs (same category as product base UoM)
-                                                                const compatibleUoms: any[] = [];
-                                                                if (product && product.uom_category) {
-                                                                    const categoryUoms = uoms.filter((u: any) => u.category === product.uom_category);
-                                                                    compatibleUoms.push(...categoryUoms);
-                                                                } else if (product && product.uom) {
-                                                                    // Fallback: just show the product's base UoM
-                                                                    const baseUom = uoms.find((u: any) => u.id === product.uom);
-                                                                    if (baseUom) compatibleUoms.push(baseUom);
+                                                                // Build list of allowed UoMs for this component
+                                                                const allowedUoms: any[] = [];
+                                                                if (product) {
+                                                                    // Add base UoM
+                                                                    if (product.uom) {
+                                                                        const baseUom = uoms.find((u: any) => u.id === product.uom);
+                                                                        if (baseUom) allowedUoms.push(baseUom);
+                                                                    }
+                                                                    // Add sale UoM if different
+                                                                    if (product.sale_uom && product.sale_uom !== product.uom) {
+                                                                        const saleUom = uoms.find((u: any) => u.id === product.sale_uom);
+                                                                        if (saleUom && !allowedUoms.find(u => u.id === saleUom.id)) {
+                                                                            allowedUoms.push(saleUom);
+                                                                        }
+                                                                    }
+                                                                    // Add allowed sale UoMs
+                                                                    if (product.allowed_sale_uoms && product.allowed_sale_uoms.length > 0) {
+                                                                        product.allowed_sale_uoms.forEach((uomId: any) => {
+                                                                            const foundUom = uoms.find((u: any) => u.id === uomId);
+                                                                            if (foundUom && !allowedUoms.find(u => u.id === foundUom.id)) {
+                                                                                allowedUoms.push(foundUom);
+                                                                            }
+                                                                        });
+                                                                    }
                                                                 }
 
                                                                 return (
@@ -383,7 +398,7 @@ export function BOMFormDialog({
                                                                                 </SelectTrigger>
                                                                             </FormControl>
                                                                             <SelectContent>
-                                                                                {compatibleUoms.map(u => (
+                                                                                {allowedUoms.map(u => (
                                                                                     <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
                                                                                 ))}
                                                                             </SelectContent>
