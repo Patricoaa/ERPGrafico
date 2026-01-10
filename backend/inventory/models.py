@@ -375,6 +375,41 @@ class Product(models.Model):
         import math
         return math.floor(min_manufacturable)
 
+    @property
+    def qty_on_hand(self):
+        """Current physical stock (sum of all moves)."""
+        from django.db.models import Sum
+        return self.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
+
+    @property
+    def qty_reserved(self):
+        """
+        Quantity reserved for confirmed sales that haven't been fully delivered.
+        """
+        from sales.models import SaleOrder, SaleLine
+        
+        # Check sales that are CONFIRMED and NOT fully delivered
+        pending_lines = SaleLine.objects.filter(
+            product=self,
+            order__status=SaleOrder.Status.CONFIRMED
+        ).exclude(
+            order__delivery_status=SaleOrder.DeliveryStatus.DELIVERED
+        )
+        
+        total_reserved = 0.0
+        for line in pending_lines:
+            total_reserved += float(line.quantity_pending)
+            
+        return total_reserved
+
+    @property
+    def qty_available(self):
+        """
+        Quantity available for new sales (On Hand - Reserved).
+        """
+        return float(self.qty_on_hand) - self.qty_reserved
+
+
 class Warehouse(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, unique=True)

@@ -58,6 +58,9 @@ class ProductSerializer(serializers.ModelSerializer):
     last_purchase_price = serializers.SerializerMethodField()
     manufacturable_quantity = serializers.SerializerMethodField()
     
+    qty_reserved = serializers.FloatField(read_only=True)
+    qty_available = serializers.FloatField(read_only=True)
+    
     # Manufacturing fields: Support multiple BOMs
     boms = BillOfMaterialsSerializer(many=True, required=False)
     product_custom_fields = ProductCustomFieldSerializer(many=True, required=False)

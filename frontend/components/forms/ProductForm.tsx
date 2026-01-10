@@ -382,6 +382,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     form={form as any}
                                     uoms={uoms}
                                     canBeSold={form.watch("can_be_sold")}
+                                    initialData={initialData}
                                 />
 
                                 <ProductPricingTab

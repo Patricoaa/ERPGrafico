@@ -13,9 +13,10 @@ interface ProductInventoryTabProps {
     form: UseFormReturn<ProductFormValues>
     uoms: any[]
     canBeSold?: boolean
+    initialData?: any
 }
 
-export function ProductInventoryTab({ form, uoms, canBeSold }: ProductInventoryTabProps) {
+export function ProductInventoryTab({ form, uoms, canBeSold, initialData }: ProductInventoryTabProps) {
     const productType = form.watch("product_type")
 
     const sortedUoms = [...uoms].sort((a, b) => {
@@ -97,20 +98,39 @@ export function ProductInventoryTab({ form, uoms, canBeSold }: ProductInventoryT
                                 control={form.control}
                                 name="track_inventory"
                                 render={({ field }) => (
-                                    <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="text-xs font-bold">Controlar Inventario</FormLabel>
-                                            <FormDescription className="text-[10px]">
-                                                Habilitar para productos que necesitan un control de inventario estricto.
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
+                                    <div className="space-y-4">
+                                        <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-xs font-bold">Controlar Inventario</FormLabel>
+                                                <FormDescription className="text-[10px]">
+                                                    Habilitar para productos que necesitan un control de inventario estricto.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+
+                                        {field.value && initialData && (
+                                            <div className="grid grid-cols-3 gap-2 p-3 bg-muted/20 rounded-lg border border-dashed">
+                                                <div className="flex flex-col items-center bg-background rounded p-2 shadow-sm">
+                                                    <span className="text-[10px] uppercase text-muted-foreground font-bold">A Mano</span>
+                                                    <span className="text-lg font-bold tabular-nums">{initialData.current_stock || 0}</span>
+                                                </div>
+                                                <div className="flex flex-col items-center bg-amber-50 rounded p-2 shadow-sm border border-amber-100">
+                                                    <span className="text-[10px] uppercase text-amber-700 font-bold">Reservado</span>
+                                                    <span className="text-lg font-bold tabular-nums text-amber-700">{initialData.qty_reserved || 0}</span>
+                                                </div>
+                                                <div className="flex flex-col items-center bg-emerald-50 rounded p-2 shadow-sm border border-emerald-100">
+                                                    <span className="text-[10px] uppercase text-emerald-700 font-bold">Disponible</span>
+                                                    <span className="text-lg font-bold tabular-nums text-emerald-700">{initialData.qty_available || 0}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             />
                         </div>

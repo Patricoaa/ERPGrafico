@@ -28,6 +28,8 @@ interface Product {
     category_name: string
     sale_price: string
     current_stock: number
+    qty_reserved?: number
+    qty_available?: number
     total_stock: number
     manufacturable_quantity?: number | null
     uom_name: string
@@ -111,10 +113,22 @@ export function ProductList() {
                                 </TableCell>
                                 <TableCell className="text-right font-bold tabular-nums">
                                     {product.track_inventory ? (
-                                        <div className="flex flex-col items-end">
-                                            <span>
-                                                {product.current_stock || 0} <span className="text-[10px] text-muted-foreground font-normal">{product.uom_name}</span>
-                                            </span>
+                                        <div className="flex flex-col items-end gap-0.5 text-[10px]">
+                                            <div className="flex gap-2 justify-between w-full min-w-[80px]">
+                                                <span className="text-muted-foreground font-normal">Físico:</span>
+                                                <span>{product.current_stock || 0}</span>
+                                            </div>
+                                            {(product.qty_reserved || 0) > 0 && (
+                                                <div className="flex gap-2 justify-between w-full min-w-[80px] text-amber-600">
+                                                    <span className="font-normal">Reserv:</span>
+                                                    <span>{product.qty_reserved}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex gap-2 justify-between w-full min-w-[80px] border-t border-dashed pt-0.5 mt-0.5">
+                                                <span className="text-emerald-600 font-bold">Disp:</span>
+                                                <span className="text-emerald-600 font-bold">{product.qty_available || 0}</span>
+                                            </div>
+                                            <span className="text-[9px] text-muted-foreground font-normal mt-0.5">{product.uom_name}</span>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col items-end">
