@@ -27,6 +27,7 @@ import { ProductPricingSection } from "./product/ProductPricingSection"
 import { ProductInventoryTab } from "./product/ProductInventoryTab"
 import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
+import { ProductUoMTab } from "./product/ProductUoMTab"
 
 // Import dialogs
 import { PricingRuleForm } from "./PricingRuleForm"
@@ -83,6 +84,19 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             product_custom_fields: [],
         },
     })
+
+    const productType = form.watch("product_type")
+
+    // Logic for inventory tracking defaults and locking
+    useEffect(() => {
+        if (productType === "STORABLE") {
+            if (!form.getValues("track_inventory")) form.setValue("track_inventory", true)
+        } else if (productType === "CONSUMABLE" || productType === "SERVICE") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
+        }
+        // For MANUFACTURABLE, we leave it as is (unlocked, user decides), 
+        // ensuring we don't overwrite saved data or user choice unless we want to enforce a default on change.
+    }, [productType, form])
 
     const fetchCategories = async () => {
         try {
@@ -190,7 +204,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     sale_uom: "",
                     purchase_uom: "",
                     allowed_sale_uoms: [],
-                    track_inventory: false,
+                    track_inventory: true, // Default for new form is STORABLE implicitly? Or handled by useEffect.
                     can_be_sold: true,
                     can_be_purchased: true,
                     custom_fields_schema: "",
@@ -333,6 +347,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             Fabricación
                                         </TabsTrigger>
                                     )}
+                                    <TabsTrigger value="inventory" className="px-8 flex gap-2">
+                                        Inventario
+                                    </TabsTrigger>
                                     <TabsTrigger value="uoms" className="px-8 flex gap-2">
                                         Und. de Medida
                                     </TabsTrigger>
@@ -380,9 +397,13 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
 
                                 <ProductInventoryTab
                                     form={form as any}
+                                    initialData={initialData}
+                                />
+
+                                <ProductUoMTab
+                                    form={form as any}
                                     uoms={uoms}
                                     canBeSold={form.watch("can_be_sold")}
-                                    initialData={initialData}
                                 />
 
                                 <ProductPricingTab

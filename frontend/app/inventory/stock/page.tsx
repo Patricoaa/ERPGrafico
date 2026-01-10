@@ -5,7 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { WarehouseList } from "@/components/inventory/WarehouseList"
 import { MovementList } from "@/components/inventory/MovementList"
 import { StockReport } from "@/components/inventory/StockReport"
-import { Warehouse, History, FileBarChart } from "lucide-react"
+import { AdjustmentList } from "@/components/inventory/AdjustmentList"
+import { ReplenishmentRuleList } from "@/components/inventory/ReplenishmentRuleList"
+import { Warehouse, History, FileBarChart, ArrowRightLeft, RefreshCw } from "lucide-react"
 
 export default function UnifiedStockPage() {
     const [activeTab, setActiveTab] = useState("warehouses")
@@ -21,16 +23,24 @@ export default function UnifiedStockPage() {
 
             <Tabs defaultValue="warehouses" className="space-y-4" onValueChange={setActiveTab}>
                 <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-lg grid-cols-3 bg-muted/50 rounded-full h-12 p-1 border">
-                        <TabsTrigger value="warehouses" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+                    <TabsList className="grid w-full h-auto flex-wrap grid-cols-2 md:grid-cols-5 bg-muted/50 rounded-lg p-1 border">
+                        <TabsTrigger value="warehouses" className="rounded-md gap-2">
                             <Warehouse className="h-4 w-4" />
                             <span className="max-sm:hidden">Almacenes</span>
                         </TabsTrigger>
-                        <TabsTrigger value="movements" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+                        <TabsTrigger value="movements" className="rounded-md gap-2">
                             <History className="h-4 w-4" />
                             <span className="max-sm:hidden">Movimientos</span>
                         </TabsTrigger>
-                        <TabsTrigger value="report" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+                        <TabsTrigger value="adjustments" className="rounded-md gap-2">
+                            <ArrowRightLeft className="h-4 w-4" />
+                            <span className="max-sm:hidden">Ajustes</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="replenishment" className="rounded-md gap-2">
+                            <RefreshCw className="h-4 w-4" />
+                            <span className="max-sm:hidden">Reabastecimiento</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="report" className="rounded-md gap-2">
                             <FileBarChart className="h-4 w-4" />
                             <span className="max-sm:hidden">Reporte Stock</span>
                         </TabsTrigger>
@@ -43,6 +53,12 @@ export default function UnifiedStockPage() {
                     </TabsContent>
                     <TabsContent value="movements" className="mt-0 outline-none">
                         <MovementList />
+                    </TabsContent>
+                    <TabsContent value="adjustments" className="mt-0 outline-none">
+                        <AdjustmentList />
+                    </TabsContent>
+                    <TabsContent value="replenishment" className="mt-0 outline-none">
+                        <ReplenishmentRuleList />
                     </TabsContent>
                     <TabsContent value="report" className="mt-0 outline-none">
                         <StockReport />

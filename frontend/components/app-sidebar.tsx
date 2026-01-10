@@ -61,11 +61,8 @@ const items = [
         icon: Package,
         items: [
             { title: "Productos", url: "/inventory/products" },
-            { title: "Ajustes de Stock", url: "/inventory/adjustments" },
-            { title: "Reabastecimiento", url: "/inventory/replenishment" },
-            { title: "Unidades de Medida", url: "/inventory/uoms" },
             { title: "Stock", url: "/inventory/stock" },
-            { title: "Reglas de Precio", url: "/inventory/pricing-rules" },
+            { title: "Unidades de Medida", url: "/inventory/uoms" },
         ]
     },
     {

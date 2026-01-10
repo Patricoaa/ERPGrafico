@@ -62,7 +62,7 @@ class Command(BaseCommand):
         
         # Add initial stock for raw materials
         self.stdout.write('Adding Initial Stock...')
-        self._create_initial_stock(inventory['warehouse'], inventory['raw_materials'])
+
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
 
@@ -291,14 +291,3 @@ class Command(BaseCommand):
         JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Aporte Inicial", debit=50000000, credit=0)
         JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social", debit=0, credit=50000000)
 
-    def _create_initial_stock(self, warehouse, products):
-        for prod in products:
-            if not StockMove.objects.filter(product=prod, warehouse=warehouse, description="SEED-STOCK").exists():
-                StockMove.objects.create(
-                    product=prod,
-                    warehouse=warehouse,
-                    quantity=500, # Start with 500 units/pliegos/kg
-                    move_type=StockMove.Type.IN,
-                    description="SEED-STOCK",
-                    date=timezone.now().date()
-                )
