@@ -710,7 +710,11 @@ class PurchasingService:
         """
         Deletes a purchase receipt, its journal entry, and associated stock moves.
         Also reverts quantity_received on the purchase order lines.
+        Only allowed for DRAFT receipts.
         """
+        if receipt.status != PurchaseReceipt.Status.DRAFT:
+            raise ValidationError("Solo se pueden eliminar recepciones en estado Borrador.")
+
         # 1. Revert received quantities & Delete Stock Moves
         for line in receipt.lines.all():
             if line.stock_move:
@@ -728,10 +732,90 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
+    def annul_receipt(receipt: PurchaseReceipt):
+        """
+        Annuls a confirmed receipt:
+        1. Reverses accounting entry.
+        2. Creates reversal stock movements (OUT).
+        3. Reverts received quantities on purchase lines.
+        4. Marks receipt as CANCELLED.
+        """
+        if receipt.status != PurchaseReceipt.Status.CONFIRMED:
+            raise ValidationError("Solo se pueden anular recepciones confirmadas.")
+
+        # 1. Reverse Accounting
+        if receipt.journal_entry:
+             JournalEntryService.reverse_entry(receipt.journal_entry, description=f"Anulación Recepción {receipt.number}")
+
+        # 2. Reverse Stock Moves & Update Purchase Lines
+        from inventory.models import StockMove
+        for line in receipt.lines.all():
+            # Create Reversal Move (OUT)
+            if line.stock_move:
+                StockMove.objects.create(
+                    date=timezone.now().date(),
+                    product=line.product,
+                    warehouse=receipt.warehouse,
+                    quantity=-abs(line.stock_move.quantity), # Negative OUT
+                    move_type=StockMove.Type.OUT,
+                    description=f"Anulación Recepción {receipt.number} ({line.product.code})"
+                )
+            
+            # Revert received quantity
+            line.purchase_line.quantity_received -= line.quantity_received
+            line.purchase_line.save()
+
+        # 3. Update Receipt Status
+        receipt.status = PurchaseReceipt.Status.CANCELLED
+        receipt.save()
+        
+        # 4. Update Order Status
+        PurchasingService._update_order_receiving_status(receipt.purchase_order)
+        
+        return receipt
+
+    @staticmethod
+    @transaction.atomic
+    def annul_purchase_order(order: PurchaseOrder):
+        """
+        Annuls a purchase order and all its associated documents (Invoices, Receipts, Payments).
+        """
+        if order.status == PurchaseOrder.Status.CANCELLED:
+             return order
+
+        from billing.models import Invoice
+        from billing.services import BillingService
+        from treasury.services import TreasuryService
+
+        # 1. Annul Invoices (Bills)
+        for invoice in order.invoices.all():
+            if invoice.status != Invoice.Status.CANCELLED:
+                 BillingService.annul_invoice(invoice)
+        
+        # 2. Annul Receipts
+        for receipt in order.receipts.all():
+            if receipt.status != PurchaseReceipt.Status.CANCELLED:
+                 PurchasingService.annul_receipt(receipt)
+        
+        # 3. Annul stand-alone Payments
+        for payment in order.payments.all():
+            if payment.journal_entry and payment.journal_entry.state == 'POSTED':
+                 TreasuryService.annul_payment(payment)
+
+        order.status = PurchaseOrder.Status.CANCELLED
+        order.save()
+        return order
+
+    @staticmethod
+    @transaction.atomic
     def delete_purchase_order(order: PurchaseOrder):
         """
         Deletes a purchase order, its invoices, and associated journal entries.
+        Only allowed for DRAFT orders.
         """
+        if order.status != PurchaseOrder.Status.DRAFT:
+            raise ValidationError("Solo se pueden eliminar órdenes de compra en estado Borrador.")
+
         from billing.services import BillingService
         from treasury.services import TreasuryService
         

@@ -177,7 +177,29 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        order = self.get_object()
+        try:
+            PurchasingService.annul_purchase_order(order)
+            return Response(PurchaseOrderSerializer(order).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class PurchaseReceiptViewSet(viewsets.ModelViewSet):
     queryset = PurchaseReceipt.objects.all()
     serializer_class = PurchaseReceiptSerializer
+
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        receipt = self.get_object()
+        try:
+            PurchasingService.annul_receipt(receipt)
+            return Response(PurchaseReceiptSerializer(receipt).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

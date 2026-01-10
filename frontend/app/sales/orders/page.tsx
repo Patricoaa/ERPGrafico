@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit, X } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -81,9 +81,21 @@ export default function SalesOrdersPage() {
             await api.delete(`/sales/orders/${id}/`)
             toast.success("Nota de Venta eliminada correctamente.")
             fetchOrders()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error deleting order:", error)
-            toast.error("Error al eliminar la nota de venta.")
+            toast.error(error.response?.data?.error || "Error al eliminar la nota de venta.")
+        }
+    }
+
+    const handleAnnul = async (id: number) => {
+        if (!confirm("¿Está seguro de que desea ANULAR esta Nota de Venta? Esta acción generará reversos contables y no se puede deshacer.")) return
+        try {
+            await api.post(`/sales/orders/${id}/annul/`)
+            toast.success("Nota de Venta anulada correctamente.")
+            fetchOrders()
+        } catch (error: any) {
+            console.error("Error annulling order:", error)
+            toast.error(error.response?.data?.error || "Error al anular la nota de venta.")
         }
     }
 
@@ -352,15 +364,27 @@ export default function SalesOrdersPage() {
                                             </Button>
                                         )}
 
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-destructive hover:text-destructive"
-                                            onClick={() => handleDelete(order.id)}
-                                            title="Eliminar"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                        {order.status === 'DRAFT' ? (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-destructive hover:text-destructive"
+                                                onClick={() => handleDelete(order.id)}
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        ) : order.status !== 'CANCELLED' ? (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-destructive hover:text-destructive"
+                                                onClick={() => handleAnnul(order.id)}
+                                                title="Anular"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        ) : null}
                                     </div>
                                 </TableCell>
                             </TableRow>

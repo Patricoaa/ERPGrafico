@@ -54,7 +54,7 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
     # Links
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='purchase_order'
     )
@@ -170,7 +170,7 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
     # Link to Accounting (if needed for cost adjustments or accruals)
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='purchase_receipt'
     )

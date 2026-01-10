@@ -78,9 +78,23 @@ export default function PaymentsPage() {
             await api.delete(`/treasury/payments/${id}/`)
             toast.success("Pago eliminado correctamente")
             fetchPayments()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to delete payment", error)
-            toast.error("Error al eliminar el pago")
+            // If it failed because it's posted, suggest annullment? 
+            // Better to handle it based on status if we have it in the frontend.
+            toast.error(error.response?.data?.error || "Error al eliminar el pago")
+        }
+    }
+
+    const handleAnnulPayment = async (id: number) => {
+        if (!confirm("¿Está seguro de ANULAR este pago? Esta acción generará reversos contables y no se puede deshacer.")) return
+        try {
+            await api.post(`/treasury/payments/${id}/annul/`)
+            toast.success("Pago anulado correctamente")
+            fetchPayments()
+        } catch (error: any) {
+            console.error("Failed to annul payment", error)
+            toast.error(error.response?.data?.error || "Error al anular el pago")
         }
     }
 
@@ -244,10 +258,10 @@ export default function PaymentsPage() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8"
-                                            onClick={() => handleDeletePayment(payment.id)}
-                                            title="Eliminar"
+                                            onClick={() => handleAnnulPayment(payment.id)}
+                                            title="Anular"
                                         >
-                                            <Trash2 className="h-4 w-4 text-red-600" />
+                                            <X className="h-4 w-4 text-red-600" />
                                         </Button>
                                     </div>
                                 </TableCell>

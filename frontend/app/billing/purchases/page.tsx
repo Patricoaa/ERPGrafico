@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit } from "lucide-react"
+import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -86,15 +86,27 @@ export default function PurchaseInvoicesPage() {
     }
 
     const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este documento? Se revertirán los efectos contables e inventario.")) return
+        if (!confirm("¿Está seguro de eliminar este documento?")) return
 
         try {
             await api.delete(`/billing/invoices/${id}/`)
             toast.success("Documento eliminado correctamente")
             fetchDocuments()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error deleting document:", error)
-            toast.error("No se pudo eliminar el documento")
+            toast.error(error.response?.data?.error || "No se pudo eliminar el documento")
+        }
+    }
+
+    const handleAnnul = async (id: number) => {
+        if (!confirm("¿Está seguro de ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
+        try {
+            await api.post(`/billing/invoices/${id}/annul/`)
+            toast.success("Documento anulado correctamente.")
+            fetchDocuments()
+        } catch (error: any) {
+            console.error("Error annulling invoice:", error)
+            toast.error(error.response?.data?.error || "Error al anular el documento.")
         }
     }
 
@@ -403,16 +415,27 @@ export default function PurchaseInvoicesPage() {
                                                     </Button>
                                                 )}
 
-                                                {/* Delete */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive"
-                                                    onClick={() => handleDelete(doc.id)}
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                {doc.status === 'DRAFT' ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive"
+                                                        onClick={() => handleDelete(doc.id)}
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                ) : doc.status !== 'CANCELLED' ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive"
+                                                        onClick={() => handleAnnul(doc.id)}
+                                                        title="Anular Documento"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                ) : null}
                                             </div>
                                         </TableCell>
                                     </TableRow>

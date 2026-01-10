@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, CheckCircle, Package, FileText, History, Banknote, FileEdit } from "lucide-react"
+import { Pencil, Trash2, CheckCircle, Package, FileText, History, Banknote, FileEdit, X } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -78,9 +78,21 @@ export default function PurchaseOrdersPage() {
             await api.delete(`/purchasing/orders/${id}/`)
             toast.success("Orden de Compra eliminada correctamente.")
             fetchOrders()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error deleting order:", error)
-            toast.error("Error al eliminar la orden de compra.")
+            toast.error(error.response?.data?.error || "Error al eliminar la orden de compra.")
+        }
+    }
+
+    const handleAnnul = async (id: number) => {
+        if (!confirm("¿Está seguro de que desea ANULAR esta Orden de Compra? Esta acción generará reversos contables y no se puede deshacer.")) return
+        try {
+            await api.post(`/purchasing/orders/${id}/annul/`)
+            toast.success("Orden de Compra anulada correctamente.")
+            fetchOrders()
+        } catch (error: any) {
+            console.error("Error annulling order:", error)
+            toast.error(error.response?.data?.error || "Error al anular la orden de compra.")
         }
     }
 
@@ -274,18 +286,29 @@ export default function PurchaseOrdersPage() {
                                             </>
                                         )}
 
-                                        {/* Delete Purchase Order */}
-                                        {!order.related_documents?.invoices?.length && (
+                                        {order.status === 'DRAFT' ? (
+                                            !order.related_documents?.invoices?.length && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-destructive hover:text-destructive"
+                                                    onClick={() => handleDelete(order.id)}
+                                                    title="Eliminar Orden de Compra"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )
+                                        ) : order.status !== 'CANCELLED' ? (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-destructive hover:text-destructive"
-                                                onClick={() => handleDelete(order.id)}
-                                                title="Eliminar Orden de Compra"
+                                                onClick={() => handleAnnul(order.id)}
+                                                title="Anular"
                                             >
-                                                <Trash2 className="h-4 w-4" />
+                                                <X className="h-4 w-4" />
                                             </Button>
-                                        )}
+                                        ) : null}
                                     </div>
                                 </TableCell>
                             </TableRow>

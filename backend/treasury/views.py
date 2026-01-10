@@ -146,3 +146,14 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return Response({'message': 'Acción de crédito procesada (documento registrado)'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        payment = self.get_object()
+        try:
+            TreasuryService.annul_payment(payment)
+            return Response(PaymentSerializer(payment).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

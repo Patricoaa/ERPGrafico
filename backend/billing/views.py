@@ -112,7 +112,17 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             print(f"DEBUG: pos_checkout ValidationError: {e}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print(f"DEBUG: pos_checkout Exception: {e}")
             import traceback
             traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        invoice = self.get_object()
+        try:
+            BillingService.annul_invoice(invoice)
+            return Response(InvoiceSerializer(invoice).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

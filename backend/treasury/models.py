@@ -99,7 +99,7 @@ class Payment(models.Model):
     # Link to Accounting
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='payment'
     )

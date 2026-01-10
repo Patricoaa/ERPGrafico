@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, Banknote, History } from "lucide-react"
+import { Search, Eye, Banknote, History, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -32,6 +32,18 @@ export default function SalesInvoicesPage() {
             toast.error("Error al cargar facturas")
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleAnnul = async (id: number) => {
+        if (!confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
+        try {
+            await api.post(`/billing/invoices/${id}/annul/`)
+            toast.success("Documento anulado correctamente.")
+            fetchInvoices()
+        } catch (error: any) {
+            console.error("Error annulling invoice:", error)
+            toast.error(error.response?.data?.error || "Error al anular el documento.")
         }
     }
 
@@ -100,8 +112,8 @@ export default function SalesInvoicesPage() {
                                         ${Number(inv.total).toLocaleString()}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={inv.status === 'PAID' ? 'success' : inv.status === 'POSTED' ? 'info' : 'secondary'}>
-                                            {inv.status_display}
+                                        <Badge variant={inv.status === 'PAID' ? 'success' : inv.status === 'POSTED' ? 'info' : inv.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
+                                            {inv.status === 'CANCELLED' ? 'Anulado' : inv.status_display}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
@@ -123,6 +135,17 @@ export default function SalesInvoicesPage() {
                                                     title="Historial de Pagos"
                                                 >
                                                     <History className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                            {inv.status !== 'CANCELLED' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-destructive hover:text-destructive"
+                                                    onClick={() => handleAnnul(inv.id)}
+                                                    title="Anular Documento"
+                                                >
+                                                    <X className="h-4 w-4" />
                                                 </Button>
                                             )}
                                         </div>

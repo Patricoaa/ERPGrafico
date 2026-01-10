@@ -374,7 +374,11 @@ class BillingService:
     def delete_invoice(invoice: Invoice):
         """
         Deletes an invoice, its associated Journal Entry, and its associated payments.
+        Only allowed for DRAFT invoices.
         """
+        if invoice.status != Invoice.Status.DRAFT:
+            raise ValidationError("Solo se pueden eliminar facturas en estado Borrador.")
+
         from treasury.services import TreasuryService
         
         # 1. Delete associated payments
@@ -390,3 +394,38 @@ class BillingService:
         
         # 3. Delete invoice
         invoice.delete()
+
+    @staticmethod
+    @transaction.atomic
+    def annul_invoice(invoice: Invoice):
+        """
+        Annuls a POSTED invoice.
+        Reverses the accounting entry and marks as CANCELLED.
+        """
+        if invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
+             raise ValidationError("Solo se pueden anular facturas publicadas o pagadas.")
+
+        # 1. Reverse Accounting Entry
+        if invoice.journal_entry:
+            JournalEntryService.reverse_entry(invoice.journal_entry, description=f"Anulación Factura {invoice.number}")
+        
+        # 2. Handle associated payments? 
+        # Ideally, payments should be annulled separately, or we warn here.
+        if invoice.payments.filter(journal_entry__state='POSTED').exists():
+             # For now, we allow annullment but warn or require payment annullment first.
+             # Strict: block if payments exist.
+             raise ValidationError("Debe anular los pagos asociados antes de anular la factura.")
+
+        # 3. Update Status
+        invoice.status = Invoice.Status.CANCELLED
+        invoice.save()
+
+        # 4. Update Order Status
+        if invoice.sale_order:
+            invoice.sale_order.status = SaleOrder.Status.CONFIRMED # Revert to confirmed
+            invoice.sale_order.save()
+        elif invoice.purchase_order:
+             invoice.purchase_order.status = PurchaseOrder.Status.RECEIVED # Revert to received
+             invoice.purchase_order.save()
+        
+        return invoice

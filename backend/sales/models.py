@@ -55,7 +55,7 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     # Link to Accounting
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='sale_order'
     )
@@ -178,7 +178,7 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
     # Link to Accounting (for COGS entry)
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='sale_delivery'
     )

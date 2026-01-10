@@ -27,6 +27,47 @@ class JournalEntryService:
         return entry
 
     @staticmethod
+    @transaction.atomic
+    def reverse_entry(entry: JournalEntry, description=None):
+        """
+        Creates a new Journal Entry that is the exact mirror of the original.
+        Debit becomes Credit, Credit becomes Debit.
+        Returns the new reversal entry.
+        """
+        if entry.state != JournalEntry.State.POSTED:
+            raise ValidationError("Solo se pueden reversar asientos que han sido publicados.")
+
+        from django.utils import timezone
+        
+        # 1. Create reversal entry
+        reversal = JournalEntry.objects.create(
+            date=timezone.now().date(),
+            description=description or f"REVERSO: {entry.description}",
+            reference=f"REV-{entry.number or entry.id}",
+            state=JournalEntry.State.DRAFT
+        )
+        
+        # 2. Mirror items
+        for item in entry.items.all():
+            JournalItem.objects.create(
+                entry=reversal,
+                account=item.account,
+                partner=item.partner,
+                label=f"REV: {item.label}"[:255],
+                debit=item.credit,
+                credit=item.debit
+            )
+        
+        # 3. Post reversal
+        JournalEntryService.post_entry(reversal)
+        
+        # 4. Mark original as CANCELLED to indicate it shouldn't be touched/reversed again
+        entry.state = JournalEntry.State.CANCELLED
+        entry.save()
+        
+        return reversal
+
+    @staticmethod
     def create_entry(data, items_data):
         """
         Creates a JournalEntry and its items.

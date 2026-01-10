@@ -220,7 +220,49 @@ class TreasuryService:
     def delete_payment(payment: Payment):
         """
         Deletes a payment and its associated Journal Entry.
+        Only allowed if the Journal Entry is DRAFT.
         """
+        if payment.journal_entry and payment.journal_entry.state == JournalEntry.State.POSTED:
+            raise ValidationError("No se puede eliminar un pago cuyo asiento contable ya ha sido publicado.")
+
         if payment.journal_entry:
             payment.journal_entry.delete()
         payment.delete()
+
+    @staticmethod
+    @transaction.atomic
+    def annul_payment(payment: Payment):
+        """
+        Annuls a payment record and its accounting entry.
+        """
+        if not payment.journal_entry or payment.journal_entry.state != JournalEntry.State.POSTED:
+             # If it's DRAFT, user should just delete it.
+             raise ValidationError("Solo se pueden anular pagos con asientos contables publicados.")
+
+        # 1. Reverse Accounting Entry
+        JournalEntryService.reverse_entry(payment.journal_entry, description=f"Anulación Pago {payment.id}")
+
+        # 2. Update Invoice/Order Totals (by letting them know a payment was reversed)
+        # The balance logic usually handles this, but if we have hardcoded status 'PAID', we might need to revert it.
+        target = payment.invoice or payment.sale_order or payment.purchase_order
+        if target and hasattr(target, 'status') and target.status == 'PAID':
+             # Revert status to INVOICED or CONFIRMED
+             from billing.models import Invoice
+             from sales.models import SaleOrder
+             from purchasing.models import PurchaseOrder
+
+             if isinstance(target, Invoice):
+                  target.status = Invoice.Status.POSTED
+             elif isinstance(target, SaleOrder):
+                  target.status = SaleOrder.Status.INVOICED
+             elif isinstance(target, PurchaseOrder):
+                  target.status = PurchaseOrder.Status.INVOICED
+             
+             target.save()
+
+        # 3. We don't have a CANCELLED status on Payment model, so we might want to add one 
+        # OR just rely on the JournalEntry state. 
+        # For now, we delete the link to the original JE (which is now CANCELLED via reverse_entry) 
+        # actually reverse_entry marks original as CANCELLED.
+        
+        return payment

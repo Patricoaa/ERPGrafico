@@ -300,7 +300,11 @@ class SalesService:
     def delete_sale_order(order: SaleOrder):
         """
         Deletes a sale order, its invoices, and associated journal entries.
+        Only allowed for DRAFT orders.
         """
+        if order.status != SaleOrder.Status.DRAFT:
+            raise ValidationError("Solo se pueden eliminar notas de venta en estado Borrador.")
+
         from billing.services import BillingService
         from treasury.services import TreasuryService
         
@@ -319,6 +323,82 @@ class SalesService:
             
         # 4. Delete Order
         order.delete()
+
+    @staticmethod
+    @transaction.atomic
+    def annul_delivery(delivery: SaleDelivery):
+        """
+        Annuls a confirmed delivery:
+        1. Reverses COGS accounting entry.
+        2. Creates reversal stock movements (IN).
+        3. Reverts delivered quantities on sale lines.
+        4. Marks delivery as CANCELLED.
+        """
+        if delivery.status != SaleDelivery.Status.CONFIRMED:
+            raise ValidationError("Solo se pueden anular despachos confirmados.")
+
+        # 1. Reverse Accounting
+        if delivery.journal_entry:
+            JournalEntryService.reverse_entry(delivery.journal_entry, description=f"Anulación Despacho {delivery.number}")
+
+        # 2. Reverse Stock Moves & Update Sale Lines
+        from inventory.models import StockMove
+        for line in delivery.lines.all():
+            # Create Reversal Move (IN)
+            if line.stock_move:
+                StockMove.objects.create(
+                    date=timezone.now().date(),
+                    product=line.product,
+                    warehouse=delivery.warehouse,
+                    quantity=abs(line.stock_move.quantity), # Positive IN
+                    move_type=StockMove.Type.IN,
+                    description=f"Anulación Despacho {delivery.number} ({line.product.code})"
+                )
+            
+            # Revert delivered quantity
+            line.sale_line.quantity_delivered -= line.quantity
+            line.sale_line.save()
+
+        # 3. Update Delivery Status
+        delivery.status = SaleDelivery.Status.CANCELLED
+        delivery.save()
+        
+        # 4. Update Order Delivery Status
+        SalesService._update_order_delivery_status(delivery.sale_order)
+        
+        return delivery
+
+    @staticmethod
+    @transaction.atomic
+    def annul_sale_order(order: SaleOrder):
+        """
+        Annuls a sale order and all its associated documents.
+        """
+        if order.status == SaleOrder.Status.CANCELLED:
+             return order
+             
+        from billing.models import Invoice
+        from billing.services import BillingService
+        from treasury.services import TreasuryService
+
+        # 1. Annul Invoices (this will block if payments exist)
+        for invoice in order.invoices.all():
+            if invoice.status != Invoice.Status.CANCELLED:
+                 BillingService.annul_invoice(invoice)
+        
+        # 2. Annul Deliveries
+        for delivery in order.deliveries.all():
+            if delivery.status != SaleDelivery.Status.CANCELLED:
+                 SalesService.annul_delivery(delivery)
+        
+        # 3. Annul stand-alone Payments (if any)
+        for payment in order.payments.all():
+            if payment.journal_entry and payment.journal_entry.state == 'POSTED':
+                 TreasuryService.annul_payment(payment)
+        
+        order.status = SaleOrder.Status.CANCELLED
+        order.save()
+        return order
     @staticmethod
     @transaction.atomic
     def create_note(order: SaleOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 

@@ -171,6 +171,28 @@ class SaleOrderViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        order = self.get_object()
+        try:
+            SalesService.annul_sale_order(order)
+            return Response(SaleOrderSerializer(order).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class SaleDeliveryViewSet(viewsets.ModelViewSet):
     queryset = SaleDelivery.objects.all()
     serializer_class = SaleDeliverySerializer
+
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        delivery = self.get_object()
+        try:
+            SalesService.annul_delivery(delivery)
+            return Response(SaleDeliverySerializer(delivery).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
