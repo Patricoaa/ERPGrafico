@@ -207,6 +207,7 @@ class SaleDeliveryLine(models.Model):
     delivery = models.ForeignKey(SaleDelivery, on_delete=models.CASCADE, related_name='lines')
     sale_line = models.ForeignKey(SaleLine, on_delete=models.PROTECT, related_name='delivery_lines')
     product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT, related_name='delivery_lines')
+    uom = models.ForeignKey('inventory.UoM', on_delete=models.PROTECT, related_name='delivery_lines', null=True, blank=True)
     
     quantity = models.DecimalField(
         _("Cantidad"), 

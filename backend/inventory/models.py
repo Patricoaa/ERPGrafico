@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from accounting.models import Account, AccountType
@@ -379,7 +380,8 @@ class Product(models.Model):
     def qty_on_hand(self):
         """Current physical stock (sum of all moves)."""
         from django.db.models import Sum
-        return self.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
+        from decimal import Decimal
+        return self.moves.aggregate(total=Sum('quantity'))['total'] or Decimal('0.0')
 
     @property
     def qty_reserved(self):
@@ -387,6 +389,7 @@ class Product(models.Model):
         Quantity reserved for confirmed sales that haven't been fully delivered.
         """
         from sales.models import SaleOrder, SaleLine
+        from decimal import Decimal
         
         # Check sales that are CONFIRMED and NOT fully delivered
         pending_lines = SaleLine.objects.filter(
@@ -396,9 +399,9 @@ class Product(models.Model):
             order__delivery_status=SaleOrder.DeliveryStatus.DELIVERED
         )
         
-        total_reserved = 0.0
+        total_reserved = Decimal('0.0')
         for line in pending_lines:
-            total_reserved += float(line.quantity_pending)
+            total_reserved += line.quantity_pending
             
         return total_reserved
 
@@ -407,7 +410,7 @@ class Product(models.Model):
         """
         Quantity available for new sales (On Hand - Reserved).
         """
-        return float(self.qty_on_hand) - self.qty_reserved
+        return self.qty_on_hand - self.qty_reserved
 
 
 class Warehouse(models.Model):
@@ -428,9 +431,10 @@ class StockMove(models.Model):
         OUT = 'OUT', _('Salida')
         ADJUSTMENT = 'ADJ', _('Ajuste')
 
-    date = models.DateField(_("Fecha"))
-    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='moves')
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='moves')
+    date = models.DateField(_("Fecha"), default=timezone.now)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='stock_moves')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='stock_moves')
+    uom = models.ForeignKey(UoM, on_delete=models.PROTECT, related_name='stock_moves_uom', null=True, blank=True)
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4) # Pos for Add, Neg for Remove
     move_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
     

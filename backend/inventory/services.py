@@ -38,6 +38,7 @@ class StockService:
             date=timezone.now().date(),
             product=product,
             warehouse=warehouse,
+            uom=product.uom,
             quantity=quantity,
             move_type=move_type,
             description=description
@@ -440,16 +441,17 @@ class ProcurementService:
 
         # 2. Calculate virtual stock
         # Virtual Stock = On Hand - Reserved + On Order
-        on_hand = Decimal(str(product.qty_on_hand))
-        reserved = Decimal(str(product.qty_reserved))
+        on_hand = product.qty_on_hand
+        reserved = product.qty_reserved
         
         # Calculate On Order (confirmed POs not yet received)
         from purchasing.models import PurchaseLine, PurchaseOrder
+        from django.db.models import Sum
         on_order = PurchaseLine.objects.filter(
             product=product,
             order__warehouse=warehouse,
             order__status=PurchaseOrder.Status.CONFIRMED
-        ).aggregate(total=models.Sum('quantity'))['total'] or Decimal('0')
+        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
         
         # Adjust on_order if partial receipts exist (actually qty_pending might be better)
         # For simplicity in this iteration:

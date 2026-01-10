@@ -174,6 +174,7 @@ class SalesService:
             delivery=delivery,
             sale_line=sale_line,
             product=product,
+            uom=sale_line.uom,
             quantity=quantity,
             unit_cost=unit_cost
         )
@@ -207,10 +208,12 @@ class SalesService:
                 )
 
                 # Create stock move (OUT)
+                print(f"DEBUG: Creating StockMove for product {product.code}, qty {-base_qty}, warehouse {delivery.warehouse.name}")
                 stock_move = StockMove.objects.create(
                     date=delivery.delivery_date,
                     product=product,
                     warehouse=delivery.warehouse,
+                    uom=product.uom,
                     quantity=-base_qty,
                     move_type=StockMove.Type.OUT,
                     description=f"Despacho-{delivery.number} (NV-{delivery.sale_order.number})"
