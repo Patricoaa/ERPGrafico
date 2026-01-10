@@ -42,7 +42,7 @@ const bomSchema = z.object({
         component_name: z.string().optional(), // For display
         component_cost: z.number().optional(), // For display
         quantity: z.coerce.number().min(0.0001, "Cantidad debe ser mayor a 0"),
-        uom: z.string().optional(), // UoM ID as string
+        uom: z.string().min(1, "Unidad requerida"), // UoM ID as string - REQUIRED
         uom_name: z.string().optional(), // For display
         notes: z.string().optional()
     })).min(1, "Debe agregar al menos un componente")
@@ -187,11 +187,9 @@ export function BOMFormDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="max-w-4xl max-h-[90vh] flex flex-col"
-                onPointerDownOutside={(e) => e.preventDefault()}
-                onInteractOutside={(e) => e.preventDefault()}
+                className="max-w-6xl max-h-[90vh] flex flex-col"
             >
                 <DialogHeader className="pr-12">
                     <DialogTitle className="flex items-center gap-2 text-xl font-bold">
@@ -284,7 +282,7 @@ export function BOMFormDialog({
                                     <Button
                                         type="button"
                                         size="sm"
-                                        onClick={() => append({ component: "", quantity: 1, uom: "", notes: "" })}
+                                        onClick={() => append({ component: "", quantity: 1, uom: "", component_cost: 0, notes: "" })}
                                         className="gap-2"
                                     >
                                         <Plus className="h-4 w-4" />
@@ -323,9 +321,9 @@ export function BOMFormDialog({
                                                                                 if (p && p.uom) {
                                                                                     form.setValue(`lines.${index}.uom`, p.uom.toString());
                                                                                     form.setValue(`lines.${index}.uom_name`, p.uom_name);
-                                                                                }
-                                                                                if (p && p.cost_price !== undefined) {
-                                                                                    form.setValue(`lines.${index}.component_cost`, p.cost_price);
+                                                                                    // Store base cost (cost in base UoM)
+                                                                                    const baseCost = p.cost_price || 0;
+                                                                                    form.setValue(`lines.${index}.component_cost`, baseCost);
                                                                                 }
                                                                             }}
                                                                             placeholder="Buscar componente..."
