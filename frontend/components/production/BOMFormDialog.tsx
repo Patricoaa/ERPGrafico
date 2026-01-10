@@ -40,6 +40,7 @@ const bomSchema = z.object({
         component: z.string().min(1, "Componente requerido"), // ID as string
         component_code: z.string().optional(), // For display
         component_name: z.string().optional(), // For display
+        component_cost: z.number().optional(), // For display
         quantity: z.coerce.number().min(0.0001, "Cantidad debe ser mayor a 0"),
         uom: z.string().optional(), // UoM ID as string
         uom_name: z.string().optional(), // For display
@@ -56,6 +57,7 @@ type BOMFormValues = {
         component: string
         component_code?: string
         component_name?: string
+        component_cost?: number
         quantity: number
         uom?: string
         uom_name?: string
@@ -131,6 +133,7 @@ export function BOMFormDialog({
                         component: l.component.toString(),
                         component_code: l.component_code,
                         component_name: l.component_name,
+                        component_cost: l.component_cost || 0,
                         quantity: l.quantity,
                         uom: l.uom?.toString() || "",
                         uom_name: l.uom_name || "",
@@ -293,9 +296,10 @@ export function BOMFormDialog({
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead className="w-[40%]">Componente</TableHead>
-                                                <TableHead className="w-[20%]">Cantidad</TableHead>
-                                                <TableHead className="w-[15%]">Unidad</TableHead>
+                                                <TableHead className="w-[30%]">Componente</TableHead>
+                                                <TableHead className="w-[15%]">Cantidad</TableHead>
+                                                <TableHead className="w-[12%]">Unidad</TableHead>
+                                                <TableHead className="w-[13%] text-right">Costo Unit.</TableHead>
                                                 <TableHead>Notas</TableHead>
                                                 <TableHead className="w-[50px]"></TableHead>
                                             </TableRow>
@@ -314,11 +318,14 @@ export function BOMFormDialog({
                                                                             value={propField.value}
                                                                             onChange={(val: string | null) => {
                                                                                 propField.onChange(val)
-                                                                                // Auto-set uom if empty
+                                                                                // Auto-set uom and cost if empty
                                                                                 const p = products.find((prod: any) => prod.id.toString() === val?.toString());
                                                                                 if (p && p.uom) {
                                                                                     form.setValue(`lines.${index}.uom`, p.uom.toString());
                                                                                     form.setValue(`lines.${index}.uom_name`, p.uom_name);
+                                                                                }
+                                                                                if (p && p.cost_price !== undefined) {
+                                                                                    form.setValue(`lines.${index}.component_cost`, p.cost_price);
                                                                                 }
                                                                             }}
                                                                             placeholder="Buscar componente..."
@@ -410,6 +417,11 @@ export function BOMFormDialog({
                                                         />
                                                     </TableCell>
                                                     <TableCell>
+                                                        <div className="text-right font-mono text-sm text-muted-foreground">
+                                                            ${(form.watch(`lines.${index}.component_cost`) || 0).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
                                                         <FormField
                                                             control={form.control}
                                                             name={`lines.${index}.notes`}
@@ -438,7 +450,7 @@ export function BOMFormDialog({
                                             ))}
                                             {fields.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                                         No hay componentes definidos. Agregue uno para comenzar.
                                                     </TableCell>
                                                 </TableRow>

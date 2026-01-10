@@ -24,6 +24,7 @@ interface BOM {
     product_name: string
     active: boolean
     lines_count: number
+    total_cost: number
 }
 
 export default function BOMsPage() {
@@ -103,6 +104,7 @@ export default function BOMsPage() {
                             <TableHead>Producto</TableHead>
                             <TableHead>Nombre / Versión</TableHead>
                             <TableHead className="text-center">Componentes</TableHead>
+                            <TableHead className="text-right">Costo Total</TableHead>
                             <TableHead className="text-center">Estado</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -117,6 +119,9 @@ export default function BOMsPage() {
                                         <Layers className="h-3 w-3" />
                                         {bom.lines_count || 0}
                                     </Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                    ${(bom.total_cost || 0).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </TableCell>
                                 <TableCell className="text-center">
                                     {bom.active ? (
@@ -152,14 +157,14 @@ export default function BOMsPage() {
                         ))}
                         {loading && (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8">
+                                <TableCell colSpan={6} className="text-center py-8">
                                     Cargando...
                                 </TableCell>
                             </TableRow>
                         )}
                         {!loading && filteredBoms.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                     No se encontraron listas de materiales.
                                 </TableCell>
                             </TableRow>

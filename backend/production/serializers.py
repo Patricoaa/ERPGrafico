@@ -29,11 +29,12 @@ class WorkOrderSerializer(serializers.ModelSerializer):
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_code = serializers.CharField(source='component.code', read_only=True)
     component_name = serializers.CharField(source='component.name', read_only=True)
+    component_cost = serializers.DecimalField(source='component.cost_price', read_only=True, max_digits=12, decimal_places=2)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
     
     class Meta:
         model = BillOfMaterialsLine
-        fields = ['id', 'component', 'component_code', 'component_name', 'quantity', 'uom', 'uom_name', 'notes']
+        fields = ['id', 'component', 'component_code', 'component_name', 'component_cost', 'quantity', 'uom', 'uom_name', 'notes']
 
     def validate(self, data):
         component = data.get('component')
@@ -59,10 +60,22 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
     lines = BillOfMaterialsLineSerializer(many=True, required=False)
     product_code = serializers.CharField(source='product.code', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
+    lines_count = serializers.SerializerMethodField()
+    total_cost = serializers.SerializerMethodField()
     
     class Meta:
         model = BillOfMaterials
         fields = '__all__'
+    
+    def get_lines_count(self, obj):
+        return obj.lines.count()
+    
+    def get_total_cost(self, obj):
+        from decimal import Decimal
+        total = Decimal('0.00')
+        for line in obj.lines.all():
+            total += line.quantity * line.component.cost_price
+        return float(total)
 
     def validate(self, data):
         product = data.get('product')
