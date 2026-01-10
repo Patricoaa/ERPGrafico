@@ -336,7 +336,7 @@ class Product(models.Model):
                 continue
             
             # Get component's current stock (in Base UoM)
-            component_stock = component.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
+            component_stock = component.stock_moves.aggregate(total=Sum('quantity'))['total'] or 0.0
             component_stock = float(component_stock)
             
             # Unit Conversion Logic using UoMService

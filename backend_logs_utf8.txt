@@ -1,0 +1,164 @@
+﻿Applying database migrations...
+Operations to perform:
+  Apply all migrations: account, accounting, admin, auth, billing, contacts, contenttypes, core, django_celery_beat, inventory, production, purchasing, sales, services, sessions, socialaccount, treasury
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying core.0001_initial... OK
+  Applying account.0001_initial... OK
+  Applying account.0002_email_max_length... OK
+  Applying account.0003_alter_emailaddress_create_unique_verified_email... OK
+  Applying account.0004_alter_emailaddress_drop_unique_email... OK
+  Applying account.0005_emailaddress_idx_upper_email... OK
+  Applying account.0006_emailaddress_lower... OK
+  Applying account.0007_emailaddress_idx_email... OK
+  Applying account.0008_emailaddress_unique_primary_email_fixup... OK
+  Applying account.0009_emailaddress_unique_primary_email... OK
+  Applying accounting.0001_initial... OK
+  Applying sales.0001_initial... OK
+  Applying inventory.0001_initial... OK
+  Applying purchasing.0001_initial... OK
+  Applying treasury.0001_initial... OK
+  Applying sales.0002_alter_saleorder_status... OK
+  Applying purchasing.0002_alter_purchaseorder_status... OK
+  Applying accounting.0002_accountingsettings... OK
+  Applying accounting.0003_remove_accountingsettings_default_tax_account_and_more... OK
+  Applying billing.0001_initial... OK
+  Applying treasury.0002_payment_invoice... OK
+  Applying treasury.0003_payment_is_pending_registration_and_more... OK
+  Applying accounting.0004_accountingsettings_default_card_account_and_more... OK
+  Applying accounting.0005_journalentry_number... OK
+  Applying accounting.0006_alter_account_code... OK
+  Applying accounting.0007_accountingsettings_inventory_valuation_method... OK
+  Applying treasury.0004_remove_payment_journal_payment_account_and_more... OK
+  Applying accounting.0008_remove_accountingsettings_default_card_account_and_more... OK
+  Applying treasury.0005_alter_payment_account_treasuryaccount_and_more... OK
+  Applying accounting.0009_accountingsettings_default_card_treasury_account_and_more... OK
+  Applying accounting.0010_remove_accountingsettings_default_card_treasury_account_and_more... OK
+  Applying accounting.0011_accountingsettings_stock_input_account_and_more... OK
+  Applying accounting.0012_accountingsettings_default_advance_payment_account_and_more... OK
+  Applying accounting.0013_budget_budgetitem... OK
+  Applying accounting.0014_alter_budgetitem_unique_together_budgetitem_month_and_more... OK
+  Applying accounting.0015_account_cf_category_account_is_category... OK
+  Applying accounting.0016_account_is_selectable... OK
+  Applying accounting.0017_remove_account_is_selectable... OK
+  Applying accounting.0018_account_bs_category... OK
+  Applying accounting.0019_add_consumable_account... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying contacts.0001_initial... OK
+  Applying treasury.0006_remove_payment_customer_remove_payment_supplier_and_more... OK
+  Applying billing.0002_invoice_document_attachment... OK
+  Applying billing.0003_alter_invoice_dte_type... OK
+  Applying billing.0004_alter_invoice_date... OK
+  Applying services.0001_initial... OK
+  Applying services.0002_remove_servicecategory_is_tax_deductible... OK
+  Applying billing.0005_invoice_contact... OK
+  Applying billing.0006_invoice_service_obligation... OK
+  Applying billing.0007_alter_invoice_journal_entry... OK
+  Applying core.0002_companysettings... OK
+  Applying django_celery_beat.0001_initial... OK
+  Applying django_celery_beat.0002_auto_20161118_0346... OK
+  Applying django_celery_beat.0003_auto_20161209_0049... OK
+  Applying django_celery_beat.0004_auto_20170221_0000... OK
+  Applying django_celery_beat.0005_add_solarschedule_events_choices... OK
+  Applying django_celery_beat.0006_auto_20180322_0932... OK
+  Applying django_celery_beat.0007_auto_20180521_0826... OK
+  Applying django_celery_beat.0008_auto_20180914_1922... OK
+  Applying django_celery_beat.0006_auto_20180210_1226... OK
+  Applying django_celery_beat.0006_periodictask_priority... OK
+  Applying django_celery_beat.0009_periodictask_headers... OK
+  Applying django_celery_beat.0010_auto_20190429_0326... OK
+  Applying django_celery_beat.0011_auto_20190508_0153... OK
+  Applying django_celery_beat.0012_periodictask_expire_seconds... OK
+  Applying django_celery_beat.0013_auto_20200609_0727... OK
+  Applying django_celery_beat.0014_remove_clockedschedule_enabled... OK
+  Applying django_celery_beat.0015_edit_solarschedule_events_choices... OK
+  Applying django_celery_beat.0016_alter_crontabschedule_timezone... OK
+  Applying django_celery_beat.0017_alter_crontabschedule_month_of_year... OK
+  Applying django_celery_beat.0018_improve_crontab_helptext... OK
+  Applying django_celery_beat.0019_alter_periodictasks_options... OK
+  Applying purchasing.0003_purchaseorder_payment_method... OK
+  Applying inventory.0002_alter_product_cost_price... OK
+  Applying inventory.0002_add_manufacturable_type... OK
+  Applying inventory.0003_merge_20260102_1735... OK
+  Applying purchasing.0004_purchaseline_quantity_received_and_more... OK
+  Applying purchasing.0005_purchasereceipt_delivery_reference... OK
+  Applying purchasing.0006_alter_purchaseorder_supplier_delete_supplier... OK
+  Applying inventory.0004_productattribute_product_variant_of_and_more... OK
+  Applying inventory.0005_uom_uomcategory_product_purchase_uom_product_uom_and_more... OK
+  Applying purchasing.0007_purchaseline_uom... OK
+  Applying purchasing.0008_alter_purchaseorder_journal_entry_and_more... OK
+  Applying inventory.0006_product_image_productcategory_icon... OK
+  Applying inventory.0007_pricingrule... OK
+  Applying inventory.0008_remove_productattributevalue_attribute_and_more... OK
+  Applying inventory.0009_refine_product_types... OK
+  Applying inventory.0010_pricingrule_max_quantity_pricingrule_operator_and_more... OK
+  Applying inventory.0011_product_sale_uom... OK
+  Applying inventory.0012_customfieldtemplate_product_has_bom_and_more... OK
+  Applying inventory.0013_product_internal_code_productcategory_prefix_and_more... OK
+  Applying inventory.0014_delete_billofmaterials... OK
+  Applying inventory.0015_product_allowed_sale_uoms... OK
+  Applying inventory.0016_product_mfg_default_delivery_days_and_more... OK
+  Applying inventory.0017_remove_product_mfg_show_contacts_and_more... OK
+  Applying inventory.0018_migrate_uom_to_allowed_sale_uoms...Ô£ô Migrated UoM data for 0 products
+ OK
+  Applying inventory.0019_alter_product_allowed_sale_uoms_and_more... OK
+  Applying inventory.0020_product_can_be_purchased_product_can_be_sold... OK
+  Applying inventory.0021_alter_stockmove_journal_entry... OK
+  Applying inventory.0022_reorderingrule... OK
+  Applying inventory.0023_replenishmentproposal... OK
+  Applying inventory.0024_stockmove_uom_alter_stockmove_date_and_more... OK
+  Applying production.0001_initial... OK
+  Applying production.0002_workorder_bom_updates... OK
+  Applying production.0003_alter_billofmaterials_product_and_more... OK
+  Applying production.0004_alter_billofmaterials_product... OK
+  Applying production.0005_alter_billofmaterials_product... OK
+  Applying production.0006_remove_billofmaterialsline_unit_and_more... OK
+  Applying sales.0003_saleorder_payment_method... OK
+  Applying sales.0004_saleline_product... OK
+  Applying sales.0005_saleorder_channel... OK
+  Applying sales.0006_alter_saleorder_status... OK
+  Applying sales.0007_salessettings... OK
+  Applying sales.0008_saleline_quantity_delivered_saleorder_delivery_date_and_more... OK
+  Applying sales.0009_alter_saleorder_customer_delete_customer... OK
+  Applying sales.0010_saleline_first_name_saleline_uom... OK
+  Applying sales.0011_saleline_manufacturing_data... OK
+  Applying sales.0012_remove_saledeliveryline_quantity_delivered_and_more... OK
+  Applying sales.0013_saledelivery_total_saledelivery_total_cost_and_more... OK
+  Applying sales.0014_alter_saledelivery_journal_entry_and_more... OK
+  Applying sales.0015_saledeliveryline_uom... OK
+  Applying services.0003_alter_servicecontract_expense_account_and_more... OK
+  Applying sessions.0001_initial... OK
+  Applying socialaccount.0001_initial... OK
+  Applying socialaccount.0002_token_max_lengths... OK
+  Applying socialaccount.0003_extra_data_default_dict... OK
+  Applying socialaccount.0004_app_provider_id_settings... OK
+  Applying socialaccount.0005_socialtoken_nullable_app... OK
+  Applying socialaccount.0006_alter_socialaccount_extra_data... OK
+  Applying treasury.0007_alter_payment_journal_entry... OK
+Starting server...
+Performing system checks...
+
+System check identified no issues (0 silenced).
+January 10, 2026 - 21:12:38
+Django version 5.2.10, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+DEBUG: CUSTOM CREATE CALLED

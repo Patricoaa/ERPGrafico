@@ -65,7 +65,7 @@ class DashboardMetricsView(APIView):
             stockouts = Product.objects.filter(
                 track_inventory=True
             ).annotate(
-                current_stock=Coalesce(Sum('moves__quantity'), Decimal('0.0'))
+                current_stock=Coalesce(Sum('stock_moves__quantity'), Decimal('0.0'))
             ).filter(
                 current_stock__lte=0
             ).count()

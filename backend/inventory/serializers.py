@@ -117,7 +117,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_current_stock(self, obj):
         # Calculate stock based on sum of moves for this specific product
         from django.db.models import Sum
-        return obj.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
+        return obj.stock_moves.aggregate(total=Sum('quantity'))['total'] or 0.0
 
     def get_effective_price(self, obj):
         from .services import PricingService

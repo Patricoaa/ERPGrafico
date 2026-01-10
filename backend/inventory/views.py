@@ -42,12 +42,12 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
         
         for p in products:
             # Current stock is sum of all moves
-            stock_qty = p.moves.aggregate(total=Sum('quantity'))['total'] or 0
+            stock_qty = p.stock_moves.aggregate(total=Sum('quantity'))['total'] or 0
             
             # Movements
-            moves_in = p.moves.filter(quantity__gt=0).aggregate(total=Sum('quantity'))['total'] or 0
+            moves_in = p.stock_moves.filter(quantity__gt=0).aggregate(total=Sum('quantity'))['total'] or 0
             # moves_out should be positive for display, but moves have negative quantity
-            moves_out = abs(p.moves.filter(quantity__lt=0).aggregate(total=Sum('quantity'))['total'] or 0)
+            moves_out = abs(p.stock_moves.filter(quantity__lt=0).aggregate(total=Sum('quantity'))['total'] or 0)
             
             report.append({
                 'id': p.id,
@@ -118,7 +118,7 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
 
         with transaction.atomic():
             # 1. Update stock moves
-            product.moves.update(quantity=models.F('quantity') * factor)
+            product.stock_moves.update(quantity=models.F('quantity') * factor)
             
             # 2. Update prices (assuming they are "per base unit")
             if factor != 1:
