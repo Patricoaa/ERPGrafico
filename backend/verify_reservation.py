@@ -15,6 +15,8 @@ from django.core.exceptions import ValidationError
 from contacts.models import Contact
 from inventory.models import UoM
 
+import traceback
+
 def run_test():
     print("Starting Verification Script...")
     
@@ -23,9 +25,9 @@ def run_test():
     if not warehouse:
         warehouse = Warehouse.objects.create(name="Test Warehouse", code="WH-TEST")
         
-    customer = Contact.objects.filter(is_customer=True).first()
+    customer = Contact.objects.filter(name="Test Customer").first()
     if not customer:
-        customer = Contact.objects.create(name="Test Customer", is_customer=True)
+        customer = Contact.objects.create(name="Test Customer", tax_id="99999999-9")
 
     # Create a test product
     product_code = "TRP-VERIFY-001"
@@ -33,10 +35,17 @@ def run_test():
     # Clean up previous runs
     Product.objects.filter(code=product_code).delete()
     
+    # Get or create category
+    from inventory.models import ProductCategory
+    category = ProductCategory.objects.first()
+    if not category:
+        category = ProductCategory.objects.create(name="Test Category")
+
     product = Product.objects.create(
         name="Test Reservation Product",
         code=product_code,
-        price=100,
+        category=category,
+        sale_price=100,
         cost_price=50,
         track_inventory=True,
         uom=UoM.objects.first() # Assume at least one UoM exists
@@ -58,7 +67,7 @@ def run_test():
     # 2. Test Case 1: Over-selling (Request 11, Available 10)
     print("\n--- Test Case 1: Over-selling (Req 11, Avail 10) ---")
     order1 = SaleOrder.objects.create(customer=customer, date='2024-01-01')
-    SaleLine.objects.create(order=order1, product=product, quantity=11, price=100)
+    SaleLine.objects.create(order=order1, product=product, quantity=11, unit_price=100)
     
     try:
         SalesService.confirm_sale(order1)
@@ -71,7 +80,7 @@ def run_test():
     # 3. Test Case 2: Successful Sale (Request 5, Available 10)
     print("\n--- Test Case 2: Successful Sale (Req 5, Avail 10) ---")
     order2 = SaleOrder.objects.create(customer=customer, date='2024-01-01')
-    SaleLine.objects.create(order=order2, product=product, quantity=5, price=100)
+    SaleLine.objects.create(order=order2, product=product, quantity=5, unit_price=100)
     
     try:
         SalesService.confirm_sale(order2)
@@ -93,7 +102,7 @@ def run_test():
     # 4. Test Case 3: Subsequent Over-selling (Request 6, Available 5)
     print("\n--- Test Case 3: Subsequent Over-selling (Req 6, Avail 5) ---")
     order3 = SaleOrder.objects.create(customer=customer, date='2024-01-01')
-    SaleLine.objects.create(order=order3, product=product, quantity=6, price=100)
+    SaleLine.objects.create(order=order3, product=product, quantity=6, unit_price=100)
     
     try:
         SalesService.confirm_sale(order3)
@@ -117,4 +126,7 @@ def run_test():
     print("Cleanup done.")
 
 if __name__ == "__main__":
-    run_test()
+    try:
+        run_test()
+    except Exception:
+        traceback.print_exc()

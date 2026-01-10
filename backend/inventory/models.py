@@ -560,3 +560,34 @@ class ReorderingRule(models.Model):
         return f"{self.product.code} - {self.warehouse.name}"
 
 
+class ReplenishmentProposal(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', _('Pendiente')
+        CONVERTED = 'CONVERTED', _('Convertido a OC')
+        IGNORED = 'IGNORED', _('Ignorado')
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='replenishment_proposals')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='replenishment_proposals')
+    qty_to_order = models.DecimalField(_("Cantidad a Pedir"), max_digits=12, decimal_places=4)
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.PENDING)
+    rule = models.ForeignKey(ReorderingRule, on_delete=models.SET_NULL, null=True, blank=True, related_name='proposals')
+    
+    purchase_order = models.ForeignKey(
+        'purchasing.PurchaseOrder', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='replenishment_proposals'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Propuesta de Reabastecimiento")
+        verbose_name_plural = _("Propuestas de Reabastecimiento")
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Propuesta: {self.product.code} ({self.qty_to_order})"
+
+

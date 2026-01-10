@@ -422,3 +422,135 @@ class UoMService:
         except ValidationError:
             return ""
 
+
+class ProcurementService:
+    @staticmethod
+    def check_replenishment(product: Product, warehouse: Warehouse):
+        """
+        Calculates needs for a specific product and warehouse and generates/updates proposals.
+        Targeted to be called via signals (Option B).
+        """
+        from .models import ReorderingRule, ReplenishmentProposal
+        from decimal import Decimal
+
+        # 1. Get rule
+        rule = ReorderingRule.objects.filter(product=product, warehouse=warehouse, active=True).first()
+        if not rule:
+            return None
+
+        # 2. Calculate virtual stock
+        # Virtual Stock = On Hand - Reserved + On Order
+        on_hand = Decimal(str(product.qty_on_hand))
+        reserved = Decimal(str(product.qty_reserved))
+        
+        # Calculate On Order (confirmed POs not yet received)
+        from purchasing.models import PurchaseLine, PurchaseOrder
+        on_order = PurchaseLine.objects.filter(
+            product=product,
+            order__warehouse=warehouse,
+            order__status=PurchaseOrder.Status.CONFIRMED
+        ).aggregate(total=models.Sum('quantity'))['total'] or Decimal('0')
+        
+        # Adjust on_order if partial receipts exist (actually qty_pending might be better)
+        # For simplicity in this iteration:
+        pending_reception = Decimal('0')
+        pending_lines = PurchaseLine.objects.filter(
+            product=product,
+            order__warehouse=warehouse,
+            order__status=PurchaseOrder.Status.CONFIRMED
+        )
+        for line in pending_lines:
+            pending_reception += line.quantity_pending
+
+        virtual_stock = on_hand - reserved + pending_reception
+
+        # 3. Check threshold
+        if virtual_stock < rule.min_quantity:
+            qty_to_order = rule.max_quantity - virtual_stock
+            
+            # Create or Update Proposal
+            proposal, created = ReplenishmentProposal.objects.get_or_create(
+                product=product,
+                warehouse=warehouse,
+                status=ReplenishmentProposal.Status.PENDING,
+                defaults={'qty_to_order': qty_to_order, 'rule': rule}
+            )
+            
+            if not created:
+                proposal.qty_to_order = qty_to_order
+                proposal.rule = rule
+                proposal.save()
+            
+            return proposal
+        else:
+            # If stock recovered, we might want to delete the pending proposal?
+            # Or leave it for the user to decide. Usually we delete if it's no longer 'needed'
+            ReplenishmentProposal.objects.filter(
+                product=product, 
+                warehouse=warehouse, 
+                status=ReplenishmentProposal.Status.PENDING
+            ).delete()
+            
+        return None
+
+    @staticmethod
+    @transaction.atomic
+    def create_purchase_order_from_proposals(proposal_ids: list, user=None):
+        """
+        Groups proposals by supplier (if known) and creates Draft POs.
+        """
+        from .models import ReplenishmentProposal
+        from purchasing.models import PurchaseOrder, PurchaseLine
+        from contacts.models import Contact # Dummy for now
+        
+        proposals = ReplenishmentProposal.objects.filter(id__in=proposal_ids, status=ReplenishmentProposal.Status.PENDING)
+        if not proposals.exists():
+            return []
+
+        # In a real scenario, we'd find the default supplier for each product.
+        # For now, we might need to ask or use a placeholder if not defined.
+        # Assuming we just create one PO per warehouse for now, or group by "Main Supplier".
+        
+        # Let's group by warehouse
+        by_warehouse = {}
+        for p in proposals:
+            if p.warehouse_id not in by_warehouse:
+                by_warehouse[p.warehouse_id] = []
+            by_warehouse[p.warehouse_id].append(p)
+
+        created_pos = []
+        for warehouse_id, props in by_warehouse.items():
+            # For this MVP, we pick the first supplier we find in the system or a default
+            from contacts.models import Contact
+            supplier = Contact.objects.filter(contact_type='SUPPLIER').first()
+            if not supplier:
+                raise ValidationError("No hay proveedores registrados en el sistema.")
+
+            warehouse = props[0].warehouse
+            
+            po = PurchaseOrder.objects.create(
+                supplier=supplier,
+                warehouse=warehouse,
+                status=PurchaseOrder.Status.DRAFT,
+                notes="Generado automáticamente por el Planificador de Reabastecimiento."
+            )
+            
+            for p in props:
+                PurchaseLine.objects.create(
+                    order=po,
+                    product=p.product,
+                    quantity=p.qty_to_order,
+                    uom=p.product.uom,
+                    unit_cost=p.product.cost_price or Decimal('0')
+                )
+                p.status = ReplenishmentProposal.Status.CONVERTED
+                p.purchase_order = po
+                p.save()
+            
+            # Recalculate totals
+            po.calculate_totals()
+            po.save()
+            created_pos.append(po)
+            
+        return created_pos
+

@@ -4,13 +4,14 @@ from rest_framework.response import Response
 from .serializers import (
     ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
-    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, ReorderingRuleSerializer
+    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, ReorderingRuleSerializer,
+    ReplenishmentProposalSerializer
 )
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, ReorderingRule
+    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal
 )
-from .services import StockService
+from .services import StockService, ProcurementService
 from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
@@ -214,4 +215,36 @@ class ReorderingRuleViewSet(viewsets.ModelViewSet):
     serializer_class = ReorderingRuleSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['product', 'warehouse', 'active']
+
+
+class ReplenishmentProposalViewSet(viewsets.ModelViewSet):
+    queryset = ReplenishmentProposal.objects.all()
+    serializer_class = ReplenishmentProposalSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product', 'warehouse', 'status']
+
+    @action(detail=False, methods=['post'])
+    def create_po(self, request):
+        """
+        Creates Purchase Orders from a list of proposal IDs.
+        """
+        proposal_ids = request.data.get('proposal_ids', [])
+        if not proposal_ids:
+            return Response({'error': 'No se proporcionaron IDs de propuestas.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            created_pos = ProcurementService.create_purchase_order_from_proposals(proposal_ids, user=request.user)
+            from purchasing.serializers import PurchaseOrderSerializer
+            return Response(PurchaseOrderSerializer(created_pos, many=True).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def ignore(self, request):
+        """
+        Marks proposals as ignored.
+        """
+        proposal_ids = request.data.get('proposal_ids', [])
+        ReplenishmentProposal.objects.filter(id__in=proposal_ids).update(status=ReplenishmentProposal.Status.IGNORED)
+        return Response({'status': 'ok'})
 

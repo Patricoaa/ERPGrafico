@@ -78,7 +78,7 @@ const ruleSchema = z.object({
     warehouse: z.string().min(1, "Seleccione un almacén"),
     min_quantity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Debe ser mayor o igual a 0"),
     max_quantity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Debe ser mayor o igual a 0"),
-    active: z.boolean().default(true),
+    active: z.boolean(),
 }).refine(data => Number(data.max_quantity) >= Number(data.min_quantity), {
     message: "La cantidad máxima debe ser mayor o igual a la mínima",
     path: ["max_quantity"],
@@ -95,6 +95,7 @@ export default function ReplenishmentPage() {
     const [editingRule, setEditingRule] = useState<ReorderingRule | null>(null)
     const [isSaving, setIsSaving] = useState(false)
 
+    // ... (fetchData)
     // Fetch Data
     const fetchData = async () => {
         setIsLoading(true)
@@ -125,7 +126,9 @@ export default function ReplenishmentPage() {
         defaultValues: {
             active: true,
             min_quantity: "0",
-            max_quantity: "0"
+            max_quantity: "0",
+            product: "",
+            warehouse: ""
         }
     })
 

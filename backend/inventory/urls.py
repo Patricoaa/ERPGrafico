@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ProductViewSet, CategoryViewSet, WarehouseViewSet, StockMoveViewSet, 
     UoMViewSet, UoMCategoryViewSet, PricingRuleViewSet,
-    CustomFieldTemplateViewSet, ProductCustomFieldViewSet, ReorderingRuleViewSet
+    CustomFieldTemplateViewSet, ProductCustomFieldViewSet, ReorderingRuleViewSet,
+    ReplenishmentProposalViewSet
 )
 
 router = DefaultRouter()
@@ -17,6 +18,7 @@ router.register(r'pricing-rules', PricingRuleViewSet)
 router.register(r'custom-field-templates', CustomFieldTemplateViewSet)
 router.register(r'product-custom-fields', ProductCustomFieldViewSet)
 router.register(r'reordering-rules', ReorderingRuleViewSet)
+router.register(r'replenishment-proposals', ReplenishmentProposalViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

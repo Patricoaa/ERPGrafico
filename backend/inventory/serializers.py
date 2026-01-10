@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, ReorderingRule
+    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
 from production.serializers import BillOfMaterialsSerializer
@@ -384,5 +384,16 @@ class ReorderingRuleSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ReorderingRule
+        fields = '__all__'
+
+class ReplenishmentProposalSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_code = serializers.CharField(source='product.code', read_only=True)
+    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
+
+    class Meta:
+        model = ReplenishmentProposal
         fields = '__all__'
 
