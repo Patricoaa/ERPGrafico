@@ -47,6 +47,16 @@ class ProductCustomFieldSerializer(serializers.ModelSerializer):
         fields = ['id', 'template', 'template_data', 'order']
 
 
+class ReorderingRuleSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_code = serializers.CharField(source='product.code', read_only=True)
+    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    
+    class Meta:
+        model = ReorderingRule
+        fields = '__all__'
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
@@ -409,14 +419,6 @@ class StockMoveSerializer(serializers.ModelSerializer):
              
         return None
 
-class ReorderingRuleSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    product_code = serializers.CharField(source='product.code', read_only=True)
-    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
-    
-    class Meta:
-        model = ReorderingRule
-        fields = '__all__'
 
 class ReplenishmentProposalSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
