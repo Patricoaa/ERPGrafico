@@ -4,11 +4,11 @@ from rest_framework.response import Response
 from .serializers import (
     ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
-    CustomFieldTemplateSerializer, ProductCustomFieldSerializer
+    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, ReorderingRuleSerializer
 )
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField
+    CustomFieldTemplate, ProductCustomField, ReorderingRule
 )
 from .services import StockService
 from django_filters.rest_framework import DjangoFilterBackend
@@ -208,4 +208,10 @@ class ProductCustomFieldViewSet(viewsets.ModelViewSet):
     queryset = ProductCustomField.objects.all()
     serializer_class = ProductCustomFieldSerializer
     filterset_fields = ['product']
+
+class ReorderingRuleViewSet(viewsets.ModelViewSet):
+    queryset = ReorderingRule.objects.all()
+    serializer_class = ReorderingRuleSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product', 'warehouse', 'active']
 

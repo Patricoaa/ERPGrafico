@@ -543,4 +543,20 @@ class ProductCustomField(models.Model):
     def __str__(self):
         return f"{self.product.code} - {self.template.name}"
 
+class ReorderingRule(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reordering_rules')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='reordering_rules')
+    min_quantity = models.DecimalField(_("Cantidad Mínima"), max_digits=12, decimal_places=4, default=0)
+    max_quantity = models.DecimalField(_("Cantidad Máxima"), max_digits=12, decimal_places=4, default=0)
+    
+    active = models.BooleanField(_("Activo"), default=True)
+
+    class Meta:
+        verbose_name = _("Regla de Reabastecimiento")
+        verbose_name_plural = _("Reglas de Reabastecimiento")
+        unique_together = ['product', 'warehouse']
+
+    def __str__(self):
+        return f"{self.product.code} - {self.warehouse.name}"
+
 
