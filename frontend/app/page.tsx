@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { DollarSign, CreditCard, Activity, Users, Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { DollarSign, CreditCard, Activity, Users, Loader2, ArrowUpRight, ShoppingCart, Factory, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 
@@ -10,6 +10,11 @@ interface DashboardMetrics {
   total_sales: number
   accounts_receivable: number
   sales_count: number
+  total_purchases: number
+  accounts_payable: number
+  pending_purchases: number
+  active_production: number
+  stockouts: number
   recent_activity: any[]
 }
 
@@ -46,22 +51,35 @@ export default function DashboardPage() {
         <h2 className="text-3xl font-bold tracking-tight">Panel de Control</h2>
       </div>
 
+      {/* Row 1: Financial Overview */}
+      <h3 className="text-lg font-semibold text-muted-foreground mt-2">Resumen Financiero</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ventas Totales</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${metrics?.total_sales.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Ventas acumuladas confirmadas</p>
+            <p className="text-xs text-muted-foreground">Ingresos confirmados</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Compras Totales</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${metrics?.total_purchases.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Egresos confirmados</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cuentas por Cobrar</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${metrics?.accounts_receivable.toLocaleString()}</div>
@@ -71,32 +89,70 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cantidad de Ventas</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Cuentas por Pagar</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{metrics?.sales_count}</div>
-            <p className="text-xs text-muted-foreground">Órdenes totales emitidas</p>
+            <div className="text-2xl font-bold">${metrics?.accounts_payable.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Saldo pendiente a proveedores</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 2: Operational Overview */}
+      <h3 className="text-lg font-semibold text-muted-foreground mt-6">Operaciones</h3>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Producción Activa</CardTitle>
+            <Factory className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics?.active_production}</div>
+            <p className="text-xs text-muted-foreground">Órdenes en proceso/planificadas</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Actividad</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Compras Pendientes</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">En Línea</div>
-            <p className="text-xs text-muted-foreground">Sistema operativo</p>
+            <div className="text-2xl font-bold">{metrics?.pending_purchases}</div>
+            <p className="text-xs text-muted-foreground">Órdenes por recibir</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Stock Crítico</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics?.stockouts}</div>
+            <p className="text-xs text-muted-foreground">Productos sin stock</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ventas Realizadas</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+{metrics?.sales_count}</div>
+            <p className="text-xs text-muted-foreground">Total órdenes de venta</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      {/* Row 3: Activity & Links */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-6">
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Actividad Reciente</CardTitle>
-            <CardDescription>Últimos asientos contables registrados.</CardDescription>
+            <CardDescription>Últimos movimientos contables registrados.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -135,11 +191,15 @@ export default function DashboardPage() {
                 <ArrowUpRight className="h-4 w-4" />
               </button>
               <button onClick={() => window.location.href = '/sales/orders'} className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted transition-colors text-sm">
-                <span>Ver Notas de Venta</span>
+                <span>Notas de Venta</span>
                 <ArrowUpRight className="h-4 w-4" />
               </button>
-              <button onClick={() => window.location.href = '/accounting/entries'} className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted transition-colors text-sm">
-                <span>Asientos Contables</span>
+              <button onClick={() => window.location.href = '/purchasing/orders'} className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted transition-colors text-sm">
+                <span>Ordenes de Compra</span>
+                <ArrowUpRight className="h-4 w-4" />
+              </button>
+              <button onClick={() => window.location.href = '/production/orders'} className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted transition-colors text-sm">
+                <span>Ordenes de Trabajo</span>
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>

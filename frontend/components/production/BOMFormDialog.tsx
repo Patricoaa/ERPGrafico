@@ -41,7 +41,8 @@ const bomSchema = z.object({
         component_code: z.string().optional(), // For display
         component_name: z.string().optional(), // For display
         quantity: z.coerce.number().min(0.0001, "Cantidad debe ser mayor a 0"),
-        unit: z.string().default("UN"),
+        uom: z.string().optional(), // UoM ID as string
+        uom_name: z.string().optional(), // For display
         notes: z.string().optional()
     })).min(1, "Debe agregar al menos un componente")
 })
@@ -56,7 +57,8 @@ type BOMFormValues = {
         component_code?: string
         component_name?: string
         quantity: number
-        unit: string
+        uom?: string
+        uom_name?: string
         notes?: string
     }[]
 }
@@ -130,7 +132,8 @@ export function BOMFormDialog({
                         component_code: l.component_code,
                         component_name: l.component_name,
                         quantity: l.quantity,
-                        unit: l.unit,
+                        uom: l.uom?.toString() || "",
+                        uom_name: l.uom_name || "",
                         notes: l.notes || ""
                     }))
                 })
@@ -158,7 +161,7 @@ export function BOMFormDialog({
                 lines: data.lines.map(l => ({
                     component: parseInt(l.component),
                     quantity: l.quantity,
-                    unit: l.unit, // Simplified, ideally select from Component UoMs
+                    uom: l.uom ? parseInt(l.uom) : null,
                     notes: l.notes
                 }))
             }
@@ -278,7 +281,7 @@ export function BOMFormDialog({
                                     <Button
                                         type="button"
                                         size="sm"
-                                        onClick={() => append({ component: "", quantity: 1, unit: "UN", notes: "" })}
+                                        onClick={() => append({ component: "", quantity: 1, uom: "", notes: "" })}
                                         className="gap-2"
                                     >
                                         <Plus className="h-4 w-4" />
@@ -311,10 +314,11 @@ export function BOMFormDialog({
                                                                             value={propField.value}
                                                                             onChange={(val: string | null) => {
                                                                                 propField.onChange(val)
-                                                                                // Auto-set unit if empty
+                                                                                // Auto-set uom if empty
                                                                                 const p = products.find((prod: any) => prod.id.toString() === val?.toString());
-                                                                                if (p && p.uom_name) {
-                                                                                    form.setValue(`lines.${index}.unit`, p.uom_name);
+                                                                                if (p && p.uom) {
+                                                                                    form.setValue(`lines.${index}.uom`, p.uom.toString());
+                                                                                    form.setValue(`lines.${index}.uom_name`, p.uom_name);
                                                                                 }
                                                                             }}
                                                                             placeholder="Buscar componente..."
@@ -343,39 +347,44 @@ export function BOMFormDialog({
                                                     <TableCell>
                                                         <FormField
                                                             control={form.control}
-                                                            name={`lines.${index}.unit`}
+                                                            name={`lines.${index}.uom`}
                                                             render={({ field }) => {
                                                                 const componentId = form.watch(`lines.${index}.component`);
                                                                 const product = products.find((p: any) => p.id.toString() === componentId?.toString());
 
-                                                                const unitNames = new Set<string>();
-                                                                if (product) {
-                                                                    if (product.uom_name) unitNames.add(product.uom_name);
-                                                                    if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
-                                                                    if (product.allowed_sale_uoms) {
-                                                                        product.allowed_sale_uoms.forEach((uomId: any) => {
-                                                                            const foundUom = uoms.find((u: any) => u.id.toString() === uomId.toString());
-                                                                            if (foundUom) unitNames.add(foundUom.name);
-                                                                        });
-                                                                    }
-                                                                }
-
-                                                                const options = Array.from(unitNames);
-                                                                if (options.length === 0 && !product) {
-                                                                    options.push("UN", "KG", "MT", "LT", "PL", "ML");
+                                                                // Build list of compatible UoMs (same category as product base UoM)
+                                                                const compatibleUoms: any[] = [];
+                                                                if (product && product.uom_category) {
+                                                                    const categoryUoms = uoms.filter((u: any) => u.category === product.uom_category);
+                                                                    compatibleUoms.push(...categoryUoms);
+                                                                } else if (product && product.uom) {
+                                                                    // Fallback: just show the product's base UoM
+                                                                    const baseUom = uoms.find((u: any) => u.id === product.uom);
+                                                                    if (baseUom) compatibleUoms.push(baseUom);
                                                                 }
 
                                                                 return (
                                                                     <FormItem>
-                                                                        <Select onValueChange={field.onChange} value={field.value}>
+                                                                        <Select
+                                                                            onValueChange={(val) => {
+                                                                                field.onChange(val);
+                                                                                const selectedUom = uoms.find((u: any) => u.id.toString() === val);
+                                                                                if (selectedUom) {
+                                                                                    form.setValue(`lines.${index}.uom_name`, selectedUom.name);
+                                                                                }
+                                                                            }}
+                                                                            value={field.value}
+                                                                        >
                                                                             <FormControl>
                                                                                 <SelectTrigger className="h-9">
-                                                                                    <SelectValue />
+                                                                                    <SelectValue placeholder="Seleccionar...">
+                                                                                        {field.value ? uoms.find((u: any) => u.id.toString() === field.value)?.name : "Seleccionar..."}
+                                                                                    </SelectValue>
                                                                                 </SelectTrigger>
                                                                             </FormControl>
                                                                             <SelectContent>
-                                                                                {options.map(u => (
-                                                                                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                                                                                {compatibleUoms.map(u => (
+                                                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
                                                                                 ))}
                                                                             </SelectContent>
                                                                         </Select>

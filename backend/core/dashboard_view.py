@@ -10,6 +10,7 @@ from purchasing.models import PurchaseOrder
 from production.models import WorkOrder
 from inventory.models import Product
 from django.db.models import Sum, Q, Value
+import logging
 
 logger = logging.getLogger(__name__)
 
