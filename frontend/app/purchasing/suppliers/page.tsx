@@ -15,6 +15,7 @@ import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { DataManagement } from "@/components/shared/DataManagement"
+import { formatRUT } from "@/lib/utils/format"
 
 interface Supplier {
     id: number
@@ -99,7 +100,7 @@ export default function SuppliersPage() {
                         {suppliers.map((supplier) => (
                             <TableRow key={supplier.id}>
                                 <TableCell className="font-medium">{supplier.name}</TableCell>
-                                <TableCell>{supplier.tax_id}</TableCell>
+                                <TableCell>{supplier.tax_id ? formatRUT(supplier.tax_id) : 'S/Rut'}</TableCell>
                                 <TableCell>
                                     <div className="font-medium">{supplier.contact_name}</div>
                                     <div className="text-xs text-muted-foreground">{supplier.email}</div>

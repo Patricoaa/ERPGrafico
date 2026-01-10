@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { useDebounce } from "@/hooks/use-debounce"
+import { formatRUT } from "@/lib/utils/format"
 
 interface Contact {
     id: number
@@ -111,7 +112,7 @@ export function AdvancedContactSelector({
                     {selectedContact ? (
                         <div className="flex flex-col items-start text-left overflow-hidden">
                             <span className="font-medium truncate w-full">{selectedContact.name}</span>
-                            <span className="text-xs text-muted-foreground">{selectedContact.tax_id || 'S/Rut'}</span>
+                            <span className="text-xs text-muted-foreground">{selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}</span>
                         </div>
                     ) : (
                         <span className="text-muted-foreground">{placeholder}</span>
@@ -159,7 +160,7 @@ export function AdvancedContactSelector({
                                         <div className="flex flex-col overflow-hidden">
                                             <span className="truncate font-medium">{contact.name}</span>
                                             <span className="text-xs text-muted-foreground truncate">
-                                                {contact.tax_id}
+                                                {contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}
                                             </span>
                                         </div>
                                         {selectedContact?.id === contact.id && (

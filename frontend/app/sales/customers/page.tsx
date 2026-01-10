@@ -15,6 +15,7 @@ import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { DataManagement } from "@/components/shared/DataManagement"
+import { formatRUT } from "@/lib/utils/format"
 
 interface Customer {
     id: number
@@ -98,7 +99,7 @@ export default function CustomersPage() {
                         {customers.map((customer) => (
                             <TableRow key={customer.id}>
                                 <TableCell className="font-medium">{customer.name}</TableCell>
-                                <TableCell>{customer.tax_id}</TableCell>
+                                <TableCell>{customer.tax_id ? formatRUT(customer.tax_id) : 'S/Rut'}</TableCell>
                                 <TableCell>
                                     <div className="text-sm">{customer.email}</div>
                                     <div className="text-xs text-muted-foreground">{customer.phone}</div>

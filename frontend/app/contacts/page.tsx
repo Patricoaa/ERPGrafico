@@ -16,6 +16,7 @@ import api from "@/lib/api"
 import { ContactModal } from "@/components/contacts/ContactModal"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
+import { formatRUT } from "@/lib/utils/format"
 
 export default function ContactsPage() {
     const [contacts, setContacts] = useState<any[]>([])
@@ -123,7 +124,7 @@ export default function ContactsPage() {
                             filteredContacts.map((contact) => (
                                 <TableRow key={contact.id}>
                                     <TableCell className="font-medium">{contact.name}</TableCell>
-                                    <TableCell>{contact.tax_id}</TableCell>
+                                    <TableCell>{contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}</TableCell>
                                     <TableCell>{getContactTypeBadge(contact.contact_type)}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-1 text-sm text-muted-foreground">

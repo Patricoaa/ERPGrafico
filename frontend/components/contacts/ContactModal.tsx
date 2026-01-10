@@ -23,10 +23,11 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { formatRUT, validateRUT } from "@/lib/utils/format"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
-    tax_id: z.string().optional(),
+    tax_id: z.string().min(1, "El RUT es requerido").refine(validateRUT, "RUT inválido"),
     email: z.string().email("Email inválido").optional().or(z.literal("")),
     phone: z.string().optional(),
     address: z.string().optional(),
@@ -129,7 +130,11 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                 <FormItem>
                                     <FormLabel>RUT / Identificación</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ej: 76.123.456-7" {...field} />
+                                        <Input
+                                            placeholder="Ej: 12.345.678-9"
+                                            {...field}
+                                            onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
