@@ -141,6 +141,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     purchase_uom: initialData.purchase_uom?.id?.toString() || initialData.purchase_uom?.toString() || "",
                     allowed_sale_uoms: initialData.allowed_sale_uoms?.map((u: any) => u.id?.toString() || u.toString()) || [],
                     track_inventory: initialData.track_inventory ?? true,
+                    can_be_sold: initialData.can_be_sold ?? true,
+                    can_be_purchased: initialData.can_be_purchased ?? true,
                     custom_fields_schema: typeof initialData.custom_fields_schema === 'object'
                         ? JSON.stringify(initialData.custom_fields_schema, null, 2)
                         : initialData.custom_fields_schema || "",
@@ -189,6 +191,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     purchase_uom: "",
                     allowed_sale_uoms: [],
                     track_inventory: false,
+                    can_be_sold: true,
+                    can_be_purchased: true,
                     custom_fields_schema: "",
                     image: undefined,
                     has_bom: false,
@@ -232,6 +236,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 data.allowed_sale_uoms.forEach(id => formData.append('allowed_sale_uoms', id))
             }
             formData.append('track_inventory', data.track_inventory ? 'true' : 'false')
+            formData.append('can_be_sold', data.can_be_sold ? 'true' : 'false')
+            formData.append('can_be_purchased', data.can_be_purchased ? 'true' : 'false')
 
             formData.append('has_bom', data.has_bom ? 'true' : 'false')
             formData.append('requires_advanced_manufacturing', data.requires_advanced_manufacturing ? 'true' : 'false')

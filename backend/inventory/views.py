@@ -51,8 +51,11 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
             report.append({
                 'id': p.id,
                 'code': p.code,
+                'internal_code': p.internal_code,
                 'name': p.name,
                 'category_name': p.category.name,
+                'uom_id': p.uom.id if p.uom else None,
+                'uom_category_id': p.uom.category_id if p.uom else None,
                 'uom_name': p.uom.name if p.uom else '',
                 'stock_qty': float(stock_qty),
                 'unit_cost': float(p.cost_price),
@@ -78,6 +81,75 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
         from .services import PricingService
         price = PricingService.get_product_price(product, quantity, uom=uom)
         return Response({'price': price})
+
+    @action(detail=True, methods=['post'])
+    def rotate_uom(self, request, pk=None):
+        """
+        Rotates the product's base UoM to the next one in the same category.
+        Crucially, it converts all existing StockMove and BOM quantities 
+        to maintain physical consistency.
+        """
+        from django.db import transaction, models
+        from django.apps import apps
+        from .models import UoM
+        
+        product = self.get_object()
+        if not product.uom:
+            return Response({'error': 'El producto no tiene unidad base.'}, status=400)
+
+        # Get all active UoMs for the same category, sorted by ratio
+        uoms = list(UoM.objects.filter(category=product.uom.category, active=True).order_by('ratio'))
+        if len(uoms) <= 1:
+            return Response({'error': 'No hay otras unidades en esta categoría.'}, status=400)
+
+        try:
+            current_index = uoms.index(product.uom)
+            next_index = (current_index + 1) % len(uoms)
+        except ValueError:
+            next_index = 0
+
+        new_uom = uoms[next_index]
+        old_uom = product.uom
+        
+        # Conversion factor (physical amount remains same)
+        # Formula: Factor = OldRatio / NewRatio
+        factor = Decimal(str(old_uom.ratio)) / Decimal(str(new_uom.ratio))
+
+        with transaction.atomic():
+            # 1. Update stock moves
+            product.moves.update(quantity=models.F('quantity') * factor)
+            
+            # 2. Update prices (assuming they are "per base unit")
+            if factor != 1:
+                product.cost_price = (product.cost_price / factor).quantize(Decimal('0.01'), rounding='ROUND_HALF_UP')
+                product.sale_price = (product.sale_price / factor).quantize(Decimal('0.01'), rounding='ROUND_HALF_UP')
+            
+            # 3. Update BOM lines where this is a component and used inherited UoM
+            BOMLine = apps.get_model('production', 'BillOfMaterialsLine')
+            BOMLine.objects.filter(component=product, uom__isnull=True).update(
+                quantity=models.F('quantity') * factor
+            )
+            
+            # 4. Update BOMs where this is the finished product
+            # BOM lines are "per 1 unit" of the finished product.
+            # If 1 Unit becomes 10 (G -> Kg), each line needs 1/10th for the same "physical unit"?
+            # Wait, no. If the finished product is 1 Kg instead of 1 G, 
+            # we need 1000x more of each component per finished unit.
+            # So multiply line quantity by (1/factor).
+            BOM = apps.get_model('production', 'BillOfMaterials')
+            boms = BOM.objects.filter(product=product)
+            for bom in boms:
+                bom.lines.update(quantity=models.F('quantity') / factor)
+
+            product.uom = new_uom
+            product.save()
+
+        return Response({
+            'status': 'ok', 
+            'new_uom': new_uom.name, 
+            'conversion_factor': float(factor),
+            'new_cost': float(product.cost_price)
+        })
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = ProductCategory.objects.all()

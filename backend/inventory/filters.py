@@ -6,7 +6,7 @@ class ProductFilter(filters.FilterSet):
 
     class Meta:
         model = Product
-        fields = ['product_type', 'category']
+        fields = ['product_type', 'category', 'can_be_sold', 'can_be_purchased']
 
 class StockMoveFilter(filters.FilterSet):
     product_id = filters.NumberFilter(field_name="product__id")

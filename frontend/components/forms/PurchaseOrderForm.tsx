@@ -305,6 +305,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                                 <ProductSelector
                                                                     value={field.value}
                                                                     allowedTypes={['STORABLE', 'CONSUMABLE']}
+                                                                    context="purchase"
                                                                     onChange={(val) => {
                                                                         field.onChange(val)
                                                                         // Automatically set unit_cost and UoM if product selected

@@ -32,6 +32,7 @@ interface ProductSelectorProps {
     restrictStock?: boolean
     showSearch?: boolean
     excludeIds?: (string | number)[]
+    context?: 'sale' | 'purchase'
 }
 
 export function ProductSelector({
@@ -43,7 +44,8 @@ export function ProductSelector({
     disabled = false,
     restrictStock = false,
     showSearch = true,
-    excludeIds = []
+    excludeIds = [],
+    context
 }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
@@ -61,6 +63,13 @@ export function ProductSelector({
                 if (productType) {
                     url += `?product_type=${productType}`
                 }
+
+                if (context === 'sale') {
+                    url += (url.includes('?') ? '&' : '?') + 'can_be_sold=true'
+                } else if (context === 'purchase') {
+                    url += (url.includes('?') ? '&' : '?') + 'can_be_purchased=true'
+                }
+
                 const res = await api.get(url)
                 let allProducts = res.data.results || res.data
 
@@ -86,7 +95,7 @@ export function ProductSelector({
             }
         }
         fetchProducts()
-    }, [value, productType])
+    }, [value, productType, context])
 
     const isStockRestricted = (product: any) => {
         return restrictStock && product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0

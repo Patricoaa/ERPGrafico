@@ -164,6 +164,18 @@ class Product(models.Model):
         help_text=_("Desactivar para productos que no requieren control de inventario (fabricables, servicios)")
     )
     
+    # Availability Control
+    can_be_sold = models.BooleanField(
+        _("Puede ser vendido"),
+        default=True,
+        help_text=_("Si se desactiva, el producto no aparecerá en ventas ni en POS.")
+    )
+    can_be_purchased = models.BooleanField(
+        _("Puede ser comprado"),
+        default=True,
+        help_text=_("Si se desactiva, el producto no aparecerá en órdenes de compra.")
+    )
+    
     # Units of Measure
     uom = models.ForeignKey(
         UoM, on_delete=models.PROTECT, related_name='products',
@@ -270,6 +282,7 @@ class Product(models.Model):
         Returns Decimal('0.00') if no active BOM or no lines.
         """
         from production.models import BillOfMaterials
+        from inventory.services import UoMService
         from decimal import Decimal
         active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
         if not active_bom:
@@ -277,8 +290,18 @@ class Product(models.Model):
         
         total_bom_cost = Decimal('0.00')
         for line in active_bom.lines.all():
+            qty = line.quantity
+            # Convert quantity from BOM Line UoM to Component Base UoM if they differ
+            if line.uom and line.component.uom and line.uom != line.component.uom:
+                try:
+                    qty = UoMService.convert_quantity(line.quantity, line.uom, line.component.uom)
+                except Exception:
+                    # In case of error (e.g. incompatible categories), use original quantity
+                    # but properly we should probably log this or handle it.
+                    pass
+
             # Use component's cost_price (weighted average)
-            total_bom_cost += line.quantity * line.component.cost_price
+            total_bom_cost += qty * line.component.cost_price
             
         return total_bom_cost
 

@@ -32,6 +32,8 @@ interface Product {
     uom_name: string
     purchase_uom_name: string
     track_inventory: boolean
+    can_be_sold: boolean
+    can_be_purchased: boolean
 }
 
 export function ProductList() {
@@ -92,6 +94,8 @@ export function ProductList() {
                             <TableHead className="text-right">Neto</TableHead>
                             <TableHead className="text-right">IVA (19%)</TableHead>
                             <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="text-center">Venta</TableHead>
+                            <TableHead className="text-center">Compra</TableHead>
                             <TableHead className="w-[100px] text-center">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>

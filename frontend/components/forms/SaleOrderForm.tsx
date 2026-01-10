@@ -351,6 +351,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                             value={field.value}
                                                                             restrictStock={true}
                                                                             showSearch={false}
+                                                                            context="sale"
                                                                             onChange={(value: string | null) => {
                                                                                 const selectedProduct = products.find(p => p.id.toString() === value)
 

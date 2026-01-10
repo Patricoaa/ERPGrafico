@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Search, Download } from "lucide-react"
+import { Search, Download, RefreshCw, Check, X } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ export function StockReport() {
     const [report, setReport] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
+    const [isRotating, setIsRotating] = useState<number | null>(null)
 
     useEffect(() => {
         fetchReport()
@@ -28,9 +29,23 @@ export function StockReport() {
         }
     }
 
+    const handleRotateUom = async (product: any) => {
+        setIsRotating(product.id)
+        try {
+            const res = await api.post(`/inventory/products/${product.id}/rotate_uom/`)
+            toast.success(`Unidad de ${product.name} cambiada a ${res.data.new_uom}`)
+            fetchReport()
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al cambiar unidad")
+        } finally {
+            setIsRotating(null)
+        }
+    }
+
     const filtered = report.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.code.toLowerCase().includes(searchTerm.toLowerCase())
+        p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.internal_code && p.internal_code.toLowerCase().includes(searchTerm.toLowerCase()))
     )
 
     return (
@@ -54,22 +69,27 @@ export function StockReport() {
                 <Table>
                     <TableHeader className="bg-muted/30">
                         <TableRow>
-                            <TableHead>Código</TableHead>
+                            <TableHead className="w-[100px]">Cod. Int.</TableHead>
+                            <TableHead>SKU/Code</TableHead>
                             <TableHead>Producto</TableHead>
                             <TableHead className="text-right">Stock Actual</TableHead>
                             <TableHead className="text-right">Costo Unit.</TableHead>
                             <TableHead className="text-right">Valorización</TableHead>
                             <TableHead className="text-right text-emerald-600">Entradas</TableHead>
                             <TableHead className="text-right text-rose-600">Salidas</TableHead>
+                            <TableHead className="text-right">Acción</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={7} className="text-center py-10">Cargando reporte...</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={9} className="text-center py-10">Cargando reporte...</TableCell></TableRow>
                         ) : filtered.length === 0 ? (
-                            <TableRow><TableCell colSpan={7} className="text-center py-10 italic text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={9} className="text-center py-10 italic text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
                         ) : filtered.map((item) => (
                             <TableRow key={item.id} className="group hover:bg-muted/20 transition-colors">
+                                <TableCell className="font-mono text-[10px] font-bold text-primary">
+                                    {item.internal_code}
+                                </TableCell>
                                 <TableCell className="font-mono text-[10px] text-muted-foreground">{item.code}</TableCell>
                                 <TableCell>
                                     <div className="flex flex-col">
@@ -78,7 +98,7 @@ export function StockReport() {
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right font-bold tabular-nums">
-                                    {Math.round(item.stock_qty).toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal lowercase">{item.uom_name}</span>
+                                    {Math.round(item.stock_qty * 100) / 100} <span className="text-[10px] text-muted-foreground font-normal lowercase">{item.uom_name}</span>
                                 </TableCell>
                                 <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
                                     ${Math.round(item.unit_cost).toLocaleString()}
@@ -87,10 +107,22 @@ export function StockReport() {
                                     ${Math.round(item.total_value).toLocaleString()}
                                 </TableCell>
                                 <TableCell className="text-right text-emerald-600 font-medium text-xs">
-                                    {item.moves_in > 0 ? `+${Math.round(item.moves_in).toLocaleString()}` : '0'}
+                                    {item.moves_in > 0 ? `+${Math.round(item.moves_in * 100) / 100}` : '0'}
                                 </TableCell>
                                 <TableCell className="text-right text-rose-600 font-medium text-xs">
-                                    {item.moves_out > 0 ? `-${Math.round(item.moves_out).toLocaleString()}` : '0'}
+                                    {item.moves_out > 0 ? `-${Math.round(item.moves_out * 100) / 100}` : '0'}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => handleRotateUom(item)}
+                                        disabled={isRotating === item.id}
+                                        title="Rotar Unidad de Medida (Convierte Cantidades)"
+                                    >
+                                        <RefreshCw className={`h-4 w-4 ${isRotating === item.id ? 'animate-spin' : ''}`} />
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}

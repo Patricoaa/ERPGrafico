@@ -13,6 +13,8 @@ export const productSchema = z.object({
     allowed_sale_uoms: z.array(z.string()).default([]),
     image: z.any().optional(),
     track_inventory: z.boolean(),
+    can_be_sold: z.boolean().default(true),
+    can_be_purchased: z.boolean().default(true),
     custom_fields_schema: z.string().optional(),
     // Manufacturing fields
     has_bom: z.boolean().default(false),
