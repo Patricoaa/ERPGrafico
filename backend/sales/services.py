@@ -22,7 +22,30 @@ class SalesService:
         if order.status != SaleOrder.Status.DRAFT:
             return order
 
-        # 1. Update Order Status
+        # 1. Validate Stock Availability (Strict Reservation)
+        from inventory.services import UoMService
+        
+        for line in order.lines.all():
+            product = line.product
+            if product.track_inventory:
+                # Convert requested qty to Product UoM
+                qty_needed = UoMService.convert_quantity(
+                    line.quantity,
+                    from_uom=line.uom,
+                    to_uom=product.uom
+                )
+                
+                # Check availability
+                # qty_available = on_hand - reserved
+                # valid if available >= needed
+                if product.qty_available < qty_needed:
+                    raise ValidationError(
+                        f"Stock insuficiente para '{product.name}'. "
+                        f"Solicitado: {qty_needed} {product.uom.name}, "
+                        f"Disponible: {product.qty_available} {product.uom.name}"
+                    )
+
+        # 2. Update Order Status
         order.status = SaleOrder.Status.CONFIRMED
         order.save()
 
