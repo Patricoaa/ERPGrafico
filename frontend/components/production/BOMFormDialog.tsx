@@ -190,7 +190,8 @@ export function BOMFormDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="max-w-6xl max-h-[90vh] flex flex-col"
+                className="max-w-[95vw] md:max-w-[1200px] max-h-[90vh] flex flex-col"
+                onInteractOutside={(e) => e.preventDefault()}
             >
                 <DialogHeader className="pr-12">
                     <DialogTitle className="flex items-center gap-2 text-xl font-bold">
@@ -422,10 +423,14 @@ export function BOMFormDialog({
                                         </TableBody>
                                     </Table>
                                 </div>
+
                                 {form.formState.errors.lines && (
-                                    <p className="text-sm font-medium text-destructive">
-                                        {form.formState.errors.lines.root?.message || "Error en las líneas"}
-                                    </p>
+                                    <div className="rounded-md bg-destructive/10 p-3 text-sm font-medium text-destructive mt-4">
+                                        {form.formState.errors.lines.root?.message
+                                            ? form.formState.errors.lines.root.message
+                                            : `Hay errores en ${Object.keys(form.formState.errors.lines).length} componente(s). Verifique los campos en rojo.`
+                                        }
+                                    </div>
                                 )}
                             </div>
                         </form>
@@ -433,16 +438,29 @@ export function BOMFormDialog({
                 </div>
 
                 <DialogFooter className="py-4 border-t mt-4">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                    <Button
+                        variant="outline"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            onOpenChange(false);
+                        }}
+                        disabled={loading}
+                    >
                         Cancelar
                     </Button>
-                    <Button form="bom-form" type="submit" disabled={loading}>
+                    <Button
+                        form="bom-form"
+                        type="submit"
+                        disabled={loading}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         <Save className="mr-2 h-4 w-4" />
                         Guardar BOM
                     </Button>
                 </DialogFooter>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }
