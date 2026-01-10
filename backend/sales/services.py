@@ -168,10 +168,10 @@ class SalesService:
         """
         # 1. Process lines for stock moves and quantity updates
         for line in delivery.lines.all():
-            from inventory.services import StockService
-            # Convert to base UoM
-            base_qty = StockService.convert_quantity(
-                line.quantity, # Changed from quantity_delivered to quantity
+            from inventory.services import StockService, UoMService
+            # Convert quantity from sale UoM to product base UoM
+            base_qty = UoMService.convert_quantity(
+                line.quantity, 
                 from_uom=line.sale_line.uom,
                 to_uom=line.product.uom
             )

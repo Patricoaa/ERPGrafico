@@ -1,11 +1,12 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from .models import Product, Warehouse, StockMove, PricingRule, UoM
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from decimal import Decimal
+from typing import Tuple, Optional
 
 class StockService:
     @staticmethod
@@ -201,3 +202,223 @@ class PricingService:
                 break
             
         return best_price
+
+class UoMService:
+    """
+    Servicio centralizado para gestión de Unidades de Medida (UoM).
+    
+    Proporciona funcionalidades de:
+    - Conversión entre unidades de la misma categoría
+    - Validación de compatibilidad de UoMs
+    - Obtención de UoMs permitidos según contexto
+    - Formateo inteligente de cantidades para display
+    """
+    
+    @staticmethod
+    def convert_quantity(qty: Decimal, from_uom: UoM, to_uom: UoM) -> Decimal:
+        """
+        Convierte cantidad entre UoMs de la misma categoría.
+        
+        Args:
+            qty: Cantidad en unidad origen
+            from_uom: UoM origen
+            to_uom: UoM destino
+            
+        Returns:
+            Cantidad convertida en unidad destino
+            
+        Raises:
+            ValidationError: Si las UoMs son de categorías diferentes
+            
+        Examples:
+            >>> convert_quantity(Decimal('1.5'), kg_uom, g_uom)
+            Decimal('1500')
+            >>> convert_quantity(Decimal('2'), rollo_uom, metro_uom)  # 1 rollo = 50m
+            Decimal('100')
+        """
+        if not UoMService.validate_uom_compatibility(from_uom, to_uom):
+            raise ValidationError(
+                f"No se puede convertir de '{from_uom.name}' ({from_uom.category.name}) "
+                f"a '{to_uom.name}' ({to_uom.category.name}). "
+                f"Las unidades deben pertenecer a la misma categoría."
+            )
+        
+        # Si son la misma UoM, no hay conversión
+        if from_uom.id == to_uom.id:
+            return qty
+        
+        # Conversión usando ratios
+        # Fórmula: qty_to = qty_from * (ratio_from / ratio_to)
+        # Ejemplo: 1.5 kg a g -> 1.5 * (1.0 / 0.001) = 1500 g
+        from_ratio = Decimal(str(from_uom.ratio))
+        to_ratio = Decimal(str(to_uom.ratio))
+        
+        if to_ratio == 0:
+            raise ValidationError(f"La UoM '{to_uom.name}' tiene un ratio inválido (0).")
+        
+        converted_qty = qty * (from_ratio / to_ratio)
+        
+        # Aplicar redondeo de la UoM destino
+        rounding = Decimal(str(to_uom.rounding))
+        return converted_qty.quantize(rounding)
+    
+    @staticmethod
+    def validate_uom_compatibility(uom1: UoM, uom2: UoM) -> bool:
+        """
+        Valida que dos UoMs pertenezcan a la misma categoría.
+        
+        Args:
+            uom1: Primera UoM
+            uom2: Segunda UoM
+            
+        Returns:
+            True si son compatibles (misma categoría), False en caso contrario
+        """
+        return uom1.category_id == uom2.category_id
+    
+    @staticmethod
+    def get_allowed_uoms_for_context(product: Product, context: str) -> QuerySet:
+        """
+        Retorna UoMs permitidos según contexto.
+        
+        Args:
+            product: Producto para el cual obtener UoMs
+            context: Contexto de uso ('sale', 'purchase', 'bom', 'stock')
+            
+        Returns:
+            QuerySet de UoMs permitidos
+            
+        Context behaviors:
+            - 'sale': uom base + allowed_sale_uoms (restrictivo)
+            - 'purchase': TODA la categoría del uom base (flexible)
+            - 'bom': TODA la categoría del uom base (flexible)
+            - 'stock': solo uom base
+        """
+        if not product.uom:
+            return UoM.objects.none()
+        
+        if context == 'stock':
+            # Solo la unidad base
+            return UoM.objects.filter(id=product.uom.id)
+        
+        elif context == 'sale':
+            # Base + allowed_sale_uoms (restrictivo)
+            allowed_ids = [product.uom.id]
+            allowed_ids.extend(product.allowed_sale_uoms.values_list('id', flat=True))
+            return UoM.objects.filter(id__in=allowed_ids, active=True)
+        
+        elif context in ['purchase', 'bom']:
+            # Toda la categoría (flexible)
+            return UoM.objects.filter(
+                category=product.uom.category,
+                active=True
+            ).order_by('ratio')
+        
+        else:
+            raise ValueError(f"Contexto inválido: '{context}'. Use: 'sale', 'purchase', 'bom', o 'stock'")
+    
+    @staticmethod
+    def get_smart_display_uom(qty: Decimal, base_uom: UoM) -> Tuple[Decimal, UoM]:
+        """
+        Determina la mejor UoM para mostrar una cantidad.
+        
+        Lógica:
+        1. Si qty >= 1 en base_uom -> retorna (qty, base_uom)
+        2. Si qty < 1 -> busca UoM más pequeño donde qty >= 1
+        3. Si no encuentra -> retorna (qty, base_uom) en decimales
+        
+        Args:
+            qty: Cantidad en unidad base
+            base_uom: UoM base del producto
+            
+        Returns:
+            Tupla (cantidad_convertida, uom_display)
+            
+        Examples:
+            >>> get_smart_display_uom(Decimal('0.5'), kg_uom)
+            (Decimal('500'), g_uom)
+            >>> get_smart_display_uom(Decimal('100'), kg_uom)
+            (Decimal('100'), kg_uom)
+        """
+        # Si qty >= 1, usar la unidad base
+        if qty >= 1:
+            return (qty, base_uom)
+        
+        # Buscar UoMs más pequeños de la misma categoría
+        smaller_uoms = UoM.objects.filter(
+            category=base_uom.category,
+            ratio__lt=base_uom.ratio,
+            active=True
+        ).order_by('-ratio')  # De mayor a menor (más cercano a base primero)
+        
+        for smaller_uom in smaller_uoms:
+            try:
+                converted_qty = UoMService.convert_quantity(qty, base_uom, smaller_uom)
+                # Si la cantidad convertida es >= 1, usar esta UoM
+                if converted_qty >= 1:
+                    return (converted_qty, smaller_uom)
+            except ValidationError:
+                continue
+        
+        # Fallback: retornar en base con decimales
+        return (qty, base_uom)
+    
+    @staticmethod
+    def format_quantity_display(qty: Decimal, base_uom: UoM, smart_convert: bool = True) -> str:
+        """
+        Formatea cantidad con unidad para display.
+        
+        Args:
+            qty: Cantidad en unidad base
+            base_uom: UoM base del producto
+            smart_convert: Si True, convierte cantidades < 1 a unidad menor
+            
+        Returns:
+            String formateado con cantidad y unidad
+            
+        Examples:
+            >>> format_quantity_display(Decimal('100'), kg_uom)
+            '100 kg'
+            >>> format_quantity_display(Decimal('0.5'), kg_uom, smart_convert=True)
+            '500 g'
+            >>> format_quantity_display(Decimal('0.5'), kg_uom, smart_convert=False)
+            '0.5 kg'
+        """
+        if smart_convert and qty < 1:
+            display_qty, display_uom = UoMService.get_smart_display_uom(qty, base_uom)
+        else:
+            display_qty, display_uom = qty, base_uom
+        
+        # Formatear cantidad (eliminar ceros innecesarios)
+        qty_str = str(display_qty.normalize())
+        
+        return f"{qty_str} {display_uom.name}"
+    
+    @staticmethod
+    def get_conversion_hint(qty: Decimal, from_uom: UoM, to_uom: UoM) -> str:
+        """
+        Genera un hint de conversión para mostrar al usuario.
+        
+        Args:
+            qty: Cantidad en unidad origen
+            from_uom: UoM origen
+            to_uom: UoM destino (típicamente la base)
+            
+        Returns:
+            String con hint de conversión
+            
+        Example:
+            >>> get_conversion_hint(Decimal('2'), rollo_uom, metro_uom)
+            '2 Rollos = 100 Metros (stock)'
+        """
+        if from_uom.id == to_uom.id:
+            return ""
+        
+        try:
+            converted_qty = UoMService.convert_quantity(qty, from_uom, to_uom)
+            from_str = f"{qty.normalize()} {from_uom.name}"
+            to_str = f"{converted_qty.normalize()} {to_uom.name}"
+            return f"{from_str} = {to_str} (stock)"
+        except ValidationError:
+            return ""
+

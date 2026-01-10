@@ -43,16 +43,19 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
         # Validate component has base UoM
         if component and not component.uom:
             raise serializers.ValidationError(
-                f"El componente '{component.name}' no tiene una Unidad de Medida (UoM) asignada."
+                f"El componente '{component.name}' debe tener una UoM base asignada."
             )
             
-        # Validate compatibility if both present
+        # Validate compatibility if both present - BOM allows full category flexibility
         if component and uom:
-            if component.uom.category != uom.category:
-                 raise serializers.ValidationError(
-                    f"La unidad '{uom.name}' no es compatible con la unidad base del componente '{component.uom.name}' "
-                    f"(Categorías diferentes: {uom.category.name} vs {component.uom.category.name})"
-                )
+            from inventory.services import UoMService
+            
+            if not UoMService.validate_uom_compatibility(component.uom, uom):
+                raise serializers.ValidationError({
+                    'uom': f"La unidad '{uom.name}' no es compatible con la categoría "
+                           f"del componente ('{component.uom.category.name}'). "
+                           f"Puede usar cualquier unidad de la misma categoría para mayor flexibilidad."
+                })
                 
         return data
 

@@ -25,7 +25,7 @@ interface SalesCheckoutWizardProps {
     orderLines: any[]
     total: number
     onComplete: () => void
-    // customerName and customerId no longer strictly needed as props if selection is inside
+    customerName?: string  // Optional for backward compatibility
     initialCustomerName?: string
     initialCustomerId?: string
 }
@@ -184,7 +184,7 @@ export function SalesCheckoutWizard({
                             {step === 1 && (
                                 <Step0_Customer
                                     selectedCustomerId={selectedCustomerId}
-                                    setSelectedCustomerId={setSelectedCustomerId}
+                                    setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
                                     setSelectedCustomerName={setSelectedCustomerName}
                                 />
                             )}

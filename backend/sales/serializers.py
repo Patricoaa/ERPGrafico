@@ -23,11 +23,19 @@ class SaleLineSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         product = data.get('product')
-        # Check if product has either a stock UoM or a Sale UoM
-        if product and not (product.uom or product.sale_uom):
-            raise serializers.ValidationError(
-                f"El producto '{product.name}' no tiene configurada una Unidad de Venta ni Unidad de Medida base."
-            )
+        uom = data.get('uom')
+        
+        if product and uom:
+            from inventory.services import UoMService
+            allowed_uoms = UoMService.get_allowed_uoms_for_context(product, 'sale')
+            
+            if uom.id not in allowed_uoms.values_list('id', flat=True):
+                allowed_names = ', '.join(allowed_uoms.values_list('name', flat=True))
+                raise serializers.ValidationError({
+                    'uom': f"La unidad '{uom.name}' no está permitida para este producto. "
+                           f"Unidades permitidas: {allowed_names}"
+                })
+        
         return data
 
 class SaleOrderSerializer(serializers.ModelSerializer):

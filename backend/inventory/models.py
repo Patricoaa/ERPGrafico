@@ -167,28 +167,30 @@ class Product(models.Model):
     # Units of Measure
     uom = models.ForeignKey(
         UoM, on_delete=models.PROTECT, related_name='products',
-        verbose_name=_("Unidad de Medida"), 
+        verbose_name=_("Unidad de Medida Base"), 
         null=True, blank=True,
-        help_text=_("Unidad base para gestión de stock")
+        help_text=_("Unidad base para gestión de stock. Todas las conversiones se hacen a esta unidad.")
     )
+    
+    # DEPRECATED FIELDS - Mantener por compatibilidad
     sale_uom = models.ForeignKey(
         UoM, on_delete=models.PROTECT, related_name='products_sale',
-        verbose_name=_("UdM Venta"),
+        verbose_name=_("UdM Venta (DEPRECATED)"),
         null=True, blank=True,
-        help_text=_("Unidad por defecto para ventas")
+        help_text=_("⚠️ DEPRECATED: Use 'allowed_sale_uoms' en su lugar. Este campo se mantendrá solo para compatibilidad.")
     )
     purchase_uom = models.ForeignKey(
         UoM, on_delete=models.PROTECT, related_name='products_purchase',
-        verbose_name=_("UdM Compra"), 
+        verbose_name=_("UdM Compra (DEPRECATED)"), 
         null=True, blank=True,
-        help_text=_("Unidad por defecto para compras")
+        help_text=_("⚠️ DEPRECATED: Use 'allowed_sale_uoms' en su lugar. Este campo se mantendrá solo para compatibilidad.")
     )
 
     allowed_sale_uoms = models.ManyToManyField(
         UoM, related_name='allowed_sale_products',
         blank=True,
         verbose_name=_("Unidades de Venta Permitidas"),
-        help_text=_("Unidades de medida explícitas permitidas para la venta de este producto.")
+        help_text=_("Unidades de medida permitidas para la venta de este producto (además de la unidad base).")
     )
 
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=2, default=0)
@@ -253,6 +255,14 @@ class Product(models.Model):
     @property
     def get_expense_account(self):
         return self.category.expense_account
+    
+    def get_allowed_sale_uoms(self):
+        """
+        Retorna QuerySet de UoMs permitidos para venta.
+        Usa UoMService para obtener base + allowed_sale_uoms.
+        """
+        from inventory.services import UoMService
+        return UoMService.get_allowed_uoms_for_context(self, 'sale')
 
     def get_bom_cost(self):
         """
@@ -305,24 +315,25 @@ class Product(models.Model):
             component_stock = component.moves.aggregate(total=Sum('quantity'))['total'] or 0.0
             component_stock = float(component_stock)
             
-            # Unit Conversion Logic
+            # Unit Conversion Logic using UoMService
             # We need to express "required_qty" (which is in line.uom) into Component Base UoM
-            conversion_factor = 1.0
+            required_qty_in_base = required_qty
             
             if line.uom and component.uom:
                 if line.uom != component.uom:
-                    if line.uom.category == component.uom.category:
-                         # Conversion: Qty_Base = Qty_Line * (Line_Ratio / Base_Ratio)
-                         # Example: Line=50cm (0.01), Base=m (1.0). Qty_Base = 50 * (0.01 / 1.0) = 0.5m
-                         line_ratio = float(line.uom.ratio)
-                         base_ratio = float(component.uom.ratio)
-                         if base_ratio != 0:
-                             conversion_factor = line_ratio / base_ratio
-                    else:
-                        # Incompatible categories (should be caught by serializer, but fail safe here)
-                        pass
-            
-            required_qty_in_base = required_qty * conversion_factor
+                    try:
+                        from inventory.services import UoMService
+                        from decimal import Decimal
+                        required_qty_in_base = float(
+                            UoMService.convert_quantity(
+                                Decimal(str(required_qty)),
+                                line.uom,
+                                component.uom
+                            )
+                        )
+                    except ValidationError:
+                        # Incompatible categories, skip this component
+                        continue
             
             if required_qty_in_base <= 0:
                  continue

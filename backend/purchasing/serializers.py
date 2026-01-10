@@ -18,13 +18,24 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         product = data.get('product')
-        # During updates, product might not be in data if not changed. 
-        # But if it IS in data, we check.
-        # If it's a new line (no instance), product is required by model, so it will be in data.
-        if product and not product.uom:
-            raise serializers.ValidationError(
-                f"El producto '{product.name}' no tiene una Unidad de Medida (UoM) asignada."
-            )
+        uom = data.get('uom')
+        
+        if product and uom:
+            from inventory.services import UoMService
+            
+            # COMPRAS: Permite toda la categoría del UoM base (flexible)
+            if not product.uom:
+                raise serializers.ValidationError({
+                    'product': f"El producto '{product.name}' debe tener una UoM base asignada."
+                })
+            
+            if not UoMService.validate_uom_compatibility(product.uom, uom):
+                raise serializers.ValidationError({
+                    'uom': f"La unidad '{uom.name}' no es compatible con la categoría "
+                           f"del producto ('{product.uom.category.name}'). "
+                           f"Solo puede usar unidades de la misma categoría."
+                })
+        
         return data
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
