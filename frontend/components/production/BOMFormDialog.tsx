@@ -357,7 +357,7 @@ export function BOMFormDialog({
                                                             render={({ field }) => {
                                                                 const componentId = form.watch(`lines.${index}.component`) || "";
                                                                 const component = products.find((p: any) => p.id.toString() === componentId);
-                                                                const quantity = parseFloat(form.watch(`lines.${index}.quantity`) || "1");
+                                                                const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1;
 
                                                                 return (
                                                                     <UoMSelector

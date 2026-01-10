@@ -342,7 +342,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                         render={({ field }) => {
                                                             const productId = form.watch(`lines.${index}.product`) || ""
                                                             const selectedProduct = products.find(p => p.id.toString() === productId)
-                                                            const quantity = parseFloat(form.watch(`lines.${index}.quantity`) || "1")
+                                                            const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1
 
                                                             return (
                                                                 <UoMSelector
