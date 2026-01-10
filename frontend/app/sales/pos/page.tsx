@@ -396,11 +396,6 @@ export default function POSPage() {
                 <div className="flex flex-col space-y-4 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                            <div className="p-4 border-b flex justify-end bg-muted/20">
-                                <Button variant="ghost" size="icon" onClick={() => setItems([])} title="Limpiar Carrito" className="hover:bg-destructive/10 hover:text-destructive">
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
                             <div className="p-4 border-b font-medium bg-muted/50 flex justify-between items-center">
                                 <span>Resumen de Venta</span>
                                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{items.length} items</span>
