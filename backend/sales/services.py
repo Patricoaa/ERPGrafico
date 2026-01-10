@@ -208,7 +208,7 @@ class SalesService:
                 )
 
                 # Create stock move (OUT)
-                print(f"DEBUG: Creating StockMove for product {product.code}, qty {-base_qty}, warehouse {delivery.warehouse.name}")
+                print(f"DEBUG: Creating StockMove for product {product.internal_code}, qty {-base_qty}, warehouse {delivery.warehouse.name}")
                 stock_move = StockMove.objects.create(
                     date=delivery.delivery_date,
                     product=product,

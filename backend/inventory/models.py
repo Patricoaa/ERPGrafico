@@ -215,6 +215,9 @@ class Product(models.Model):
         verbose_name = _("Producto")
         verbose_name_plural = _("Productos")
 
+    def __str__(self):
+        return f"{self.internal_code} - {self.name}"
+
     def save(self, *args, **kwargs):
         if self.code == "" or (isinstance(self.code, str) and not self.code.strip()):
             self.code = None
@@ -456,7 +459,7 @@ class StockMove(models.Model):
         ordering = ['-date', '-created_at']
 
     def __str__(self):
-        return f"{self.date} - {self.product.code} ({self.quantity})"
+        return f"{self.date} - {self.product.internal_code} ({self.quantity})"
 
 class PricingRule(models.Model):
     class RuleType(models.TextChoices):
@@ -545,7 +548,7 @@ class ProductCustomField(models.Model):
         unique_together = ['product', 'template']
     
     def __str__(self):
-        return f"{self.product.code} - {self.template.name}"
+        return f"{self.product.internal_code} - {self.template.name}"
 
 class ReorderingRule(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reordering_rules')
@@ -561,7 +564,7 @@ class ReorderingRule(models.Model):
         unique_together = ['product', 'warehouse']
 
     def __str__(self):
-        return f"{self.product.code} - {self.warehouse.name}"
+        return f"{self.product.internal_code} - {self.warehouse.name}"
 
 
 class ReplenishmentProposal(models.Model):
@@ -592,6 +595,6 @@ class ReplenishmentProposal(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Propuesta: {self.product.code} ({self.qty_to_order})"
+        return f"Propuesta: {self.product.internal_code} ({self.qty_to_order})"
 
 
