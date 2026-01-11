@@ -37,7 +37,7 @@ export function Step1_PurchaseDTE({ dteData, setDteData }: Step1_PurchaseDTEProp
                         <RadioGroupItem value="FACTURA" id="type-factura" className="sr-only" />
                         <FileText className="mb-3 h-6 w-6" />
                         <span className="text-sm font-medium">Factura</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Adjunto requerido</span>
+                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Folio y adjunto requeridos</span>
                     </Label>
                 </RadioGroup>
             </div>
@@ -58,14 +58,14 @@ export function Step1_PurchaseDTE({ dteData, setDteData }: Step1_PurchaseDTEProp
                     <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
                         <div className="space-y-2">
                             <Label htmlFor="folio" className="text-xs font-bold uppercase">
-                                N° de Folio {dteData.type === 'BOLETA' && <span className="text-destructive">*</span>}
+                                N° de Folio <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="folio"
                                 placeholder="Ej: 45223"
                                 value={dteData.number}
                                 onChange={(e) => setDteData({ ...dteData, number: e.target.value })}
-                                required={dteData.type === 'BOLETA'}
+                                required
                             />
                         </div>
                         <div className="space-y-2">
@@ -105,10 +105,10 @@ export function Step1_PurchaseDTE({ dteData, setDteData }: Step1_PurchaseDTEProp
                 </div>
             )}
 
-            {dteData.type === 'FACTURA' && !dteData.isPending && !dteData.attachment && (
+            {dteData.type === 'FACTURA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-lg text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
-                    <p>El adjunto de la factura es requerido para registrar el documento.</p>
+                    <p>El folio y el adjunto de la factura son requeridos para registrar el documento.</p>
                 </div>
             )}
         </div>

@@ -99,9 +99,15 @@ export function PurchaseCheckoutWizard({
             toast.error("Debe seleccionar una bodega destino.")
             return
         }
-        if (step === 2 && dteData.type === 'FACTURA' && !dteData.isPending && !dteData.attachment) {
-            toast.error("Debe adjuntar el archivo de la factura.")
-            return
+        if (step === 2 && dteData.type === 'FACTURA' && !dteData.isPending) {
+            if (!dteData.attachment) {
+                toast.error("Debe adjuntar el archivo de la factura.")
+                return
+            }
+            if (!dteData.number) {
+                toast.error("Debe ingresar el número de folio de la factura.")
+                return
+            }
         }
         if (step === 2 && dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
             toast.error("Debe ingresar el número de folio de la boleta.")
