@@ -55,8 +55,6 @@ const purchaseLineSchema = z.object({
 })
 
 const purchaseOrderSchema = z.object({
-    supplier: z.string().min(1, "El proveedor es requerido"),
-    warehouse: z.string().min(1, "El almacén es requerido"),
     notes: z.string().optional(),
     lines: z.array(purchaseLineSchema).min(1, "Debe agregar al menos una línea"),
 })
@@ -68,6 +66,7 @@ interface PurchaseOrderFormProps {
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    onCheckout?: (orderLines: any[], total: number) => void
 }
 
 const OrderTotals = ({ control }: { control: Control<PurchaseOrderFormValues> }) => {
@@ -98,13 +97,12 @@ const OrderTotals = ({ control }: { control: Control<PurchaseOrderFormValues> })
     )
 }
 
-export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOpenChange }: PurchaseOrderFormProps) {
+export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOpenChange, onCheckout }: PurchaseOrderFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [warehouses, setWarehouses] = useState<any[]>([])
     const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoMs] = useState<any[]>([])
 
@@ -112,8 +110,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
         resolver: zodResolver(purchaseOrderSchema),
         defaultValues: initialData ? {
             ...initialData,
-            supplier: initialData.supplier?.toString() || "",
-            warehouse: initialData.warehouse?.toString() || "",
             lines: initialData.lines.map((l: any) => ({
                 id: l.id,
                 product: l.product?.id?.toString() || l.product?.toString() || "",
@@ -123,8 +119,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 tax_rate: parseFloat(l.tax_rate) || 19,
             }))
         } : {
-            supplier: "",
-            warehouse: "",
             notes: "",
             lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
         },
@@ -137,12 +131,10 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
 
     const fetchData = async () => {
         try {
-            const [warehousesRes, productsRes, uomsRes] = await Promise.all([
-                api.get('/inventory/warehouses/'),
+            const [productsRes, uomsRes] = await Promise.all([
                 api.get('/inventory/products/'),
                 api.get('/inventory/uoms/'),
             ])
-            setWarehouses(warehousesRes.data.results || warehousesRes.data)
 
             // Filter products to exclude SERVICE, MANUFACTURABLE_STANDARD, and MANUFACTURABLE_CUSTOM
             const allProducts = productsRes.data.results || productsRes.data
@@ -156,24 +148,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
         }
     }
 
-    // Auto-fetch default vendor if none selected
-    useEffect(() => {
-        if (open && !form.getValues("supplier")) {
-            const fetchDefaultVendor = async () => {
-                try {
-                    const response = await api.get('/contacts/?is_default_vendor=true');
-                    const results = response.data.results || response.data;
-                    const defaultVendor = results.find((c: any) => c.is_default_vendor);
-                    if (defaultVendor) {
-                        form.setValue("supplier", defaultVendor.id.toString());
-                    }
-                } catch (error) {
-                    console.error("Error fetching default vendor:", error);
-                }
-            };
-            fetchDefaultVendor();
-        }
-    }, [open, form]);
+
 
     useEffect(() => {
         if (open) {
@@ -181,8 +156,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
             if (initialData) {
                 form.reset({
                     ...initialData,
-                    supplier: initialData.supplier?.id?.toString() || initialData.supplier?.toString() || "",
-                    warehouse: initialData.warehouse?.id?.toString() || initialData.warehouse?.toString() || "",
                     lines: initialData.lines.map((l: any) => ({
                         id: l.id,
                         product: l.product?.id?.toString() || l.product?.toString() || "",
@@ -194,8 +167,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 })
             } else {
                 form.reset({
-                    supplier: "",
-                    warehouse: "",
                     notes: "",
                     lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
                 })
@@ -204,14 +175,40 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
     }, [open, initialData, form])
 
     async function onSubmit(data: PurchaseOrderFormValues) {
+        // For new orders, trigger the checkout wizard
+        if (!initialData && onCheckout) {
+            const lines = useWatch({ control: form.control, name: "lines" }) || data.lines
+            const total = lines.reduce((sum, line) => {
+                const lineNet = Number(line.quantity) * Number(line.unit_cost) || 0
+                const lineTax = lineNet * (Number(line.tax_rate) / 100)
+                return sum + lineNet + lineTax
+            }, 0)
+
+            // Prepare order lines with product details
+            const orderLines = await Promise.all(data.lines.map(async (line) => {
+                const product = products.find(p => p.id.toString() === line.product)
+                return {
+                    id: product?.id,
+                    name: product?.name,
+                    qty: line.quantity,
+                    quantity: line.quantity,
+                    uom: line.uom,
+                    unit_cost: line.unit_cost,
+                    tax_rate: line.tax_rate
+                }
+            }))
+
+            onCheckout(orderLines, total)
+            setOpen(false)
+            return
+        }
+
+        // For editing existing orders, save normally
         setLoading(true)
         try {
             if (initialData) {
                 await api.put(`/purchasing/orders/${initialData.id}/`, data)
                 toast.success("Orden de Compra actualizada correctamente")
-            } else {
-                await api.post('/purchasing/orders/', data)
-                toast.success("Orden de Compra creada correctamente")
             }
             form.reset()
             setOpen(false)
@@ -240,52 +237,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="supplier"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Proveedor</FormLabel>
-                                        <FormControl>
-                                            <AdvancedContactSelector
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                contactType="SUPPLIER"
-                                                placeholder="Buscar proveedor..."
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="warehouse"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Almacén de Recepción</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione un almacén" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {warehouses.filter(w => w.id).map((w) => (
-                                                    <SelectItem key={w.id} value={w.id.toString()}>
-                                                        {w.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                        </div>
-
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-medium">Líneas de Compra</h3>

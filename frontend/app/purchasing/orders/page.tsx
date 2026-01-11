@@ -60,6 +60,7 @@ export default function PurchaseOrdersPage() {
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
+    const [checkoutData, setCheckoutData] = useState<{ orderLines: any[], total: number }>({ orderLines: [], total: 0 })
 
 
     const fetchOrders = async () => {
@@ -152,16 +153,16 @@ export default function PurchaseOrdersPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
                 <div className="flex items-center space-x-2">
-                    <Button onClick={() => setCheckoutOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Procesar Compra
-                    </Button>
                     <PurchaseOrderForm
                         onSuccess={fetchOrders}
                         open={isFormOpen && !editingOrder}
                         onOpenChange={(open) => {
                             setIsFormOpen(open)
                             if (!open) setEditingOrder(null)
+                        }}
+                        onCheckout={(orderLines, total) => {
+                            setCheckoutData({ orderLines, total })
+                            setCheckoutOpen(true)
                         }}
                     />
                     {editingOrder && (
@@ -376,11 +377,12 @@ export default function PurchaseOrdersPage() {
                 open={checkoutOpen}
                 onOpenChange={setCheckoutOpen}
                 order={null}
-                orderLines={[]}
-                total={0}
+                orderLines={checkoutData.orderLines}
+                total={checkoutData.total}
                 onComplete={() => {
                     fetchOrders()
                     setCheckoutOpen(false)
+                    setCheckoutData({ orderLines: [], total: 0 })
                 }}
             />
         </div>
