@@ -9,9 +9,10 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Step1_DTE } from "../sales/checkout/Step1_DTE"
+import { Step1_PurchaseDTE } from "./checkout/Step1_PurchaseDTE"
 import { Step2_PurchasePayment } from "./checkout/Step2_PurchasePayment"
 import { Step3_Receipt } from "./checkout/Step3_Receipt"
+import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
@@ -44,6 +45,7 @@ export function PurchaseCheckoutWizard({
     const [selectedSupplierId, setSelectedSupplierId] = useState(initialSupplierId)
     const [selectedSupplierName, setSelectedSupplierName] = useState("")
     const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
+    const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
 
     const [dteData, setDteData] = useState({
         type: 'FACTURA',
@@ -54,7 +56,7 @@ export function PurchaseCheckoutWizard({
     })
 
     const [paymentData, setPaymentData] = useState({
-        method: 'CREDIT',
+        method: 'CASH',
         amount: total,
         transactionNumber: '',
         treasuryAccountId: null,
@@ -64,8 +66,29 @@ export function PurchaseCheckoutWizard({
     const [receiptData, setReceiptData] = useState<any>({
         type: 'IMMEDIATE',
         deliveryReference: '',
-        notes: ''
+        notes: '',
+        partialQuantities: []
     })
+
+    // Update payment amount when total changes
+    useEffect(() => {
+        setPaymentData(prev => ({ ...prev, amount: total }))
+    }, [total])
+
+    // Fetch warehouse name when ID changes
+    useEffect(() => {
+        if (selectedWarehouseId) {
+            const fetchWarehouseName = async () => {
+                try {
+                    const response = await api.get(`/inventory/warehouses/${selectedWarehouseId}/`)
+                    setSelectedWarehouseName(response.data.name)
+                } catch (error) {
+                    console.error("Failed to fetch warehouse name", error)
+                }
+            }
+            fetchWarehouseName()
+        }
+    }, [selectedWarehouseId])
 
     const handleNext = () => {
         if (step === 1 && !selectedSupplierId) {
@@ -76,11 +99,15 @@ export function PurchaseCheckoutWizard({
             toast.error("Debe seleccionar una bodega destino.")
             return
         }
-        if (step === 2 && dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
-            toast.error("Debe ingresar el número de folio para la factura.")
+        if (step === 2 && dteData.type === 'FACTURA' && !dteData.isPending && !dteData.attachment) {
+            toast.error("Debe adjuntar el archivo de la factura.")
             return
         }
-        if (step === 3 && paymentData.method !== 'CREDIT') {
+        if (step === 2 && dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
+            toast.error("Debe ingresar el número de folio de la boleta.")
+            return
+        }
+        if (step === 3 && paymentData.amount > 0) {
             if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
                 toast.error("Debe seleccionar una cuenta de origen.")
                 return
@@ -113,7 +140,7 @@ export function PurchaseCheckoutWizard({
                 lines: orderLines.map(l => ({
                     product: l.id,
                     quantity: l.qty || l.quantity,
-                    unit_cost: l.unit_cost || l.unit_price,
+                    unit_cost: l.unit_cost || 0,
                     uom: l.uom,
                     tax_rate: 19
                 }))
@@ -125,20 +152,36 @@ export function PurchaseCheckoutWizard({
             if (dteData.number) formData.append('document_number', dteData.number)
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
+            formData.append('is_pending_registration', dteData.isPending.toString())
 
             // Payment data
-            formData.append('payment_method', paymentData.method)
-            formData.append('amount', paymentData.amount.toString())
-            formData.append('payment_is_pending', paymentData.isPending.toString())
-            if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
-            if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
+            if (paymentData.amount > 0) {
+                formData.append('payment_method', paymentData.method)
+                formData.append('amount', paymentData.amount.toString())
+                formData.append('payment_is_pending', paymentData.isPending.toString())
+                if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
+                if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
+            } else {
+                // Implicit credit - no payment
+                formData.append('payment_method', 'CREDIT')
+                formData.append('amount', '0')
+            }
 
             // Receipt data
             formData.append('receipt_type', receiptData.type)
-            const receiptPayload = {
+            const receiptPayload: any = {
                 delivery_reference: receiptData.deliveryReference,
                 notes: receiptData.notes
             }
+
+            // Add partial quantities if applicable
+            if (receiptData.type === 'PARTIAL' && receiptData.partialQuantities) {
+                receiptPayload.line_data = receiptData.partialQuantities.map((pq: any) => ({
+                    product_id: pq.productId,
+                    quantity: pq.receivedQty
+                }))
+            }
+
             formData.append('receipt_data', JSON.stringify(receiptPayload))
 
             await api.post('/purchasing/orders/purchase_checkout/', formData, {
@@ -160,7 +203,7 @@ export function PurchaseCheckoutWizard({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[95vw] lg:max-w-[1000px] p-0 overflow-hidden bg-background">
+            <DialogContent className="sm:max-w-[95vw] lg:max-w-[1200px] p-0 overflow-hidden bg-background max-h-[90vh]">
                 <div className="flex h-[600px]">
                     <div className="flex-1 flex flex-col min-w-0">
                         <DialogHeader className="p-6 border-b">
@@ -187,9 +230,9 @@ export function PurchaseCheckoutWizard({
                                     setSelectedWarehouseId={setSelectedWarehouseId}
                                 />
                             )}
-                            {step === 2 && <Step1_DTE dteData={dteData} setDteData={setDteData} />}
+                            {step === 2 && <Step1_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
                             {step === 3 && <Step2_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
-                            {step === 4 && <Step3_Receipt receiptData={receiptData} setReceiptData={setReceiptData} />}
+                            {step === 4 && <Step3_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={orderLines} />}
                         </div>
 
                         <DialogFooter className="p-6 border-t bg-muted/5">
@@ -224,6 +267,24 @@ export function PurchaseCheckoutWizard({
                                 )}
                             </div>
                         </DialogFooter>
+                    </div>
+
+                    {/* Sidebar Summary */}
+                    <div className="w-[380px] hidden lg:block">
+                        <PurchaseOrderSummaryCard
+                            orderLines={orderLines}
+                            total={total}
+                            supplierName={selectedSupplierName}
+                            warehouseName={selectedWarehouseName}
+                            dteType={step > 1 ? dteData.type : undefined}
+                            paymentData={step > 2 ? {
+                                method: paymentData.method,
+                                amount: paymentData.amount,
+                                pendingDebt: total - paymentData.amount
+                            } : undefined}
+                            receiptData={step > 3 ? receiptData : undefined}
+                            currentStep={step}
+                        />
                     </div>
                 </div>
             </DialogContent>

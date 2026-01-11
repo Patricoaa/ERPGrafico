@@ -75,13 +75,29 @@ class PurchasingService:
         
         for item in line_data:
             line_id = item.get('line_id')
+            product_id = item.get('product_id')
             quantity = Decimal(str(item.get('quantity', 0)))
             unit_cost = Decimal(str(item.get('unit_cost', 0)))
             
             if quantity <= 0:
                 continue
                 
-            purchase_line = order.lines.get(id=line_id)
+            purchase_line = None
+            if line_id:
+                purchase_line = order.lines.filter(id=line_id).first()
+            elif product_id:
+                # Fallback: Find first pending line for this product
+                for line in order.lines.filter(product_id=product_id):
+                    if line.quantity_pending > 0:
+                        purchase_line = line
+                        break
+                if not purchase_line: 
+                     # If no pending line, just grab last one to over-receive? 
+                     # Or error? Let's grab first match.
+                     purchase_line = order.lines.filter(product_id=product_id).first()
+
+            if not purchase_line:
+                raise ValidationError(f"No se encontró línea de compra válida para el item (ID: {line_id}, Prod: {product_id})")
             
             if quantity > purchase_line.quantity_pending:
                  raise ValidationError(f"Cantidad a recibir ({quantity}) excede la pendiente ({purchase_line.quantity_pending}) para {purchase_line.product.name}")

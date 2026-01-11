@@ -10,12 +10,11 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, CheckCircle, Package, FileText, History, Banknote, FileEdit, X, ShoppingCart } from "lucide-react"
+import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { Eye, FileBadge } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
@@ -61,6 +60,8 @@ export default function PurchaseOrdersPage() {
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [checkoutData, setCheckoutData] = useState<{ orderLines: any[], total: number }>({ orderLines: [], total: 0 })
+    const [folioModalOpen, setFolioModalOpen] = useState(false)
+    const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
 
 
     const fetchOrders = async () => {
@@ -209,16 +210,31 @@ export default function PurchaseOrdersPage() {
                                     <div className="flex flex-col gap-1">
                                         {/* Only show Invoices/Boletas as requested */}
                                         {order.related_documents?.invoices?.map((inv: any) => (
-                                            <button
-                                                key={inv.id}
-                                                onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                                className={`text-[10px] flex flex-col text-left items-start leading-tight ${inv.status === 'DRAFT' ? 'text-amber-600' : 'text-blue-600 hover:underline'}`}
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">
-                                                    {inv.type === 'BOLETA' ? 'Boleta' : 'Factura'}
-                                                </span>
-                                                {inv.status === 'DRAFT' ? '(Pendiente)' : `${inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-${inv.number}`}
-                                            </button>
+                                            <div key={inv.id} className="flex items-center gap-2 group">
+                                                <button
+                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                    className={`text-[10px] flex flex-col text-left items-start leading-tight ${inv.status === 'DRAFT' ? 'text-amber-600' : 'text-blue-600 hover:underline'}`}
+                                                >
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">
+                                                        {inv.type === 'BOLETA' ? 'Boleta' : 'Factura'}
+                                                    </span>
+                                                    {inv.status === 'DRAFT' ? '(Pendiente)' : `${inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-${inv.number}`}
+                                                </button>
+                                                {inv.status === 'DRAFT' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={() => {
+                                                            setSelectedInvoice({ id: inv.id, type: inv.type })
+                                                            setFolioModalOpen(true)
+                                                        }}
+                                                        title="Registrar Folio"
+                                                    >
+                                                        <FileEdit className="h-3 w-3 text-amber-600" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         ))}
                                         {!order.related_documents?.invoices?.length && (
                                             <span className="text-muted-foreground text-xs">-</span>
@@ -385,6 +401,16 @@ export default function PurchaseOrdersPage() {
                     setCheckoutData({ orderLines: [], total: 0 })
                 }}
             />
+
+            {selectedInvoice && (
+                <DocumentCompletionModal
+                    open={folioModalOpen}
+                    onOpenChange={setFolioModalOpen}
+                    invoiceId={selectedInvoice.id}
+                    invoiceType={selectedInvoice.type}
+                    onSuccess={fetchOrders}
+                />
+            )}
         </div>
     )
 }
