@@ -38,13 +38,6 @@ export function Step0_Customer({
                         placeholder="Buscar por Nombre, RUT o Email..."
                     />
                 </div>
-
-                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl border border-dashed">
-                    <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground leading-normal">
-                        Si el cliente no existe, puede crearlo desde el módulo de Contactos. Para ventas rápidas, puede buscar un cliente genérico.
-                    </p>
-                </div>
             </div>
         </div>
     )

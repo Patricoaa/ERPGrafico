@@ -244,7 +244,7 @@ class BillingService:
     @staticmethod
     @transaction.atomic
     def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, 
-                     is_pending_registration=False, amount=None, treasury_account_id=None, 
+                     is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes=''):
         """
@@ -328,7 +328,7 @@ class BillingService:
                 sale_order=order,
                 treasury_account_id=treasury_account_id,
                 transaction_number=transaction_number,
-                is_pending_registration=is_pending_registration
+                is_pending_registration=payment_is_pending
             )
             
         return invoice

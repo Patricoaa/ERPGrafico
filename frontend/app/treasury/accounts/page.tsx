@@ -12,6 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 import {
     Dialog,
     DialogContent,
@@ -29,7 +30,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Plus, Pencil, Trash2, Loader2, Building2, Banknote } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Building2, Banknote, CheckCircle2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 
@@ -42,6 +44,9 @@ interface TreasuryAccount {
     account_name?: string
     account_details?: any
     account_type: 'BANK' | 'CASH'
+    allows_cash: boolean
+    allows_card: boolean
+    allows_transfer: boolean
 }
 
 export default function TreasuryAccountsPage() {
@@ -107,6 +112,7 @@ export default function TreasuryAccountsPage() {
                             <TableHead>Nombre</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Moneda</TableHead>
+                            <TableHead>Método de Pago</TableHead>
                             <TableHead>Cuenta Contable Asociada</TableHead>
                             <TableHead className="w-[100px]"></TableHead>
                         </TableRow>
@@ -135,6 +141,14 @@ export default function TreasuryAccountsPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>{acc.currency}</TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-wrap gap-1">
+                                            {acc.allows_cash && <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 border-emerald-200 bg-emerald-50">Efectivo</Badge>}
+                                            {acc.allows_card && <Badge variant="outline" className="text-[10px] uppercase font-bold text-blue-600 border-blue-200 bg-blue-50">Tarjeta</Badge>}
+                                            {acc.allows_transfer && <Badge variant="outline" className="text-[10px] uppercase font-bold text-purple-600 border-purple-200 bg-purple-50">Transf.</Badge>}
+                                            {!acc.allows_cash && !acc.allows_card && !acc.allows_transfer && <span className="text-[10px] text-muted-foreground italic">Ninguno</span>}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         {acc.account ? (
                                             <div className="flex flex-col">
@@ -179,6 +193,9 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
     const [type, setType] = useState<"BANK" | "CASH">("CASH")
     const [currency, setCurrency] = useState("CLP")
     const [accountingAccount, setAccountingAccount] = useState<string | null>(null)
+    const [allowsCash, setAllowsCash] = useState(false)
+    const [allowsCard, setAllowsCard] = useState(false)
+    const [allowsTransfer, setAllowsTransfer] = useState(false)
 
     useEffect(() => {
         if (open) {
@@ -187,11 +204,17 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setType(account.account_type)
                 setCurrency(account.currency)
                 setAccountingAccount(account.account ? account.account.toString() : null)
+                setAllowsCash(account.allows_cash)
+                setAllowsCard(account.allows_card)
+                setAllowsTransfer(account.allows_transfer)
             } else {
                 setName("")
                 setType("CASH")
                 setCurrency("CLP")
                 setAccountingAccount(null)
+                setAllowsCash(true) // Default for new account
+                setAllowsCard(false)
+                setAllowsTransfer(false)
             }
         }
     }, [open, account])
@@ -204,7 +227,10 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 name,
                 account_type: type,
                 currency,
-                account: accountingAccount
+                account: accountingAccount,
+                allows_cash: allowsCash,
+                allows_card: allowsCard,
+                allows_transfer: allowsTransfer
             }
             if (account) {
                 await api.patch(`/treasury/accounts/${account.id}/`, payload)
@@ -261,6 +287,26 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                             </Select>
                         </div>
                     </div>
+                    <div className="grid gap-3 p-4 border rounded-lg bg-muted/20">
+                        <Label className="text-sm font-bold">Métodos de Pago Permitidos</Label>
+                        <div className="flex flex-wrap gap-6">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="check-cash" checked={allowsCash} onCheckedChange={(v) => setAllowsCash(!!v)} />
+                                <Label htmlFor="check-cash" className="text-xs cursor-pointer">Efectivo</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="check-card" checked={allowsCard} onCheckedChange={(v) => setAllowsCard(!!v)} />
+                                <Label htmlFor="check-card" className="text-xs cursor-pointer">Tarjeta</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="check-transfer" checked={allowsTransfer} onCheckedChange={(v) => setAllowsTransfer(!!v)} />
+                                <Label htmlFor="check-transfer" className="text-xs cursor-pointer">Transferencia</Label>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground italic">
+                            Seleccione todos los métodos que esta caja o banco puede recibir.
+                        </p>
+                    </div>
                     <div className="grid gap-2">
                         <Label>Cuenta Contable (Activo)</Label>
                         <AccountSelector
@@ -270,7 +316,16 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                             placeholder="Seleccione cuenta contable..."
                         />
                         <p className="text-[10px] text-muted-foreground">
-                            Los movimientos de esta cuenta se reflejarán en la cuenta contable seleccionada.
+                            - **Backend Refinement**: Updated the `pos_checkout` view and `TreasuryService` to handle independent pending status for DTEs and Payments.
+
+                            ## Soporte Multi-Método en Cuentas de Tesorería
+
+                            He evolucionado la configuración de cuentas para que una sola cuenta (ej. "Caja Principal" o "Banco") pueda aceptar múltiples métodos de pago:
+
+                            - **Cambio de Modelo**: Reemplazado el selector único por 3 flags booleanos (`allows_cash`, `allows_card`, `allows_transfer`).
+                            - **UI de Gestión**: Actualizado el diálogo de creación/edición con checkboxes para una selección múltiple intuitiva.
+                            - **Checkout POS**: La lógica de filtrado y auto-selección en el checkout ahora considera todos los métodos activos para cada cuenta, permitiendo que una cuenta de Banco aparezca tanto en "Tarjeta" como en "Transferencia" si así se configura.
+                            - **Migraciones**: Se han aplicado las migraciones necesarias para limpiar el campo anterior y establecer la nueva estructura.
                         </p>
                     </div>
                     <DialogFooter>

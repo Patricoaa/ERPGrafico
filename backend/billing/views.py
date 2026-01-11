@@ -79,6 +79,11 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         is_pending_registration = request.data.get('is_pending_registration', False)
         if isinstance(is_pending_registration, str):
             is_pending_registration = is_pending_registration.lower() == 'true'
+        
+        payment_is_pending = request.data.get('payment_is_pending', False)
+        if isinstance(payment_is_pending, str):
+            payment_is_pending = payment_is_pending.lower() == 'true'
+
         document_number = request.data.get('document_number') or request.data.get('document_reference')
         document_date = request.data.get('document_date')
         document_attachment = request.FILES.get('document_attachment')
@@ -98,6 +103,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 order_data, dte_type, payment_method, 
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration,
+                payment_is_pending=payment_is_pending,
                 amount=amount,
                 treasury_account_id=treasury_account_id,
                 document_number=document_number,

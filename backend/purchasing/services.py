@@ -378,6 +378,10 @@ class PurchasingService:
         from inventory.models import StockMove
         from billing.services import BillingService
         
+        settings = AccountingSettings.objects.first()
+        if not settings:
+             raise ValidationError("No se encontró configuración contable.")
+        
         # Get the original invoice to determine document type
         original_invoice = None
         if original_invoice_id:

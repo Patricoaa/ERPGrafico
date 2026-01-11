@@ -170,7 +170,7 @@ class Command(BaseCommand):
         uom_kg, _ = UoM.objects.get_or_create(name="Kilogramo (kg)", defaults={'category': cat_weight, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
         
         # Graphic specifics
-        uom_pliego, _ = UoM.objects.get_or_create(name="Pliego", defaults={'category': cat_graphic, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
+        uom_hoja, _ = UoM.objects.get_or_create(name="Hoja", defaults={'category': cat_graphic, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
         uom_millar, _ = UoM.objects.get_or_create(name="Millar (1000u)", defaults={'category': cat_units, 'ratio': 1000.0, 'uom_type': UoM.Type.BIGGER})
         uom_resma, _ = UoM.objects.get_or_create(name="Resma (500 pliegos)", defaults={'category': cat_graphic, 'ratio': 500.0, 'uom_type': UoM.Type.BIGGER})
         uom_paquete, _ = UoM.objects.get_or_create(name="Paquete (100u)", defaults={'category': cat_units, 'ratio': 100.0, 'uom_type': UoM.Type.BIGGER})
@@ -178,7 +178,7 @@ class Command(BaseCommand):
         return {
             'un': uom_un,
             'kg': uom_kg,
-            'pliego': uom_pliego,
+            'hoja': uom_hoja,
             'millar': uom_millar,
             'resma': uom_resma,
             'paquete': uom_paquete
@@ -193,7 +193,7 @@ class Command(BaseCommand):
         cat_services, _ = ProductCategory.objects.get_or_create(name="Servicios Gráficos", defaults={'asset_account': accounts['inventory_finished'], 'income_account': accounts['sales_service'], 'expense_account': accounts['cogs_service'], 'prefix': 'SRV'})
 
         # RAW MATERIALS
-        p_papel, _ = Product.objects.get_or_create(code="INS-0001", defaults={'name': "Resma de papel", 'category': cat_supplies, 'product_type': Product.Type.STORABLE, 'uom': uoms['resma'], 'purchase_uom': uoms['pliego'], 'sale_price': 5000})
+        p_papel, _ = Product.objects.get_or_create(code="INS-0001", defaults={'name': "Resma de papel", 'category': cat_supplies, 'product_type': Product.Type.STORABLE, 'uom': uoms['resma'], 'purchase_uom': uoms['hoja'], 'sale_price': 5000})
         p_tinta_c, _ = Product.objects.get_or_create(code="MP-TIN-CYA", defaults={'name': "Tinta Offset Cyan 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
         p_tinta_m, _ = Product.objects.get_or_create(code="MP-TIN-MAG", defaults={'name': "Tinta Offset Magenta 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
         p_tinta_y, _ = Product.objects.get_or_create(code="MP-TIN-YEL", defaults={'name': "Tinta Offset Yellow 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
@@ -204,8 +204,8 @@ class Command(BaseCommand):
             'name': "Impresion a color", 
             'category': cat_finished, 
             'product_type': Product.Type.MANUFACTURABLE, 
-            'uom': uoms['un'], 
-            'sale_uom': uoms['un'],
+            'uom': uoms['hoja'], 
+            'sale_uom': uoms['hoja'],
             'sale_price': 150,
             'track_inventory': False,
             'mfg_enable_press': True,
@@ -226,7 +226,7 @@ class Command(BaseCommand):
         if not BillOfMaterials.objects.filter(product=p_impresion_color).exists():
             bom_impresion_color = BillOfMaterials.objects.create(product=p_impresion_color, name="BOM Impresion a color", active=True)
             # Para 1 impresion a color.
-            BillOfMaterialsLine.objects.create(bom=bom_impresion_color, component=p_papel, quantity=Decimal('1'), uom=uoms['pliego'])
+            BillOfMaterialsLine.objects.create(bom=bom_impresion_color, component=p_papel, quantity=Decimal('1'), uom=uoms['hoja'])
 
         
         # SERVICES

@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, Banknote, History, X, FileBadge } from "lucide-react"
+import { Search, Eye, Banknote, History, X, FileBadge, Receipt, FileUp } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
+import { PaymentDialog } from "@/components/shared/PaymentDialog"
 
 export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
@@ -19,6 +20,7 @@ export default function SalesInvoicesPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<any | null>(null)
+    const [payingInv, setPayingInv] = useState<any | null>(null)
 
     useEffect(() => {
         fetchInvoices()
@@ -46,6 +48,43 @@ export default function SalesInvoicesPage() {
         } catch (error: any) {
             console.error("Error annulling invoice:", error)
             toast.error(error.response?.data?.error || "Error al anular el documento.")
+        }
+    }
+
+    const handlePayment = async (data: any) => {
+        if (!payingInv) return
+        try {
+            const formData = new FormData()
+            formData.append('amount', data.amount.toString())
+
+            // Auto-detect direction based on document type
+            let paymentType = 'INBOUND' // Default for receiving payment from a sale
+            const isCreditNote = payingInv.dte_type === 'NOTA_CREDITO'
+            if (isCreditNote) paymentType = 'OUTBOUND' // Refunding money back (Devolución)
+
+            formData.append('payment_type', paymentType)
+            formData.append('reference', `${payingInv.dte_type === 'NOTA_CREDITO' ? 'NC' : payingInv.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingInv.number}`)
+            formData.append('sale_order', payingInv.sale_order ? payingInv.sale_order.toString() : '')
+            formData.append('invoice', payingInv.id.toString())
+            formData.append('payment_method', data.paymentMethod)
+
+            if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
+            if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
+            if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
+            if (data.dteType) formData.append('dte_type', data.dteType)
+            if (data.documentReference) formData.append('document_reference', data.documentReference)
+            if (data.documentDate) formData.append('document_date', data.documentDate)
+            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
+
+            await api.post('/treasury/payments/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            toast.success("Operación registrada correctamente")
+            setPayingInv(null)
+            fetchInvoices()
+        } catch (error: any) {
+            console.error("Error registering payment:", error)
+            toast.error(error.response?.data?.error || "Error al registrar la operación")
         }
     }
 
@@ -128,7 +167,9 @@ export default function SalesInvoicesPage() {
                                             >
                                                 <Eye className="h-4 w-4" />
                                             </Button>
-                                            {(inv.related_documents?.payments?.length ?? 0) > 0 && (
+
+                                            {/* Historial de Pagos */}
+                                            {((inv.related_documents?.payments?.length ?? 0) > 0 || inv.status === 'PAID') && (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -139,17 +180,35 @@ export default function SalesInvoicesPage() {
                                                     <History className="h-4 w-4" />
                                                 </Button>
                                             )}
+
                                             {inv.status !== 'CANCELLED' && (
                                                 <>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-purple-600"
-                                                        onClick={() => setNotingInvoice(inv)}
-                                                        title="Registrar Nota Crédito/Débito"
-                                                    >
-                                                        <FileBadge className="h-4 w-4" />
-                                                    </Button>
+                                                    {/* Registrar Pago / Reembolso */}
+                                                    {(inv.pending_amount ?? (inv.status === 'PAID' ? 0 : inv.total)) > 0 && inv.status === 'POSTED' && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-emerald-600"
+                                                            onClick={() => setPayingInv(inv)}
+                                                            title={inv.dte_type === 'NOTA_CREDITO' ? "Registrar Reembolso" : "Registrar Pago"}
+                                                        >
+                                                            <Banknote className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Registrar Nota (Solo para Facturas/Boletas, no sobre Notas) */}
+                                                    {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-purple-600"
+                                                            onClick={() => setNotingInvoice(inv)}
+                                                            title="Registrar Nota Crédito/Débito"
+                                                        >
+                                                            <FileBadge className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -188,6 +247,24 @@ export default function SalesInvoicesPage() {
                     orderNumber={notingInvoice.sale_order_number}
                     invoiceId={notingInvoice.id}
                     onSuccess={fetchInvoices}
+                />
+            )}
+
+            {payingInv && (
+                <PaymentDialog
+                    open={!!payingInv}
+                    onOpenChange={(open) => !open && setPayingInv(null)}
+                    onConfirm={handlePayment}
+                    isPurchase={false}
+                    total={parseFloat(payingInv.total)}
+                    pendingAmount={payingInv.pending_amount ?? parseFloat(payingInv.total)}
+                    hideDteFields={true}
+                    isRefund={payingInv.dte_type === 'NOTA_CREDITO'}
+                    existingInvoice={{
+                        dte_type: payingInv.dte_type,
+                        number: payingInv.number,
+                        document_attachment: null
+                    }}
                 />
             )}
         </div>

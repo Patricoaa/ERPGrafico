@@ -208,7 +208,8 @@ class TreasuryService:
             JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0, partner=partner.name if partner else '')
 
              
-        JournalEntryService.post_entry(entry)
+        if not is_pending_registration:
+            JournalEntryService.post_entry(entry)
         
         payment.journal_entry = entry
         payment.save()

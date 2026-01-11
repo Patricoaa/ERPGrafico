@@ -5,39 +5,6 @@ from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 
 
-class TreasuryAccount(models.Model):
-    class Type(models.TextChoices):
-        BANK = 'BANK', _('Banco')
-        CASH = 'CASH', _('Caja')
-
-    name = models.CharField(_("Nombre"), max_length=100)
-    code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
-    currency = models.CharField(_("Moneda"), max_length=3, default='CLP')
-    
-    # Linked financial account (Asset -> Bank/Cash)
-    account = models.ForeignKey(
-        Account, 
-        on_delete=models.PROTECT, 
-        limit_choices_to={'account_type': AccountType.ASSET},
-        related_name='treasury_accounts',
-        verbose_name=_("Cuenta Contable")
-    )
-    
-    account_type = models.CharField(
-        _("Tipo"), 
-        max_length=10, 
-        choices=Type.choices,
-        default=Type.CASH
-    )
-
-    class Meta:
-        verbose_name = _("Cuenta de Tesorería")
-        verbose_name_plural = _("Cuentas de Tesorería")
-
-    def __str__(self):
-        return f"{self.name} ({self.currency})"
-
-
 class Payment(models.Model):
     class Type(models.TextChoices):
         INBOUND = 'INBOUND', _('Entrante (Cobro)')
@@ -60,7 +27,7 @@ class Payment(models.Model):
     
     # Account chosen by user (Bank/Cash Box)
     treasury_account = models.ForeignKey(
-        TreasuryAccount,
+        'TreasuryAccount',
         on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='pay_treasury',
@@ -68,9 +35,6 @@ class Payment(models.Model):
     )
 
     # Resolved Financial Account (Snapshot or direct link)
-    # We keep this to allow history if TreasuryAccount changes its mapping, 
-    # OR we can just rely on treasury_account linkage. 
-    # For robust accounting, we often duplicate the actual Account hit on the transaction.
     account = models.ForeignKey(
         Account, 
         on_delete=models.PROTECT, 
@@ -113,3 +77,40 @@ class Payment(models.Model):
     def __str__(self):
         prefix = 'ING' if self.payment_type == 'INBOUND' else 'EGR'
         return f"{prefix}-{str(self.id).zfill(5)}"
+
+
+class TreasuryAccount(models.Model):
+    class Type(models.TextChoices):
+        BANK = 'BANK', _('Banco')
+        CASH = 'CASH', _('Caja')
+
+    name = models.CharField(_("Nombre"), max_length=100)
+    code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
+    currency = models.CharField(_("Moneda"), max_length=3, default='CLP')
+    
+    # Linked financial account (Asset -> Bank/Cash)
+    account = models.ForeignKey(
+        Account, 
+        on_delete=models.PROTECT, 
+        limit_choices_to={'account_type': AccountType.ASSET},
+        related_name='treasury_accounts',
+        verbose_name=_("Cuenta Contable")
+    )
+    
+    account_type = models.CharField(
+        _("Tipo"), 
+        max_length=10, 
+        choices=Type.choices,
+        default=Type.CASH
+    )
+
+    allows_cash = models.BooleanField(_("Permite Efectivo"), default=False)
+    allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
+    allows_transfer = models.BooleanField(_("Permite Transferencia"), default=False)
+
+    class Meta:
+        verbose_name = _("Cuenta de Tesorería")
+        verbose_name_plural = _("Cuentas de Tesorería")
+
+    def __str__(self):
+        return f"{self.name} ({self.currency})"

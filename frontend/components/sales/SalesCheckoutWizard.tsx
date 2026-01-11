@@ -60,7 +60,8 @@ export function SalesCheckoutWizard({
         method: 'CASH',
         amount: total,
         transactionNumber: '',
-        treasuryAccountId: null
+        treasuryAccountId: null,
+        isPending: false
     })
 
     const [deliveryData, setDeliveryData] = useState<any>({
@@ -110,9 +111,15 @@ export function SalesCheckoutWizard({
             toast.error("Debe ingresar el número de folio para la factura.")
             return
         }
-        if (step === 3 && (paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
-            toast.error("Debe seleccionar una cuenta de destino.")
-            return
+        if (step === 3) {
+            if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
+                toast.error("Debe seleccionar una cuenta de destino.")
+                return
+            }
+            if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
+                toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
+                return
+            }
         }
         setStep(prev => prev + 1)
     }
@@ -157,6 +164,7 @@ export function SalesCheckoutWizard({
             // Payment data
             formData.append('payment_method', paymentData.method)
             formData.append('amount', paymentData.amount.toString())
+            formData.append('payment_is_pending', paymentData.isPending.toString())
             if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
             if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
 
