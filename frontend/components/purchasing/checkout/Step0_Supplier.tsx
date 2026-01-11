@@ -76,7 +76,7 @@ export function Step0_Supplier({
                 </Label>
                 <AdvancedContactSelector
                     value={selectedSupplierId}
-                    onChange={setSelectedSupplierId}
+                    onChange={(val) => setSelectedSupplierId(val || "")}
                     contactType="SUPPLIER"
                     placeholder="Buscar proveedor..."
                 />
