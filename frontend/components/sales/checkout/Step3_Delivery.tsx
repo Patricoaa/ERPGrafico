@@ -5,6 +5,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Truck, Package, Store, Calendar, Info, AlertTriangle } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface Step3_DeliveryProps {
     deliveryData: any
@@ -15,7 +16,22 @@ interface Step3_DeliveryProps {
 export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: Step3_DeliveryProps) {
     // Basic analysis of items
     const hasFabricable = orderLines.some(line => line.product_type === 'MANUFACTURABLE' || line.has_bom);
-    const hasStorable = orderLines.some(line => line.product_type === 'STORABLE');
+
+    // Check for "Advanced Manufacturing" products that don't track inventory (MUST be produced first)
+    const itemsRequiringWorkflow = orderLines.filter(line =>
+        (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
+        line.requires_advanced_manufacturing &&
+        !line.track_inventory
+    );
+    const hasRestrictedItems = itemsRequiringWorkflow.length > 0;
+
+    // If restricted items exist and type is IMMEDIATE, switch to SCHEDULED automatically
+    if (hasRestrictedItems && deliveryData.type === 'IMMEDIATE') {
+        setTimeout(() => {
+            setDeliveryData({ ...deliveryData, type: 'SCHEDULED' });
+        }, 0);
+    }
+
     const isOnlyService = orderLines.every(line => line.product_type === 'SERVICE');
 
     if (isOnlyService) {
@@ -39,7 +55,17 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
             <div className="space-y-4">
                 <Label className="text-sm font-semibold">Opciones de Entrega</Label>
 
-                {hasFabricable && (
+                {hasRestrictedItems && (
+                    <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
+                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <p className="text-xs font-bold uppercase tracking-wider">Producción Pendiente Requerida</p>
+                            <p className="text-xs font-medium">Hay {itemsRequiringWorkflow.length} productos con Fabricación Avanzada. El despacho inmediato está deshabilitado porque deben ser procesados en el módulo de producción.</p>
+                        </div>
+                    </div>
+                )}
+
+                {hasFabricable && !hasRestrictedItems && (
                     <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl text-orange-800 animate-pulse">
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
@@ -56,9 +82,13 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 >
                     <Label
                         htmlFor="del-immediate"
-                        className={`flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'IMMEDIATE' ? 'border-primary bg-primary/5' : ''}`}
+                        className={cn(
+                            "flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            deliveryData.type === 'IMMEDIATE' && "border-primary bg-primary/5",
+                            hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
+                        )}
                     >
-                        <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" />
+                        <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
                         <div className={`p-2 rounded-lg bg-background border ${deliveryData.type === 'IMMEDIATE' ? 'text-primary' : 'text-muted-foreground'}`}>
                             <Package className="h-5 w-5" />
                         </div>

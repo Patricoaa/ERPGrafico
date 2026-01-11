@@ -92,6 +92,11 @@ class Product(models.Model):
         default=False,
         help_text=_("Habilita campos personalizados al vender este producto desde POS o notas de venta")
     )
+    mfg_auto_finalize = models.BooleanField(
+        _("Finalizar Automáticamente"),
+        default=False,
+        help_text=_("Si se activa, la OT se marcará como Terminada automáticamente al generarse (Flujo Express)")
+    )
     
     # Print Shop Workflow - Stage Enablers
     mfg_enable_prepress = models.BooleanField(

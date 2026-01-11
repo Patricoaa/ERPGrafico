@@ -34,7 +34,7 @@ class WorkOrderService:
             sale_line=sale_line,
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
-            warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.exists() else None
+            warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.filter(warehouse__isnull=False).exists() else Warehouse.objects.first()
         )
 
         # Auto-assign materials from BOM if active
@@ -55,6 +55,14 @@ class WorkOrderService:
             status=work_order.status,
             notes="OT generada automáticamente desde venta."
         )
+
+        # Express Flow: Auto-finalize if product is configured for it
+        if product.mfg_auto_finalize:
+            WorkOrderService.transition_to(
+                work_order, 
+                WorkOrder.Stage.FINISHED, 
+                notes="Finalización automática (Flujo Express)"
+            )
 
         return work_order
 
@@ -182,3 +190,24 @@ class WorkOrderService:
         if work_order.sale_line:
             # Possible logic to mark line as 'Produced' or 'Ready for dispatch'
             pass
+
+    @staticmethod
+    @transaction.atomic
+    def add_material(work_order, component, quantity, uom=None):
+        """
+        Adds a material manually to a Work Order.
+        """
+        material, created = WorkOrderMaterial.objects.get_or_create(
+            work_order=work_order,
+            component=component,
+            defaults={
+                'quantity_planned': Decimal(str(quantity)),
+                'uom': uom or component.uom,
+                'source': 'MANUAL'
+            }
+        )
+        if not created:
+            material.quantity_planned += Decimal(str(quantity))
+            material.save()
+        
+        return material

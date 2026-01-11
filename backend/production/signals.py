@@ -11,7 +11,11 @@ def auto_create_work_orders(sender, instance, created, **kwargs):
     """
     if instance.status == SaleOrder.Status.CONFIRMED:
         for line in instance.lines.all():
-            if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
-                # Check if OT already exists to avoid duplicates if saved multiple times in confirmed state
-                if not line.work_orders.exists():
-                    WorkOrderService.create_from_sale_line(line)
+            product = line.product
+            if product and product.product_type == Product.Type.MANUFACTURABLE and product.has_bom:
+                # ONLY create OT if Express or Advanced manufacturing is enabled.
+                # If both are OFF (Simple mode), we assume manual/batch production.
+                if product.mfg_auto_finalize or product.requires_advanced_manufacturing:
+                    # Check if OT already exists to avoid duplicates
+                    if not line.work_orders.exists():
+                        WorkOrderService.create_from_sale_line(line)

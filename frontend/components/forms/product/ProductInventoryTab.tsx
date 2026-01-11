@@ -74,23 +74,44 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                             name="track_inventory"
                             render={({ field }) => (
                                 <div className="space-y-4">
-                                    <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="text-xs font-bold">Controlar Stock</FormLabel>
-                                            <FormDescription className="text-[10px]">
-                                                {productType === 'STORABLE' ? 'Obligatorio para productos almacenables.' :
-                                                    productType === 'SERVICE' || productType === 'CONSUMABLE' ? 'Desactivado para servicios y consumibles.' :
-                                                        'Habilitar si desea rastrear cantidades en stock.'}
-                                            </FormDescription>
+                                    {productType === 'MANUFACTURABLE' ? (
+                                        <div className="flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/20">
+                                            <div className="space-y-0.5">
+                                                <div className="flex items-center gap-2">
+                                                    <FormLabel className="text-xs font-bold">Control de Inventario</FormLabel>
+                                                    <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20 uppercase font-black">Automático</Badge>
+                                                </div>
+                                                <FormDescription className="text-[10px]">
+                                                    Gestionado por el Modo de Producción seleccionado.
+                                                </FormDescription>
+                                            </div>
+                                            <div className="flex items-center gap-2 cursor-help" title={field.value ? "Activado (Simple/Lote)" : "Desactivado (Sobre Pedido)"}>
+                                                <Switch
+                                                    checked={field.value}
+                                                    disabled
+                                                    className="opacity-50"
+                                                />
+                                            </div>
                                         </div>
-                                        <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                                disabled={isSwitchDisabled}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
+                                    ) : (
+                                        <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-xs font-bold">Controlar Stock</FormLabel>
+                                                <FormDescription className="text-[10px]">
+                                                    {productType === 'STORABLE' ? 'Obligatorio para productos almacenables.' :
+                                                        productType === 'SERVICE' || productType === 'CONSUMABLE' ? 'Desactivado para servicios y consumibles.' :
+                                                            'Habilitar si desea rastrear cantidades en stock.'}
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                    disabled={isSwitchDisabled}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
 
                                     {field.value && initialData && (
                                         <div className="grid grid-cols-3 gap-2 p-3 bg-muted/20 rounded-lg border border-dashed">

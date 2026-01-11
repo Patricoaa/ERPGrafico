@@ -84,6 +84,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             mfg_postpress_finishing: false,
             mfg_postpress_binding: false,
             mfg_default_delivery_days: 3,
+            mfg_auto_finalize: false,
             boms: [],
             product_custom_fields: [],
         },
@@ -185,6 +186,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     mfg_postpress_finishing: initialData.mfg_postpress_finishing ?? false,
                     mfg_postpress_binding: initialData.mfg_postpress_binding ?? false,
                     mfg_default_delivery_days: initialData.mfg_default_delivery_days ?? 3,
+                    mfg_auto_finalize: initialData.mfg_auto_finalize ?? false,
                     boms: initialData.boms?.map((b: any) => ({
                         id: b.id,
                         name: b.name || "",
@@ -235,6 +237,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     mfg_postpress_finishing: false,
                     mfg_postpress_binding: false,
                     mfg_default_delivery_days: 3,
+                    mfg_auto_finalize: false,
                     boms: [],
                     product_custom_fields: [],
                 })
@@ -280,6 +283,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('mfg_postpress_finishing', data.mfg_postpress_finishing ? 'true' : 'false')
             formData.append('mfg_postpress_binding', data.mfg_postpress_binding ? 'true' : 'false')
             formData.append('mfg_default_delivery_days', data.mfg_default_delivery_days.toString())
+            formData.append('mfg_auto_finalize', data.mfg_auto_finalize ? 'true' : 'false')
 
             if (!initialData && data.boms && data.boms.length > 0) {
                 formData.append('boms', JSON.stringify(data.boms))

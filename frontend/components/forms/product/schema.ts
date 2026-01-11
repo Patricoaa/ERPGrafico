@@ -19,6 +19,7 @@ export const productSchema = z.object({
     // Manufacturing fields
     has_bom: z.boolean().default(false),
     requires_advanced_manufacturing: z.boolean().default(false),
+    mfg_auto_finalize: z.boolean().default(false),
     // Print Shop Workflow
     mfg_enable_prepress: z.boolean().default(false),
     mfg_enable_press: z.boolean().default(false),
@@ -47,6 +48,24 @@ export const productSchema = z.object({
         template: z.preprocess((v) => Number(v), z.number()),
         order: z.number().default(0)
     })).default([]),
+}).refine((data) => {
+    // If express production is enabled, at least one BOM must exist
+    if (data.mfg_auto_finalize && (!data.boms || data.boms.length === 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Debe asignar al menos una lista de materiales para producción Express",
+    path: ["boms"]
+}).refine((data) => {
+    // If express production is enabled, BOMs must have lines
+    if (data.mfg_auto_finalize && data.boms && data.boms.some(bom => !bom.lines || bom.lines.length === 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "La lista de materiales debe tener al menos un componente",
+    path: ["boms"]
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>

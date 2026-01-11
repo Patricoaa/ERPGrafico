@@ -106,7 +106,11 @@ class ProductSerializer(serializers.ModelSerializer):
                         if isinstance(item, str):
                             try:
                                 # Try to parse as JSON (for BOMs or nested objects)
-                                processed_list.append(json.loads(item))
+                                parsed_item = json.loads(item)
+                                if isinstance(parsed_item, list):
+                                    processed_list.extend(parsed_item)
+                                else:
+                                    processed_list.append(parsed_item)
                             except (ValueError, TypeError):
                                 # If it's a simple ID string, it will be handled by the field itself or we can cast to int
                                 # Casting to int is safer for Many-to-Many IDs

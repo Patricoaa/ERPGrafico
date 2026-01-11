@@ -84,6 +84,29 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
+    @action(detail=True, methods=['post'])
+    def add_material(self, request, pk=None):
+        """Add a material manually to the Work Order"""
+        work_order = self.get_object()
+        try:
+            product_id = request.data.get('product_id')
+            quantity = Decimal(str(request.data.get('quantity')))
+            uom_id = request.data.get('uom_id')
+            
+            product = Product.objects.get(pk=product_id)
+            uom = UoM.objects.get(pk=uom_id) if uom_id else None
+            
+            WorkOrderService.add_material(
+                work_order=work_order,
+                component=product,
+                quantity=quantity,
+                uom=uom
+            )
+            
+            return Response(WorkOrderSerializer(work_order).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['post'])
     def create_manual(self, request):
         """Create a manual OT"""

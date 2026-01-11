@@ -228,6 +228,14 @@ class SalesService:
             # PATH B: Product DOES NOT track inventory (Service or Non-tracked Manufactured)
             else:
                 if product.product_type == 'MANUFACTURABLE':
+                    # SAFEGUARD: If this sale line already has a Work Order, 
+                    # do NOT explode BOM again here (production already consumed materials).
+                    if line.sale_line.work_orders.exists():
+                        print(f"DEBUG: Skipping BOM explosion for {product.internal_code} - OT already exists.")
+                        line.unit_cost = product.get_bom_cost()
+                        line.save()
+                        continue
+
                     active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
                     
                     if active_bom:

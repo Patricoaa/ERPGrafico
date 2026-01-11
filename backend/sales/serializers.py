@@ -67,6 +67,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
     related_documents = serializers.SerializerMethodField()
+    has_pending_work_orders = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -114,6 +115,9 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             })
 
         return docs
+
+    def get_has_pending_work_orders(self, obj):
+        return obj.work_orders.exclude(status='FINISHED').exists()
 
     def get_total_paid(self, obj):
         return sum(p.amount for p in obj.payments.all())

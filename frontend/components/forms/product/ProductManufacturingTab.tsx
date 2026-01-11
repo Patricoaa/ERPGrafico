@@ -3,15 +3,17 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Plus, Trash2, Layers, Check, ChevronUp, ChevronDown, X, Clock, Settings2 } from "lucide-react"
+import { Package, Plus, Trash2, Layers, Check, ChevronUp, ChevronDown, X, Clock, Settings2 } from "lucide-react"
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { TabsContent } from "@/components/ui/tabs"
+import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { BOMManager } from "@/components/production/BOMManager"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
 
 interface ProductManufacturingTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -65,36 +67,60 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                             )}
                         />
 
+                        <div className="space-y-4 pt-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Modo de Producción</Label>
+                            <Tabs
+                                value={form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")}
+                                onValueChange={(value) => {
+                                    if (value === "simple") {
+                                        form.setValue("requires_advanced_manufacturing", false);
+                                        form.setValue("mfg_auto_finalize", false);
+                                        form.setValue("track_inventory", true);
+                                        // Simple mode now allows BOM for manual/batch OTs
+                                    } else if (value === "express") {
+                                        form.setValue("requires_advanced_manufacturing", false);
+                                        form.setValue("mfg_auto_finalize", true);
+                                        form.setValue("has_bom", true);
+                                        form.setValue("track_inventory", false);
+                                    } else if (value === "advanced") {
+                                        form.setValue("requires_advanced_manufacturing", true);
+                                        form.setValue("mfg_auto_finalize", false);
+                                        form.setValue("has_bom", true);
+                                        form.setValue("track_inventory", false);
+                                    }
+                                }}
+                                className="w-full"
+                            >
+                                <TabsList className="grid w-full grid-cols-3 h-20 bg-muted/30 p-1">
+                                    <TabsTrigger value="simple" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                                        <Package className="h-4 w-4" />
+                                        <span className="text-[10px] font-bold">Simple</span>
+                                        <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Manual / Lote<br />(Contra Stock)</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="express" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                                        <Clock className="h-4 w-4" />
+                                        <span className="text-[10px] font-bold">Express</span>
+                                        <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Auto-cierre<br />(Sobre Pedido)</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="advanced" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                                        <Layers className="h-4 w-4" />
+                                        <span className="text-[10px] font-bold">Avanzado</span>
+                                        <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Wizard Etapas<br />(Sobre Pedido)</span>
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+
+                        {/* Traditional Switch for BOM if someone wants custom config */}
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="has_bom"
                             render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
+                                <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
                                     <div className="space-y-0.5">
                                         <FormLabel className="font-bold">Posee Receta (BOM)</FormLabel>
                                         <FormDescription className="text-[10px]">
-                                            Habilitar para productos ensamblados.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField<ProductFormValues>
-                            control={form.control}
-                            name="requires_advanced_manufacturing"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="font-bold">Fabricación Avanzada</FormLabel>
-                                        <FormDescription className="text-[10px]">
-                                            Habilita flujo de trabajo personalizado.
+                                            Detección automática por modo seleccionado.
                                         </FormDescription>
                                     </div>
                                     <FormControl>
@@ -314,7 +340,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                     )}
                 </div>
             </div>
-        </TabsContent>
+        </TabsContent >
     )
 }
 
@@ -457,29 +483,29 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                         const componentId = form.watch(`boms.${bomIndex}.lines.${index}.component`);
                                                         const product = products.find((p: any) => p.id.toString() === componentId?.toString());
 
-                                                         const unitNames = new Set<string>();
-                                                         if (product) {
-                                                             if (product.uom_name) unitNames.add(product.uom_name);
-                                                             if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
-                                                             if (product.purchase_uom_name) unitNames.add(product.purchase_uom_name);
-                                                             
-                                                             if (product.allowed_sale_uoms) {
-                                                                 product.allowed_sale_uoms.forEach((uomInfo: any) => {
-                                                                     // Handle both ID list and object list
-                                                                     if (typeof uomInfo === 'object' && uomInfo.name) {
-                                                                         unitNames.add(uomInfo.name);
-                                                                     } else {
-                                                                         const foundUom = uoms.find((u: any) => u.id.toString() === uomInfo.toString());
-                                                                         if (foundUom) unitNames.add(foundUom.name);
-                                                                     }
-                                                                 });
-                                                             }
-                                                         }
- 
-                                                         const options = Array.from(unitNames);
-                                                         if (options.length === 0 && !product) {
-                                                             options.push("UN", "KG", "MT", "LT", "PL", "ML");
-                                                         }
+                                                        const unitNames = new Set<string>();
+                                                        if (product) {
+                                                            if (product.uom_name) unitNames.add(product.uom_name);
+                                                            if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
+                                                            if (product.purchase_uom_name) unitNames.add(product.purchase_uom_name);
+
+                                                            if (product.allowed_sale_uoms) {
+                                                                product.allowed_sale_uoms.forEach((uomInfo: any) => {
+                                                                    // Handle both ID list and object list
+                                                                    if (typeof uomInfo === 'object' && uomInfo.name) {
+                                                                        unitNames.add(uomInfo.name);
+                                                                    } else {
+                                                                        const foundUom = uoms.find((u: any) => u.id.toString() === uomInfo.toString());
+                                                                        if (foundUom) unitNames.add(foundUom.name);
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+
+                                                        const options = Array.from(unitNames);
+                                                        if (options.length === 0 && !product) {
+                                                            options.push("UN", "KG", "MT", "LT", "PL", "ML");
+                                                        }
 
                                                         return (
                                                             <Select onValueChange={field.onChange} value={field.value}>

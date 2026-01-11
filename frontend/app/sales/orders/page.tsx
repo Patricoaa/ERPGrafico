@@ -35,6 +35,7 @@ interface SaleOrder {
     customer: number
     channel_display: string
     delivery_status: 'PENDING' | 'PARTIAL' | 'DELIVERED'
+    has_pending_work_orders?: boolean
     related_documents?: {
         invoices: any[]
         notes: any[]
@@ -341,7 +342,7 @@ export default function SalesOrdersPage() {
                                             </Button>
                                         )}
 
-                                        {['CONFIRMED', 'INVOICED', 'PAID'].includes(order.status) && order.delivery_status !== 'DELIVERED' && (
+                                        {['CONFIRMED', 'INVOICED', 'PAID'].includes(order.status) && order.delivery_status !== 'DELIVERED' && !order.has_pending_work_orders && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

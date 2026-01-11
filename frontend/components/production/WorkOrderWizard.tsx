@@ -20,10 +20,13 @@ import {
     Layers,
     History,
     Package,
+    ArrowLeft,
     ArrowRight,
-    ArrowLeft
+    Plus
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { Input } from "@/components/ui/input"
 
 interface WorkOrderWizardProps {
     orderId: number
@@ -46,6 +49,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
     const [loading, setLoading] = useState(true)
     const [transitioning, setTransitioning] = useState(false)
     const [currentStep, setCurrentStep] = useState(0)
+    const [isAddMaterialOpen, setIsAddMaterialOpen] = useState(false)
+    const [newMaterialProduct, setNewMaterialProduct] = useState<string | null>(null)
+    const [newMaterialQty, setNewMaterialQty] = useState("1")
+    const [addingMaterial, setAddingMaterial] = useState(false)
 
     const fetchOrder = async () => {
         setLoading(true)
@@ -101,6 +108,34 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
             link.remove()
         } catch (error) {
             toast.error("Error al generar el PDF")
+        }
+    }
+
+    const handleAddMaterial = async () => {
+        if (!newMaterialProduct) {
+            toast.error("Seleccione un producto")
+            return
+        }
+        if (parseFloat(newMaterialQty) <= 0) {
+            toast.error("Ingrese una cantidad válida")
+            return
+        }
+
+        setAddingMaterial(true)
+        try {
+            await api.post(`/production/orders/${orderId}/add_material/`, {
+                product_id: newMaterialProduct,
+                quantity: newMaterialQty
+            })
+            toast.success("Material agregado")
+            setIsAddMaterialOpen(false)
+            setNewMaterialProduct(null)
+            setNewMaterialQty("1")
+            fetchOrder()
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al agregar material")
+        } finally {
+            setAddingMaterial(false)
         }
     }
 
@@ -189,9 +224,44 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                             </tbody>
                                         </table>
                                     </div>
-                                    <Button variant="outline" size="sm" className="w-full border-dashed" disabled>
-                                        + Agregar Material Manualmente (Próximamente)
-                                    </Button>
+                                    {isAddMaterialOpen ? (
+                                        <div className="p-4 border rounded-md bg-muted/20 space-y-4">
+                                            <div className="flex flex-col md:flex-row gap-4 items-end">
+                                                <div className="flex-1 space-y-2">
+                                                    <label className="text-xs font-bold uppercase">Producto / Componente</label>
+                                                    <ProductSelector
+                                                        value={newMaterialProduct}
+                                                        onChange={setNewMaterialProduct}
+                                                    />
+                                                </div>
+                                                <div className="w-full md:w-32 space-y-2">
+                                                    <label className="text-xs font-bold uppercase">Cantidad</label>
+                                                    <Input
+                                                        type="number"
+                                                        value={newMaterialQty}
+                                                        onChange={(e) => setNewMaterialQty(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" size="sm" onClick={() => setIsAddMaterialOpen(false)}>Cancelar</Button>
+                                                    <Button size="sm" onClick={handleAddMaterial} disabled={addingMaterial}>
+                                                        {addingMaterial ? "Añadiendo..." : "Añadir"}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full border-dashed"
+                                            onClick={() => setIsAddMaterialOpen(true)}
+                                            disabled={order?.status === 'FINISHED'}
+                                        >
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Agregar Material Manualmente
+                                        </Button>
+                                    )}
                                 </div>
                             )}
 
