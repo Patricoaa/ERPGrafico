@@ -780,7 +780,7 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def annul_purchase_order(order: PurchaseOrder):
+    def annul_purchase_order(order: PurchaseOrder, force: bool = False):
         """
         Annuls a purchase order and all its associated documents (Invoices, Receipts, Payments).
         """
@@ -794,7 +794,7 @@ class PurchasingService:
         # 1. Annul Invoices (Bills)
         for invoice in order.invoices.all():
             if invoice.status != Invoice.Status.CANCELLED:
-                 BillingService.annul_invoice(invoice)
+                 BillingService.annul_invoice(invoice, force=force)
         
         # 2. Annul Receipts
         for receipt in order.receipts.all():

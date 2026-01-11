@@ -395,7 +395,7 @@ class SalesService:
 
     @staticmethod
     @transaction.atomic
-    def annul_sale_order(order: SaleOrder):
+    def annul_sale_order(order: SaleOrder, force: bool = False):
         """
         Annuls a sale order and all its associated documents.
         """
@@ -406,10 +406,10 @@ class SalesService:
         from billing.services import BillingService
         from treasury.services import TreasuryService
 
-        # 1. Annul Invoices (this will block if payments exist)
+        # 1. Annul Invoices (this will block if payments exist and force is False)
         for invoice in order.invoices.all():
             if invoice.status != Invoice.Status.CANCELLED:
-                 BillingService.annul_invoice(invoice)
+                 BillingService.annul_invoice(invoice, force=force)
         
         # 2. Annul Deliveries
         for delivery in order.deliveries.all():

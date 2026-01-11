@@ -125,8 +125,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         invoice = self.get_object()
+        force = request.data.get('force', False)
+        if isinstance(force, str):
+            force = force.lower() == 'true'
+            
         try:
-            BillingService.annul_invoice(invoice)
+            BillingService.annul_invoice(invoice, force=force)
             return Response(InvoiceSerializer(invoice).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -174,8 +174,9 @@ class SaleOrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         order = self.get_object()
+        force = request.data.get('force', False)
         try:
-            SalesService.annul_sale_order(order)
+            SalesService.annul_sale_order(order, force=force)
             return Response(SaleOrderSerializer(order).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

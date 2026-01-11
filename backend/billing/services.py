@@ -400,10 +400,11 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def annul_invoice(invoice: Invoice):
+    def annul_invoice(invoice: Invoice, force: bool = False):
         """
         Annuls a POSTED invoice.
         Reverses the accounting entry and marks as CANCELLED.
+        If force is True, also annuls associated payments.
         """
         if invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
              raise ValidationError("Solo se pueden anular facturas publicadas o pagadas.")
@@ -412,12 +413,17 @@ class BillingService:
         if invoice.journal_entry:
             JournalEntryService.reverse_entry(invoice.journal_entry, description=f"Anulación Factura {invoice.number}")
         
-        # 2. Handle associated payments? 
-        # Ideally, payments should be annulled separately, or we warn here.
-        if invoice.payments.filter(journal_entry__state='POSTED').exists():
-             # For now, we allow annullment but warn or require payment annullment first.
-             # Strict: block if payments exist.
-             raise ValidationError("Debe anular los pagos asociados antes de anular la factura.")
+        # 2. Handle associated payments
+        from treasury.services import TreasuryService
+        
+        posted_payments = invoice.payments.filter(journal_entry__state='POSTED')
+        if posted_payments.exists():
+             if not force:
+                 raise ValidationError("Debe anular los pagos asociados antes de anular la factura.")
+             
+             # Annul payments in cascade
+             for payment in posted_payments:
+                 TreasuryService.annul_payment(payment)
 
         # 3. Update Status
         invoice.status = Invoice.Status.CANCELLED

@@ -315,18 +315,6 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                             accountType="ASSET"
                             placeholder="Seleccione cuenta contable..."
                         />
-                        <p className="text-[10px] text-muted-foreground">
-                            - **Backend Refinement**: Updated the `pos_checkout` view and `TreasuryService` to handle independent pending status for DTEs and Payments.
-
-                            ## Soporte Multi-Método en Cuentas de Tesorería
-
-                            He evolucionado la configuración de cuentas para que una sola cuenta (ej. "Caja Principal" o "Banco") pueda aceptar múltiples métodos de pago:
-
-                            - **Cambio de Modelo**: Reemplazado el selector único por 3 flags booleanos (`allows_cash`, `allows_card`, `allows_transfer`).
-                            - **UI de Gestión**: Actualizado el diálogo de creación/edición con checkboxes para una selección múltiple intuitiva.
-                            - **Checkout POS**: La lógica de filtrado y auto-selección en el checkout ahora considera todos los métodos activos para cada cuenta, permitiendo que una cuenta de Banco aparezca tanto en "Tarjeta" como en "Transferencia" si así se configura.
-                            - **Migraciones**: Se han aplicado las migraciones necesarias para limpiar el campo anterior y establecer la nueva estructura.
-                        </p>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>

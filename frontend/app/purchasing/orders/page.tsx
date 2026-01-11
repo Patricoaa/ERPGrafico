@@ -84,15 +84,24 @@ export default function PurchaseOrdersPage() {
         }
     }
 
-    const handleAnnul = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea ANULAR esta Orden de Compra? Esta acción generará reversos contables y no se puede deshacer.")) return
+    const handleAnnul = async (id: number, force: boolean = false) => {
+        if (!force && !confirm("¿Está seguro de que desea ANULAR esta Orden de Compra? Esta acción generará reversos contables y no se puede deshacer.")) return
         try {
-            await api.post(`/purchasing/orders/${id}/annul/`)
+            await api.post(`/purchasing/orders/${id}/annul/`, { force })
             toast.success("Orden de Compra anulada correctamente.")
             fetchOrders()
         } catch (error: any) {
             console.error("Error annulling order:", error)
-            toast.error(error.response?.data?.error || "Error al anular la orden de compra.")
+            const errorMessage = error.response?.data?.error || ""
+
+            if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
+                if (confirm("Este documento (o sus facturas) tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
+                    handleAnnul(id, true)
+                    return
+                }
+            }
+
+            toast.error(errorMessage || "Error al anular la orden de compra.")
         }
     }
 

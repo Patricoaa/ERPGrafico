@@ -180,8 +180,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         order = self.get_object()
+        force = request.data.get('force', False)
         try:
-            PurchasingService.annul_purchase_order(order)
+            PurchasingService.annul_purchase_order(order, force=force)
             return Response(PurchaseOrderSerializer(order).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

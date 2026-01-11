@@ -39,15 +39,24 @@ export default function SalesInvoicesPage() {
         }
     }
 
-    const handleAnnul = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
+    const handleAnnul = async (id: number, force: boolean = false) => {
+        if (!force && !confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
         try {
-            await api.post(`/billing/invoices/${id}/annul/`)
+            await api.post(`/billing/invoices/${id}/annul/`, { force })
             toast.success("Documento anulado correctamente.")
             fetchInvoices()
         } catch (error: any) {
             console.error("Error annulling invoice:", error)
-            toast.error(error.response?.data?.error || "Error al anular el documento.")
+            const errorMessage = error.response?.data?.error || ""
+
+            if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
+                if (confirm("Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
+                    handleAnnul(id, true)
+                    return
+                }
+            }
+
+            toast.error(errorMessage || "Error al anular el documento.")
         }
     }
 
