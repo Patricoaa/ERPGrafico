@@ -249,15 +249,6 @@ export default function PaymentsPage() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8"
-                                            onClick={() => setEditingPayment(payment)}
-                                            title="Editar"
-                                        >
-                                            <Edit className="h-4 w-4 text-amber-600" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8"
                                             onClick={() => handleAnnulPayment(payment.id)}
                                             title="Anular"
                                         >

@@ -12,7 +12,6 @@ import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
-import { DocumentEditModal } from "../../../components/purchasing/DocumentEditModal"
 import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
@@ -58,7 +57,6 @@ export default function PurchaseInvoicesPage() {
 
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<PurchaseDocument | null>(null)
-    const [editingDoc, setEditingDoc] = useState<PurchaseDocument | null>(null)
     const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
     const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
 
@@ -365,16 +363,6 @@ export default function PurchaseInvoicesPage() {
                                                     </Button>
                                                 )}
 
-                                                {/* Edit Metadata */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-orange-500"
-                                                    onClick={() => setEditingDoc(doc)}
-                                                    title="Editar"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
 
                                                 {/* Credit/Debit Note (Only for primary documents with folio) */}
                                                 {doc.purchase_order && !isNote && doc.number && doc.status !== 'DRAFT' && (
@@ -484,14 +472,6 @@ export default function PurchaseInvoicesPage() {
                 />
             )}
 
-            {editingDoc && (
-                <DocumentEditModal
-                    open={!!editingDoc}
-                    onOpenChange={(open: boolean) => !open && setEditingDoc(null)}
-                    document={editingDoc}
-                    onSuccess={fetchDocuments}
-                />
-            )}
 
             {notingDoc && notingDoc.purchase_order && (
                 <PurchaseNoteModal

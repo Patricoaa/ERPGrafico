@@ -6,17 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, Banknote, History, X } from "lucide-react"
+import { Search, Eye, Banknote, History, X, FileBadge } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
 
 export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
+    const [notingInvoice, setNotingInvoice] = useState<any | null>(null)
 
     useEffect(() => {
         fetchInvoices()
@@ -138,15 +140,26 @@ export default function SalesInvoicesPage() {
                                                 </Button>
                                             )}
                                             {inv.status !== 'CANCELLED' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() => handleAnnul(inv.id)}
-                                                    title="Anular Documento"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
+                                                <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-purple-600"
+                                                        onClick={() => setNotingInvoice(inv)}
+                                                        title="Registrar Nota Crédito/Débito"
+                                                    >
+                                                        <FileBadge className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive"
+                                                        onClick={() => handleAnnul(inv.id)}
+                                                        title="Anular Documento"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </>
                                             )}
                                         </div>
                                     </TableCell>
@@ -164,6 +177,17 @@ export default function SalesInvoicesPage() {
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
                     view={viewingTransaction.view}
+                />
+            )}
+
+            {notingInvoice && (
+                <SaleNoteModal
+                    open={!!notingInvoice}
+                    onOpenChange={(open) => !open && setNotingInvoice(null)}
+                    orderId={notingInvoice.sale_order}
+                    orderNumber={notingInvoice.sale_order_number}
+                    invoiceId={notingInvoice.id}
+                    onSuccess={fetchInvoices}
                 />
             )}
         </div>

@@ -32,6 +32,7 @@ export function DocumentCompletionModal({
     onSuccess
 }: DocumentCompletionModalProps) {
     const [reference, setReference] = useState("")
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
 
@@ -50,6 +51,7 @@ export function DocumentCompletionModal({
         try {
             const formData = new FormData()
             formData.append('number', reference)
+            formData.append('date', date)
             if (attachment) {
                 formData.append('document_attachment', attachment)
             }
@@ -78,7 +80,7 @@ export function DocumentCompletionModal({
                         Completar Datos del Documento
                     </DialogTitle>
                     <DialogDescription>
-                        Ingrese el folio y adjunte el documento legal para finalizar el registro.
+                        Ingrese el folio, fecha y adjunte el documento legal para finalizar el registro.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -92,6 +94,18 @@ export function DocumentCompletionModal({
                             placeholder="Ej: 12345"
                             value={reference}
                             onChange={(e) => setReference(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="comp-date">
+                            Fecha de Emisión <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                            id="comp-date"
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
                         />
                     </div>
 
