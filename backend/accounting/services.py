@@ -304,19 +304,75 @@ class AccountingMapper:
                 continue
                 
             product = line.product
-            # COGS Account
+            # COGS Account (always from finished product)
             cogs_account = product.get_expense_account or settings.default_expense_account
             if not cogs_account:
-                raise ValidationError(f"Falta configuración de cuenta de costo/gasto para el producto {product.code}.")
+                raise ValidationError(f"Falta configuración de cuenta de costo/gasto para el producto {product.internal_code}.")
             
-            # Inventory Account
-            inventory_account = product.get_asset_account or settings.default_inventory_account
-            if not inventory_account:
-                raise ValidationError(f"Falta configuración de cuenta de inventario para el producto {product.code}.")
-                
-            # Add to groupings
+            # Add to groupings (Debits)
             debits[cogs_account] = debits.get(cogs_account, Decimal('0.00')) + line.total_cost
-            credits[inventory_account] = credits.get(inventory_account, Decimal('0.00')) + line.total_cost
+
+            # Inventory Account Credit
+            # If it's a manufacturable product without direct inventory tracking, we credit the components used.
+            if not product.track_inventory and product.product_type == 'MANUFACTURABLE':
+                from production.models import BillOfMaterials
+                from inventory.services import UoMService
+                active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
+                
+                if active_bom:
+                    line_total_accounted = Decimal('0.00')
+                    bom_lines = list(active_bom.lines.all())
+                    
+                    if not bom_lines:
+                         # Fallback if BOM has no lines
+                         inventory_account = product.get_asset_account or settings.default_inventory_account
+                         if not inventory_account:
+                            raise ValidationError(f"Falta configuración de cuenta de inventario para el producto {product.internal_code}.")
+                         credits[inventory_account] = credits.get(inventory_account, Decimal('0.00')) + line.total_cost
+                         continue
+
+                    for bom_line in bom_lines:
+                        component = bom_line.component
+                        # Calculate component's contribution to cost (same logic as SalesService.confirm_delivery)
+                        comp_qty = line.quantity * bom_line.quantity
+                        try:
+                            base_comp_qty = UoMService.convert_quantity(
+                                comp_qty,
+                                from_uom=bom_line.uom,
+                                to_uom=component.uom
+                            )
+                        except ValidationError:
+                            # Incompatible UoMs, skip but the cost will be missing from credits
+                            continue
+                            
+                        comp_cost = (base_comp_qty * component.cost_price).quantize(Decimal('0.01'))
+                        
+                        # Asset account for this specific component
+                        comp_inventory_account = component.get_asset_account or settings.default_inventory_account
+                        if not comp_inventory_account:
+                             raise ValidationError(f"Falta configuración de cuenta de inventario para el componente {component.internal_code}.")
+                        
+                        credits[comp_inventory_account] = credits.get(comp_inventory_account, Decimal('0.00')) + comp_cost
+                        line_total_accounted += comp_cost
+                    
+                    # Adjustment for rounding to ensure it matches exactly line.total_cost
+                    diff = line.total_cost - line_total_accounted
+                    if diff != 0:
+                        last_comp = bom_lines[-1].component
+                        last_acc = last_comp.get_asset_account or settings.default_inventory_account
+                        credits[last_acc] = credits.get(last_acc, Decimal('0.00')) + diff
+                else:
+                    # No active BOM, fallback to finished product's inventory account
+                    inventory_account = product.get_asset_account or settings.default_inventory_account
+                    if not inventory_account:
+                        raise ValidationError(f"Falta configuración de cuenta de inventario para el producto {product.internal_code}.")
+                    credits[inventory_account] = credits.get(inventory_account, Decimal('0.00')) + line.total_cost
+            else:
+                # Standard case (Tracked Inventory or Service with explicit cost)
+                inventory_account = product.get_asset_account or settings.default_inventory_account
+                if not inventory_account:
+                    raise ValidationError(f"Falta configuración de cuenta de inventario para el producto {product.internal_code}.")
+                credits[inventory_account] = credits.get(inventory_account, Decimal('0.00')) + line.total_cost
             
         if not debits:
             # No cost to record (e.g., manufacturable products without BOM)

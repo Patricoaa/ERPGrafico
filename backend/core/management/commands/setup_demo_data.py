@@ -193,21 +193,21 @@ class Command(BaseCommand):
         cat_services, _ = ProductCategory.objects.get_or_create(name="Servicios Gráficos", defaults={'asset_account': accounts['inventory_finished'], 'income_account': accounts['sales_service'], 'expense_account': accounts['cogs_service'], 'prefix': 'SRV'})
 
         # RAW MATERIALS
-        p_papel, _ = Product.objects.get_or_create(code="MP-COU-170", defaults={'name': "Papel Couche 170g (Pliego 72x102)", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['pliego'], 'purchase_uom': uoms['resma'], 'sale_price': 150})
+        p_papel, _ = Product.objects.get_or_create(code="INS-0001", defaults={'name': "Resma de papel", 'category': cat_supplies, 'product_type': Product.Type.STORABLE, 'uom': uoms['resma'], 'purchase_uom': uoms['pliego'], 'sale_price': 5000})
         p_tinta_c, _ = Product.objects.get_or_create(code="MP-TIN-CYA", defaults={'name': "Tinta Offset Cyan 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
         p_tinta_m, _ = Product.objects.get_or_create(code="MP-TIN-MAG", defaults={'name': "Tinta Offset Magenta 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
         p_tinta_y, _ = Product.objects.get_or_create(code="MP-TIN-YEL", defaults={'name': "Tinta Offset Yellow 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000})
         p_tinta_k, _ = Product.objects.get_or_create(code="MP-TIN-BLA", defaults={'name': "Tinta Offset Black 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 10000})
 
         # FINISHED PRODUCTS (Fabricables)
-        p_flyers, _ = Product.objects.get_or_create(code="PT-FLY-1015", defaults={
-            'name': "Flyers 10x15cm (Couche 170g)", 
+        p_impresion_color, _ = Product.objects.get_or_create(code="PT-0001", defaults={
+            'name': "Impresion a color", 
             'category': cat_finished, 
             'product_type': Product.Type.MANUFACTURABLE, 
             'uom': uoms['un'], 
-            'sale_uom': uoms['millar'],
-            'sale_price': 45000,
-            'track_inventory': True,
+            'sale_uom': uoms['un'],
+            'sale_price': 150,
+            'track_inventory': False,
             'mfg_enable_press': True,
             'mfg_enable_postpress': True
         })
@@ -223,11 +223,11 @@ class Command(BaseCommand):
         })
 
         # BOMs
-        if not BillOfMaterials.objects.filter(product=p_flyers).exists():
-            bom_flyer = BillOfMaterials.objects.create(product=p_flyers, name="BOM Flyer Estándar 10x15", active=True)
-            # Para 1 flyer 10x15, asumiendo 32 flyers por pliego (con merma)
-            BillOfMaterialsLine.objects.create(bom=bom_flyer, component=p_papel, quantity=Decimal('0.03125'), uom=uoms['pliego'])
-            BillOfMaterialsLine.objects.create(bom=bom_flyer, component=p_tinta_k, quantity=Decimal('0.0005'), uom=uoms['kg']) # Referencial
+        if not BillOfMaterials.objects.filter(product=p_impresion_color).exists():
+            bom_impresion_color = BillOfMaterials.objects.create(product=p_impresion_color, name="BOM Impresion a color", active=True)
+            # Para 1 impresion a color.
+            BillOfMaterialsLine.objects.create(bom=bom_impresion_color, component=p_papel, quantity=Decimal('0.03125'), uom=uoms['pliego'])
+
         
         # SERVICES
         Product.objects.get_or_create(code="SRV-DIS-GRA", defaults={'name': "Servicio Diseño Gráfico", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 25000})
