@@ -117,16 +117,16 @@ export function SalesCheckoutWizard({
         fetchAccounts()
     }, [])
 
-    const handleNext = () => {
-        if (step === 1 && !selectedCustomerId) {
+    const validateCurrentStep = (targetStep: number) => {
+        if (targetStep === 1 && !selectedCustomerId) {
             toast.error("Debe seleccionar un cliente para continuar.")
-            return
+            return false
         }
-        if (step === 2 && dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
+        if (targetStep === 2 && dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
             toast.error("Debe ingresar el número de folio para la factura.")
-            return
+            return false
         }
-        if (step === 3) {
+        if (targetStep === 3) {
             // Validate at least one account exists for the selected method
             const hasAccountsForMethod = (method: string) => {
                 if (method === 'CASH') return accounts.some(a => a.allows_cash)
@@ -135,35 +135,44 @@ export function SalesCheckoutWizard({
                 return false
             }
 
-            if (accounts.length === 0) {
-                toast.error("No se puede continuar: No hay cuentas de tesorería configuradas.")
-                return
-            }
+            if (paymentData.method !== 'CREDIT') {
+                if (accounts.length === 0) {
+                    toast.error("No se puede continuar: No hay cuentas de tesorería configuradas.")
+                    return false
+                }
 
-            if (!hasAccountsForMethod(paymentData.method)) {
-                toast.error(`El método ${paymentData.method} no tiene una cuenta de tesorería asociada.`)
-                return
-            }
+                if (!hasAccountsForMethod(paymentData.method)) {
+                    toast.error(`El método ${paymentData.method} no tiene una cuenta de tesorería asociada.`)
+                    return false
+                }
 
-            if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
-                toast.error("Debe seleccionar una cuenta de destino.")
-                return
-            }
-            if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
-                toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
-                return
+                if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
+                    toast.error("Debe seleccionar una cuenta de destino.")
+                    return false
+                }
+                if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
+                    toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
+                    return false
+                }
             }
         }
+        return true
+    }
+
+    const handleNext = () => {
+        if (!validateCurrentStep(step)) return
         setStep(prev => prev + 1)
     }
 
     const handleBack = () => setStep(prev => prev - 1)
 
     const handleFinish = async () => {
-        if (!selectedCustomerId) {
-            toast.error("Debe seleccionar un cliente.")
-            setStep(1)
-            return
+        // Force validation of ALL steps up to the current one
+        for (let s = 1; s <= step; s++) {
+            if (!validateCurrentStep(s)) {
+                setStep(s)
+                return
+            }
         }
 
         setLoading(true)

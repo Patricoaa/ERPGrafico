@@ -105,30 +105,32 @@ export function PurchaseCheckoutWizard({
         fetchAccounts()
     }, [])
 
-    const handleNext = () => {
-        if (step === 1 && !selectedSupplierId) {
-            toast.error("Debe seleccionar un proveedor para continuar.")
-            return
+    const validateCurrentStep = (targetStep: number) => {
+        if (targetStep === 1) {
+            if (!selectedSupplierId) {
+                toast.error("Debe seleccionar un proveedor para continuar.")
+                return false
+            }
+            if (!selectedWarehouseId) {
+                toast.error("Debe seleccionar una bodega destino.")
+                return false
+            }
         }
-        if (step === 1 && !selectedWarehouseId) {
-            toast.error("Debe seleccionar una bodega destino.")
-            return
-        }
-        if (step === 2 && dteData.type === 'FACTURA' && !dteData.isPending) {
+        if (targetStep === 2 && dteData.type === 'FACTURA' && !dteData.isPending) {
             if (!dteData.attachment) {
                 toast.error("Debe adjuntar el archivo de la factura.")
-                return
+                return false
             }
             if (!dteData.number) {
                 toast.error("Debe ingresar el número de folio de la factura.")
-                return
+                return false
             }
         }
-        if (step === 2 && dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
+        if (targetStep === 2 && dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
             toast.error("Debe ingresar el número de folio de la boleta.")
-            return
+            return false
         }
-        if (step === 3 && paymentData.amount > 0) {
+        if (targetStep === 3 && paymentData.amount > 0) {
             // Validate at least one account exists for the selected method
             const hasAccountsForMethod = (method: string) => {
                 if (method === 'CASH') return accounts.some(a => a.allows_cash)
@@ -138,24 +140,29 @@ export function PurchaseCheckoutWizard({
             }
 
             if (accounts.length === 0) {
-                toast.error("No se puede pagar: No hay cuentas de tesorería configuradas.")
-                return
+                toast.error("No se puede continuar: No hay cuentas de tesorería configuradas.")
+                return false
             }
 
             if (!hasAccountsForMethod(paymentData.method)) {
-                toast.error(`El método ${paymentData.method} no tiene una cuenta de tesorería configurada.`)
-                return
+                toast.error(`El método ${paymentData.method} no tiene una cuenta de tesorería asociada.`)
+                return false
             }
 
             if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
-                toast.error("Debe seleccionar una cuenta de origen.")
-                return
+                toast.error("Debe seleccionar una cuenta de destino.")
+                return false
             }
             if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
                 toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
-                return
+                return false
             }
         }
+        return true
+    }
+
+    const handleNext = () => {
+        if (!validateCurrentStep(step)) return
         setStep(prev => prev + 1)
     }
 

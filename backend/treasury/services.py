@@ -34,19 +34,9 @@ class TreasuryService:
                  pass
         
         if not treasury_account:
-            # Fallback: Find the first available treasury account of the correct type
-            if payment_method == Payment.Method.CASH:
-                treasury_account = TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.CASH).first()
-            else:
-                # For Card/Transfer, prefer Bank, but fallback to any valid account if needed logic could be added
-                treasury_account = TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.BANK).first()
-        
-        if not treasury_account:
-             # Last resort: just get ANY treasury account
-             treasury_account = TreasuryAccount.objects.first()
-
-        if not treasury_account:
-             raise ValidationError(f"No se ha configurado ninguna cuenta de tesorería (Caja o Banco). Cree una en Tesorería -> Cuentas.")
+         # ELIMINATED FALLBACKS: We no longer guess the account. 
+         # The user MUST provide one or have a default set in the frontend/service call.
+         raise ValidationError(f"Debe seleccionar una cuenta de tesorería (Caja o Banco) para procesar un pago de tipo {payment_method}.")
              
         # Resolve Financial Account from Treasury Account
         financial_account = treasury_account.account
