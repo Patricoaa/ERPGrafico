@@ -177,7 +177,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
     async function onSubmit(data: PurchaseOrderFormValues) {
         // For new orders, trigger the checkout wizard
         if (!initialData && onCheckout) {
-            const lines = useWatch({ control: form.control, name: "lines" }) || data.lines
+            const lines = data.lines
             const total = lines.reduce((sum, line) => {
                 const lineNet = Number(line.quantity) * Number(line.unit_cost) || 0
                 const lineTax = lineNet * (Number(line.tax_rate) / 100)
