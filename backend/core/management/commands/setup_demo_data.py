@@ -226,7 +226,7 @@ class Command(BaseCommand):
         if not BillOfMaterials.objects.filter(product=p_impresion_color).exists():
             bom_impresion_color = BillOfMaterials.objects.create(product=p_impresion_color, name="BOM Impresion a color", active=True)
             # Para 1 impresion a color.
-            BillOfMaterialsLine.objects.create(bom=bom_impresion_color, component=p_papel, quantity=Decimal('0.03125'), uom=uoms['pliego'])
+            BillOfMaterialsLine.objects.create(bom=bom_impresion_color, component=p_papel, quantity=Decimal('1'), uom=uoms['pliego'])
 
         
         # SERVICES
