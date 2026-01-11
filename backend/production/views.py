@@ -8,51 +8,102 @@ from .serializers import (
     BillOfMaterialsSerializer,
     BillOfMaterialsLineSerializer
 )
-from .services import ProductionService
+from .services import WorkOrderService
 from inventory.models import Product, Warehouse
 from decimal import Decimal
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from io import BytesIO
 
 class WorkOrderViewSet(viewsets.ModelViewSet):
     queryset = WorkOrder.objects.all()
     serializer_class = WorkOrderSerializer
 
     @action(detail=True, methods=['post'])
-    def consume(self, request, pk=None):
+    def transition(self, request, pk=None):
+        """Transition OT to next stage with optional data"""
         work_order = self.get_object()
         try:
-            product_id = request.data.get('product_id')
-            warehouse_id = request.data.get('warehouse_id')
-            quantity = Decimal(str(request.data.get('quantity')))
+            next_stage = request.data.get('next_stage')
+            notes = request.data.get('notes', '')
+            data = request.data.get('data', {})
             
-            product = Product.objects.get(pk=product_id)
-            warehouse = Warehouse.objects.get(pk=warehouse_id)
+            # Find the stage choice
+            stage_match = None
+            for choice, label in WorkOrder.Stage.choices:
+                if choice == next_stage:
+                    stage_match = choice
+                    break
             
-            consumption = ProductionService.consume_material(work_order, product, warehouse, quantity)
+            if not stage_match:
+                return Response({'error': f'Etapa inválida: {next_stage}'}, status=status.HTTP_400_BAD_REQUEST)
+
+            WorkOrderService.transition_to(
+                work_order=work_order,
+                next_stage=stage_match,
+                user=request.user,
+                notes=notes,
+                data=data
+            )
             
-            return Response(ProductionConsumptionSerializer(consumption).data, status=status.HTTP_201_CREATED)
+            return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=True, methods=['post'])
-    def consume_from_bom(self, request, pk=None):
-        """Consume materials based on the BOM of the associated product"""
+
+    @action(detail=True, methods=['get'])
+    def print_pdf(self, request, pk=None):
+        """Generate a basic PDF for the Work Order"""
         work_order = self.get_object()
+        
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer)
+        
+        # Simple PDF generation logic
+        p.drawString(100, 800, f"ORDEN DE TRABAJO: OT-{work_order.number}")
+        p.drawString(100, 780, f"Descripción: {work_order.description}")
+        p.drawString(100, 760, f"Estado: {work_order.get_status_display()}")
+        p.drawString(100, 740, f"Etapa Actual: {work_order.get_current_stage_display()}")
+        
+        if work_order.sale_order:
+            p.drawString(100, 720, f"Nota de Venta: NV-{work_order.sale_order.number}")
+            p.drawString(100, 700, f"Cliente: {work_order.sale_order.customer.name}")
+
+        y = 660
+        p.drawString(100, y, "MATERIALES ASIGNADOS:")
+        y -= 20
+        for mat in work_order.materials.all():
+            p.drawString(120, y, f"- {mat.component.name} ({mat.component.code}): {mat.quantity_planned} {mat.uom.name}")
+            y -= 15
+        
+        p.showPage()
+        p.save()
+        
+        buffer.seek(0)
+        filename = f"OT-{work_order.number}.pdf"
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    @action(detail=False, methods=['post'])
+    def create_manual(self, request):
+        """Create a manual OT"""
         try:
+            product_id = request.data.get('product_id')
+            quantity = Decimal(str(request.data.get('quantity')))
+            description = request.data.get('description', '')
             warehouse_id = request.data.get('warehouse_id')
-            multiplier = Decimal(str(request.data.get('multiplier', '1.0')))
             
-            warehouse = Warehouse.objects.get(pk=warehouse_id)
+            product = Product.objects.get(pk=product_id)
+            warehouse = Warehouse.objects.get(pk=warehouse_id) if warehouse_id else None
             
-            consumptions = ProductionService.consume_materials_from_bom(
-                work_order, 
-                warehouse, 
-                multiplier
+            work_order = WorkOrderService.create_manual(
+                product=product,
+                quantity=quantity,
+                description=description,
+                warehouse=warehouse
             )
             
-            return Response(
-                ProductionConsumptionSerializer(consumptions, many=True).data, 
-                status=status.HTTP_201_CREATED
-            )
+            return Response(WorkOrderSerializer(work_order).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

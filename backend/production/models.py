@@ -11,6 +11,15 @@ class WorkOrder(models.Model):
         FINISHED = 'FINISHED', _('Terminada')
         CANCELLED = 'CANCELLED', _('Anulada')
 
+    class Stage(models.TextChoices):
+        MATERIAL_ASSIGNMENT = 'MATERIAL_ASSIGNMENT', _('Asignación de Materiales')
+        MATERIAL_APPROVAL = 'MATERIAL_APPROVAL', _('Aprobación de Materiales')
+        PREPRESS = 'PREPRESS', _('Pre-Impresión')
+        PRESS = 'PRESS', _('Impresión')
+        POSTPRESS = 'POSTPRESS', _('Post-Impresión')
+        FINISHED = 'FINISHED', _('Finalizada')
+        CANCELLED = 'CANCELLED', _('Cancelada')
+
     number = models.CharField(_("Número OT"), max_length=20, unique=True, editable=False)
     description = models.CharField(_("Descripción"), max_length=255)
     
@@ -30,7 +39,40 @@ class WorkOrder(models.Model):
         help_text="Línea de venta asociada"
     )
     
+    # New fields for manual OT
+    is_manual = models.BooleanField(_("Es Manual"), default=False)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='manual_work_orders',
+        help_text="Producto fabricable (para OTs manuales)"
+    )
+    
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    
+    current_stage = models.CharField(
+        _("Etapa Actual"),
+        max_length=30,
+        choices=Stage.choices,
+        default=Stage.MATERIAL_ASSIGNMENT
+    )
+    
+    # Store dynamic data for each stage
+    stage_data = models.JSONField(
+        _("Datos de Etapas"),
+        default=dict,
+        blank=True,
+        help_text="Datos de diseño, folios, confirmaciones de impresión, etc."
+    )
+    
+    warehouse = models.ForeignKey(
+        Warehouse, 
+        on_delete=models.PROTECT, 
+        related_name='work_orders',
+        null=True, blank=True,
+        help_text="Bodega de donde se obtendrán los materiales"
+    )
     
     # Specs
     specifications = models.TextField(_("Especificaciones Técnicas"), blank=True, help_text="Papel, Tintas, Terminaciones, etc.")
@@ -97,6 +139,51 @@ class ProductionConsumption(models.Model):
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity} (OT-{self.work_order.number})"
+
+class WorkOrderMaterial(models.Model):
+    """
+    Materiales asignados a una OT específica.
+    Permite asignar materiales directamente a la OT sin necesidad de un BOM maestro.
+    """
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='materials')
+    component = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='ot_material_usages')
+    quantity_planned = models.DecimalField(_("Cantidad Planificada"), max_digits=12, decimal_places=4)
+    quantity_consumed = models.DecimalField(_("Cantidad Consumida"), max_digits=12, decimal_places=4, default=0)
+    uom = models.ForeignKey(UoM, on_delete=models.PROTECT, related_name='ot_materials')
+    
+    # Field to track if this came from a BOM or was added manually
+    source = models.CharField(
+        _("Origen"), 
+        max_length=20, 
+        choices=[('BOM', 'Lista de Materiales'), ('MANUAL', 'Manual')], 
+        default='MANUAL'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Material de OT")
+        verbose_name_plural = _("Materiales de OT")
+        unique_together = [['work_order', 'component']]
+
+    def __str__(self):
+        return f"{self.component.name} ({self.work_order.number})"
+
+class WorkOrderHistory(models.Model):
+    """
+    Track history of stage changes and important actions.
+    """
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='history')
+    stage = models.CharField(max_length=30)
+    status = models.CharField(max_length=20)
+    notes = models.TextField(blank=True)
+    user = models.ForeignKey('core.User', on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = _("Historial de OT")
+        verbose_name_plural = _("Historiales de OT")
 
 class BillOfMaterials(models.Model):
     """

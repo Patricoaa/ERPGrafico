@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine
+from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderHistory
 
 class ProductionConsumptionSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
@@ -17,10 +17,34 @@ class ProductionConsumptionSerializer(serializers.ModelSerializer):
             )
         return data
 
+class WorkOrderHistorySerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.first_name', read_only=True)
+    
+    class Meta:
+        model = WorkOrderHistory
+        fields = '__all__'
+
+class WorkOrderMaterialSerializer(serializers.ModelSerializer):
+    component_name = serializers.CharField(source='component.name', read_only=True)
+    component_code = serializers.CharField(source='component.code', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    
+    class Meta:
+        model = WorkOrderMaterial
+        fields = '__all__'
+
 class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
+    materials = WorkOrderMaterialSerializer(many=True, read_only=True)
+    history = WorkOrderHistorySerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
+    sale_customer_name = serializers.CharField(source='sale_order.customer.name', read_only=True)
     product_info = serializers.ReadOnlyField()
+    
+    # Metadata helpers
+    requires_prepress = serializers.BooleanField(source='sale_line.product.mfg_enable_prepress', read_only=True, default=False)
+    requires_press = serializers.BooleanField(source='sale_line.product.mfg_enable_press', read_only=True, default=False)
+    requires_postpress = serializers.BooleanField(source='sale_line.product.mfg_enable_postpress', read_only=True, default=False)
     
     class Meta:
         model = WorkOrder
