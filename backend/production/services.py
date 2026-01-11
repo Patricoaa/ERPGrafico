@@ -172,8 +172,14 @@ class WorkOrderService:
             mat.quantity_consumed = mat.quantity_planned # We consume what was planned
             mat.save()
             
-            # Accounting for consumption (simplified, matching ProductionService style)
-            # ... (omitted for brevity in this step)
+            # Create traceability record
+            ProductionConsumption.objects.create(
+                work_order=work_order,
+                product=mat.component,
+                warehouse=work_order.warehouse,
+                quantity=base_comp_qty,
+                stock_move=move
+            )
 
         # 2. Add finished product
         product = None

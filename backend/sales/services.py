@@ -49,6 +49,17 @@ class SalesService:
         order.status = SaleOrder.Status.CONFIRMED
         order.save()
 
+        # 3. Trigger Work Order creation for manufacturable products
+        from production.services import WorkOrderService
+        from inventory.models import Product
+        
+        for line in order.lines.all():
+            if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
+                # Check if an OT already exists for this line to avoid duplicates
+                if not line.work_orders.exists():
+                    print(f"DEBUG: Triggering auto-OT for product {line.product.internal_code} on SaleOrder {order.number}")
+                    WorkOrderService.create_from_sale_line(line)
+
         # NOTE: Accounting entry moved to BillingService.create_sale_invoice
         
         return order
