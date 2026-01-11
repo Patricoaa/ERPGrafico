@@ -61,7 +61,6 @@ const saleLineSchema = z.object({
 })
 
 const saleOrderSchema = z.object({
-    customer: z.string().min(1, "El cliente es requerido"),
     payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
     notes: z.string().optional(),
     lines: z.array(saleLineSchema).min(1, "Debe agregar al menos una línea"),
@@ -71,6 +70,7 @@ type SaleOrderFormValues = z.infer<typeof saleOrderSchema>
 
 interface SaleOrderFormProps {
     onSuccess?: (order?: any) => void
+    onConfirmCheckout?: (data: any) => void
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
@@ -134,7 +134,7 @@ const DynamicFieldsRenderer = ({ schema, value, onChange }: { schema: any, value
     )
 }
 
-export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenChange }: SaleOrderFormProps) {
+export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open: openProp, onOpenChange }: SaleOrderFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -153,7 +153,6 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         resolver: zodResolver(saleOrderSchema) as any,
         defaultValues: initialData ? {
             ...initialData,
-            customer: initialData.customer?.toString() || "",
             lines: initialData.lines.map((l: any) => ({
                 id: l.id,
                 product: l.product?.toString() || "",
@@ -166,7 +165,6 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 manufacturing_data: l.manufacturing_data || null,
             }))
         } : {
-            customer: "",
             payment_method: "CREDIT",
             notes: "",
             lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
@@ -225,7 +223,6 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             if (initialData) {
                 form.reset({
                     ...initialData,
-                    customer: initialData.customer?.id?.toString() || initialData.customer?.toString() || "",
                     lines: initialData.lines.map((l: any) => ({
                         id: l.id,
                         product: l.product?.toString() || "",
@@ -240,7 +237,6 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 })
             } else {
                 form.reset({
-                    customer: "",
                     payment_method: "CREDIT",
                     notes: "",
                     lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
@@ -250,6 +246,22 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     }, [open, initialData, form])
 
     async function onSubmit(data: SaleOrderFormValues) {
+        if (!initialData && onConfirmCheckout) {
+            // Enrich data with names for the checkout summary
+            const enrichedLines = data.lines.map(line => {
+                const product = products.find(p => p.id.toString() === line.product);
+                const uom = uoms.find(u => u.id.toString() === line.uom);
+                return {
+                    ...line,
+                    product_name: product?.name || line.description,
+                    uom_name: uom?.name || "",
+                };
+            });
+            onConfirmCheckout({ ...data, lines: enrichedLines });
+            setOpen(false)
+            return
+        }
+
         setLoading(true)
         try {
             let res;
@@ -280,32 +292,14 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             )}
             <DialogContent className="sm:max-w-[1200px] w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Nota de Venta" : "Crear Nota de Venta"}</DialogTitle>
+                    <DialogTitle>{initialData ? "Editar Nota de Venta" : "Cerrar Venta"}</DialogTitle>
                     <DialogDescription>
-                        {initialData ? "Modifique los datos de la nota de venta." : "Ingrese los detalles de la nueva nota de venta."}
+                        {initialData ? "Modifique los datos de la nota de venta." : "Ingrese los detalles para confirmar la venta e ir al checkout."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField<SaleOrderFormValues>
-                                control={form.control}
-                                name="customer"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Cliente</FormLabel>
-                                        <FormControl>
-                                            <AdvancedContactSelector
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                contactType="CUSTOMER"
-                                                placeholder="Buscar cliente..."
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         </div>
 
                         <div className="space-y-4">
@@ -337,8 +331,8 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {fields.map((field, index) => (
-                                            <TableRow key={field.id}>
+                                        {fields.map((row, index) => (
+                                            <TableRow key={row.id}>
                                                 <TableCell>
                                                     <FormField<SaleOrderFormValues>
                                                         control={form.control}
@@ -386,29 +380,6 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                             }}
                                                                         />
                                                                     </div>
-                                                                    {(() => {
-                                                                        const prod = products.find(p => p.id.toString() === field.value)
-                                                                        if (!prod?.requires_advanced_manufacturing) return null
-
-                                                                        const hasData = !!form.watch(`lines.${index}.manufacturing_data`)
-
-                                                                        return (
-                                                                            <Button
-                                                                                type="button"
-                                                                                variant={hasData ? "default" : "outline"}
-                                                                                size="icon"
-                                                                                className={cn("h-9 w-9 shrink-0", hasData && "bg-primary text-primary-foreground")}
-                                                                                onClick={() => {
-                                                                                    setPendingProduct(prod)
-                                                                                    setPendingItemIndex(index)
-                                                                                    setAdvMfgDialogOpen(true)
-                                                                                }}
-                                                                                title="Configurar fabricación"
-                                                                            >
-                                                                                <Paintbrush className="h-4 w-4" />
-                                                                            </Button>
-                                                                        )
-                                                                    })()}
                                                                 </div>
                                                                 {(() => {
                                                                     const prod = products.find(p => p.id.toString() === field.value)
@@ -521,15 +492,42 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                     {(Math.round((Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0) * 1.19)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => remove(index)}
-                                                        disabled={fields.length === 1}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    <div className="flex items-center gap-1">
+                                                        {(() => {
+                                                            const productId = form.watch(`lines.${index}.product`)
+                                                            const prod = products.find(p => p.id.toString() === productId)
+                                                            if (!prod?.requires_advanced_manufacturing) return null
+
+                                                            const hasData = !!form.watch(`lines.${index}.manufacturing_data`)
+
+                                                            return (
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className={cn("h-8 w-8", hasData ? "text-primary" : "text-muted-foreground")}
+                                                                    onClick={() => {
+                                                                        setPendingProduct(prod)
+                                                                        setPendingItemIndex(index)
+                                                                        setAdvMfgDialogOpen(true)
+                                                                    }}
+                                                                    title="Configurar fabricación"
+                                                                >
+                                                                    <Paintbrush className="h-4 w-4" />
+                                                                </Button>
+                                                            )
+                                                        })()}
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => remove(index)}
+                                                            disabled={fields.length === 1}
+                                                            className="h-8 w-8 text-destructive"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -568,7 +566,7 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Nota de Venta"}
+                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Confirmar Venta"}
                             </Button>
                         </div>
                     </form>
@@ -586,6 +584,6 @@ export function SaleOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     }}
                 />
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }

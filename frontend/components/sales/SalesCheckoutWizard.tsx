@@ -16,7 +16,7 @@ import { OrderSummaryCard } from "./checkout/OrderSummaryCard"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Customer } from "./checkout/Step0_Customer"
-import { Check, ChevronRight, ChevronLeft, Loader2 } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, User, Tag, CreditCard, ShoppingBag } from "lucide-react"
 
 interface SalesCheckoutWizardProps {
     open: boolean
@@ -28,6 +28,7 @@ interface SalesCheckoutWizardProps {
     customerName?: string  // Optional for backward compatibility
     initialCustomerName?: string
     initialCustomerId?: string
+    channel?: string
 }
 
 export function SalesCheckoutWizard({
@@ -38,7 +39,8 @@ export function SalesCheckoutWizard({
     total,
     onComplete,
     initialCustomerName = "",
-    initialCustomerId = ""
+    initialCustomerId = "",
+    channel = "POS"
 }: SalesCheckoutWizardProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
@@ -79,6 +81,26 @@ export function SalesCheckoutWizard({
         }
     }, [orderLines]);
 
+    // Fetch default customer if none provided
+    useEffect(() => {
+        if (!initialCustomerId && open) {
+            const fetchDefaultCustomer = async () => {
+                try {
+                    const response = await api.get('/contacts/?is_default_customer=true');
+                    const results = response.data.results || response.data;
+                    const defaultCustomer = results.find((c: any) => c.is_default_customer);
+                    if (defaultCustomer) {
+                        setSelectedCustomerId(defaultCustomer.id.toString());
+                        setSelectedCustomerName(defaultCustomer.name);
+                    }
+                } catch (error) {
+                    console.error("Error fetching default customer:", error);
+                }
+            };
+            fetchDefaultCustomer();
+        }
+    }, [initialCustomerId, open]);
+
     const handleNext = () => {
         if (step === 1 && !selectedCustomerId) {
             toast.error("Debe seleccionar un cliente para continuar.")
@@ -112,6 +134,7 @@ export function SalesCheckoutWizard({
             const payloadOrder = order ? { id: order.id } : {
                 customer: parseInt(selectedCustomerId),
                 payment_method: paymentData.method, // Important for the order record too
+                channel: channel,
                 lines: orderLines.map(l => ({
                     product: l.id,
                     description: l.name || l.product_name || l.description,
@@ -228,11 +251,19 @@ export function SalesCheckoutWizard({
                     </div>
 
                     {/* Sidebar Summary */}
-                    <div className="w-80 hidden lg:block">
+                    <div className="w-80 hidden lg:block border-l">
                         <OrderSummaryCard
                             orderLines={orderLines}
                             total={total}
                             customerName={selectedCustomerName}
+                            dteType={dteData.type}
+                            paymentData={{
+                                method: paymentData.method,
+                                amount: paymentData.amount,
+                                creditAssigned: paymentData.amount < total ? total - paymentData.amount : 0
+                            }}
+                            deliveryData={deliveryData}
+                            currentStep={step}
                         />
                     </div>
                 </div>

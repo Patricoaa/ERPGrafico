@@ -43,7 +43,6 @@ const items = [
         items: [
             { title: "Notas de Venta", url: "/sales/orders" },
             { title: "POS", url: "/sales/pos" },
-            { title: "Historial", url: "/sales/history" },
         ]
     },
     {

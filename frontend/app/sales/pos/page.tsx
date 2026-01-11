@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Paintbrush, Info } from "lucide-react"
+import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Paintbrush, Info, Settings2 } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -394,6 +394,11 @@ export default function POSPage() {
                                                     <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{product.internal_code || product.code}</div>
+                                                {product.product_type === 'MANUFACTURABLE' && (
+                                                    <div className="mt-1 text-[10px] text-blue-600 font-bold uppercase flex items-center justify-center gap-1">
+                                                        <Settings2 className="h-3 w-3" /> Configurado
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     )
@@ -431,13 +436,8 @@ export default function POSPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {items.map((item) => {
-                                            // Need to find the product in the full list to get allowed_sale_uoms
                                             const originalProduct = products.find(p => p.id === item.id)
                                             const itemUom = uoms.find(u => u.id === item.uom)
-
-                                            // Logic: allowed_sale_uoms (if any) + default sale UoM OR Category fallback
-                                            // The 'product' interface in this file needs to include allowed_sale_uoms for this to work.
-                                            // I will assume the API returns it (ProductSerializer does), I need to update the interface above too.
 
                                             let allowedUoMs = []
                                             if (originalProduct && (originalProduct as any).allowed_sale_uoms?.length > 0) {
@@ -456,25 +456,6 @@ export default function POSPage() {
                                                                 <span className="font-mono text-[10px] text-muted-foreground mr-1">{item.internal_code || item.code}</span>
                                                                 {item.name}
                                                             </span>
-                                                            {item.manufacturing_data && item.manufacturable_quantity && (
-                                                                <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                                    <Package className="h-3 w-3" />
-                                                                    Mfg: {item.manufacturable_quantity || 0}
-                                                                </div>
-                                                            )}
-                                                            {item.requires_advanced_manufacturing && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className={cn("h-6 w-6 mt-1", item.manufacturing_data ? "text-primary" : "text-muted-foreground")}
-                                                                    onClick={() => {
-                                                                        setPendingProduct(item as Product)
-                                                                        setAdvMfgDialogOpen(true)
-                                                                    }}
-                                                                >
-                                                                    <Paintbrush className="h-3 w-3" />
-                                                                </Button>
-                                                            )}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
@@ -518,9 +499,24 @@ export default function POSPage() {
                                                     <TableCell className="text-right text-xs text-muted-foreground">${Number(item.total_tax).toLocaleString()}</TableCell>
                                                     <TableCell className="text-right font-bold text-sm">${Number(item.total_gross).toLocaleString()}</TableCell>
                                                     <TableCell>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeItem(item.id)}>
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
+                                                        <div className="flex items-center gap-1">
+                                                            {item.requires_advanced_manufacturing && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className={cn("h-8 w-8", item.manufacturing_data ? "text-primary" : "text-muted-foreground")}
+                                                                    onClick={() => {
+                                                                        setPendingProduct(item as Product)
+                                                                        setAdvMfgDialogOpen(true)
+                                                                    }}
+                                                                >
+                                                                    <Paintbrush className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(item.id)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </TableCell>
                                                 </TableRow>
                                             )
@@ -565,18 +561,20 @@ export default function POSPage() {
                 </div>
             </div>
 
-            {checkoutOpen && (
-                <SalesCheckoutWizard
-                    open={checkoutOpen}
-                    onOpenChange={setCheckoutOpen}
-                    order={null}
-                    orderLines={items}
-                    total={total_gross_sum}
-                    onComplete={() => {
-                        setItems([])
-                    }}
-                />
-            )}
+            {
+                checkoutOpen && (
+                    <SalesCheckoutWizard
+                        open={checkoutOpen}
+                        onOpenChange={setCheckoutOpen}
+                        order={null}
+                        orderLines={items}
+                        total={total_gross_sum}
+                        onComplete={() => {
+                            setItems([])
+                        }}
+                    />
+                )
+            }
 
             <AdvancedManufacturingDialog
                 open={advMfgDialogOpen}
@@ -589,7 +587,6 @@ export default function POSPage() {
                     }
                 }}
             />
-
         </div>
     )
 }

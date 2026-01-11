@@ -62,6 +62,7 @@ export default function SalesOrdersPage() {
     const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
     const [completingFolio, setCompletingFolio] = useState<SaleOrder | null>(null)
     const [addingNote, setAddingNote] = useState<SaleOrder | null>(null)
+    const [checkoutData, setCheckoutData] = useState<any | null>(null)
 
     const fetchOrders = async () => {
         try {
@@ -177,16 +178,17 @@ export default function SalesOrdersPage() {
                 <h2 className="text-3xl font-bold tracking-tight">Notas de Venta</h2>
                 <div className="flex items-center space-x-2">
                     <SaleOrderForm
-                        onSuccess={(newOrder) => {
-                            fetchOrders()
-                            if (newOrder && !editingOrder) {
-                                setPayingOrder(newOrder)
-                            }
+                        onConfirmCheckout={(data) => {
+                            setCheckoutData(data)
+                            setIsFormOpen(false)
                         }}
                         open={isFormOpen && !editingOrder}
                         onOpenChange={(open) => {
                             setIsFormOpen(open)
-                            if (!open) setEditingOrder(null)
+                            if (!open) {
+                                setEditingOrder(null)
+                                setCheckoutData(null)
+                            }
                         }}
                     />
                     {editingOrder && (
@@ -413,14 +415,31 @@ export default function SalesOrdersPage() {
                 />
             )}
 
-            {payingOrder && (
+            {(payingOrder || checkoutData) && (
                 <SalesCheckoutWizard
-                    open={!!payingOrder}
-                    onOpenChange={(open) => !open && setPayingOrder(null)}
+                    open={!!payingOrder || !!checkoutData}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setPayingOrder(null)
+                            setCheckoutData(null)
+                        }
+                    }}
                     order={payingOrder}
-                    orderLines={payingOrder.lines || []}
-                    total={parseFloat(payingOrder.total)}
-                    customerName={payingOrder.customer_name}
+                    orderLines={payingOrder ? (payingOrder.lines || []) : (checkoutData?.lines?.map((l: any) => ({
+                        ...l,
+                        id: l.product, // Salesforce expects product ID in 'id' field for new orders
+                        product_name: l.description,
+                        qty: l.quantity,
+                        unit_price_net: l.unit_price
+                    })) || [])}
+                    total={payingOrder ? parseFloat(payingOrder.total) : (checkoutData?.lines?.reduce((sum: number, l: any) => {
+                        const net = l.quantity * (l.unit_price || 0);
+                        const tax = net * ((l.tax_rate || 19) / 100);
+                        return sum + net + tax;
+                    }, 0) || 0)}
+                    initialCustomerId={payingOrder?.customer?.toString()}
+                    initialCustomerName={payingOrder?.customer_name}
+                    channel={checkoutData ? "SALE" : "POS"}
                     onComplete={fetchOrders}
                 />
             )}

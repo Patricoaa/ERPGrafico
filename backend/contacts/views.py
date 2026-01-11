@@ -15,6 +15,7 @@ class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['is_default_customer', 'is_default_vendor']
     search_fields = ['name', 'tax_id', 'email', 'contact_name']
     ordering_fields = ['name', 'created_at']
     ordering = ['name']

@@ -274,7 +274,10 @@ class BillingService:
             if not order_serializer.is_valid():
                 print(f"DEBUG: serializer errors: {order_serializer.errors}")
                 raise ValidationError(order_serializer.errors)
-            order = order_serializer.save(channel='POS')
+            
+            # Use provided channel or default to POS
+            channel = order_data.get('channel', 'POS')
+            order = order_serializer.save(channel=channel)
         
         # 2. Confirm Order
         from sales.services import SalesService

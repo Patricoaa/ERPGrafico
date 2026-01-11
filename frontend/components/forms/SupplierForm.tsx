@@ -10,6 +10,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
     FormControl,
@@ -30,6 +31,8 @@ const supplierSchema = z.object({
     email: z.string().email("Email inválido").optional().or(z.literal("")),
     phone: z.string().optional(),
     address: z.string().optional(),
+    is_default_customer: z.boolean().default(false),
+    is_default_vendor: z.boolean().default(false),
 })
 
 type SupplierFormValues = z.infer<typeof supplierSchema>
@@ -57,6 +60,8 @@ export function SupplierForm({ onSuccess, initialData, open: openProp, onOpenCha
             email: "",
             phone: "",
             address: "",
+            is_default_customer: false,
+            is_default_vendor: false,
         },
     })
 

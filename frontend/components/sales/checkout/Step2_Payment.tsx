@@ -32,7 +32,6 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
         { id: 'CASH', label: 'Efectivo', icon: Banknote, color: 'text-emerald-600' },
         { id: 'CARD', label: 'Tarjeta', icon: CreditCard, color: 'text-blue-600' },
         { id: 'TRANSFER', label: 'Transferencia', icon: Building2, color: 'text-purple-600' },
-        { id: 'CREDIT', label: 'Crédito', icon: ClipboardList, color: 'text-orange-600' },
     ]
 
     return (
@@ -52,7 +51,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                 <RadioGroup
                     value={paymentData.method}
                     onValueChange={(val) => setPaymentData({ ...paymentData, method: val })}
-                    className="grid grid-cols-2 gap-4"
+                    className="grid grid-cols-3 gap-4"
                 >
                     {methods.map((m) => (
                         <Label
@@ -81,14 +80,21 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                             onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
                         />
                     </div>
-                    {paymentData.amount > total && paymentData.method === 'CASH' && (
+                    {paymentData.amount > total && paymentData.method === 'CASH' ? (
                         <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase text-emerald-600">Vuelto</Label>
                             <div className="h-10 flex items-center px-3 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold">
                                 {(paymentData.amount - total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                             </div>
                         </div>
-                    )}
+                    ) : paymentData.amount < total ? (
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-orange-600">Crédito Asignado</Label>
+                            <div className="h-10 flex items-center px-3 rounded-md border border-orange-200 bg-orange-50 text-orange-700 font-bold">
+                                {(total - paymentData.amount).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
 
                 {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (

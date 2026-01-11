@@ -36,8 +36,33 @@ class Contact(models.Model):
         verbose_name=_("Cuenta por Pagar")
     )
 
+    is_default_customer = models.BooleanField(_("Cliente por Defecto"), default=False)
+    is_default_vendor = models.BooleanField(_("Proveedor por Defecto"), default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.is_default_customer:
+            # Ensure only one default customer
+            clashing = Contact.objects.filter(is_default_customer=True)
+            if self.pk:
+                clashing = clashing.exclude(pk=self.pk)
+            if clashing.exists():
+                raise ValidationError(_("Ya existe un cliente por defecto."))
+        
+        if self.is_default_vendor:
+            # Ensure only one default vendor
+            clashing = Contact.objects.filter(is_default_vendor=True)
+            if self.pk:
+                clashing = clashing.exclude(pk=self.pk)
+            if clashing.exists():
+                raise ValidationError(_("Ya existe un proveedor por defecto."))
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Contacto")

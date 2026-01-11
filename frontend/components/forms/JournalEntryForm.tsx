@@ -301,7 +301,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="w-[300px]">Cuenta</TableHead>
-                                        <TableHead>Etiqueta</TableHead>
+                                        <TableHead>Glosa</TableHead>
                                         <TableHead className="w-[150px]">Debe</TableHead>
                                         <TableHead className="w-[150px]">Haber</TableHead>
                                         <TableHead className="w-[50px]"></TableHead>

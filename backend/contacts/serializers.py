@@ -14,6 +14,7 @@ class ContactSerializer(serializers.ModelSerializer):
             'id', 'name', 'tax_id', 'contact_name', 'email', 'phone', 'address',
             'account_receivable', 'account_payable',
             'is_customer', 'is_supplier', 'contact_type',
+            'is_default_customer', 'is_default_vendor',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -25,4 +26,4 @@ class ContactListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Contact
-        fields = ['id', 'name', 'tax_id', 'email', 'phone', 'contact_type']
+        fields = ['id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor']

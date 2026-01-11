@@ -12,6 +12,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
     FormControl,
@@ -31,6 +32,8 @@ const customerSchema = z.object({
     email: z.string().email("Email inválido").optional().or(z.literal("")),
     phone: z.string().optional(),
     address: z.string().optional(),
+    is_default_customer: z.boolean().default(false),
+    is_default_vendor: z.boolean().default(false),
 })
 
 type CustomerFormValues = z.infer<typeof customerSchema>
@@ -57,6 +60,8 @@ export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenCha
             email: "",
             phone: "",
             address: "",
+            is_default_customer: false,
+            is_default_vendor: false,
         },
     })
 
@@ -72,6 +77,8 @@ export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenCha
                     email: "",
                     phone: "",
                     address: "",
+                    is_default_customer: false,
+                    is_default_vendor: false,
                 })
             }
         }
@@ -181,6 +188,46 @@ export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenCha
                                 </FormItem>
                             )}
                         />
+                        <div className="flex gap-6 pt-2">
+                            <FormField
+                                control={form.control}
+                                name="is_default_customer"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-1">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                                Cliente por defecto
+                                            </FormLabel>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="is_default_vendor"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-1">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                                Proveedor por defecto
+                                            </FormLabel>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <div className="flex justify-end space-x-2">
                             <Button
                                 type="button"
@@ -196,6 +243,6 @@ export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenCha
                     </form>
                 </Form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }
