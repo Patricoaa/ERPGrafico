@@ -812,6 +812,114 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
+    def purchase_checkout(order_data, dte_type, document_number='', document_date=None, document_attachment=None,
+                         payment_method='CREDIT', amount=None, treasury_account_id=None, transaction_number=None,
+                         payment_is_pending=False, receipt_type='IMMEDIATE', receipt_data=None):
+        """
+        Complete Purchase checkout: Create Order -> Register Bill -> Payment -> Receipt.
+        
+        Args:
+            order_data: dict with order info or {'id': existing_order_id}
+            dte_type: 'BOLETA', 'FACTURA', 'FACTURA_EXENTA'
+            document_number: Supplier's invoice number (folio)
+            document_date: Invoice date
+            document_attachment: File attachment
+            payment_method: 'CASH', 'CARD', 'TRANSFER', 'CREDIT'
+            amount: Payment amount (defaults to order total)
+            treasury_account_id: Treasury account for payment
+            transaction_number: Transaction reference
+            payment_is_pending: Mark payment as pending validation
+            receipt_type: 'IMMEDIATE', 'DEFERRED', 'PARTIAL'
+            receipt_data: For partial receipts: {'line_data': [{'line_id': 1, 'quantity': 5}]}
+        
+        Returns:
+            dict: {'order': order, 'invoice': invoice, 'payment': payment, 'receipt': receipt}
+        """
+        from purchasing.serializers import WritePurchaseOrderSerializer
+        from treasury.services import TreasuryService
+        from billing.services import BillingService
+        from billing.models import Invoice
+        
+        # 1. Get or Create Purchase Order
+        order = None
+        if isinstance(order_data, str):
+            import json
+            order_data = json.loads(order_data)
+        
+        if 'id' in order_data:
+            order = PurchaseOrder.objects.get(id=order_data['id'])
+        else:
+            order_serializer = WritePurchaseOrderSerializer(data=order_data)
+            if not order_serializer.is_valid():
+                raise ValidationError(order_serializer.errors)
+            order = order_serializer.save()
+        
+        # Confirm order if still DRAFT
+        if order.status == PurchaseOrder.Status.DRAFT:
+            order.status = PurchaseOrder.Status.CONFIRMED
+            order.save()
+        
+        # 2. Register Bill (Invoice)
+        invoice_status = Invoice.Status.DRAFT if not document_number else Invoice.Status.POSTED
+        invoice = BillingService.create_purchase_bill(
+            order=order,
+            supplier_invoice_number=document_number,
+            dte_type=dte_type,
+            document_attachment=document_attachment,
+            date=document_date or timezone.now().date(),
+            status=invoice_status
+        )
+        
+        # 3. Register Payment (if not CREDIT)
+        payment = None
+        if payment_method != 'CREDIT':
+            payment_amount = Decimal(str(amount)) if amount else order.total
+            
+            payment = TreasuryService.register_payment(
+                amount=payment_amount,
+                payment_type='OUTBOUND',
+                payment_method=payment_method,
+                reference=f"OC-{order.number}",
+                partner=order.supplier,
+                invoice=invoice,
+                purchase_order=order,
+                treasury_account_id=treasury_account_id,
+                transaction_number=transaction_number,
+                is_pending_registration=payment_is_pending
+            )
+        
+        # 4. Receive Merchandise (if not DEFERRED)
+        receipt = None
+        warehouse = order.warehouse or Warehouse.objects.first()
+        
+        if receipt_type == 'IMMEDIATE':
+            receipt = PurchasingService.receive_order(
+                order=order,
+                warehouse=warehouse,
+                receipt_date=timezone.now().date(),
+                delivery_reference=receipt_data.get('delivery_reference', '') if receipt_data else '',
+                notes=receipt_data.get('notes', '') if receipt_data else ''
+            )
+        elif receipt_type == 'PARTIAL' and receipt_data:
+            receipt = PurchasingService.partial_receive(
+                order=order,
+                warehouse=warehouse,
+                line_data=receipt_data.get('line_data', []),
+                receipt_date=receipt_data.get('receipt_date') or timezone.now().date(),
+                delivery_reference=receipt_data.get('delivery_reference', ''),
+                notes=receipt_data.get('notes', '')
+            )
+        # DEFERRED: No receipt created
+        
+        return {
+            'order': order,
+            'invoice': invoice,
+            'payment': payment,
+            'receipt': receipt
+        }
+
+    @staticmethod
+    @transaction.atomic
     def delete_purchase_order(order: PurchaseOrder):
         """
         Deletes a purchase order, its invoices, and associated journal entries.

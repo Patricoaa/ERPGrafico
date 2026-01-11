@@ -177,6 +177,60 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'])
+    def purchase_checkout(self, request):
+        """
+        Unified purchase checkout endpoint.
+        Handles: Order creation/confirmation -> Bill registration -> Payment -> Receipt
+        """
+        try:
+            # Extract data from request
+            order_data = request.data.get('order_data')
+            if isinstance(order_data, str):
+                import json
+                order_data = json.loads(order_data)
+            
+            # Parse receipt_data if it's a string
+            receipt_data = request.data.get('receipt_data')
+            if isinstance(receipt_data, str):
+                import json
+                receipt_data = json.loads(receipt_data)
+            
+            result = PurchasingService.purchase_checkout(
+                order_data=order_data,
+                dte_type=request.data.get('dte_type', 'FACTURA'),
+                document_number=request.data.get('document_number', ''),
+                document_date=request.data.get('document_date'),
+                document_attachment=request.FILES.get('document_attachment'),
+                payment_method=request.data.get('payment_method', 'CREDIT'),
+                amount=request.data.get('amount'),
+                treasury_account_id=request.data.get('treasury_account_id'),
+                transaction_number=request.data.get('transaction_number'),
+                payment_is_pending=request.data.get('payment_is_pending', 'false').lower() == 'true',
+                receipt_type=request.data.get('receipt_type', 'IMMEDIATE'),
+                receipt_data=receipt_data
+            )
+            
+            # Serialize response
+            from billing.serializers import InvoiceSerializer
+            from treasury.serializers import PaymentSerializer
+            from .serializers import PurchaseReceiptSerializer
+            
+            response_data = {
+                'order': PurchaseOrderSerializer(result['order']).data,
+                'invoice': InvoiceSerializer(result['invoice']).data if result['invoice'] else None,
+                'payment': PaymentSerializer(result['payment']).data if result['payment'] else None,
+                'receipt': PurchaseReceiptSerializer(result['receipt']).data if result['receipt'] else None
+            }
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         order = self.get_object()

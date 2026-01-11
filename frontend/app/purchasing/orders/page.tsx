@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, CheckCircle, Package, FileText, History, Banknote, FileEdit, X } from "lucide-react"
+import { Pencil, Trash2, CheckCircle, Package, FileText, History, Banknote, FileEdit, X, ShoppingCart } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -19,6 +19,7 @@ import { Eye, FileBadge } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
+import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckoutWizard"
 
 interface PurchaseOrder {
     id: number
@@ -58,6 +59,7 @@ export default function PurchaseOrdersPage() {
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
+    const [checkoutOpen, setCheckoutOpen] = useState(false)
 
 
     const fetchOrders = async () => {
@@ -150,6 +152,10 @@ export default function PurchaseOrdersPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
                 <div className="flex items-center space-x-2">
+                    <Button onClick={() => setCheckoutOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Procesar Compra
+                    </Button>
                     <PurchaseOrderForm
                         onSuccess={fetchOrders}
                         open={isFormOpen && !editingOrder}
@@ -365,6 +371,18 @@ export default function PurchaseOrdersPage() {
                     onSuccess={fetchOrders}
                 />
             )}
+
+            <PurchaseCheckoutWizard
+                open={checkoutOpen}
+                onOpenChange={setCheckoutOpen}
+                order={null}
+                orderLines={[]}
+                total={0}
+                onComplete={() => {
+                    fetchOrders()
+                    setCheckoutOpen(false)
+                }}
+            />
         </div>
     )
 }
