@@ -2,14 +2,24 @@
 
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { FileText, Receipt, FileCheck } from "lucide-react"
+import { FileText, Receipt, FileCheck, Package } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 
 interface Step3_ReceiptProps {
     receiptData: any
     setReceiptData: (data: any) => void
+    orderLines?: any[]
 }
 
-export function Step3_Receipt({ receiptData, setReceiptData }: Step3_ReceiptProps) {
+export function Step3_Receipt({ receiptData, setReceiptData, orderLines = [] }: Step3_ReceiptProps) {
     const receiptTypes = [
         {
             id: 'IMMEDIATE',
@@ -34,10 +44,34 @@ export function Step3_Receipt({ receiptData, setReceiptData }: Step3_ReceiptProp
         }
     ]
 
+    // Initialize partial quantities if not set
+    if (receiptData.type === 'PARTIAL' && (!receiptData.partialQuantities || receiptData.partialQuantities.length === 0)) {
+        setReceiptData({
+            ...receiptData,
+            partialQuantities: orderLines.map(line => ({
+                productId: line.id,
+                productName: line.name,
+                orderedQty: line.quantity || line.qty,
+                receivedQty: line.quantity || line.qty,
+                uom: line.uom
+            }))
+        })
+    }
+
+    const updatePartialQty = (index: number, value: string) => {
+        const newQuantities = [...(receiptData.partialQuantities || [])]
+        newQuantities[index] = {
+            ...newQuantities[index],
+            receivedQty: parseFloat(value) || 0
+        }
+        setReceiptData({ ...receiptData, partialQuantities: newQuantities })
+    }
+
     return (
         <div className="space-y-6">
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block">
+                <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block flex items-center gap-2">
+                    <Package className="h-4 w-4" />
                     Tipo de Recepción
                 </Label>
                 <RadioGroup
@@ -66,17 +100,58 @@ export function Step3_Receipt({ receiptData, setReceiptData }: Step3_ReceiptProp
                 </RadioGroup>
             </div>
 
+            {receiptData.type === 'PARTIAL' && orderLines.length > 0 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <Label className="text-sm font-semibold">Cantidades a Recibir</Label>
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[40%]">Producto</TableHead>
+                                    <TableHead className="w-[20%] text-right">Ordenado</TableHead>
+                                    <TableHead className="w-[20%]">A Recibir</TableHead>
+                                    <TableHead className="w-[20%]">Unidad</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {orderLines.map((line, idx) => (
+                                    <TableRow key={idx}>
+                                        <TableCell className="font-medium">{line.name}</TableCell>
+                                        <TableCell className="text-right font-semibold">
+                                            {(line.quantity || line.qty).toLocaleString('es-CL')}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                max={line.quantity || line.qty}
+                                                value={receiptData.partialQuantities?.[idx]?.receivedQty || 0}
+                                                onChange={(e) => updatePartialQty(idx, e.target.value)}
+                                                className="w-full"
+                                            />
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {line.uom}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
+
             {receiptData.type !== 'DEFERRED' && (
                 <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed animate-in fade-in">
                     <div className="space-y-2">
                         <Label htmlFor="delivery-ref" className="text-xs font-bold uppercase">
                             Referencia de Entrega (Opcional)
                         </Label>
-                        <input
+                        <Input
                             id="delivery-ref"
                             type="text"
                             placeholder="Ej: Guía de despacho #123"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                             value={receiptData.deliveryReference || ''}
                             onChange={(e) => setReceiptData({ ...receiptData, deliveryReference: e.target.value })}
                         />

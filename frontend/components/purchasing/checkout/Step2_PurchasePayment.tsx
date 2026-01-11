@@ -3,7 +3,7 @@
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
-import { Banknote, CreditCard, Building2, Wallet } from "lucide-react"
+import { Banknote, CreditCard, Building2, Wallet, AlertCircle } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useEffect, useMemo } from "react"
 import api from "@/lib/api"
@@ -30,6 +30,13 @@ export function Step2_PurchasePayment({ paymentData, setPaymentData, total }: St
         fetchAccounts()
     }, [])
 
+    // Initialize amount to total if not set
+    useEffect(() => {
+        if (paymentData.amount === 0 || !paymentData.amount) {
+            setPaymentData({ ...paymentData, amount: total })
+        }
+    }, [total])
+
     const filteredAccounts = useMemo(() => {
         return accounts.filter(acc => {
             if (paymentData.method === 'CASH') return acc.allows_cash
@@ -46,6 +53,8 @@ export function Step2_PurchasePayment({ paymentData, setPaymentData, total }: St
             setPaymentData({ ...paymentData, treasuryAccountId: null })
         }
     }, [filteredAccounts, paymentData, setPaymentData])
+
+    const pendingDebt = total - (paymentData.amount || 0)
 
     const methods = [
         {
@@ -68,13 +77,6 @@ export function Step2_PurchasePayment({ paymentData, setPaymentData, total }: St
             icon: Building2,
             color: 'text-purple-600',
             hasAccounts: accounts.some(a => a.allows_transfer)
-        },
-        {
-            id: 'CREDIT',
-            label: 'Crédito (Pagar Luego)',
-            icon: Wallet,
-            color: 'text-orange-600',
-            hasAccounts: true
         }
     ]
 
@@ -82,7 +84,7 @@ export function Step2_PurchasePayment({ paymentData, setPaymentData, total }: St
         <div className="space-y-6">
             <div className="p-4 bg-destructive/5 rounded-xl border border-destructive/10 flex justify-between items-center">
                 <div>
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Total a Pagar</Label>
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Total de la Compra</Label>
                     <p className="text-2xl font-bold text-destructive">
                         {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                     </p>
@@ -90,52 +92,74 @@ export function Step2_PurchasePayment({ paymentData, setPaymentData, total }: St
                 <Wallet className="h-8 w-8 text-destructive/20" />
             </div>
 
-            <div className="space-y-4">
-                <Label className="text-sm font-semibold">Método de Pago</Label>
-                <RadioGroup
-                    value={paymentData.method}
-                    onValueChange={(val) => setPaymentData({ ...paymentData, method: val })}
-                    className="grid grid-cols-2 gap-4"
-                >
-                    {methods.map((m) => (
-                        <div key={m.id} className="relative group">
-                            <Label
-                                htmlFor={`method-${m.id}`}
-                                className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5' : ''} ${!m.hasAccounts && m.id !== 'CREDIT' ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
-                                onClick={(e) => {
-                                    if (!m.hasAccounts && m.id !== 'CREDIT') {
-                                        e.preventDefault()
-                                        return
-                                    }
-                                }}
-                            >
-                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts && m.id !== 'CREDIT'} />
-                                <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
-                                    <m.icon className="h-5 w-5" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium">{m.label}</span>
-                                    {!m.hasAccounts && m.id !== 'CREDIT' && (
-                                        <span className="text-[8px] font-bold text-destructive uppercase">Sin Configurar</span>
-                                    )}
-                                </div>
-                            </Label>
-                        </div>
-                    ))}
-                </RadioGroup>
+            <div className="space-y-2">
+                <Label htmlFor="pay-amount" className="text-sm font-semibold">Monto a Pagar Ahora</Label>
+                <Input
+                    id="pay-amount"
+                    type="number"
+                    value={paymentData.amount}
+                    max={total}
+                    onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
+                    className="text-lg font-semibold"
+                />
+                <p className="text-xs text-muted-foreground">
+                    Puede pagar el total o un monto parcial. La diferencia quedará como deuda pendiente.
+                </p>
             </div>
 
-            {paymentData.method !== 'CREDIT' && (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                    <div className="space-y-2">
-                        <Label htmlFor="pay-amount" className="text-xs font-bold uppercase">Monto a Pagar</Label>
-                        <Input
-                            id="pay-amount"
-                            type="number"
-                            value={paymentData.amount}
-                            onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
-                        />
+            {pendingDebt > 0 && (
+                <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border-2 border-orange-200 dark:border-orange-800 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
+                                Deuda Pendiente
+                            </p>
+                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-100 mt-1">
+                                {pendingDebt.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                            </p>
+                            <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
+                                Este monto quedará registrado como cuenta por pagar al proveedor.
+                            </p>
+                        </div>
                     </div>
+                </div>
+            )}
+
+            {paymentData.amount > 0 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <Label className="text-sm font-semibold">Método de Pago</Label>
+                    <RadioGroup
+                        value={paymentData.method}
+                        onValueChange={(val) => setPaymentData({ ...paymentData, method: val })}
+                        className="grid grid-cols-3 gap-4"
+                    >
+                        {methods.map((m) => (
+                            <div key={m.id} className="relative group">
+                                <Label
+                                    htmlFor={`method-${m.id}`}
+                                    className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5' : ''} ${!m.hasAccounts ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                    onClick={(e) => {
+                                        if (!m.hasAccounts) {
+                                            e.preventDefault()
+                                            return
+                                        }
+                                    }}
+                                >
+                                    <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts} />
+                                    <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
+                                        <m.icon className="h-5 w-5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium">{m.label}</span>
+                                        {!m.hasAccounts && (
+                                            <span className="text-[8px] font-bold text-destructive uppercase">Sin Configurar</span>
+                                        )}
+                                    </div>
+                                </Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
 
                     {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
                         <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
