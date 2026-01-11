@@ -242,12 +242,21 @@ class SalesService:
                         # BOM Explosion: Consume components instead of the product
                         line_total_cost = Decimal('0.00')
                         for bom_line in active_bom.lines.all():
-                            # Total quantity of component to consume (sale_qty * qty_per_unit_in_bom)
-                            comp_qty = line.quantity * bom_line.quantity
+                            # 1. First, calculate total requirement in the BOM line's UoM
+                            # Requirement = (Sale Qty in Sale UoM) * (BOM Qty per Unit)
+                            # NOTE: This assumes BOM quantity is per "Base Unit" of the product.
+                            # If sold in a different UoM, we must convert Sale Qty to Base UoM first.
+                            base_sale_qty = UoMService.convert_quantity(
+                                line.quantity,
+                                from_uom=line.sale_line.uom,
+                                to_uom=product.uom
+                            )
                             
-                            # Convert to component's base UoM
+                            comp_qty_in_bom_uom = base_sale_qty * bom_line.quantity
+                            
+                            # 2. Convert to component's base UoM for Kardex
                             base_comp_qty = UoMService.convert_quantity(
-                                comp_qty,
+                                comp_qty_in_bom_uom,
                                 from_uom=bom_line.uom,
                                 to_uom=bom_line.component.uom
                             )
@@ -257,6 +266,7 @@ class SalesService:
                                 date=delivery.delivery_date,
                                 product=bom_line.component,
                                 warehouse=delivery.warehouse,
+                                uom=bom_line.component.uom,
                                 quantity=-base_comp_qty,
                                 move_type=StockMove.Type.OUT,
                                 description=f"Consumo BOM p/Despacho {delivery.number} ({product.name})"

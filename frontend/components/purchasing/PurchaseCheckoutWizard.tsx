@@ -90,6 +90,21 @@ export function PurchaseCheckoutWizard({
         }
     }, [selectedWarehouseId])
 
+    const [accounts, setAccounts] = useState<any[]>([])
+
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            try {
+                const response = await api.get('/treasury/accounts/')
+                const results = response.data.results || response.data
+                setAccounts(results)
+            } catch (error) {
+                console.error("Failed to fetch treasury accounts", error)
+            }
+        }
+        fetchAccounts()
+    }, [])
+
     const handleNext = () => {
         if (step === 1 && !selectedSupplierId) {
             toast.error("Debe seleccionar un proveedor para continuar.")
@@ -114,6 +129,24 @@ export function PurchaseCheckoutWizard({
             return
         }
         if (step === 3 && paymentData.amount > 0) {
+            // Validate at least one account exists for the selected method
+            const hasAccountsForMethod = (method: string) => {
+                if (method === 'CASH') return accounts.some(a => a.allows_cash)
+                if (method === 'CARD') return accounts.some(a => a.allows_card)
+                if (method === 'TRANSFER') return accounts.some(a => a.allows_transfer)
+                return false
+            }
+
+            if (accounts.length === 0) {
+                toast.error("No se puede pagar: No hay cuentas de tesorería configuradas.")
+                return
+            }
+
+            if (!hasAccountsForMethod(paymentData.method)) {
+                toast.error(`El método ${paymentData.method} no tiene una cuenta de tesorería configurada.`)
+                return
+            }
+
             if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
                 toast.error("Debe seleccionar una cuenta de origen.")
                 return

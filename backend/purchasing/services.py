@@ -189,11 +189,21 @@ class PurchasingService:
         for line in receipt.lines.all():
             # 1. Create Stock Move (OUT) - quantity is already negative in receipt line
             from inventory.models import StockMove
+            from inventory.services import StockService
+            
+            # Convert received quantity to base UoM for reversal
+            base_qty = StockService.convert_quantity(
+                line.quantity_received,
+                from_uom=line.purchase_line.uom,
+                to_uom=line.product.uom
+            )
+
             stock_move = StockMove.objects.create(
                 date=receipt.receipt_date,
                 product=line.product,
                 warehouse=receipt.warehouse,
-                quantity=line.quantity_received, 
+                uom=line.product.uom,
+                quantity=base_qty, # base_qty is already negative for returns
                 move_type=StockMove.Type.OUT,
                 description=f"Devolución OC-{receipt.purchase_order.number}",
                 journal_entry=entry
@@ -772,10 +782,13 @@ class PurchasingService:
         for line in receipt.lines.all():
             # Create Reversal Move (OUT)
             if line.stock_move:
+                # Revert exactly what was recorded in the stock move
+                # Original move was IN (positive), so we create an OUT (negative) of same abs value
                 StockMove.objects.create(
                     date=timezone.now().date(),
                     product=line.product,
                     warehouse=receipt.warehouse,
+                    uom=line.product.uom,
                     quantity=-abs(line.stock_move.quantity), # Negative OUT
                     move_type=StockMove.Type.OUT,
                     description=f"Anulación Recepción {receipt.number} ({line.product.code})"

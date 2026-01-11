@@ -7,6 +7,9 @@ import { Banknote, CreditCard, Building2, ClipboardList, Wallet, AlertCircle } f
 import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useEffect, useMemo } from "react"
 import api from "@/lib/api"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Settings } from "lucide-react"
+import Link from "next/link"
 
 interface Step2_PaymentProps {
     paymentData: any
@@ -82,6 +85,19 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                 </div>
                 <Wallet className="h-8 w-8 text-primary/20" />
             </div>
+
+            {accounts.length === 0 && (
+                <Alert variant="destructive" className="bg-destructive/5 border-destructive/20">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle className="text-sm font-bold">Sin Métodos de Pago</AlertTitle>
+                    <AlertDescription className="text-xs mt-1">
+                        No hay cuentas de tesorería configuradas.
+                        <Link href="/treasury/accounts" className="font-bold underline ml-1 hover:text-destructive/80 transition-colors">
+                            Configurar ahora
+                        </Link>
+                    </AlertDescription>
+                </Alert>
+            )}
 
             <div className="space-y-4">
                 <Label className="text-sm font-semibold">Método de Pago</Label>

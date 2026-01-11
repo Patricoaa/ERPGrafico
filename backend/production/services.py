@@ -148,40 +148,60 @@ class WorkOrderService:
         1. Decrease materials (Stock OUT).
         2. Increase product (Stock IN) if storable.
         """
+        from inventory.services import UoMService
         if not work_order.warehouse:
             raise ValidationError("Se requiere una bodega para finalizar la producción y registrar consumos.")
 
         # 1. Consume materials
         for mat in work_order.materials.all():
+            # Convert quantity from planned UoM to component base UoM
+            base_comp_qty = UoMService.convert_quantity(
+                mat.quantity_planned,
+                from_uom=mat.uom,
+                to_uom=mat.component.uom
+            )
+
             move = StockMove.objects.create(
                 product=mat.component,
                 warehouse=work_order.warehouse,
-                quantity=-mat.quantity_planned, # Consumption
+                uom=mat.component.uom,
+                quantity=-base_comp_qty, # Consumption in base units
                 move_type=StockMove.Type.OUT,
                 description=f"Consumo producción OT-{work_order.number}"
             )
-            mat.quantity_consumed = mat.quantity_planned
+            mat.quantity_consumed = mat.quantity_planned # We consume what was planned
             mat.save()
             
             # Accounting for consumption (simplified, matching ProductionService style)
-            # ... (omitted for brevity in this step, but should be added for full SRP)
+            # ... (omitted for brevity in this step)
 
         # 2. Add finished product
         product = None
         quantity = Decimal('0')
+        uom = None
         
         if work_order.sale_line:
             product = work_order.sale_line.product
             quantity = work_order.sale_line.quantity
+            uom = work_order.sale_line.uom
         elif work_order.product:
             product = work_order.product
             quantity = Decimal(str(work_order.stage_data.get('quantity', 0)))
+            uom = product.uom
 
         if product and product.track_inventory:
+            # Convert quantity from work order/sale line UoM to product base UoM
+            base_qty = UoMService.convert_quantity(
+                quantity,
+                from_uom=uom,
+                to_uom=product.uom
+            )
+
             StockMove.objects.create(
                 product=product,
                 warehouse=work_order.warehouse,
-                quantity=quantity,
+                uom=product.uom,
+                quantity=base_qty,
                 move_type=StockMove.Type.IN,
                 description=f"Entrada producción OT-{work_order.number}"
             )
