@@ -156,6 +156,25 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
         }
     }
 
+    // Auto-fetch default vendor if none selected
+    useEffect(() => {
+        if (open && !form.getValues("supplier")) {
+            const fetchDefaultVendor = async () => {
+                try {
+                    const response = await api.get('/contacts/?is_default_vendor=true');
+                    const results = response.data.results || response.data;
+                    const defaultVendor = results.find((c: any) => c.is_default_vendor);
+                    if (defaultVendor) {
+                        form.setValue("supplier", defaultVendor.id.toString());
+                    }
+                } catch (error) {
+                    console.error("Error fetching default vendor:", error);
+                }
+            };
+            fetchDefaultVendor();
+        }
+    }, [open, form]);
+
     useEffect(() => {
         if (open) {
             fetchData()

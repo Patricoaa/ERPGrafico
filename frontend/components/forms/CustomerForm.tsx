@@ -32,8 +32,8 @@ const customerSchema = z.object({
     email: z.string().email("Email inválido").optional().or(z.literal("")),
     phone: z.string().optional(),
     address: z.string().optional(),
-    is_default_customer: z.boolean().default(false),
-    is_default_vendor: z.boolean().default(false),
+    is_default_customer: z.boolean(),
+    is_default_vendor: z.boolean(),
 })
 
 type CustomerFormValues = z.infer<typeof customerSchema>
@@ -54,7 +54,11 @@ export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenCha
 
     const form = useForm<CustomerFormValues>({
         resolver: zodResolver(customerSchema),
-        defaultValues: initialData || {
+        defaultValues: initialData ? {
+            ...initialData,
+            is_default_customer: !!initialData.is_default_customer,
+            is_default_vendor: !!initialData.is_default_vendor,
+        } : {
             name: "",
             tax_id: "",
             email: "",

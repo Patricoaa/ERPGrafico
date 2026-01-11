@@ -11,6 +11,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
     FormControl,
@@ -33,6 +34,8 @@ const contactSchema = z.object({
     address: z.string().optional(),
     city: z.string().optional(),
     payment_terms: z.string().optional(),
+    is_default_customer: z.boolean(),
+    is_default_vendor: z.boolean(),
 })
 
 interface ContactModalProps {
@@ -45,14 +48,26 @@ interface ContactModalProps {
 export function ContactModal({ open, onOpenChange, contact, onSuccess }: ContactModalProps) {
     const form = useForm<z.infer<typeof contactSchema>>({
         resolver: zodResolver(contactSchema),
-        defaultValues: {
+        defaultValues: contact ? {
+            name: contact.name || "",
+            tax_id: contact.tax_id || "",
+            email: contact.email || "",
+            phone: contact.phone || "",
+            address: contact.address || "",
+            city: contact.city || "",
+            payment_terms: contact.payment_terms || "CONTADO",
+            is_default_customer: !!contact.is_default_customer,
+            is_default_vendor: !!contact.is_default_vendor,
+        } : {
             name: "",
             tax_id: "",
             email: "",
             phone: "",
             address: "",
             city: "",
-            payment_terms: "CONTADO"
+            payment_terms: "CONTADO",
+            is_default_customer: false,
+            is_default_vendor: false,
         },
     })
 
@@ -65,7 +80,9 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                 phone: contact.phone || "",
                 address: contact.address || "",
                 city: contact.city || "",
-                payment_terms: contact.payment_terms || "CONTADO"
+                payment_terms: contact.payment_terms || "CONTADO",
+                is_default_customer: !!contact.is_default_customer,
+                is_default_vendor: !!contact.is_default_vendor
             })
         } else {
             form.reset({
@@ -75,7 +92,9 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                 phone: "",
                 address: "",
                 city: "",
-                payment_terms: "CONTADO"
+                payment_terms: "CONTADO",
+                is_default_customer: false,
+                is_default_vendor: false
             })
         }
     }, [contact, open, form])
@@ -184,6 +203,47 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                 </FormItem>
                             )}
                         />
+
+                        <div className="flex gap-6 p-1">
+                            <FormField
+                                control={form.control}
+                                name="is_default_customer"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                                Cliente por defecto
+                                            </FormLabel>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="is_default_vendor"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                                Proveedor por defecto
+                                            </FormLabel>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
                         <div className="flex justify-end pt-4 gap-2">
                             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>

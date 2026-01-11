@@ -31,8 +31,8 @@ const supplierSchema = z.object({
     email: z.string().email("Email inválido").optional().or(z.literal("")),
     phone: z.string().optional(),
     address: z.string().optional(),
-    is_default_customer: z.boolean().default(false),
-    is_default_vendor: z.boolean().default(false),
+    is_default_customer: z.boolean(),
+    is_default_vendor: z.boolean(),
 })
 
 type SupplierFormValues = z.infer<typeof supplierSchema>
@@ -53,7 +53,11 @@ export function SupplierForm({ onSuccess, initialData, open: openProp, onOpenCha
 
     const form = useForm<SupplierFormValues>({
         resolver: zodResolver(supplierSchema),
-        defaultValues: initialData || {
+        defaultValues: initialData ? {
+            ...initialData,
+            is_default_customer: !!initialData.is_default_customer,
+            is_default_vendor: !!initialData.is_default_vendor,
+        } : {
             name: "",
             tax_id: "",
             contact_name: "",
@@ -77,6 +81,8 @@ export function SupplierForm({ onSuccess, initialData, open: openProp, onOpenCha
                     email: "",
                     phone: "",
                     address: "",
+                    is_default_customer: false,
+                    is_default_vendor: false,
                 })
             }
         }
@@ -199,6 +205,46 @@ export function SupplierForm({ onSuccess, initialData, open: openProp, onOpenCha
                                 </FormItem>
                             )}
                         />
+                        <div className="flex gap-6 pt-2">
+                            <FormField
+                                control={form.control}
+                                name="is_default_customer"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-1">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                                Cliente por defecto
+                                            </FormLabel>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="is_default_vendor"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-1">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                                Proveedor por defecto
+                                            </FormLabel>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <div className="flex justify-end space-x-2">
                             <Button
                                 type="button"
