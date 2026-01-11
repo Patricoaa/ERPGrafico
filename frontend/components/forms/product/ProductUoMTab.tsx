@@ -12,9 +12,10 @@ interface ProductUoMTabProps {
     form: UseFormReturn<ProductFormValues>
     uoms: any[]
     canBeSold?: boolean
+    canBePurchased?: boolean
 }
 
-export function ProductUoMTab({ form, uoms, canBeSold }: ProductUoMTabProps) {
+export function ProductUoMTab({ form, uoms, canBeSold, canBePurchased }: ProductUoMTabProps) {
     const productType = form.watch("product_type")
 
     const sortedUoms = [...uoms].sort((a, b) => {
@@ -98,7 +99,49 @@ export function ProductUoMTab({ form, uoms, canBeSold }: ProductUoMTabProps) {
                                 />
                             )}
 
-                            {/* Validations for Purchase UoM could land here too if needed, but keeping it simple for now based on request */}
+                            {/* Category-based Purchase UoM selector */}
+                            {canBePurchased && (productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'MANUFACTURABLE') && (
+                                <FormField<ProductFormValues>
+                                    control={form.control}
+                                    name="purchase_uom"
+                                    render={({ field }) => {
+                                        const stockUomId = form.watch("uom");
+                                        const stockUom = uoms.find(u => u.id.toString() === stockUomId?.toString());
+                                        const stockCategoryId = stockUom?.category;
+
+                                        return (
+                                            <FormItem>
+                                                <FormLabel className="flex items-center gap-2">
+                                                    UdM de Compra por Defecto
+                                                    <Badge variant="outline" className="text-[10px] font-normal py-0">Sugerida</Badge>
+                                                </FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Seleccionar unidad de compra" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {!stockCategoryId ? (
+                                                            <SelectItem value="none" disabled>Seleccione primero UdM Base</SelectItem>
+                                                        ) : (
+                                                            uoms
+                                                                .filter(u => u.category === stockCategoryId)
+                                                                .map((u) => (
+                                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                                ))
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormDescription className="text-[10px]">
+                                                    Esta unidad se seleccionará automáticamente en órdenes de compra.
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        );
+                                    }}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

@@ -198,10 +198,10 @@ class Product(models.Model):
         help_text=_("⚠️ DEPRECATED: Use 'allowed_sale_uoms' en su lugar. Este campo se mantendrá solo para compatibilidad.")
     )
     purchase_uom = models.ForeignKey(
-        UoM, on_delete=models.PROTECT, related_name='products_purchase',
-        verbose_name=_("UdM Compra (DEPRECATED)"), 
+        UoM, on_delete=models.SET_NULL, related_name='products_purchase',
+        verbose_name=_("UdM Compra por Defecto"), 
         null=True, blank=True,
-        help_text=_("⚠️ DEPRECATED: Use 'allowed_sale_uoms' en su lugar. Este campo se mantendrá solo para compatibilidad.")
+        help_text=_("Unidad sugerida automáticamente al agregar este producto a una orden de compra.")
     )
 
     allowed_sale_uoms = models.ManyToManyField(
