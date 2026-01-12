@@ -75,7 +75,7 @@ export function getActionBadgeCount(action: Action, order: any): number | undefi
  * Get status badge variant
  */
 export function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'info' {
-    const variants: Record<string, any> = {
+    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'info'> = {
         DRAFT: 'secondary',
         CONFIRMED: 'info',
         POSTED: 'info',

@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
-import { OrderActionPanel } from "@/components/orders/OrderActionPanel"
+import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 
 export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
@@ -298,16 +298,13 @@ export default function SalesInvoicesPage() {
                 />
             )}
 
-            {/* Order Action Panel */}
-            {selectedOrderId && (
-                <OrderActionPanel
-                    open={!!selectedOrderId}
-                    onOpenChange={(open) => !open && setSelectedOrderId(null)}
-                    orderId={selectedOrderId}
-                    orderType="sale"
-                    onActionComplete={fetchInvoices}
-                />
-            )}
+            <OrderCommandCenter
+                orderId={selectedOrderId}
+                type="sale"
+                open={selectedOrderId !== null}
+                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                onActionSuccess={fetchInvoices}
+            />
         </div>
     )
 }

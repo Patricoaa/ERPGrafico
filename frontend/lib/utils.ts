@@ -40,3 +40,14 @@ export function translatePaymentMethod(method: string): string {
   }
   return map[method.toUpperCase()] || method
 }
+
+export function formatCurrency(amount: number | string | null | undefined): string {
+  if (amount === null || amount === undefined) return '$0'
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0,
+  }).format(numericAmount)
+}
+

@@ -15,7 +15,7 @@ import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
-import { OrderActionPanel } from "@/components/orders/OrderActionPanel"
+import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 
 interface PurchaseDocument {
     id: number
@@ -534,18 +534,13 @@ export default function PurchaseInvoicesPage() {
                 )
             }
 
-            {/* Order Action Panel */}
-            {
-                selectedOrderId && (
-                    <OrderActionPanel
-                        open={!!selectedOrderId}
-                        onOpenChange={(open) => !open && setSelectedOrderId(null)}
-                        orderId={selectedOrderId}
-                        orderType="purchase"
-                        onActionComplete={fetchDocuments}
-                    />
-                )
-            }
+            <OrderCommandCenter
+                orderId={selectedOrderId}
+                type="purchase"
+                open={selectedOrderId !== null}
+                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                onActionSuccess={fetchDocuments}
+            />
         </div >
     )
 }
