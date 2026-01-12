@@ -51,6 +51,21 @@ class StockService:
              quantity = qty_in_base
              unit_cost = cost_in_base
 
+        # Validation: Negative Stock
+        current_stock = product.qty_on_hand
+        future_stock = current_stock + quantity
+        
+        # Allow negative stock ONLY if the system explicitly allows it (not implemented yet, so strict by default)
+        # Note: 'quantity' is signed here. If it's an OUT move, quantity is negative.
+        if future_stock < 0:
+            raise ValidationError(f"No hay suficiente stock para realizar este ajuste. Stock actual: {current_stock}, Solicitado: {abs(quantity)}.")
+
+        # Validation: Revaluation logic
+        # Interpretation: Revaluation implies adjusting value of existing stock. 
+        # If stock is 0, it should be 'INITIAL' or 'CORRECTION' not 'REVALUATION'.
+        if adjustment_reason == StockMove.AdjustmentReason.REVALUATION and current_stock <= 0:
+             raise ValidationError("No se puede realizar una revalorización sobre un stock nulo o negativo. Use 'Inventario Inicial' o 'Corrección'.")
+
         # 1. Logic for unit_cost and cost pondering
         if unit_cost is None or unit_cost == 0:
             if quantity > 0 and (product.cost_price == 0 or adjustment_reason == StockMove.AdjustmentReason.INITIAL):
