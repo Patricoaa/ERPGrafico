@@ -108,10 +108,6 @@ class TreasuryAccount(models.Model):
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
     allows_transfer = models.BooleanField(_("Permite Transferencia"), default=False)
 
-    # Tuu Integration
-    tuu_api_key = models.CharField(_("Tuu API Key"), max_length=255, blank=True, null=True)
-    tuu_device_id = models.CharField(_("Tuu Device ID"), max_length=100, blank=True, null=True)
-
     class Meta:
         verbose_name = _("Cuenta de Tesorería")
         verbose_name_plural = _("Cuentas de Tesorería")

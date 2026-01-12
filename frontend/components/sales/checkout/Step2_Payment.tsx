@@ -10,9 +10,6 @@ import api from "@/lib/api"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Settings } from "lucide-react"
 import Link from "next/link"
-import { TuuPaymentModal } from "./TuuPaymentModal"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
 
 interface Step2_PaymentProps {
     paymentData: any
@@ -22,7 +19,6 @@ interface Step2_PaymentProps {
 
 export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_PaymentProps) {
     const [accounts, setAccounts] = useState<any[]>([])
-    const [showTuuModal, setShowTuuModal] = useState(false)
 
     useEffect(() => {
         const fetchAccounts = async () => {
@@ -45,10 +41,6 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
             return false
         })
     }, [accounts, paymentData.method])
-
-    const currentAccount = useMemo(() => {
-        return accounts.find(a => a.id.toString() === paymentData.treasuryAccountId)
-    }, [accounts, paymentData.treasuryAccountId])
 
     useEffect(() => {
         if (filteredAccounts.length === 1 && paymentData.treasuryAccountId !== filteredAccounts[0].id.toString()) {
@@ -206,20 +198,6 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                             )}
                         </div>
 
-                        {/* Integration Button */}
-                        {currentAccount && (currentAccount.tuu_api_key || currentAccount.tuu_device_id) && paymentData.method === 'CARD' && (
-                            <div className="pt-2">
-                                <Button
-                                    type="button"
-                                    className="w-full bg-blue-600 hover:bg-blue-700"
-                                    onClick={() => setShowTuuModal(true)}
-                                >
-                                    <CreditCard className="mr-2 h-4 w-4" />
-                                    Enviar a Máquina Tuu
-                                </Button>
-                            </div>
-                        )}
-
                         {paymentData.method === 'TRANSFER' && (
                             <div className="flex items-center space-x-2 pt-2">
                                 <Checkbox
@@ -235,23 +213,6 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                     </div>
                 )}
             </div>
-
-
-            <TuuPaymentModal
-                open={showTuuModal}
-                onOpenChange={setShowTuuModal}
-                amount={paymentData.amount}
-                treasuryAccountId={parseInt(paymentData.treasuryAccountId)}
-                onSuccess={(data) => {
-                    setPaymentData({
-                        ...paymentData,
-                        transactionNumber: data.sequenceNumber || "TUU-AUTO",
-                        isPending: false
-                    })
-                    setShowTuuModal(false)
-                    toast.success("Pago aprobado por terminal")
-                }}
-            />
-        </div >
+        </div>
     )
 }

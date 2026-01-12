@@ -47,8 +47,6 @@ interface TreasuryAccount {
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
-    tuu_api_key?: string
-    tuu_device_id?: string
 }
 
 export default function TreasuryAccountsPage() {
@@ -198,8 +196,6 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
     const [allowsCash, setAllowsCash] = useState(false)
     const [allowsCard, setAllowsCard] = useState(false)
     const [allowsTransfer, setAllowsTransfer] = useState(false)
-    const [tuuApiKey, setTuuApiKey] = useState("")
-    const [tuuDeviceId, setTuuDeviceId] = useState("")
 
     useEffect(() => {
         if (open) {
@@ -211,8 +207,6 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setAllowsCash(account.allows_cash)
                 setAllowsCard(account.allows_card)
                 setAllowsTransfer(account.allows_transfer)
-                setTuuApiKey(account.tuu_api_key || "")
-                setTuuDeviceId(account.tuu_device_id || "")
             } else {
                 setName("")
                 setType("CASH")
@@ -221,8 +215,6 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setAllowsCash(true) // Default for new account
                 setAllowsCard(false)
                 setAllowsTransfer(false)
-                setTuuApiKey("")
-                setTuuDeviceId("")
             }
         }
     }, [open, account])
@@ -238,9 +230,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 account: accountingAccount,
                 allows_cash: allowsCash,
                 allows_card: allowsCard,
-                allows_transfer: allowsTransfer,
-                tuu_api_key: tuuApiKey,
-                tuu_device_id: tuuDeviceId
+                allows_transfer: allowsTransfer
             }
             if (account) {
                 await api.patch(`/treasury/accounts/${account.id}/`, payload)
@@ -325,23 +315,6 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                             accountType="ASSET"
                             placeholder="Seleccione cuenta contable..."
                         />
-                    </div>
-
-                    <div className="grid gap-3 p-4 border rounded-lg">
-                        <Label className="text-sm font-bold flex items-center gap-2">
-                            <Banknote className="h-4 w-4" /> Integración Tuu (Pago Remoto)
-                        </Label>
-                        <p className="text-[11px] text-muted-foreground">
-                            Configure sí esta caja tiene un terminal Tuu asociado. Deje en blanco para usar "Modo Simulación".
-                        </p>
-                        <div className="grid gap-2">
-                            <Label className="text-xs">API Key</Label>
-                            <Input value={tuuApiKey} onChange={e => setTuuApiKey(e.target.value)} type="password" placeholder="Tuu API Key..." />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label className="text-xs">Device ID</Label>
-                            <Input value={tuuDeviceId} onChange={e => setTuuDeviceId(e.target.value)} placeholder="Ej: 3230303..." />
-                        </div>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
