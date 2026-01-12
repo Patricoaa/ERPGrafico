@@ -40,9 +40,9 @@ class Invoice(models.Model):
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
 
     # Totals
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=2, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=2, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=2, default=0)
+    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
+    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
+    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
 
     # Accounting
     journal_entry = models.OneToOneField(

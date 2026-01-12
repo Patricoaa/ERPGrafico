@@ -216,8 +216,8 @@ class Product(models.Model):
         help_text=_("Unidades de medida permitidas para la venta de este producto (además de la unidad base).")
     )
 
-    sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=2, default=0)
-    cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=2, default=0, editable=False)
+    sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0)
+    cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
     
     active = models.BooleanField(_("Activo"), default=True, help_text=_("Desactivar para archivar el producto en lugar de eliminarlo."))
 
@@ -510,7 +510,7 @@ class PricingRule(models.Model):
     max_quantity = models.DecimalField(_("Cantidad Máxima / Hasta"), max_digits=12, decimal_places=4, null=True, blank=True, help_text=_("Solo usado para el operador 'Entre'"))
     
     rule_type = models.CharField(_("Tipo de Regla"), max_length=20, choices=RuleType.choices, default=RuleType.FIXED)
-    fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=12, decimal_places=2, null=True, blank=True)
+    fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=12, decimal_places=0, null=True, blank=True)
     discount_percentage = models.DecimalField(_("Descuento %"), max_digits=5, decimal_places=2, null=True, blank=True)
     
     start_date = models.DateField(_("Fecha Inicio"), null=True, blank=True)

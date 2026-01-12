@@ -88,10 +88,10 @@ class SaleLine(models.Model):
         related_name='sale_lines',
         verbose_name=_("Unidad")
     )
-    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=2)
+    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0)
     tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00) # Chile default
     
-    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=2, editable=False)
+    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False)
     
     # Track delivered quantity
     quantity_delivered = models.DecimalField(
@@ -170,10 +170,10 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     notes = models.TextField(_("Notas"), blank=True)
     
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=2, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=2, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=2, default=0)
-    total_cost = models.DecimalField(_("Costo Total (COGS)"), max_digits=12, decimal_places=2, default=0)
+    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
+    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
+    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
+    total_cost = models.DecimalField(_("Costo Total (COGS)"), max_digits=12, decimal_places=0, default=0)
 
     # Link to Accounting (for COGS entry)
     journal_entry = models.OneToOneField(
@@ -216,10 +216,10 @@ class SaleDeliveryLine(models.Model):
         default=0,
         help_text="Cantidad despachada en este despacho"
     )
-    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=2, default=0)
-    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=2, default=0)
-    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=2, editable=False, default=0)
-    total_cost = models.DecimalField(_("Costo Total"), max_digits=12, decimal_places=2, editable=False, default=0)
+    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0, default=0)
+    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=0, default=0)
+    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False, default=0)
+    total_cost = models.DecimalField(_("Costo Total"), max_digits=12, decimal_places=0, editable=False, default=0)
     
     # Link to Stock Move
     stock_move = models.OneToOneField(

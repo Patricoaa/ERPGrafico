@@ -35,10 +35,7 @@ interface CashFlowTableProps {
     showComparison?: boolean;
 }
 
-const formatCurrency = (val: number | undefined | null) => {
-    if (val === undefined || val === null) return '$0';
-    return val.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
-};
+import { formatCurrency } from "@/lib/currency";
 
 const SectionHeader = ({ title, showComparison }: { title: string, showComparison?: boolean }) => (
     <TableRow className="bg-muted/50 font-bold">

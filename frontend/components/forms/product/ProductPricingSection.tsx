@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+import { formatCurrency } from "@/lib/currency"
+
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>
     initialData?: any
@@ -38,7 +40,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                         <FormControl>
                             <div className="relative">
                                 <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                <Input type="number" className="pl-7 font-bold text-lg" {...field} />
+                                <Input type="number" step="1" className="pl-7 font-bold text-lg" {...field} />
                             </div>
                         </FormControl>
                         <FormMessage />
@@ -49,7 +51,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
             <div className="space-y-2">
                 <Label className="text-muted-foreground">IVA (19%)</Label>
                 <div className="h-10 flex items-center px-3 rounded-md bg-muted/50 font-medium text-muted-foreground">
-                    $ {ivaCalculated.toLocaleString()}
+                    {formatCurrency(ivaCalculated)}
                 </div>
             </div>
 
@@ -59,6 +61,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                     <span className="absolute left-3 top-2.5 text-primary/50">$</span>
                     <Input
                         type="number"
+                        step="1"
                         className="pl-7 bg-primary/10 border-primary/30 font-extrabold text-primary text-lg"
                         value={totalCalculated || ""}
                         onChange={(e) => {
@@ -117,7 +120,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                     )}>
                         <div className="flex items-center gap-2">
                             <Info className="h-4 w-4 opacity-70" />
-                            <span>Costo: ${costPrice.toLocaleString()}</span>
+                            <span>Costo: {formatCurrency(costPrice)}</span>
                         </div>
                         <Badge className={cn(
                             "px-2 py-0.5 rounded-lg text-[11px] font-black border-none shadow-none uppercase tracking-tighter",

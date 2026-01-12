@@ -6,6 +6,8 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { TabsContent } from "@/components/ui/tabs"
 
+import { formatCurrency } from "@/lib/currency"
+
 interface ProductPricingTabProps {
     initialData?: any
     pricingRules: any[]
@@ -93,7 +95,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                                 <TableCell className="text-sm font-semibold tabular-nums">{Number(rule.min_quantity)} unidad(es)</TableCell>
                                                 <TableCell className="text-right font-black text-primary">
                                                     {rule.rule_type === 'FIXED'
-                                                        ? `$ ${Number(rule.fixed_price).toLocaleString()}`
+                                                        ? formatCurrency(rule.fixed_price)
                                                         : `-${Number(rule.discount_percentage)}%`}
                                                 </TableCell>
                                                 <TableCell className="text-center">
