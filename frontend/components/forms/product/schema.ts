@@ -7,7 +7,7 @@ export const productSchema = z.object({
     category: z.string().min(1, "Categoría requerida"),
     product_type: z.string().min(1, "Tipo requerido"),
     sale_price: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
-    uom: z.string().optional().or(z.literal("")),
+    uom: z.string().min(1, "Unidad base requerida"),
     sale_uom: z.string().optional().or(z.literal("")),
     purchase_uom: z.string().optional().or(z.literal("")),
     allowed_sale_uoms: z.array(z.string()).default([]),
@@ -49,6 +49,39 @@ export const productSchema = z.object({
         template: z.preprocess((v) => Number(v), z.number()),
         order: z.number().default(0)
     })).default([]),
+}).refine((data) => {
+    // At least one purpose must be enabled
+    return data.can_be_sold || data.can_be_purchased;
+}, {
+    message: "El producto debe poder ser vendido o comprado (al menos uno)",
+    path: ["can_be_sold"]
+}).refine((data) => {
+    // If can_be_sold is true, sale_price must be > 0
+    if (data.can_be_sold && (!data.sale_price || data.sale_price <= 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "El precio de venta debe ser mayor a 0",
+    path: ["sale_price"]
+}).refine((data) => {
+    // If can_be_sold is true, sale_uom must be selected
+    if (data.can_be_sold && (!data.sale_uom || data.sale_uom === "")) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Debe seleccionar una unidad de venta",
+    path: ["sale_uom"]
+}).refine((data) => {
+    // If can_be_sold is true, at least 1 allowed_sale_uom must be selected
+    if (data.can_be_sold && (!data.allowed_sale_uoms || data.allowed_sale_uoms.length === 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Debe seleccionar al menos una unidad de venta permitida",
+    path: ["allowed_sale_uoms"]
 }).refine((data) => {
     // If express production is enabled, at least one BOM must exist
     if (data.mfg_auto_finalize && (!data.boms || data.boms.length === 0)) {

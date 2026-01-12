@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Package, Loader2 } from "lucide-react"
+import { Package, Loader2, AlertCircle } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -54,6 +54,41 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
 
     // State for Replenishment Rules
     const [reorderingRules, setReorderingRules] = useState<any[]>([])
+    const [activeTab, setActiveTab] = useState("general")
+
+    // Helper function to map field errors to tabs
+    const getTabsWithErrors = () => {
+        const errors = form.formState.errors
+        const tabErrors: { [key: string]: number } = {}
+
+        // General tab fields
+        const generalFields = ['name', 'category', 'product_type', 'sale_price', 'can_be_sold', 'can_be_purchased']
+        generalFields.forEach(field => {
+            if (errors[field as keyof typeof errors]) {
+                tabErrors['general'] = (tabErrors['general'] || 0) + 1
+            }
+        })
+
+        // Manufacturing tab fields
+        const mfgFields = ['boms', 'has_bom', 'mfg_auto_finalize']
+        mfgFields.forEach(field => {
+            if (errors[field as keyof typeof errors]) {
+                tabErrors['manufacturing'] = (tabErrors['manufacturing'] || 0) + 1
+            }
+        })
+
+        // UoM tab fields
+        const uomFields = ['uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms']
+        uomFields.forEach(field => {
+            if (errors[field as keyof typeof errors]) {
+                tabErrors['uoms'] = (tabErrors['uoms'] || 0) + 1
+            }
+        })
+
+        return tabErrors
+    }
+
+    const tabErrors = getTabsWithErrors()
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -248,6 +283,19 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         }
     }, [open, initialData])
 
+    const onSubmitError = (errors: any) => {
+        console.log("Form validation errors:", errors)
+        const tabsWithErrors = getTabsWithErrors()
+        const firstErrorTab = Object.keys(tabsWithErrors)[0]
+
+        if (firstErrorTab) {
+            setActiveTab(firstErrorTab)
+            toast.error("Formulario incompleto", {
+                description: "Por favor complete todos los campos requeridos. Revise las pestañas marcadas en rojo."
+            })
+        }
+    }
+
     const onSubmit = async (data: ProductFormValues) => {
         setLoading(true)
         try {
@@ -359,22 +407,37 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
 
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
                     <Form {...form}>
-                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <Tabs defaultValue="general" className="w-full">
+                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-6">
+                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                                 <TabsList className="mb-4 bg-muted/50 p-1">
-                                    <TabsTrigger value="general" className="px-8 flex gap-2">
+                                    <TabsTrigger value="general" className="px-8 flex gap-2 relative">
                                         Información General
+                                        {tabErrors['general'] && (
+                                            <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                                                <AlertCircle className="h-3 w-3" />
+                                            </span>
+                                        )}
                                     </TabsTrigger>
                                     {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
-                                        <TabsTrigger value="manufacturing" className="px-8 flex gap-2">
+                                        <TabsTrigger value="manufacturing" className="px-8 flex gap-2 relative">
                                             Fabricación
+                                            {tabErrors['manufacturing'] && (
+                                                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                                                    <AlertCircle className="h-3 w-3" />
+                                                </span>
+                                            )}
                                         </TabsTrigger>
                                     )}
                                     <TabsTrigger value="inventory" className="px-8 flex gap-2">
                                         Inventario
                                     </TabsTrigger>
-                                    <TabsTrigger value="uoms" className="px-8 flex gap-2">
+                                    <TabsTrigger value="uoms" className="px-8 flex gap-2 relative">
                                         Und. de Medida
+                                        {tabErrors['uoms'] && (
+                                            <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                                                <AlertCircle className="h-3 w-3" />
+                                            </span>
+                                        )}
                                     </TabsTrigger>
                                     {form.watch("can_be_sold") && (
                                         <TabsTrigger value="pricing" className="px-8 flex gap-2">
