@@ -29,9 +29,9 @@ export const saleOrderActions: ActionRegistry = {
                 icon: FileEdit,
                 requiredPermissions: ['billing.change_invoice'],
                 checkAvailability: (order) => {
-                    // Only show if there's a draft invoice
+                    // Show if there's any invoice without a real folio number
                     const invoices = order.related_documents?.invoices || order.invoices || []
-                    return invoices.some((inv: any) => inv.status === 'DRAFT')
+                    return invoices.some((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
                 },
                 badge: { type: 'warning', label: 'Pendiente' }
             },
@@ -167,8 +167,9 @@ export const saleOrderActions: ActionRegistry = {
                 icon: Trash2,
                 requiredPermissions: ['billing.delete_invoice'],
                 checkAvailability: (order) => {
-                    // Show only if there's a draft invoice
-                    return order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT')
+                    // Show only if there's a draft invoice (unpaid)
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    return invoices.some((inv: any) => inv.status === 'DRAFT')
                 },
                 variant: 'destructive'
             }
