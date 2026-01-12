@@ -39,7 +39,7 @@ export const saleOrderActions: ActionRegistry = {
                 label: 'Ver Documentos',
                 icon: Eye,
                 requiredPermissions: ['billing.view_invoice'],
-                checkAvailability: (order) => order.invoices?.length > 0
+                checkAvailability: (order) => (order.related_documents?.invoices?.length || 0) > 0
             }
         ]
     },

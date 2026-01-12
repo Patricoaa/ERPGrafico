@@ -264,7 +264,7 @@ export function ActionCategory({
                     existingInvoice={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'POSTED' || inv.status === 'PAID') ? {
                         dte_type: (order.related_documents?.invoices || order.invoices).find((inv: any) => inv.status === 'POSTED' || inv.status === 'PAID').dte_type,
                         number: (order.related_documents?.invoices || order.invoices).find((inv: any) => inv.status === 'POSTED' || inv.status === 'PAID').number,
-                        document_attachment: null
+                        document_attachment: (order.related_documents?.invoices || order.invoices).find((inv: any) => inv.status === 'POSTED' || inv.status === 'PAID').document_attachment || null
                     } : undefined}
                 />
             )}

@@ -102,7 +102,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             doc_info = {
                 'id': inv.id,
                 'number': inv.number or 'Draft',
-                'type': inv.dte_type,
+                'dte_type': inv.dte_type,
                 'type_display': inv.get_dte_type_display(),
                 'status': inv.status,
                 'total': inv.total
