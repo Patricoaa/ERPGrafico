@@ -21,10 +21,10 @@ import { useState } from "react"
 
 const formSchema = z.object({
     username: z.string().min(2, {
-        message: "Username must be at least 2 characters.",
+        message: "El nombre de usuario debe tener al menos 2 caracteres.",
     }),
     password: z.string().min(1, {
-        message: "Password is required"
+        message: "La contraseña es obligatoria"
     }),
 })
 
@@ -55,10 +55,10 @@ export default function LoginPage() {
                 localStorage.setItem('refresh_token', data.refresh)
                 router.push('/')
             } else {
-                setError("Invalid credentials")
+                setError("Credenciales inválidas")
             }
         } catch (err) {
-            setError("Something went wrong")
+            setError("Algo salió mal, intente nuevamente")
         }
     }
 
@@ -66,8 +66,8 @@ export default function LoginPage() {
         <div className="flex h-screen w-full items-center justify-center bg-background">
             <Card className="w-[350px]">
                 <CardHeader>
-                    <CardTitle>ERPGrafico Login</CardTitle>
-                    <CardDescription>Enter your credentials to access the system.</CardDescription>
+                    <CardTitle>ERPGrafico - Iniciar Sesión</CardTitle>
+                    <CardDescription>Ingresa tus credenciales para acceder al sistema.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
@@ -77,9 +77,9 @@ export default function LoginPage() {
                                 name="username"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Username</FormLabel>
+                                        <FormLabel>Usuario</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="admin" {...field} />
+                                            <Input placeholder="usuario" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Password</FormLabel>
+                                        <FormLabel>Contraseña</FormLabel>
                                         <FormControl>
                                             <Input type="password" placeholder="••••••" {...field} />
                                         </FormControl>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                                 )}
                             />
                             {error && <p className="text-sm text-red-500">{error}</p>}
-                            <Button type="submit" className="w-full">Sign In</Button>
+                            <Button type="submit" className="w-full">Ingresar</Button>
                         </form>
                     </Form>
                 </CardContent>
