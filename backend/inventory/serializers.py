@@ -60,6 +60,7 @@ class ReorderingRuleSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
+    uom_category = serializers.IntegerField(source='uom.category.id', read_only=True)
     sale_uom_name = serializers.CharField(source='sale_uom.name', read_only=True)
     purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
     
