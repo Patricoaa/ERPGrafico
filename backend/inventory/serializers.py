@@ -60,7 +60,7 @@ class ReorderingRuleSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
-    uom_category = serializers.IntegerField(source='uom.category.id', read_only=True)
+    uom_category = serializers.SerializerMethodField()
     sale_uom_name = serializers.CharField(source='sale_uom.name', read_only=True)
     purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
     
@@ -81,6 +81,9 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+
+    def get_uom_category(self, obj):
+        return obj.uom.category_id if obj.uom else None
 
     def to_internal_value(self, data):
         # Handle JSON strings and multiple values for list fields when using multipart/form-data

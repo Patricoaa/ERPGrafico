@@ -7,7 +7,7 @@ import { Search, Download, RefreshCw, Check, X } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { AdjustmentList } from "@/components/inventory/AdjustmentList"
+import { AdjustmentForm } from "@/components/inventory/AdjustmentForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ArrowRightLeft } from "lucide-react"
 
@@ -121,7 +121,7 @@ export function StockReport() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="h-8 w-8 text-muted-foreground hover:text-primary"
                                             onClick={() => setAdjustingProduct(item)}
                                             title="Ajustar Stock"
                                         >
@@ -130,7 +130,7 @@ export function StockReport() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="h-8 w-8 text-muted-foreground hover:text-primary"
                                             onClick={() => handleRotateUom(item)}
                                             disabled={isRotating === item.id}
                                             title="Rotar Unidad de Medida (Convierte Cantidades)"
@@ -146,7 +146,7 @@ export function StockReport() {
             </div>
 
             <Dialog open={!!adjustingProduct} onOpenChange={(open) => !open && setAdjustingProduct(null)}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Ajustar Stock: {adjustingProduct?.name}
@@ -156,13 +156,16 @@ export function StockReport() {
                             Costo unitario: <span className="font-bold">${adjustingProduct?.unit_cost}</span>
                         </p>
                     </DialogHeader>
-                    <AdjustmentList
-                        preSelectedProduct={adjustingProduct?.id?.toString()}
-                        onSuccess={() => {
-                            setAdjustingProduct(null);
-                            fetchReport();
-                        }}
-                    />
+                    {adjustingProduct && (
+                        <AdjustmentForm
+                            preSelectedProduct={adjustingProduct.id.toString()}
+                            onSuccess={() => {
+                                setAdjustingProduct(null);
+                                fetchReport();
+                            }}
+                            onCancel={() => setAdjustingProduct(null)}
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
         </div>

@@ -182,6 +182,8 @@ class WarehouseViewSet(viewsets.ModelViewSet):
 class UoMViewSet(viewsets.ModelViewSet):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category', 'active']
 
 class UoMCategoryViewSet(viewsets.ModelViewSet):
     queryset = UoMCategory.objects.all()
