@@ -246,7 +246,7 @@ class BillingService:
     def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, 
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
-                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes=''):
+                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         """
@@ -290,6 +290,40 @@ class BillingService:
             if not warehouse:
                 raise ValidationError("Debe existir al menos una bodega para realizar despachos.")
             SalesService.dispatch_order(order, warehouse)
+        
+        elif delivery_type == 'PARTIAL':
+            # Partial Dispatch: Immediate lines are dispatched now, others are scheduled
+            warehouse = Warehouse.objects.first()
+            if not warehouse:
+                raise ValidationError("Debe existir al menos una bodega para realizar despachos.")
+
+            if not immediate_lines:
+                # Fallback to SCHEDULED if no lines are marked for immediate
+                delivery_type = 'SCHEDULED'
+            else:
+                # Prepare quantities for immediate lines
+                line_quantities = {}
+                # immediate_lines is expected to be a list of SaleLine IDs
+                for line_id in immediate_lines:
+                    try:
+                        line = order.lines.get(id=line_id)
+                        line_quantities[line.id] = line.quantity_pending
+                    except SaleOrder.DoesNotExist:
+                        continue
+                
+                if line_quantities:
+                    SalesService.partial_dispatch(order, warehouse, line_quantities)
+            
+            # For the REST (or all if fallback), schedule them
+            if delivery_type == 'PARTIAL' or delivery_type == 'SCHEDULED': # Logic applies to remainder
+                if delivery_date:
+                    order.delivery_date = delivery_date
+                
+                notes_prefix = "Despacho Parcial: " if delivery_type == 'PARTIAL' else ""
+                if delivery_notes:
+                    order.notes = f"{order.notes}\n{notes_prefix}Notas Despacho: {delivery_notes}".strip()
+                order.save()
+
         elif delivery_type == 'SCHEDULED':
             order.delivery_status = SaleOrder.DeliveryStatus.PENDING
             if delivery_date:

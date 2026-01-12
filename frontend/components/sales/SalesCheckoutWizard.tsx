@@ -215,6 +215,10 @@ export function SalesCheckoutWizard({
             if (deliveryData.date) formData.append('delivery_date', deliveryData.date)
             if (deliveryData.notes) formData.append('delivery_notes', deliveryData.notes)
 
+            if (deliveryData.type === 'PARTIAL' && deliveryData.immediateLines) {
+                formData.append('immediate_lines', JSON.stringify(deliveryData.immediateLines))
+            }
+
             await api.post('/billing/invoices/pos_checkout/', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             })

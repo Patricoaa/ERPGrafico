@@ -27,7 +27,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
             'id', 'product', 'product_name', 'product_type', 'track_inventory', 
             'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
             'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 
-            'quantity_pending', 'manufacturing_data'
+            'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing'
         ]
 
     def get_product_type(self, obj):
@@ -41,6 +41,11 @@ class SaleLineSerializer(serializers.ModelSerializer):
             qty = obj.product.get_manufacturable_quantity()
             return float(qty) if qty is not None else None
         return None
+        
+    requires_advanced_manufacturing = serializers.SerializerMethodField()
+    
+    def get_requires_advanced_manufacturing(self, obj):
+        return obj.product.requires_advanced_manufacturing if obj.product else False
 
     def validate(self, data):
         product = data.get('product')

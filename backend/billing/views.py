@@ -95,6 +95,15 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         delivery_date = request.data.get('delivery_date')
         delivery_notes = request.data.get('delivery_notes', '')
 
+        # Extract immediate_lines for PARTIAL delivery
+        immediate_lines = request.data.get('immediate_lines')
+        if immediate_lines and isinstance(immediate_lines, str):
+            import json
+            try:
+                immediate_lines = json.loads(immediate_lines)
+            except json.JSONDecodeError:
+                immediate_lines = []
+
         if not all([order_data, dte_type, payment_method]):
             return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -111,7 +120,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 document_attachment=document_attachment,
                 delivery_type=delivery_type,
                 delivery_date=delivery_date,
-                delivery_notes=delivery_notes
+                delivery_notes=delivery_notes,
+                immediate_lines=immediate_lines
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

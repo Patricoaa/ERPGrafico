@@ -77,7 +77,17 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
                 <RadioGroup
                     value={deliveryData.type}
-                    onValueChange={(val) => setDeliveryData({ ...deliveryData, type: val })}
+                    onValueChange={(val) => {
+                        // When switching to partial, pre-select all eligible items
+                        if (val === 'PARTIAL') {
+                            const eligibleIds = orderLines
+                                .filter(line => !line.requires_advanced_manufacturing)
+                                .map(line => line.id);
+                            setDeliveryData({ ...deliveryData, type: val, immediateLines: eligibleIds });
+                        } else {
+                            setDeliveryData({ ...deliveryData, type: val });
+                        }
+                    }}
                     className="grid gap-3"
                 >
                     <Label
@@ -113,6 +123,20 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     </Label>
 
                     <Label
+                        htmlFor="del-partial"
+                        className={`flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'PARTIAL' ? 'border-primary bg-primary/5' : ''}`}
+                    >
+                        <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
+                        <div className={`p-2 rounded-lg bg-background border ${deliveryData.type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <Truck className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <span className="text-sm font-bold block">Despacho Parcial</span>
+                            <span className="text-[10px] text-muted-foreground">Entregar disponibles ahora, programar el resto.</span>
+                        </div>
+                    </Label>
+
+                    <Label
                         htmlFor="del-pickup"
                         className={`flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'PICKUP' ? 'border-primary bg-primary/5' : ''}`}
                     >
@@ -129,9 +153,59 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
             </div>
 
             <div className="space-y-4 animate-in fade-in duration-300">
-                {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PICKUP') && (
+                {deliveryData.type === 'PARTIAL' && (
+                    <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+                        <h4 className="text-sm font-bold flex items-center gap-2">
+                            <Package className="h-4 w-4 text-emerald-600" />
+                            Items para Despacho Inmediato
+                        </h4>
+                        <p className="text-xs text-muted-foreground mb-2">
+                            Seleccione los productos que entregará ahora. El resto quedará programado.
+                        </p>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                            {orderLines.map(line => {
+                                const isEligible = !line.requires_advanced_manufacturing;
+                                const isSelected = (deliveryData.immediateLines || []).includes(line.id);
+
+                                return (
+                                    <div key={line.id} className={cn(
+                                        "flex items-center gap-3 p-2 rounded-md border text-xs",
+                                        isEligible ? "bg-background" : "bg-muted opacity-70",
+                                        isSelected && "border-primary/50 bg-primary/5"
+                                    )}>
+                                        <input
+                                            type="checkbox"
+                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                            checked={isSelected}
+                                            disabled={!isEligible}
+                                            onChange={(e) => {
+                                                const current = deliveryData.immediateLines || [];
+                                                if (e.target.checked) {
+                                                    setDeliveryData({ ...deliveryData, immediateLines: [...current, line.id] });
+                                                } else {
+                                                    setDeliveryData({ ...deliveryData, immediateLines: current.filter((id: number) => id !== line.id) });
+                                                }
+                                            }}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium truncate">{line.description || line.product_name}</p>
+                                            <p className="text-muted-foreground">{line.qty || line.quantity} {line.uom_name}</p>
+                                        </div>
+                                        {!isEligible && (
+                                            <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Producción</span>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PICKUP' || deliveryData.type === 'PARTIAL') && (
                     <div className="space-y-2">
-                        <Label htmlFor="del-date" className="text-xs font-bold uppercase">Fecha Estimada</Label>
+                        <Label htmlFor="del-date" className="text-xs font-bold uppercase">
+                            {deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}
+                        </Label>
                         <div className="relative">
                             <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
