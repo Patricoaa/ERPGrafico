@@ -135,20 +135,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                             <span className="text-[10px] text-muted-foreground">Entregar disponibles ahora, programar el resto.</span>
                         </div>
                     </Label>
-
-                    <Label
-                        htmlFor="del-pickup"
-                        className={`flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'PICKUP' ? 'border-primary bg-primary/5' : ''}`}
-                    >
-                        <RadioGroupItem value="PICKUP" id="del-pickup" className="sr-only" />
-                        <div className={`p-2 rounded-lg bg-background border ${deliveryData.type === 'PICKUP' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Store className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Retiro en Tienda</span>
-                            <span className="text-[10px] text-muted-foreground">El cliente vendrá a retirar.</span>
-                        </div>
-                    </Label>
                 </RadioGroup>
             </div>
 
@@ -169,13 +155,13 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
                                 return (
                                     <div key={line.id} className={cn(
-                                        "flex items-center gap-3 p-2 rounded-md border text-xs",
+                                        "flex items-center gap-3 p-3 rounded-md border", // Increased padding
                                         isEligible ? "bg-background" : "bg-muted opacity-70",
                                         isSelected && "border-primary/50 bg-primary/5"
                                     )}>
                                         <input
                                             type="checkbox"
-                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                            className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" // Larger checkbox
                                             checked={isSelected}
                                             disabled={!isEligible}
                                             onChange={(e) => {
@@ -187,12 +173,15 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                 }
                                             }}
                                         />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium truncate">{line.description || line.product_name}</p>
-                                            <p className="text-muted-foreground">{line.qty || line.quantity} {line.uom_name}</p>
+                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                            {/* Stronger visual hierarchy */}
+                                            <p className="font-bold text-sm text-foreground truncate">{line.product_name || line.description}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                <span className="font-semibold text-foreground">{line.qty || line.quantity}</span> {line.uom_name}
+                                            </p>
                                         </div>
                                         {!isEligible && (
-                                            <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Producción</span>
+                                            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded font-medium">Producción</span>
                                         )}
                                     </div>
                                 )
@@ -201,7 +190,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     </div>
                 )}
 
-                {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PICKUP' || deliveryData.type === 'PARTIAL') && (
+                {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
                     <div className="space-y-2">
                         <Label htmlFor="del-date" className="text-xs font-bold uppercase">
                             {deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}

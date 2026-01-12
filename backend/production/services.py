@@ -34,7 +34,8 @@ class WorkOrderService:
             sale_line=sale_line,
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
-            warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.filter(warehouse__isnull=False).exists() else Warehouse.objects.first()
+            warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.filter(warehouse__isnull=False).exists() else Warehouse.objects.first(),
+            stage_data=WorkOrderService._map_manufacturing_data(sale_line.manufacturing_data) if sale_line.manufacturing_data else {}
         )
 
         # Auto-assign materials from BOM if active
@@ -237,3 +238,27 @@ class WorkOrderService:
             material.save()
         
         return material
+
+    @staticmethod
+    def _map_manufacturing_data(mfg_data):
+        """
+        Maps nested manufacturing data from SaleLine to flat stage_data structure 
+        expected by WorkOrder frontend.
+        """
+        if not mfg_data:
+            return {}
+            
+        stage_data = {
+            'internal_notes': mfg_data.get('description', ''),
+            'product_description': mfg_data.get('product_description', ''),
+            'folio_enabled': mfg_data.get('folio_enabled', False),
+            'folio_start': mfg_data.get('folio_start', ''),
+            'design_attachments': [f['name'] if isinstance(f, dict) else str(f) for f in mfg_data.get('design_files', [])],
+            # Map specs
+            'prepress_specs': mfg_data.get('specifications', {}).get('prepress', ''),
+            'press_specs': mfg_data.get('specifications', {}).get('press', ''),
+            'postpress_specs': mfg_data.get('specifications', {}).get('postpress', ''),
+            # Map phases to root keys for serializer to pick up if needed, or just store them
+            'phases': mfg_data.get('phases', {})
+        }
+        return stage_data

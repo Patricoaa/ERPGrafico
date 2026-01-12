@@ -33,6 +33,7 @@ interface ProductSelectorProps {
     showSearch?: boolean
     excludeIds?: (string | number)[]
     context?: 'sale' | 'purchase'
+    onSelect?: (product: any) => void
 }
 
 export function ProductSelector({
@@ -45,7 +46,8 @@ export function ProductSelector({
     restrictStock = false,
     showSearch = true,
     excludeIds = [],
-    context
+    context,
+    onSelect
 }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
@@ -108,6 +110,7 @@ export function ProductSelector({
 
         setSelectedProduct(product)
         onChange(product ? product.id.toString() : null)
+        if (onSelect) onSelect(product)
         setOpen(false)
         setModalOpen(false)
     }

@@ -107,6 +107,25 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'])
+    def update_material(self, request, pk=None):
+        """Update a manually added material"""
+        work_order = self.get_object()
+        try:
+            material_id = request.data.get('material_id')
+            quantity = Decimal(str(request.data.get('quantity')))
+            uom_id = request.data.get('uom_id')
+            
+            material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
+            material.quantity_planned = quantity
+            if uom_id:
+                material.uom_id = uom_id
+            material.save()
+            
+            return Response(WorkOrderSerializer(work_order).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['post'])
     def create_manual(self, request):
         """Create a manual OT"""

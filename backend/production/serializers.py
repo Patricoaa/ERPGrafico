@@ -42,9 +42,33 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     product_info = serializers.ReadOnlyField()
     
     # Metadata helpers
-    requires_prepress = serializers.BooleanField(source='sale_line.product.mfg_enable_prepress', read_only=True, default=False)
-    requires_press = serializers.BooleanField(source='sale_line.product.mfg_enable_press', read_only=True, default=False)
-    requires_postpress = serializers.BooleanField(source='sale_line.product.mfg_enable_postpress', read_only=True, default=False)
+    # Metadata helpers
+    requires_prepress = serializers.SerializerMethodField()
+    requires_press = serializers.SerializerMethodField()
+    requires_postpress = serializers.SerializerMethodField()
+
+    def get_requires_prepress(self, obj):
+        # 1. Try stage_data (specific for this order)
+        if obj.stage_data and 'phases' in obj.stage_data:
+            return obj.stage_data['phases'].get('prepress', False)
+        # 2. Fallback to product default
+        if obj.sale_line and obj.sale_line.product:
+            return obj.sale_line.product.mfg_enable_prepress
+        return False
+
+    def get_requires_press(self, obj):
+        if obj.stage_data and 'phases' in obj.stage_data:
+            return obj.stage_data['phases'].get('press', False)
+        if obj.sale_line and obj.sale_line.product:
+            return obj.sale_line.product.mfg_enable_press
+        return False
+
+    def get_requires_postpress(self, obj):
+        if obj.stage_data and 'phases' in obj.stage_data:
+            return obj.stage_data['phases'].get('postpress', False)
+        if obj.sale_line and obj.sale_line.product:
+            return obj.sale_line.product.mfg_enable_postpress
+        return False
     
     class Meta:
         model = WorkOrder

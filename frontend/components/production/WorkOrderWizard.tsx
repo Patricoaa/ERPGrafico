@@ -26,10 +26,12 @@ import {
     Upload,
     Download,
     Check,
-    X
+    X,
+    Pencil
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -58,6 +60,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
     const [isAddMaterialOpen, setIsAddMaterialOpen] = useState(false)
     const [newMaterialProduct, setNewMaterialProduct] = useState<string | null>(null)
     const [newMaterialQty, setNewMaterialQty] = useState("1")
+    const [newMaterialUoM, setNewMaterialUoM] = useState<string>("")
+    const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
+    const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null)
+    const [uoms, setUoMs] = useState<any[]>([]) // Store all UoMs
     const [addingMaterial, setAddingMaterial] = useState(false)
     const [designUrl, setDesignUrl] = useState("")
     const [designFile, setDesignFile] = useState<File | null>(null)
@@ -137,6 +143,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
         }
     }
 
+    useEffect(() => {
+        // Fetch UoMs
+        api.get('/inventory/uoms/').then(res => {
+            setUoMs(res.data.results || res.data)
+        })
+    }, [])
+
     const handleAddMaterial = async () => {
         if (!newMaterialProduct) {
             toast.error("Seleccione un producto")
@@ -149,20 +162,58 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
 
         setAddingMaterial(true)
         try {
-            await api.post(`/production/orders/${orderId}/add_material/`, {
-                product_id: newMaterialProduct,
-                quantity: newMaterialQty
-            })
-            toast.success("Material agregado")
+            if (editingMaterialId) {
+                // Update existing
+                await api.post(`/production/orders/${orderId}/update_material/`, {
+                    material_id: editingMaterialId,
+                    quantity: newMaterialQty,
+                    uom_id: newMaterialUoM
+                })
+                toast.success("Material actualizado")
+            } else {
+                // Add new
+                await api.post(`/production/orders/${orderId}/add_material/`, {
+                    product_id: newMaterialProduct,
+                    quantity: newMaterialQty,
+                    uom_id: newMaterialUoM
+                })
+                toast.success("Material agregado")
+            }
+
             setIsAddMaterialOpen(false)
-            setNewMaterialProduct(null)
-            setNewMaterialQty("1")
+            resetMaterialForm()
             fetchOrder()
         } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al agregar material")
+            toast.error(error.response?.data?.error || "Error al guardar material")
         } finally {
             setAddingMaterial(false)
         }
+    }
+
+    const resetMaterialForm = () => {
+        setNewMaterialProduct(null)
+        setNewMaterialQty("1")
+        setNewMaterialUoM("")
+        setSelectedProductObj(null)
+        setEditingMaterialId(null)
+    }
+
+    const handleEditMaterial = (material: any) => {
+        setEditingMaterialId(material.id)
+        setNewMaterialProduct(material.component.toString()) // Assuming component is ID
+        // Note: material.component might be an object or ID depending on serializer.
+        // WorkOrderMaterialSerializer: component_name, component_code. But 'component' field?
+        // Let's check serializer: fields = '__all__', so 'component' is ID.
+        setNewMaterialQty(material.quantity_planned)
+        setNewMaterialUoM(material.uom.toString())
+
+        // We need the product object for UoM selector. 
+        // We might need to fetch it or finding it if we have it. 
+        // Ideally we should fetch the product details to get allowed UoMs.
+        api.get(`/inventory/products/${material.component}/`).then(res => {
+            setSelectedProductObj(res.data)
+            setIsAddMaterialOpen(true)
+        })
     }
 
     const handleDeleteMaterial = async (materialId: number) => {
@@ -253,14 +304,24 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                                         <td className="p-2"><Badge variant="outline" className="text-[10px]">{m.source}</Badge></td>
                                                         <td className="p-2">
                                                             {m.source === 'MANUAL' && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-6 w-6 text-destructive"
-                                                                    onClick={() => handleDeleteMaterial(m.id)}
-                                                                >
-                                                                    <Trash2 className="h-3 w-3" />
-                                                                </Button>
+                                                                <div className="flex gap-1">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-6 w-6 text-primary"
+                                                                        onClick={() => handleEditMaterial(m)}
+                                                                    >
+                                                                        <Pencil className="h-3 w-3" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-6 w-6 text-destructive"
+                                                                        onClick={() => handleDeleteMaterial(m.id)}
+                                                                    >
+                                                                        <Trash2 className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
                                                             )}
                                                         </td>
                                                     </tr>
@@ -281,6 +342,12 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                                     <ProductSelector
                                                         value={newMaterialProduct}
                                                         onChange={setNewMaterialProduct}
+                                                        onSelect={(p) => {
+                                                            setSelectedProductObj(p)
+                                                            // Auto-select base UoM
+                                                            if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
+                                                        }}
+                                                        disabled={!!editingMaterialId} // Disable product change when editing
                                                     />
                                                 </div>
                                                 <div className="w-full md:w-32 space-y-2">
@@ -291,10 +358,23 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                                         onChange={(e) => setNewMaterialQty(e.target.value)}
                                                     />
                                                 </div>
+                                                <div className="w-full md:w-40 space-y-2">
+                                                    <label className="text-xs font-bold uppercase">Unidad</label>
+                                                    <UoMSelector
+                                                        product={selectedProductObj}
+                                                        context="bom" // Flexible category selection
+                                                        value={newMaterialUoM}
+                                                        onChange={setNewMaterialUoM}
+                                                        uoms={uoms}
+                                                    />
+                                                </div>
                                                 <div className="flex gap-2">
-                                                    <Button variant="outline" size="sm" onClick={() => setIsAddMaterialOpen(false)}>Cancelar</Button>
+                                                    <Button variant="outline" size="sm" onClick={() => {
+                                                        setIsAddMaterialOpen(false)
+                                                        resetMaterialForm()
+                                                    }}>Cancelar</Button>
                                                     <Button size="sm" onClick={handleAddMaterial} disabled={addingMaterial}>
-                                                        {addingMaterial ? "Añadiendo..." : "Añadir"}
+                                                        {addingMaterial ? (editingMaterialId ? "Guardando..." : "Añadiendo...") : (editingMaterialId ? "Guardar" : "Añadir")}
                                                     </Button>
                                                 </div>
                                             </div>
@@ -304,7 +384,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                             variant="outline"
                                             size="sm"
                                             className="w-full border-dashed"
-                                            onClick={() => setIsAddMaterialOpen(true)}
+                                            onClick={() => {
+                                                resetMaterialForm()
+                                                setIsAddMaterialOpen(true)
+                                            }}
                                             disabled={order?.status === 'FINISHED'}
                                         >
                                             <Plus className="mr-2 h-4 w-4" />
