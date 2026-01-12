@@ -89,7 +89,6 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             priority: 0,
             active: true,
             product: productId || null,
-            category: null,
             uom: null,
             operator: "GE",
             max_quantity: null,
