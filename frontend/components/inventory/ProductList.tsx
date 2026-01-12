@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { cn, translateProductType } from "@/lib/utils"
+import { formatCurrency } from "@/lib/currency"
 
 interface Product {
     id: number
@@ -178,13 +179,13 @@ export function ProductList() {
                                     )}
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-muted-foreground">
-                                    ${Number(product.sale_price).toLocaleString()}
+                                    {formatCurrency(product.sale_price)}
                                 </TableCell>
                                 <TableCell className="text-right text-muted-foreground text-xs">
-                                    ${Math.round(Number(product.sale_price) * 0.19).toLocaleString()}
+                                    {formatCurrency(Math.round(Number(product.sale_price) * 0.19))}
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-primary">
-                                    ${Math.round(Number(product.sale_price) * 1.19).toLocaleString()}
+                                    {formatCurrency(Math.round(Number(product.sale_price) * 1.19))}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center gap-1">

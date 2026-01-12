@@ -10,6 +10,7 @@ import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { formatCurrency } from "@/lib/currency"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { SalesCheckoutWizard } from "@/components/sales/SalesCheckoutWizard"
 import { Badge } from "@/components/ui/badge"
@@ -394,7 +395,7 @@ export default function POSPage() {
                                             <CardContent className="p-3 text-center flex-1 flex flex-col justify-center">
                                                 <div className="font-bold text-sm line-clamp-2">{product.name}</div>
                                                 <div className="text-primary font-semibold text-base mt-1">
-                                                    ${Math.round(Number(product.sale_price) * 1.19).toLocaleString()}
+                                                    {formatCurrency(Math.round(Number(product.sale_price) * 1.19))}
                                                     <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{product.internal_code || product.code}</div>
@@ -499,9 +500,9 @@ export default function POSPage() {
                                                             </span>
                                                         )}
                                                     </TableCell>
-                                                    <TableCell className="text-right text-xs text-muted-foreground">${Number(item.total_net).toLocaleString()}</TableCell>
-                                                    <TableCell className="text-right text-xs text-muted-foreground">${Number(item.total_tax).toLocaleString()}</TableCell>
-                                                    <TableCell className="text-right font-bold text-sm">${Number(item.total_gross).toLocaleString()}</TableCell>
+                                                    <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(item.total_net)}</TableCell>
+                                                    <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(item.total_tax)}</TableCell>
+                                                    <TableCell className="text-right font-bold text-sm">{formatCurrency(item.total_gross)}</TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-1">
                                                             {item.requires_advanced_manufacturing && (
@@ -540,15 +541,15 @@ export default function POSPage() {
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-muted-foreground">
                                         <span>Neto</span>
-                                        <span>${total_net_sum.toLocaleString()}</span>
+                                        <span>{formatCurrency(total_net_sum)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm text-muted-foreground">
                                         <span>IVA (19%)</span>
-                                        <span>${total_tax_sum.toLocaleString()}</span>
+                                        <span>{formatCurrency(total_tax_sum)}</span>
                                     </div>
                                     <div className="flex justify-between text-xl font-bold pt-2 border-t">
                                         <span>Total</span>
-                                        <span>${total_gross_sum.toLocaleString()}</span>
+                                        <span>{formatCurrency(total_gross_sum)}</span>
                                     </div>
                                 </div>
                                 <Button

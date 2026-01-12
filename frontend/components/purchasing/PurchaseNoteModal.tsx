@@ -22,6 +22,7 @@ import {
 import { FileBadge, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { formatCurrency } from "@/lib/currency"
 
 interface PurchaseNoteModalProps {
     open: boolean
@@ -224,7 +225,7 @@ export function PurchaseNoteModal({
                                             </div>
                                         </td>
                                         <td className="px-3 py-2 text-right font-black">
-                                            ${(line.note_quantity * line.note_unit_cost).toLocaleString()}
+                                            {formatCurrency(line.note_quantity * line.note_unit_cost)}
                                         </td>
                                     </tr>
                                 ))}
@@ -250,15 +251,15 @@ export function PurchaseNoteModal({
                         <div className="w-64 p-4 bg-muted/30 rounded-lg border space-y-2">
                             <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
                                 <span>Neto:</span>
-                                <span>${amountNet.toLocaleString()}</span>
+                                <span>{formatCurrency(amountNet)}</span>
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
                                 <span>IVA (19%):</span>
-                                <span>${amountTax.toLocaleString()}</span>
+                                <span>{formatCurrency(amountTax)}</span>
                             </div>
                             <div className="flex justify-between items-center pt-2 border-t font-black">
                                 <span className="text-sm">TOTAL:</span>
-                                <span className="text-xl text-primary">${total.toLocaleString()}</span>
+                                <span className="text-xl text-primary">{formatCurrency(total)}</span>
                             </div>
                         </div>
                     </div>
