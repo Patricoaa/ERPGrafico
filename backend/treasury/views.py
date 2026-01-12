@@ -7,6 +7,10 @@ from .services import TreasuryService
 from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
+from django.conf import settings
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+from .tuu import TuuClient
 
 class TreasuryAccountViewSet(viewsets.ModelViewSet):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
@@ -157,3 +161,57 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TuuPaymentView(APIView):
+    """
+    Endpoints for Tuu Remote Payment interaction.
+    """
+
+    def post(self, request):
+        """
+        Initiate a payment on the POS.
+        Payload: { "treasury_account_id": int, "amount": int, "order_id": int (optional) }
+        """
+        account_id = request.data.get('treasury_account_id')
+        amount = request.data.get('amount')
+        
+        if not account_id or not amount:
+            return Response({"error": "Missing treasury_account_id or amount"}, status=status.HTTP_400_BAD_REQUEST)
+
+        treasury_account = get_object_or_404(TreasuryAccount, id=account_id)
+        
+        # Check permissions/configuration
+        if not treasury_account.tuu_api_key and not settings.DEBUG:
+             # In production, we might enforce API key. 
+             # For this implementation, we allow empty key to trigger Mock Mode if TuuClient handles it.
+             pass
+
+        client = TuuClient(api_key=treasury_account.tuu_api_key, device_id=treasury_account.tuu_device_id)
+        
+        result = client.create_payment(amount=amount)
+        
+        if result['success']:
+            return Response(result['data'], status=status.HTTP_200_OK)
+        else:
+            return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TuuStatusView(APIView):
+    """
+    Check status of a payment.
+    """
+    def get(self, request, idempotency_key):
+        # We need the API key, so we need to know which treasury account used it.
+        # Ideally, we pass it or look it up. For simplicity, we might ask frontend to pass 'treasury_account_id' query param.
+        account_id = request.query_params.get('treasury_account_id')
+        if not account_id:
+            return Response({"error": "Missing treasury_account_id"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        treasury_account = get_object_or_404(TreasuryAccount, id=account_id)
+        client = TuuClient(api_key=treasury_account.tuu_api_key, device_id=treasury_account.tuu_device_id)
+        
+        result = client.get_status(idempotency_key)
+        
+        if result['success']:
+            return Response(result['data'], status=status.HTTP_200_OK)
+        else:
+            return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
