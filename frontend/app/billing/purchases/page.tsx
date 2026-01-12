@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X } from "lucide-react"
+import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X, MoreVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -15,6 +15,7 @@ import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
 import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
+import { OrderActionPanel } from "@/components/orders/OrderActionPanel"
 
 interface PurchaseDocument {
     id: number
@@ -59,6 +60,9 @@ export default function PurchaseInvoicesPage() {
     const [receivingDoc, setReceivingDoc] = useState<PurchaseDocument | null>(null)
     const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
     const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
+
+    // Action Panel state
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
 
     useEffect(() => {
         fetchDocuments()
@@ -336,6 +340,20 @@ export default function PurchaseInvoicesPage() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex justify-center space-x-1">
+                                                {/* Open Action Panel */}
+                                                {doc.purchase_order && (
+                                                    <Button
+                                                        variant="default"
+                                                        size="sm"
+                                                        onClick={() => setSelectedOrderId(doc.purchase_order!)}
+                                                        title="Gestionar Orden"
+                                                        className="h-8 px-3"
+                                                    >
+                                                        <MoreVertical className="h-4 w-4 mr-1" />
+                                                        Gestionar
+                                                    </Button>
+                                                )}
+
                                                 {/* View Details */}
                                                 <Button
                                                     variant="ghost"
@@ -500,6 +518,17 @@ export default function PurchaseInvoicesPage() {
                     invoiceId={completingDoc.id}
                     invoiceType={completingDoc.dte_type}
                     onSuccess={fetchDocuments}
+                />
+            )}
+
+            {/* Order Action Panel */}
+            {selectedOrderId && (
+                <OrderActionPanel
+                    open={!!selectedOrderId}
+                    onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                    orderId={selectedOrderId}
+                    orderType="purchase"
+                    onActionComplete={fetchDocuments}
                 />
             )}
         </div>

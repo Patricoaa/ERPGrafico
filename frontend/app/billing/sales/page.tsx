@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, Banknote, History, X, FileBadge, Receipt, FileUp } from "lucide-react"
+import { Search, Eye, Banknote, History, X, FileBadge, Receipt, FileUp, MoreVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { OrderActionPanel } from "@/components/orders/OrderActionPanel"
 
 export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
@@ -21,6 +22,9 @@ export default function SalesInvoicesPage() {
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<any | null>(null)
     const [payingInv, setPayingInv] = useState<any | null>(null)
+
+    // Action Panel state
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
 
     useEffect(() => {
         fetchInvoices()
@@ -168,6 +172,18 @@ export default function SalesInvoicesPage() {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex space-x-1">
+                                            {/* Open Action Panel */}
+                                            <Button
+                                                variant="default"
+                                                size="sm"
+                                                onClick={() => setSelectedOrderId(inv.sale_order)}
+                                                title="Gestionar Orden"
+                                                className="h-8 px-3"
+                                            >
+                                                <MoreVertical className="h-4 w-4 mr-1" />
+                                                Gestionar
+                                            </Button>
+
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -274,6 +290,17 @@ export default function SalesInvoicesPage() {
                         number: payingInv.number,
                         document_attachment: null
                     }}
+                />
+            )}
+
+            {/* Order Action Panel */}
+            {selectedOrderId && (
+                <OrderActionPanel
+                    open={!!selectedOrderId}
+                    onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                    orderId={selectedOrderId}
+                    orderType="sale"
+                    onActionComplete={fetchInvoices}
                 />
             )}
         </div>
