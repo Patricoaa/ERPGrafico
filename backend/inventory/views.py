@@ -25,6 +25,25 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProductFilter
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        active_param = self.request.query_params.get('active')
+        
+        # Default behavior: Show only active products
+        if active_param is None:
+            return queryset.filter(active=True)
+            
+        # If active=all, show everything
+        if active_param == 'all':
+            return queryset
+            
+        # If active=false, show only archived
+        if active_param == 'false':
+            return queryset.filter(active=False)
+            
+        # If active=true (default explicit)
+        return queryset.filter(active=True)
+
     def perform_update(self, serializer):
         serializer.save()
 

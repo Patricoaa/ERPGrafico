@@ -218,6 +218,8 @@ class Product(models.Model):
 
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=2, default=0)
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=2, default=0, editable=False)
+    
+    active = models.BooleanField(_("Activo"), default=True, help_text=_("Desactivar para archivar el producto en lugar de eliminarlo."))
 
     created_at = models.DateTimeField(auto_now_add=True)
 

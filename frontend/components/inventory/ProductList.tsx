@@ -37,6 +37,7 @@ interface Product {
     track_inventory: boolean
     can_be_sold: boolean
     can_be_purchased: boolean
+    active: boolean
 }
 
 export function ProductList() {
@@ -44,11 +45,17 @@ export function ProductList() {
     const [loading, setLoading] = useState(true)
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [showArchived, setShowArchived] = useState(false)
 
     const fetchProducts = async () => {
         setLoading(true)
         try {
-            const response = await api.get('/inventory/products/')
+            // If showing archived, we want ALL products (active and archived) to see context,
+            // or just active=false? User usually wants to see everything or toggle between modes.
+            // Let's use 'all' if showArchived is true, so they see mixed list?
+            // Or maybe separate view. Let's send 'all' for now.
+            const params = { active: showArchived ? 'all' : undefined }
+            const response = await api.get('/inventory/products/', { params })
             const data = response.data.results || response.data
             setProducts(data)
         } catch (error) {
@@ -59,29 +66,41 @@ export function ProductList() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar este producto?")) return
+    const handleArchive = async (product: Product) => {
+        const action = product.active ? "archivar" : "restaurar"
+        if (!confirm(`¿Está seguro de que desea ${action} este producto?`)) return
+
         try {
-            await api.delete(`/inventory/products/${id}/`)
-            toast.success("Producto eliminado correctamente.")
+            await api.patch(`/inventory/products/${product.id}/`, { active: !product.active })
+            toast.success(`Producto ${product.active ? 'archivado' : 'restaurado'} correctamente.`)
             fetchProducts()
         } catch (error) {
-            console.error("Error deleting product:", error)
-            toast.error("Error al eliminar el producto.")
+            console.error(`Error ${action} product:`, error)
+            toast.error(`Error al ${action} el producto.`)
         }
     }
 
     useEffect(() => {
         fetchProducts()
-    }, [])
+    }, [showArchived])
 
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Catálogo de Productos</h3>
-                <Button onClick={() => setIsFormOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowArchived(!showArchived)}
+                        className={showArchived ? "bg-amber-50 border-amber-200 text-amber-700" : ""}
+                    >
+                        {showArchived ? "Ocultar Archivados" : "Mostrar Archivados"}
+                    </Button>
+                    <Button onClick={() => setIsFormOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
+                    </Button>
+                </div>
             </div>
 
             <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
@@ -104,9 +123,18 @@ export function ProductList() {
                     <TableBody>
                         {products.map((product) => (
                             <TableRow key={product.id} className="group hover:bg-muted/20 transition-colors">
-                                <TableCell className="font-mono text-[10px] font-bold text-primary">{product.internal_code}</TableCell>
+                                <TableCell className="font-mono text-[10px] font-bold text-primary">
+                                    {product.internal_code}
+                                    {!product.active && (
+                                        <Badge variant="destructive" className="ml-1 text-[8px] h-3 px-1">ARCHIVADO</Badge>
+                                    )}
+                                </TableCell>
                                 <TableCell className="font-mono text-xs">{product.code || '-'}</TableCell>
-                                <TableCell className="font-medium">{product.name}</TableCell>
+                                <TableCell className="font-medium">
+                                    <span className={!product.active ? "text-muted-foreground line-through" : ""}>
+                                        {product.name}
+                                    </span>
+                                </TableCell>
                                 <TableCell className="text-sm">{product.category_name}</TableCell>
                                 <TableCell>
                                     <Badge variant="secondary" className="text-[10px]">{translateProductType(product.product_type)}</Badge>
@@ -184,10 +212,11 @@ export function ProductList() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 text-destructive"
-                                            onClick={() => handleDelete(product.id)}
+                                            className={cn("h-8 w-8", product.active ? "text-destructive" : "text-emerald-600")}
+                                            onClick={() => handleArchive(product)}
+                                            title={product.active ? "Archivar" : "Restaurar"}
                                         >
-                                            <Trash2 className="h-4 w-4" />
+                                            {product.active ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -212,6 +241,6 @@ export function ProductList() {
                 initialData={editingProduct}
                 onSuccess={fetchProducts}
             />
-        </div>
+        </div >
     )
 }
