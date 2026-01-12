@@ -56,40 +56,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     const [reorderingRules, setReorderingRules] = useState<any[]>([])
     const [activeTab, setActiveTab] = useState("general")
 
-    // Helper function to map field errors to tabs
-    const getTabsWithErrors = () => {
-        const errors = form.formState.errors
-        const tabErrors: { [key: string]: number } = {}
-
-        // General tab fields
-        const generalFields = ['name', 'category', 'product_type', 'sale_price', 'can_be_sold', 'can_be_purchased']
-        generalFields.forEach(field => {
-            if (errors[field as keyof typeof errors]) {
-                tabErrors['general'] = (tabErrors['general'] || 0) + 1
-            }
-        })
-
-        // Manufacturing tab fields
-        const mfgFields = ['boms', 'has_bom', 'mfg_auto_finalize']
-        mfgFields.forEach(field => {
-            if (errors[field as keyof typeof errors]) {
-                tabErrors['manufacturing'] = (tabErrors['manufacturing'] || 0) + 1
-            }
-        })
-
-        // UoM tab fields
-        const uomFields = ['uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms']
-        uomFields.forEach(field => {
-            if (errors[field as keyof typeof errors]) {
-                tabErrors['uoms'] = (tabErrors['uoms'] || 0) + 1
-            }
-        })
-
-        return tabErrors
-    }
-
-    const tabErrors = getTabsWithErrors()
-
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
         defaultValues: {
@@ -124,6 +90,40 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             product_custom_fields: [],
         },
     })
+
+    // Helper function to map field errors to tabs
+    const getTabsWithErrors = () => {
+        const errors = form.formState.errors
+        const tabErrors: { [key: string]: number } = {}
+
+        // General tab fields
+        const generalFields = ['name', 'category', 'product_type', 'sale_price', 'can_be_sold', 'can_be_purchased']
+        generalFields.forEach(field => {
+            if (errors[field as keyof typeof errors]) {
+                tabErrors['general'] = (tabErrors['general'] || 0) + 1
+            }
+        })
+
+        // Manufacturing tab fields
+        const mfgFields = ['boms', 'has_bom', 'mfg_auto_finalize']
+        mfgFields.forEach(field => {
+            if (errors[field as keyof typeof errors]) {
+                tabErrors['manufacturing'] = (tabErrors['manufacturing'] || 0) + 1
+            }
+        })
+
+        // UoM tab fields
+        const uomFields = ['uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms']
+        uomFields.forEach(field => {
+            if (errors[field as keyof typeof errors]) {
+                tabErrors['uoms'] = (tabErrors['uoms'] || 0) + 1
+            }
+        })
+
+        return tabErrors
+    }
+
+    const tabErrors = getTabsWithErrors()
 
     const productType = form.watch("product_type")
 
