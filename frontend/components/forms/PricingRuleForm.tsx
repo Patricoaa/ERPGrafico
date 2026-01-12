@@ -58,31 +58,17 @@ interface PricingRuleFormProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     productId?: number
+    productName?: string
 }
 
-export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, productId }: PricingRuleFormProps) {
+export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
     const [products, setProducts] = useState<any[]>([])
     // const [categories, setCategories] = useState<any[]>([]) // Removed
     const [uoms, setUoms] = useState<any[]>([])
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: initialData ? {
-            name: initialData.name || "",
-            rule_type: initialData.rule_type || "FIXED",
-            operator: initialData.operator ?? "GE",
-            min_quantity: initialData.min_quantity !== undefined ? String(initialData.min_quantity) : "1",
-            max_quantity: initialData.max_quantity ? String(initialData.max_quantity) : null,
-            fixed_price: initialData.fixed_price ? String(initialData.fixed_price) : null,
-            discount_percentage: initialData.discount_percentage ? String(initialData.discount_percentage) : null,
-            priority: initialData.priority ?? 0,
-            active: initialData.active ?? true,
-            product: productId || initialData.product || null,
-            // category: initialData.category || null,
-            uom: initialData.uom || null,
-            start_date: initialData.start_date || null,
-            end_date: initialData.end_date || null,
-        } : {
+        defaultValues: {
             name: "",
             rule_type: "FIXED",
             min_quantity: "1",
@@ -103,6 +89,45 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
     const operator = form.watch("operator")
 
     useEffect(() => {
+        if (open) {
+            // Reset form when dialog opens
+            if (initialData) {
+                form.reset({
+                    name: initialData.name || "",
+                    rule_type: initialData.rule_type || "FIXED",
+                    operator: initialData.operator ?? "GE",
+                    min_quantity: initialData.min_quantity !== undefined ? String(initialData.min_quantity) : "1",
+                    max_quantity: initialData.max_quantity ? String(initialData.max_quantity) : null,
+                    fixed_price: initialData.fixed_price ? String(initialData.fixed_price) : null,
+                    discount_percentage: initialData.discount_percentage ? String(initialData.discount_percentage) : null,
+                    priority: initialData.priority ?? 0,
+                    active: initialData.active ?? true,
+                    product: initialData.product || productId || null,
+                    uom: initialData.uom || null,
+                    start_date: initialData.start_date || null,
+                    end_date: initialData.end_date || null,
+                })
+            } else {
+                form.reset({
+                    name: "",
+                    rule_type: "FIXED",
+                    min_quantity: "1",
+                    priority: 0,
+                    active: true,
+                    product: productId || null,
+                    uom: null,
+                    operator: "GE",
+                    max_quantity: null,
+                    fixed_price: null,
+                    discount_percentage: null,
+                    start_date: null,
+                    end_date: null,
+                })
+            }
+        }
+    }, [open, initialData, productId, form])
+
+    useEffect(() => {
         const fetchData = async () => {
             try {
                 const [prodRes, uomRes] = await Promise.all([
@@ -110,15 +135,27 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                     // api.get('/inventory/categories/'),
                     api.get('/inventory/uoms/')
                 ])
-                setProducts(prodRes.data.results || prodRes.data)
+                let fetchedProducts = prodRes.data.results || prodRes.data
+
+                // If we have a productId/Name provided (context from ProductForm), ensure it's in the list
+                if (productId && productName) {
+                    const exists = fetchedProducts.find((p: any) => p.id === productId)
+                    if (!exists) {
+                        fetchedProducts = [{ id: productId, name: productName }, ...fetchedProducts]
+                    }
+                }
+
+                setProducts(fetchedProducts)
                 // setCategories(catRes.data.results || catRes.data)
                 setUoms(uomRes.data.results || uomRes.data)
             } catch (error) {
                 console.error("Error fetching data", error)
             }
         }
-        fetchData()
-    }, [])
+        if (open) {
+            fetchData()
+        }
+    }, [open, productId, productName])
 
     async function onSubmit(values: FormValues) {
         try {
@@ -138,7 +175,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             }
             onSuccess?.()
             onOpenChange?.(false)
-        } catch (error) {
+        } catch (error: any) {
             console.error(error)
             toast.error("Error al guardar la regla")
         }

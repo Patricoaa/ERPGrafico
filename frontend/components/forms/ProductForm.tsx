@@ -467,6 +467,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 initialData={selectedPricingRule}
                 onSuccess={fetchPricingRules}
                 productId={initialData?.id}
+                productName={initialData?.name}
             />
 
             <CategoryForm
