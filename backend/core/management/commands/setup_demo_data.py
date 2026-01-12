@@ -238,13 +238,76 @@ class Command(BaseCommand):
         Product.objects.get_or_create(code="SRV-PRE-PRE", defaults={'name': "Pre-Prensa y Planchas", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 15000})
 
         # Treasury Accounts
-        TreasuryAccount.objects.get_or_create(code="CAJA01", defaults={'name': "Caja Taller", 'currency': "CLP", 'account': accounts['cash'], 'account_type': TreasuryAccount.Type.CASH})
-        TreasuryAccount.objects.get_or_create(code="BCO01", defaults={'name': "Banco Estado Empresa", 'currency': "CLP", 'account': accounts['bank'], 'account_type': TreasuryAccount.Type.BANK})
+        TreasuryAccount.objects.get_or_create(code="CAJA01", defaults={
+            'name': "Caja Taller", 
+            'currency': "CLP", 
+            'account': accounts['cash'], 
+            'account_type': TreasuryAccount.Type.CASH,
+            'allows_cash': True,
+            'allows_card': False,
+            'allows_transfer': False
+        })
+        TreasuryAccount.objects.get_or_create(code="BCO01", defaults={
+            'name': "Banco Estado Empresa", 
+            'currency': "CLP", 
+            'account': accounts['bank'], 
+            'account_type': TreasuryAccount.Type.BANK,
+            'allows_cash': False,
+            'allows_card': True,
+            'allows_transfer': True
+        })
+
+        # PRICING RULES
+        # 1. Fixed Price for specific quantity range (Price Break)
+        if not PricingRule.objects.filter(name="Descuento Volumen Tarjetas").exists():
+            PricingRule.objects.create(
+                name="Descuento Volumen Tarjetas",
+                product=p_tarjetas,
+                rule_type=PricingRule.RuleType.FIXED,
+                start_date=timezone.now().date(),
+                min_quantity=1000,
+                fixed_price=120, # Drop from 150 to 120
+                operator=PricingRule.Operator.GE
+            )
+
+        # 2. Package Price (New Type) - e.g. 500 cards for $60.000 fixed total
+        if not PricingRule.objects.filter(name="Pack Pyme 500 Tarjetas").exists():
+             PricingRule.objects.create(
+                name="Pack Pyme 500 Tarjetas",
+                product=p_tarjetas,
+                rule_type=PricingRule.RuleType.PACKAGE_FIXED,
+                start_date=timezone.now().date(),
+                min_quantity=1,
+                max_quantity=500, # Up to 500 units
+                operator=PricingRule.Operator.BT, # Between
+                fixed_price=60000, # Total price for the package
+                priority=10
+            )
+
+        # 3. Discount Percentage
+        if not PricingRule.objects.filter(name="Descuento Clientes Nuevos").exists():
+            # Apply to all products in Finished category
+            PricingRule.objects.create(
+                name="Descuento Clientes Nuevos",
+                category=cat_finished,
+                rule_type=PricingRule.RuleType.DISCOUNT_PERCENTAGE,
+                start_date=timezone.now().date(),
+                min_quantity=1,
+                discount_percentage=5.00, # 5% off
+                operator=PricingRule.Operator.GE,
+                priority=5
+            )
 
         return {
             'warehouse': wh,
+            'warehouse': wh,
             'raw_materials': [p_papel, p_tinta_c, p_tinta_m, p_tinta_y, p_tinta_k]
         }
+
+    def _create_pricing_rules(self):
+        # Moved to _create_inventory for simplicity or can be separate. 
+        # Kept inline above for access to product variables.
+        pass
 
     def _create_contracts(self, accounts, suppliers):
         cat_maint, _ = ServiceCategory.objects.get_or_create(code="MNT", defaults={'name': "Mantenimiento Máquinas", 'expense_account': accounts['expense_general'], 'payable_account': accounts['payable']})
