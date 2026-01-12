@@ -341,7 +341,7 @@ export default function PurchaseInvoicesPage() {
                                         <TableCell>
                                             <div className="flex justify-center space-x-1">
                                                 {/* Open Action Panel */}
-                                                {doc.purchase_order && (
+                                                {doc.purchase_order ? (
                                                     <Button
                                                         variant="default"
                                                         size="sm"
@@ -352,105 +352,108 @@ export default function PurchaseInvoicesPage() {
                                                         <MoreVertical className="h-4 w-4 mr-1" />
                                                         Gestionar
                                                     </Button>
+                                                ) : (
+                                                    <>
+
+                                                        {/* View Details */}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'details' })}
+                                                            title="Ver Detalle"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+
+                                                        {/* Finalize Folio (Draft only) */}
+                                                        {doc.status === 'DRAFT' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-amber-600"
+                                                                onClick={() => setCompletingDoc(doc)}
+                                                                title="Completar Folio"
+                                                            >
+                                                                <FileEdit className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+
+                                                        {/* Receive/Send Merchandise */}
+                                                        {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-orange-600"
+                                                                onClick={() => setReceivingDoc(doc)}
+                                                                title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
+                                                            >
+                                                                <Package className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+
+
+                                                        {/* Credit/Debit Note (Only for primary documents with folio) */}
+                                                        {doc.purchase_order && !isNote && doc.number && doc.status !== 'DRAFT' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-amber-600"
+                                                                onClick={() => setNotingDoc(doc)}
+                                                                title="Registrar Nota Crédito/Débito"
+                                                            >
+                                                                <FileBadge className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+
+                                                        {/* Register Payment / Refund */}
+                                                        {(doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status) && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-emerald-600"
+                                                                onClick={() => setPayingDoc(doc)}
+                                                                title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
+                                                            >
+                                                                <Banknote className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+
+                                                        {/* Payment History */}
+                                                        {((doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0) && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-emerald-600"
+                                                                onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
+                                                                title="Historial de Pagos"
+                                                            >
+                                                                <History className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+
+                                                        {doc.status === 'DRAFT' ? (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-destructive"
+                                                                onClick={() => handleDelete(doc.id)}
+                                                                title="Eliminar"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        ) : doc.status !== 'CANCELLED' ? (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-destructive hover:text-destructive"
+                                                                onClick={() => handleAnnul(doc.id)}
+                                                                title="Anular Documento"
+                                                            >
+                                                                <X className="h-4 w-4" />
+                                                            </Button>
+                                                        ) : null}
+                                                    </>
                                                 )}
-
-                                                {/* View Details */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'details' })}
-                                                    title="Ver Detalle"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-
-                                                {/* Finalize Folio (Draft only) */}
-                                                {doc.status === 'DRAFT' && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-amber-600"
-                                                        onClick={() => setCompletingDoc(doc)}
-                                                        title="Completar Folio"
-                                                    >
-                                                        <FileEdit className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-
-                                                {/* Receive/Send Merchandise */}
-                                                {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-orange-600"
-                                                        onClick={() => setReceivingDoc(doc)}
-                                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
-                                                    >
-                                                        <Package className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-
-
-                                                {/* Credit/Debit Note (Only for primary documents with folio) */}
-                                                {doc.purchase_order && !isNote && doc.number && doc.status !== 'DRAFT' && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-amber-600"
-                                                        onClick={() => setNotingDoc(doc)}
-                                                        title="Registrar Nota Crédito/Débito"
-                                                    >
-                                                        <FileBadge className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-
-                                                {/* Register Payment / Refund */}
-                                                {(doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status) && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-emerald-600"
-                                                        onClick={() => setPayingDoc(doc)}
-                                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
-                                                    >
-                                                        <Banknote className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-
-                                                {/* Payment History */}
-                                                {((doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0) && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-emerald-600"
-                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
-                                                        title="Historial de Pagos"
-                                                    >
-                                                        <History className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-
-                                                {doc.status === 'DRAFT' ? (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive"
-                                                        onClick={() => handleDelete(doc.id)}
-                                                        title="Eliminar"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                ) : doc.status !== 'CANCELLED' ? (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive hover:text-destructive"
-                                                        onClick={() => handleAnnul(doc.id)}
-                                                        title="Anular Documento"
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
-                                                ) : null}
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -461,76 +464,88 @@ export default function PurchaseInvoicesPage() {
                 </CardContent>
             </Card>
 
-            {viewingTransaction && (
-                <TransactionViewModal
-                    open={!!viewingTransaction}
-                    onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type}
-                    id={viewingTransaction.id}
-                    view={viewingTransaction.view}
-                />
-            )}
+            {
+                viewingTransaction && (
+                    <TransactionViewModal
+                        open={!!viewingTransaction}
+                        onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
+                        type={viewingTransaction.type}
+                        id={viewingTransaction.id}
+                        view={viewingTransaction.view}
+                    />
+                )
+            }
 
-            {payingDoc && (
-                <PaymentDialog
-                    open={!!payingDoc}
-                    onOpenChange={(open: boolean) => !open && setPayingDoc(null)}
-                    onConfirm={handlePayment}
-                    isPurchase={true}
-                    total={parseFloat(payingDoc.total)}
-                    pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)}
-                    hideDteFields={true}
-                    isRefund={payingDoc.dte_type === 'NOTA_CREDITO'}
-                    existingInvoice={{
-                        dte_type: payingDoc.dte_type,
-                        number: payingDoc.number,
-                        document_attachment: null
-                    }}
-                />
-            )}
+            {
+                payingDoc && (
+                    <PaymentDialog
+                        open={!!payingDoc}
+                        onOpenChange={(open: boolean) => !open && setPayingDoc(null)}
+                        onConfirm={handlePayment}
+                        isPurchase={true}
+                        total={parseFloat(payingDoc.total)}
+                        pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)}
+                        hideDteFields={true}
+                        isRefund={payingDoc.dte_type === 'NOTA_CREDITO'}
+                        existingInvoice={{
+                            dte_type: payingDoc.dte_type,
+                            number: payingDoc.number,
+                            document_attachment: null
+                        }}
+                    />
+                )
+            }
 
-            {receivingDoc && receivingDoc.purchase_order && (
-                <ReceiptModal
-                    open={!!receivingDoc}
-                    onOpenChange={(open: boolean) => !open && setReceivingDoc(null)}
-                    orderId={receivingDoc.purchase_order}
-                    onSuccess={fetchDocuments}
-                    isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'}
-                />
-            )}
+            {
+                receivingDoc && receivingDoc.purchase_order && (
+                    <ReceiptModal
+                        open={!!receivingDoc}
+                        onOpenChange={(open: boolean) => !open && setReceivingDoc(null)}
+                        orderId={receivingDoc.purchase_order}
+                        onSuccess={fetchDocuments}
+                        isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'}
+                    />
+                )
+            }
 
 
-            {notingDoc && notingDoc.purchase_order && (
-                <PurchaseNoteModal
-                    open={!!notingDoc}
-                    onOpenChange={(open: boolean) => !open && setNotingDoc(null)}
-                    orderId={notingDoc.purchase_order}
-                    orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order.toString()}
-                    invoiceId={notingDoc.id}
-                    onSuccess={fetchDocuments}
-                />
-            )}
+            {
+                notingDoc && notingDoc.purchase_order && (
+                    <PurchaseNoteModal
+                        open={!!notingDoc}
+                        onOpenChange={(open: boolean) => !open && setNotingDoc(null)}
+                        orderId={notingDoc.purchase_order}
+                        orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order.toString()}
+                        invoiceId={notingDoc.id}
+                        onSuccess={fetchDocuments}
+                    />
+                )
+            }
 
-            {completingDoc && (
-                <DocumentCompletionModal
-                    open={!!completingDoc}
-                    onOpenChange={(open: boolean) => !open && setCompletingDoc(null)}
-                    invoiceId={completingDoc.id}
-                    invoiceType={completingDoc.dte_type}
-                    onSuccess={fetchDocuments}
-                />
-            )}
+            {
+                completingDoc && (
+                    <DocumentCompletionModal
+                        open={!!completingDoc}
+                        onOpenChange={(open: boolean) => !open && setCompletingDoc(null)}
+                        invoiceId={completingDoc.id}
+                        invoiceType={completingDoc.dte_type}
+                        onSuccess={fetchDocuments}
+                    />
+                )
+            }
 
             {/* Order Action Panel */}
-            {selectedOrderId && (
-                <OrderActionPanel
-                    open={!!selectedOrderId}
-                    onOpenChange={(open) => !open && setSelectedOrderId(null)}
-                    orderId={selectedOrderId}
-                    orderType="purchase"
-                    onActionComplete={fetchDocuments}
-                />
-            )}
-        </div>
+            {
+                selectedOrderId && (
+                    <OrderActionPanel
+                        open={!!selectedOrderId}
+                        onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                        orderId={selectedOrderId}
+                        orderType="purchase"
+                        onActionComplete={fetchDocuments}
+                    />
+                )
+            }
+        </div >
     )
 }

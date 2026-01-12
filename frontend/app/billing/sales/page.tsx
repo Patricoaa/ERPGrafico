@@ -173,76 +173,81 @@ export default function SalesInvoicesPage() {
                                     <TableCell>
                                         <div className="flex space-x-1">
                                             {/* Open Action Panel */}
-                                            <Button
-                                                variant="default"
-                                                size="sm"
-                                                onClick={() => setSelectedOrderId(inv.sale_order)}
-                                                title="Gestionar Orden"
-                                                className="h-8 px-3"
-                                            >
-                                                <MoreVertical className="h-4 w-4 mr-1" />
-                                                Gestionar
-                                            </Button>
-
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                                title="Ver Detalle"
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-
-                                            {/* Historial de Pagos */}
-                                            {((inv.related_documents?.payments?.length ?? 0) > 0 || inv.status === 'PAID') && (
+                                            {inv.sale_order ? (
                                                 <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-emerald-600"
-                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'history' })}
-                                                    title="Historial de Pagos"
+                                                    variant="default"
+                                                    size="sm"
+                                                    onClick={() => setSelectedOrderId(inv.sale_order)}
+                                                    title="Gestionar Orden"
+                                                    className="h-8 px-3 w-full"
                                                 >
-                                                    <History className="h-4 w-4" />
+                                                    <MoreVertical className="h-4 w-4 mr-1" />
+                                                    Gestionar
                                                 </Button>
-                                            )}
-
-                                            {inv.status !== 'CANCELLED' && (
+                                            ) : (
                                                 <>
-                                                    {/* Registrar Pago / Reembolso */}
-                                                    {(inv.pending_amount ?? (inv.status === 'PAID' ? 0 : inv.total)) > 0 && inv.status === 'POSTED' && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="text-emerald-600"
-                                                            onClick={() => setPayingInv(inv)}
-                                                            title={inv.dte_type === 'NOTA_CREDITO' ? "Registrar Reembolso" : "Registrar Pago"}
-                                                        >
-                                                            <Banknote className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-
-                                                    {/* Registrar Nota (Solo para Facturas/Boletas, no sobre Notas) */}
-                                                    {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="text-purple-600"
-                                                            onClick={() => setNotingInvoice(inv)}
-                                                            title="Registrar Nota Crédito/Débito"
-                                                        >
-                                                            <FileBadge className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
 
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="text-destructive hover:text-destructive"
-                                                        onClick={() => handleAnnul(inv.id)}
-                                                        title="Anular Documento"
+                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                        title="Ver Detalle"
                                                     >
-                                                        <X className="h-4 w-4" />
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
+
+                                                    {/* Historial de Pagos */}
+                                                    {((inv.related_documents?.payments?.length ?? 0) > 0 || inv.status === 'PAID') && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-emerald-600"
+                                                            onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'history' })}
+                                                            title="Historial de Pagos"
+                                                        >
+                                                            <History className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+
+                                                    {inv.status !== 'CANCELLED' && (
+                                                        <>
+                                                            {/* Registrar Pago / Reembolso */}
+                                                            {(inv.pending_amount ?? (inv.status === 'PAID' ? 0 : inv.total)) > 0 && inv.status === 'POSTED' && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-emerald-600"
+                                                                    onClick={() => setPayingInv(inv)}
+                                                                    title={inv.dte_type === 'NOTA_CREDITO' ? "Registrar Reembolso" : "Registrar Pago"}
+                                                                >
+                                                                    <Banknote className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+
+                                                            {/* Registrar Nota (Solo para Facturas/Boletas, no sobre Notas) */}
+                                                            {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-purple-600"
+                                                                    onClick={() => setNotingInvoice(inv)}
+                                                                    title="Registrar Nota Crédito/Débito"
+                                                                >
+                                                                    <FileBadge className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-destructive hover:text-destructive"
+                                                                onClick={() => handleAnnul(inv.id)}
+                                                                title="Anular Documento"
+                                                            >
+                                                                <X className="h-4 w-4" />
+                                                            </Button>
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                         </div>

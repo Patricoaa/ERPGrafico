@@ -26,7 +26,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 label: 'Completar Folio',
                 icon: FileEdit,
                 requiredPermissions: ['billing.change_invoice'],
-                requiredStatus: ['DRAFT'],
+                // Removed requiredStatus to allow access whenever a draft invoice exists
                 checkAvailability: (order) => {
                     // Only show if there's a draft invoice
                     return order.invoices?.some((inv: any) => inv.status === 'DRAFT')
@@ -82,6 +82,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 label: 'Registrar Pago',
                 icon: Banknote,
                 requiredPermissions: ['treasury.add_payment'],
+                // Removed specific requiredStatus to rely on financial state
                 checkAvailability: (order) => {
                     // Show if there's a posted invoice with pending amount
                     const hasPostedInvoice = order.invoices?.some((inv: any) => inv.status === 'POSTED')

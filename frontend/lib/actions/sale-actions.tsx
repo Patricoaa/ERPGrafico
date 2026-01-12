@@ -7,7 +7,9 @@ import {
     FileBadge,
     X,
     Eye,
-    Package
+    Package,
+    Trash2,
+    FileEdit
 } from 'lucide-react'
 
 /**
@@ -20,6 +22,17 @@ export const saleOrderActions: ActionRegistry = {
         label: 'Documentos',
         icon: FileText,
         actions: [
+            {
+                id: 'complete-folio',
+                label: 'Emitir Documento',
+                icon: FileEdit,
+                requiredPermissions: ['billing.change_invoice'],
+                checkAvailability: (order) => {
+                    // Only show if there's a draft invoice
+                    return order.invoices?.some((inv: any) => inv.status === 'DRAFT')
+                },
+                badge: { type: 'warning', label: 'Pendiente' }
+            },
             {
                 id: 'view-documents',
                 label: 'Ver Documentos',
@@ -129,6 +142,17 @@ export const saleOrderActions: ActionRegistry = {
                     return order.invoices?.some((inv: any) =>
                         inv.status === 'POSTED' || inv.status === 'PAID'
                     )
+                },
+                variant: 'destructive'
+            },
+            {
+                id: 'delete-draft',
+                label: 'Eliminar Borrador',
+                icon: Trash2,
+                requiredPermissions: ['billing.delete_invoice'],
+                checkAvailability: (order) => {
+                    // Show only if there's a draft invoice
+                    return order.invoices?.some((inv: any) => inv.status === 'DRAFT')
                 },
                 variant: 'destructive'
             }
