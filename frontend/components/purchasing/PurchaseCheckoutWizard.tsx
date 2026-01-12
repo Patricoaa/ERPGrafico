@@ -250,7 +250,7 @@ export function PurchaseCheckoutWizard({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] min-h-[85vh] max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <div className="p-6 border-b flex justify-between items-center bg-muted/30">
                     <div>
                         <DialogTitle className="text-2xl">Procesar Compra</DialogTitle>

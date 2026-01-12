@@ -6,6 +6,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Truck, Package, Store, Calendar, Info, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 
 interface Step3_DeliveryProps {
     deliveryData: any
@@ -78,12 +86,15 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <RadioGroup
                     value={deliveryData.type}
                     onValueChange={(val) => {
-                        // When switching to partial, pre-select all eligible items
+                        // When switching to partial, pre-fill all eligible items with their full quantities
                         if (val === 'PARTIAL') {
-                            const eligibleIds = orderLines
+                            const partialQuantities = orderLines
                                 .filter(line => !line.requires_advanced_manufacturing)
-                                .map(line => line.id);
-                            setDeliveryData({ ...deliveryData, type: val, immediateLines: eligibleIds });
+                                .map(line => ({
+                                    productId: line.id,
+                                    dispatchedQty: line.qty || line.quantity
+                                }));
+                            setDeliveryData({ ...deliveryData, type: val, partialQuantities });
                         } else {
                             setDeliveryData({ ...deliveryData, type: val });
                         }
@@ -140,52 +151,72 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
             <div className="space-y-4 animate-in fade-in duration-300">
                 {deliveryData.type === 'PARTIAL' && (
-                    <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
-                        <h4 className="text-sm font-bold flex items-center gap-2">
-                            <Package className="h-4 w-4 text-emerald-600" />
-                            Items para Despacho Inmediato
-                        </h4>
-                        <p className="text-xs text-muted-foreground mb-2">
-                            Seleccione los productos que entregará ahora. El resto quedará programado.
-                        </p>
-                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
-                            {orderLines.map(line => {
-                                const isEligible = !line.requires_advanced_manufacturing;
-                                const isSelected = (deliveryData.immediateLines || []).includes(line.id);
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                        <div className="flex flex-col gap-1">
+                            <Label className="text-sm font-semibold">Cantidades para Despacho Inmediato</Label>
+                            <p className="text-xs text-muted-foreground">
+                                Especifique las cantidades que entregará ahora. El resto quedará programado.
+                            </p>
+                        </div>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[45%]">Producto</TableHead>
+                                        <TableHead className="w-[15%] text-right">Pendiente</TableHead>
+                                        <TableHead className="w-[20%]">A Despachar</TableHead>
+                                        <TableHead className="w-[20%]">Unidad</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {orderLines.map((line, idx) => {
+                                        const isEligible = !line.requires_advanced_manufacturing;
+                                        const pendingQty = line.qty || line.quantity;
+                                        const currentVal = (deliveryData.partialQuantities || []).find((pq: any) => pq.productId === line.id)?.dispatchedQty ?? 0;
 
-                                return (
-                                    <div key={line.id} className={cn(
-                                        "flex items-center gap-3 p-3 rounded-md border", // Increased padding
-                                        isEligible ? "bg-background" : "bg-muted opacity-70",
-                                        isSelected && "border-primary/50 bg-primary/5"
-                                    )}>
-                                        <input
-                                            type="checkbox"
-                                            className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" // Larger checkbox
-                                            checked={isSelected}
-                                            disabled={!isEligible}
-                                            onChange={(e) => {
-                                                const current = deliveryData.immediateLines || [];
-                                                if (e.target.checked) {
-                                                    setDeliveryData({ ...deliveryData, immediateLines: [...current, line.id] });
-                                                } else {
-                                                    setDeliveryData({ ...deliveryData, immediateLines: current.filter((id: number) => id !== line.id) });
-                                                }
-                                            }}
-                                        />
-                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                            {/* Stronger visual hierarchy */}
-                                            <p className="font-bold text-sm text-foreground truncate">{line.product_name || line.description}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                <span className="font-semibold text-foreground">{line.qty || line.quantity}</span> {line.uom_name}
-                                            </p>
-                                        </div>
-                                        {!isEligible && (
-                                            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded font-medium">Producción</span>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                                        return (
+                                            <TableRow key={line.id} className={!isEligible ? "bg-muted/30 opacity-70" : ""}>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium">{line.product_name || line.description}</span>
+                                                        {!isEligible && (
+                                                            <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Requiere Producción</span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right font-semibold">
+                                                    {pendingQty.toLocaleString('es-CL')}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        max={pendingQty}
+                                                        value={currentVal}
+                                                        disabled={!isEligible}
+                                                        onChange={(e) => {
+                                                            const val = parseFloat(e.target.value) || 0;
+                                                            const pqs = [...(deliveryData.partialQuantities || [])];
+                                                            const existingIdx = pqs.findIndex((pq: any) => pq.productId === line.id);
+                                                            if (existingIdx >= 0) {
+                                                                pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
+                                                            } else {
+                                                                pqs.push({ productId: line.id, dispatchedQty: val });
+                                                            }
+                                                            setDeliveryData({ ...deliveryData, partialQuantities: pqs });
+                                                        }}
+                                                        className="h-8"
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="text-sm text-muted-foreground font-medium">
+                                                    {line.uom_name || line.uom}
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
                         </div>
                     </div>
                 )}

@@ -193,6 +193,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                     qty: line.quantity,
                     quantity: line.quantity,
                     uom: line.uom,
+                    uom_name: uoms.find(u => u.id.toString() === line.uom)?.name,
                     unit_cost: line.unit_cost,
                     tax_rate: line.tax_rate
                 }

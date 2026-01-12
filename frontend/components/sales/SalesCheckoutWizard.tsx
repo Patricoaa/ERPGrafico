@@ -216,8 +216,11 @@ export function SalesCheckoutWizard({
             if (deliveryData.date) formData.append('delivery_date', deliveryData.date)
             if (deliveryData.notes) formData.append('delivery_notes', deliveryData.notes)
 
-            if (deliveryData.type === 'PARTIAL' && deliveryData.immediateLines) {
-                formData.append('immediate_lines', JSON.stringify(deliveryData.immediateLines))
+            if (deliveryData.type === 'PARTIAL' && deliveryData.partialQuantities) {
+                formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map((pq: any) => ({
+                    id: pq.productId,
+                    quantity: pq.dispatchedQty
+                }))))
             }
 
             await api.post('/billing/invoices/pos_checkout/', formData, {
@@ -240,7 +243,7 @@ export function SalesCheckoutWizard({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] min-h-[85vh] max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <div className="p-6 border-b flex justify-between items-center bg-muted/30">
                     <div>
                         <DialogTitle className="text-2xl">Cerrar Venta</DialogTitle>

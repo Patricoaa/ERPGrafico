@@ -131,8 +131,8 @@ export function Step3_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                                 className="w-full"
                                             />
                                         </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">
-                                            {line.uom}
+                                        <TableCell className="text-sm text-muted-foreground font-medium">
+                                            {line.uom_name || line.uom}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -173,10 +173,16 @@ export function Step3_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {receiptData.type === 'DEFERRED' && (
-                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <p className="text-sm text-amber-800 dark:text-amber-200">
-                        <strong>Nota:</strong> La mercancía no será recibida en inventario. Podrá registrar la recepción más tarde desde la lista de órdenes de compra.
-                    </p>
+                <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400">
+                    <div className="p-2 rounded-lg bg-background border border-amber-500/20">
+                        <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold uppercase tracking-wider">Nota de Recepción Diferida</p>
+                        <p className="text-sm">
+                            La mercancía no será recibida en inventario. Podrá registrar la recepción más tarde desde la lista de órdenes de compra.
+                        </p>
+                    </div>
                 </div>
             )}
         </div>

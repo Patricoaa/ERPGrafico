@@ -303,12 +303,20 @@ class BillingService:
             else:
                 # Prepare quantities for immediate lines
                 line_quantities = {}
-                # immediate_lines is expected to be a list of SaleLine IDs
-                for line_id in immediate_lines:
+                # immediate_lines can be a list of IDs or a list of {'id': id, 'quantity': qty}
+                for item in immediate_lines:
                     try:
-                        line = order.lines.get(id=line_id)
-                        line_quantities[line.id] = line.quantity_pending
-                    except SaleOrder.DoesNotExist:
+                        if isinstance(item, dict) and 'id' in item:
+                            line_id = item['id']
+                            qty = Decimal(str(item.get('quantity', 0)))
+                        else:
+                            line_id = item
+                            line = order.lines.get(id=line_id)
+                            qty = line.quantity_pending
+                        
+                        if qty > 0:
+                            line_quantities[line_id] = qty
+                    except (SaleOrder.DoesNotExist, ValueError, TypeError):
                         continue
                 
                 if line_quantities:
