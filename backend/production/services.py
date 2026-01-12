@@ -256,7 +256,11 @@ class WorkOrderService:
             'contact_tax_id': mfg_data.get('contact', {}).get('tax_id') if mfg_data.get('contact') else '',
             'folio_enabled': mfg_data.get('folio_enabled', False),
             'folio_start': mfg_data.get('folio_start', ''),
-            'design_attachments': [f['name'] if isinstance(f, dict) else str(f) for f in mfg_data.get('design_files', [])],
+            'design_attachments': [
+                f.get('name') if isinstance(f, dict) else str(f) 
+                for f in mfg_data.get('design_files', []) 
+                if (isinstance(f, dict) and f.get('name')) or (not isinstance(f, dict) and str(f))
+            ],
             # Map specs
             'prepress_specs': mfg_data.get('specifications', {}).get('prepress', ''),
             'press_specs': mfg_data.get('specifications', {}).get('press', ''),

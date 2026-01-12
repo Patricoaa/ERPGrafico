@@ -12,7 +12,7 @@ import {
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { ProductForm } from "@/components/forms/ProductForm"
-import { Pencil, Trash2, ChevronRight, ChevronDown, Plus } from "lucide-react"
+import { Pencil, Archive, ChevronRight, ChevronDown, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -216,7 +216,7 @@ export function ProductList() {
                                             onClick={() => handleArchive(product)}
                                             title={product.active ? "Archivar" : "Restaurar"}
                                         >
-                                            {product.active ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                            {product.active ? <Archive className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                                         </Button>
                                     </div>
                                 </TableCell>

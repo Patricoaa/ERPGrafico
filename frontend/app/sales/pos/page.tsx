@@ -87,10 +87,12 @@ export default function POSPage() {
     // Advanced Manufacturing State
     const [advMfgDialogOpen, setAdvMfgDialogOpen] = useState(false)
     const [pendingProduct, setPendingProduct] = useState<Product | null>(null)
+    const [isEditingMode, setIsEditingMode] = useState(false)
 
     const [pricingRules, setPricingRules] = useState<any[]>([])
 
     useEffect(() => {
+        // ... (fetchData implementation unchanged)
         const fetchData = async () => {
             setLoading(true)
 
@@ -136,6 +138,7 @@ export default function POSPage() {
         fetchData()
     }, [])
 
+    // ... (filteredProducts and getEffectivePrice unchanged)
     const filteredProducts = products.filter(p => {
         const matchesSearch = (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.code.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -191,6 +194,7 @@ export default function POSPage() {
 
     const addToCart = (product: Product, mfgData?: any) => {
         if (product.requires_advanced_manufacturing && !mfgData) {
+            setIsEditingMode(false)
             setPendingProduct(product)
             setAdvMfgDialogOpen(true)
             return
@@ -506,6 +510,7 @@ export default function POSPage() {
                                                                     size="icon"
                                                                     className={cn("h-8 w-8", item.manufacturing_data ? "text-primary" : "text-muted-foreground")}
                                                                     onClick={() => {
+                                                                        setIsEditingMode(true)
                                                                         setPendingProduct(item as Product)
                                                                         setAdvMfgDialogOpen(true)
                                                                     }}
@@ -582,8 +587,18 @@ export default function POSPage() {
                 product={pendingProduct}
                 onConfirm={(data) => {
                     if (pendingProduct) {
-                        addToCart(pendingProduct, data)
+                        if (isEditingMode) {
+                            // Edit mode: Update existing item without adding quantity
+                            setItems(items.map(i => i.id === pendingProduct.id
+                                ? { ...i, manufacturing_data: data }
+                                : i
+                            ))
+                        } else {
+                            // Add mode: Add item or increment quantity
+                            addToCart(pendingProduct, data)
+                        }
                         setPendingProduct(null)
+                        setIsEditingMode(false)
                     }
                 }}
             />
