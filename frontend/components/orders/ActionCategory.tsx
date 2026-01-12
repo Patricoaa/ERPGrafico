@@ -6,12 +6,13 @@ import { ActionButton } from "./ActionButton"
 import { Action, ActionCategory as CategoryType } from "@/types/actions"
 import { getActionBadgeCount } from "@/lib/actions/utils"
 import { DocumentCompletionModal } from "../shared/DocumentCompletionModal"
-import { DeliveryModal } from "../shared/DeliveryModal"
-import { PaymentHistoryModal } from "../shared/PaymentHistoryModal"
-import { PaymentModal } from "../shared/PaymentModal"
+import { DeliveryModal } from "../sales/DeliveryModal"
+import { ReceiptModal } from "../purchasing/ReceiptModal"
+import { PaymentHistoryModal } from "./PaymentHistoryModal"
+import { PaymentDialog as PaymentModal } from "../shared/PaymentDialog"
 import { PaymentReferenceModal } from "../shared/PaymentReferenceModal"
-import { SaleNoteModal } from "../shared/SaleNoteModal"
-import { PurchaseNoteModal } from "../shared/PurchaseNoteModal"
+import { SaleNoteModal } from "../sales/SaleNoteModal"
+import { PurchaseNoteModal } from "../purchasing/PurchaseNoteModal"
 import { toast } from "sonner"
 import api from "@/lib/api"
 
@@ -32,6 +33,10 @@ export function ActionCategory({
 }: ActionCategoryProps) {
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
+
+    // Detemine order type helper
+    const isSale = !!order.customer_name || !!order.customer
+    const isPurchase = !!order.supplier_name || !!order.supplier
 
     const handleActionClick = (actionId: string) => {
         switch (actionId) {
@@ -111,13 +116,13 @@ export function ActionCategory({
         }
     }
 
-    const handlePaymentAction = async (data: any) => {
+    const handlePaymentConfirm = async (data: any) => {
         setIsProcessing(true)
         try {
             await api.post('/treasury/payments/', {
                 ...data,
-                [order.customer ? 'sale_order' : 'purchase_order']: order.id,
-                partner: (order.customer || order.supplier)?.id
+                [isSale ? 'sale_order' : 'purchase_order']: order.id,
+                partner: (order.customer || order.supplier)?.id || (isSale ? order.customer_id : order.supplier_id)
             })
             toast.success("Pago registrado correctamente")
             closeModal()
@@ -130,7 +135,7 @@ export function ActionCategory({
         }
     }
 
-    const filteredActions = category.actions.filter(action => {
+    const filteredActions = category?.actions.filter(action => {
         if (action.requiredPermissions && !action.requiredPermissions.some(p => userPermissions.includes(p))) {
             return false
         }
@@ -138,7 +143,7 @@ export function ActionCategory({
             return false
         }
         return true
-    })
+    }) || []
 
     if (filteredActions.length === 0) return null
 
@@ -160,7 +165,7 @@ export function ActionCategory({
                 </div>
             )}
 
-            <div className={layout === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-2" : "space-y-2"}>
+            <div className={layout === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-2"}>
                 {filteredActions.map((action) => (
                     <ActionButton
                         key={action.id}
@@ -185,13 +190,21 @@ export function ActionCategory({
             )}
 
             {activeModal === 'register-delivery' && (
-                <DeliveryModal
-                    open={true}
-                    onOpenChange={closeModal}
-                    type={order.customer_name ? 'sale' : 'purchase'}
-                    order={order}
-                    onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                />
+                isSale ? (
+                    <DeliveryModal
+                        open={true}
+                        onOpenChange={closeModal}
+                        orderId={order.id}
+                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                    />
+                ) : (
+                    <ReceiptModal
+                        open={true}
+                        onOpenChange={closeModal}
+                        orderId={order.id}
+                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                    />
+                )
             )}
 
             {activeModal === 'view-payments' && (
@@ -206,9 +219,10 @@ export function ActionCategory({
                 <PaymentModal
                     open={true}
                     onOpenChange={closeModal}
-                    order={order}
-                    type={order.customer_name ? 'sale' : 'purchase'}
-                    onSuccess={handlePaymentAction}
+                    total={order.total}
+                    pendingAmount={order.pending_amount ?? order.total}
+                    onConfirm={handlePaymentConfirm}
+                    isPurchase={isPurchase}
                 />
             )}
 
@@ -216,46 +230,54 @@ export function ActionCategory({
                 <PaymentReferenceModal
                     open={true}
                     onOpenChange={closeModal}
-                    order={order}
+                    payments={order.related_documents?.payments || order.serialized_payments || []}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}
 
             {activeModal === 'credit-note' && (
-                order.customer_name ? (
+                isSale ? (
                     <SaleNoteModal
                         open={true}
                         onOpenChange={closeModal}
-                        invoice={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')}
-                        type="CREDIT"
+                        orderId={order.id}
+                        orderNumber={order.number}
+                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')?.id}
+                        initialType="NOTA_CREDITO"
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                     />
                 ) : (
                     <PurchaseNoteModal
                         open={true}
                         onOpenChange={closeModal}
-                        invoice={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')}
-                        type="CREDIT"
+                        orderId={order.id}
+                        orderNumber={order.number}
+                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')?.id}
+                        initialType="NOTA_CREDITO"
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                     />
                 )
             )}
 
             {activeModal === 'debit-note' && (
-                order.customer_name ? (
+                isSale ? (
                     <SaleNoteModal
                         open={true}
                         onOpenChange={closeModal}
-                        invoice={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')}
-                        type="DEBIT"
+                        orderId={order.id}
+                        orderNumber={order.number}
+                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')?.id}
+                        initialType="NOTA_DEBITO"
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                     />
                 ) : (
                     <PurchaseNoteModal
                         open={true}
                         onOpenChange={closeModal}
-                        invoice={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')}
-                        type="DEBIT"
+                        orderId={order.id}
+                        orderNumber={order.number}
+                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')?.id}
+                        initialType="NOTA_DEBITO"
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                     />
                 )

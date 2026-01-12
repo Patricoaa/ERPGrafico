@@ -107,7 +107,7 @@ export function OrderCommandCenter({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-sm border-border/50">
+            <DialogContent className="sm:max-w-[95vw] lg:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-background/95 backdrop-blur-sm border-border/50">
                 <DialogHeader className="pb-4 border-b">
                     <div className="flex items-center justify-between">
                         <div>
@@ -128,45 +128,44 @@ export function OrderCommandCenter({
                                 </span>
                             </DialogDescription>
                         </div>
-                        <div className="text-right">
-                            <p className="text-xs text-muted-foreground uppercase font-semibold">Total Orden</p>
-                            <p className="text-xl font-bold text-primary">{formatCurrency(order.total)}</p>
+                        <div className="text-right bg-primary/5 p-4 rounded-xl border border-primary/10">
+                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1 opacity-70">Total Orden</p>
+                            <p className="text-3xl font-black text-primary tracking-tighter">{formatCurrency(order.total)}</p>
                         </div>
                     </div>
                 </DialogHeader>
 
-                {/* Timeline Stepper */}
-                <div className="py-8 px-4">
-                    <div className="relative flex justify-between">
-                        {/* Connecting Line */}
-                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
-                        <div
-                            className="absolute top-1/2 left-0 h-0.5 bg-primary transition-all duration-500 -translate-y-1/2 z-0"
-                            style={{
-                                width: `${(steps.filter(s => s.completed).length - 1) * 33.33}%`
-                            }}
-                        />
+                {/* Timeline Stepper (Independent States) */}
+                <div className="py-12 px-12 bg-muted/20 rounded-2xl mt-6 border border-border/50">
+                    <div className="relative flex justify-between max-w-5xl mx-auto">
+                        {/* Connecting Line (Muted Background) */}
+                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted/50 -translate-y-1/2 z-0" />
 
                         {steps.map((step, idx) => (
-                            <div key={idx} className="relative z-10 flex flex-col items-center gap-2 bg-background/50 px-2">
+                            <div key={idx} className="relative z-10 flex flex-col items-center gap-2 bg-background/95 px-4">
                                 <div className={`
-                                    h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all duration-300
+                                    h-12 w-12 rounded-full flex items-center justify-center border-2 transition-all duration-300
                                     ${step.completed ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20' :
                                         step.active ? 'bg-background border-primary text-primary animate-pulse' :
                                             'bg-background border-muted text-muted-foreground'}
                                 `}>
-                                    <step.icon className="h-5 w-5" />
+                                    <step.icon className="h-6 w-6" />
                                 </div>
-                                <span className={`text-xs font-semibold ${step.completed || step.active ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                <span className={`text-[11px] font-bold uppercase tracking-wider ${step.completed || step.active ? 'text-primary' : 'text-muted-foreground'}`}>
                                     {step.label}
                                 </span>
+                                {step.completed && (
+                                    <Badge variant="success" className="h-5 px-2 text-[9px] font-black animate-in fade-in zoom-in duration-500 shadow-sm border-white/20">
+                                        LISTO
+                                    </Badge>
+                                )}
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Phase Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8 mt-6">
                     {/* Phase 1: Logistics */}
                     <PhaseCard
                         title="1. Logística"
@@ -308,7 +307,7 @@ export function OrderCommandCenter({
 
 function PhaseCard({ title, icon: Icon, children, status, badgeType }: any) {
     return (
-        <div className="p-5 rounded-xl border border-border/50 bg-card hover:bg-accent/5 transition-colors group">
+        <div className="p-8 rounded-2xl border border-border/50 bg-card hover:bg-accent/5 transition-all group shadow-sm">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">

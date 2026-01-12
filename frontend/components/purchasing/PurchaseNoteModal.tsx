@@ -31,6 +31,7 @@ interface PurchaseNoteModalProps {
     orderNumber: string
     invoiceId?: number
     onSuccess?: () => void
+    initialType?: "NOTA_CREDITO" | "NOTA_DEBITO"
 }
 
 export function PurchaseNoteModal({
@@ -39,9 +40,10 @@ export function PurchaseNoteModal({
     orderId,
     orderNumber,
     invoiceId,
-    onSuccess
+    onSuccess,
+    initialType = "NOTA_CREDITO"
 }: PurchaseNoteModalProps) {
-    const [noteType, setNoteType] = useState("NOTA_CREDITO")
+    const [noteType, setNoteType] = useState(initialType)
     const [documentNumber, setDocumentNumber] = useState("")
     const [lines, setLines] = useState<any[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
@@ -150,7 +152,7 @@ export function PurchaseNoteModal({
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label className="text-[11px] font-bold uppercase text-muted-foreground">Tipo de Nota</Label>
-                            <Select value={noteType} onValueChange={setNoteType}>
+                            <Select value={noteType} onValueChange={(val: any) => setNoteType(val)}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
