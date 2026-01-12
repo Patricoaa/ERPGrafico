@@ -65,7 +65,7 @@ export function getActionBadgeCount(action: Action, order: any): number | undefi
         case 'view-deliveries':
             return order.related_documents?.deliveries?.length
         case 'view-documents':
-            return order.invoices?.length
+            return order.related_documents?.invoices?.length || order.invoices?.length
         default:
             return action.badge?.count
     }

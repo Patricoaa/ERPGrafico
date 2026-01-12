@@ -15,6 +15,7 @@ import { PurchaseNoteModal } from '@/components/purchasing/PurchaseNoteModal'
 import { SaleNoteModal } from '@/components/sales/SaleNoteModal'
 import { TransactionViewModal } from '@/components/shared/TransactionViewModal'
 import { DeliveryModal } from '@/components/sales/DeliveryModal'
+import { PaymentReferenceModal } from '@/components/shared/PaymentReferenceModal'
 import { toast } from 'sonner'
 import api from '@/lib/api'
 
@@ -57,7 +58,8 @@ export function ActionCategory({
     }
 
     const handleAnnulDocument = async () => {
-        const invoice = order.invoices?.find((inv: any) =>
+        const invoices = order.related_documents?.invoices || order.invoices
+        const invoice = invoices?.find((inv: any) =>
             inv.status === 'POSTED' || inv.status === 'PAID'
         )
 
@@ -98,7 +100,8 @@ export function ActionCategory({
     }
 
     const handleDeleteDraft = async () => {
-        const draftInvoice = order.invoices?.find((inv: any) => inv.status === 'DRAFT')
+        const invoices = order.related_documents?.invoices || order.invoices
+        const draftInvoice = invoices?.find((inv: any) => inv.status === 'DRAFT')
 
         if (!draftInvoice) {
             toast.error('No se encontró un borrador para eliminar')
@@ -133,7 +136,8 @@ export function ActionCategory({
     }
 
     const handlePayment = async (data: any) => {
-        const invoice = order.invoices?.find((inv: any) => inv.status === 'POSTED')
+        const invoices = order.related_documents?.invoices || order.invoices
+        const invoice = invoices?.find((inv: any) => inv.status === 'POSTED' || inv.status === 'PAID')
         if (!invoice) return
 
         try {
@@ -219,12 +223,12 @@ export function ActionCategory({
             </Card>
 
             {/* Modals */}
-            {activeModal === 'complete-folio' && order.invoices?.[0] && (
+            {activeModal === 'complete-folio' && (
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={order.invoices.find((inv: any) => inv.status === 'DRAFT')?.id}
-                    invoiceType={order.invoices.find((inv: any) => inv.status === 'DRAFT')?.dte_type}
+                    invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'DRAFT')?.id}
+                    invoiceType={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'DRAFT')?.dte_type}
                     onSuccess={handleSuccess}
                 />
             )}
@@ -256,12 +260,21 @@ export function ActionCategory({
                     total={parseFloat(order.total)}
                     pendingAmount={order.pending_amount ?? parseFloat(order.total)}
                     hideDteFields={true}
-                    isRefund={order.invoices?.some((inv: any) => inv.dte_type === 'NOTA_CREDITO')}
-                    existingInvoice={order.invoices?.find((inv: any) => inv.status === 'POSTED') ? {
-                        dte_type: order.invoices.find((inv: any) => inv.status === 'POSTED').dte_type,
-                        number: order.invoices.find((inv: any) => inv.status === 'POSTED').number,
+                    isRefund={(order.related_documents?.invoices || order.invoices)?.some((inv: any) => inv.dte_type === 'NOTA_CREDITO')}
+                    existingInvoice={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'POSTED' || inv.status === 'PAID') ? {
+                        dte_type: (order.related_documents?.invoices || order.invoices).find((inv: any) => inv.status === 'POSTED' || inv.status === 'PAID').dte_type,
+                        number: (order.related_documents?.invoices || order.invoices).find((inv: any) => inv.status === 'POSTED' || inv.status === 'PAID').number,
                         document_attachment: null
                     } : undefined}
+                />
+            )}
+
+            {activeModal === 'register-payment-ref' && (
+                <PaymentReferenceModal
+                    open={true}
+                    onOpenChange={closeModal}
+                    payments={order.serialized_payments || order.related_documents?.payments}
+                    onSuccess={handleSuccess}
                 />
             )}
 
@@ -272,7 +285,7 @@ export function ActionCategory({
                         onOpenChange={closeModal}
                         orderId={order.id}
                         orderNumber={order.number}
-                        invoiceId={order.invoices?.find((inv: any) =>
+                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) =>
                             inv.status !== 'DRAFT' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)
                         )?.id}
                         onSuccess={handleSuccess}
@@ -283,7 +296,7 @@ export function ActionCategory({
                         onOpenChange={closeModal}
                         orderId={order.id}
                         orderNumber={order.number}
-                        invoiceId={order.invoices?.find((inv: any) =>
+                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) =>
                             inv.status !== 'DRAFT' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)
                         )?.id}
                         onSuccess={handleSuccess}

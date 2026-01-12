@@ -8,7 +8,8 @@ import {
     X,
     Eye,
     FileEdit,
-    Trash2
+    Trash2,
+    Hash
 } from 'lucide-react'
 
 /**
@@ -29,7 +30,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 // Removed requiredStatus to allow access whenever a draft invoice exists
                 checkAvailability: (order) => {
                     // Only show if there's a draft invoice
-                    return order.invoices?.some((inv: any) => inv.status === 'DRAFT')
+                    return order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT')
                 },
                 badge: { type: 'warning', label: 'Pendiente' }
             },
@@ -85,7 +86,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 // Removed specific requiredStatus to rely on financial state
                 checkAvailability: (order) => {
                     // Show if there's a posted invoice with pending amount
-                    const hasPostedInvoice = order.invoices?.some((inv: any) => inv.status === 'POSTED')
+                    const hasPostedInvoice = order.related_documents?.invoices?.some((inv: any) => inv.status === 'POSTED')
                     const hasPendingAmount = (order.pending_amount ?? 0) > 0
                     return hasPostedInvoice && hasPendingAmount
                 },
@@ -101,6 +102,20 @@ export const purchaseOrderActions: ActionRegistry = {
                         order.serialized_payments?.length || 0
                     return paymentsCount > 0
                 }
+            },
+            {
+                id: 'register-payment-ref',
+                label: 'Registrar N° Operación',
+                icon: Hash,
+                requiredPermissions: ['treasury.change_payment'],
+                checkAvailability: (order) => {
+                    // Show if any payment lacks transaction number but requires it
+                    return order.serialized_payments?.some((p: any) =>
+                        (p.payment_method === 'TRANSFER' || p.payment_method === 'CARD') &&
+                        (p.is_pending_registration || !p.transaction_number)
+                    )
+                },
+                badge: { type: 'warning', label: 'Pendiente' }
             }
         ]
     },
@@ -118,7 +133,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 excludedStatus: ['DRAFT', 'CANCELLED'],
                 checkAvailability: (order) => {
                     // Show if there's a posted invoice that's not a note
-                    const hasValidInvoice = order.invoices?.some((inv: any) =>
+                    const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
                         !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)
                     )
@@ -140,7 +155,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['billing.delete_invoice'],
                 checkAvailability: (order) => {
                     // Show if there's a posted invoice that's not cancelled
-                    return order.invoices?.some((inv: any) =>
+                    return order.related_documents?.invoices?.some((inv: any) =>
                         inv.status === 'POSTED' || inv.status === 'PAID'
                     )
                 },
@@ -153,7 +168,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['billing.delete_invoice'],
                 checkAvailability: (order) => {
                     // Show only if there's a draft invoice
-                    return order.invoices?.some((inv: any) => inv.status === 'DRAFT')
+                    return order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT')
                 },
                 variant: 'destructive'
             }
