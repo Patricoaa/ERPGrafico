@@ -84,21 +84,7 @@ export function UoMSelector({
         return `${quantity} ${selectedUom.name} = ${formattedConverted} ${baseUom.name} (stock)`
     }, [showConversionHint, product, value, quantity, uoms])
 
-    // Get context description for tooltip
-    const contextDescription = useMemo(() => {
-        switch (context) {
-            case 'sale':
-                return 'Solo unidades permitidas para venta (base + configuradas)'
-            case 'purchase':
-                return 'Cualquier unidad de la misma categoría (flexible para proveedores)'
-            case 'bom':
-                return 'Cualquier unidad de la misma categoría (flexible para componentes)'
-            case 'stock':
-                return 'Solo unidad base del producto'
-            default:
-                return ''
-        }
-    }, [context])
+
 
     if (filteredUoMs.length === 0) {
         return (
@@ -115,18 +101,7 @@ export function UoMSelector({
         <div className="space-y-2">
             <div className="flex items-center gap-2">
                 <Label>{label}</Label>
-                {contextDescription && (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p className="max-w-xs">{contextDescription}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                )}
+
             </div>
 
             <Select onValueChange={onChange} value={value} disabled={disabled || !product}>
