@@ -46,6 +46,7 @@ export default function WorkOrdersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
     const [viewMode, setViewMode] = useState<string>("kanban")
+    const [requestedStage, setRequestedStage] = useState<string | undefined>(undefined)
 
     const fetchOrders = async () => {
         setLoading(true)
@@ -73,15 +74,9 @@ export default function WorkOrdersPage() {
     }
 
     const handleKanbanTransition = async (orderId: number, nextStage: string) => {
-        try {
-            await api.post(`/production/orders/${orderId}/transition/`, {
-                next_stage: nextStage
-            })
-            fetchOrders()
-            toast.success("OT movida de etapa")
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "No se pudo cambiar la etapa")
-        }
+        // Instead of auto-transitioning, open the wizard to validate/confirm details
+        setActiveWizardId(orderId)
+        setRequestedStage(nextStage)
     }
 
     useEffect(() => {
@@ -152,8 +147,14 @@ export default function WorkOrdersPage() {
                         <WorkOrderWizard
                             orderId={activeWizardId}
                             open={!!activeWizardId}
-                            onOpenChange={(open) => !open && setActiveWizardId(null)}
+                            onOpenChange={(open) => {
+                                if (!open) {
+                                    setActiveWizardId(null)
+                                    setRequestedStage(undefined)
+                                }
+                            }}
                             onSuccess={fetchOrders}
+                            targetStage={requestedStage}
                         />
                     )}
                 </div>

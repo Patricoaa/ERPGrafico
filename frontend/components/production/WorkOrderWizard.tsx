@@ -27,7 +27,8 @@ import {
     Download,
     Check,
     X,
-    Pencil
+    Pencil,
+    User
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -41,6 +42,7 @@ interface WorkOrderWizardProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
+    targetStage?: string // New prop
 }
 
 const BASE_STAGES = [
@@ -52,7 +54,7 @@ const BASE_STAGES = [
     { id: 'FINISHED', label: 'Finalizada', icon: CheckCircle2, alwaysShow: true },
 ]
 
-export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: WorkOrderWizardProps) {
+export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, targetStage }: WorkOrderWizardProps) {
     const [order, setOrder] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [transitioning, setTransitioning] = useState(false)
@@ -77,8 +79,20 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
             const response = await api.get(`/production/orders/${orderId}/`)
             setOrder(response.data)
 
-            // Find current stage index in filtered stages
+            // Calculate steps
             const filteredStages = getFilteredStages(response.data)
+
+            // If targetStage provided, try to find its index to set as current step?
+            // Actually, we usually want to show the CURRENT stage of the order, 
+            // but if the user dragged to a FUTURE stage, we want to allow them to confirm transition TO that stage.
+            // But WorkOrderWizard logic assumes we are AT current_stage.
+            // If we are transitioning, we are basically previewing the "Next" action.
+
+            // For now, let's stick to showing current stage, but maybe alert user or auto-advance if logical.
+            // The simplest "Kanban drop -> Modal" flow is just opening the modal to manage the current state, 
+            // and the user manually clicks "Next Stage" (which matches the drag intent).
+            // BUT user wants to understand which stages can be selected.
+
             const index = filteredStages.findIndex(s => s.id === response.data.current_stage)
             setCurrentStep(index !== -1 ? index : 0)
         } catch (error) {
@@ -110,6 +124,25 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
     const STAGES = getFilteredStages(order)
 
     const handleTransition = async (nextStageId: string, data: any = {}) => {
+        // Validation: Materials
+        if (order.current_stage === 'MATERIAL_ASSIGNMENT' && (!order.materials || order.materials.length === 0)) {
+            toast.error("Debe asignar al menos un componente antes de continuar.")
+            return
+        }
+
+        // Validation: Approvals (Prepress)
+        if (order.current_stage === 'PREPRESS' && nextStageId !== 'PREPRESS') {
+            // Only enforced when moving forward (not backward)
+            const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
+            const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
+            if (nextIndex > currentIndex) {
+                if (!clientApproved || !supervisorApproved) {
+                    toast.error("Debe completar todas las aprobaciones requeridas.")
+                    return
+                }
+            }
+        }
+
         setTransitioning(true)
         try {
             await api.post(`/production/orders/${orderId}/transition/`, {
@@ -452,9 +485,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                                         <Button
                                                             size="sm"
                                                             variant={clientApproved ? "default" : "outline"}
+                                                            className={cn("transition-all duration-300", clientApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
                                                             onClick={() => setClientApproved(!clientApproved)}
                                                         >
-                                                            {clientApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                            {clientApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
                                                             {clientApproved ? "Aprobado" : "Aprobar"}
                                                         </Button>
                                                     </div>
@@ -480,9 +514,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                                         <Button
                                                             size="sm"
                                                             variant={supervisorApproved ? "default" : "outline"}
+                                                            className={cn("transition-all duration-300", supervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
                                                             onClick={() => setSupervisorApproved(!supervisorApproved)}
                                                         >
-                                                            {supervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                            {supervisorApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
                                                             {supervisorApproved ? "Aprobado" : "Aprobar"}
                                                         </Button>
                                                     </div>
@@ -499,7 +534,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                     <div className="max-w-md mx-auto space-y-2">
                                         <p className="font-semibold">Confirmación de Impresión</p>
                                         <p className="text-sm text-muted-foreground leading-relaxed">
-                                            Al pasar a la siguiente etapa, se confirma que el trabajo ha pasado por la prensa y se están generando las pliegos/hojas base.
+                                            Al pasar a la siguiente etapa, se confirma que el trabajo ha pasado por la prensa y se están generando el producto final.
                                         </p>
                                     </div>
                                 </div>
@@ -568,10 +603,23 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                     <div className="w-80 border-l bg-muted/5 p-4 space-y-4 overflow-y-auto hidden lg:block">
                         <div className="space-y-2">
                             <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
-                            <div className="p-3 bg-background rounded-lg border">
+                            <div className="p-3 bg-background rounded-lg border space-y-2">
                                 <p className="font-semibold text-sm">{productName}</p>
+
+                                {order?.sale_customer_name && (
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground border-t pt-2">
+                                        <User className="h-3 w-3" />
+                                        <div>
+                                            <p className="font-medium">{order.sale_customer_name}</p>
+                                            <p>{order.sale_customer_rut}</p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {stageData.product_description && (
-                                    <p className="text-xs text-muted-foreground mt-1">{stageData.product_description}</p>
+                                    <div className="border-t pt-2">
+                                        <p className="text-xs text-muted-foreground italic">{stageData.product_description}</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
