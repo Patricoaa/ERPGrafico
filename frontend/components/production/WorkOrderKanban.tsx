@@ -32,28 +32,6 @@ const STAGES = [
 ]
 
 export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps) {
-    const [draggedOrderId, setDraggedOrderId] = useState<number | null>(null)
-
-    const handleDragStart = (e: React.DragEvent, id: number) => {
-        setDraggedOrderId(id)
-        e.dataTransfer.setData("orderId", id.toString())
-        e.dataTransfer.effectAllowed = "move"
-    }
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault()
-        e.dataTransfer.dropEffect = "move"
-    }
-
-    const handleDrop = (e: React.DragEvent, nextStage: string) => {
-        e.preventDefault()
-        const id = parseInt(e.dataTransfer.getData("orderId"))
-        if (id) {
-            onTransition(id, nextStage)
-        }
-        setDraggedOrderId(null)
-    }
-
     return (
         <div className="flex space-x-4 overflow-x-auto pb-4 h-[calc(100vh-250px)]">
             {STAGES.map((stage) => {
@@ -67,8 +45,6 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                             "flex-shrink-0 w-80 rounded-xl flex flex-col border shadow-sm",
                             stage.color
                         )}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, stage.id)}
                     >
                         <div className="p-4 border-b flex items-center justify-between">
                             <div className="flex items-center space-x-2">
@@ -82,13 +58,11 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                             {stageOrders.map((order) => (
                                 <Card
                                     key={order.id}
-                                    draggable
-                                    onDragStart={(e) => handleDragStart(e, order.id)}
+                                    onClick={() => onManage(order.id)}
                                     className={cn(
-                                        "cursor-grab active:cursor-grabbing hover:shadow-md transition-all border-none shadow-sm",
-                                        draggedOrderId === order.id ? "opacity-40" : "opacity-100"
+                                        "cursor-pointer hover:shadow-md transition-all border-none shadow-sm",
+                                        "active:scale-95 duration-100" // Add subtle click feedback
                                     )}
-                                    onDoubleClick={() => onManage(order.id)}
                                 >
                                     <CardContent className="p-3 space-y-3">
                                         <div className="flex justify-between items-start">
@@ -125,12 +99,8 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                         )}
 
                                         <div className="pt-2 flex justify-between items-center border-t border-dashed">
-                                            <button
-                                                onClick={() => onManage(order.id)}
-                                                className="text-[11px] text-primary font-medium hover:underline flex items-center"
-                                            >
-                                                Gestionar <ChevronRight className="h-3 w-3 ml-0.5" />
-                                            </button>
+                                            <span className="text-[10px] text-muted-foreground">Click para gestionar</span>
+                                            <ChevronRight className="h-3 w-3 text-primary" />
                                         </div>
                                     </CardContent>
                                 </Card>

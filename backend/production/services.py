@@ -251,6 +251,9 @@ class WorkOrderService:
         stage_data = {
             'internal_notes': mfg_data.get('description', ''),
             'product_description': mfg_data.get('product_description', ''),
+            'contact_name': mfg_data.get('contact', {}).get('name', '') if mfg_data.get('contact') else '',
+            'contact_id': mfg_data.get('contact', {}).get('id') if mfg_data.get('contact') else None,
+            'contact_tax_id': mfg_data.get('contact', {}).get('tax_id') if mfg_data.get('contact') else '',
             'folio_enabled': mfg_data.get('folio_enabled', False),
             'folio_start': mfg_data.get('folio_start', ''),
             'design_attachments': [f['name'] if isinstance(f, dict) else str(f) for f in mfg_data.get('design_files', [])],

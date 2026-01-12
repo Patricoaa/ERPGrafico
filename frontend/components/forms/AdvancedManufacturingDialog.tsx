@@ -87,7 +87,7 @@ export function AdvancedManufacturingDialog({
 
         onConfirm({
             design_needed: designNeeded,
-            contact: contact ? { id: contact.id, name: contact.name } : null,
+            contact: contact ? { id: contact.id, name: contact.name, tax_id: contact.tax_id || contact.rut } : null,
             description, // Internal notes
             product_description: productDescription,
             design_files: designFiles,
@@ -111,8 +111,10 @@ export function AdvancedManufacturingDialog({
 
     if (!product) return null
 
-    // Check if product description should be hidden
-    const hideProductDescription = product.has_bom && product.requires_advanced_manufacturing
+    // Check if product description should be shown: Manufacturable, Advanced, but NO BOM
+    const showProductDescription = product.product_type === 'MANUFACTURABLE' &&
+        product.requires_advanced_manufacturing &&
+        !product.has_bom
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,7 +161,7 @@ export function AdvancedManufacturingDialog({
 
                     {product.product_type === 'MANUFACTURABLE' && (
                         <>
-                            {!hideProductDescription && (
+                            {showProductDescription && (
                                 <>
                                     <div className="space-y-2 pt-2 border-t font-medium text-xs text-primary flex items-center gap-2 uppercase tracking-wider">
                                         <FileText className="h-3 w-3" /> Descripción del Trabajo

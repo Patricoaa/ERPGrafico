@@ -38,8 +38,8 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     materials = WorkOrderMaterialSerializer(many=True, read_only=True)
     history = WorkOrderHistorySerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
-    sale_customer_name = serializers.ReadOnlyField(source='sale_order.customer.name')
-    sale_customer_rut = serializers.ReadOnlyField(source='sale_order.customer.tax_id')
+    sale_customer_name = serializers.SerializerMethodField()
+    sale_customer_rut = serializers.SerializerMethodField()
     product_info = serializers.ReadOnlyField()
     
     # Metadata helpers
@@ -47,6 +47,22 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     requires_prepress = serializers.SerializerMethodField()
     requires_press = serializers.SerializerMethodField()
     requires_postpress = serializers.SerializerMethodField()
+
+    def get_sale_customer_name(self, obj):
+        # 1. Prefer override from stage_data (set via Manufacturing Dialog)
+        if obj.stage_data and obj.stage_data.get('contact_name'):
+            return obj.stage_data.get('contact_name')
+        # 2. Fallback to Sale Order customer
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.name
+        return "Manual / Interno"
+
+    def get_sale_customer_rut(self, obj):
+        if obj.stage_data and obj.stage_data.get('contact_tax_id'):
+            return obj.stage_data.get('contact_tax_id')
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.tax_id
+        return ""
 
     def get_requires_prepress(self, obj):
         # 1. Try stage_data (specific for this order)
