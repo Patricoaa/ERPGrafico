@@ -9,13 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
-    CalendarIcon, User, Paintbrush, FileText, Plus, X, Clock, Settings2
+    User, Paintbrush, FileText, Plus, X, Upload, FileIcon
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { format, addDays } from "date-fns"
 import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { toast } from "sonner"
 
 interface AdvancedManufacturingDialogProps {
     open: boolean
@@ -29,42 +28,38 @@ export function AdvancedManufacturingDialog({
 }: AdvancedManufacturingDialogProps) {
     const [designNeeded, setDesignNeeded] = useState(false)
     const [contact, setContact] = useState<any>(null)
-    const [deliveryDateTime, setDeliveryDateTime] = useState("")
     const [description, setDescription] = useState("")
     const [productDescription, setProductDescription] = useState("")
-    const [customValues, setCustomValues] = useState<Record<string, any>>({})
+    const [designFiles, setDesignFiles] = useState<File[]>([])
+    const [folioEnabled, setFolioEnabled] = useState(false)
+    const [folioStart, setFolioStart] = useState("")
 
     // Phase Switches
     const [enablePrepress, setEnablePrepress] = useState(false)
     const [enablePress, setEnablePress] = useState(false)
     const [enablePostpress, setEnablePostpress] = useState(false)
 
+    // Specifications for each stage
+    const [prepressSpecs, setPrepressSpecs] = useState("")
+    const [pressSpecs, setPressSpecs] = useState("")
+    const [postpressSpecs, setPostpressSpecs] = useState("")
+
+    // Print type
+    const [printType, setPrintType] = useState<string | null>(null)
+
     useEffect(() => {
         if (open && product) {
             setDesignNeeded(false)
             setContact(null)
-
-            // Set default delivery date-time
-            const daysOffset = product.mfg_default_delivery_days ?? 3
-            const defaultDate = addDays(new Date(), daysOffset)
-            // Set time to standard end of day 18:00
-            defaultDate.setHours(18, 0, 0, 0)
-
-            // Format for datetime-local input: YYYY-MM-DDTHH:mm
-            try {
-                const year = defaultDate.getFullYear()
-                const month = String(defaultDate.getMonth() + 1).padStart(2, '0')
-                const day = String(defaultDate.getDate()).padStart(2, '0')
-                const hours = String(defaultDate.getHours()).padStart(2, '0')
-                const minutes = String(defaultDate.getMinutes()).padStart(2, '0')
-                setDeliveryDateTime(`${year}-${month}-${day}T${hours}:${minutes}`)
-            } catch (e) {
-                console.error("Error setting default date", e)
-            }
-
             setDescription("")
             setProductDescription("")
-            setCustomValues({})
+            setDesignFiles([])
+            setFolioEnabled(false)
+            setFolioStart("")
+            setPrepressSpecs("")
+            setPressSpecs("")
+            setPostpressSpecs("")
+            setPrintType(null)
 
             // Initialize switches from product configuration
             setEnablePrepress(!!product.mfg_enable_prepress)
@@ -73,29 +68,55 @@ export function AdvancedManufacturingDialog({
         }
     }, [open, product])
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setDesignFiles(Array.from(e.target.files))
+        }
+    }
+
+    const removeFile = (index: number) => {
+        setDesignFiles(prev => prev.filter((_, i) => i !== index))
+    }
+
     const handleConfirm = () => {
+        // Validation: at least one stage must be enabled
+        if (!enablePrepress && !enablePress && !enablePostpress) {
+            toast.error("Debe habilitar al menos una etapa de fabricación")
+            return
+        }
+
         onConfirm({
             design_needed: designNeeded,
             contact: contact ? { id: contact.id, name: contact.name } : null,
-            delivery_date: deliveryDateTime,
             description, // Internal notes
             product_description: productDescription,
+            design_files: designFiles,
+            folio_enabled: folioEnabled,
+            folio_start: folioStart,
             // Include phase capability flags in the result
             phases: {
                 prepress: enablePrepress,
                 press: enablePress,
                 postpress: enablePostpress
             },
-            custom_values: customValues
+            specifications: {
+                prepress: prepressSpecs,
+                press: pressSpecs,
+                postpress: postpressSpecs
+            },
+            print_type: printType
         })
         onOpenChange(false)
     }
 
     if (!product) return null
 
+    // Check if product description should be hidden
+    const hideProductDescription = product.has_bom && product.requires_advanced_manufacturing
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px] border-primary/20 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <DialogContent className="sm:max-w-[900px] border-primary/20 shadow-2xl overflow-y-auto max-h-[90vh]">
                 <DialogHeader className="space-y-4">
                     <div className="flex items-center gap-3">
                         <div className="p-3 rounded-2xl bg-primary/10 text-primary">
@@ -109,63 +130,52 @@ export function AdvancedManufacturingDialog({
                 </DialogHeader>
 
                 <div className="grid gap-6 py-4">
-                    {/* Always visible: Delivery Date-Time and Contact Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground">Fecha y Hora de Entrega</Label>
-                            <div className="relative">
-                                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                                <Input
-                                    type="datetime-local"
-                                    className="pl-9 h-10"
-                                    value={deliveryDateTime}
-                                    onChange={(e) => setDeliveryDateTime(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground">Contacto / Referencia</Label>
-                            {contact ? (
-                                <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <User className="h-4 w-4 text-primary shrink-0" />
-                                        <span className="text-sm truncate font-medium">{contact.name}</span>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                        onClick={() => setContact(null)}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
+                    {/* Contact Row */}
+                    <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground">Contacto / Referencia</Label>
+                        {contact ? (
+                            <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <User className="h-4 w-4 text-primary shrink-0" />
+                                    <span className="text-sm truncate font-medium">{contact.name}</span>
                                 </div>
-                            ) : (
-                                <AdvancedContactSelector
-                                    onSelectContact={setContact}
-                                    onChange={() => { }}
-                                    placeholder="Buscar contacto..."
-                                />
-                            )}
-                        </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                    onClick={() => setContact(null)}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ) : (
+                            <AdvancedContactSelector
+                                onSelectContact={setContact}
+                                onChange={() => { }}
+                                placeholder="Buscar contacto..."
+                            />
+                        )}
                     </div>
 
                     {product.product_type === 'MANUFACTURABLE' && (
                         <>
-                            <div className="space-y-2 pt-2 border-t font-medium text-xs text-primary flex items-center gap-2 uppercase tracking-wider">
-                                <FileText className="h-3 w-3" /> Descripción del Trabajo
-                            </div>
+                            {!hideProductDescription && (
+                                <>
+                                    <div className="space-y-2 pt-2 border-t font-medium text-xs text-primary flex items-center gap-2 uppercase tracking-wider">
+                                        <FileText className="h-3 w-3" /> Descripción del Trabajo
+                                    </div>
 
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground">Descripción del Producto</Label>
-                                <Input
-                                    placeholder="Ej: Trípticos 10x21cm, Papel Couche 170gr..."
-                                    className="h-10"
-                                    value={productDescription}
-                                    onChange={(e) => setProductDescription(e.target.value)}
-                                />
-                            </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Descripción del Producto</Label>
+                                        <Input
+                                            placeholder="Ej: Trípticos 10x21cm, Papel Couche 170gr..."
+                                            className="h-10"
+                                            value={productDescription}
+                                            onChange={(e) => setProductDescription(e.target.value)}
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {/* Pre-Press Column */}
@@ -184,42 +194,86 @@ export function AdvancedManufacturingDialog({
                                     {enablePrepress && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <div className="space-y-2">
+                                                <Label className="text-xs font-medium">Especificaciones</Label>
+                                                <Textarea
+                                                    placeholder="Detalles técnicos de pre-impresión..."
+                                                    className="text-xs bg-background min-h-[60px]"
+                                                    value={prepressSpecs}
+                                                    onChange={(e) => setPrepressSpecs(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div className="flex items-center justify-between p-2 rounded-md bg-background">
                                                 <Label className="text-xs font-medium">Diseño Requerido</Label>
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        variant={designNeeded ? "default" : "outline"}
-                                                        size="sm"
-                                                        className="flex-1 h-8 text-xs"
-                                                        onClick={() => setDesignNeeded(true)}>
-                                                        Sí
-                                                    </Button>
-                                                    <Button
-                                                        variant={!designNeeded ? "default" : "outline"}
-                                                        size="sm"
-                                                        className="flex-1 h-8 text-xs"
-                                                        onClick={() => setDesignNeeded(false)}>
-                                                        No
-                                                    </Button>
+                                                <Switch
+                                                    checked={designNeeded}
+                                                    onCheckedChange={setDesignNeeded}
+                                                    className="scale-75"
+                                                />
+                                            </div>
+
+                                            {designNeeded && (
+                                                <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    <Label className="text-[10px] uppercase text-muted-foreground">Adjuntos de Diseño</Label>
+                                                    <div className="space-y-2">
+                                                        <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                                                            <Upload className="h-4 w-4 text-muted-foreground" />
+                                                            <span className="text-xs text-muted-foreground">Cargar archivos</span>
+                                                            <input
+                                                                type="file"
+                                                                multiple
+                                                                className="hidden"
+                                                                onChange={handleFileChange}
+                                                                accept="image/*,.pdf,.ai,.psd,.eps"
+                                                            />
+                                                        </label>
+                                                        <p className="text-[9px] text-muted-foreground italic">
+                                                            Formatos: Imágenes, PDF, AI, PSD, EPS
+                                                        </p>
+                                                        {designFiles.length > 0 && (
+                                                            <div className="space-y-1">
+                                                                {designFiles.map((file, index) => (
+                                                                    <div key={index} className="flex items-center justify-between p-2 bg-background rounded text-xs">
+                                                                        <div className="flex items-center gap-2 overflow-hidden">
+                                                                            <FileIcon className="h-3 w-3 shrink-0" />
+                                                                            <span className="truncate">{file.name}</span>
+                                                                        </div>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-5 w-5"
+                                                                            onClick={() => removeFile(index)}
+                                                                        >
+                                                                            <X className="h-3 w-3" />
+                                                                        </Button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] uppercase text-muted-foreground">Especificaciones</Label>
-                                                <Input
-                                                    placeholder="Detalles técnicos..."
-                                                    className="h-8 text-xs bg-background"
-                                                    value={customValues.specs || ""}
-                                                    onChange={(e) => setCustomValues({ ...customValues, specs: e.target.value })}
+                                            )}
+
+                                            <div className="flex items-center justify-between p-2 rounded-md bg-background">
+                                                <Label className="text-xs font-medium">Folio</Label>
+                                                <Switch
+                                                    checked={folioEnabled}
+                                                    onCheckedChange={setFolioEnabled}
+                                                    className="scale-75"
                                                 />
                                             </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] uppercase text-muted-foreground">Folio</Label>
-                                                <Input
-                                                    placeholder="N° Folio..."
-                                                    className="h-8 text-xs bg-background"
-                                                    value={customValues.folio || ""}
-                                                    onChange={(e) => setCustomValues({ ...customValues, folio: e.target.value })}
-                                                />
-                                            </div>
+
+                                            {folioEnabled && (
+                                                <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    <Label className="text-[10px] uppercase text-muted-foreground">Folio Inicial</Label>
+                                                    <Input
+                                                        placeholder="N° Folio inicial..."
+                                                        className="h-8 text-xs bg-background"
+                                                        value={folioStart}
+                                                        onChange={(e) => setFolioStart(e.target.value)}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -240,21 +294,38 @@ export function AdvancedManufacturingDialog({
                                     {enablePress && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <div className="space-y-2">
+                                                <Label className="text-xs font-medium">Especificaciones</Label>
+                                                <Textarea
+                                                    placeholder="Detalles técnicos de impresión..."
+                                                    className="text-xs bg-background min-h-[60px]"
+                                                    value={pressSpecs}
+                                                    onChange={(e) => setPressSpecs(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
                                                 <Label className="text-xs font-medium">Tipo de Impresión</Label>
-                                                <div className="flex gap-1">
+                                                <div className="grid grid-cols-3 gap-1">
                                                     <Button
-                                                        variant={customValues.print_type === 'offset' ? "default" : "outline"}
+                                                        variant={printType === 'offset' ? "default" : "outline"}
                                                         size="sm"
-                                                        className="flex-1 h-8 text-[10px]"
-                                                        onClick={() => setCustomValues({ ...customValues, print_type: 'offset' })}>
+                                                        className="h-8 text-[10px]"
+                                                        onClick={() => setPrintType('offset')}>
                                                         Offset
                                                     </Button>
                                                     <Button
-                                                        variant={customValues.print_type === 'digital' ? "default" : "outline"}
+                                                        variant={printType === 'digital' ? "default" : "outline"}
                                                         size="sm"
-                                                        className="flex-1 h-8 text-[10px]"
-                                                        onClick={() => setCustomValues({ ...customValues, print_type: 'digital' })}>
+                                                        className="h-8 text-[10px]"
+                                                        onClick={() => setPrintType('digital')}>
                                                         Digital
+                                                    </Button>
+                                                    <Button
+                                                        variant={printType === 'especial' ? "default" : "outline"}
+                                                        size="sm"
+                                                        className="h-8 text-[10px]"
+                                                        onClick={() => setPrintType('especial')}>
+                                                        Especial
                                                     </Button>
                                                 </div>
                                             </div>
@@ -277,13 +348,13 @@ export function AdvancedManufacturingDialog({
 
                                     {enablePostpress && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] uppercase text-muted-foreground">Acabados</Label>
-                                                <Input
-                                                    placeholder="Barniz, laminado, etc..."
-                                                    className="h-8 text-xs bg-background"
-                                                    value={customValues.finishing || ""}
-                                                    onChange={(e) => setCustomValues({ ...customValues, finishing: e.target.value })}
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-medium">Especificaciones</Label>
+                                                <Textarea
+                                                    placeholder="Acabados, barniz, laminado, encuadernación, troquelado..."
+                                                    className="text-xs bg-background min-h-[60px]"
+                                                    value={postpressSpecs}
+                                                    onChange={(e) => setPostpressSpecs(e.target.value)}
                                                 />
                                             </div>
                                         </div>

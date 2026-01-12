@@ -143,6 +143,11 @@ class Product(models.Model):
         default=False,
         help_text=_("Solicitar información de impresión digital")
     )
+    mfg_press_special = models.BooleanField(
+        _("Impresión: Especial"),
+        default=False,
+        help_text=_("Solicitar información de impresión especial")
+    )
     
     # Post-Press Options
     mfg_postpress_finishing = models.BooleanField(

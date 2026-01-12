@@ -167,18 +167,6 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                                             />
                                             <FormField<ProductFormValues>
                                                 control={form.control}
-                                                name="mfg_prepress_specs"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-between">
-                                                        <FormLabel className="text-[11px] font-normal">Especificaciones</FormLabel>
-                                                        <FormControl>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
                                                 name="mfg_prepress_folio"
                                                 render={({ field }) => (
                                                     <FormItem className="flex items-center justify-between">
@@ -231,6 +219,18 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                                                     </FormItem>
                                                 )}
                                             />
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="mfg_press_special"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-between">
+                                                        <FormLabel className="text-[11px] font-normal">Especial</FormLabel>
+                                                        <FormControl>
+                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
                                         </div>
                                     )}
 
@@ -247,34 +247,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                                         )}
                                     />
 
-                                    {form.watch("mfg_enable_postpress") && (
-                                        <div className="ml-4 space-y-2 pl-4 border-l-2 border-primary/20">
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="mfg_postpress_finishing"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-between">
-                                                        <FormLabel className="text-[11px] font-normal">Acabados</FormLabel>
-                                                        <FormControl>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="mfg_postpress_binding"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-between">
-                                                        <FormLabel className="text-[11px] font-normal">Encuadernación/Troquelado</FormLabel>
-                                                        <FormControl>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    )}
+
                                 </div>
                             </div>
                         )}

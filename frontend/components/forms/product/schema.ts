@@ -29,6 +29,7 @@ export const productSchema = z.object({
     mfg_prepress_folio: z.boolean().default(false),
     mfg_press_offset: z.boolean().default(false),
     mfg_press_digital: z.boolean().default(false),
+    mfg_press_special: z.boolean().default(false),
     mfg_postpress_finishing: z.boolean().default(false),
     mfg_postpress_binding: z.boolean().default(false),
     mfg_default_delivery_days: z.preprocess((v) => Number(v) || 3, z.number().min(0)),

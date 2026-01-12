@@ -26,9 +26,9 @@ const STAGES = [
     { id: 'MATERIAL_ASSIGNMENT', label: 'Materiales', color: 'bg-slate-100', icon: Package },
     { id: 'MATERIAL_APPROVAL', label: 'Aprobación', color: 'bg-blue-50', icon: CheckCircle2 },
     { id: 'PREPRESS', label: 'Pre-Prensa', color: 'bg-purple-50', icon: FileText },
-    { id: 'PRESS', label: 'Imprenta', color: 'bg-orange-50', icon: Printer },
-    { id: 'POSTPRESS', label: 'Terminación', color: 'bg-cyan-50', icon: Layers },
-    { id: 'FINISHED', label: 'Terminadas', color: 'bg-green-50', icon: CheckCircle2 },
+    { id: 'PRESS', label: 'Impresión', color: 'bg-orange-50', icon: Printer },
+    { id: 'POSTPRESS', label: 'Post-Impresión', color: 'bg-cyan-50', icon: Layers },
+    { id: 'FINISHED', label: 'Finalizado', color: 'bg-green-50', icon: CheckCircle2 },
 ]
 
 export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps) {

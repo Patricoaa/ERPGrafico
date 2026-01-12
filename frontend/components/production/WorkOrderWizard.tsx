@@ -18,15 +18,21 @@ import {
     Printer,
     FileText,
     Layers,
-    History,
     Package,
     ArrowLeft,
     ArrowRight,
-    Plus
+    Plus,
+    Trash2,
+    Upload,
+    Download,
+    Check,
+    X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 
 interface WorkOrderWizardProps {
     orderId: number
@@ -35,13 +41,13 @@ interface WorkOrderWizardProps {
     onSuccess?: () => void
 }
 
-const STAGES = [
-    { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', icon: Package },
-    { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Stock', icon: CheckCircle2 },
-    { id: 'PREPRESS', label: 'Pre-Impresión', icon: FileText },
-    { id: 'PRESS', label: 'Impresión', icon: Printer },
-    { id: 'POSTPRESS', label: 'Post-Impresión', icon: Layers },
-    { id: 'FINISHED', label: 'Finalizada', icon: CheckCircle2 },
+const BASE_STAGES = [
+    { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', icon: Package, alwaysShow: true },
+    { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Stock', icon: CheckCircle2, alwaysShow: true },
+    { id: 'PREPRESS', label: 'Pre-Impresión', icon: FileText, alwaysShow: false },
+    { id: 'PRESS', label: 'Impresión', icon: Printer, alwaysShow: false },
+    { id: 'POSTPRESS', label: 'Post-Impresión', icon: Layers, alwaysShow: false },
+    { id: 'FINISHED', label: 'Finalizada', icon: CheckCircle2, alwaysShow: true },
 ]
 
 export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: WorkOrderWizardProps) {
@@ -53,6 +59,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
     const [newMaterialProduct, setNewMaterialProduct] = useState<string | null>(null)
     const [newMaterialQty, setNewMaterialQty] = useState("1")
     const [addingMaterial, setAddingMaterial] = useState(false)
+    const [designUrl, setDesignUrl] = useState("")
+    const [designFile, setDesignFile] = useState<File | null>(null)
+    const [clientApprovalFile, setClientApprovalFile] = useState<File | null>(null)
+    const [clientApproved, setClientApproved] = useState(false)
+    const [supervisorApproved, setSupervisorApproved] = useState(false)
 
     const fetchOrder = async () => {
         setLoading(true)
@@ -60,8 +71,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
             const response = await api.get(`/production/orders/${orderId}/`)
             setOrder(response.data)
 
-            // Find current stage index
-            const index = STAGES.findIndex(s => s.id === response.data.current_stage)
+            // Find current stage index in filtered stages
+            const filteredStages = getFilteredStages(response.data)
+            const index = filteredStages.findIndex(s => s.id === response.data.current_stage)
             setCurrentStep(index !== -1 ? index : 0)
         } catch (error) {
             console.error("Error fetching order details:", error)
@@ -76,6 +88,20 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
             fetchOrder()
         }
     }, [open, orderId])
+
+    const getFilteredStages = (orderData: any) => {
+        if (!orderData) return BASE_STAGES.filter(s => s.alwaysShow)
+
+        return BASE_STAGES.filter(stage => {
+            if (stage.alwaysShow) return true
+            if (stage.id === 'PREPRESS') return orderData.requires_prepress
+            if (stage.id === 'PRESS') return orderData.requires_press
+            if (stage.id === 'POSTPRESS') return orderData.requires_postpress
+            return false
+        })
+    }
+
+    const STAGES = getFilteredStages(order)
 
     const handleTransition = async (nextStageId: string, data: any = {}) => {
         setTransitioning(true)
@@ -139,11 +165,24 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
         }
     }
 
+    const handleDeleteMaterial = async (materialId: number) => {
+        try {
+            await api.delete(`/production/orders/${orderId}/materials/${materialId}/`)
+            toast.success("Material eliminado")
+            fetchOrder()
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al eliminar material")
+        }
+    }
+
     if (!order && loading) return null
+
+    const stageData = order?.stage_data || {}
+    const productName = order?.product_name || order?.sale_line?.product?.name || "Producto"
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1000px] w-[95vw] max-h-[90vh] overflow-y-auto flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <div className="p-6 border-b flex justify-between items-center bg-muted/30">
                     <div>
                         <DialogTitle className="text-2xl">Gestión de Orden de Trabajo OT-{order?.number}</DialogTitle>
@@ -158,15 +197,12 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                 </div>
 
                 <div className="flex flex-1 overflow-hidden">
-                    {/* Sidebar Steps */}
-                    <div className="w-64 border-r bg-muted/10 p-4 space-y-2 hidden md:block">
+                    {/* Left Sidebar - Steps */}
+                    <div className="w-56 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">
                         {STAGES.map((stage, index) => {
                             const Icon = stage.icon
                             const isActive = currentStep === index
                             const isPast = currentStep > index
-
-                            // Check if stage is applicable (stub for now, should use backend metadata)
-                            const isApplicable = true
 
                             return (
                                 <div
@@ -185,7 +221,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                         })}
                     </div>
 
-                    {/* Content Area */}
+                    {/* Center - Content Area */}
                     <div className="flex-1 flex flex-col p-6 overflow-y-auto">
                         <div className="mb-6 flex items-center justify-between">
                             <h3 className="text-lg font-semibold">{STAGES[currentStep]?.label}</h3>
@@ -205,6 +241,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                                     <th className="p-2 text-right">Cant. Planificada</th>
                                                     <th className="p-2 text-left">UoM</th>
                                                     <th className="p-2 text-left">Origen</th>
+                                                    <th className="p-2 w-10"></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -214,11 +251,23 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                                         <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
                                                         <td className="p-2">{m.uom_name}</td>
                                                         <td className="p-2"><Badge variant="outline" className="text-[10px]">{m.source}</Badge></td>
+                                                        <td className="p-2">
+                                                            {m.source === 'MANUAL' && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-6 w-6 text-destructive"
+                                                                    onClick={() => handleDeleteMaterial(m.id)}
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </Button>
+                                                            )}
+                                                        </td>
                                                     </tr>
                                                 ))}
                                                 {(!order?.materials || order.materials.length === 0) && (
                                                     <tr>
-                                                        <td colSpan={4} className="p-4 text-center text-muted-foreground italic">No hay materiales asignados.</td>
+                                                        <td colSpan={5} className="p-4 text-center text-muted-foreground italic">No hay materiales asignados.</td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -269,7 +318,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                 <div className="space-y-4">
                                     <p className="text-sm text-muted-foreground">Verifique la disponibilidad de stock en {order?.warehouse_name || 'la bodega seleccionada'}.</p>
                                     <div className="grid gap-4">
-                                        {/* Simplified stock check view */}
                                         {order?.materials?.map((m: any) => (
                                             <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg">
                                                 <div className="space-y-1">
@@ -284,23 +332,80 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                             )}
 
                             {order?.current_stage === 'PREPRESS' && (
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-blue-800 text-sm">
-                                        Captura de especificaciones técnicas y archivos de diseño.
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-semibold uppercase text-muted-foreground">Folio Inicial</label>
-                                            <input type="number" className="w-full p-2 border rounded-md" placeholder="0" />
+                                <div className="space-y-6">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label className="text-sm font-semibold">Diseño</Label>
+                                            <div className="mt-2 space-y-3">
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs">URL del Diseño</Label>
+                                                    <Input
+                                                        placeholder="https://..."
+                                                        value={designUrl}
+                                                        onChange={(e) => setDesignUrl(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs">O cargar archivo</Label>
+                                                    <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
+                                                        <Upload className="h-4 w-4" />
+                                                        <span className="text-sm">{designFile ? designFile.name : "Seleccionar archivo"}</span>
+                                                        <input
+                                                            type="file"
+                                                            className="hidden"
+                                                            onChange={(e) => setDesignFile(e.target.files?.[0] || null)}
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-semibold uppercase text-muted-foreground">Folio Final</label>
-                                            <input type="number" className="w-full p-2 border rounded-md" placeholder="0" />
+
+                                        <div className="border-t pt-4">
+                                            <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
+                                            <div className="space-y-3">
+                                                <div className="p-4 border rounded-lg space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <Label className="text-sm">Aprobación del Cliente</Label>
+                                                        <Button
+                                                            size="sm"
+                                                            variant={clientApproved ? "default" : "outline"}
+                                                            onClick={() => setClientApproved(!clientApproved)}
+                                                        >
+                                                            {clientApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                            {clientApproved ? "Aprobado" : "Aprobar"}
+                                                        </Button>
+                                                    </div>
+                                                    {clientApproved && (
+                                                        <div className="space-y-2 animate-in fade-in">
+                                                            <Label className="text-xs text-muted-foreground">Adjunto de aprobación (opcional)</Label>
+                                                            <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-muted/50">
+                                                                <Upload className="h-3 w-3" />
+                                                                <span className="text-xs">{clientApprovalFile ? clientApprovalFile.name : "Cargar evidencia"}</span>
+                                                                <input
+                                                                    type="file"
+                                                                    className="hidden"
+                                                                    onChange={(e) => setClientApprovalFile(e.target.files?.[0] || null)}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="p-4 border rounded-lg">
+                                                    <div className="flex items-center justify-between">
+                                                        <Label className="text-sm">Aprobación del Supervisor</Label>
+                                                        <Button
+                                                            size="sm"
+                                                            variant={supervisorApproved ? "default" : "outline"}
+                                                            onClick={() => setSupervisorApproved(!supervisorApproved)}
+                                                        >
+                                                            {supervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                            {supervisorApproved ? "Aprobado" : "Aprobar"}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold uppercase text-muted-foreground">Observaciones de Diseño</label>
-                                        <textarea className="w-full p-2 border rounded-md h-24" placeholder="Instrucciones adicionales..."></textarea>
                                     </div>
                                 </div>
                             )}
@@ -318,15 +423,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                             )}
 
                             {order?.current_stage === 'POSTPRESS' && (
-                                <div className="space-y-4">
-                                    <p className="font-semibold text-sm">Validación de Acabados</p>
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {['Laminado', 'Troquelado', 'Encuadernación', 'Barniz UV'].map(item => (
-                                            <div key={item} className="flex items-center space-x-2 p-2 border rounded hover:bg-muted/30 cursor-pointer transition-colors">
-                                                <Circle className="h-4 w-4" />
-                                                <span className="text-sm">{item}</span>
-                                            </div>
-                                        ))}
+                                <div className="space-y-4 text-center py-10">
+                                    <Layers className="h-16 w-16 mx-auto text-primary opacity-20" />
+                                    <div className="max-w-md mx-auto space-y-2">
+                                        <p className="font-semibold">Acabados y Post-Impresión</p>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            Aplicar los acabados finales según las especificaciones del trabajo.
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -376,6 +479,100 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess }: Work
                                 </Button>
                             )}
                         </div>
+                    </div>
+
+                    {/* Right Sidebar - Information */}
+                    <div className="w-80 border-l bg-muted/5 p-4 space-y-4 overflow-y-auto hidden lg:block">
+                        <div className="space-y-2">
+                            <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
+                            <div className="p-3 bg-background rounded-lg border">
+                                <p className="font-semibold text-sm">{productName}</p>
+                                {stageData.product_description && (
+                                    <p className="text-xs text-muted-foreground mt-1">{stageData.product_description}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {stageData.internal_notes && (
+                            <div className="space-y-2">
+                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Observaciones Internas</h4>
+                                <div className="p-3 bg-background rounded-lg border">
+                                    <p className="text-xs whitespace-pre-wrap">{stageData.internal_notes}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {(order?.current_stage === 'MATERIAL_ASSIGNMENT' || order?.current_stage === 'MATERIAL_APPROVAL') && (
+                            <div className="space-y-3">
+                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Especificaciones</h4>
+                                {stageData.prepress_specs && (
+                                    <div className="p-3 bg-background rounded-lg border space-y-1">
+                                        <p className="text-[10px] font-semibold text-primary">Pre-Impresión</p>
+                                        <p className="text-xs">{stageData.prepress_specs}</p>
+                                    </div>
+                                )}
+                                {stageData.press_specs && (
+                                    <div className="p-3 bg-background rounded-lg border space-y-1">
+                                        <p className="text-[10px] font-semibold text-primary">Impresión</p>
+                                        <p className="text-xs">{stageData.press_specs}</p>
+                                    </div>
+                                )}
+                                {stageData.postpress_specs && (
+                                    <div className="p-3 bg-background rounded-lg border space-y-1">
+                                        <p className="text-[10px] font-semibold text-primary">Post-Impresión</p>
+                                        <p className="text-xs">{stageData.postpress_specs}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {order?.current_stage === 'PREPRESS' && (
+                            <div className="space-y-3">
+                                {stageData.prepress_specs && (
+                                    <div className="space-y-2">
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Especificaciones</h4>
+                                        <div className="p-3 bg-background rounded-lg border">
+                                            <p className="text-xs whitespace-pre-wrap">{stageData.prepress_specs}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {stageData.design_attachments && stageData.design_attachments.length > 0 && (
+                                    <div className="space-y-2">
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Adjuntos de Diseño</h4>
+                                        <div className="space-y-1">
+                                            {stageData.design_attachments.map((file: string, index: number) => (
+                                                <div key={index} className="flex items-center gap-2 p-2 bg-background rounded border text-xs">
+                                                    <FileText className="h-3 w-3" />
+                                                    <span className="flex-1 truncate">{file}</span>
+                                                    <Download className="h-3 w-3 cursor-pointer" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {stageData.folio_enabled && (
+                                    <div className="space-y-2">
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Folio</h4>
+                                        <div className="p-3 bg-background rounded-lg border">
+                                            <p className="text-xs">Folio inicial: <span className="font-semibold">{stageData.folio_start}</span></p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {(order?.current_stage === 'PRESS' || order?.current_stage === 'POSTPRESS') && (
+                            <div className="space-y-2">
+                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Especificaciones</h4>
+                                <div className="p-3 bg-background rounded-lg border">
+                                    <p className="text-xs whitespace-pre-wrap">
+                                        {order?.current_stage === 'PRESS' ? stageData.press_specs : stageData.postpress_specs}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </DialogContent>
