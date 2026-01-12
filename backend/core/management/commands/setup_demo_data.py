@@ -14,6 +14,7 @@ from treasury.models import TreasuryAccount, Payment
 from billing.models import Invoice
 from services.models import ServiceCategory, ServiceContract, ServiceObligation
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
+from core.models import User
 
 class Command(BaseCommand):
     help = 'Seeds database with comprehensive graphic industry data using IFRS CoA'
@@ -41,6 +42,9 @@ class Command(BaseCommand):
         self.stdout.write('Populating IFRS Chart of Accounts...')
         result_msg = AccountingService.populate_ifrs_coa()
         self.stdout.write(f"  {result_msg}")
+
+        self.stdout.write('Creating Default Admin User...')
+        self._create_admin_user()
         
         # Get references to key accounts for further seeding
         accounts = self._get_account_references()
@@ -290,4 +294,23 @@ class Command(BaseCommand):
         # Initial Bank Capital
         JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Aporte Inicial", debit=50000000, credit=0)
         JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social", debit=0, credit=50000000)
+
+    def _create_admin_user(self):
+        admin_user, created = User.objects.get_or_create(
+            username='admin',
+            defaults={
+                'email': 'admin@erpgrafico.com',
+                'first_name': 'Admin',
+                'last_name': 'User',
+                'role': User.Role.ADMIN,
+                'is_staff': True,
+                'is_superuser': True
+            }
+        )
+        if created:
+            admin_user.set_password('admin123')
+            admin_user.save()
+            self.stdout.write(self.style.SUCCESS(f"  User 'admin' created with password 'admin123'"))
+        else:
+            self.stdout.write(f"  User 'admin' already exists")
 
