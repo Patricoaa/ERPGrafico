@@ -301,7 +301,7 @@ class WarehouseSerializer(serializers.ModelSerializer):
 class StockMoveSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_code = serializers.CharField(source='product.code', read_only=True)
-    uom_name = serializers.CharField(source='product.uom.name', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     move_type_display = serializers.CharField(source='get_move_type_display', read_only=True)
     journal_entry_number = serializers.CharField(source='journal_entry.number', read_only=True, allow_null=True)

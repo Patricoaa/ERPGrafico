@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { AdjustmentList } from "@/components/inventory/AdjustmentList"
+import { AdjustmentForm } from "@/components/inventory/AdjustmentForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"
 
@@ -160,11 +160,11 @@ export function MovementList() {
             )}
 
             <Dialog open={showAdjustmentModal} onOpenChange={setShowAdjustmentModal}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Nuevo Ajuste de Stock</DialogTitle>
                     </DialogHeader>
-                    <AdjustmentList onSuccess={() => { setShowAdjustmentModal(false); fetchMoves(); }} />
+                    <AdjustmentForm onSuccess={() => { setShowAdjustmentModal(false); fetchMoves(); }} onCancel={() => setShowAdjustmentModal(false)} />
                 </DialogContent>
             </Dialog>
         </div>

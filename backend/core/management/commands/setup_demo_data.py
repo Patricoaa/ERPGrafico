@@ -43,6 +43,9 @@ class Command(BaseCommand):
         result_msg = AccountingService.populate_ifrs_coa()
         self.stdout.write(f"  {result_msg}")
 
+        self.stdout.write('Configuring Inventory Accounting Mappings...')
+        self._configure_inventory_accounting()
+
         self.stdout.write('Creating Default Admin User...')
         self._create_admin_user()
         
@@ -69,6 +72,83 @@ class Command(BaseCommand):
 
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
+
+    def _configure_inventory_accounting(self):
+        # Ensure we have the necessary accounts for advanced inventory mapping
+        
+        # 4.2.02 - Ganancia por Ajuste de Inventario (Income)
+        parent_42 = Account.objects.filter(code='4.2').first()
+        if parent_42:
+            acc_gain, _ = Account.objects.get_or_create(
+                code='4.2.02',
+                defaults={
+                    'name': 'Ganancia por Ajuste de Inventario',
+                    'account_type': AccountType.INCOME,
+                    'parent': parent_42,
+                    'is_category': None,
+                    'cf_category': None
+                }
+            )
+        else:
+            acc_gain = None
+
+        # 5.2.07 - Pérdida por Ajuste de Inventario (Expense)
+        parent_52 = Account.objects.filter(code='5.2').first()
+        if parent_52:
+            acc_loss, _ = Account.objects.get_or_create(
+                code='5.2.07',
+                defaults={
+                    'name': 'Pérdida por Ajuste de Inventario',
+                    'account_type': AccountType.EXPENSE,
+                    'parent': parent_52,
+                    'is_category': None,
+                    'cf_category': None
+                }
+            )
+        else:
+            acc_loss = None
+
+        # 3.1.02 - Contrapartida Inicial de Inventario (Equity)
+        parent_31 = Account.objects.filter(code='3.1').first()
+        if parent_31:
+            acc_initial, _ = Account.objects.get_or_create(
+                code='3.1.02',
+                defaults={
+                    'name': 'Contrapartida Inicial de Inventario',
+                    'account_type': AccountType.EQUITY,
+                    'parent': parent_31,
+                    'is_category': None,
+                    'cf_category': None
+                }
+            )
+        else:
+            acc_initial = None
+        
+        # 5.1.03 - Costo por Revalorización (Expense - COGS related)
+        parent_51 = Account.objects.filter(code='5.1').first()
+        if parent_51:
+            acc_reval, _ = Account.objects.get_or_create(
+                code='5.1.03',
+                defaults={
+                    'name': 'Ajuste por Revalorización de Stock',
+                    'account_type': AccountType.EXPENSE,
+                    'parent': parent_51,
+                    'is_category': None, # Inherits COST_OF_SALES
+                    'cf_category': None
+                }
+            )
+        else:
+            acc_reval = None
+
+        # Update Settings
+        settings = AccountingSettings.objects.first()
+        if settings:
+            if acc_gain: settings.adjustment_income_account = acc_gain
+            if acc_loss: settings.adjustment_expense_account = acc_loss
+            if acc_initial: settings.initial_inventory_account = acc_initial
+            if acc_reval: settings.revaluation_account = acc_reval
+            settings.save()
+            self.stdout.write("  Inventory accounting settings updated.")
 
     def _purge_data(self):
         def _safe_delete(model_class, name):

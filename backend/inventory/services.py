@@ -11,7 +11,7 @@ from typing import Tuple, Optional
 class StockService:
     @staticmethod
     @transaction.atomic
-    def adjust_stock(product: Product, warehouse: Warehouse, quantity: Decimal, unit_cost: Decimal, description: str, adjustment_reason: str = None):
+    def adjust_stock(product: Product, warehouse: Warehouse, quantity: Decimal, unit_cost: Decimal, description: str, adjustment_reason: str = None, uom: UoM = None):
         """
         Creates a Stock Move (Adjustment) and the corresponding Journal Entry.
         Handles cost ponderation for entries and uses specific accounts from AccountingSettings.
@@ -23,6 +23,33 @@ class StockService:
         settings = AccountingSettings.objects.first()
         if not settings:
             raise ValidationError("No se encontró la configuración contable global.")
+
+        # UoM Conversion Logic
+        if uom and product.uom and uom != product.uom:
+             # Validate compatibility
+             if uom.category != product.uom.category:
+                 raise ValidationError(f"La unidad {uom.name} no es compatible con la unidad base del producto {product.uom.name}")
+             
+             # Convert Quantity
+             qty_in_base = StockService.convert_quantity(quantity, uom, product.uom)
+             
+             # Convert Unit Cost (Inverse of quantity conversion)
+             # CostBase = CostInput * (QtyInput / QtyBase) ???
+             # Total Value = QtyInput * CostInput
+             # Total Value = QtyBase * CostBase
+             # CostBase = (QtyInput * CostInput) / QtyBase
+             # CostBase = (QtyInput * CostInput) / (QtyInput * Factor) = CostInput / Factor
+             
+             # Factor = FromRatio / ToRatio
+             factor = Decimal(str(uom.ratio)) / Decimal(str(product.uom.ratio))
+             cost_in_base = unit_cost / factor
+             
+             # Append to description for traceability
+             description += f" (Conv: {quantity} {uom.name} @ {unit_cost})"
+             
+             # Reassign for processing
+             quantity = qty_in_base
+             unit_cost = cost_in_base
 
         # 1. Logic for unit_cost and cost pondering
         if unit_cost is None or unit_cost == 0:
