@@ -44,7 +44,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider>
             <AppSidebar />
-            <main className="w-full">
+            <main className="w-full overflow-x-hidden">
                 <SidebarTrigger className="md:hidden" />
                 {children}
             </main>
