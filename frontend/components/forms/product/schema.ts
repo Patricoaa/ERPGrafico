@@ -41,7 +41,7 @@ export const productSchema = z.object({
             id: z.number().optional(),
             component: z.string().min(1, "Componente requerido"),
             quantity: z.preprocess((v) => Number(v) || 0, z.number().min(0.0001, "Mínimo 0.0001")),
-            unit: z.string().default("UN"),
+            uom: z.string().optional(),
             notes: z.string().optional(),
         })).default([]),
     })).default([]),

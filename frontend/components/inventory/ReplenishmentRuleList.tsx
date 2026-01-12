@@ -45,6 +45,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 // Interfaces
 interface ReorderingRule {
@@ -57,13 +58,6 @@ interface ReorderingRule {
     min_quantity: string
     max_quantity: string
     active: boolean
-}
-
-interface Product {
-    id: number
-    name: string
-    code: string
-    internal_code: string
 }
 
 interface Warehouse {
@@ -87,7 +81,6 @@ type FormValues = z.infer<typeof ruleSchema>
 
 export function ReplenishmentRuleList() {
     const [rules, setRules] = useState<ReorderingRule[]>([])
-    const [products, setProducts] = useState<Product[]>([])
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -98,14 +91,12 @@ export function ReplenishmentRuleList() {
     const fetchData = async () => {
         setIsLoading(true)
         try {
-            const [rulesRes, productsRes, warehousesRes] = await Promise.all([
+            const [rulesRes, warehousesRes] = await Promise.all([
                 api.get('/inventory/reordering-rules/'),
-                api.get('/inventory/products/'),
                 api.get('/inventory/warehouses/')
             ])
 
             setRules(rulesRes.data.results || rulesRes.data)
-            setProducts(productsRes.data.results || productsRes.data)
             setWarehouses(warehousesRes.data.results || warehousesRes.data)
         } catch (error) {
             console.error("Failed to fetch data", error)
@@ -233,24 +224,14 @@ export function ReplenishmentRuleList() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Producto</FormLabel>
-                                                <Select
-                                                    onValueChange={field.onChange}
-                                                    value={field.value}
-                                                    disabled={!!editingRule} // Disable changing product on edit to simplify
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Seleccionar producto..." />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {products.map((p) => (
-                                                            <SelectItem key={p.id} value={p.id.toString()}>
-                                                                {p.internal_code} - {p.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                <FormControl>
+                                                    <ProductSelector
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        disabled={!!editingRule}
+                                                        placeholder="Seleccionar producto..."
+                                                    />
+                                                </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}

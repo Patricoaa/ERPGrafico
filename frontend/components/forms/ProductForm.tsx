@@ -230,7 +230,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                             id: l.id,
                             component: l.component?.toString() || "",
                             quantity: parseFloat(l.quantity) || 0,
-                            unit: l.unit || "UN",
+                            uom: l.uom?.toString() || undefined,
                             notes: l.notes || ""
                         }))
                     })) || [],

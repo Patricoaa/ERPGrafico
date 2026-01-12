@@ -344,7 +344,6 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                         <ProductSelector
                                                                             value={field.value}
                                                                             restrictStock={true}
-                                                                            showSearch={false}
                                                                             context="sale"
                                                                             onChange={(value: string | null) => {
                                                                                 const selectedProduct = products.find(p => p.id.toString() === value)

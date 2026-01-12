@@ -394,7 +394,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                             variant="secondary"
                             size="sm"
                             className="h-7 text-[10px] gap-1 px-2"
-                            onClick={() => append({ component: "", quantity: 1, unit: "UN", notes: "" })}
+                            onClick={() => append({ component: "", quantity: 1, uom: undefined, notes: "" })}
                         >
                             <Plus className="h-3 w-3" /> Añadir
                         </Button>
@@ -426,11 +426,30 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                     onChange={(val: any) => {
                                                         form.setValue(`boms.${bomIndex}.lines.${index}.component`, val)
                                                         const p = products.find((prod: any) => prod.id.toString() === val?.toString());
-                                                        if (p && p.uom_name) {
-                                                            form.setValue(`boms.${bomIndex}.lines.${index}.unit`, p.uom_name);
+                                                        if (p && p.uom) {
+                                                            form.setValue(`boms.${bomIndex}.lines.${index}.uom`, p.uom.toString());
                                                         }
                                                     }}
                                                     placeholder="Sel. componente"
+                                                    customFilter={(product: any) => {
+                                                        // No CONSUMABLE - uso interno solamente
+                                                        if (product.product_type === 'CONSUMABLE') return false
+
+                                                        // Si es MANUFACTURABLE, no debe ser express
+                                                        if (product.product_type === 'MANUFACTURABLE') {
+                                                            // Express products auto-finalize, not suitable for BOM
+                                                            if (product.mfg_auto_finalize) return false
+                                                        }
+
+                                                        return true
+                                                    }}
+                                                    customDisabled={(product: any) => {
+                                                        // Deshabilitar STORABLE sin stock
+                                                        if (product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0) {
+                                                            return true
+                                                        }
+                                                        return false
+                                                    }}
                                                 />
                                             </TableCell>
                                             <TableCell className="p-1 px-2">
@@ -451,45 +470,43 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                             <TableCell className="p-1 px-2 text-center">
                                                 <FormField
                                                     control={form.control}
-                                                    name={`boms.${bomIndex}.lines.${index}.unit`}
+                                                    name={`boms.${bomIndex}.lines.${index}.uom`}
                                                     render={({ field }) => {
                                                         const componentId = form.watch(`boms.${bomIndex}.lines.${index}.component`);
                                                         const product = products.find((p: any) => p.id.toString() === componentId?.toString());
 
-                                                        const unitNames = new Set<string>();
+                                                        // Get UoM IDs, not names
+                                                        const uomIds = new Set<string>();
                                                         if (product) {
-                                                            if (product.uom_name) unitNames.add(product.uom_name);
-                                                            if (product.sale_uom_name) unitNames.add(product.sale_uom_name);
-                                                            if (product.purchase_uom_name) unitNames.add(product.purchase_uom_name);
+                                                            if (product.uom) uomIds.add(product.uom.toString());
+                                                            if (product.sale_uom) uomIds.add(product.sale_uom.toString());
+                                                            if (product.purchase_uom) uomIds.add(product.purchase_uom.toString());
 
                                                             if (product.allowed_sale_uoms) {
                                                                 product.allowed_sale_uoms.forEach((uomInfo: any) => {
-                                                                    // Handle both ID list and object list
-                                                                    if (typeof uomInfo === 'object' && uomInfo.name) {
-                                                                        unitNames.add(uomInfo.name);
+                                                                    // Handle both ID and object
+                                                                    if (typeof uomInfo === 'object' && uomInfo.id) {
+                                                                        uomIds.add(uomInfo.id.toString());
                                                                     } else {
-                                                                        const foundUom = uoms.find((u: any) => u.id.toString() === uomInfo.toString());
-                                                                        if (foundUom) unitNames.add(foundUom.name);
+                                                                        uomIds.add(uomInfo.toString());
                                                                     }
                                                                 });
                                                             }
                                                         }
 
-                                                        const options = Array.from(unitNames);
-                                                        if (options.length === 0 && !product) {
-                                                            options.push("UN", "KG", "MT", "LT", "PL", "ML");
-                                                        }
+                                                        // Filter uoms to only show those related to product's category
+                                                        const availableUoms = uoms.filter((u: any) => uomIds.has(u.id.toString()));
 
                                                         return (
                                                             <Select onValueChange={field.onChange} value={field.value}>
                                                                 <FormControl>
                                                                     <SelectTrigger className="h-8 text-[10px] px-1 justify-center">
-                                                                        <SelectValue />
+                                                                        <SelectValue placeholder="-" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
-                                                                    {options.map(u => (
-                                                                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                                                                    {availableUoms.map((u: any) => (
+                                                                        <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
                                                                     ))}
                                                                 </SelectContent>
                                                             </Select>

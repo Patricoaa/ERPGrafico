@@ -45,6 +45,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Separator } from "@/components/ui/separator"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 // Interfaces
 interface StockMove {
@@ -57,14 +58,6 @@ interface StockMove {
     description: string
     uom_name: string
     created_at: string
-}
-
-interface Product {
-    id: number
-    name: string
-    code: string
-    internal_code: string
-    uom_name: string
 }
 
 interface Warehouse {
@@ -83,7 +76,6 @@ const adjustmentSchema = z.object({
 
 export function AdjustmentList() {
     const [moves, setMoves] = useState<StockMove[]>([])
-    const [products, setProducts] = useState<Product[]>([])
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -95,10 +87,6 @@ export function AdjustmentList() {
             // Fetch Adjustments
             const movesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/inventory/moves/?move_type=ADJ`)
             if (movesRes.ok) setMoves(await movesRes.json())
-
-            // Fetch Products (Lite version ideally, but standard for now)
-            const prodRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/inventory/products/`) // TODO: Optimize pagination
-            if (prodRes.ok) setProducts((await prodRes.json()).results || [])
 
             // Fetch Warehouses
             const warehouseRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/inventory/warehouses/`)
@@ -193,20 +181,13 @@ export function AdjustmentList() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Producto</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Seleccionar producto..." />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {products.map((p) => (
-                                                            <SelectItem key={p.id} value={p.id.toString()}>
-                                                                {p.internal_code} - {p.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                <FormControl>
+                                                    <ProductSelector
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        placeholder="Seleccionar producto..."
+                                                    />
+                                                </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}

@@ -30,10 +30,11 @@ interface ProductSelectorProps {
     allowedTypes?: string[]
     disabled?: boolean
     restrictStock?: boolean
-    showSearch?: boolean
     excludeIds?: (string | number)[]
     context?: 'sale' | 'purchase'
     onSelect?: (product: any) => void
+    customFilter?: (product: any) => boolean
+    customDisabled?: (product: any) => boolean
 }
 
 export function ProductSelector({
@@ -44,18 +45,19 @@ export function ProductSelector({
     allowedTypes,
     disabled = false,
     restrictStock = false,
-    showSearch = true,
     excludeIds = [],
     context,
-    onSelect
+    onSelect,
+    customFilter,
+    customDisabled
 }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
-    const [modalOpen, setModalOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
     const [filteredProducts, setFilteredProducts] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedProduct, setSelectedProduct] = useState<any>(null)
+    const [displayLimit, setDisplayLimit] = useState(20)
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -83,6 +85,11 @@ export function ProductSelector({
                     allProducts = allProducts.filter((p: any) => !excludeIds.map(id => id.toString()).includes(p.id.toString()))
                 }
 
+                // Apply custom filter
+                if (customFilter) {
+                    allProducts = allProducts.filter(customFilter)
+                }
+
                 setProducts(allProducts)
                 setFilteredProducts(allProducts)
 
@@ -97,14 +104,21 @@ export function ProductSelector({
             }
         }
         fetchProducts()
-    }, [value, productType, context])
+    }, [value, productType, context, customFilter])
 
     const isStockRestricted = (product: any) => {
         return restrictStock && product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0
     }
 
+    const isCustomDisabled = (product: any) => {
+        if (customDisabled && customDisabled(product)) {
+            return true
+        }
+        return false
+    }
+
     const handleSelect = (product: any) => {
-        if (isStockRestricted(product)) {
+        if (isStockRestricted(product) || isCustomDisabled(product)) {
             return;
         }
 
@@ -112,7 +126,6 @@ export function ProductSelector({
         onChange(product ? product.id.toString() : null)
         if (onSelect) onSelect(product)
         setOpen(false)
-        setModalOpen(false)
     }
 
     const searchProducts = (val: string) => {
@@ -122,13 +135,20 @@ export function ProductSelector({
         setFilteredProducts(
             products.filter(p =>
                 p.code.toLowerCase().includes(lowerVal) ||
+                (p.internal_code && p.internal_code.toLowerCase().includes(lowerVal)) ||
                 p.name.toLowerCase().includes(lowerVal)
             )
         )
+        // Reset display limit when searching
+        setDisplayLimit(20)
+    }
+
+    const handleLoadMore = () => {
+        setDisplayLimit(prev => prev + 20)
     }
 
     return (
-        <div className="flex gap-2 w-full min-w-0">
+        <div className="w-full min-w-0">
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -162,17 +182,24 @@ export function ProductSelector({
                                 onChange={(e) => searchProducts(e.target.value)}
                             />
                         </div>
-                        <div className="max-h-[300px] overflow-y-auto space-y-1">
+                        <div className="max-h-[400px] overflow-y-auto space-y-1" onScroll={(e) => {
+                            const target = e.currentTarget
+                            if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+                                if (displayLimit < filteredProducts.length) {
+                                    handleLoadMore()
+                                }
+                            }
+                        }}>
                             {loading ? (
                                 <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                             ) : filteredProducts.length === 0 ? (
                                 <div className="p-4 text-sm text-center">No se encontraron productos.</div>
                             ) : (
-                                filteredProducts.slice(0, 15).map((product) => {
+                                filteredProducts.slice(0, displayLimit).map((product) => {
                                     return (
                                         <div
                                             key={product.id}
-                                            data-disabled={isStockRestricted(product)}
+                                            data-disabled={isStockRestricted(product) || isCustomDisabled(product)}
                                             className={cn(
                                                 "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
                                                 selectedProduct?.id === product.id && "bg-accent"
@@ -202,86 +229,15 @@ export function ProductSelector({
                                     )
                                 })
                             )}
-                            {filteredProducts.length > 15 && (
+                            {displayLimit < filteredProducts.length && (
                                 <div className="p-2 text-xs text-center text-muted-foreground border-t">
-                                    Use búsqueda avanzada para ver más...
+                                    Mostrando {displayLimit} de {filteredProducts.length} productos. Scroll para ver más...
                                 </div>
                             )}
                         </div>
                     </div>
                 </PopoverContent>
             </Popover>
-
-            {showSearch && (
-                <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" size="icon" title="Búsqueda Avanzada" className="h-9 w-9 shrink-0">
-                            <Search className="h-4 w-4" />
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-                        <DialogHeader>
-                            <DialogTitle>Búsqueda Avanzada de Productos</DialogTitle>
-                            <DialogDescription>
-                                Filtre por código o nombre para encontrar el producto exacto.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 pt-4 flex-1 overflow-hidden flex flex-col">
-                            <div className="flex gap-2">
-                                <Input
-                                    autoFocus
-                                    placeholder="Filtrar por código o nombre..."
-                                    value={searchTerm}
-                                    onChange={(e) => searchProducts(e.target.value)}
-                                    className="flex-1"
-                                />
-                            </div>
-                            <div className="border rounded-md flex-1 overflow-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-1/4">Código</TableHead>
-                                            <TableHead>Nombre</TableHead>
-                                            <TableHead>Categoría</TableHead>
-                                            <TableHead className="text-right">Precio</TableHead>
-                                            <TableHead className="text-right">Stock</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {filteredProducts.map((product) => (
-                                            <TableRow
-                                                key={product.id}
-                                                className={cn(
-                                                    "cursor-pointer hover:bg-accent",
-                                                    isStockRestricted(product) && "opacity-50 pointer-events-none grayscale-[0.5]"
-                                                )}
-                                                onClick={() => handleSelect(product)}
-                                            >
-                                                <TableCell className="font-mono text-xs">
-                                                    <span className="font-mono text-xs text-muted-foreground mr-2">
-                                                        {product.internal_code || product.code}
-                                                    </span>
-                                                    <span className="font-medium">{product.name}</span>
-                                                </TableCell>
-                                                <TableCell className="text-sm">{product.category_name}</TableCell>
-                                                <TableCell className="text-right font-medium">${Number(product.sale_price).toLocaleString()}</TableCell>
-                                                <TableCell className="text-right">{(product.current_stock || 0)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                        {filteredProducts.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                                                    No se encontraron resultados.
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            )}
         </div>
     )
 }
