@@ -31,7 +31,7 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
     customer = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='sale_orders')
     date = models.DateField(_("Fecha"), auto_now_add=True)
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.CONFIRMED)
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     channel = models.CharField(_("Canal"), max_length=20, choices=Channel.choices, default=Channel.SYSTEM)
     

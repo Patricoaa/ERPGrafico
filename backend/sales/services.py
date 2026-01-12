@@ -24,26 +24,27 @@ class SalesService:
 
         # 1. Validate Stock Availability (Strict Reservation)
         from inventory.services import UoMService
+        from sales.models import SalesSettings
+        settings = SalesSettings.objects.first()
         
-        for line in order.lines.all():
-            product = line.product
-            if product.track_inventory:
-                # Convert requested qty to Product UoM
-                qty_needed = UoMService.convert_quantity(
-                    line.quantity,
-                    from_uom=line.uom,
-                    to_uom=product.uom
-                )
-                
-                # Check availability
-                # qty_available = on_hand - reserved
-                # valid if available >= needed
-                if product.qty_available < qty_needed:
-                    raise ValidationError(
-                        f"Stock insuficiente para '{product.name}'. "
-                        f"Solicitado: {qty_needed} {product.uom.name}, "
-                        f"Disponible: {product.qty_available} {product.uom.name}"
+        if settings and settings.restrict_stock_sales:
+            for line in order.lines.all():
+                product = line.product
+                if product and product.track_inventory:
+                    # Convert requested qty to Product UoM
+                    qty_needed = UoMService.convert_quantity(
+                        line.quantity,
+                        from_uom=line.uom,
+                        to_uom=product.uom
                     )
+                    
+                    # Check availability
+                    if product.qty_available < qty_needed:
+                        raise ValidationError(
+                            f"Stock insuficiente para '{product.name}'. "
+                            f"Solicitado: {qty_needed} {product.uom.name}, "
+                            f"Disponible: {product.qty_available} {product.uom.name}"
+                        )
 
         # 2. Update Order Status
         order.status = SaleOrder.Status.CONFIRMED
@@ -58,7 +59,18 @@ class SalesService:
                 # Check if an OT already exists for this line to avoid duplicates
                 if not line.work_orders.exists():
                     print(f"DEBUG: Triggering auto-OT for product {line.product.internal_code} on SaleOrder {order.number}")
-                    WorkOrderService.create_from_sale_line(line)
+                    try:
+                        ot = WorkOrderService.create_from_sale_line(line)
+                        if ot:
+                            print(f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}")
+                        else:
+                            print(f"DEBUG: WorkOrderService.create_from_sale_line returned None for {line.product.internal_code}")
+                    except Exception as e:
+                        print(f"ERROR creating OT for {line.product.internal_code}: {str(e)}")
+                        # We don't necessarily want to block the sale if OT creation fails, 
+                        # but it's important to know why.
+                else:
+                    print(f"DEBUG: OT already exists for line {line.id} ({line.product.internal_code})")
 
         # NOTE: Accounting entry moved to BillingService.create_sale_invoice
         

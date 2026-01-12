@@ -151,6 +151,7 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        from .services import SalesService
         lines_data = validated_data.pop('lines')
         order = SaleOrder.objects.create(**validated_data)
         
@@ -159,6 +160,9 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         
         order.recalculate_totals()
         order.save()
+        
+        # Trigger confirmation logic (including OT creation)
+        SalesService.confirm_sale(order)
         
         return order
 
