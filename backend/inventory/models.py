@@ -473,7 +473,8 @@ class StockMove(models.Model):
 
 class PricingRule(models.Model):
     class RuleType(models.TextChoices):
-        FIXED = 'FIXED', _('Precio Fijo')
+        FIXED = 'FIXED', _('Precio Fijo (Unitario)')
+        PACKAGE_FIXED = 'PACKAGE_FIXED', _('Precio Paquete (Total)')
         DISCOUNT_PERCENTAGE = 'DISCOUNT_PERCENTAGE', _('Porcentaje de Descuento')
 
     class Operator(models.TextChoices):

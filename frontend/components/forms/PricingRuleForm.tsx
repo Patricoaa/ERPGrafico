@@ -36,12 +36,12 @@ import { Plus } from "lucide-react"
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     product: z.number().nullable().optional(),
-    category: z.number().nullable().optional(),
+    // category: removed as requested
     uom: z.number().nullable().optional(),
     operator: z.enum(["GT", "LT", "EQ", "GE", "LE", "BT"]),
     min_quantity: z.string().or(z.number()),
     max_quantity: z.string().or(z.number()).nullable().optional(),
-    rule_type: z.enum(["FIXED", "DISCOUNT_PERCENTAGE"]),
+    rule_type: z.enum(["FIXED", "DISCOUNT_PERCENTAGE", "PACKAGE_FIXED"]),
     fixed_price: z.string().or(z.number()).nullable().optional(),
     discount_percentage: z.string().or(z.number()).nullable().optional(),
     start_date: z.string().nullable().optional(),
@@ -62,7 +62,7 @@ interface PricingRuleFormProps {
 
 export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, productId }: PricingRuleFormProps) {
     const [products, setProducts] = useState<any[]>([])
-    const [categories, setCategories] = useState<any[]>([])
+    // const [categories, setCategories] = useState<any[]>([]) // Removed
     const [uoms, setUoms] = useState<any[]>([])
 
     const form = useForm<FormValues>({
@@ -78,7 +78,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             priority: initialData.priority ?? 0,
             active: initialData.active ?? true,
             product: productId || initialData.product || null,
-            category: initialData.category || null,
+            // category: initialData.category || null,
             uom: initialData.uom || null,
             start_date: initialData.start_date || null,
             end_date: initialData.end_date || null,
@@ -106,13 +106,13 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [prodRes, catRes, uomRes] = await Promise.all([
+                const [prodRes, uomRes] = await Promise.all([
                     api.get('/inventory/products/'),
-                    api.get('/inventory/categories/'),
+                    // api.get('/inventory/categories/'),
                     api.get('/inventory/uoms/')
                 ])
                 setProducts(prodRes.data.results || prodRes.data)
-                setCategories(catRes.data.results || catRes.data)
+                // setCategories(catRes.data.results || catRes.data)
                 setUoms(uomRes.data.results || uomRes.data)
             } catch (error) {
                 console.error("Error fetching data", error)
@@ -126,7 +126,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             // Clean up null values or strings that should be null
             const payload = { ...values }
             if (payload.product === null) delete payload.product
-            if (payload.category === null) delete payload.category
+            // if (payload.category === null) delete payload.category
             if (payload.uom === null) delete payload.uom
             if (payload.operator !== "BT") delete payload.max_quantity
 
@@ -167,16 +167,17 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                             )}
                         />
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             <FormField
                                 control={form.control}
                                 name="product"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Producto (Opcional)</FormLabel>
+                                        <FormLabel>Producto</FormLabel>
                                         <Select
                                             onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
                                             value={field.value?.toString() || "none"}
+                                            disabled={!!productId}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
@@ -187,32 +188,6 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                                 <SelectItem value="none">Todos los productos</SelectItem>
                                                 {products.map((p) => (
                                                     <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="category"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Categoría (Opcional)</FormLabel>
-                                        <Select
-                                            onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
-                                            value={field.value?.toString() || "none"}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione una categoría" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="none">Todas las categorías</SelectItem>
-                                                {categories.map((c) => (
-                                                    <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -337,7 +312,8 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="FIXED">Precio Fijo</SelectItem>
+                                                <SelectItem value="FIXED">Precio Fijo (Unitario)</SelectItem>
+                                                <SelectItem value="PACKAGE_FIXED">Precio Paquete (Total Fijo)</SelectItem>
                                                 <SelectItem value="DISCOUNT_PERCENTAGE">Porcentaje de Descuento</SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -345,7 +321,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                     </FormItem>
                                 )}
                             />
-                            {ruleType === "FIXED" ? (
+                            {ruleType === "FIXED" || ruleType === "PACKAGE_FIXED" ? (
                                 <FormField
                                     control={form.control}
                                     name="fixed_price"
@@ -357,6 +333,12 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                             </FormControl>
                                             {field.value && !isNaN(parseFloat(field.value.toString())) && (
                                                 <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border rounded p-2 bg-muted/50">
+                                                    {ruleType === "PACKAGE_FIXED" && (
+                                                        <div className="flex justify-between text-amber-600 font-medium pb-1 mb-1 border-b border-amber-200">
+                                                            <span>Tipo:</span>
+                                                            <span>Precio TOTAL por el rango</span>
+                                                        </div>
+                                                    )}
                                                     <div className="flex justify-between">
                                                         <span>Neto:</span>
                                                         <span>{parseInt(field.value.toString()).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
@@ -369,6 +351,14 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                                         <span>Total (Bruto):</span>
                                                         <span>{Math.round(parseInt(field.value.toString()) * 1.19).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                                                     </div>
+                                                    {ruleType === "PACKAGE_FIXED" && form.watch('min_quantity') && (
+                                                        <div className="pt-2 mt-1 border-t border-dashed text-xs text-slate-500">
+                                                            <p>Precio Unitario (aprox) para {form.watch('min_quantity')} unidades:</p>
+                                                            <p className="font-mono text-right">
+                                                                {Math.round(parseInt(field.value.toString()) / parseFloat(form.watch('min_quantity') as string)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })} c/u
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                             <FormMessage />

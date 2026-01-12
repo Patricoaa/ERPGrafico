@@ -188,13 +188,19 @@ class PricingService:
                 # Calculate price
                 if rule.rule_type == PricingRule.RuleType.FIXED:
                     if rule.fixed_price is not None:
-                        # If rule has a UoM, the fixed price might be per that UoM?
-                        # Usually sale prices are per product.uom. 
-                        # If the rule defines a price, it's usually what the user sees for the line.
-                        # However, if we store base price we might need to adjust.
-                        # For now, we assume the fixed price is the price per UNIT (product.uom)
-                        # but triggered by the rule's measure.
+                        # Fixed price per unit
                         best_price = rule.fixed_price
+                elif rule.rule_type == PricingRule.RuleType.PACKAGE_FIXED:
+                    if rule.fixed_price is not None:
+                         # Fixed price for the WHOLE package
+                         # We need to return UNIT price, so we divide by quantity
+                         # Ensure quantity is not zero to avoid division by zero (should be covered by rules)
+                         if quantity > 0:
+                             best_price = rule.fixed_price / quantity
+                         else:
+                             # Edge case: quantity 0, just return fixed price or base?
+                             # Usually we don't price 0 items.
+                             best_price = rule.fixed_price
                 else:
                     if rule.discount_percentage is not None:
                         best_price = base_price * (1 - (rule.discount_percentage / 100))
