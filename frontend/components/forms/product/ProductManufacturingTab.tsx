@@ -435,15 +435,15 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                         // No CONSUMABLE - uso interno solamente
                                                         if (product.product_type === 'CONSUMABLE') return false
 
-                                                        // Si es MANUFACTURABLE, no debe ser express
+                                                        // Si es MANUFACTURABLE:
                                                         if (product.product_type === 'MANUFACTURABLE') {
-                                                            // Express products auto-finalize, not suitable for BOM
-                                                            if (product.mfg_auto_finalize) return false
+                                                            // Solo mostrar si es express (mfg_auto_finalize: true)
+                                                            // Los simples y avanzados no se muestran como componentes según requerimiento
+                                                            return !!product.mfg_auto_finalize
                                                         }
 
                                                         return true
-                                                    }}
-                                                    customDisabled={(product: any) => {
+                                                    }} customDisabled={(product: any) => {
                                                         // Deshabilitar STORABLE sin stock
                                                         if (product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0) {
                                                             return true

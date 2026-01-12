@@ -16,6 +16,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator"
 
 const accountingSchema = z.object({
     default_receivable_account: z.string().nullable(),
@@ -30,6 +31,10 @@ const accountingSchema = z.object({
     default_consumable_account: z.string().nullable(),
     default_prepayment_account: z.string().nullable(),
     default_advance_payment_account: z.string().nullable(),
+    adjustment_income_account: z.string().nullable(),
+    adjustment_expense_account: z.string().nullable(),
+    initial_inventory_account: z.string().nullable(),
+    revaluation_account: z.string().nullable(),
 
     code_format: z.string(),
     asset_prefix: z.string(),
@@ -63,6 +68,10 @@ export default function AccountingSettingsPage() {
             default_consumable_account: null,
             default_prepayment_account: null,
             default_advance_payment_account: null,
+            adjustment_income_account: null,
+            adjustment_expense_account: null,
+            initial_inventory_account: null,
+            revaluation_account: null,
 
             code_format: "X.X.XX.XXX",
             asset_prefix: "1",
@@ -143,17 +152,17 @@ export default function AccountingSettingsPage() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button 
-                        variant="outline" 
-                        onClick={handlePopulateIFRS} 
+                    <Button
+                        variant="outline"
+                        onClick={handlePopulateIFRS}
                         disabled={populating || saving}
                         className="gap-2"
                     >
                         {populating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
                         Poblar Plan IFRS
                     </Button>
-                    <Button 
-                        onClick={form.handleSubmit(onSubmit)} 
+                    <Button
+                        onClick={form.handleSubmit(onSubmit)}
                         disabled={saving || populating}
                         className="gap-2"
                     >
@@ -222,6 +231,17 @@ export default function AccountingSettingsPage() {
                                                 <AccountField form={form} name="stock_output_account" label="Puente Despachos (Activo)" accountType="ASSET" />
                                             </div>
                                         </div>
+                                        <Separator className="my-4" />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                                            <div className="space-y-4">
+                                                <AccountField form={form} name="adjustment_income_account" label="Ingreso por Ajuste/Sobrante (Ingreso)" accountType="INCOME" />
+                                                <AccountField form={form} name="adjustment_expense_account" label="Gasto por Ajuste/Merma (Gasto)" accountType="EXPENSE" />
+                                            </div>
+                                            <div className="space-y-4">
+                                                <AccountField form={form} name="initial_inventory_account" label="Carga de Stock Inicial (Patrimonio/Activo)" accountType="EQUITY" />
+                                                <AccountField form={form} name="revaluation_account" label="Revalorización de Stock (Ingreso/Gasto)" accountType="INCOME" />
+                                            </div>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -265,7 +285,7 @@ export default function AccountingSettingsPage() {
                                             <FormItem><FormLabel>Gastos</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                                         )} />
                                     </div>
-                                    
+
                                     <Alert>
                                         <Settings2 className="h-4 w-4" />
                                         <AlertTitle>Nota sobre prefijos</AlertTitle>

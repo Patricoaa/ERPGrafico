@@ -204,11 +204,12 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet):
             quantity = Decimal(str(request.data.get('quantity')))
             unit_cost = Decimal(str(request.data.get('unit_cost', 0)))
             description = request.data.get('description', 'Manual Adjustment')
+            adjustment_reason = request.data.get('adjustment_reason')
 
             product = Product.objects.get(pk=product_id)
             warehouse = Warehouse.objects.get(pk=warehouse_id)
 
-            move = StockService.adjust_stock(product, warehouse, quantity, unit_cost, description)
+            move = StockService.adjust_stock(product, warehouse, quantity, unit_cost, description, adjustment_reason)
             return Response(StockMoveSerializer(move).data, status=status.HTTP_201_CREATED)
 
         except Exception as e:

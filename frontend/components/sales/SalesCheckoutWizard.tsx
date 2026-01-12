@@ -13,10 +13,11 @@ import { Step1_DTE } from "./checkout/Step1_DTE"
 import { Step2_Payment } from "./checkout/Step2_Payment"
 import { Step3_Delivery } from "./checkout/Step3_Delivery"
 import { OrderSummaryCard } from "./checkout/OrderSummaryCard"
+import { ProcessSummarySidebar } from "./checkout/ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Customer } from "./checkout/Step0_Customer"
-import { Check, ChevronRight, ChevronLeft, Loader2, User, Tag, CreditCard, ShoppingBag } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2 } from "lucide-react"
 
 interface SalesCheckoutWizardProps {
     open: boolean
@@ -239,85 +240,87 @@ export function SalesCheckoutWizard({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[95vw] lg:max-w-[1200px] p-0 overflow-hidden bg-background">
-                <div className="flex h-[600px]">
-                    {/* Main Content */}
-                    <div className="flex-1 flex flex-col min-w-0">
-                        <DialogHeader className="p-6 border-b">
-                            <div className="flex items-center justify-between">
-                                <DialogTitle className="text-xl font-bold">Cerrar Venta</DialogTitle>
-                                <div className="flex items-center gap-2">
-                                    {[1, 2, 3, totalSteps].map((s) => (
-                                        <div
-                                            key={s}
-                                            className={`h-2 w-8 rounded-full transition-all ${step === s ? 'bg-primary w-12' : 'bg-muted'}`}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </DialogHeader>
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
+                <div className="p-6 border-b flex justify-between items-center bg-muted/30">
+                    <div>
+                        <DialogTitle className="text-2xl">Cerrar Venta</DialogTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {[1, 2, 3, totalSteps].map((s) => (
+                            <div
+                                key={s}
+                                className={`h-2 w-8 rounded-full transition-all ${step === s ? 'bg-primary w-12' : 'bg-muted'}`}
+                            />
+                        ))}
+                    </div>
+                </div>
 
-                        <div className="flex-1 overflow-auto p-6">
-                            {step === 1 && (
-                                <Step0_Customer
-                                    selectedCustomerId={selectedCustomerId}
-                                    setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
-                                    setSelectedCustomerName={setSelectedCustomerName}
-                                />
-                            )}
-                            {step === 2 && <Step1_DTE dteData={dteData} setDteData={setDteData} />}
-                            {step === 3 && <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
-                            {step === 4 && <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={orderLines} />}
-                        </div>
+                <div className="flex flex-1 overflow-hidden">
+                    {/* Left Sidebar - Process Summary */}
+                    <ProcessSummarySidebar
+                        currentStep={step}
+                        totalSteps={totalSteps}
+                        customerName={selectedCustomerName}
+                        dteType={step > 1 ? dteData.type : undefined}
+                        paymentData={step > 2 ? {
+                            method: paymentData.method,
+                            amount: paymentData.amount,
+                            creditAssigned: paymentData.amount < total ? total - paymentData.amount : 0
+                        } : undefined}
+                        deliveryData={step > 3 ? deliveryData : undefined}
+                    />
 
-                        <DialogFooter className="p-6 border-t bg-muted/5">
-                            <div className="flex justify-between w-full gap-4">
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleBack}
-                                    disabled={step === 1 || loading}
-                                >
-                                    <ChevronLeft className="mr-2 h-4 w-4" />
-                                    Atrás
+                    {/* Center - Content Area */}
+                    <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+                        {step === 1 && (
+                            <Step0_Customer
+                                selectedCustomerId={selectedCustomerId}
+                                setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
+                                setSelectedCustomerName={setSelectedCustomerName}
+                            />
+                        )}
+                        {step === 2 && <Step1_DTE dteData={dteData} setDteData={setDteData} />}
+                        {step === 3 && <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
+                        {step === 4 && <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={orderLines} />}
+
+                        {/* Progress Buttons */}
+                        <div className="mt-8 pt-6 border-t flex justify-between">
+                            <Button
+                                variant="ghost"
+                                onClick={handleBack}
+                                disabled={step === 1 || loading}
+                            >
+                                <ChevronLeft className="mr-2 h-4 w-4" />
+                                Atrás
+                            </Button>
+
+                            {step < totalSteps ? (
+                                <Button onClick={handleNext} className="w-40">
+                                    Siguiente
+                                    <ChevronRight className="ml-2 h-4 w-4" />
                                 </Button>
-
-                                {step < totalSteps ? (
-                                    <Button onClick={handleNext} className="w-40">
-                                        Siguiente
-                                        <ChevronRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        onClick={handleFinish}
-                                        className="w-48 bg-emerald-600 hover:bg-emerald-700"
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <Check className="mr-2 h-4 w-4" />
-                                        )}
-                                        Finalizar Venta
-                                    </Button>
-                                )}
-                            </div>
-                        </DialogFooter>
+                            ) : (
+                                <Button
+                                    onClick={handleFinish}
+                                    className="w-48 bg-emerald-600 hover:bg-emerald-700"
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Check className="mr-2 h-4 w-4" />
+                                    )}
+                                    Finalizar Venta
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Sidebar Summary */}
-                    <div className="w-80 hidden lg:block border-l">
+                    {/* Right Sidebar - Product Summary */}
+                    <div className="w-80 hidden lg:block">
                         <OrderSummaryCard
                             orderLines={orderLines}
                             total={total}
-                            customerName={selectedCustomerName}
-                            dteType={dteData.type}
-                            paymentData={{
-                                method: paymentData.method,
-                                amount: paymentData.amount,
-                                creditAssigned: paymentData.amount < total ? total - paymentData.amount : 0
-                            }}
-                            deliveryData={deliveryData}
-                            currentStep={step}
                         />
                     </div>
                 </div>

@@ -13,6 +13,7 @@ import { Step1_PurchaseDTE } from "./checkout/Step1_PurchaseDTE"
 import { Step2_PurchasePayment } from "./checkout/Step2_PurchasePayment"
 import { Step3_Receipt } from "./checkout/Step3_Receipt"
 import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
+import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
@@ -249,87 +250,90 @@ export function PurchaseCheckoutWizard({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[95vw] lg:max-w-[1200px] p-0 overflow-hidden bg-background max-h-[90vh]">
-                <div className="flex h-[600px]">
-                    <div className="flex-1 flex flex-col min-w-0">
-                        <DialogHeader className="p-6 border-b">
-                            <div className="flex items-center justify-between">
-                                <DialogTitle className="text-xl font-bold">Procesar Compra</DialogTitle>
-                                <div className="flex items-center gap-2">
-                                    {[1, 2, 3, 4].map((s) => (
-                                        <div
-                                            key={s}
-                                            className={`h-2 w-8 rounded-full transition-all ${step === s ? 'bg-primary w-12' : 'bg-muted'}`}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </DialogHeader>
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
+                <div className="p-6 border-b flex justify-between items-center bg-muted/30">
+                    <div>
+                        <DialogTitle className="text-2xl">Procesar Compra</DialogTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {[1, 2, 3, 4].map((s) => (
+                            <div
+                                key={s}
+                                className={`h-2 w-8 rounded-full transition-all ${step === s ? 'bg-primary w-12' : 'bg-muted'}`}
+                            />
+                        ))}
+                    </div>
+                </div>
 
-                        <div className="flex-1 overflow-auto p-6">
-                            {step === 1 && (
-                                <Step0_Supplier
-                                    selectedSupplierId={selectedSupplierId}
-                                    setSelectedSupplierId={setSelectedSupplierId}
-                                    setSelectedSupplierName={setSelectedSupplierName}
-                                    selectedWarehouseId={selectedWarehouseId}
-                                    setSelectedWarehouseId={setSelectedWarehouseId}
-                                />
-                            )}
-                            {step === 2 && <Step1_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
-                            {step === 3 && <Step2_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
-                            {step === 4 && <Step3_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={orderLines} />}
-                        </div>
+                <div className="flex flex-1 overflow-hidden">
+                    {/* Left Sidebar - Process Summary */}
+                    <PurchaseProcessSummarySidebar
+                        currentStep={step}
+                        totalSteps={totalSteps}
+                        supplierName={selectedSupplierName}
+                        warehouseName={selectedWarehouseName}
+                        dteType={step > 1 ? dteData.type : undefined}
+                        paymentData={step > 2 ? {
+                            method: paymentData.method,
+                            amount: paymentData.amount,
+                            pendingDebt: total - paymentData.amount
+                        } : undefined}
+                        receiptData={step > 3 ? receiptData : undefined}
+                    />
 
-                        <DialogFooter className="p-6 border-t bg-muted/5">
-                            <div className="flex justify-between w-full gap-4">
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleBack}
-                                    disabled={step === 1 || loading}
-                                >
-                                    <ChevronLeft className="mr-2 h-4 w-4" />
-                                    Atrás
+                    {/* Center - Content Area */}
+                    <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+                        {step === 1 && (
+                            <Step0_Supplier
+                                selectedSupplierId={selectedSupplierId}
+                                setSelectedSupplierId={setSelectedSupplierId}
+                                setSelectedSupplierName={setSelectedSupplierName}
+                                selectedWarehouseId={selectedWarehouseId}
+                                setSelectedWarehouseId={setSelectedWarehouseId}
+                            />
+                        )}
+                        {step === 2 && <Step1_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
+                        {step === 3 && <Step2_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
+                        {step === 4 && <Step3_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={orderLines} />}
+
+                        {/* Progress Buttons */}
+                        <div className="mt-8 pt-6 border-t flex justify-between">
+                            <Button
+                                variant="ghost"
+                                onClick={handleBack}
+                                disabled={step === 1 || loading}
+                            >
+                                <ChevronLeft className="mr-2 h-4 w-4" />
+                                Atrás
+                            </Button>
+
+                            {step < totalSteps ? (
+                                <Button onClick={handleNext} className="w-40">
+                                    Siguiente
+                                    <ChevronRight className="ml-2 h-4 w-4" />
                                 </Button>
-
-                                {step < totalSteps ? (
-                                    <Button onClick={handleNext} className="w-40">
-                                        Siguiente
-                                        <ChevronRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        onClick={handleFinish}
-                                        className="w-48 bg-emerald-600 hover:bg-emerald-700"
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <Check className="mr-2 h-4 w-4" />
-                                        )}
-                                        Finalizar Compra
-                                    </Button>
-                                )}
-                            </div>
-                        </DialogFooter>
+                            ) : (
+                                <Button
+                                    onClick={handleFinish}
+                                    className="w-48 bg-emerald-600 hover:bg-emerald-700"
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Check className="mr-2 h-4 w-4" />
+                                    )}
+                                    Finalizar Compra
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Sidebar Summary */}
-                    <div className="w-[380px] hidden lg:block">
+                    {/* Right Sidebar - Product Summary */}
+                    <div className="w-80 hidden lg:block">
                         <PurchaseOrderSummaryCard
                             orderLines={orderLines}
                             total={total}
-                            supplierName={selectedSupplierName}
-                            warehouseName={selectedWarehouseName}
-                            dteType={step > 1 ? dteData.type : undefined}
-                            paymentData={step > 2 ? {
-                                method: paymentData.method,
-                                amount: paymentData.amount,
-                                pendingDebt: total - paymentData.amount
-                            } : undefined}
-                            receiptData={step > 3 ? receiptData : undefined}
-                            currentStep={step}
                         />
                     </div>
                 </div>

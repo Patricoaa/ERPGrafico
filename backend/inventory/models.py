@@ -446,12 +446,25 @@ class StockMove(models.Model):
         OUT = 'OUT', _('Salida')
         ADJUSTMENT = 'ADJ', _('Ajuste')
 
+    class AdjustmentReason(models.TextChoices):
+        INITIAL = 'INITIAL', _('Inventario Inicial')
+        LOSS = 'LOSS', _('Merma/Pérdida')
+        GAIN = 'GAIN', _('Sobrante/Ganancia')
+        REVALUATION = 'REVALUATION', _('Revalorización')
+        CORRECTION = 'CORRECTION', _('Corrección de Inventario')
+
     date = models.DateField(_("Fecha"), default=timezone.now)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='stock_moves')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='stock_moves')
     uom = models.ForeignKey(UoM, on_delete=models.PROTECT, related_name='stock_moves_uom', null=True, blank=True)
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4) # Pos for Add, Neg for Remove
     move_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
+    adjustment_reason = models.CharField(
+        _("Motivo de Ajuste"), 
+        max_length=20, 
+        choices=AdjustmentReason.choices, 
+        null=True, blank=True
+    )
     
     description = models.CharField(_("Descripción"), max_length=255, blank=True)
     

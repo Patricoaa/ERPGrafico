@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { WarehouseList } from "@/components/inventory/WarehouseList"
 import { MovementList } from "@/components/inventory/MovementList"
 import { StockReport } from "@/components/inventory/StockReport"
-import { AdjustmentList } from "@/components/inventory/AdjustmentList"
+
 import { ReplenishmentRuleList } from "@/components/inventory/ReplenishmentRuleList"
 import { Warehouse, History, FileBarChart, ArrowRightLeft, RefreshCw } from "lucide-react"
 
@@ -23,7 +23,7 @@ export default function UnifiedStockPage() {
 
             <Tabs defaultValue="warehouses" className="space-y-4" onValueChange={setActiveTab}>
                 <div className="flex justify-center">
-                    <TabsList className="grid w-full h-auto flex-wrap grid-cols-2 md:grid-cols-5 bg-muted/50 rounded-lg p-1 border">
+                    <TabsList className="grid w-full h-auto flex-wrap grid-cols-2 md:grid-cols-4 bg-muted/50 rounded-lg p-1 border">
                         <TabsTrigger value="warehouses" className="rounded-md gap-2">
                             <Warehouse className="h-4 w-4" />
                             <span className="max-sm:hidden">Almacenes</span>
@@ -32,10 +32,7 @@ export default function UnifiedStockPage() {
                             <History className="h-4 w-4" />
                             <span className="max-sm:hidden">Movimientos</span>
                         </TabsTrigger>
-                        <TabsTrigger value="adjustments" className="rounded-md gap-2">
-                            <ArrowRightLeft className="h-4 w-4" />
-                            <span className="max-sm:hidden">Ajustes</span>
-                        </TabsTrigger>
+
                         <TabsTrigger value="replenishment" className="rounded-md gap-2">
                             <RefreshCw className="h-4 w-4" />
                             <span className="max-sm:hidden">Reabastecimiento</span>
@@ -54,9 +51,7 @@ export default function UnifiedStockPage() {
                     <TabsContent value="movements" className="mt-0 outline-none">
                         <MovementList />
                     </TabsContent>
-                    <TabsContent value="adjustments" className="mt-0 outline-none">
-                        <AdjustmentList />
-                    </TabsContent>
+
                     <TabsContent value="replenishment" className="mt-0 outline-none">
                         <ReplenishmentRuleList />
                     </TabsContent>

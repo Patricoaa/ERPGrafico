@@ -336,6 +336,32 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta de gasto usada por defecto para productos consumibles (tintas, papel, etc.)")
     )
 
+    # Adjustment Accounts
+    adjustment_income_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_adjustment_income',
+        verbose_name=_("Cuenta de Ingreso por Ajuste (Sobrantes)"),
+        help_text=_("Cuenta de ingreso para registrar ganancias de inventario (ej: Otros Ingresos).")
+    )
+    adjustment_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_adjustment_expense',
+        verbose_name=_("Cuenta de Gasto por Ajuste (Mermas)"),
+        help_text=_("Cuenta de gasto para registrar mermas o pérdidas de inventario.")
+    )
+    initial_inventory_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_initial_inventory',
+        verbose_name=_("Cuenta de Inventario Inicial (Patrimonio/Contrapartida)"),
+        help_text=_("Cuenta usada como contrapartida al cargar el stock por primera vez.")
+    )
+    revaluation_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_revaluation',
+        verbose_name=_("Cuenta de Revalorización"),
+        help_text=_("Cuenta usada para ajustes de costo sin cambio físico en stock.")
+    )
+
 
 
     # Advanced Accounting

@@ -11,28 +11,46 @@ from typing import Tuple, Optional
 class StockService:
     @staticmethod
     @transaction.atomic
-    def adjust_stock(product: Product, warehouse: Warehouse, quantity: Decimal, unit_cost: Decimal, description: str):
+    def adjust_stock(product: Product, warehouse: Warehouse, quantity: Decimal, unit_cost: Decimal, description: str, adjustment_reason: str = None):
         """
         Creates a Stock Move (Adjustment) and the corresponding Journal Entry.
-        
-        IN (Positive Qty):
-            Debit: Asset (Stock)
-            Credit: Income/Adjustment Account (e.g., Initial Inventory or Gain)
-        
-        OUT (Negative Qty):
-            Debit: Expense (Loss/COGS)
-            Credit: Asset (Stock)
+        Handles cost ponderation for entries and uses specific accounts from AccountingSettings.
         """
-        
         if quantity == 0:
             return None
 
-        # 1. Create Stock Move
-        move_type = StockMove.Type.ADJUSTMENT
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
+        if not settings:
+            raise ValidationError("No se encontró la configuración contable global.")
+
+        # 1. Logic for unit_cost and cost pondering
+        if unit_cost is None or unit_cost == 0:
+            if quantity > 0 and (product.cost_price == 0 or adjustment_reason == StockMove.AdjustmentReason.INITIAL):
+                 raise ValidationError(f"Debe especificar un costo unitario para esta entrada de stock del producto {product.name}.")
+            unit_cost = product.cost_price
+
+        # Update product weighted average cost for entries
         if quantity > 0:
-             move_type = StockMove.Type.IN
-        elif quantity < 0:
-             move_type = StockMove.Type.OUT
+            old_qty = product.qty_on_hand
+            old_cost = product.cost_price
+            new_qty = old_qty + quantity
+            
+            if new_qty > 0:
+                # Weighted Average Formula: (old_stock * old_cost + new_stock * new_cost) / total_stock
+                # But only if new_qty > 0 to avoid division by zero
+                # If we were at 0 or negative, the new unit_cost becomes the reference
+                if old_qty <= 0:
+                    product.cost_price = unit_cost
+                else:
+                    new_cost = ((old_qty * old_cost) + (quantity * unit_cost)) / new_qty
+                    product.cost_price = new_cost.quantize(Decimal('0.01'))
+                product.save()
+
+        # 2. Create Stock Move
+        move_type = StockMove.Type.ADJUSTMENT
+        # Even if tagged as ADJ, we check direction for move_type logic if needed (though ADJ is valid)
+        # We'll use ADJ but keep the direction in quantity
              
         move = StockMove.objects.create(
             date=timezone.now().date(),
@@ -41,44 +59,49 @@ class StockService:
             uom=product.uom,
             quantity=quantity,
             move_type=move_type,
+            adjustment_reason=adjustment_reason,
             description=description
         )
 
-        # 2. Accounting Logic
+        # 3. Accounting Logic
         asset_account = product.get_asset_account
         if not asset_account:
              raise ValidationError(f"El producto {product.name} (o su categoría) no tiene configurada una Cuenta de Activo.")
 
-        # Determine Counterpart Account
-        # For simplicity, we assume a generic "Inventory Adjustment" account if not specified
-        # In a real scenario, this might come from a 'Reason' code or settings.
-        try:
-             # Default Adjustment Account (Income/Expense depending on sign)
-             # Logic: If Gain -> Income (Credit). If Loss -> Expense (Debit).
-             if quantity > 0:
-                 contra_account = Account.objects.filter(account_type=AccountType.INCOME).first() # TODO: Fix
-             else:
-                 contra_account = Account.objects.filter(account_type=AccountType.EXPENSE).first() # TODO: Fix
-        except:
-             raise ValidationError("No se encontró cuenta de contrapartida para ajuste.")
+        # Determine Counterpart Account based on reason
+        contra_account = None
+        
+        if adjustment_reason == StockMove.AdjustmentReason.INITIAL:
+            contra_account = settings.initial_inventory_account
+        elif adjustment_reason == StockMove.AdjustmentReason.REVALUATION:
+            contra_account = settings.revaluation_account
+        elif quantity > 0:
+            # Gain/Sobrante
+            contra_account = settings.adjustment_income_account or Account.objects.filter(account_type=AccountType.INCOME).first()
+        else:
+            # Loss/Merma
+            contra_account = settings.adjustment_expense_account or Account.objects.filter(account_type=AccountType.EXPENSE).first()
+
+        if not contra_account:
+             raise ValidationError(f"No se encontró una cuenta de contrapartida configurada para el motivo: {adjustment_reason or 'Ajuste Genérico'}.")
 
         total_value = abs(quantity * unit_cost)
 
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description=f"Ajuste Stock {product.code}: {description}",
+            description=f"Ajuste Stock {product.internal_code}: {description} ({adjustment_reason or 'Manual'})",
             reference=f"STK-{move.id}",
             state=JournalEntry.State.DRAFT
         )
 
         if quantity > 0:
-            # Debit Asset, Credit Income
-            JournalItem.objects.create(entry=entry, account=asset_account, debit=total_value, credit=0)
-            JournalItem.objects.create(entry=entry, account=contra_account, debit=0, credit=total_value)
+            # Entry: Debit Asset, Credit Counterpart
+            JournalItem.objects.create(entry=entry, account=asset_account, debit=total_value, credit=0, label=description)
+            JournalItem.objects.create(entry=entry, account=contra_account, debit=0, credit=total_value, label=description)
         else:
-            # Debit Expense, Credit Asset
-            JournalItem.objects.create(entry=entry, account=contra_account, debit=total_value, credit=0)
-            JournalItem.objects.create(entry=entry, account=asset_account, debit=0, credit=total_value)
+            # Exit: Debit Counterpart, Credit Asset
+            JournalItem.objects.create(entry=entry, account=contra_account, debit=total_value, credit=0, label=description)
+            JournalItem.objects.create(entry=entry, account=asset_account, debit=0, credit=total_value, label=description)
             
         JournalEntryService.post_entry(entry)
         

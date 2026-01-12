@@ -7,12 +7,16 @@ import { Search, Download, RefreshCw, Check, X } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { AdjustmentList } from "@/components/inventory/AdjustmentList"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ArrowRightLeft } from "lucide-react"
 
 export function StockReport() {
     const [report, setReport] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [isRotating, setIsRotating] = useState<number | null>(null)
+    const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
 
     useEffect(() => {
         fetchReport()
@@ -77,7 +81,7 @@ export function StockReport() {
                             <TableHead className="text-right">Valorización</TableHead>
                             <TableHead className="text-right text-emerald-600">Entradas</TableHead>
                             <TableHead className="text-right text-rose-600">Salidas</TableHead>
-                            <TableHead className="text-right">Acción</TableHead>
+                            <TableHead className="text-center w-[100px]">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -112,23 +116,55 @@ export function StockReport() {
                                 <TableCell className="text-right text-rose-600 font-medium text-xs">
                                     {item.moves_out > 0 ? `-${Math.round(item.moves_out * 100) / 100}` : '0'}
                                 </TableCell>
-                                <TableCell className="text-right">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => handleRotateUom(item)}
-                                        disabled={isRotating === item.id}
-                                        title="Rotar Unidad de Medida (Convierte Cantidades)"
-                                    >
-                                        <RefreshCw className={`h-4 w-4 ${isRotating === item.id ? 'animate-spin' : ''}`} />
-                                    </Button>
+                                <TableCell className="text-center">
+                                    <div className="flex gap-1 justify-center">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => setAdjustingProduct(item)}
+                                            title="Ajustar Stock"
+                                        >
+                                            <ArrowRightLeft className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => handleRotateUom(item)}
+                                            disabled={isRotating === item.id}
+                                            title="Rotar Unidad de Medida (Convierte Cantidades)"
+                                        >
+                                            <RefreshCw className={`h-4 w-4 ${isRotating === item.id ? 'animate-spin' : ''}`} />
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
             </div>
+
+            <Dialog open={!!adjustingProduct} onOpenChange={(open) => !open && setAdjustingProduct(null)}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>
+                            Ajustar Stock: {adjustingProduct?.name}
+                        </DialogTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Stock actual: <span className="font-bold">{adjustingProduct?.stock_qty} {adjustingProduct?.uom_name}</span> •
+                            Costo unitario: <span className="font-bold">${adjustingProduct?.unit_cost}</span>
+                        </p>
+                    </DialogHeader>
+                    <AdjustmentList
+                        preSelectedProduct={adjustingProduct?.id?.toString()}
+                        onSuccess={() => {
+                            setAdjustingProduct(null);
+                            fetchReport();
+                        }}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

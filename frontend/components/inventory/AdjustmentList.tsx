@@ -71,10 +71,18 @@ const adjustmentSchema = z.object({
     warehouse_id: z.string().min(1, "Seleccione un almacén"),
     type: z.enum(["IN", "OUT"]),
     quantity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Debe ser mayor a 0"),
+    unit_cost: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Debe ser mayor o igual a 0"),
+    adjustment_reason: z.string().min(1, "Seleccione un motivo"),
     description: z.string().optional(),
 })
 
-export function AdjustmentList() {
+interface AdjustmentListProps {
+    preSelectedProduct?: string
+    preSelectedWarehouse?: string
+    onSuccess?: () => void
+}
+
+export function AdjustmentList({ preSelectedProduct, preSelectedWarehouse, onSuccess }: AdjustmentListProps = {}) {
     const [moves, setMoves] = useState<StockMove[]>([])
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -109,9 +117,27 @@ export function AdjustmentList() {
         defaultValues: {
             type: "IN",
             description: "",
-            quantity: ""
+            quantity: "",
+            unit_cost: "0",
+            adjustment_reason: "CORRECTION",
+            product_id: preSelectedProduct || "",
+            warehouse_id: preSelectedWarehouse || ""
         }
     })
+
+    // Auto-fill unit_cost when product changes
+    const selectedProductId = form.watch("product_id")
+    useEffect(() => {
+        if (selectedProductId) {
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/inventory/products/${selectedProductId}/`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.cost_price !== undefined) {
+                        form.setValue("unit_cost", data.cost_price.toString())
+                    }
+                })
+        }
+    }, [selectedProductId, form])
 
     const onSubmit = async (values: z.infer<typeof adjustmentSchema>) => {
         try {
@@ -122,6 +148,8 @@ export function AdjustmentList() {
                 product_id: values.product_id,
                 warehouse_id: values.warehouse_id,
                 quantity: finalQty,
+                unit_cost: Number(values.unit_cost),
+                adjustment_reason: values.adjustment_reason,
                 description: values.description || "Ajuste Manual"
             }
 
@@ -136,10 +164,11 @@ export function AdjustmentList() {
                 throw new Error(err.error || "Error al crear ajuste")
             }
 
-            toast.success("Ajuste realizado correctamente")
-            setIsDialogOpen(false)
+            toast.success("Ajuste creado exitosamente")
             form.reset()
             fetchData()
+            setIsDialogOpen(false)
+            onSuccess?.()
 
         } catch (error: any) {
             toast.error(error.message)
@@ -186,6 +215,7 @@ export function AdjustmentList() {
                                                         value={field.value}
                                                         onChange={field.onChange}
                                                         placeholder="Seleccionar producto..."
+                                                        disabled={!!preSelectedProduct}
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -256,6 +286,46 @@ export function AdjustmentList() {
                                                     <FormControl>
                                                         <Input type="number" step="0.01" {...field} />
                                                     </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="unit_cost"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Costo Unitario ($)</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" step="0.01" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="adjustment_reason"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Motivo Especial</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Seleccionar motivo..." />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="CORRECTION">Corrección de Inventario</SelectItem>
+                                                            <SelectItem value="INITIAL">Inventario Inicial</SelectItem>
+                                                            <SelectItem value="LOSS">Merma / Pérdida</SelectItem>
+                                                            <SelectItem value="GAIN">Sobrante / Ganancia</SelectItem>
+                                                            <SelectItem value="REVALUATION">Revalorización</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}

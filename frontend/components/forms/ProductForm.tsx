@@ -131,11 +131,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     useEffect(() => {
         if (productType === "STORABLE") {
             if (!form.getValues("track_inventory")) form.setValue("track_inventory", true)
-        } else if (productType === "CONSUMABLE" || productType === "SERVICE") {
+        } else if (productType === "CONSUMABLE") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
+            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
+        } else if (productType === "SERVICE") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
         }
-        // For MANUFACTURABLE, we leave it as is (unlocked, user decides), 
-        // ensuring we don't overwrite saved data or user choice unless we want to enforce a default on change.
     }, [productType, form])
 
     const fetchCategories = async () => {
@@ -468,6 +469,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                 form={form as any}
                                                 initialData={initialData}
                                                 canBeSold={form.watch("can_be_sold")}
+                                                uoms={uoms}
+                                            />
+                                            <ProductManufacturingTab
+                                                form={form as any}
+                                                initialData={initialData}
+                                                products={products}
                                                 uoms={uoms}
                                             />
                                         </div>

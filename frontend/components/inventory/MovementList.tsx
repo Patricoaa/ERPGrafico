@@ -14,6 +14,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { AdjustmentList } from "@/components/inventory/AdjustmentList"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Plus } from "lucide-react"
 
 interface StockMove {
     id: number
@@ -35,6 +38,7 @@ export function MovementList() {
     const [moves, setMoves] = useState<StockMove[]>([])
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
+    const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
 
     const fetchMoves = async () => {
         setLoading(true)
@@ -56,6 +60,10 @@ export function MovementList() {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Historial de Movimientos</h3>
+                <Button onClick={() => setShowAdjustmentModal(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Nuevo Ajuste
+                </Button>
             </div>
 
             <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
@@ -89,7 +97,11 @@ export function MovementList() {
                                 </TableCell>
                                 <TableCell className="text-[10px] text-muted-foreground font-medium uppercase">{move.uom_name}</TableCell>
                                 <TableCell>
-                                    <Badge variant={move.move_type === 'IN' ? 'default' : move.move_type === 'OUT' ? 'destructive' : 'outline'} className="text-[10px]">
+                                    <Badge
+                                        variant={move.move_type === 'IN' ? 'default' : move.move_type === 'OUT' ? 'destructive' : 'secondary'}
+                                        className={`text-[10px] gap-1 ${move.move_type === 'ADJ' ? 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200' : ''}`}
+                                    >
+                                        {move.move_type === 'ADJ' && <span className="text-[8px]">🔄</span>}
                                         {move.move_type === 'IN' ? 'Entrada' : move.move_type === 'OUT' ? 'Salida' : 'Ajuste'}
                                     </Badge>
                                 </TableCell>
@@ -146,6 +158,15 @@ export function MovementList() {
                     view={viewingTransaction.view}
                 />
             )}
+
+            <Dialog open={showAdjustmentModal} onOpenChange={setShowAdjustmentModal}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Nuevo Ajuste de Stock</DialogTitle>
+                    </DialogHeader>
+                    <AdjustmentList onSuccess={() => { setShowAdjustmentModal(false); fetchMoves(); }} />
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

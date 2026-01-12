@@ -50,6 +50,15 @@ export const productSchema = z.object({
         order: z.number().default(0)
     })).default([]),
 }).refine((data) => {
+    // Consumables cannot be sold
+    if (data.product_type === 'CONSUMABLE' && data.can_be_sold) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Los productos consumibles no pueden ser marcados para la venta",
+    path: ["can_be_sold"]
+}).refine((data) => {
     // At least one purpose must be enabled
     return data.can_be_sold || data.can_be_purchased;
 }, {
