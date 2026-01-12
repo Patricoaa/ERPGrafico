@@ -212,12 +212,12 @@ export function OrderActionPanel({
                                 </div>
 
                                 {/* Document Count */}
-                                {(order?.related_documents?.invoices?.length || order?.invoices?.length) > 0 && (
+                                {((order?.related_documents?.invoices || order?.invoices)?.length || 0) > 0 && (
                                     <div className="pt-2 border-t border-border/50">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-muted-foreground">Documentos</span>
                                             <Badge variant="outline" className="text-xs">
-                                                {order.related_documents?.invoices?.length || order.invoices?.length}
+                                                {(order.related_documents?.invoices || order.invoices)?.length}
                                             </Badge>
                                         </div>
                                     </div>

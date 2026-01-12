@@ -25,12 +25,13 @@ export const saleOrderActions: ActionRegistry = {
         actions: [
             {
                 id: 'complete-folio',
-                label: 'Emitir Documento',
+                label: 'Registrar Folio',
                 icon: FileEdit,
                 requiredPermissions: ['billing.change_invoice'],
                 checkAvailability: (order) => {
                     // Only show if there's a draft invoice
-                    return order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT')
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    return invoices.some((inv: any) => inv.status === 'DRAFT')
                 },
                 badge: { type: 'warning', label: 'Pendiente' }
             },

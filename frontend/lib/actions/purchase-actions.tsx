@@ -24,13 +24,13 @@ export const purchaseOrderActions: ActionRegistry = {
         actions: [
             {
                 id: 'complete-folio',
-                label: 'Completar Folio',
+                label: 'Registrar Folio',
                 icon: FileEdit,
                 requiredPermissions: ['billing.change_invoice'],
-                // Removed requiredStatus to allow access whenever a draft invoice exists
                 checkAvailability: (order) => {
                     // Only show if there's a draft invoice
-                    return order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT')
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    return invoices.some((inv: any) => inv.status === 'DRAFT')
                 },
                 badge: { type: 'warning', label: 'Pendiente' }
             },
