@@ -187,6 +187,16 @@ export default function PaymentsPage() {
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() => setViewingTransaction({ type: 'payment', id: payment.id })}
+                                            title="Ver Detalle"
+                                        >
+                                            <Eye className="h-4 w-4 text-blue-600" />
+                                        </Button>
+
                                         {/* Logic: Show transaction button if:
                                             1. OUTBOUND + (CARD or TRANSFER)
                                             2. INBOUND + TRANSFER + (transaction_number is empty)
@@ -207,16 +217,6 @@ export default function PaymentsPage() {
                                                     <Hash className="h-4 w-4 text-orange-600" />
                                                 </Button>
                                             )}
-
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8"
-                                            onClick={() => setViewingTransaction({ type: 'payment', id: payment.id })}
-                                            title="Ver Detalle"
-                                        >
-                                            <Eye className="h-4 w-4 text-blue-600" />
-                                        </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"

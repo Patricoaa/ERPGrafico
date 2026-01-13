@@ -110,6 +110,18 @@ export function OrderCommandCenter({
         }
     }
 
+    const handleDeletePayment = async (id: number) => {
+        if (!confirm("¿Está seguro de anular este pago?")) return
+        try {
+            await api.delete(`/treasury/payments/${id}/`)
+            toast.success("Pago anulado correctamente")
+            fetchOrderDetails()
+            onActionSuccess?.()
+        } catch (error: any) {
+            toast.error("Error al anular el pago")
+        }
+    }
+
     const handleDeleteDraft = async (id: number) => {
         if (!confirm("¿Estás seguro de que deseas eliminar este borrador?")) return
         try {
@@ -435,7 +447,13 @@ export function OrderCommandCenter({
                                                 id: pay.id,
                                                 initialValue: pay.transaction_number || ""
                                             })
-                                        }] : [])
+                                        }] : []),
+                                        {
+                                            icon: X,
+                                            title: 'Anular Pago',
+                                            color: 'text-red-600 hover:bg-red-600/10',
+                                            onClick: () => handleDeletePayment(pay.id)
+                                        }
                                     ]
                                 }))}
                                 onViewDetail={openDetails}
@@ -479,7 +497,7 @@ export function OrderCommandCenter({
                         />
                     </div>
                 </DialogContent>
-            </Dialog>
+            </Dialog >
 
             <TransactionViewModal
                 open={detailsModal.open}

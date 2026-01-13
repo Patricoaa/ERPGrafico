@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Tag, CreditCard, ShoppingBag, CheckCircle2 } from "lucide-react"
+import { User, Tag, CreditCard, ShoppingBag, CheckCircle2, Paintbrush } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ProcessSummarySidebarProps {
@@ -8,6 +8,7 @@ interface ProcessSummarySidebarProps {
     totalSteps: number
     customerName?: string
     dteType?: string
+    hasManufacturing?: boolean
     paymentData?: {
         method: string
         amount: number
@@ -33,22 +34,32 @@ const deliveryLabels: Record<string, string> = {
     'PARTIAL': 'Entrega Parcial'
 }
 
-const STEPS = [
-    { id: 1, label: 'Cliente', icon: User },
-    { id: 2, label: 'Documento', icon: Tag },
-    { id: 3, label: 'Pago', icon: CreditCard },
-    { id: 4, label: 'Entrega', icon: ShoppingBag }
-]
-
 export function ProcessSummarySidebar({
     currentStep,
     totalSteps,
     customerName,
     dteType,
+    hasManufacturing,
     paymentData,
     deliveryData
 }: ProcessSummarySidebarProps) {
-    const visibleSteps = STEPS.slice(0, totalSteps)
+    // Dynamically build the steps list
+    const steps = [
+        { id: 'customer', label: 'Cliente', icon: User },
+    ]
+
+    if (hasManufacturing) {
+        steps.push({ id: 'mfg', label: 'Fabricación', icon: Paintbrush })
+    }
+
+    steps.push(
+        { id: 'dte', label: 'Documento', icon: Tag },
+        { id: 'payment', label: 'Pago', icon: CreditCard }
+    )
+
+    if (totalSteps > (hasManufacturing ? 4 : 3)) {
+        steps.push({ id: 'delivery', label: 'Entrega', icon: ShoppingBag })
+    }
 
     return (
         <div className="w-64 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">
@@ -56,11 +67,12 @@ export function ProcessSummarySidebar({
                 Proceso de Venta
             </h3>
 
-            {visibleSteps.map((step) => {
+            {steps.map((step, index) => {
+                const stepNumber = index + 1
                 const Icon = step.icon
-                const isActive = currentStep === step.id
-                const isPast = currentStep > step.id
-                const isFuture = currentStep < step.id
+                const isActive = currentStep === stepNumber
+                const isPast = currentStep > stepNumber
+                const isFuture = currentStep < stepNumber
 
                 return (
                     <div
@@ -81,13 +93,13 @@ export function ProcessSummarySidebar({
                         {/* Step Details */}
                         {isPast && (
                             <div className="px-3 pb-3 pt-1 space-y-1 animate-in fade-in duration-300">
-                                {step.id === 1 && customerName && (
+                                {step.id === 'customer' && customerName && (
                                     <p className="text-xs font-semibold truncate">{customerName}</p>
                                 )}
-                                {step.id === 2 && dteType && (
+                                {step.id === 'dte' && dteType && (
                                     <p className="text-xs font-semibold">{dteType}</p>
                                 )}
-                                {step.id === 3 && paymentData && (
+                                {step.id === 'payment' && paymentData && (
                                     <div className="space-y-0.5">
                                         <p className="text-xs font-semibold">
                                             {methodLabels[paymentData.method]}
@@ -102,7 +114,7 @@ export function ProcessSummarySidebar({
                                         )}
                                     </div>
                                 )}
-                                {step.id === 4 && deliveryData && (
+                                {step.id === 'delivery' && deliveryData && (
                                     <div className="space-y-0.5">
                                         <p className="text-xs font-semibold">
                                             {deliveryLabels[deliveryData.type]}

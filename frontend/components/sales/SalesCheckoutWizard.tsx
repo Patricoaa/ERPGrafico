@@ -12,12 +12,15 @@ import { Button } from "@/components/ui/button"
 import { Step1_DTE } from "./checkout/Step1_DTE"
 import { Step2_Payment } from "./checkout/Step2_Payment"
 import { Step3_Delivery } from "./checkout/Step3_Delivery"
+import { Step2_ManufacturingDetails } from "./checkout/Step2_ManufacturingDetails"
 import { OrderSummaryCard } from "./checkout/OrderSummaryCard"
 import { ProcessSummarySidebar } from "./checkout/ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Customer } from "./checkout/Step0_Customer"
-import { Check, ChevronRight, ChevronLeft, Loader2 } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, Paintbrush } from "lucide-react"
+
+// ... other imports
 
 interface SalesCheckoutWizardProps {
     open: boolean
@@ -36,8 +39,8 @@ export function SalesCheckoutWizard({
     open,
     onOpenChange,
     order,
-    orderLines,
-    total,
+    orderLines: initialOrderLines,
+    total: initialTotal,
     onComplete,
     initialCustomerName = "",
     initialCustomerId = "",
@@ -45,6 +48,10 @@ export function SalesCheckoutWizard({
 }: SalesCheckoutWizardProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
+
+    // Recalculate total if currentOrderLines changes (though likely unit prices won't change here)
+    const currentTotal = currentOrderLines.reduce((acc: number, line: any) => acc + (line.qty || line.quantity) * (line.unit_price_net || line.unit_price), 0);
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
@@ -59,11 +66,16 @@ export function SalesCheckoutWizard({
 
     const [paymentData, setPaymentData] = useState({
         method: 'CASH',
-        amount: total,
+        amount: initialTotal,
         transactionNumber: '',
         treasuryAccountId: null,
         isPending: false
     })
+
+    // Sync payment amount when total changes
+    useEffect(() => {
+        setPaymentData(prev => ({ ...prev, amount: currentTotal }));
+    }, [currentTotal]);
 
     const [deliveryData, setDeliveryData] = useState<any>({
         type: 'IMMEDIATE',
@@ -71,9 +83,13 @@ export function SalesCheckoutWizard({
         notes: ''
     })
 
+    const hasManufacturing = currentOrderLines.some((line: any) =>
+        line.product_type === 'MANUFACTURABLE' && (line.requires_advanced_manufacturing || line.has_bom)
+    );
+
     // Auto-suggest delivery date if fabricable
     useEffect(() => {
-        const hasFabricable = orderLines.some(line => line.product_type === 'MANUFACTURABLE' || line.has_bom);
+        const hasFabricable = currentOrderLines.some((line: any) => line.product_type === 'MANUFACTURABLE' || line.has_bom);
         if (hasFabricable) {
             setDeliveryData((prev: any) => ({ ...prev, type: 'SCHEDULED' }));
             // Suggest +5 days
@@ -81,7 +97,7 @@ export function SalesCheckoutWizard({
             suggestedDate.setDate(suggestedDate.getDate() + 5);
             setDeliveryData((prev: any) => ({ ...prev, date: suggestedDate.toISOString().split('T')[0] }));
         }
-    }, [orderLines]);
+    }, [currentOrderLines]);
 
     // Fetch default customer if none provided
     useEffect(() => {
@@ -118,17 +134,102 @@ export function SalesCheckoutWizard({
         fetchAccounts()
     }, [])
 
-    const validateCurrentStep = (targetStep: number) => {
-        if (targetStep === 1 && !selectedCustomerId) {
-            toast.error("Debe seleccionar un cliente para continuar.")
-            return false
+    const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
+    const totalSteps = (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0);
+
+    // Map internal step to components
+    const renderStep = () => {
+        let currentStepNum = 1;
+
+        // Step 1: Customer
+        if (step === currentStepNum) {
+            return (
+                <Step0_Customer
+                    selectedCustomerId={selectedCustomerId}
+                    setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
+                    setSelectedCustomerName={setSelectedCustomerName}
+                />
+            )
         }
-        if (targetStep === 2 && dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
-            toast.error("Debe ingresar el número de folio para la factura.")
-            return false
+        currentStepNum++;
+
+        // Optional Step 2: Manufacturing
+        if (hasManufacturing) {
+            if (step === currentStepNum) {
+                return (
+                    <Step2_ManufacturingDetails
+                        orderLines={currentOrderLines}
+                        setOrderLines={setCurrentOrderLines}
+                    />
+                )
+            }
+            currentStepNum++;
         }
-        if (targetStep === 3) {
-            // Validate at least one account exists for the selected method
+
+        // Step: DTE
+        if (step === currentStepNum) {
+            return <Step1_DTE dteData={dteData} setDteData={setDteData} />
+        }
+        currentStepNum++;
+
+        // Step: Payment
+        if (step === currentStepNum) {
+            return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />
+        }
+        currentStepNum++;
+
+        // Step: Delivery
+        if (!isOnlyService && step === currentStepNum) {
+            return <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
+        }
+
+        return null;
+    }
+
+    const validateCurrentStep = () => {
+        // Find which logical step we are in
+        let currentStepNum = 1;
+
+        // Customer validation
+        if (step === currentStepNum) {
+            if (!selectedCustomerId) {
+                toast.error("Debe seleccionar un cliente para continuar.")
+                return false
+            }
+            return true
+        }
+        currentStepNum++;
+
+        // Manufacturing validation
+        if (hasManufacturing) {
+            if (step === currentStepNum) {
+                // Check if all mfg items have data
+                const pendingItems = currentOrderLines.filter((line: any) =>
+                    line.product_type === 'MANUFACTURABLE' &&
+                    (line.requires_advanced_manufacturing || line.has_bom) &&
+                    !line.manufacturing_data
+                )
+                if (pendingItems.length > 0) {
+                    toast.error(`Tiene ${pendingItems.length} productos sin configurar detalles de fabricación.`)
+                    return false
+                }
+                return true
+            }
+            currentStepNum++;
+        }
+
+        // DTE validation
+        if (step === currentStepNum) {
+            if (dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
+                toast.error("Debe ingresar el número de folio para la factura.")
+                return false
+            }
+            return true
+        }
+        currentStepNum++;
+
+        // Payment validation
+        if (step === currentStepNum) {
             const hasAccountsForMethod = (method: string) => {
                 if (method === 'CASH') return accounts.some(a => a.allows_cash)
                 if (method === 'CARD') return accounts.some(a => a.allows_card)
@@ -141,12 +242,10 @@ export function SalesCheckoutWizard({
                     toast.error("No se puede continuar: No hay cuentas de tesorería configuradas.")
                     return false
                 }
-
                 if (!hasAccountsForMethod(paymentData.method)) {
                     toast.error(`El método ${paymentData.method} no tiene una cuenta de tesorería asociada.`)
                     return false
                 }
-
                 if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
                     toast.error("Debe seleccionar una cuenta de destino.")
                     return false
@@ -156,36 +255,32 @@ export function SalesCheckoutWizard({
                     return false
                 }
             }
+            return true
         }
+
         return true
     }
 
     const handleNext = () => {
-        if (!validateCurrentStep(step)) return
+        if (!validateCurrentStep()) return
         setStep(prev => prev + 1)
     }
 
     const handleBack = () => setStep(prev => prev - 1)
 
     const handleFinish = async () => {
-        // Force validation of ALL steps up to the current one
-        for (let s = 1; s <= step; s++) {
-            if (!validateCurrentStep(s)) {
-                setStep(s)
-                return
-            }
-        }
+        // Final validation
+        if (!validateCurrentStep()) return
 
         setLoading(true)
         try {
             const formData = new FormData()
 
-            // Order data
             const payloadOrder = order ? { id: order.id } : {
                 customer: parseInt(selectedCustomerId),
-                payment_method: paymentData.method, // Important for the order record too
+                payment_method: paymentData.method,
                 channel: channel,
-                lines: orderLines.map(l => ({
+                lines: currentOrderLines.map((l: any) => ({
                     product: l.id,
                     description: l.name || l.product_name || l.description,
                     quantity: l.qty || l.quantity,
@@ -239,18 +334,15 @@ export function SalesCheckoutWizard({
         }
     }
 
-    const isOnlyService = orderLines.every(line => line.product_type === 'SERVICE');
-    const totalSteps = isOnlyService ? 3 : 4; // Step 1: Customer, Step 2: DTE, Step 3: Payment, Step 4: Delivery (if not service)
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1400px] w-[95vw] min-h-[85vh] max-h-[90vh] overflow-hidden flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] min-h-[85vh] max-h-[90vh] overflow-hidden flex flex-col p-0 text-foreground">
                 <div className="p-6 border-b flex justify-between items-center bg-muted/30">
                     <div>
                         <DialogTitle className="text-2xl">Cerrar Venta</DialogTitle>
                     </div>
                     <div className="flex items-center gap-2">
-                        {[1, 2, 3, totalSteps].map((s) => (
+                        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
                             <div
                                 key={s}
                                 className={`h-2 w-8 rounded-full transition-all ${step === s ? 'bg-primary w-12' : 'bg-muted'}`}
@@ -265,32 +357,27 @@ export function SalesCheckoutWizard({
                         currentStep={step}
                         totalSteps={totalSteps}
                         customerName={selectedCustomerName}
-                        dteType={step > 1 ? dteData.type : undefined}
-                        paymentData={step > 2 ? {
+                        hasManufacturing={hasManufacturing}
+                        dteType={step > (hasManufacturing ? 2 : 1) ? dteData.type : undefined}
+                        paymentData={step > (hasManufacturing ? 3 : 2) ? {
                             method: paymentData.method,
                             amount: paymentData.amount,
-                            creditAssigned: paymentData.amount < total ? total - paymentData.amount : 0
+                            creditAssigned: paymentData.amount < currentTotal ? currentTotal - paymentData.amount : 0
                         } : undefined}
-                        deliveryData={step > 3 ? deliveryData : undefined}
+                        deliveryData={step > (hasManufacturing ? 4 : 3) ? deliveryData : undefined}
                     />
 
-                    {/* Center - Content Area */}
-                    <div className="flex-1 flex flex-col p-6 overflow-y-auto">
-                        {step === 1 && (
-                            <Step0_Customer
-                                selectedCustomerId={selectedCustomerId}
-                                setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
-                                setSelectedCustomerName={setSelectedCustomerName}
-                            />
-                        )}
-                        {step === 2 && <Step1_DTE dteData={dteData} setDteData={setDteData} />}
-                        {step === 3 && <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
-                        {step === 4 && <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={orderLines} />}
+                    {/* Center - Content Area Wrapper */}
+                    <div className="flex-1 flex flex-col min-w-0">
+                        {/* Scrollable Content */}
+                        <div className="flex-1 p-6 overflow-y-auto">
+                            {renderStep()}
+                        </div>
 
-                        {/* Progress Buttons */}
-                        <div className="mt-8 pt-6 border-t flex justify-between">
+                        {/* Fixed Footer with Progress Buttons */}
+                        <div className="p-6 border-t bg-background flex justify-between z-10 shrink-0">
                             <Button
-                                variant="ghost"
+                                variant="outline"
                                 onClick={handleBack}
                                 disabled={step === 1 || loading}
                             >
@@ -299,14 +386,14 @@ export function SalesCheckoutWizard({
                             </Button>
 
                             {step < totalSteps ? (
-                                <Button onClick={handleNext} className="w-40">
+                                <Button onClick={handleNext} className="w-40 font-bold">
                                     Siguiente
                                     <ChevronRight className="ml-2 h-4 w-4" />
                                 </Button>
                             ) : (
                                 <Button
                                     onClick={handleFinish}
-                                    className="w-48 bg-emerald-600 hover:bg-emerald-700"
+                                    className="w-48 bg-emerald-600 hover:bg-emerald-700 font-bold"
                                     disabled={loading}
                                 >
                                     {loading ? (
@@ -321,10 +408,10 @@ export function SalesCheckoutWizard({
                     </div>
 
                     {/* Right Sidebar - Product Summary */}
-                    <div className="w-80 hidden lg:block">
+                    <div className="w-80 border-l hidden lg:block overflow-y-auto">
                         <OrderSummaryCard
-                            orderLines={orderLines}
-                            total={total}
+                            orderLines={currentOrderLines}
+                            total={currentTotal}
                         />
                     </div>
                 </div>
