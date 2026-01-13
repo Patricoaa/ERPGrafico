@@ -241,106 +241,6 @@ export default function PurchaseOrdersPage() {
                                             <MoreVertical className="h-4 w-4 mr-1" />
                                             Gestionar
                                         </Button>
-                                        <div className="flex justify-center space-x-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}
-                                                title="Ver Detalles"
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            {order.status === 'DRAFT' && (
-                                                <>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleEdit(order)}
-                                                        title="Editar"
-                                                    >
-                                                        <Pencil className="h-4 w-4 text-orange-500" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-blue-600"
-                                                        onClick={() => handleConfirm(order.id)}
-                                                        title="Confirmar"
-                                                    >
-                                                        <CheckCircle className="h-4 w-4" />
-                                                    </Button>
-                                                </>
-                                            )}
-
-                                            {['CONFIRMED', 'RECEIVED', 'PAID', 'INVOICED'].includes(order.status) && !order.is_invoiced && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-emerald-500"
-                                                    onClick={() => handleInvoice(order)}
-                                                    title="Registrar Factura/Boleta"
-                                                >
-                                                    <FileText className="h-4 w-4" />
-                                                </Button>
-                                            )}
-
-                                            {/* Complete Folio for Draft Invoices */}
-                                            {order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT') && (
-                                                <>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-amber-600"
-                                                        onClick={() => {
-                                                            const draftInv = order.related_documents?.invoices?.find((inv: any) => inv.status === 'DRAFT')
-                                                            if (draftInv) setCompletingInvoice({ id: draftInv.id, type: draftInv.type })
-                                                        }}
-                                                        title="Completar Folio"
-                                                    >
-                                                        <FileEdit className="h-4 w-4" />
-                                                    </Button>
-                                                    {/* Delete Draft Invoice */}
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive"
-                                                        onClick={() => {
-                                                            const inv = order.related_documents?.invoices?.[0]
-                                                            if (inv && confirm(`¿Está seguro de eliminar ${inv.type === 'BOLETA' ? 'la Boleta' : 'la Factura'} ${inv.number || '(Pendiente)'}?`)) {
-                                                                handleDeleteInvoice(inv.id)
-                                                            }
-                                                        }}
-                                                        title="Eliminar Documento"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </>
-                                            )}
-
-                                            {order.status === 'DRAFT' ? (
-                                                !order.related_documents?.invoices?.length && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive hover:text-destructive"
-                                                        onClick={() => handleDelete(order.id)}
-                                                        title="Eliminar Orden de Compra"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )
-                                            ) : order.status !== 'CANCELLED' ? (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() => handleAnnul(order.id)}
-                                                    title="Anular"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            ) : null}
-                                        </div>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -357,7 +257,7 @@ export default function PurchaseOrdersPage() {
                         )}
                     </TableBody>
                 </Table>
-            </div>
+            </div >
 
             {viewingTransaction && (
                 <TransactionViewModal
@@ -367,27 +267,32 @@ export default function PurchaseOrdersPage() {
                     id={viewingTransaction.id}
                     view={viewingTransaction.view}
                 />
-            )}
+            )
+            }
 
-            {invoicingOrder && (
-                <DocumentRegistrationModal
-                    open={!!invoicingOrder}
-                    onOpenChange={(open) => !open && setInvoicingOrder(null)}
-                    orderId={invoicingOrder.id}
-                    orderNumber={invoicingOrder.number}
-                    onSuccess={fetchOrders}
-                />
-            )}
+            {
+                invoicingOrder && (
+                    <DocumentRegistrationModal
+                        open={!!invoicingOrder}
+                        onOpenChange={(open) => !open && setInvoicingOrder(null)}
+                        orderId={invoicingOrder.id}
+                        orderNumber={invoicingOrder.number}
+                        onSuccess={fetchOrders}
+                    />
+                )
+            }
 
-            {completingInvoice && (
-                <DocumentCompletionModal
-                    open={!!completingInvoice}
-                    onOpenChange={(open) => !open && setCompletingInvoice(null)}
-                    invoiceId={completingInvoice.id}
-                    invoiceType={completingInvoice.type}
-                    onSuccess={fetchOrders}
-                />
-            )}
+            {
+                completingInvoice && (
+                    <DocumentCompletionModal
+                        open={!!completingInvoice}
+                        onOpenChange={(open) => !open && setCompletingInvoice(null)}
+                        invoiceId={completingInvoice.id}
+                        invoiceType={completingInvoice.type}
+                        onSuccess={fetchOrders}
+                    />
+                )
+            }
 
             <PurchaseCheckoutWizard
                 open={checkoutOpen}
@@ -401,15 +306,17 @@ export default function PurchaseOrdersPage() {
                 }}
             />
 
-            {selectedInvoice && (
-                <DocumentCompletionModal
-                    open={folioModalOpen}
-                    onOpenChange={setFolioModalOpen}
-                    invoiceId={selectedInvoice.id}
-                    invoiceType={selectedInvoice.type}
-                    onSuccess={fetchOrders}
-                />
-            )}
+            {
+                selectedInvoice && (
+                    <DocumentCompletionModal
+                        open={folioModalOpen}
+                        onOpenChange={setFolioModalOpen}
+                        invoiceId={selectedInvoice.id}
+                        invoiceType={selectedInvoice.type}
+                        onSuccess={fetchOrders}
+                    />
+                )
+            }
 
             <OrderCommandCenter
                 orderId={selectedOrderId}
@@ -418,6 +325,6 @@ export default function PurchaseOrdersPage() {
                 onOpenChange={(open) => !open && setSelectedOrderId(null)}
                 onActionSuccess={fetchOrders}
             />
-        </div>
+        </div >
     )
 }

@@ -141,19 +141,6 @@ export default function ServiceObligationsPage() {
                                                 <MoreVertical className="h-4 w-4 mr-1" />
                                                 Gestionar
                                             </Button>
-                                            <div className="flex justify-center gap-2">
-                                                {/* Actions */}
-                                                {!o.invoice && o.status !== 'PAID' && o.status !== 'CANCELLED' && (
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() => handleRegisterInvoice(o)}
-                                                        title="Registrar Factura/Boleta"
-                                                    >
-                                                        <FileText className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
                                         </div>
                                     </TableCell>
                                 </TableRow>

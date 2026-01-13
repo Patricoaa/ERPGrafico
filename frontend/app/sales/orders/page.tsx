@@ -295,123 +295,6 @@ export default function SalesOrdersPage() {
                                             <MoreVertical className="h-4 w-4 mr-1" />
                                             Gestionar
                                         </Button>
-                                        <div className="flex justify-center space-x-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'details' })}
-                                                title="Ver Detalles"
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            {order.status === 'DRAFT' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleEdit(order)}
-                                                    title="Editar"
-                                                >
-                                                    <Pencil className="h-4 w-4 text-orange-500" />
-                                                </Button>
-                                            )}
-
-                                            {order.status === 'DRAFT' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-blue-600"
-                                                    onClick={() => handleConfirm(order.id)}
-                                                    title="Confirmar"
-                                                >
-                                                    <CheckCircle className="h-4 w-4" />
-                                                </Button>
-                                            )}
-
-                                            {['CONFIRMED', 'INVOICED'].includes(order.status) && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-emerald-600"
-                                                    onClick={async () => {
-                                                        const res = await api.get(`/sales/orders/${order.id}/`)
-                                                        setPayingOrder(res.data)
-                                                    }}
-                                                    title="Registrar Pago"
-                                                >
-                                                    <Banknote className="h-4 w-4" />
-                                                </Button>
-                                            )}
-
-                                            {order.status === 'CONFIRMED' && !order.related_documents?.invoices?.length && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-blue-600"
-                                                    onClick={() => setCompletingFolio(order)}
-                                                    title="Completar Folio"
-                                                >
-                                                    <FileEdit className="h-4 w-4" />
-                                                </Button>
-                                            )}
-
-                                            {['CONFIRMED', 'INVOICED', 'PAID'].includes(order.status) && order.delivery_status !== 'DELIVERED' && !order.has_pending_work_orders && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-purple-600"
-                                                    onClick={() => setDispatchingOrder(order.id)}
-                                                    title="Despachar"
-                                                >
-                                                    <Truck className="h-4 w-4" />
-                                                </Button>
-                                            )}
-
-                                            {['INVOICED', 'PAID'].includes(order.status) && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-purple-600"
-                                                    onClick={() => setAddingNote(order)}
-                                                    title="Registrar Nota Crédito/Débito"
-                                                >
-                                                    <FileBadge className="h-4 w-4" />
-                                                </Button>
-                                            )}
-
-                                            {(order.related_documents?.payments?.length ?? 0) > 0 && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-emerald-600"
-                                                    onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'history' })}
-                                                    title="Historial de Pagos"
-                                                >
-                                                    <History className="h-4 w-4" />
-                                                </Button>
-                                            )}
-
-                                            {order.status === 'DRAFT' ? (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() => handleDelete(order.id)}
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            ) : order.status !== 'CANCELLED' ? (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() => handleAnnul(order.id)}
-                                                    title="Anular"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            ) : null}
-                                        </div>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -428,7 +311,7 @@ export default function SalesOrdersPage() {
                         )}
                     </TableBody>
                 </Table>
-            </div>
+            </div >
 
             {viewingTransaction && (
                 <TransactionViewModal
@@ -438,66 +321,75 @@ export default function SalesOrdersPage() {
                     id={viewingTransaction.id}
                     view={viewingTransaction.view}
                 />
-            )}
+            )
+            }
 
-            {(payingOrder || checkoutData) && (
-                <SalesCheckoutWizard
-                    open={!!payingOrder || !!checkoutData}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setPayingOrder(null)
-                            setCheckoutData(null)
-                        }
-                    }}
-                    order={payingOrder}
-                    orderLines={payingOrder ? (payingOrder.lines || []) : (checkoutData?.lines?.map((l: any) => ({
-                        ...l,
-                        id: l.product, // Salesforce expects product ID in 'id' field for new orders
-                        product_name: l.description,
-                        qty: l.quantity,
-                        unit_price_net: l.unit_price
-                    })) || [])}
-                    total={payingOrder ? parseFloat(payingOrder.total) : (checkoutData?.lines?.reduce((sum: number, l: any) => {
-                        const net = l.quantity * (l.unit_price || 0);
-                        const tax = net * ((l.tax_rate || 19) / 100);
-                        return sum + net + tax;
-                    }, 0) || 0)}
-                    initialCustomerId={payingOrder?.customer?.toString()}
-                    initialCustomerName={payingOrder?.customer_name}
-                    channel={checkoutData ? "SALE" : "POS"}
-                    onComplete={fetchOrders}
-                />
-            )}
+            {
+                (payingOrder || checkoutData) && (
+                    <SalesCheckoutWizard
+                        open={!!payingOrder || !!checkoutData}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                setPayingOrder(null)
+                                setCheckoutData(null)
+                            }
+                        }}
+                        order={payingOrder}
+                        orderLines={payingOrder ? (payingOrder.lines || []) : (checkoutData?.lines?.map((l: any) => ({
+                            ...l,
+                            id: l.product, // Salesforce expects product ID in 'id' field for new orders
+                            product_name: l.description,
+                            qty: l.quantity,
+                            unit_price_net: l.unit_price
+                        })) || [])}
+                        total={payingOrder ? parseFloat(payingOrder.total) : (checkoutData?.lines?.reduce((sum: number, l: any) => {
+                            const net = l.quantity * (l.unit_price || 0);
+                            const tax = net * ((l.tax_rate || 19) / 100);
+                            return sum + net + tax;
+                        }, 0) || 0)}
+                        initialCustomerId={payingOrder?.customer?.toString()}
+                        initialCustomerName={payingOrder?.customer_name}
+                        channel={checkoutData ? "SALE" : "POS"}
+                        onComplete={fetchOrders}
+                    />
+                )
+            }
 
-            {dispatchingOrder && (
-                <DeliveryModal
-                    open={!!dispatchingOrder}
-                    onOpenChange={(open) => !open && setDispatchingOrder(null)}
-                    orderId={dispatchingOrder}
-                    onSuccess={fetchOrders}
-                />
-            )}
+            {
+                dispatchingOrder && (
+                    <DeliveryModal
+                        open={!!dispatchingOrder}
+                        onOpenChange={(open) => !open && setDispatchingOrder(null)}
+                        orderId={dispatchingOrder}
+                        onSuccess={fetchOrders}
+                    />
+                )
+            }
 
-            {completingFolio && (
-                <DocumentCompletionModal
-                    open={!!completingFolio}
-                    onOpenChange={(open) => !open && setCompletingFolio(null)}
-                    invoiceId={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
-                    invoiceType={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.type || "BOLETA"}
-                    onSuccess={fetchOrders}
-                />
-            )}
+            {
+                completingFolio && (
+                    <DocumentCompletionModal
+                        open={!!completingFolio}
+                        onOpenChange={(open) => !open && setCompletingFolio(null)}
+                        invoiceId={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
+                        invoiceType={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.type || "BOLETA"}
+                        onSuccess={fetchOrders}
+                    />
+                )
+            }
 
-            {addingNote && (
-                <SaleNoteModal
-                    open={!!addingNote}
-                    onOpenChange={(open) => !open && setAddingNote(null)}
-                    orderId={addingNote.id}
-                    orderNumber={addingNote.number}
-                    invoiceId={addingNote.related_documents?.invoices?.[0]?.id}
-                    onSuccess={fetchOrders}
-                />
-            )}
+            {
+                addingNote && (
+                    <SaleNoteModal
+                        open={!!addingNote}
+                        onOpenChange={(open) => !open && setAddingNote(null)}
+                        orderId={addingNote.id}
+                        orderNumber={addingNote.number}
+                        invoiceId={addingNote.related_documents?.invoices?.[0]?.id}
+                        onSuccess={fetchOrders}
+                    />
+                )
+            }
 
             <OrderCommandCenter
                 orderId={selectedOrderId}
@@ -506,6 +398,6 @@ export default function SalesOrdersPage() {
                 onOpenChange={(open) => !open && setSelectedOrderId(null)}
                 onActionSuccess={fetchOrders}
             />
-        </div>
+        </div >
     )
 }
