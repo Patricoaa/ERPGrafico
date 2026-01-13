@@ -33,6 +33,7 @@ export interface Action {
     // Visual indicators
     badge?: ActionBadge
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost'
+    description?: string
 }
 
 /**

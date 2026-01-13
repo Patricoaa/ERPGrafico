@@ -237,8 +237,8 @@ export function OrderActionPanel({
                                         key={key}
                                         category={category}
                                         order={order}
-                                        orderType={orderType}
-                                        onActionComplete={handleActionComplete}
+                                        userPermissions={userPermissions?.permissions || []}
+                                        onActionSuccess={handleActionComplete}
                                     />
                                 ))}
 

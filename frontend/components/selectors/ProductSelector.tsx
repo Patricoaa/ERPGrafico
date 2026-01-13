@@ -35,6 +35,7 @@ interface ProductSelectorProps {
     onSelect?: (product: any) => void
     customFilter?: (product: any) => boolean
     customDisabled?: (product: any) => boolean
+    className?: string
 }
 
 export function ProductSelector({
@@ -49,7 +50,8 @@ export function ProductSelector({
     context,
     onSelect,
     customFilter,
-    customDisabled
+    customDisabled,
+    className
 }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
@@ -148,7 +150,7 @@ export function ProductSelector({
     }
 
     return (
-        <div className="w-full min-w-0">
+        <div className={cn("w-full min-w-0", className)}>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
