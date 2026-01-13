@@ -174,7 +174,7 @@ export default function POSPage() {
             if (rule.rule_type === "FIXED") {
                 return parseFloat(rule.fixed_price || "0")
             } else {
-                return basePrice * (1 - (parseFloat(rule.discount_percentage || "0") / 100))
+                return PricingUtils.applyDiscount(basePrice, parseFloat(rule.discount_percentage || "0"))
             }
         }
 
@@ -184,10 +184,11 @@ export default function POSPage() {
             const targetUom = uoms.find(u => u.id === selectedUomId)
 
             if (baseUom && targetUom) {
-                // If target is BIGGER, ratio is > 1. If SMALLER, ratio is < 1? 
-                // Depends on how ratio is stored. Usually: base_qty = qty * (target_ratio / base_ratio)
-                const ratio = parseFloat(targetUom.ratio) / parseFloat(baseUom.ratio)
-                return basePrice * ratio
+                return PricingUtils.calculateUoMPrice(
+                    basePrice,
+                    parseFloat(baseUom.ratio),
+                    parseFloat(targetUom.ratio)
+                )
             }
         }
 
@@ -252,9 +253,9 @@ export default function POSPage() {
                     ...i,
                     qty: newQty,
                     unit_price_net: netPrice,
-                    total_net: Math.round(newQty * netPrice),
-                    total_tax: Math.round(newQty * netPrice * 0.19),
-                    total_gross: Math.round(newQty * netPrice * 1.19)
+                    total_net: PricingUtils.calculateLineNet(newQty, netPrice),
+                    total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(newQty, netPrice)),
+                    total_gross: PricingUtils.calculateLineTotal(newQty, netPrice)
                 }
             }
             return i

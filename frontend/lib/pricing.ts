@@ -143,4 +143,17 @@ export const PricingUtils = {
     formatCurrency: (amount: number): string => {
         return `$${PricingUtils.formatAmount(amount)}`;
     },
+
+    /**
+     * Calcula el precio para una unidad de medida porcentualmente
+     * @param basePrice - Precio en la unidad base
+     * @param baseRatio - Ratio de la unidad base
+     * @param targetRatio - Ratio de la unidad de destino
+     * @returns Precio calculado y redondeado
+     */
+    calculateUoMPrice: (basePrice: number, baseRatio: number, targetRatio: number): number => {
+        if (!baseRatio || baseRatio === 0) return basePrice;
+        const ratio = targetRatio / baseRatio;
+        return Math.round(basePrice * ratio);
+    },
 };

@@ -193,7 +193,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
         }
     }
 
-    const getEffectivePrice = (product: any, qty: number) => {
+    const getEffectivePrice = (product: any, qty: number, selectedUomId?: number) => {
         const basePrice = parseFloat(product.sale_price)
         const date = new Date().toISOString().split('T')[0]
         const categoryId = typeof product.category === 'object' ? product.category?.id : product.category
@@ -202,10 +202,11 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             const matchesProduct = rule.product === product.id
             const matchesCategory = rule.category === categoryId
             const matchesQty = qty >= parseFloat(rule.min_quantity)
+            const matchesUom = !rule.uom || rule.uom === selectedUomId
             const matchesDate = (!rule.start_date || rule.start_date <= date) &&
                 (!rule.end_date || rule.end_date >= date)
-            return (matchesProduct || matchesCategory) && matchesQty && matchesDate
-        }).sort((a, b) => b.priority - a.priority || parseFloat(a.min_quantity) - parseFloat(b.min_quantity))
+            return (matchesProduct || matchesCategory) && matchesQty && matchesDate && matchesUom
+        }).sort((a, b) => b.priority - a.priority || parseFloat(b.min_quantity) - parseFloat(a.min_quantity))
 
         if (applicableRules.length > 0) {
             const rule = applicableRules[0]
@@ -215,6 +216,21 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 return PricingUtils.applyDiscount(basePrice, parseFloat(rule.discount_percentage || "0"))
             }
         }
+
+        // 2. Proportional pricing based on UoM if no rule
+        if (selectedUomId && selectedUomId !== product.uom) {
+            const baseUom = uoms.find(u => u.id === product.uom)
+            const targetUom = uoms.find(u => u.id === selectedUomId)
+
+            if (baseUom && targetUom) {
+                return PricingUtils.calculateUoMPrice(
+                    basePrice,
+                    parseFloat(baseUom.ratio),
+                    parseFloat(targetUom.ratio)
+                )
+            }
+        }
+
         return basePrice
     }
 
@@ -360,10 +376,11 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 // Auto-populate price, description and UoM from product
                                                                                 if (selectedProduct) {
                                                                                     const qty = form.getValues(`lines.${index}.quantity`) || 1
-                                                                                    const price = getEffectivePrice(selectedProduct, qty)
+                                                                                    const uomId = selectedProduct.uom
+                                                                                    const price = getEffectivePrice(selectedProduct, qty, uomId)
                                                                                     form.setValue(`lines.${index}.unit_price`, price)
                                                                                     form.setValue(`lines.${index}.description`, selectedProduct.name)
-                                                                                    form.setValue(`lines.${index}.uom`, selectedProduct.uom?.toString() || "")
+                                                                                    form.setValue(`lines.${index}.uom`, uomId?.toString() || "")
 
                                                                                     // Reset custom specs if not custom manufacturable
                                                                                     if (selectedProduct.product_type !== 'MANUFACTURABLE_CUSTOM') {
@@ -436,7 +453,8 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     const productId = form.getValues(`lines.${index}.product`)
                                                                     const product = products.find(p => p.id.toString() === productId)
                                                                     if (product) {
-                                                                        const price = getEffectivePrice(product, val)
+                                                                        const uomId = parseInt(form.getValues(`lines.${index}.uom`))
+                                                                        const price = getEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
                                                                         form.setValue(`lines.${index}.unit_price`, price)
                                                                     }
                                                                 }}
@@ -458,7 +476,13 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     product={selectedProduct || null}
                                                                     context="sale"
                                                                     value={field.value || ""}
-                                                                    onChange={field.onChange}
+                                                                    onChange={(val) => {
+                                                                        field.onChange(val)
+                                                                        const qty = Number(form.getValues(`lines.${index}.quantity`)) || 1
+                                                                        const uomId = parseInt(val)
+                                                                        const price = getEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
+                                                                        form.setValue(`lines.${index}.unit_price`, price)
+                                                                    }}
                                                                     uoms={uoms}
                                                                     showConversionHint={true}
                                                                     quantity={quantity}
