@@ -363,6 +363,8 @@ export function OrderCommandCenter({
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                     actionEngineRef={actionEngineRef}
                                     showDocProgress={true}
+                                    stageId="production"
+                                    isComplete={totalOTProgress === 100 && totalOTs > 0}
                                 >
                                     {totalOTs > 0 ? (
                                         <div className="space-y-1.5 px-0.5">
@@ -397,6 +399,8 @@ export function OrderCommandCenter({
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                     actionEngineRef={actionEngineRef}
+                                    stageId="logistics"
+                                    isComplete={logisticsProgress >= 100}
                                 >
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground/60 uppercase tracking-tighter">
@@ -737,18 +741,25 @@ function PhaseCard({
 
                 {/* Actions Section */}
                 <div className="mt-auto space-y-4">
-                    {categorizedActions.primary.length > 0 && (
-                        <div className="space-y-3">
-                            <div className="h-px bg-white/5 w-full" />
-                            <ActionCategory
-                                category={{ actions: categorizedActions.primary } as any}
-                                order={order}
-                                userPermissions={userPermissions}
-                                onActionSuccess={onActionSuccess}
-                                layout="grid"
-                                compact={true}
-                            />
+                    {isSuccess ? (
+                        <div className="flex flex-col items-center justify-center py-5 px-3 border border-dotted border-white/10 rounded-2xl bg-white/2">
+                            <Settings2 className="h-5 w-5 text-muted-foreground/10 mb-2" />
+                            <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">Etapa Completada</span>
                         </div>
+                    ) : (
+                        categorizedActions.primary.length > 0 && (
+                            <div className="space-y-3">
+                                <div className="h-px bg-white/5 w-full" />
+                                <ActionCategory
+                                    category={{ actions: categorizedActions.primary } as any}
+                                    order={order}
+                                    userPermissions={userPermissions}
+                                    onActionSuccess={onActionSuccess}
+                                    layout="grid"
+                                    compact={true}
+                                />
+                            </div>
+                        )
                     )}
 
                     {categorizedActions.secondary.length > 0 && (
@@ -766,13 +777,6 @@ function PhaseCard({
                                 layout="grid"
                                 compact={true}
                             />
-                        </div>
-                    )}
-
-                    {categorizedActions.primary.length === 0 && categorizedActions.secondary.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-5 px-3 border border-dotted border-white/10 rounded-2xl bg-white/2">
-                            <Settings2 className="h-5 w-5 text-muted-foreground/10 mb-2" />
-                            <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">Etapa Completada</span>
                         </div>
                     )}
                 </div>
