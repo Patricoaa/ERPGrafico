@@ -123,7 +123,7 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                 </Button>
             </div>
 
-            <div className="rounded-md border h-[50vh] overflow-y-auto">
+            <div className="rounded-md border flex-1 overflow-auto min-h-[400px]">
                 <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>

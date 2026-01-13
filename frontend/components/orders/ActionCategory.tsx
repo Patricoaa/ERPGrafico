@@ -32,7 +32,8 @@ export const ActionCategory = forwardRef(({
     order,
     userPermissions,
     onActionSuccess,
-    layout = 'list'
+    layout = 'list',
+    compact = false
 }: ActionCategoryProps, ref) => {
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
@@ -205,7 +206,7 @@ export const ActionCategory = forwardRef(({
                 </div>
             )}
 
-            <div className={layout === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-2"}>
+            <div className={layout === 'grid' ? (compact ? "grid grid-cols-1 gap-2" : "grid grid-cols-1 sm:grid-cols-2 gap-4") : "space-y-2"}>
                 {filteredActions.map((action) => (
                     <ActionButton
                         key={action.id}
@@ -214,6 +215,7 @@ export const ActionCategory = forwardRef(({
                         userPermissions={userPermissions}
                         onClick={() => handleActionClick(action.id)}
                         showBadge={true}
+                        compact={compact}
                     />
                 ))}
             </div>

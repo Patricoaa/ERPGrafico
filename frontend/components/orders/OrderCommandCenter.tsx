@@ -317,13 +317,17 @@ export function OrderCommandCenter({
                                     actionEngineRef={actionEngineRef}
                                     showDocProgress={true}
                                 >
-                                    {totalOTs > 0 && (
+                                    {totalOTs > 0 ? (
                                         <div className="space-y-1.5 px-0.5">
                                             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                                                 <span>General</span>
                                                 <span className="text-primary">{Math.round(totalOTProgress)}%</span>
                                             </div>
                                             <Progress value={totalOTProgress} className="h-1.5" />
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-center py-2 px-2 rounded-lg bg-muted/5 border border-dashed border-border/40">
+                                            <span className="text-[9px] text-muted-foreground/40 font-medium italic">Sin manufactura iniciada</span>
                                         </div>
                                     )}
                                 </PhaseCard>
@@ -559,7 +563,7 @@ function PhaseCard({
                                             <doc.icon className="h-3.5 w-3.5 text-primary" />
                                         </div>
                                         <div className="flex flex-col overflow-hidden max-w-[150px]">
-                                            <span className="text-[11px] font-bold text-foreground truncate" title={doc.number}>{doc.number}</span>
+                                            <span className="text-[11px] font-bold text-foreground line-clamp-2 leading-tight" title={doc.number}>{doc.number}</span>
                                             {doc.status && (
                                                 <span className="text-[8px] font-bold uppercase text-muted-foreground/70 truncate">{doc.status}</span>
                                             )}
@@ -632,7 +636,12 @@ function PhaseCard({
                             compact={true}
                         />
                     ) : (
-                        <p className="text-[9px] text-center text-muted-foreground/40 italic py-1">Sin acciones</p>
+                        <div className="flex flex-col items-center justify-center py-4 px-2 border-2 border-dotted border-border/40 rounded-lg bg-muted/5">
+                            <div className="p-2 rounded-full bg-muted/10 mb-1">
+                                <Settings2 className="h-4 w-4 text-muted-foreground/30" />
+                            </div>
+                            <span className="text-[9px] text-muted-foreground/50 font-medium">Sin acciones disponibles</span>
+                        </div>
                     )}
                 </div>
             </CardContent>

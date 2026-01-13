@@ -1,41 +1,46 @@
 "use client"
 
-import { Building2, Tag, CreditCard, Package, Warehouse, CheckCircle2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Building2, Tag, CreditCard, Package, Warehouse, CheckCircle2, ShoppingCart } from "lucide-react"
 
-interface PurchaseProcessSummarySidebarProps {
+import { cn } from "@/lib/utils"
+import { PaymentMethod, ReceptionType } from "@/types/checkout"
+
+export interface PurchaseProcessSummarySidebarProps {
     currentStep: number
     totalSteps: number
     supplierName?: string
     warehouseName?: string
     dteType?: string
     paymentData?: {
-        method: string
+        method: PaymentMethod
         amount: number
         pendingDebt?: number
     }
     receiptData?: {
-        type: string
+        type: ReceptionType
     }
 }
 
 const methodLabels: Record<string, string> = {
     'CASH': 'Efectivo',
-    'CARD': 'Tarjeta',
-    'TRANSFER': 'Transferencia'
+    'TRANSFER': 'Transferencia',
+    'DEBIT': 'Débito',
+    'CREDIT': 'Crédito',
+    'CHECK': 'Cheque'
 }
 
 const receiptLabels: Record<string, string> = {
-    'IMMEDIATE': 'Recepción Inmediata',
-    'DEFERRED': 'Recepción Diferida',
-    'PARTIAL': 'Recepción Parcial'
+    'immediate': 'Recepción Inmediata (Bodega)',
+    'dispatch': 'Despacho a Domicilio',
+    'provisional': 'Recepción Provisoria'
 }
 
 const STEPS = [
     { id: 1, label: 'Proveedor', icon: Building2, subLabel: 'Bodega', subIcon: Warehouse },
-    { id: 2, label: 'Documento', icon: Tag },
-    { id: 3, label: 'Pago', icon: CreditCard },
-    { id: 4, label: 'Recepción', icon: Package }
+    { id: 2, label: 'Productos', icon: ShoppingCart },
+    { id: 3, label: 'Documento', icon: Tag },
+    { id: 4, label: 'Pago', icon: CreditCard },
+    { id: 5, label: 'Recepción', icon: Package }
 ]
 
 export function PurchaseProcessSummarySidebar({
@@ -93,10 +98,10 @@ export function PurchaseProcessSummarySidebar({
                                         )}
                                     </>
                                 )}
-                                {step.id === 2 && dteType && (
+                                {step.id === 3 && dteType && (
                                     <p className="text-xs font-semibold">{dteType}</p>
                                 )}
-                                {step.id === 3 && paymentData && (
+                                {step.id === 4 && paymentData && (
                                     <div className="space-y-0.5">
                                         <p className="text-xs font-semibold">
                                             {paymentData.amount > 0 ? methodLabels[paymentData.method] : 'Crédito'}
@@ -111,7 +116,7 @@ export function PurchaseProcessSummarySidebar({
                                         )}
                                     </div>
                                 )}
-                                {step.id === 4 && receiptData && (
+                                {step.id === 5 && receiptData && (
                                     <p className="text-xs font-semibold">
                                         {receiptLabels[receiptData.type]}
                                     </p>

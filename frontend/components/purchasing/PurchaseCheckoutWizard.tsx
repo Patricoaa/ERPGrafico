@@ -314,29 +314,32 @@ export function PurchaseCheckoutWizard({
                         receiptData={step > 4 ? receiptData : undefined}
                     />
 
-                    {/* Center - Content Area */}
-                    <div className="flex-1 flex flex-col p-6 overflow-y-auto">
-                        {step === 1 && (
-                            <Step0_Supplier
-                                selectedSupplierId={selectedSupplierId}
-                                setSelectedSupplierId={setSelectedSupplierId}
-                                setSelectedSupplierName={setSelectedSupplierName}
-                                selectedWarehouseId={selectedWarehouseId}
-                                setSelectedWarehouseId={setSelectedWarehouseId}
-                            />
-                        )}
-                        {step === 2 && (
-                            <Step1_ProductSelection
-                                orderLines={currentOrderLines}
-                                setOrderLines={setCurrentOrderLines}
-                            />
-                        )}
-                        {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
-                        {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
-                        {step === 5 && <Step4_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={currentOrderLines} />}
+                    {/* Center - Content Area Wrapper */}
+                    <div className="flex-1 flex flex-col min-w-0">
+                        {/* Scrollable Content */}
+                        <div className="flex-1 p-6 overflow-y-auto">
+                            {step === 1 && (
+                                <Step0_Supplier
+                                    selectedSupplierId={selectedSupplierId}
+                                    setSelectedSupplierId={setSelectedSupplierId}
+                                    setSelectedSupplierName={setSelectedSupplierName}
+                                    selectedWarehouseId={selectedWarehouseId}
+                                    setSelectedWarehouseId={setSelectedWarehouseId}
+                                />
+                            )}
+                            {step === 2 && (
+                                <Step1_ProductSelection
+                                    orderLines={currentOrderLines}
+                                    setOrderLines={setCurrentOrderLines}
+                                />
+                            )}
+                            {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
+                            {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
+                            {step === 5 && <Step4_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={currentOrderLines} />}
+                        </div>
 
-                        {/* Progress Buttons */}
-                        <div className="mt-8 pt-6 border-t flex justify-between">
+                        {/* Fixed Footer with Progress Buttons */}
+                        <div className="p-6 border-t bg-background flex justify-between z-10 shrink-0">
                             <Button
                                 variant="ghost"
                                 onClick={handleBack}
