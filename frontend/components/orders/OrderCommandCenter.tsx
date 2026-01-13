@@ -196,12 +196,9 @@ export function OrderCommandCenter({
         }))
     })()
 
-    // Calculate dynamic logistics progress if API returns 0 but we have docs
+    // Calculate dynamic logistics progress - Always use frontend logic to sync with docs
     const logisticsProgress = (() => {
-        const apiProgress = (isSale ? order.delivery_progress : order.receiving_progress) || 0
-        if (apiProgress > 0) return apiProgress
-
-        // Frontend calculation fallback - MUST sync with logisticsDocs logic
+        // Frontend calculation - MUST sync with logisticsDocs logic
         const docsSource = (order.related_stock_moves?.length > 0)
             ? order.related_stock_moves
             : (isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions))
@@ -443,7 +440,7 @@ export function OrderCommandCenter({
                                         ...(((
                                             (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
                                             (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
-                                        )) ? [{
+                                        ) && !pay.transaction_number) ? [{
                                             icon: Hash,
                                             title: 'Registrar N° Transacción',
                                             color: 'text-orange-600 hover:bg-orange-600/10',

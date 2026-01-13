@@ -343,14 +343,6 @@ export function SalesCheckoutWizard({
                     <div>
                         <DialogTitle className="text-2xl">Cerrar Venta</DialogTitle>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
-                            <div
-                                key={s}
-                                className={`h-2 w-8 rounded-full transition-all ${step === s ? 'bg-primary w-12' : 'bg-muted'}`}
-                            />
-                        ))}
-                    </div>
                 </div>
 
                 <div className="flex flex-1 overflow-hidden">

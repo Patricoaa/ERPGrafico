@@ -103,12 +103,18 @@ class PurchasingService:
             if quantity > purchase_line.quantity_pending:
                  raise ValidationError(f"Cantidad a recibir ({quantity}) excede la pendiente ({purchase_line.quantity_pending}) para {purchase_line.product.name}")
             
+            # Resolve UoM if provided as ID
+            uom = item.get('uom')
+            if uom and not isinstance(uom, models.Model):
+                from inventory.models import UoM
+                uom = UoM.objects.filter(id=uom).first()
+
             PurchasingService._create_receipt_line(
                 receipt=receipt,
                 purchase_line=purchase_line,
                 quantity=quantity,
                 unit_cost=unit_cost if unit_cost > 0 else purchase_line.unit_cost,
-                uom=item.get('uom') or purchase_line.uom
+                uom=uom or purchase_line.uom
             )
             
         # Confirm receipt
@@ -149,12 +155,18 @@ class PurchasingService:
                 
             purchase_line = order.lines.get(id=line_id)
             
+            # Resolve UoM if provided as ID
+            uom = item.get('uom')
+            if uom and not isinstance(uom, models.Model):
+                from inventory.models import UoM
+                uom = UoM.objects.filter(id=uom).first()
+
             PurchasingService._create_receipt_line(
                 receipt=receipt,
                 purchase_line=purchase_line,
                 quantity=-quantity, # Negative for return
                 unit_cost=unit_cost if unit_cost > 0 else purchase_line.unit_cost,
-                uom=item.get('uom') or purchase_line.uom
+                uom=uom or purchase_line.uom
             )
             
         # Confirm "receipt" (return)
