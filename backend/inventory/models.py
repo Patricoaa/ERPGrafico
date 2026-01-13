@@ -467,6 +467,14 @@ class StockMove(models.Model):
     )
     
     description = models.CharField(_("Descripción"), max_length=255, blank=True)
+    journal_entry = models.ForeignKey(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='stock_moves',
+        verbose_name=_("Asiento Contable")
+    )
     
     # Traceability for original transaction units
     source_uom = models.ForeignKey(UoM, on_delete=models.SET_NULL, null=True, blank=True, related_name='stock_moves_source', help_text=_("Unidad original de la transacción"))

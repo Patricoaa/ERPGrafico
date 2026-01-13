@@ -217,6 +217,9 @@ class SalesService:
         from inventory.models import StockMove
         from production.models import BillOfMaterials
 
+        # 0. Collect moves to link them later to the journal entry
+        created_moves = []
+
         # 1. Process lines for stock moves and quantity updates
         for line in delivery.lines.all():
             product = line.product
@@ -243,6 +246,7 @@ class SalesService:
                     source_uom=line.uom or line.sale_line.uom,
                     source_quantity=line.quantity
                 )
+                created_moves.append(stock_move)
                 
                 # Link stock move to delivery line
                 line.stock_move = stock_move
@@ -287,7 +291,7 @@ class SalesService:
                             )
                             
                             # Create stock move (OUT) for the COMPONENT
-                            StockMove.objects.create(
+                            comp_move = StockMove.objects.create(
                                 date=delivery.delivery_date,
                                 product=bom_line.component,
                                 warehouse=delivery.warehouse,
@@ -296,6 +300,7 @@ class SalesService:
                                 move_type=StockMove.Type.OUT,
                                 description=f"Consumo BOM p/Despacho {delivery.number} ({product.name})"
                             )
+                            created_moves.append(comp_move)
                             
                             # Calculate component cost contribution
                             line_total_cost += base_comp_qty * bom_line.component.cost_price
@@ -341,6 +346,11 @@ class SalesService:
             
             JournalEntryService.post_entry(entry)
             delivery.journal_entry = entry
+            
+            # Link all created stock moves to this entry
+            for move in created_moves:
+                move.journal_entry = entry
+                move.save()
         
         # Confirm delivery
         delivery.status = SaleDelivery.Status.CONFIRMED
@@ -406,8 +416,9 @@ class SalesService:
             raise ValidationError("Solo se pueden anular despachos confirmados.")
 
         # 1. Reverse Accounting
+        rev_entry = None
         if delivery.journal_entry:
-            JournalEntryService.reverse_entry(delivery.journal_entry, description=f"Anulación Despacho {delivery.number}")
+            rev_entry = JournalEntryService.reverse_entry(delivery.journal_entry, description=f"Anulación Despacho {delivery.number}")
 
         # 2. Reverse Stock Moves & Update Sale Lines
         from inventory.models import StockMove
@@ -420,7 +431,8 @@ class SalesService:
                     warehouse=delivery.warehouse,
                     quantity=abs(line.stock_move.quantity), # Positive IN
                     move_type=StockMove.Type.IN,
-                    description=f"Anulación Despacho {delivery.number} ({line.product.code})"
+                    description=f"Anulación Despacho {delivery.number} ({line.product.code})",
+                    journal_entry=rev_entry
                 )
             
             # Revert delivered quantity

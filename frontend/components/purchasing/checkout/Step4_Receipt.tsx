@@ -88,18 +88,20 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
     ]
 
     // Initialize partial quantities if not set
-    if (receiptData.type === 'PARTIAL' && (!receiptData.partialQuantities || receiptData.partialQuantities.length === 0)) {
-        setReceiptData({
-            ...receiptData,
-            partialQuantities: orderLines.map(line => ({
-                productId: line.id,
-                productName: line.name,
-                orderedQty: line.quantity || line.qty,
-                receivedQty: line.quantity || line.qty,
-                uom: line.uom
-            }))
-        })
-    }
+    useEffect(() => {
+        if (receiptData.type === 'PARTIAL' && (!receiptData.partialQuantities || receiptData.partialQuantities.length === 0)) {
+            setReceiptData({
+                ...receiptData,
+                partialQuantities: orderLines.map(line => ({
+                    productId: line.id,
+                    productName: line.name,
+                    orderedQty: line.quantity || line.qty,
+                    receivedQty: line.quantity || line.qty,
+                    uom: line.uom
+                }))
+            })
+        }
+    }, [receiptData.type, receiptData.partialQuantities?.length, orderLines, setReceiptData, receiptData])
 
     const updatePartialQty = (index: number, value: string) => {
         const newQuantities = [...(receiptData.partialQuantities || [])]
