@@ -194,7 +194,7 @@ export function OrderCommandCenter({
         if (!docs || docs.length === 0) return 0
 
         const completedCount = docs.filter((d: any) =>
-            ['DELIVERED', 'RECEIVED', 'done', 'assigned', 'POSTED'].includes(d.status?.toLowerCase())
+            ['delivered', 'received', 'done', 'assigned', 'posted', 'paid'].includes(d.status?.toLowerCase())
         ).length
 
         return Math.round((completedCount / docs.length) * 100)
@@ -423,24 +423,25 @@ export function OrderCommandCenter({
                                     docType: 'payment',
                                     status: pay.payment_method,
                                     actions: [
-                                        ...(((pay.payment_type === 'OUTBOUND' && ['CARD', 'TRANSFER'].includes(pay.payment_method)) ||
-                                            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER' && !pay.transaction_number)) ? [{
-                                                icon: Hash,
-                                                title: 'Registrar N° Transacción',
-                                                color: 'text-orange-600 hover:bg-orange-600/10',
-                                                onClick: () => setTrForm({
-                                                    open: true,
-                                                    id: pay.id,
-                                                    initialValue: pay.transaction_number || ""
-                                                })
-                                            }] : [])
+                                        ...((!pay.transaction_number && (
+                                            pay.payment_method === 'TRANSFER' ||
+                                            (pay.payment_method === 'CARD' && pay.payment_type === 'OUTBOUND')
+                                        )) ? [{
+                                            icon: Hash,
+                                            title: 'Registrar N° Transacción',
+                                            color: 'text-orange-600 hover:bg-orange-600/10',
+                                            onClick: () => setTrForm({
+                                                open: true,
+                                                id: pay.id,
+                                                initialValue: pay.transaction_number || ""
+                                            })
+                                        }] : [])
                                     ]
                                 }))}
                                 onViewDetail={openDetails}
                                 actions={(registry.payments?.actions || []).filter((a: any) =>
                                     !a.id.includes('view-') &&
-                                    !a.id.includes('history') &&
-                                    !a.id.includes('payment-ref')
+                                    (a.id.includes('history') ? (order.related_documents?.payments?.length > 0 || order.payments_detail?.length > 0) : true)
                                 )}
                                 emptyMessage="Sin pagos registrados"
                                 order={order}
