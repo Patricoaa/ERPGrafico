@@ -227,7 +227,7 @@ class SalesService:
             # PATH A: Product tracks inventory directly
             if product.track_inventory:
                 # Base quantity conversion
-                base_qty = StockService.convert_quantity(
+                base_qty = UoMService.convert_quantity(
                     line.quantity,
                     from_uom=line.uom or line.sale_line.uom,
                     to_uom=line.product.uom
