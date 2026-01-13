@@ -84,10 +84,10 @@ export function SalesCheckoutWizard({
     })
 
     const hasManufacturing = currentOrderLines.some((line: any) =>
-        line.product_type === 'MANUFACTURABLE' && (line.requires_advanced_manufacturing || line.has_bom)
+        line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
     );
 
-    // Auto-suggest delivery date if fabricable
+    // Auto-suggest delivery date if fabricable (includes any mfg or BOM)
     useEffect(() => {
         const hasFabricable = currentOrderLines.some((line: any) => line.product_type === 'MANUFACTURABLE' || line.has_bom);
         if (hasFabricable) {
@@ -206,7 +206,7 @@ export function SalesCheckoutWizard({
                 // Check if all mfg items have data
                 const pendingItems = currentOrderLines.filter((line: any) =>
                     line.product_type === 'MANUFACTURABLE' &&
-                    (line.requires_advanced_manufacturing || line.has_bom) &&
+                    line.requires_advanced_manufacturing &&
                     !line.manufacturing_data
                 )
                 if (pendingItems.length > 0) {

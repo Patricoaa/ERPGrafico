@@ -103,20 +103,6 @@ export const purchaseOrderActions: ActionRegistry = {
                     return paymentsCount > 0
                 }
             },
-            {
-                id: 'register-payment-ref',
-                label: 'Registrar N° Operación',
-                icon: Hash,
-                requiredPermissions: ['treasury.change_payment'],
-                checkAvailability: (order) => {
-                    // Show if any payment lacks transaction number but requires it
-                    return order.serialized_payments?.some((p: any) =>
-                        (p.payment_method === 'TRANSFER' || p.payment_method === 'CARD') &&
-                        (p.is_pending_registration || !p.transaction_number)
-                    )
-                },
-                badge: { type: 'warning', label: 'Pendiente' }
-            }
         ]
     },
 

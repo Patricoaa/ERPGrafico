@@ -399,9 +399,9 @@ export default function POSPage() {
                                                     <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{product.internal_code || product.code}</div>
-                                                {product.product_type === 'MANUFACTURABLE' && (
+                                                {product.product_type === 'MANUFACTURABLE' && product.requires_advanced_manufacturing && (
                                                     <div className="mt-1 text-[10px] text-blue-600 font-bold uppercase flex items-center justify-center gap-1">
-                                                        <Settings2 className="h-3 w-3" /> Configurado
+                                                        <Settings2 className="h-3 w-3" /> Configurable
                                                     </div>
                                                 )}
                                             </CardContent>

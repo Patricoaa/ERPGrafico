@@ -435,9 +435,9 @@ export function OrderCommandCenter({
                                     docType: 'payment',
                                     status: pay.payment_method,
                                     actions: [
-                                        ...((!pay.transaction_number && (
-                                            pay.payment_method === 'TRANSFER' ||
-                                            (pay.payment_method === 'CARD' && pay.payment_type === 'OUTBOUND')
+                                        ...(((
+                                            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
+                                            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
                                         )) ? [{
                                             icon: Hash,
                                             title: 'Registrar N° Transacción',

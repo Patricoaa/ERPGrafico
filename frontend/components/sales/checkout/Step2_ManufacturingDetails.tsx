@@ -20,7 +20,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
     // Filter to show only items that require advanced manufacturing
     const manufacturableItems = orderLines
         .map((line, index) => ({ ...line, originalIndex: index }))
-        .filter(line => line.product_type === 'MANUFACTURABLE' && (line.requires_advanced_manufacturing || line.has_bom))
+        .filter(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
 
     const handleEditClick = (index: number) => {
         setEditingLineIndex(index)
