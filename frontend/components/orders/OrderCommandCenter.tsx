@@ -198,19 +198,20 @@ export function OrderCommandCenter({
 
     // Calculate dynamic logistics progress - Always use frontend logic to sync with docs
     const logisticsProgress = (() => {
-        // Frontend calculation - MUST sync with logisticsDocs logic
-        const docsSource = (order.related_stock_moves?.length > 0)
-            ? order.related_stock_moves
-            : (isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions))
+        const lines = order.lines || order.items || []
+        if (lines.length === 0) return 0
 
-        const docs = docsSource || []
-        if (docs.length === 0) return 0
+        const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+        if (totalOrdered === 0) return 100
 
-        const completedCount = docs.filter((d: any) =>
-            ['delivered', 'received', 'done', 'assigned', 'posted', 'paid'].includes((d.status || d.state)?.toLowerCase())
-        ).length
+        const totalProcessed = lines.reduce((acc: number, line: any) => {
+            const processed = isSale
+                ? (line.quantity_delivered || 0)
+                : (line.quantity_received || 0)
+            return acc + (parseFloat(processed) || 0)
+        }, 0)
 
-        return Math.round((completedCount / docs.length) * 100)
+        return Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
     })()
 
     return (
@@ -256,7 +257,7 @@ export function OrderCommandCenter({
                             <PhaseCard
                                 title="Origen"
                                 icon={TrendingUp}
-                                variant="neutral"
+                                variant={order.status !== 'DRAFT' ? 'success' : 'neutral'}
                                 documents={[
                                     {
                                         type: order.document_type === 'SERVICE_OBLIGATION' ? 'Obligación' : (isSale ? 'Nota de Venta' : 'Orden de Compra'),
@@ -426,8 +427,8 @@ export function OrderCommandCenter({
                                 title="Tesorería"
                                 icon={Banknote}
                                 variant={
-                                    (order.status === 'PAID' || order.payment_status === 'PAID') ? 'success' :
-                                        (order.pending_amount < order.total && order.pending_amount > 0) ? 'active' : 'neutral'
+                                    (order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) ? 'success' :
+                                        (parseFloat(order.pending_amount) < parseFloat(order.total) && parseFloat(order.pending_amount) > 0) ? 'active' : 'neutral'
                                 }
                                 documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
                                     type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
