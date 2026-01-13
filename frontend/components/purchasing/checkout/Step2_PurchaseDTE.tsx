@@ -6,12 +6,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { FileText, Receipt, AlertCircle } from "lucide-react"
 
-interface Step1_PurchaseDTEProps {
+interface Step2_PurchaseDTEProps {
     dteData: any
     setDteData: (data: any) => void
 }
 
-export function Step1_PurchaseDTE({ dteData, setDteData }: Step1_PurchaseDTEProps) {
+export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProps) {
     return (
         <div className="space-y-6">
             <div className="space-y-4">

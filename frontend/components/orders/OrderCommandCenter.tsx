@@ -203,7 +203,7 @@ export function OrderCommandCenter({
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="w-full max-w-[1400px] max-h-[95vh] overflow-y-auto bg-background/95 backdrop-blur-md border-border p-0 rounded-xl">
+                <DialogContent className="w-[95vw] max-w-[1600px] max-h-[95vh] overflow-y-auto bg-background/95 backdrop-blur-md border-border p-0 rounded-xl">
                     <div className="p-6 pb-2">
                         <DialogHeader className="pb-4 border-b">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

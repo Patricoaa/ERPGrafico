@@ -73,7 +73,11 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
         setOrderLines(newLines)
     }
 
-    const handleProductChange = (index: number, productId: string) => {
+    const handleProductChange = (index: number, productId: string | null) => {
+        if (!productId) {
+            updateLine(index, 'product', "")
+            return
+        }
         const product = products.find(p => p.id.toString() === productId)
         if (product) {
             const newLines = [...orderLines]
@@ -136,7 +140,7 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                             <TableRow key={index}>
                                 <TableCell>
                                     <ProductSelector
-                                        value={line.product?.toString() || line.id?.toString()}
+                                        value={line.product?.toString() || line.id?.toString() || ""}
                                         allowedTypes={['STORABLE', 'CONSUMABLE']}
                                         context="purchase"
                                         onChange={(val) => handleProductChange(index, val)}

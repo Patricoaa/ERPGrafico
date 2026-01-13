@@ -13,13 +13,13 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
-interface Step3_ReceiptProps {
+interface Step4_ReceiptProps {
     receiptData: any
     setReceiptData: (data: any) => void
     orderLines?: any[]
 }
 
-export function Step3_Receipt({ receiptData, setReceiptData, orderLines = [] }: Step3_ReceiptProps) {
+export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: Step4_ReceiptProps) {
     const receiptTypes = [
         {
             id: 'IMMEDIATE',

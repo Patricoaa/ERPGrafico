@@ -9,9 +9,9 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Step1_PurchaseDTE } from "./checkout/Step1_PurchaseDTE"
-import { Step2_PurchasePayment } from "./checkout/Step2_PurchasePayment"
-import { Step3_Receipt } from "./checkout/Step3_Receipt"
+import { Step2_PurchaseDTE } from "./checkout/Step2_PurchaseDTE"
+import { Step3_PurchasePayment } from "./checkout/Step3_PurchasePayment"
+import { Step4_Receipt } from "./checkout/Step4_Receipt"
 import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
@@ -331,9 +331,9 @@ export function PurchaseCheckoutWizard({
                                 setOrderLines={setCurrentOrderLines}
                             />
                         )}
-                        {step === 3 && <Step1_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
-                        {step === 4 && <Step2_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
-                        {step === 5 && <Step3_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={currentOrderLines} />}
+                        {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
+                        {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
+                        {step === 5 && <Step4_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={currentOrderLines} />}
 
                         {/* Progress Buttons */}
                         <div className="mt-8 pt-6 border-t flex justify-between">

@@ -66,7 +66,6 @@ interface PurchaseOrderFormProps {
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
-    onCheckout?: (orderLines: any[], total: number) => void
 }
 
 const OrderTotals = ({ control }: { control: Control<PurchaseOrderFormValues> }) => {
@@ -97,7 +96,7 @@ const OrderTotals = ({ control }: { control: Control<PurchaseOrderFormValues> })
     )
 }
 
-export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOpenChange, onCheckout }: PurchaseOrderFormProps) {
+export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOpenChange }: PurchaseOrderFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -175,42 +174,15 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
     }, [open, initialData, form])
 
     async function onSubmit(data: PurchaseOrderFormValues) {
-        // For new orders, trigger the checkout wizard
-        if (!initialData && onCheckout) {
-            const lines = data.lines
-            const total = lines.reduce((sum, line) => {
-                const lineNet = Number(line.quantity) * Number(line.unit_cost) || 0
-                const lineTax = lineNet * (Number(line.tax_rate) / 100)
-                return sum + lineNet + lineTax
-            }, 0)
-
-            // Prepare order lines with product details
-            const orderLines = await Promise.all(data.lines.map(async (line) => {
-                const product = products.find(p => p.id.toString() === line.product)
-                return {
-                    id: product?.id,
-                    name: product?.name,
-                    qty: line.quantity,
-                    quantity: line.quantity,
-                    uom: line.uom,
-                    uom_name: uoms.find(u => u.id.toString() === line.uom)?.name,
-                    unit_cost: line.unit_cost,
-                    tax_rate: line.tax_rate
-                }
-            }))
-
-            onCheckout(orderLines, total)
-            setOpen(false)
+        if (!initialData) {
+            toast.error("Este formulario solo se usa para editar órdenes existentes")
             return
         }
 
-        // For editing existing orders, save normally
         setLoading(true)
         try {
-            if (initialData) {
-                await api.put(`/purchasing/orders/${initialData.id}/`, data)
-                toast.success("Orden de Compra actualizada correctamente")
-            }
+            await api.put(`/purchasing/orders/${initialData.id}/`, data)
+            toast.success("Orden de Compra actualizada correctamente")
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
@@ -224,16 +196,11 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {!initialData && (
-                <DialogTrigger asChild>
-                    <Button>Nueva Orden de Compra</Button>
-                </DialogTrigger>
-            )}
             <DialogContent className="sm:max-w-[1200px] w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Orden de Compra" : "Crear Orden de Compra"}</DialogTitle>
+                    <DialogTitle>Editar Orden de Compra</DialogTitle>
                     <DialogDescription>
-                        {initialData ? "Modifique los datos de la orden de compra." : "Ingrese los detalles de la nueva orden de compra."}
+                        Modifique los datos de la orden de compra.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -396,7 +363,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Orden de Compra"}
+                                {loading ? "Guardando..." : "Guardar Cambios"}
                             </Button>
                         </div>
                     </form>

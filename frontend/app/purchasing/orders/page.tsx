@@ -54,12 +54,10 @@ export default function PurchaseOrdersPage() {
     const [orders, setOrders] = useState<PurchaseOrder[]>([])
     const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
-    const [checkoutData, setCheckoutData] = useState<{ orderLines: any[], total: number }>({ orderLines: [], total: 0 })
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
 
@@ -113,7 +111,6 @@ export default function PurchaseOrdersPage() {
         try {
             const response = await api.get(`/purchasing/orders/${order.id}/`)
             setEditingOrder(response.data)
-            setIsFormOpen(true)
         } catch (error) {
             console.error("Error fetching order details:", error)
             toast.error("Error al cargar los detalles de la orden de compra.")
@@ -154,24 +151,14 @@ export default function PurchaseOrdersPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
                 <div className="flex items-center space-x-2">
-                    <PurchaseOrderForm
-                        onSuccess={fetchOrders}
-                        open={isFormOpen && !editingOrder}
-                        onOpenChange={(open) => {
-                            setIsFormOpen(open)
-                            if (!open) setEditingOrder(null)
-                        }}
-                        onCheckout={(orderLines, total) => {
-                            setCheckoutData({ orderLines, total })
-                            setCheckoutOpen(true)
-                        }}
-                    />
+                    <Button onClick={() => setCheckoutOpen(true)}>
+                        Nueva Orden de Compra
+                    </Button>
                     {editingOrder && (
                         <PurchaseOrderForm
                             initialData={editingOrder}
-                            open={isFormOpen && !!editingOrder}
+                            open={!!editingOrder}
                             onOpenChange={(open) => {
-                                setIsFormOpen(open)
                                 if (!open) setEditingOrder(null)
                             }}
                             onSuccess={fetchOrders}
@@ -393,12 +380,11 @@ export default function PurchaseOrdersPage() {
                 open={checkoutOpen}
                 onOpenChange={setCheckoutOpen}
                 order={null}
-                orderLines={checkoutData.orderLines}
-                total={checkoutData.total}
+                orderLines={[{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }]}
+                total={0}
                 onComplete={() => {
                     fetchOrders()
                     setCheckoutOpen(false)
-                    setCheckoutData({ orderLines: [], total: 0 })
                 }}
             />
 

@@ -10,13 +10,13 @@ import api from "@/lib/api"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import Link from "next/link"
 
-interface Step2_PurchasePaymentProps {
+interface Step3_PurchasePaymentProps {
     paymentData: any
     setPaymentData: (data: any) => void
     total: number
 }
 
-export function Step2_PurchasePayment({ paymentData, setPaymentData, total }: Step2_PurchasePaymentProps) {
+export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: Step3_PurchasePaymentProps) {
     const [accounts, setAccounts] = useState<any[]>([])
 
     useEffect(() => {
