@@ -356,11 +356,11 @@ export function OrderCommandCenter({
                                         id: ot.id,
                                         docType: 'work_order',
                                         status: ot.status,
-                                        progressValue: ot.progress || 0 // Assuming ot.progress exists or needs to be calculated
+                                        progressValue: ot.production_progress || 0
                                     })) || []}
                                     onViewDetail={openDetails}
                                     actions={(registry.production?.actions || []).filter((a: any) => !a.id.includes('view-'))}
-                                    emptyMessage="Sin manufactura"
+                                    emptyMessage="Sin órdenes de trabajo"
                                     order={order}
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
@@ -379,7 +379,7 @@ export function OrderCommandCenter({
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-center py-2 px-2 rounded-lg bg-muted/5 border border-dashed border-border/40">
-                                            <span className="text-[9px] text-muted-foreground/40 font-medium italic">Sin manufactura iniciada</span>
+                                            <span className="text-[9px] text-muted-foreground/40 font-medium italic">Sin órdenes de trabajo iniciadas</span>
                                         </div>
                                     )}
                                 </PhaseCard>

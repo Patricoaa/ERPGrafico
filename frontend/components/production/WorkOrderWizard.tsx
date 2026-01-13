@@ -381,6 +381,21 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
                                                         }}
                                                         disabled={!!editingMaterialId} // Disable product change when editing
+                                                        customFilter={(p: any) => {
+                                                            // 1. Exclude the product being manufactured
+                                                            if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
+
+                                                            // 2. Exclude Consumable products
+                                                            if (p.product_type === 'CONSUMABLE') return false;
+
+                                                            // 3. Exclude Simple Manufacturable products
+                                                            if (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing) return false;
+
+                                                            // 4. Exclude Advanced Manufacturable WITHOUT stock control
+                                                            if (p.requires_advanced_manufacturing && !p.track_inventory) return false;
+
+                                                            return true;
+                                                        }}
                                                     />
                                                 </div>
                                                 <div className="w-full md:w-32 space-y-2">

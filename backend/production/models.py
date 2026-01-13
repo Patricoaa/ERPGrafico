@@ -92,15 +92,24 @@ class WorkOrder(models.Model):
     @property
     def product_info(self):
         """
-        Returns product information if associated with a sale line.
+        Returns product information if associated with a sale line or manual product.
         """
         if self.sale_line and self.sale_line.product:
             product = self.sale_line.product
             return {
-                'code': product.code,
+                'id': product.id,
+                'code': product.internal_code or product.code,
                 'name': product.name,
                 'quantity': float(self.sale_line.quantity),
                 'unit_price': float(self.sale_line.unit_price),
+            }
+        elif self.is_manual and self.product:
+            return {
+                'id': self.product.id,
+                'code': self.product.internal_code or self.product.code,
+                'name': self.product.name,
+                'quantity': float(self.stage_data.get('quantity', 0)),
+                'unit_price': 0,
             }
         return None
     

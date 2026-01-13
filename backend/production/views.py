@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine
+from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial
 from .serializers import (
     WorkOrderSerializer, 
     ProductionConsumptionSerializer,
@@ -9,7 +9,7 @@ from .serializers import (
     BillOfMaterialsLineSerializer
 )
 from .services import WorkOrderService
-from inventory.models import Product, Warehouse
+from inventory.models import Product, Warehouse, UoM
 from decimal import Decimal
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas

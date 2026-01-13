@@ -41,6 +41,8 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     sale_customer_name = serializers.SerializerMethodField()
     sale_customer_rut = serializers.SerializerMethodField()
     product_info = serializers.ReadOnlyField()
+    main_product_id = serializers.SerializerMethodField()
+    production_progress = serializers.SerializerMethodField()
     
     # Metadata helpers
     # Metadata helpers
@@ -86,6 +88,31 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         if obj.sale_line and obj.sale_line.product:
             return obj.sale_line.product.mfg_enable_postpress
         return False
+
+    def get_main_product_id(self, obj):
+        if obj.sale_line and obj.sale_line.product_id:
+            return obj.sale_line.product_id
+        if obj.product_id:
+            return obj.product_id
+        return None
+    
+    def get_production_progress(self, obj):
+        if obj.status == WorkOrder.Status.FINISHED:
+            return 100
+        if obj.status == WorkOrder.Status.CANCELLED:
+            return 0
+        
+        # Progression based on stages
+        weights = {
+            WorkOrder.Stage.MATERIAL_ASSIGNMENT.value: 0,
+            WorkOrder.Stage.MATERIAL_APPROVAL.value: 20,
+            WorkOrder.Stage.PREPRESS.value: 40,
+            WorkOrder.Stage.PRESS.value: 60,
+            WorkOrder.Stage.POSTPRESS.value: 80,
+            WorkOrder.Stage.FINISHED.value: 100,
+            WorkOrder.Stage.CANCELLED.value: 0
+        }
+        return weights.get(obj.current_stage, 0)
     
     class Meta:
         model = WorkOrder

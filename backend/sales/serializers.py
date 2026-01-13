@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import SaleOrder, SaleLine, SalesSettings, SaleDelivery, SaleDeliveryLine
 from treasury.serializers import PaymentSerializer
+from production.serializers import WorkOrderSerializer
 from inventory.models import Product
 from django.db.models import Sum
 import math
@@ -72,6 +73,8 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
     related_documents = serializers.SerializerMethodField()
+    work_orders = WorkOrderSerializer(many=True, read_only=True)
+    production_progress = serializers.SerializerMethodField()
     has_pending_work_orders = serializers.SerializerMethodField()
 
     class Meta:
@@ -130,6 +133,13 @@ class SaleOrderSerializer(serializers.ModelSerializer):
 
     def get_pending_amount(self, obj):
         return obj.total - self.get_total_paid(obj)
+
+    def get_production_progress(self, obj):
+        wos = obj.work_orders.all()
+        if not wos.exists():
+            return 0
+        total_progress = sum(WorkOrderSerializer(wo).data.get('production_progress', 0) for wo in wos)
+        return total_progress / wos.count()
 
 class CreateSaleOrderSerializer(serializers.ModelSerializer):
     """
