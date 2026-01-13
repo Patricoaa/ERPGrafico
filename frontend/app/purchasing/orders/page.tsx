@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge } from "lucide-react"
+import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -19,6 +19,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckoutWizard"
+import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 
 interface PurchaseOrder {
     id: number
@@ -60,6 +61,7 @@ export default function PurchaseOrdersPage() {
     const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
 
 
     const fetchOrders = async () => {
@@ -229,105 +231,116 @@ export default function PurchaseOrdersPage() {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex justify-center space-x-1">
+                                    <div className="flex flex-col gap-1">
                                         <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}
-                                            title="Ver Detalles"
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => setSelectedOrderId(order.id)}
+                                            className="h-8 px-3 w-full"
                                         >
-                                            <Eye className="h-4 w-4" />
+                                            <MoreVertical className="h-4 w-4 mr-1" />
+                                            Gestionar
                                         </Button>
-                                        {order.status === 'DRAFT' && (
-                                            <>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleEdit(order)}
-                                                    title="Editar"
-                                                >
-                                                    <Pencil className="h-4 w-4 text-orange-500" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-blue-600"
-                                                    onClick={() => handleConfirm(order.id)}
-                                                    title="Confirmar"
-                                                >
-                                                    <CheckCircle className="h-4 w-4" />
-                                                </Button>
-                                            </>
-                                        )}
-
-                                        {['CONFIRMED', 'RECEIVED', 'PAID', 'INVOICED'].includes(order.status) && !order.is_invoiced && (
+                                        <div className="flex justify-center space-x-1">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-emerald-500"
-                                                onClick={() => handleInvoice(order)}
-                                                title="Registrar Factura/Boleta"
+                                                onClick={() => setViewingTransaction({ type: 'purchase_order', id: order.id, view: 'details' })}
+                                                title="Ver Detalles"
                                             >
-                                                <FileText className="h-4 w-4" />
+                                                <Eye className="h-4 w-4" />
                                             </Button>
-                                        )}
+                                            {order.status === 'DRAFT' && (
+                                                <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleEdit(order)}
+                                                        title="Editar"
+                                                    >
+                                                        <Pencil className="h-4 w-4 text-orange-500" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-blue-600"
+                                                        onClick={() => handleConfirm(order.id)}
+                                                        title="Confirmar"
+                                                    >
+                                                        <CheckCircle className="h-4 w-4" />
+                                                    </Button>
+                                                </>
+                                            )}
 
-                                        {/* Complete Folio for Draft Invoices */}
-                                        {order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT') && (
-                                            <>
+                                            {['CONFIRMED', 'RECEIVED', 'PAID', 'INVOICED'].includes(order.status) && !order.is_invoiced && (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="text-amber-600"
-                                                    onClick={() => {
-                                                        const draftInv = order.related_documents?.invoices?.find((inv: any) => inv.status === 'DRAFT')
-                                                        if (draftInv) setCompletingInvoice({ id: draftInv.id, type: draftInv.type })
-                                                    }}
-                                                    title="Completar Folio"
+                                                    className="text-emerald-500"
+                                                    onClick={() => handleInvoice(order)}
+                                                    title="Registrar Factura/Boleta"
                                                 >
-                                                    <FileEdit className="h-4 w-4" />
+                                                    <FileText className="h-4 w-4" />
                                                 </Button>
-                                                {/* Delete Draft Invoice */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive"
-                                                    onClick={() => {
-                                                        const inv = order.related_documents?.invoices?.[0]
-                                                        if (inv && confirm(`¿Está seguro de eliminar ${inv.type === 'BOLETA' ? 'la Boleta' : 'la Factura'} ${inv.number || '(Pendiente)'}?`)) {
-                                                            handleDeleteInvoice(inv.id)
-                                                        }
-                                                    }}
-                                                    title="Eliminar Documento"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </>
-                                        )}
+                                            )}
 
-                                        {order.status === 'DRAFT' ? (
-                                            !order.related_documents?.invoices?.length && (
+                                            {/* Complete Folio for Draft Invoices */}
+                                            {order.related_documents?.invoices?.some((inv: any) => inv.status === 'DRAFT') && (
+                                                <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-amber-600"
+                                                        onClick={() => {
+                                                            const draftInv = order.related_documents?.invoices?.find((inv: any) => inv.status === 'DRAFT')
+                                                            if (draftInv) setCompletingInvoice({ id: draftInv.id, type: draftInv.type })
+                                                        }}
+                                                        title="Completar Folio"
+                                                    >
+                                                        <FileEdit className="h-4 w-4" />
+                                                    </Button>
+                                                    {/* Delete Draft Invoice */}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive"
+                                                        onClick={() => {
+                                                            const inv = order.related_documents?.invoices?.[0]
+                                                            if (inv && confirm(`¿Está seguro de eliminar ${inv.type === 'BOLETA' ? 'la Boleta' : 'la Factura'} ${inv.number || '(Pendiente)'}?`)) {
+                                                                handleDeleteInvoice(inv.id)
+                                                            }
+                                                        }}
+                                                        title="Eliminar Documento"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </>
+                                            )}
+
+                                            {order.status === 'DRAFT' ? (
+                                                !order.related_documents?.invoices?.length && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive"
+                                                        onClick={() => handleDelete(order.id)}
+                                                        title="Eliminar Orden de Compra"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )
+                                            ) : order.status !== 'CANCELLED' ? (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
-                                                    onClick={() => handleDelete(order.id)}
-                                                    title="Eliminar Orden de Compra"
+                                                    onClick={() => handleAnnul(order.id)}
+                                                    title="Anular"
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <X className="h-4 w-4" />
                                                 </Button>
-                                            )
-                                        ) : order.status !== 'CANCELLED' ? (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-destructive hover:text-destructive"
-                                                onClick={() => handleAnnul(order.id)}
-                                                title="Anular"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        ) : null}
+                                            ) : null}
+                                        </div>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -397,6 +410,14 @@ export default function PurchaseOrdersPage() {
                     onSuccess={fetchOrders}
                 />
             )}
+
+            <OrderCommandCenter
+                orderId={selectedOrderId}
+                type="purchase"
+                open={selectedOrderId !== null}
+                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                onActionSuccess={fetchOrders}
+            />
         </div>
     )
 }

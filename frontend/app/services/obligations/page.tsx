@@ -10,9 +10,10 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ServiceInvoiceDialog } from "@/components/services/ServiceInvoiceDialog"
 import { ServicePaymentDialog } from "@/components/services/ServicePaymentDialog"
-import { FileText } from "lucide-react"
+import { FileText, MoreVertical } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { ServiceContractDetailModal } from "@/components/services/ServiceContractDetailModal"
+import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 
 const statusLabels: Record<string, string> = {
     'PENDING': 'Pendiente',
@@ -29,6 +30,7 @@ export default function ServiceObligationsPage() {
     const [selectedObligation, setSelectedObligation] = useState<any>(null)
     const [showInvoiceDialog, setShowInvoiceDialog] = useState(false)
     const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
 
     // Transaction viewing
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
@@ -129,18 +131,29 @@ export default function ServiceObligationsPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex justify-center gap-2">
-                                            {/* Actions */}
-                                            {!o.invoice && o.status !== 'PAID' && o.status !== 'CANCELLED' && (
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() => handleRegisterInvoice(o)}
-                                                    title="Registrar Factura/Boleta"
-                                                >
-                                                    <FileText className="h-4 w-4" />
-                                                </Button>
-                                            )}
+                                        <div className="flex flex-col gap-1 items-center">
+                                            <Button
+                                                variant="default"
+                                                size="sm"
+                                                onClick={() => setSelectedOrderId(o.id)}
+                                                className="h-8 px-3 w-full max-w-[120px]"
+                                            >
+                                                <MoreVertical className="h-4 w-4 mr-1" />
+                                                Gestionar
+                                            </Button>
+                                            <div className="flex justify-center gap-2">
+                                                {/* Actions */}
+                                                {!o.invoice && o.status !== 'PAID' && o.status !== 'CANCELLED' && (
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={() => handleRegisterInvoice(o)}
+                                                        title="Registrar Factura/Boleta"
+                                                    >
+                                                        <FileText className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -179,6 +192,14 @@ export default function ServiceObligationsPage() {
                 open={viewingContractId !== null}
                 onOpenChange={(open) => !open && setViewingContractId(null)}
                 onSuccess={fetchObligations}
+            />
+
+            <OrderCommandCenter
+                orderId={selectedOrderId}
+                type="obligation"
+                open={selectedOrderId !== null}
+                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                onActionSuccess={fetchObligations}
             />
         </div>
     )

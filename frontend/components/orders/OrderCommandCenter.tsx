@@ -38,7 +38,7 @@ import { toast } from "sonner"
 
 interface OrderCommandCenterProps {
     orderId: number | null
-    type: 'purchase' | 'sale'
+    type: 'purchase' | 'sale' | 'obligation'
     open: boolean
     onOpenChange: (open: boolean) => void
     onActionSuccess?: () => void
@@ -82,7 +82,10 @@ export function OrderCommandCenter({
         if (!orderId) return
         setLoading(true)
         try {
-            const endpoint = type === 'purchase' ? `/purchasing/orders/${orderId}/` : `/sales/orders/${orderId}/`
+            const endpoint =
+                type === 'purchase' ? `/purchasing/orders/${orderId}/` :
+                    type === 'obligation' ? `/services/obligations/${orderId}/` :
+                        `/sales/orders/${orderId}/`
             const response = await api.get(endpoint)
             setOrder(response.data)
         } catch (error) {
@@ -164,7 +167,7 @@ export function OrderCommandCenter({
 
     if (!order) return null
 
-    const registry = type === 'purchase' ? purchaseOrderActions : saleOrderActions
+    const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
     const isSale = type === 'sale'
     const billingActions = registry.notes?.actions || []
 
@@ -256,9 +259,9 @@ export function OrderCommandCenter({
                                 <div className="space-y-1">
                                     <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                                         <Settings2 className="h-6 w-6 text-primary" />
-                                        {order.document_type === 'SERVICE_OBLIGATION' ? 'Obligación de Servicio' : 'Centro de Comandos'}
+                                        {order.document_type === 'SERVICE_OBLIGATION' || type === 'obligation' ? 'Obligación de Servicio' : 'Centro de Comandos'}
                                         <span className="text-muted-foreground font-light mx-2">|</span>
-                                        <span className="font-mono text-xl">{type === 'purchase' ? 'OC' : 'NV'}-{order.number}</span>
+                                        <span className="font-mono text-xl">{type === 'purchase' ? 'OC' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>
                                     </DialogTitle>
                                     <DialogDescription className="flex items-center gap-4">
                                         <span className="flex items-center gap-1.5 text-xs font-medium">
@@ -292,8 +295,8 @@ export function OrderCommandCenter({
                                 variant={order.status !== 'DRAFT' ? 'success' : 'neutral'}
                                 documents={[
                                     {
-                                        type: order.document_type === 'SERVICE_OBLIGATION' ? 'Obligación' : (isSale ? 'Nota de Venta' : 'Orden de Compra'),
-                                        number: `${order.document_type === 'SERVICE_OBLIGATION' ? 'Obligación' : (isSale ? 'Nota de Venta' : 'Orden de Compra')} - ${(isSale ? 'NV' : 'OC') + '-' + order.number}`,
+                                        type: (type === 'obligation' || order.document_type === 'SERVICE_OBLIGATION') ? 'Obligación' : (isSale ? 'Nota de Venta' : 'Orden de Compra'),
+                                        number: `${(type === 'obligation' || order.document_type === 'SERVICE_OBLIGATION') ? 'Obligación' : (isSale ? 'Nota de Venta' : 'Orden de Compra')} - ${(isSale ? 'NV' : (type === 'obligation' ? 'OB' : 'OC')) + '-' + (order.number || order.id)}`,
                                         icon: FileText,
                                         id: order.id,
                                         docType: type === 'sale' ? 'sale_order' : (order.document_type === 'SERVICE_OBLIGATION' ? 'service_obligation' : 'purchase_order'),

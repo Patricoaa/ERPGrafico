@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit, X } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit, X, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -21,6 +21,7 @@ import { DeliveryModal } from "@/components/sales/DeliveryModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
 import { Progress } from "@/components/ui/progress"
+import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 
 
 interface SaleOrder {
@@ -64,6 +65,7 @@ export default function SalesOrdersPage() {
     const [completingFolio, setCompletingFolio] = useState<SaleOrder | null>(null)
     const [addingNote, setAddingNote] = useState<SaleOrder | null>(null)
     const [checkoutData, setCheckoutData] = useState<any | null>(null)
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
 
     const fetchOrders = async () => {
         try {
@@ -283,122 +285,133 @@ export default function SalesOrdersPage() {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex justify-center space-x-1">
+                                    <div className="flex flex-col gap-1">
                                         <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'details' })}
-                                            title="Ver Detalles"
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => setSelectedOrderId(order.id)}
+                                            className="h-8 px-3 w-full"
                                         >
-                                            <Eye className="h-4 w-4" />
+                                            <MoreVertical className="h-4 w-4 mr-1" />
+                                            Gestionar
                                         </Button>
-                                        {order.status === 'DRAFT' && (
+                                        <div className="flex justify-center space-x-1">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleEdit(order)}
-                                                title="Editar"
+                                                onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'details' })}
+                                                title="Ver Detalles"
                                             >
-                                                <Pencil className="h-4 w-4 text-orange-500" />
+                                                <Eye className="h-4 w-4" />
                                             </Button>
-                                        )}
+                                            {order.status === 'DRAFT' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleEdit(order)}
+                                                    title="Editar"
+                                                >
+                                                    <Pencil className="h-4 w-4 text-orange-500" />
+                                                </Button>
+                                            )}
 
-                                        {order.status === 'DRAFT' && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-blue-600"
-                                                onClick={() => handleConfirm(order.id)}
-                                                title="Confirmar"
-                                            >
-                                                <CheckCircle className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                                            {order.status === 'DRAFT' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-blue-600"
+                                                    onClick={() => handleConfirm(order.id)}
+                                                    title="Confirmar"
+                                                >
+                                                    <CheckCircle className="h-4 w-4" />
+                                                </Button>
+                                            )}
 
-                                        {['CONFIRMED', 'INVOICED'].includes(order.status) && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-emerald-600"
-                                                onClick={async () => {
-                                                    const res = await api.get(`/sales/orders/${order.id}/`)
-                                                    setPayingOrder(res.data)
-                                                }}
-                                                title="Registrar Pago"
-                                            >
-                                                <Banknote className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                                            {['CONFIRMED', 'INVOICED'].includes(order.status) && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-emerald-600"
+                                                    onClick={async () => {
+                                                        const res = await api.get(`/sales/orders/${order.id}/`)
+                                                        setPayingOrder(res.data)
+                                                    }}
+                                                    title="Registrar Pago"
+                                                >
+                                                    <Banknote className="h-4 w-4" />
+                                                </Button>
+                                            )}
 
-                                        {order.status === 'CONFIRMED' && !order.related_documents?.invoices?.length && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-blue-600"
-                                                onClick={() => setCompletingFolio(order)}
-                                                title="Completar Folio"
-                                            >
-                                                <FileEdit className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                                            {order.status === 'CONFIRMED' && !order.related_documents?.invoices?.length && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-blue-600"
+                                                    onClick={() => setCompletingFolio(order)}
+                                                    title="Completar Folio"
+                                                >
+                                                    <FileEdit className="h-4 w-4" />
+                                                </Button>
+                                            )}
 
-                                        {['CONFIRMED', 'INVOICED', 'PAID'].includes(order.status) && order.delivery_status !== 'DELIVERED' && !order.has_pending_work_orders && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-purple-600"
-                                                onClick={() => setDispatchingOrder(order.id)}
-                                                title="Despachar"
-                                            >
-                                                <Truck className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                                            {['CONFIRMED', 'INVOICED', 'PAID'].includes(order.status) && order.delivery_status !== 'DELIVERED' && !order.has_pending_work_orders && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-purple-600"
+                                                    onClick={() => setDispatchingOrder(order.id)}
+                                                    title="Despachar"
+                                                >
+                                                    <Truck className="h-4 w-4" />
+                                                </Button>
+                                            )}
 
-                                        {['INVOICED', 'PAID'].includes(order.status) && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-purple-600"
-                                                onClick={() => setAddingNote(order)}
-                                                title="Registrar Nota Crédito/Débito"
-                                            >
-                                                <FileBadge className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                                            {['INVOICED', 'PAID'].includes(order.status) && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-purple-600"
+                                                    onClick={() => setAddingNote(order)}
+                                                    title="Registrar Nota Crédito/Débito"
+                                                >
+                                                    <FileBadge className="h-4 w-4" />
+                                                </Button>
+                                            )}
 
-                                        {(order.related_documents?.payments?.length ?? 0) > 0 && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-emerald-600"
-                                                onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'history' })}
-                                                title="Historial de Pagos"
-                                            >
-                                                <History className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                                            {(order.related_documents?.payments?.length ?? 0) > 0 && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-emerald-600"
+                                                    onClick={() => setViewingTransaction({ type: 'sale_order', id: order.id, view: 'history' })}
+                                                    title="Historial de Pagos"
+                                                >
+                                                    <History className="h-4 w-4" />
+                                                </Button>
+                                            )}
 
-                                        {order.status === 'DRAFT' ? (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-destructive hover:text-destructive"
-                                                onClick={() => handleDelete(order.id)}
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        ) : order.status !== 'CANCELLED' ? (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-destructive hover:text-destructive"
-                                                onClick={() => handleAnnul(order.id)}
-                                                title="Anular"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        ) : null}
+                                            {order.status === 'DRAFT' ? (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-destructive hover:text-destructive"
+                                                    onClick={() => handleDelete(order.id)}
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            ) : order.status !== 'CANCELLED' ? (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-destructive hover:text-destructive"
+                                                    onClick={() => handleAnnul(order.id)}
+                                                    title="Anular"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -485,6 +498,14 @@ export default function SalesOrdersPage() {
                     onSuccess={fetchOrders}
                 />
             )}
+
+            <OrderCommandCenter
+                orderId={selectedOrderId}
+                type="sale"
+                open={selectedOrderId !== null}
+                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                onActionSuccess={fetchOrders}
+            />
         </div>
     )
 }
