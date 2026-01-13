@@ -280,8 +280,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                     <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
                                                         {currentType === 'inventory' ? 'Cantidad' : 'Total'}
                                                     </div>
-                                                    <div className={`font-bold text-base truncate ${currentType === 'inventory' ? (parseFloat(data.quantity) > 0 ? 'text-green-600' : 'text-red-600') : ''}`}>
-                                                        {currentType === 'inventory' ? Math.round(Math.abs(parseFloat(data.quantity))) : `$${Number(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + Number(i.debit), 0) : data.total).toLocaleString()}`}
+                                                    <div className={`font-bold text-base truncate ${currentType === 'inventory' ? ((Number(data.quantity) || 0) > 0 ? 'text-green-600' : 'text-red-600') : ''}`}>
+                                                        {currentType === 'inventory' ? Math.round(Math.abs(Number(data.quantity) || 0)) : `$${Number(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + (Number(i.debit) || 0), 0) : (data.total || 0)).toLocaleString()}`}
                                                     </div>
                                                 </CardContent>
                                             </Card>

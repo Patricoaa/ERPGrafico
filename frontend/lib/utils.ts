@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function translateStatus(status: string): string {
+export function translateStatus(status: string | null | undefined): string {
+  if (!status) return ''
   const map: Record<string, string> = {
     'DRAFT': 'Borrador',
     'CONFIRMED': 'Confirmado',
