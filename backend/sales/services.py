@@ -223,11 +223,11 @@ class SalesService:
             
             # PATH A: Product tracks inventory directly
             if product.track_inventory:
-                # Convert quantity from sale UoM to product base UoM
-                base_qty = UoMService.convert_quantity(
-                    line.quantity, 
-                    from_uom=line.sale_line.uom,
-                    to_uom=product.uom
+                # Base quantity conversion
+                base_qty = StockService.convert_quantity(
+                    line.quantity,
+                    from_uom=line.uom or line.sale_line.uom,
+                    to_uom=line.product.uom
                 )
 
                 # Create stock move (OUT)
@@ -237,9 +237,11 @@ class SalesService:
                     product=product,
                     warehouse=delivery.warehouse,
                     uom=product.uom,
-                    quantity=-base_qty,
+                    quantity=-base_qty, # Negative for OUT move
                     move_type=StockMove.Type.OUT,
-                    description=f"Despacho-{delivery.number} (NV-{delivery.sale_order.number})"
+                    description=f"Despacho NV-{delivery.sale_order.number}", # Updated description
+                    source_uom=line.uom or line.sale_line.uom,
+                    source_quantity=line.quantity
                 )
                 
                 # Link stock move to delivery line

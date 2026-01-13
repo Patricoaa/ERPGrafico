@@ -19,6 +19,8 @@ class StockService:
         if quantity == 0:
             return None
 
+        quantity_orig = quantity
+
         from accounting.models import AccountingSettings
         settings = AccountingSettings.objects.first()
         if not settings:
@@ -102,7 +104,9 @@ class StockService:
             quantity=quantity,
             move_type=move_type,
             adjustment_reason=adjustment_reason,
-            description=description
+            description=description,
+            source_uom=uom or product.uom,
+            source_quantity=quantity_orig
         )
 
         # 3. Accounting Logic
@@ -170,11 +174,14 @@ class StockService:
                 raise ValidationError(f"No se puede convertir de {from_uom.name} a {to_uom.name} (Categorías distintas)")
         
         # Conversion: Qty * (FromRatio / ToRatio)
-        # 1 Box (12) -> Unit (1). 1.0 * (12.0 / 1.0) = 12.0
-        # 1 Unit (1) -> Box (12). 1.0 * (1.0 / 12.0) = 0.0833
+        converted_qty = (quantity * from_uom.ratio) / to_uom.ratio
         
-
-        return (quantity * from_uom.ratio) / to_uom.ratio
+        # Apply rounding if to_uom has it
+        if hasattr(to_uom, 'rounding') and to_uom.rounding:
+            rounding = Decimal(str(to_uom.rounding))
+            return converted_qty.quantize(rounding)
+            
+        return converted_qty
 
 class PricingService:
     @staticmethod

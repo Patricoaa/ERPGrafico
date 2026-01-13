@@ -315,7 +315,8 @@ export function SalesCheckoutWizard({
             if (deliveryData.type === 'PARTIAL' && deliveryData.partialQuantities) {
                 formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map((pq: any) => ({
                     id: pq.productId,
-                    quantity: pq.dispatchedQty
+                    quantity: pq.dispatchedQty,
+                    uom: pq.uom
                 }))))
             }
 

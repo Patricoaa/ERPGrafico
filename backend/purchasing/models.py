@@ -206,6 +206,14 @@ class PurchaseReceiptLine(models.Model):
         decimal_places=2,
         help_text="Cantidad recibida en esta recepción"
     )
+
+    uom = models.ForeignKey(
+        'inventory.UoM',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='receipt_lines',
+        verbose_name=_("Unidad")
+    )
     
     # Link to Stock Move
     stock_move = models.OneToOneField(

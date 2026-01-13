@@ -468,13 +468,9 @@ class StockMove(models.Model):
     
     description = models.CharField(_("Descripción"), max_length=255, blank=True)
     
-    # Link to Accounting
-    journal_entry = models.ForeignKey(
-        'accounting.JournalEntry', 
-        on_delete=models.PROTECT, 
-        null=True, blank=True,
-        related_name='stock_moves'
-    )
+    # Traceability for original transaction units
+    source_uom = models.ForeignKey(UoM, on_delete=models.SET_NULL, null=True, blank=True, related_name='stock_moves_source', help_text=_("Unidad original de la transacción"))
+    source_quantity = models.DecimalField(_("Cantidad Original"), max_digits=12, decimal_places=4, null=True, blank=True, help_text=_("Cantidad original en la unidad de la transacción"))
     
     created_at = models.DateTimeField(auto_now_add=True)
 

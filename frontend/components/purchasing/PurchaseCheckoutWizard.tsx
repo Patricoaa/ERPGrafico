@@ -258,7 +258,8 @@ export function PurchaseCheckoutWizard({
             if (receiptData.type === 'PARTIAL' && receiptData.partialQuantities) {
                 receiptPayload.line_data = receiptData.partialQuantities.map((pq: any) => ({
                     product_id: pq.productId,
-                    quantity: pq.receivedQty
+                    quantity: pq.receivedQty,
+                    uom: pq.uom
                 }))
             }
 
@@ -307,7 +308,7 @@ export function PurchaseCheckoutWizard({
                         warehouseName={selectedWarehouseName}
                         dteType={step > 2 ? dteData.type : undefined}
                         paymentData={step > 3 ? {
-                            method: paymentData.method,
+                            method: paymentData.method as any,
                             amount: paymentData.amount,
                             pendingDebt: currentTotal - paymentData.amount
                         } : undefined}

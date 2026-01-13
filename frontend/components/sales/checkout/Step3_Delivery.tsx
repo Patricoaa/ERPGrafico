@@ -1,11 +1,53 @@
 "use client"
 
+function UoMSelector({ line, currentUom, onUomChange }: { line: any, currentUom: any, onUomChange: (uomId: number) => void }) {
+    const [allowedUoms, setAllowedUoms] = useState<any[]>([])
+
+    useEffect(() => {
+        const fetchAllowed = async () => {
+            try {
+                const res = await api.get(`/inventory/uoms/allowed/?product_id=${line.product || line.id}&context=sale`)
+                setAllowedUoms(res.data)
+            } catch (err) {
+                console.error("Error fetching allowed UoMs", err)
+            }
+        }
+        fetchAllowed()
+    }, [line.id, line.product])
+
+    if (allowedUoms.length <= 1) return <span>{line.uom_name || line.uom}</span>
+
+    return (
+        <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
+            <SelectTrigger className="h-7 text-xs w-24">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                {allowedUoms.map((u: any) => (
+                    <SelectItem key={u.id} value={u.id.toString()} className="text-xs">
+                        {u.name}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    )
+}
+
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Truck, Package, Store, Calendar, Info, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import api from "@/lib/api"
+import { useState, useEffect } from "react"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import {
     Table,
     TableBody,
@@ -202,7 +244,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                             if (existingIdx >= 0) {
                                                                 pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
                                                             } else {
-                                                                pqs.push({ productId: line.id, dispatchedQty: val });
+                                                                pqs.push({ productId: line.id, dispatchedQty: val, uom: line.uom });
                                                             }
                                                             setDeliveryData({ ...deliveryData, partialQuantities: pqs });
                                                         }}
@@ -210,7 +252,20 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                     />
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
-                                                    {line.uom_name || line.uom}
+                                                    <UoMSelector
+                                                        line={line}
+                                                        currentUom={(deliveryData.partialQuantities || []).find((pq: any) => pq.productId === line.id)?.uom || line.uom}
+                                                        onUomChange={(uomId) => {
+                                                            const pqs = [...(deliveryData.partialQuantities || [])];
+                                                            const existingIdx = pqs.findIndex((pq: any) => pq.productId === line.id);
+                                                            if (existingIdx >= 0) {
+                                                                pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
+                                                            } else {
+                                                                pqs.push({ productId: line.id, dispatchedQty: 1, uom: uomId });
+                                                            }
+                                                            setDeliveryData({ ...deliveryData, partialQuantities: pqs });
+                                                        }}
+                                                    />
                                                 </TableCell>
                                             </TableRow>
                                         )

@@ -40,7 +40,8 @@ class PurchasingService:
                     receipt=receipt,
                     purchase_line=line,
                     quantity=line.quantity_pending,
-                    unit_cost=line.unit_cost # Use PO cost by default
+                    unit_cost=line.unit_cost, # Use PO cost by default
+                    uom=line.uom
                 )
         
         # Confirm receipt
@@ -106,7 +107,8 @@ class PurchasingService:
                 receipt=receipt,
                 purchase_line=purchase_line,
                 quantity=quantity,
-                unit_cost=unit_cost if unit_cost > 0 else purchase_line.unit_cost
+                unit_cost=unit_cost if unit_cost > 0 else purchase_line.unit_cost,
+                uom=item.get('uom') or purchase_line.uom
             )
             
         # Confirm receipt
@@ -151,7 +153,8 @@ class PurchasingService:
                 receipt=receipt,
                 purchase_line=purchase_line,
                 quantity=-quantity, # Negative for return
-                unit_cost=unit_cost if unit_cost > 0 else purchase_line.unit_cost
+                unit_cost=unit_cost if unit_cost > 0 else purchase_line.unit_cost,
+                uom=item.get('uom') or purchase_line.uom
             )
             
         # Confirm "receipt" (return)
@@ -194,7 +197,7 @@ class PurchasingService:
             # Convert received quantity to base UoM for reversal
             base_qty = StockService.convert_quantity(
                 line.quantity_received,
-                from_uom=line.purchase_line.uom,
+                from_uom=line.uom or line.purchase_line.uom,
                 to_uom=line.product.uom
             )
 
@@ -206,7 +209,9 @@ class PurchasingService:
                 quantity=base_qty, # base_qty is already negative for returns
                 move_type=StockMove.Type.OUT,
                 description=f"Devolución OC-{receipt.purchase_order.number}",
-                journal_entry=entry
+                journal_entry=entry,
+                source_uom=line.uom or line.purchase_line.uom,
+                source_quantity=line.quantity_received
             )
             line.stock_move = stock_move
             line.save()
@@ -251,13 +256,14 @@ class PurchasingService:
         receipt.save()
 
     @staticmethod
-    def _create_receipt_line(receipt, purchase_line, quantity, unit_cost):
+    def _create_receipt_line(receipt, purchase_line, quantity, unit_cost, uom=None):
         PurchaseReceiptLine.objects.create(
             receipt=receipt,
             purchase_line=purchase_line,
             product=purchase_line.product,
             quantity_received=quantity,
-            unit_cost=unit_cost
+            unit_cost=unit_cost,
+            uom=uom or purchase_line.uom
         )
 
     @staticmethod
@@ -295,7 +301,7 @@ class PurchasingService:
             # Base quantity conversion
             base_qty = StockService.convert_quantity(
                 line.quantity_received,
-                from_uom=line.purchase_line.uom,
+                from_uom=line.uom or line.purchase_line.uom,
                 to_uom=line.product.uom
             )
             
@@ -314,7 +320,9 @@ class PurchasingService:
                 warehouse=receipt.warehouse,
                 quantity=base_qty,
                 move_type=StockMove.Type.IN,
-                description=f"Recepción OC-{receipt.purchase_order.number}"
+                description=f"Recepción OC-{receipt.purchase_order.number}",
+                source_uom=line.uom or line.purchase_line.uom,
+                source_quantity=line.quantity_received
             )
             line.stock_move = stock_move
             line.save()
