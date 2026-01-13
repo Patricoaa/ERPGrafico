@@ -24,10 +24,12 @@ export function PaymentReferenceModal({
     onSuccess
 }: PaymentReferenceModalProps) {
     // Filter payments that need a reference (TRANSFER or CARD with missing info)
-    const pendingPayments = payments?.filter((p: any) =>
-        (p.payment_method === 'TRANSFER' || p.payment_method === 'CARD') &&
-        (p.is_pending_registration || !p.transaction_number)
-    ) || []
+    const pendingPayments = payments?.filter((p: any) => {
+        const method = p.payment_method?.toUpperCase()
+        const isTransferOrCard = method === 'TRANSFER' || method === 'CARD' || method === 'BANK'
+        const hasNoRef = !p.transaction_number || p.transaction_number === "" || p.transaction_number === "null"
+        return isTransferOrCard && (p.is_pending_registration || hasNoRef)
+    }) || []
 
     const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(
         pendingPayments.length > 0 ? pendingPayments[0].id : null

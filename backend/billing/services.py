@@ -381,11 +381,12 @@ class BillingService:
     @transaction.atomic
     def confirm_invoice(invoice: Invoice, number: str, document_attachment=None):
         """
-        Finalizes a DRAFT invoice, adding folio and separating VAT if Factura.
-        Works for both Purchase Orders and Service Obligations.
+        Finalizes a DRAFT or PAID-without-folio invoice, adding folio and separating VAT.
+        Works for Sale Orders, Purchase Orders and Service Obligations.
         """
-        if invoice.status != Invoice.Status.DRAFT:
-            raise ValidationError("Solo se pueden confirmar facturas en estado borrador.")
+        # Allow PAID status because a draft can be fully paid before folio is registered
+        if invoice.status not in [Invoice.Status.DRAFT, Invoice.Status.PAID]:
+            raise ValidationError(f"Solo se pueden confirmar facturas en estado Borrador (actual: {invoice.status}).")
         
         if not number:
             raise ValidationError("El número de folio es obligatorio para confirmar la factura.")
@@ -393,7 +394,11 @@ class BillingService:
         invoice.number = number
         if document_attachment:
             invoice.document_attachment = document_attachment
-        invoice.status = Invoice.Status.POSTED
+        
+        # Avoid downgrading status if it was already PAID
+        if invoice.status == Invoice.Status.DRAFT:
+            invoice.status = Invoice.Status.POSTED
+            
         invoice.save()
 
         # Adjust Journal Entry
@@ -410,9 +415,9 @@ class BillingService:
             entry.reference = f"{invoice.dte_type[:3]}-{number}"
             entry.save()
 
-
-            # Post entry (it was created in DRAFT state)
-            JournalEntryService.post_entry(entry)
+            # Post entry if it's still in DRAFT (which it is for Draft/Paid-Draft invoices)
+            if entry.state == JournalEntry.State.DRAFT:
+                JournalEntryService.post_entry(entry)
 
         return invoice
 

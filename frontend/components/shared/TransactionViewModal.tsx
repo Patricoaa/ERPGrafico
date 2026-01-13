@@ -4,17 +4,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2 } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { translateStatus, translatePaymentMethod } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { PaymentForm } from "@/components/forms/PaymentForm"
+import { Progress } from "@/components/ui/progress"
 
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation'
+    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation' | 'work_order'
     id: number | string
     view?: 'details' | 'history' | 'all'
 }
@@ -53,6 +54,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             else if (currentType === 'journal_entry') endpoint = `/accounting/entries/${currentId}/`
             else if (currentType === 'inventory') endpoint = `/inventory/moves/${currentId}/`
             else if (currentType === 'service_obligation') endpoint = `/services/obligations/${currentId}/`
+            else if (currentType === 'work_order') endpoint = `/manufacturing/work-orders/${currentId}/`
 
             const response = await api.get(endpoint)
             setData(response.data)
@@ -116,6 +118,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 return `MOVIMIENTO DE INVENTARIO ${data.reference_code || `MOV-${data.id}`}`
             case 'service_obligation':
                 return `OBLIGACIÓN DE SERVICIO OB-${data.id}`
+            case 'work_order':
+                return `ORDEN DE TRABAJO ${data.code || `OT-${data.id}`}`
             default:
                 return "DETALLES DE TRANSACCIÓN"
         }
@@ -130,6 +134,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         if (currentType === 'inventory') return <Package className="h-5 w-5 text-blue-600" />
         if (currentType === 'payment') return <Banknote className="h-5 w-5 text-emerald-600" />
         if (currentType === 'service_obligation') return <Building2 className="h-5 w-5 text-indigo-600" />
+        if (currentType === 'work_order') return <ClipboardList className="h-5 w-5 text-indigo-600" />
         return <FileText className="h-5 w-5" />
     }
 
@@ -341,6 +346,57 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                 <h4 className="text-xs font-semibold text-muted-foreground uppercase">Vencimiento</h4>
                                                 <p className="text-sm">{data.due_date}</p>
                                             </div>
+                                        </div>
+                                    </div>
+                                ) : currentType === 'work_order' ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 border-t">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Producto a Fabricar</h4>
+                                                <p className="font-black text-lg leading-tight">{data.product_name}</p>
+                                                <p className="text-xs text-muted-foreground font-mono">{data.product_code}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Cantidad</h4>
+                                                <p className="text-2xl font-black">{Math.round(data.quantity)} {data.uom_name || 'UN'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Estado Producción</h4>
+                                                <Badge className="mt-1 font-black px-3 py-1 text-sm">
+                                                    {translateStatus(data.status)}
+                                                </Badge>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Progreso</h4>
+                                                <div className="flex items-center gap-3">
+                                                    <Progress value={data.production_progress || 0} className="h-2 flex-1" />
+                                                    <span className="font-black text-sm">{Math.round(data.production_progress || 0)}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Nota de Venta Origen</h4>
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full justify-start gap-2 font-bold h-12"
+                                                    onClick={() => navigateTo('sale_order', data.sale_order)}
+                                                >
+                                                    <ShoppingBag className="h-4 w-4 text-primary" />
+                                                    NV-{data.sale_order_number || data.sale_order}
+                                                </Button>
+                                            </div>
+                                            {data.assigned_to_name && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Asignado a</h4>
+                                                    <p className="text-sm font-bold flex items-center gap-2">
+                                                        <User className="h-3.5 w-3.5" />
+                                                        {data.assigned_to_name}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (

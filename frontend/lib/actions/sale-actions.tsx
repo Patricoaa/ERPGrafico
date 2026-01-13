@@ -149,6 +149,13 @@ export const saleOrderActions: ActionRegistry = {
         icon: X,
         actions: [
             {
+                id: 'view-work-orders',
+                label: 'Ver Órdenes de Trabajo',
+                icon: Eye,
+                requiredPermissions: ['manufacturing.view_workorder'],
+                checkAvailability: (order) => (order.work_orders?.length || 0) > 0
+            },
+            {
                 id: 'annul-document',
                 label: 'Anular Documento',
                 icon: X,

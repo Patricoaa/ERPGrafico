@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { ArrowDownLeft, ArrowUpRight, Eye, Banknote, CreditCard, Landmark, Receipt, Edit, Save, X, Trash2 } from "lucide-react"
+import { ArrowDownLeft, ArrowUpRight, Eye, Banknote, CreditCard, Landmark, Receipt, Edit, Save, X, Trash2, Hash } from "lucide-react"
 import api from "@/lib/api"
 import { PaymentForm } from "@/components/forms/PaymentForm"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -186,22 +186,9 @@ export default function PaymentsPage() {
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
-                                            <span className="font-mono text-[10px]">
+                                            <span className="font-mono text-[10px] whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]" title={payment.transaction_number}>
                                                 {payment.transaction_number || '-'}
                                             </span>
-                                            {(payment.payment_method === 'CARD' || payment.payment_method === 'TRANSFER') && (
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() => {
-                                                        setEditingId(payment.id)
-                                                        setTempTransactionNumber(payment.transaction_number || "")
-                                                    }}
-                                                >
-                                                    <Edit className="h-3 w-3 text-blue-600" />
-                                                </Button>
-                                            )}
                                         </div>
                                     )}
                                 </TableCell>
@@ -236,6 +223,26 @@ export default function PaymentsPage() {
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center gap-1">
+                                        {/* Logic: Show transaction button if:
+                                            1. OUTBOUND + (CARD or TRANSFER)
+                                            2. INBOUND + TRANSFER + (transaction_number is empty)
+                                        */}
+                                        {((payment.payment_type === 'OUTBOUND' && ['CARD', 'TRANSFER'].includes(payment.payment_method)) ||
+                                            (payment.payment_type === 'INBOUND' && payment.payment_method === 'TRANSFER' && !payment.transaction_number)) && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() => {
+                                                        setEditingId(payment.id)
+                                                        setTempTransactionNumber(payment.transaction_number || "")
+                                                    }}
+                                                    title="Registrar N° Transacción"
+                                                >
+                                                    <Hash className="h-4 w-4 text-orange-600" />
+                                                </Button>
+                                            )}
+
                                         <Button
                                             variant="ghost"
                                             size="icon"

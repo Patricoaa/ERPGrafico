@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, forwardRef, useImperativeHandle } from "react"
 import { Badge } from "@/components/ui/badge"
 import { ActionButton } from "./ActionButton"
 import { Action, ActionCategory as CategoryType } from "@/types/actions"
@@ -14,6 +14,8 @@ import { PaymentReferenceModal } from "../shared/PaymentReferenceModal"
 import { SaleNoteModal } from "../sales/SaleNoteModal"
 import { PurchaseNoteModal } from "../purchasing/PurchaseNoteModal"
 import { toast } from "sonner"
+import { DocumentListModal } from './DocumentListModal'
+import { TransactionViewModal } from "../shared/TransactionViewModal"
 import api from "@/lib/api"
 
 interface ActionCategoryProps {
@@ -22,31 +24,68 @@ interface ActionCategoryProps {
     userPermissions: string[]
     onActionSuccess?: () => void
     layout?: 'list' | 'grid'
+    compact?: boolean
 }
 
-export function ActionCategory({
+export const ActionCategory = forwardRef(({
     category,
     order,
     userPermissions,
     onActionSuccess,
     layout = 'list'
-}: ActionCategoryProps) {
+}: ActionCategoryProps, ref) => {
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
+
+    useImperativeHandle(ref, () => ({
+        handleActionClick
+    }))
 
     // Detemine order type helper
     const isSale = !!order.customer_name || !!order.customer
     const isPurchase = !!order.supplier_name || !!order.supplier
 
+    const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
+
     const handleActionClick = (actionId: string) => {
         switch (actionId) {
             case 'complete-folio':
             case 'register-delivery':
-            case 'view-payments':
+            case 'register-reception':
+            case 'payment-history':
             case 'register-payment':
             case 'register-payment-ref':
-            case 'credit-note':
-            case 'debit-note':
+            case 'create-note':
+                setActiveModal(actionId)
+                break
+            case 'view-documents':
+            case 'view-receptions':
+            case 'view-deliveries':
+                const docs = actionId === 'view-documents'
+                    ? (order.related_documents?.invoices || order.invoices || [])
+                    : (isSale ? (order.related_documents?.deliveries || []) : (order.related_documents?.receipts || []))
+
+                if (docs.length === 0) {
+                    toast.error("No se han encontrado documentos.")
+                    return
+                }
+
+                // If only one, open directly. If multiple, eventually we might need a list, 
+                // but user wants TransactionViewModal. We'll open the latest one.
+                const targetDoc = docs[0]
+                const viewType = actionId === 'view-documents' ? 'invoice' : 'inventory'
+                const viewId = actionId === 'view-documents' ? targetDoc.id : (targetDoc.id || targetDoc.stock_move_id)
+
+                if (!viewId) {
+                    toast.error("Error al identificar el documento.")
+                    return
+                }
+
+                setViewConfig({ type: viewType, id: viewId })
+                setActiveModal('transaction-view')
+                break
+            case 'view-work-orders':
+                // For Work Orders we'll keep it as a list for now or open specific one
                 setActiveModal(actionId)
                 break
             case 'annul-document':
@@ -189,7 +228,7 @@ export function ActionCategory({
                 />
             )}
 
-            {activeModal === 'register-delivery' && (
+            {(activeModal === 'register-delivery' || activeModal === 'register-reception') && (
                 isSale ? (
                     <DeliveryModal
                         open={true}
@@ -207,7 +246,7 @@ export function ActionCategory({
                 )
             )}
 
-            {activeModal === 'view-payments' && (
+            {activeModal === 'payment-history' && (
                 <PaymentHistoryModal
                     open={true}
                     onOpenChange={closeModal}
@@ -235,14 +274,14 @@ export function ActionCategory({
                 />
             )}
 
-            {activeModal === 'credit-note' && (
+            {activeModal === 'create-note' && (
                 isSale ? (
                     <SaleNoteModal
                         open={true}
                         onOpenChange={closeModal}
                         orderId={order.id}
                         orderNumber={order.number}
-                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')?.id}
+                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
                         initialType="NOTA_CREDITO"
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                     />
@@ -252,36 +291,34 @@ export function ActionCategory({
                         onOpenChange={closeModal}
                         orderId={order.id}
                         orderNumber={order.number}
-                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')?.id}
+                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
                         initialType="NOTA_CREDITO"
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                     />
                 )
             )}
 
-            {activeModal === 'debit-note' && (
-                isSale ? (
-                    <SaleNoteModal
-                        open={true}
-                        onOpenChange={closeModal}
-                        orderId={order.id}
-                        orderNumber={order.number}
-                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')?.id}
-                        initialType="NOTA_DEBITO"
-                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                    />
-                ) : (
-                    <PurchaseNoteModal
-                        open={true}
-                        onOpenChange={closeModal}
-                        orderId={order.id}
-                        orderNumber={order.number}
-                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED')?.id}
-                        initialType="NOTA_DEBITO"
-                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                    />
-                )
+            {activeModal === 'transaction-view' && viewConfig && (
+                <TransactionViewModal
+                    open={true}
+                    onOpenChange={closeModal}
+                    type={viewConfig.type}
+                    id={viewConfig.id}
+                />
+            )}
+
+            {activeModal === 'view-work-orders' && (
+                <DocumentListModal
+                    open={true}
+                    onOpenChange={closeModal}
+                    type="work_orders"
+                    data={order.work_orders || []}
+                    onItemClick={(type, id) => {
+                        setViewConfig({ type, id })
+                        setActiveModal('transaction-view')
+                    }}
+                />
             )}
         </div>
     )
-}
+})

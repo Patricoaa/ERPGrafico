@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
-import { Landmark, Calendar, User, Hash } from "lucide-react"
+import { Landmark, Calendar, User, Hash, FileText } from "lucide-react"
 
 interface Payment {
     id: number
@@ -46,35 +46,35 @@ export function PaymentHistoryModal({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Landmark className="h-5 w-5" />
-                        Historial de Pagos - Orden {order.number}
+                <DialogHeader className="border-b pb-4">
+                    <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                        <Landmark className="h-6 w-6 text-primary" />
+                        Historial de Pagos y Referencias - Orden {order.number}
                     </DialogTitle>
                 </DialogHeader>
 
                 {payments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground bg-muted/30 rounded-lg border-2 border-dashed">
-                        <Landmark className="h-12 w-12 mb-4 opacity-20" />
-                        <p>No se han registrado pagos para esta orden.</p>
+                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-muted/20 rounded-xl border-2 border-dashed mt-4">
+                        <Landmark className="h-16 w-16 mb-4 opacity-10" />
+                        <p className="font-medium text-lg">No se han registrado pagos aún.</p>
                     </div>
                 ) : (
-                    <div className="rounded-md border">
+                    <div className="mt-4 rounded-xl border shadow-sm overflow-hidden">
                         <Table>
-                            <TableHeader>
+                            <TableHeader className="bg-muted/50">
                                 <TableRow>
-                                    <TableHead>Fecha</TableHead>
-                                    <TableHead>Método</TableHead>
-                                    <TableHead>Referencia</TableHead>
-                                    <TableHead className="text-right">Monto</TableHead>
+                                    <TableHead className="text-[11px] font-black uppercase tracking-wider">Fecha</TableHead>
+                                    <TableHead className="text-[11px] font-black uppercase tracking-wider">Método de Pago</TableHead>
+                                    <TableHead className="text-[11px] font-black uppercase tracking-wider">Referencia / N° Op</TableHead>
+                                    <TableHead className="text-right text-[11px] font-black uppercase tracking-wider">Monto</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {payments.map((payment: Payment) => (
-                                    <TableRow key={payment.id}>
+                                    <TableRow key={payment.id} className="hover:bg-muted/30 transition-colors">
                                         <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium">{new Date(payment.date).toLocaleDateString()}</span>
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="font-bold">{new Date(payment.date).toLocaleDateString()}</span>
                                                 {payment.created_by_name && (
                                                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                                         <User className="h-3 w-3" /> {payment.created_by_name}
@@ -83,21 +83,28 @@ export function PaymentHistoryModal({
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="font-normal capitalize">
+                                            <Badge variant="outline" className="font-black text-[9px] uppercase border-primary/20 bg-primary/5 text-primary">
                                                 {payment.payment_method_display || payment.payment_method}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs">{payment.reference || '--'}</span>
+                                            <div className="flex flex-col gap-1">
+                                                {payment.reference && (
+                                                    <span className="text-xs font-medium flex items-center gap-1">
+                                                        <FileText className="h-3 w-3 text-muted-foreground" /> {payment.reference}
+                                                    </span>
+                                                )}
                                                 {payment.transaction_number && (
-                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                    <span className="text-xs font-black text-emerald-600 flex items-center gap-1">
                                                         <Hash className="h-3 w-3" /> {payment.transaction_number}
                                                     </span>
                                                 )}
+                                                {!payment.reference && !payment.transaction_number && (
+                                                    <span className="text-[10px] text-muted-foreground italic">Sin referencias</span>
+                                                )}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-right font-bold text-primary">
+                                        <TableCell className="text-right font-black text-lg tracking-tighter text-primary">
                                             {formatCurrency(payment.amount)}
                                         </TableCell>
                                     </TableRow>

@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck, Calendar, FileUp } from "lucide-react"
+import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck, Calendar, FileUp, FileText, User } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Wallet, AlertCircle, Building2 } from "lucide-react"
 
 interface PaymentDialogProps {
     open: boolean
@@ -91,11 +93,23 @@ export function PaymentDialog({
                 </DialogHeader>
 
                 <div className="py-4 space-y-6">
-                    <div className="flex justify-between items-center p-4 bg-muted/50 rounded-lg">
-                        <div className="text-sm font-medium text-muted-foreground">Monto Total: ${total.toLocaleString()}</div>
-                        <div className="text-2xl font-black text-primary">
-                            {isRefund ? "Por Recibir" : "Pendiente"}: ${pendingAmount.toLocaleString()}
+                    <div className="relative overflow-hidden p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/10 shadow-inner">
+                        <div className="flex justify-between items-center relative z-10">
+                            <div>
+                                <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/70 mb-1">Monto de la Orden</p>
+                                <p className="text-sm font-bold text-muted-foreground opacity-80">${total.toLocaleString()}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/70 mb-1">
+                                    {isRefund ? "Total a Reembolsar" : "Saldo Pendiente"}
+                                </p>
+                                <p className="text-4xl font-black text-primary tracking-tighter drop-shadow-sm">
+                                    ${pendingAmount.toLocaleString()}
+                                </p>
+                            </div>
                         </div>
+                        {/* Abstract background elements */}
+                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
                     </div>
 
                     <div className="grid gap-4">
@@ -204,31 +218,38 @@ export function PaymentDialog({
                             </div>
                         )}
 
-                        <div className="grid gap-2">
+                        <div className="space-y-4">
                             <Label className="text-[11px] font-bold uppercase text-muted-foreground">Método de Pago</Label>
-                            <div className="grid grid-cols-4 gap-2">
+                            <RadioGroup
+                                value={paymentMethod}
+                                onValueChange={setPaymentMethod}
+                                className="grid grid-cols-2 md:grid-cols-4 gap-3"
+                            >
                                 {[
-                                    { id: 'CASH', label: 'Efectivo', icon: Banknote },
-                                    { id: 'CARD', label: 'Tarjeta', icon: CreditCard },
-                                    { id: 'TRANSFER', label: 'Transf.', icon: Landmark },
-                                    { id: 'CREDIT', label: 'Crédito', icon: Receipt },
+                                    { id: 'CASH', label: 'Efectivo', icon: Banknote, color: 'text-emerald-600' },
+                                    { id: 'CARD', label: 'Tarjeta', icon: CreditCard, color: 'text-blue-600' },
+                                    { id: 'TRANSFER', label: 'Transf.', icon: Building2, color: 'text-purple-600' },
+                                    { id: 'CREDIT', label: 'Crédito', icon: Receipt, color: 'text-amber-600' },
                                 ].filter(m => !isPurchase || m.id !== 'CREDIT').map((m) => (
-                                    <Button
-                                        key={m.id}
-                                        type="button"
-                                        variant={paymentMethod === m.id ? "default" : "outline"}
-                                        className="flex flex-col h-16 gap-1 px-1"
-                                        onClick={() => setPaymentMethod(m.id)}
-                                    >
-                                        <m.icon className="h-5 w-5" />
-                                        <span className="text-[9px] uppercase font-bold">{m.label}</span>
-                                    </Button>
+                                    <div key={m.id} className="relative group">
+                                        <Label
+                                            htmlFor={`method-${m.id}`}
+                                            className={`flex flex-col items-center gap-2 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all cursor-pointer ${paymentMethod === m.id ? 'border-primary bg-primary/5' : ''}`}
+                                        >
+                                            <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" />
+                                            <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
+                                                <m.icon className="h-5 w-5" />
+                                            </div>
+                                            <span className="text-[10px] font-bold uppercase">{m.label}</span>
+                                        </Label>
+                                    </div>
                                 ))}
-                            </div>
+                            </RadioGroup>
+
                             {paymentMethod === 'CREDIT' && (
                                 <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900 rounded-md text-[10px] text-amber-700 dark:text-amber-400">
-                                    <p className="font-bold mb-1">Nota sobre Venta/Compra a Crédito:</p>
-                                    <p>Esta opción no genera un movimiento de caja. Solo servirá para registrar el documento (Factura/Boleta) y generar la deuda en la cuenta corriente del {isPurchase ? 'proveedor' : 'cliente'}.</p>
+                                    <p className="font-bold mb-1 uppercase tracking-tight">Venta/Compra a Crédito</p>
+                                    <p>Esta opción no genera un movimiento de caja. Solo servirá para registrar el documento y generar la deuda en la cuenta corriente.</p>
                                 </div>
                             )}
                         </div>
@@ -271,31 +292,54 @@ export function PaymentDialog({
                             </div>
                         )}
 
-                        <div className="grid gap-2">
-                            <Label className="text-[11px] font-bold uppercase text-muted-foreground">
-                                {isRefund ? "Monto a Recibir" : "Monto a Pagar"}
-                            </Label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
-                                <Input
-                                    type="number"
-                                    step="1"
-                                    value={amount}
-                                    onChange={(e) => setAmount(Math.ceil(parseFloat(e.target.value) || 0).toString())}
-                                    className="pl-7 text-2xl font-black h-14"
-                                    autoFocus
-                                    onFocus={(e) => e.target.select()}
-                                />
+                        <div className="grid gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-bold uppercase text-muted-foreground tracking-widest">
+                                    {isRefund ? "Monto a Reembolsar" : "Monto Recibido"}
+                                </Label>
+                                <div className="relative group">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-2xl text-muted-foreground group-focus-within:text-primary transition-colors">$</span>
+                                    <Input
+                                        type="number"
+                                        step="1"
+                                        value={amount}
+                                        onChange={(e) => setAmount(Math.ceil(parseFloat(e.target.value) || 0).toString())}
+                                        className="pl-10 text-4xl font-black h-20 rounded-2xl border-2 focus-visible:ring-offset-0 transition-all bg-background/50 backdrop-blur-sm shadow-sm"
+                                        autoFocus
+                                        onFocus={(e) => e.target.select()}
+                                    />
+                                </div>
                             </div>
 
-                            {paymentMethod === 'CASH' && change > 0 && (
-                                <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 rounded-md">
-                                    <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                                        {isRefund ? "Diferencia a favor:" : "Vuelto a entregar:"}
+                            {paymentMethod === 'CASH' && change > 0 ? (
+                                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex justify-between items-center animate-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 bg-white dark:bg-zinc-900 rounded-lg shadow-sm">
+                                            <Banknote className="h-5 w-5 text-emerald-600" />
+                                        </div>
+                                        <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                                            {isRefund ? "Diferencia a favor:" : "Vuelto a entregar:"}
+                                        </span>
+                                    </div>
+                                    <span className="font-black text-2xl text-emerald-600 dark:text-emerald-400 tracking-tighter">
+                                        ${change.toLocaleString()}
                                     </span>
-                                    <span className="font-bold text-xl text-emerald-600 dark:text-emerald-400">${change.toLocaleString()}</span>
                                 </div>
-                            )}
+                            ) : parseFloat(amount) < pendingAmount && paymentMethod !== 'CREDIT' ? (
+                                <div className="p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-xl flex justify-between items-center animate-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 bg-white dark:bg-zinc-900 rounded-lg shadow-sm">
+                                            <Wallet className="h-5 w-5 text-orange-600" />
+                                        </div>
+                                        <span className="text-sm font-bold text-orange-700 dark:text-orange-400 uppercase tracking-tight">
+                                            Crédito Automático:
+                                        </span>
+                                    </div>
+                                    <span className="font-black text-2xl text-orange-600 dark:text-orange-400 tracking-tighter">
+                                        ${(pendingAmount - parseFloat(amount)).toLocaleString()}
+                                    </span>
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 </div>
