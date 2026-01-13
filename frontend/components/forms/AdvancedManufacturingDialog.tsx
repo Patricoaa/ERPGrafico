@@ -49,22 +49,55 @@ export function AdvancedManufacturingDialog({
 
     useEffect(() => {
         if (open && product) {
-            setDesignNeeded(false)
-            setContact(null)
-            setDescription("")
-            setProductDescription("")
-            setDesignFiles([])
-            setFolioEnabled(false)
-            setFolioStart("")
-            setPrepressSpecs("")
-            setPressSpecs("")
-            setPostpressSpecs("")
-            setPrintType(null)
+            const mfgData = product.manufacturing_data
 
-            // Initialize switches from product configuration
-            setEnablePrepress(!!product.mfg_enable_prepress)
-            setEnablePress(!!product.mfg_enable_press)
-            setEnablePostpress(!!product.mfg_enable_postpress)
+            if (mfgData) {
+                setDesignNeeded(mfgData.design_needed || false)
+                setContact(mfgData.contact || null)
+                setDescription(mfgData.description || "")
+                setProductDescription(mfgData.product_description || "")
+                setDesignFiles(mfgData.design_files || [])
+                setFolioEnabled(mfgData.folio_enabled || false)
+                setFolioStart(mfgData.folio_start || "")
+                setPrintType(mfgData.print_type || null)
+
+                if (mfgData.phases) {
+                    setEnablePrepress(mfgData.phases.prepress ?? !!product.mfg_enable_prepress)
+                    setEnablePress(mfgData.phases.press ?? !!product.mfg_enable_press)
+                    setEnablePostpress(mfgData.phases.postpress ?? !!product.mfg_enable_postpress)
+                } else {
+                    setEnablePrepress(!!product.mfg_enable_prepress)
+                    setEnablePress(!!product.mfg_enable_press)
+                    setEnablePostpress(!!product.mfg_enable_postpress)
+                }
+
+                if (mfgData.specifications) {
+                    setPrepressSpecs(mfgData.specifications.prepress || "")
+                    setPressSpecs(mfgData.specifications.press || "")
+                    setPostpressSpecs(mfgData.specifications.postpress || "")
+                } else {
+                    setPrepressSpecs("")
+                    setPressSpecs("")
+                    setPostpressSpecs("")
+                }
+            } else {
+                setDesignNeeded(false)
+                setContact(null)
+                setDescription("")
+                setProductDescription("")
+                setDesignFiles([])
+                setFolioEnabled(false)
+                setFolioStart("")
+                setPrepressSpecs("")
+                setPressSpecs("")
+                setPostpressSpecs("")
+                setPrintType(null)
+
+                // Initialize switches from product configuration
+                setEnablePrepress(!!product.mfg_enable_prepress)
+                setEnablePress(!!product.mfg_enable_press)
+                setEnablePostpress(!!product.mfg_enable_postpress)
+            }
         }
     }, [open, product])
 

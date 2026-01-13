@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Paintbrush, Info, Settings2 } from "lucide-react"
+import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Info } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -15,7 +15,6 @@ import { PricingUtils } from "@/lib/pricing"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { SalesCheckoutWizard } from "@/components/sales/SalesCheckoutWizard"
 import { Badge } from "@/components/ui/badge"
-import { AdvancedManufacturingDialog } from "@/components/forms/AdvancedManufacturingDialog"
 import {
     Select,
     SelectContent,
@@ -85,11 +84,6 @@ export default function POSPage() {
     const [categories, setCategories] = useState<Category[]>([])
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([])
-
-    // Advanced Manufacturing State
-    const [advMfgDialogOpen, setAdvMfgDialogOpen] = useState(false)
-    const [pendingProduct, setPendingProduct] = useState<Product | null>(null)
-    const [isEditingMode, setIsEditingMode] = useState(false)
 
     const [pricingRules, setPricingRules] = useState<any[]>([])
 
@@ -196,13 +190,6 @@ export default function POSPage() {
     }
 
     const addToCart = (product: Product, mfgData?: any) => {
-        if (product.requires_advanced_manufacturing && !mfgData) {
-            setIsEditingMode(false)
-            setPendingProduct(product)
-            setAdvMfgDialogOpen(true)
-            return
-        }
-
         const existing = items.find(i => i.id === product.id)
 
         // Prioritize sale_uom if available
@@ -401,11 +388,6 @@ export default function POSPage() {
                                                     <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{product.internal_code || product.code}</div>
-                                                {product.product_type === 'MANUFACTURABLE' && product.requires_advanced_manufacturing && (
-                                                    <div className="mt-1 text-[10px] text-blue-600 font-bold uppercase flex items-center justify-center gap-1">
-                                                        <Settings2 className="h-3 w-3" /> Configurable
-                                                    </div>
-                                                )}
                                             </CardContent>
                                         </Card>
                                     )
@@ -507,20 +489,6 @@ export default function POSPage() {
                                                     <TableCell className="text-right font-bold text-sm">{formatCurrency(item.total_gross)}</TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-1">
-                                                            {item.requires_advanced_manufacturing && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className={cn("h-8 w-8", item.manufacturing_data ? "text-primary" : "text-muted-foreground")}
-                                                                    onClick={() => {
-                                                                        setIsEditingMode(true)
-                                                                        setPendingProduct(item as Product)
-                                                                        setAdvMfgDialogOpen(true)
-                                                                    }}
-                                                                >
-                                                                    <Paintbrush className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
                                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(item.id)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
@@ -583,28 +551,6 @@ export default function POSPage() {
                     />
                 )
             }
-
-            <AdvancedManufacturingDialog
-                open={advMfgDialogOpen}
-                onOpenChange={setAdvMfgDialogOpen}
-                product={pendingProduct}
-                onConfirm={(data) => {
-                    if (pendingProduct) {
-                        if (isEditingMode) {
-                            // Edit mode: Update existing item without adding quantity
-                            setItems(items.map(i => i.id === pendingProduct.id
-                                ? { ...i, manufacturing_data: data }
-                                : i
-                            ))
-                        } else {
-                            // Add mode: Add item or increment quantity
-                            addToCart(pendingProduct, data)
-                        }
-                        setPendingProduct(null)
-                        setIsEditingMode(false)
-                    }
-                }}
-            />
         </div>
     )
 }

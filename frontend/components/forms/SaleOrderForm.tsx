@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Trash2, Box, Info, Paintbrush } from "lucide-react"
+import { Plus, Trash2, Box, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
     Dialog,
@@ -46,7 +46,6 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { AdvancedManufacturingDialog } from "@/components/forms/AdvancedManufacturingDialog"
 import { PricingUtils } from "@/lib/pricing"
 
 const saleLineSchema = z.object({
@@ -144,11 +143,6 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoMs] = useState<any[]>([])
     const [pricingRules, setPricingRules] = useState<any[]>([])
-
-    // Advanced Manufacturing State
-    const [advMfgDialogOpen, setAdvMfgDialogOpen] = useState(false)
-    const [pendingProduct, setPendingProduct] = useState<any>(null)
-    const [pendingItemIndex, setPendingItemIndex] = useState<number | null>(null)
 
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema) as any,
@@ -386,13 +380,6 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                     if (selectedProduct.product_type !== 'MANUFACTURABLE_CUSTOM') {
                                                                                         form.setValue(`lines.${index}.custom_specs`, {})
                                                                                     }
-
-                                                                                    // Trigger Advanced Manufacturing Dialog if required
-                                                                                    if (selectedProduct.requires_advanced_manufacturing) {
-                                                                                        setPendingProduct(selectedProduct)
-                                                                                        setPendingItemIndex(index)
-                                                                                        setAdvMfgDialogOpen(true)
-                                                                                    }
                                                                                 }
                                                                             }}
                                                                         />
@@ -402,20 +389,8 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     const prod = products.find(p => p.id.toString() === field.value)
                                                                     if (!prod) return null
 
-                                                                    const mfgData = form.watch(`lines.${index}.manufacturing_data`)
-
                                                                     return (
                                                                         <div className="space-y-2">
-                                                                            {mfgData && (
-                                                                                <div className="px-2 py-1 rounded bg-primary/10 border border-primary/20 text-[10px] font-medium text-primary flex items-center gap-1">
-                                                                                    <Info className="h-3 w-3" /> Fabricación Configurada
-                                                                                    {mfgData.delivery_date && (
-                                                                                        <span className="opacity-70 ml-1">
-                                                                                            • Entrega: {new Date(mfgData.delivery_date).toLocaleDateString()}
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
-                                                                            )}
                                                                             {prod.product_type === 'MANUFACTURABLE_CUSTOM' && prod.custom_fields_schema && (
                                                                                 <FormField<SaleOrderFormValues>
                                                                                     control={form.control}
@@ -520,30 +495,6 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-1">
-                                                        {(() => {
-                                                            const productId = form.watch(`lines.${index}.product`)
-                                                            const prod = products.find(p => p.id.toString() === productId)
-                                                            if (!prod?.requires_advanced_manufacturing) return null
-
-                                                            const hasData = !!form.watch(`lines.${index}.manufacturing_data`)
-
-                                                            return (
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className={cn("h-8 w-8", hasData ? "text-primary" : "text-muted-foreground")}
-                                                                    onClick={() => {
-                                                                        setPendingProduct(prod)
-                                                                        setPendingItemIndex(index)
-                                                                        setAdvMfgDialogOpen(true)
-                                                                    }}
-                                                                    title="Configurar fabricación"
-                                                                >
-                                                                    <Paintbrush className="h-4 w-4" />
-                                                                </Button>
-                                                            )
-                                                        })()}
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
@@ -598,18 +549,6 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                         </div>
                     </form>
                 </Form>
-                <AdvancedManufacturingDialog
-                    open={advMfgDialogOpen}
-                    onOpenChange={setAdvMfgDialogOpen}
-                    product={pendingProduct}
-                    onConfirm={(data) => {
-                        if (pendingItemIndex !== null) {
-                            form.setValue(`lines.${pendingItemIndex}.manufacturing_data`, data)
-                            setPendingItemIndex(null)
-                            setPendingProduct(null)
-                        }
-                    }}
-                />
             </DialogContent>
         </Dialog >
     )
