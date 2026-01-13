@@ -608,6 +608,12 @@ function PhaseCard({
         neutral: 'bg-white/10 text-muted-foreground',
     }
 
+    const statusDot: Record<string, string> = {
+        success: 'bg-green-500 shadow-green-500/50',
+        active: 'bg-primary shadow-primary/50 animate-pulse',
+        neutral: 'bg-white/20',
+    }
+
     // Separate actions into primary (closing) and secondary
     const categorizedActions = (() => {
         const filtered = actions?.filter((action: any) => {
