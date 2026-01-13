@@ -50,8 +50,11 @@ export function SalesCheckoutWizard({
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
 
-    // Recalculate total if currentOrderLines changes (though likely unit prices won't change here)
-    const currentTotal = currentOrderLines.reduce((acc: number, line: any) => acc + (line.qty || line.quantity) * (line.unit_price_net || line.unit_price), 0);
+    // Recalculate total if currentOrderLines changes (Gross total including 19% tax)
+    const currentTotal = currentOrderLines.reduce((acc: number, line: any) => {
+        const net = (line.qty || line.quantity) * (line.unit_price_net || line.unit_price);
+        return acc + Math.round(net * 1.19);
+    }, 0);
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)

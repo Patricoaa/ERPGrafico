@@ -43,7 +43,7 @@ export function OrderSummaryCard({
                                         </div>
                                     </div>
                                     <p className="font-mono text-xs font-black whitespace-nowrap pt-0.5">
-                                        {formatCurrency(Math.round((line.qty || line.quantity) * (line.unit_price_net || line.unit_price)))}
+                                        {formatCurrency(Math.round((line.qty || line.quantity) * (line.unit_price_net || line.unit_price) * 1.19))}
                                     </p>
                                 </div>
                             ))}
