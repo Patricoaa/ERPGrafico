@@ -31,23 +31,23 @@ export function ActionButton({
             variant={action.variant || "outline"}
             onClick={onClick}
             className={cn(
-                "w-full justify-start text-left font-medium h-auto py-3 px-4 transition-all duration-200 group",
+                "w-full justify-start text-left font-medium h-auto py-2 px-3 transition-all duration-200 group",
                 action.variant === 'destructive' ? 'hover:bg-destructive/10' : 'hover:border-primary/50 hover:bg-primary/5',
                 className
             )}
         >
-            <div className="flex items-center gap-3 w-full overflow-hidden">
+            <div className="flex items-center gap-2.5 w-full overflow-hidden">
                 <div className={cn(
-                    "p-2 rounded-lg shrink-0 transition-colors",
+                    "p-1.5 rounded-md shrink-0 transition-colors",
                     action.variant === 'destructive' ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
                 )}>
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3.5 w-3.5" />
                 </div>
 
                 <div className="flex flex-col flex-1 min-w-0">
-                    <span className="truncate">{action.label}</span>
+                    <span className="truncate text-xs">{action.label}</span>
                     {action.description && (
-                        <span className="text-[10px] text-muted-foreground font-normal truncate">
+                        <span className="text-[9px] text-muted-foreground font-normal truncate">
                             {action.description}
                         </span>
                     )}

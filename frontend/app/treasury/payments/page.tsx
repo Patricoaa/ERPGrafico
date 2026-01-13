@@ -17,6 +17,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
 
 interface Payment {
     id: number
@@ -42,8 +43,11 @@ export default function PaymentsPage() {
     const [payments, setPayments] = useState<Payment[]>([])
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
-    const [editingId, setEditingId] = useState<number | null>(null)
-    const [tempTransactionNumber, setTempTransactionNumber] = useState("")
+    const [trForm, setTrForm] = useState<{ open: boolean, id: number | null, initialValue: string }>({
+        open: false,
+        id: null,
+        initialValue: ""
+    })
     const [editingPayment, setEditingPayment] = useState<any>(null)
 
     const fetchPayments = async () => {
@@ -58,19 +62,6 @@ export default function PaymentsPage() {
         }
     }
 
-    const handleUpdateTransactionNumber = async (id: number) => {
-        try {
-            await api.patch(`/treasury/payments/${id}/`, {
-                transaction_number: tempTransactionNumber
-            })
-            toast.success("N° de transacción actualizado")
-            setEditingId(null)
-            fetchPayments()
-        } catch (error) {
-            console.error("Failed to update transaction number", error)
-            toast.error("Error al actualizar N° de transacción")
-        }
-    }
 
     const handleDeletePayment = async (id: number) => {
         if (!confirm("¿Está seguro de eliminar este pago?")) return
@@ -159,38 +150,11 @@ export default function PaymentsPage() {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    {editingId === payment.id ? (
-                                        <div className="flex items-center gap-1">
-                                            <Input
-                                                className="h-7 text-[10px] w-24 px-1 font-mono"
-                                                value={tempTransactionNumber}
-                                                onChange={(e) => setTempTransactionNumber(e.target.value)}
-                                                autoFocus
-                                            />
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-7 w-7"
-                                                onClick={() => handleUpdateTransactionNumber(payment.id)}
-                                            >
-                                                <Save className="h-3.5 w-3.5 text-emerald-600" />
-                                            </Button>
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-7 w-7"
-                                                onClick={() => setEditingId(null)}
-                                            >
-                                                <X className="h-3.5 w-3.5 text-red-600" />
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-[10px] whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]" title={payment.transaction_number}>
-                                                {payment.transaction_number || '-'}
-                                            </span>
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-[10px] whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]" title={payment.transaction_number}>
+                                            {payment.transaction_number || '-'}
+                                        </span>
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex flex-col">
@@ -233,10 +197,11 @@ export default function PaymentsPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8"
-                                                    onClick={() => {
-                                                        setEditingId(payment.id)
-                                                        setTempTransactionNumber(payment.transaction_number || "")
-                                                    }}
+                                                    onClick={() => setTrForm({
+                                                        open: true,
+                                                        id: payment.id,
+                                                        initialValue: payment.transaction_number || ""
+                                                    })}
                                                     title="Registrar N° Transacción"
                                                 >
                                                     <Hash className="h-4 w-4 text-orange-600" />
@@ -299,6 +264,14 @@ export default function PaymentsPage() {
                     }}
                 />
             )}
+
+            <TransactionNumberForm
+                open={trForm.open}
+                onOpenChange={(open) => setTrForm(prev => ({ ...prev, open }))}
+                paymentId={trForm.id}
+                initialValue={trForm.initialValue}
+                onSuccess={fetchPayments}
+            />
         </div>
     )
 }
