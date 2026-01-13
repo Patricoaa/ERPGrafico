@@ -216,7 +216,7 @@ export function OrderCommandCenter({
                                     </DialogTitle>
                                     <DialogDescription className="flex items-center gap-4">
                                         <span className="flex items-center gap-1.5 text-xs font-medium">
-                                            <div className={cn("w-2 h-2 rounded-full",
+                                            <span className={cn("w-2 h-2 rounded-full",
                                                 order.status === 'PAID' ? 'bg-green-500' :
                                                     order.status === 'CANCELLED' ? 'bg-destructive' :
                                                         'bg-primary'

@@ -17,6 +17,7 @@ import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummary
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
+import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2 } from "lucide-react"
 
 interface PurchaseCheckoutWizardProps {
@@ -42,6 +43,26 @@ export function PurchaseCheckoutWizard({
 }: PurchaseCheckoutWizardProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    const [currentOrderLines, setCurrentOrderLines] = useState<any[]>(orderLines)
+    const [currentTotal, setCurrentTotal] = useState(total)
+
+    useEffect(() => {
+        if (open) {
+            setCurrentOrderLines(orderLines)
+            setCurrentTotal(total)
+            setStep(1)
+        }
+    }, [open, orderLines, total])
+
+    useEffect(() => {
+        const newTotal = currentOrderLines.reduce((sum, line) => {
+            const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
+            const tax = net * 0.19
+            return sum + net + tax
+        }, 0)
+        setCurrentTotal(newTotal)
+    }, [currentOrderLines])
+
 
     const [selectedSupplierId, setSelectedSupplierId] = useState(initialSupplierId)
     const [selectedSupplierName, setSelectedSupplierName] = useState("")
@@ -73,8 +94,8 @@ export function PurchaseCheckoutWizard({
 
     // Update payment amount when total changes
     useEffect(() => {
-        setPaymentData(prev => ({ ...prev, amount: total }))
-    }, [total])
+        setPaymentData(prev => ({ ...prev, amount: currentTotal }))
+    }, [currentTotal])
 
     // Fetch warehouse name when ID changes
     useEffect(() => {
@@ -117,7 +138,18 @@ export function PurchaseCheckoutWizard({
                 return false
             }
         }
-        if (targetStep === 2 && dteData.type === 'FACTURA' && !dteData.isPending) {
+        if (targetStep === 2) {
+            if (currentOrderLines.length === 0) {
+                toast.error("Debe seleccionar al menos un producto.")
+                return false
+            }
+            const invalidLine = currentOrderLines.find(l => !l.product && !l.id)
+            if (invalidLine) {
+                toast.error("Todos las líneas deben tener un producto seleccionado.")
+                return false
+            }
+        }
+        if (targetStep === 3 && dteData.type === 'FACTURA' && !dteData.isPending) {
             if (!dteData.attachment) {
                 toast.error("Debe adjuntar el archivo de la factura.")
                 return false
@@ -127,11 +159,11 @@ export function PurchaseCheckoutWizard({
                 return false
             }
         }
-        if (targetStep === 2 && dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
+        if (targetStep === 3 && dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
             toast.error("Debe ingresar el número de folio de la boleta.")
             return false
         }
-        if (targetStep === 3 && paymentData.amount > 0) {
+        if (targetStep === 4 && paymentData.amount > 0) {
             // Validate at least one account exists for the selected method
             const hasAccountsForMethod = (method: string) => {
                 if (method === 'CASH') return accounts.some(a => a.allows_cash)
@@ -184,8 +216,8 @@ export function PurchaseCheckoutWizard({
             const payloadOrder = order ? { id: order.id } : {
                 supplier: parseInt(selectedSupplierId),
                 warehouse: parseInt(selectedWarehouseId),
-                lines: orderLines.map(l => ({
-                    product: l.id,
+                lines: currentOrderLines.map(l => ({
+                    product: l.id || l.product,
                     quantity: l.qty || l.quantity,
                     unit_cost: l.unit_cost || 0,
                     uom: l.uom,
@@ -247,7 +279,7 @@ export function PurchaseCheckoutWizard({
         }
     }
 
-    const totalSteps = 4
+    const totalSteps = 5
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -257,7 +289,7 @@ export function PurchaseCheckoutWizard({
                         <DialogTitle className="text-2xl">Procesar Compra</DialogTitle>
                     </div>
                     <div className="flex items-center gap-2">
-                        {[1, 2, 3, 4].map((s) => (
+                        {[1, 2, 3, 4, 5].map((s) => (
                             <div
                                 key={s}
                                 className={`h-2 w-8 rounded-full transition-all ${step === s ? 'bg-primary w-12' : 'bg-muted'}`}
@@ -273,13 +305,13 @@ export function PurchaseCheckoutWizard({
                         totalSteps={totalSteps}
                         supplierName={selectedSupplierName}
                         warehouseName={selectedWarehouseName}
-                        dteType={step > 1 ? dteData.type : undefined}
-                        paymentData={step > 2 ? {
+                        dteType={step > 2 ? dteData.type : undefined}
+                        paymentData={step > 3 ? {
                             method: paymentData.method,
                             amount: paymentData.amount,
-                            pendingDebt: total - paymentData.amount
+                            pendingDebt: currentTotal - paymentData.amount
                         } : undefined}
-                        receiptData={step > 3 ? receiptData : undefined}
+                        receiptData={step > 4 ? receiptData : undefined}
                     />
 
                     {/* Center - Content Area */}
@@ -293,9 +325,15 @@ export function PurchaseCheckoutWizard({
                                 setSelectedWarehouseId={setSelectedWarehouseId}
                             />
                         )}
-                        {step === 2 && <Step1_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
-                        {step === 3 && <Step2_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />}
-                        {step === 4 && <Step3_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={orderLines} />}
+                        {step === 2 && (
+                            <Step1_ProductSelection
+                                orderLines={currentOrderLines}
+                                setOrderLines={setCurrentOrderLines}
+                            />
+                        )}
+                        {step === 3 && <Step1_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
+                        {step === 4 && <Step2_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
+                        {step === 5 && <Step3_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={currentOrderLines} />}
 
                         {/* Progress Buttons */}
                         <div className="mt-8 pt-6 border-t flex justify-between">
@@ -333,8 +371,8 @@ export function PurchaseCheckoutWizard({
                     {/* Right Sidebar - Product Summary */}
                     <div className="w-80 hidden lg:block">
                         <PurchaseOrderSummaryCard
-                            orderLines={orderLines}
-                            total={total}
+                            orderLines={currentOrderLines}
+                            total={currentTotal}
                         />
                     </div>
                 </div>
