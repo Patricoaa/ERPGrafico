@@ -89,6 +89,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         document_attachment = request.FILES.get('document_attachment')
         amount = request.data.get('amount')
         treasury_account_id = request.data.get('treasury_account_id')
+        payment_type = request.data.get('payment_type', 'INBOUND')
         
         # New delivery parameters
         delivery_type = request.data.get('delivery_type', 'IMMEDIATE')
@@ -121,7 +122,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 delivery_type=delivery_type,
                 delivery_date=delivery_date,
                 delivery_notes=delivery_notes,
-                immediate_lines=immediate_lines
+                immediate_lines=immediate_lines,
+                payment_type=payment_type
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

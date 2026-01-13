@@ -210,6 +210,7 @@ export function SalesCheckoutWizard({
             formData.append('payment_is_pending', paymentData.isPending.toString())
             if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
             if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
+            formData.append('payment_type', 'INBOUND')
 
             // Delivery data
             formData.append('delivery_type', deliveryData.type)

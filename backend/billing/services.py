@@ -246,7 +246,7 @@ class BillingService:
     def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, 
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
-                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None):
+                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND'):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         """
@@ -364,7 +364,7 @@ class BillingService:
             
             TreasuryService.register_payment(
                 amount=payment_amount,
-                payment_type='INBOUND',
+                payment_type=payment_type,
                 payment_method=payment_method,
                 reference=f"NV-{order.number}",
                 partner=order.customer,

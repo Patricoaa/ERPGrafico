@@ -212,20 +212,10 @@ export function Step2_PurchasePayment({ paymentData, setPaymentData, total }: St
                 </div>
 
                 {pendingDebt > 0 && (
-                    <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border-2 border-orange-200 dark:border-orange-800 animate-in fade-in slide-in-from-top-2">
-                        <div className="flex items-start gap-3">
-                            <AlertCircle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
-                                    Deuda Pendiente
-                                </p>
-                                <p className="text-2xl font-bold text-orange-900 dark:text-orange-100 mt-1">
-                                    {pendingDebt.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                </p>
-                                <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
-                                    Este monto quedará registrado como cuenta por pagar al proveedor.
-                                </p>
-                            </div>
+                    <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase text-orange-600">Deuda Pendiente</Label>
+                        <div className="h-10 flex items-center px-3 rounded-md border border-orange-200 bg-orange-50 text-orange-700 font-bold">
+                            {pendingDebt.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                         </div>
                     </div>
                 )}

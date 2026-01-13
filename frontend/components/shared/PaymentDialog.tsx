@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Wallet, AlertCircle, Building2 } from "lucide-react"
+import api from "@/lib/api"
 
 interface PaymentDialogProps {
     open: boolean
@@ -61,6 +62,8 @@ export function PaymentDialog({
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isPending, setIsPending] = useState(false)
     const [treasuryAccount, setTreasuryAccount] = useState<string | null>(null)
+    const [availableAccounts, setAvailableAccounts] = useState<any[]>([])
+    const [loadingAccounts, setLoadingAccounts] = useState(false)
 
     useEffect(() => {
         if (open) {
@@ -79,6 +82,43 @@ export function PaymentDialog({
             }
         }
     }, [open, pendingAmount, isPurchase, existingInvoice])
+
+    useEffect(() => {
+        const fetchAndFilterAccounts = async () => {
+            if (!open) {
+                setAvailableAccounts([])
+                return
+            }
+
+            setLoadingAccounts(true)
+            try {
+                const res = await api.get('/treasury/accounts/')
+                const allAccounts = res.data.results || res.data
+
+                const filtered = allAccounts.filter((acc: any) => {
+                    if (paymentMethod === 'CASH') return acc.allows_cash
+                    if (paymentMethod === 'CARD') return acc.allows_card
+                    if (paymentMethod === 'TRANSFER') return acc.allows_transfer
+                    return false
+                })
+
+                setAvailableAccounts(filtered)
+
+                // Auto-select if only one
+                if (filtered.length === 1) {
+                    setTreasuryAccount(filtered[0].id.toString())
+                } else {
+                    setTreasuryAccount(null)
+                }
+            } catch (error) {
+                console.error("Error fetching accounts:", error)
+            } finally {
+                setLoadingAccounts(false)
+            }
+        }
+
+        fetchAndFilterAccounts()
+    }, [open, paymentMethod])
 
     const change = Math.max(0, parseFloat(amount || "0") - pendingAmount)
 
@@ -223,14 +263,13 @@ export function PaymentDialog({
                             <RadioGroup
                                 value={paymentMethod}
                                 onValueChange={setPaymentMethod}
-                                className="grid grid-cols-2 md:grid-cols-4 gap-3"
+                                className="grid grid-cols-3 gap-3"
                             >
                                 {[
                                     { id: 'CASH', label: 'Efectivo', icon: Banknote, color: 'text-emerald-600' },
                                     { id: 'CARD', label: 'Tarjeta', icon: CreditCard, color: 'text-blue-600' },
                                     { id: 'TRANSFER', label: 'Transf.', icon: Building2, color: 'text-purple-600' },
-                                    { id: 'CREDIT', label: 'Crédito', icon: Receipt, color: 'text-amber-600' },
-                                ].filter(m => !isPurchase || m.id !== 'CREDIT').map((m) => (
+                                ].map((m) => (
                                     <div key={m.id} className="relative group">
                                         <Label
                                             htmlFor={`method-${m.id}`}
@@ -245,22 +284,15 @@ export function PaymentDialog({
                                     </div>
                                 ))}
                             </RadioGroup>
-
-                            {paymentMethod === 'CREDIT' && (
-                                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900 rounded-md text-[10px] text-amber-700 dark:text-amber-400">
-                                    <p className="font-bold mb-1 uppercase tracking-tight">Venta/Compra a Crédito</p>
-                                    <p>Esta opción no genera un movimiento de caja. Solo servirá para registrar el documento y generar la deuda en la cuenta corriente.</p>
-                                </div>
-                            )}
                         </div>
 
-                        {paymentMethod !== 'CREDIT' && (
+                        {availableAccounts.length > 1 && (
                             <div className="grid gap-2">
-                                <Label className="text-[11px] font-bold uppercase text-muted-foreground">Cuenta Destino (Opcional)</Label>
+                                <Label className="text-[11px] font-bold uppercase text-muted-foreground">Cuenta Destino</Label>
                                 <TreasuryAccountSelector
                                     value={treasuryAccount}
                                     onChange={setTreasuryAccount}
-                                    placeholder="Cuenta Automática (según config.)"
+                                    placeholder="Seleccionar cuenta..."
                                     type={paymentMethod === 'CASH' ? 'CASH' : 'BANK'}
                                 />
                             </div>
@@ -325,19 +357,12 @@ export function PaymentDialog({
                                         ${change.toLocaleString()}
                                     </span>
                                 </div>
-                            ) : parseFloat(amount) < pendingAmount && paymentMethod !== 'CREDIT' ? (
-                                <div className="p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-xl flex justify-between items-center animate-in slide-in-from-top-2 duration-300">
-                                    <div className="flex items-center gap-2">
-                                        <div className="p-2 bg-white dark:bg-zinc-900 rounded-lg shadow-sm">
-                                            <Wallet className="h-5 w-5 text-orange-600" />
-                                        </div>
-                                        <span className="text-sm font-bold text-orange-700 dark:text-orange-400 uppercase tracking-tight">
-                                            Crédito Automático:
-                                        </span>
+                            ) : parseFloat(amount) < pendingAmount ? (
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase text-orange-600">Deuda Pendiente</Label>
+                                    <div className="h-10 flex items-center px-3 rounded-md border border-orange-200 bg-orange-50 text-orange-700 font-bold">
+                                        {(pendingAmount - parseFloat(amount)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                     </div>
-                                    <span className="font-black text-2xl text-orange-600 dark:text-orange-400 tracking-tighter">
-                                        ${(pendingAmount - parseFloat(amount)).toLocaleString()}
-                                    </span>
                                 </div>
                             ) : null}
                         </div>
@@ -349,26 +374,25 @@ export function PaymentDialog({
                     <Button
                         className="flex-[2] bg-emerald-600 hover:bg-emerald-700 h-12 text-lg font-bold"
                         onClick={() => onConfirm({
-                            paymentMethod,
+                            paymentMethod: parseFloat(amount) === 0 ? 'CREDIT' : paymentMethod,
                             amount: parseFloat(amount),
                             dteType: (showDteSelector && dteType !== 'NONE') ? dteType : undefined,
                             documentReference: (dteType !== 'NONE') ? documentReference : undefined,
                             documentDate: (dteType !== 'NONE') ? documentDate : undefined,
                             documentAttachment: (dteType !== 'NONE') ? documentAttachment : undefined,
-                            transaction_number: transactionNumber,
+                            transaction_number: parseFloat(amount) === 0 ? undefined : transactionNumber,
                             is_pending_registration: !!isPending,
-                            treasury_account_id: treasuryAccount
+                            treasury_account_id: parseFloat(amount) === 0 ? null : treasuryAccount
                         })}
                         disabled={
-                            (paymentMethod !== 'CREDIT' && parseFloat(amount) <= 0) ||
-                            (!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference) ||
-                            (!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference) ||
-                            ((paymentMethod === 'CARD' || paymentMethod === 'TRANSFER') && !isPending && !transactionNumber)
+                            (parseFloat(amount) < 0) ||
+                            (parseFloat(amount) > 0 && !treasuryAccount) ||
+                            ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference)) ||
+                            ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
+                            ((paymentMethod === 'CARD' || paymentMethod === 'TRANSFER') && !isPending && !transactionNumber && parseFloat(amount) > 0)
                         }
                     >
-                        {paymentMethod === 'CREDIT' ? (
-                            existingInvoice ? 'Mantener en Cuenta Corriente' : 'Confirmar Venta/Compra a Crédito'
-                        ) : (isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago')}
+                        {isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

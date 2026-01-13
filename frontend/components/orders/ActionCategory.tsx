@@ -160,6 +160,7 @@ export const ActionCategory = forwardRef(({
         try {
             await api.post('/treasury/payments/', {
                 ...data,
+                payment_type: isSale ? 'INBOUND' : 'OUTBOUND',
                 [isSale ? 'sale_order' : 'purchase_order']: order.id,
                 partner: (order.customer || order.supplier)?.id || (isSale ? order.customer_id : order.supplier_id)
             })
