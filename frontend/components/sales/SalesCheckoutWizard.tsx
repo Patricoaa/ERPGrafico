@@ -8,6 +8,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
+import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
 import { Step1_DTE } from "./checkout/Step1_DTE"
 import { Step2_Payment } from "./checkout/Step2_Payment"
@@ -52,8 +53,8 @@ export function SalesCheckoutWizard({
 
     // Recalculate total if currentOrderLines changes (Gross total including 19% tax)
     const currentTotal = currentOrderLines.reduce((acc: number, line: any) => {
-        const net = (line.qty || line.quantity) * (line.unit_price_net || line.unit_price);
-        return acc + Math.round(net * 1.19);
+        const net = PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price);
+        return acc + PricingUtils.netToGross(net);
     }, 0);
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)

@@ -32,6 +32,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Plus } from "lucide-react"
+import { PricingUtils } from "@/lib/pricing"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -381,11 +382,11 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span>IVA (19%):</span>
-                                                        <span>{Math.round(parseInt(field.value.toString()) * 0.19).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                                        <span>{PricingUtils.calculateTax(parseInt(field.value.toString())).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                                                     </div>
                                                     <div className="flex justify-between font-bold border-t pt-1 mt-1">
                                                         <span>Total (Bruto):</span>
-                                                        <span>{Math.round(parseInt(field.value.toString()) * 1.19).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                                        <span>{PricingUtils.netToGross(parseInt(field.value.toString())).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                                                     </div>
                                                     {ruleType === "PACKAGE_FIXED" && form.watch('min_quantity') && (
                                                         <div className="pt-2 mt-1 border-t border-dashed text-xs text-slate-500">

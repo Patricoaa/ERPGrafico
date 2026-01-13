@@ -23,6 +23,7 @@ import { FileBadge, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
+import { PricingUtils } from "@/lib/pricing"
 
 interface SaleNoteModalProps {
     open: boolean
@@ -84,7 +85,7 @@ export function SaleNoteModal({
     }
 
     const amountNet = lines.reduce((acc, line) => acc + (line.note_quantity * line.note_unit_price), 0)
-    const amountTax = Math.round(amountNet * 0.19)
+    const amountTax = PricingUtils.calculateTax(amountNet)
     const total = amountNet + amountTax
 
     const handleSubmit = async () => {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Check, ChevronsUpDown, Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
 import {
     Popover,
@@ -224,7 +225,10 @@ export function ProductSelector({
                                                     <span className="text-[10px] text-muted-foreground">
                                                         {product.product_type === 'STORABLE' && `Stock: ${(product.current_stock || 0)}`}
                                                     </span>
-                                                    <span className="text-[10px] font-bold">${Number(product.sale_price).toLocaleString()}</span>
+                                                    <span className="text-[10px] font-bold">
+                                                        ${PricingUtils.netToGross(Number(product.sale_price)).toLocaleString()}
+                                                        <span className="text-[8px] text-muted-foreground ml-0.5">c/IVA</span>
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>

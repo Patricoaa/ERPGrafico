@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { cn, translateProductType } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
+import { PricingUtils } from "@/lib/pricing"
 
 interface Product {
     id: number
@@ -182,10 +183,10 @@ export function ProductList() {
                                     {formatCurrency(product.sale_price)}
                                 </TableCell>
                                 <TableCell className="text-right text-muted-foreground text-xs">
-                                    {formatCurrency(Math.round(Number(product.sale_price) * 0.19))}
+                                    {formatCurrency(PricingUtils.calculateTax(Number(product.sale_price)))}
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-primary">
-                                    {formatCurrency(Math.round(Number(product.sale_price) * 1.19))}
+                                    {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-center gap-1">

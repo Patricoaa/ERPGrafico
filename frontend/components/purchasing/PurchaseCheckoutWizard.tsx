@@ -16,6 +16,7 @@ import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { PricingUtils } from "@/lib/pricing"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2 } from "lucide-react"
@@ -60,7 +61,7 @@ export function PurchaseCheckoutWizard({
     useEffect(() => {
         const newTotal = currentOrderLines.reduce((sum, line) => {
             const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
-            const tax = net * 0.19
+            const tax = PricingUtils.calculateTax(net)
             return sum + net + tax
         }, 0)
         setCurrentTotal(newTotal)

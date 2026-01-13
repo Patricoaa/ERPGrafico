@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
+import { PricingUtils } from "@/lib/pricing"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { SalesCheckoutWizard } from "@/components/sales/SalesCheckoutWizard"
 import { Badge } from "@/components/ui/badge"
@@ -216,9 +217,9 @@ export default function POSPage() {
                     ...i,
                     qty: newQty,
                     unit_price_net: netPrice,
-                    total_net: Math.round(newQty * netPrice),
-                    total_tax: Math.round(newQty * netPrice * 0.19),
-                    total_gross: Math.round(newQty * netPrice * 1.19),
+                    total_net: PricingUtils.calculateLineNet(newQty, netPrice),
+                    total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(newQty, netPrice)),
+                    total_gross: PricingUtils.calculateLineTotal(newQty, netPrice),
                     manufacturing_data: mfgData || i.manufacturing_data
                 }
                 : i
@@ -231,9 +232,9 @@ export default function POSPage() {
                 uom: defaultUoM,
                 uom_name: uomName,
                 unit_price_net: netPrice,
-                total_net: Math.round(netPrice),
-                total_tax: Math.round(netPrice * 0.19),
-                total_gross: Math.round(netPrice * 1.19),
+                total_net: PricingUtils.calculateLineNet(1, netPrice),
+                total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(1, netPrice)),
+                total_gross: PricingUtils.calculateLineTotal(1, netPrice),
                 manufacturing_data: mfgData
             }])
         }
@@ -395,7 +396,7 @@ export default function POSPage() {
                                             <CardContent className="p-3 text-center flex-1 flex flex-col justify-center">
                                                 <div className="font-bold text-sm line-clamp-2">{product.name}</div>
                                                 <div className="text-primary font-semibold text-base mt-1">
-                                                    {formatCurrency(Math.round(Number(product.sale_price) * 1.19))}
+                                                    {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}
                                                     <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{product.internal_code || product.code}</div>

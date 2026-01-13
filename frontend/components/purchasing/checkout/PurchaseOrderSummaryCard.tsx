@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
+import { PricingUtils } from "@/lib/pricing"
 
 interface PurchaseOrderSummaryCardProps {
     orderLines: any[]
@@ -50,11 +51,11 @@ export function PurchaseOrderSummaryCard({
             <div className="p-6 bg-background border-t shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] space-y-3">
                 <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                     <span>Subtotal Neto</span>
-                    <span className="whitespace-nowrap font-mono">{formatCurrency(Math.round(total / 1.19))}</span>
+                    <span className="whitespace-nowrap font-mono">{formatCurrency(PricingUtils.grossToNet(total))}</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                     <span>IVA (19%)</span>
-                    <span className="whitespace-nowrap font-mono">{formatCurrency(Math.round(total - (total / 1.19)))}</span>
+                    <span className="whitespace-nowrap font-mono">{formatCurrency(PricingUtils.extractTax(total))}</span>
                 </div>
                 <Separator className="my-2 opacity-50" />
                 <div className="flex justify-between items-center pt-1">

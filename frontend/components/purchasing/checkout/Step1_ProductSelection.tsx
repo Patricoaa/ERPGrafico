@@ -16,6 +16,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { PricingUtils } from "@/lib/pricing"
 
 interface Step1_ProductSelectionProps {
     orderLines: any[]
@@ -234,13 +235,13 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                     <div className="text-sm text-muted-foreground">
                         IVA (19%): {orderLines.reduce((sum, line) => {
                             const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
-                            return sum + (net * 0.19)
+                            return sum + PricingUtils.calculateTax(net)
                         }, 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                     </div>
                     <div className="text-xl font-bold">
                         Total: {orderLines.reduce((sum, line) => {
                             const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
-                            return sum + (net * 1.19)
+                            return sum + PricingUtils.netToGross(net)
                         }, 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                     </div>
                 </div>

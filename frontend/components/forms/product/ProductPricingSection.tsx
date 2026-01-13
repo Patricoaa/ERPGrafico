@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { formatCurrency } from "@/lib/currency"
+import { PricingUtils } from "@/lib/pricing"
 
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>
@@ -19,13 +20,11 @@ interface ProductPricingSectionProps {
 
 export function ProductPricingSection({ form, initialData, canBeSold, uoms }: ProductPricingSectionProps) {
     const salePrice = form.watch("sale_price") || 0
-    const ivaCalculated = Math.round(Number(salePrice) * 0.19)
-    const totalCalculated = Math.round(Number(salePrice) + ivaCalculated)
+    const ivaCalculated = PricingUtils.calculateTax(Number(salePrice))
+    const totalCalculated = PricingUtils.netToGross(Number(salePrice))
     const costPrice = Number(initialData?.cost_price || 0)
 
-    const marginPercentage = salePrice > 0
-        ? Math.round((1 - (costPrice / salePrice)) * 100)
-        : 0
+    const marginPercentage = PricingUtils.calculateMargin(salePrice, costPrice)
 
     if (!canBeSold) return null;
 
@@ -66,7 +65,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                         value={totalCalculated || ""}
                         onChange={(e) => {
                             const gross = Number(e.target.value);
-                            const net = Math.round(gross / 1.19);
+                            const net = PricingUtils.grossToNet(gross);
                             form.setValue("sale_price", net);
                         }}
                     />

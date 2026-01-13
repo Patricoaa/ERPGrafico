@@ -47,6 +47,7 @@ import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedManufacturingDialog } from "@/components/forms/AdvancedManufacturingDialog"
+import { PricingUtils } from "@/lib/pricing"
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
@@ -211,7 +212,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             if (rule.rule_type === "FIXED") {
                 return parseFloat(rule.fixed_price || "0")
             } else {
-                return basePrice * (1 - (parseFloat(rule.discount_percentage || "0") / 100))
+                return PricingUtils.applyDiscount(basePrice, parseFloat(rule.discount_percentage || "0"))
             }
         }
         return basePrice
@@ -485,10 +486,13 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                     {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                 </TableCell>
                                                 <TableCell className="text-right text-muted-foreground text-xs">
-                                                    {(Math.round((Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0) * 0.19)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                    {PricingUtils.calculateTax(Math.round((Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0))).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                 </TableCell>
                                                 <TableCell className="text-right font-bold text-sm">
-                                                    {(Math.round((Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0) * 1.19)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                    {PricingUtils.calculateLineTotal(
+                                                        Number(form.watch(`lines.${index}.quantity`)),
+                                                        Number(form.watch(`lines.${index}.unit_price`))
+                                                    ).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-1">
