@@ -33,7 +33,7 @@ export function PurchaseOrderSummaryCard({
                                         </p>
                                         <div className="flex items-center gap-2">
                                             <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground font-bold">
-                                                {line.qty || line.quantity} {line.uom || 'un'}
+                                                {line.qty || line.quantity} {line.uom_name || 'un'}
                                             </Badge>
                                         </div>
                                     </div>

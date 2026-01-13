@@ -52,7 +52,10 @@ export function PurchaseCheckoutWizard({
             setCurrentTotal(total)
             setStep(1)
         }
-    }, [open, orderLines, total])
+        // We ideally only want this to run once when the wizard opens.
+        // If orderLines or total change from the parent while open, 
+        // we might reset the user's progress in Step 1, which is what we are avoiding.
+    }, [open])
 
     useEffect(() => {
         const newTotal = currentOrderLines.reduce((sum, line) => {
@@ -257,6 +260,7 @@ export function PurchaseCheckoutWizard({
             // Add partial quantities if applicable
             if (receiptData.type === 'PARTIAL' && receiptData.partialQuantities) {
                 receiptPayload.line_data = receiptData.partialQuantities.map((pq: any) => ({
+                    line_id: pq.lineId,
                     product_id: pq.productId,
                     quantity: pq.receivedQty,
                     uom: pq.uom

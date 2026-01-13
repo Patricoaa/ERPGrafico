@@ -101,14 +101,19 @@ class SaleOrderViewSet(viewsets.ModelViewSet):
         try:
             warehouse_id = request.data.get('warehouse_id')
             delivery_date = request.data.get('delivery_date')
-            line_quantities = request.data.get('line_quantities', {})  # {sale_line_id: quantity}
+            # Support both old and new format for safer transition
+            line_quantities = request.data.get('line_quantities')
+            if line_quantities and isinstance(line_quantities, dict):
+                line_data = [{'line_id': int(k), 'quantity': v} for k, v in line_quantities.items()]
+            else:
+                line_data = request.data.get('line_data', [])
             
             warehouse = Warehouse.objects.get(pk=warehouse_id)
             
             delivery = SalesService.partial_dispatch(
                 order=order,
                 warehouse=warehouse,
-                line_quantities=line_quantities,
+                line_data=line_data,
                 delivery_date=delivery_date
             )
             

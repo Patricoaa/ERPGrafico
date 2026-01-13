@@ -93,7 +93,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             setReceiptData({
                 ...receiptData,
                 partialQuantities: orderLines.map(line => ({
-                    productId: line.id,
+                    lineId: line.id,
+                    productId: line.product,
                     productName: line.name,
                     orderedQty: line.quantity || line.qty,
                     receivedQty: line.quantity || line.qty,
@@ -103,13 +104,31 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         }
     }, [receiptData.type, receiptData.partialQuantities?.length, orderLines, setReceiptData, receiptData])
 
-    const updatePartialQty = (index: number, value: string) => {
-        const newQuantities = [...(receiptData.partialQuantities || [])]
-        newQuantities[index] = {
-            ...newQuantities[index],
-            receivedQty: parseFloat(value) || 0
-        }
-        setReceiptData({ ...receiptData, partialQuantities: newQuantities })
+    const updatePartialQty = (lineId: any, productId: any, value: string) => {
+        const qty = parseFloat(value) || 0;
+        setReceiptData((prev: any) => {
+            const pqs = [...(prev.partialQuantities || [])];
+            const existingIdx = pqs.findIndex((pq: any) => pq.lineId === lineId || (productId && pq.productId === productId));
+            if (existingIdx >= 0) {
+                pqs[existingIdx] = { ...pqs[existingIdx], receivedQty: qty };
+            } else {
+                pqs.push({ lineId, productId, receivedQty: qty, uom: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.uom });
+            }
+            return { ...prev, partialQuantities: pqs };
+        });
+    }
+
+    const updatePartialUom = (lineId: any, productId: any, uomId: number) => {
+        setReceiptData((prev: any) => {
+            const pqs = [...(prev.partialQuantities || [])];
+            const existingIdx = pqs.findIndex((pq: any) => pq.lineId === lineId || (productId && pq.productId === productId));
+            if (existingIdx >= 0) {
+                pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
+            } else {
+                pqs.push({ lineId, productId, receivedQty: 1, uom: uomId });
+            }
+            return { ...prev, partialQuantities: pqs };
+        });
     }
 
     return (
@@ -159,39 +178,39 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {orderLines.map((line, idx) => (
-                                    <TableRow key={idx}>
-                                        <TableCell className="font-medium">{line.name}</TableCell>
-                                        <TableCell className="text-right font-semibold">
-                                            {(line.quantity || line.qty).toLocaleString('es-CL')}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                max={line.quantity || line.qty}
-                                                value={receiptData.partialQuantities?.[idx]?.receivedQty || 0}
-                                                onChange={(e) => updatePartialQty(idx, e.target.value)}
-                                                className="w-full"
-                                            />
-                                        </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground font-medium">
-                                            <UoMSelector
-                                                line={line}
-                                                currentUom={receiptData.partialQuantities?.[idx]?.uom || line.uom}
-                                                onUomChange={(uomId) => {
-                                                    const newQuantities = [...(receiptData.partialQuantities || [])]
-                                                    newQuantities[idx] = {
-                                                        ...newQuantities[idx],
-                                                        uom: uomId
-                                                    }
-                                                    setReceiptData({ ...receiptData, partialQuantities: newQuantities })
-                                                }}
-                                            />
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                {orderLines.map((line, idx) => {
+                                    const pendingQty = line.quantity || line.qty;
+                                    const currentPartial = (receiptData.partialQuantities || []).find((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
+                                    const currentReceivedQty = currentPartial?.receivedQty ?? 0;
+                                    const currentUom = currentPartial?.uom || line.uom;
+
+                                    return (
+                                        <TableRow key={line.id || idx}>
+                                            <TableCell className="font-medium">{line.product_name || line.name || line.description}</TableCell>
+                                            <TableCell className="text-right font-semibold">
+                                                {pendingQty.toLocaleString('es-CL')}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    max={pendingQty}
+                                                    value={currentReceivedQty}
+                                                    onChange={(e) => updatePartialQty(line.id, line.product, e.target.value)}
+                                                    className="w-full"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="text-sm text-muted-foreground font-medium">
+                                                <UoMSelector
+                                                    line={line}
+                                                    currentUom={currentUom}
+                                                    onUomChange={(uomId) => updatePartialUom(line.id, line.product, uomId)}
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                             </TableBody>
                         </Table>
                     </div>

@@ -301,26 +301,31 @@ class BillingService:
                 # Fallback to SCHEDULED if no lines are marked for immediate
                 delivery_type = 'SCHEDULED'
             else:
-                # Prepare quantities for immediate lines
-                line_quantities = {}
-                # immediate_lines can be a list of IDs or a list of {'id': id, 'quantity': qty}
+                # Prepare data for immediate lines
+                line_data = []
                 for item in immediate_lines:
                     try:
                         if isinstance(item, dict) and 'id' in item:
                             line_id = item['id']
                             qty = Decimal(str(item.get('quantity', 0)))
+                            uom_id = item.get('uom')
                         else:
                             line_id = item
                             line = order.lines.get(id=line_id)
                             qty = line.quantity_pending
+                            uom_id = line.uom.id if line.uom else None
                         
                         if qty > 0:
-                            line_quantities[line_id] = qty
+                            line_data.append({
+                                'line_id': line_id,
+                                'quantity': qty,
+                                'uom_id': uom_id
+                            })
                     except (SaleOrder.DoesNotExist, ValueError, TypeError):
                         continue
                 
-                if line_quantities:
-                    SalesService.partial_dispatch(order, warehouse, line_quantities)
+                if line_data:
+                    SalesService.partial_dispatch(order, warehouse, line_data)
             
             # For the REST (or all if fallback), schedule them
             if delivery_type == 'PARTIAL' or delivery_type == 'SCHEDULED': # Logic applies to remainder

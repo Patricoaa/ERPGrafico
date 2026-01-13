@@ -128,18 +128,20 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <RadioGroup
                     value={deliveryData.type}
                     onValueChange={(val) => {
-                        // When switching to partial, pre-fill all eligible items with their full quantities
-                        if (val === 'PARTIAL') {
-                            const partialQuantities = orderLines
-                                .filter(line => !line.requires_advanced_manufacturing)
-                                .map(line => ({
-                                    productId: line.id,
-                                    dispatchedQty: line.qty || line.quantity
-                                }));
-                            setDeliveryData({ ...deliveryData, type: val, partialQuantities });
-                        } else {
-                            setDeliveryData({ ...deliveryData, type: val });
-                        }
+                        setDeliveryData((prev: any) => {
+                            if (val === 'PARTIAL') {
+                                const partialQuantities = orderLines
+                                    .filter(line => !line.requires_advanced_manufacturing)
+                                    .map(line => ({
+                                        lineId: line.id,
+                                        productId: line.product,
+                                        dispatchedQty: line.qty || line.quantity,
+                                        uom: line.uom
+                                    }));
+                                return { ...prev, type: val, partialQuantities };
+                            }
+                            return { ...prev, type: val };
+                        });
                     }}
                     className="grid gap-3"
                 >
@@ -214,7 +216,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                     {orderLines.map((line, idx) => {
                                         const isEligible = !line.requires_advanced_manufacturing;
                                         const pendingQty = line.qty || line.quantity;
-                                        const currentVal = (deliveryData.partialQuantities || []).find((pq: any) => pq.productId === line.id)?.dispatchedQty ?? 0;
+                                        const currentVal = (deliveryData.partialQuantities || []).find((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.dispatchedQty ?? 0;
 
                                         return (
                                             <TableRow key={line.id} className={!isEligible ? "bg-muted/30 opacity-70" : ""}>
@@ -239,14 +241,16 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                         disabled={!isEligible}
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
-                                                            const pqs = [...(deliveryData.partialQuantities || [])];
-                                                            const existingIdx = pqs.findIndex((pq: any) => pq.productId === line.id);
-                                                            if (existingIdx >= 0) {
-                                                                pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
-                                                            } else {
-                                                                pqs.push({ productId: line.id, dispatchedQty: val, uom: line.uom });
-                                                            }
-                                                            setDeliveryData({ ...deliveryData, partialQuantities: pqs });
+                                                            setDeliveryData((prev: any) => {
+                                                                const pqs = [...(prev.partialQuantities || [])];
+                                                                const existingIdx = pqs.findIndex((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
+                                                                if (existingIdx >= 0) {
+                                                                    pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
+                                                                } else {
+                                                                    pqs.push({ lineId: line.id, productId: line.product, dispatchedQty: val, uom: line.uom });
+                                                                }
+                                                                return { ...prev, partialQuantities: pqs };
+                                                            });
                                                         }}
                                                         className="h-8"
                                                     />
@@ -256,14 +260,16 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                         line={line}
                                                         currentUom={(deliveryData.partialQuantities || []).find((pq: any) => pq.productId === line.id)?.uom || line.uom}
                                                         onUomChange={(uomId) => {
-                                                            const pqs = [...(deliveryData.partialQuantities || [])];
-                                                            const existingIdx = pqs.findIndex((pq: any) => pq.productId === line.id);
-                                                            if (existingIdx >= 0) {
-                                                                pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
-                                                            } else {
-                                                                pqs.push({ productId: line.id, dispatchedQty: 1, uom: uomId });
-                                                            }
-                                                            setDeliveryData({ ...deliveryData, partialQuantities: pqs });
+                                                            setDeliveryData((prev: any) => {
+                                                                const pqs = [...(prev.partialQuantities || [])];
+                                                                const existingIdx = pqs.findIndex((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
+                                                                if (existingIdx >= 0) {
+                                                                    pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
+                                                                } else {
+                                                                    pqs.push({ lineId: line.id, productId: line.product, dispatchedQty: 1, uom: uomId });
+                                                                }
+                                                                return { ...prev, partialQuantities: pqs };
+                                                            });
                                                         }}
                                                     />
                                                 </TableCell>

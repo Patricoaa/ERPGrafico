@@ -98,11 +98,10 @@ export function UoMSelector({
     }
 
     return (
-        <div className="space-y-2">
-
+        <div className="flex items-center gap-1.5 min-w-0">
             <Select onValueChange={onChange} value={value} disabled={disabled || !product}>
-                <SelectTrigger>
-                    <SelectValue placeholder="Seleccione unidad" />
+                <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Und" />
                 </SelectTrigger>
                 <SelectContent>
                     {filteredUoMs.map((uom) => (
@@ -114,10 +113,18 @@ export function UoMSelector({
             </Select>
 
             {conversionHint && (
-                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Info className="h-3 w-3" />
-                    {conversionHint}
-                </div>
+                <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="p-1 rounded-full hover:bg-muted cursor-help transition-colors">
+                                <Info className="h-4 w-4 text-muted-foreground/70" />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="center" className="bg-popover text-popover-foreground border shadow-md font-medium text-xs">
+                            <p>{conversionHint}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             )}
         </div>
     )

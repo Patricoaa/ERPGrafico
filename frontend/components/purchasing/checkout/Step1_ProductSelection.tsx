@@ -19,8 +19,11 @@ import { toast } from "sonner"
 
 interface Step1_ProductSelectionProps {
     orderLines: any[]
-    setOrderLines: (lines: any[]) => void
+    setOrderLines: (lines: any[] | ((prev: any[]) => any[])) => void
 }
+
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Info } from "lucide-react"
 
 export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_ProductSelectionProps) {
     const [products, setProducts] = useState<any[]>([])
@@ -67,10 +70,16 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
         }
     }
 
-    const updateLine = (index: number, field: string, value: any) => {
-        const newLines = [...orderLines]
-        newLines[index] = { ...newLines[index], [field]: value }
-        setOrderLines(newLines)
+    const updateLine = (index: number, fieldOrUpdates: string | Record<string, any>, value?: any) => {
+        setOrderLines(prev => {
+            const newLines = [...prev]
+            if (typeof fieldOrUpdates === 'string') {
+                newLines[index] = { ...newLines[index], [fieldOrUpdates]: value }
+            } else {
+                newLines[index] = { ...newLines[index], ...fieldOrUpdates }
+            }
+            return newLines
+        })
     }
 
     const handleProductChange = (index: number, productId: string | null) => {
@@ -80,17 +89,14 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
         }
         const product = products.find(p => p.id.toString() === productId)
         if (product) {
-            const newLines = [...orderLines]
-            newLines[index] = {
-                ...newLines[index],
+            updateLine(index, {
                 product: productId,
                 name: product.name,
-                id: product.id, // Ensure ID is set for consistency
+                // Removed: id: product.id, which was overwriting line.id
                 unit_cost: parseFloat(product.last_purchase_price) || 0,
                 uom: (product.purchase_uom || product.uom)?.toString() || "",
                 uom_name: uoms.find(u => u.id.toString() === ((product.purchase_uom || product.uom)?.toString()))?.name
-            }
-            setOrderLines(newLines)
+            })
         } else {
             updateLine(index, 'product', productId)
         }
@@ -129,7 +135,21 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                         <TableRow>
                             <TableHead className="w-[35%]">Producto</TableHead>
                             <TableHead className="w-[10%]">Cantidad</TableHead>
-                            <TableHead className="w-[20%]">Unidad</TableHead>
+                            <TableHead className="w-[20%]">
+                                <div className="flex items-center gap-1">
+                                    Unidad
+                                    <TooltipProvider delayDuration={0}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent className="text-[11px] font-medium">
+                                                Las unidades se convierten automáticamente a la unidad base de stock. Pase sobre el icono para ver la equivalencia.
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                            </TableHead>
                             <TableHead className="w-[15%]">Costo Unit.</TableHead>
                             <TableHead className="w-[10%]">Subtotal</TableHead>
                             <TableHead className="w-[10%]"></TableHead>
@@ -160,9 +180,11 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                                         context="purchase"
                                         value={line.uom?.toString() || ""}
                                         onChange={(val) => {
-                                            updateLine(index, 'uom', val)
                                             const uomName = uoms.find(u => u.id.toString() === val)?.name
-                                            updateLine(index, 'uom_name', uomName)
+                                            updateLine(index, {
+                                                uom: val,
+                                                uom_name: uomName
+                                            })
                                         }}
                                         uoms={uoms}
                                         showConversionHint={true}

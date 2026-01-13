@@ -201,12 +201,16 @@ export function OrderCommandCenter({
         const apiProgress = (isSale ? order.delivery_progress : order.receiving_progress) || 0
         if (apiProgress > 0) return apiProgress
 
-        // Frontend calculation fallback
-        const docs = isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions)
-        if (!docs || docs.length === 0) return 0
+        // Frontend calculation fallback - MUST sync with logisticsDocs logic
+        const docsSource = (order.related_stock_moves?.length > 0)
+            ? order.related_stock_moves
+            : (isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions))
+
+        const docs = docsSource || []
+        if (docs.length === 0) return 0
 
         const completedCount = docs.filter((d: any) =>
-            ['delivered', 'received', 'done', 'assigned', 'posted', 'paid'].includes(d.status?.toLowerCase())
+            ['delivered', 'received', 'done', 'assigned', 'posted', 'paid'].includes((d.status || d.state)?.toLowerCase())
         ).length
 
         return Math.round((completedCount / docs.length) * 100)
@@ -280,6 +284,7 @@ export function OrderCommandCenter({
                                     }
                                 ]}
                                 onViewDetail={openDetails}
+                                actions={[]}
                                 order={order}
                                 userPermissions={userPermissions}
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
@@ -427,7 +432,7 @@ export function OrderCommandCenter({
                                     (order.status === 'PAID' || order.payment_status === 'PAID') ? 'success' :
                                         (order.pending_amount < order.total && order.pending_amount > 0) ? 'active' : 'neutral'
                                 }
-                                documents={(order.related_documents?.payments || order.payments_detail || order.serialized_payments || []).map((pay: any) => ({
+                                documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
                                     type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
                                     number: `${pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso'} - ${pay.transaction_number || `PAGO-${pay.id}`}`,
                                     icon: Banknote,
@@ -645,23 +650,39 @@ function PhaseCard({
                 <div className="bg-border/20 h-px w-full" />
 
                 <div className="mt-auto">
-                    {actions && actions.length > 0 ? (
-                        <ActionCategory
-                            category={{ actions } as any}
-                            order={order}
-                            userPermissions={userPermissions}
-                            onActionSuccess={onActionSuccess}
-                            layout="grid"
-                            compact={true}
-                        />
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-4 px-2 border-2 border-dotted border-border/40 rounded-lg bg-muted/5">
-                            <div className="p-2 rounded-full bg-muted/10 mb-1">
-                                <Settings2 className="h-4 w-4 text-muted-foreground/30" />
+                    {(() => {
+                        const filteredActions = actions?.filter((action: any) => {
+                            if (action.requiredPermissions && !action.requiredPermissions.some((p: string) => userPermissions.includes(p))) {
+                                return false
+                            }
+                            if (action.checkAvailability && !action.checkAvailability(order)) {
+                                return false
+                            }
+                            return true
+                        }) || []
+
+                        if (filteredActions.length > 0) {
+                            return (
+                                <ActionCategory
+                                    category={{ actions: filteredActions } as any}
+                                    order={order}
+                                    userPermissions={userPermissions}
+                                    onActionSuccess={onActionSuccess}
+                                    layout="grid"
+                                    compact={true}
+                                />
+                            )
+                        }
+
+                        return (
+                            <div className="flex flex-col items-center justify-center py-4 px-2 border-2 border-dotted border-border/40 rounded-lg bg-muted/5">
+                                <div className="p-2 rounded-full bg-muted/10 mb-1">
+                                    <Settings2 className="h-4 w-4 text-muted-foreground/30" />
+                                </div>
+                                <span className="text-[9px] text-muted-foreground/50 font-medium">Sin acciones disponibles</span>
                             </div>
-                            <span className="text-[9px] text-muted-foreground/50 font-medium">Sin acciones disponibles</span>
-                        </div>
-                    )}
+                        )
+                    })()}
                 </div>
             </CardContent>
         </Card>

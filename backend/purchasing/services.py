@@ -98,7 +98,7 @@ class PurchasingService:
                      purchase_line = order.lines.filter(product_id=product_id).first()
 
             if not purchase_line:
-                raise ValidationError(f"No se encontró línea de compra válida para el item (ID: {line_id}, Prod: {product_id})")
+                raise ValidationError(f"No se encontró línea de compra válida para el item en la orden {order.reference} (ID Línea: {line_id}, ID Prod: {product_id})")
             
             if quantity > purchase_line.quantity_pending:
                  raise ValidationError(f"Cantidad a recibir ({quantity}) excede la pendiente ({purchase_line.quantity_pending}) para {purchase_line.product.name}")

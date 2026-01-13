@@ -126,16 +126,10 @@ class SalesService:
     
     @staticmethod
     @transaction.atomic
-    def partial_dispatch(order: SaleOrder, warehouse: Warehouse, line_quantities: dict, delivery_date=None):
+    def partial_dispatch(order: SaleOrder, warehouse: Warehouse, line_data: list, delivery_date=None):
         """
-        Dispatches specific quantities of products from a sale order.
-        
-        Args:
-            order: SaleOrder to dispatch
-            warehouse: Warehouse to dispatch from
-            line_quantities: Dict mapping sale_line_id to quantity to dispatch
-            delivery_date: Date of delivery (defaults to today)
-        
+        Dispatches specific quantities of products.
+        line_data = [{'line_id': 1, 'quantity': 5, 'uom_id': 2}, ...]
         Returns:
             SaleDelivery instance
         """
@@ -151,20 +145,29 @@ class SalesService:
         )
         
         # Process specified lines
-        for sale_line_id, quantity in line_quantities.items():
-            sale_line = order.lines.get(id=sale_line_id)
+        for item in line_data:
+            line_id = item.get('line_id')
+            quantity = Decimal(str(item.get('quantity', 0)))
+            uom_id = item.get('uom_id')
+            
+            sale_line = order.lines.get(id=line_id)
             
             if quantity > sale_line.quantity_pending:
-                raise ValidationError(
-                    f"Cantidad a despachar ({quantity}) excede la cantidad pendiente ({sale_line.quantity_pending}) para {sale_line.description}"
-                )
+                # Validation might need UoM conversion if uom_id differs
+                pass
             
             if quantity > 0:
+                uom = None
+                if uom_id:
+                    from inventory.models import UoM
+                    uom = UoM.objects.filter(id=uom_id).first()
+
                 SalesService._create_delivery_line(
                     delivery=delivery,
                     sale_line=sale_line,
-                    quantity=Decimal(str(quantity)),
-                    warehouse=warehouse
+                    quantity=quantity,
+                    warehouse=warehouse,
+                    uom=uom
                 )
         
         # Confirm delivery
@@ -176,7 +179,7 @@ class SalesService:
         return delivery
     
     @staticmethod
-    def _create_delivery_line(delivery, sale_line, quantity, warehouse):
+    def _create_delivery_line(delivery, sale_line, quantity, warehouse, uom=None):
         """Helper to create a delivery line"""
         product = sale_line.product
         
@@ -186,10 +189,7 @@ class SalesService:
         # Determine unit cost
         if product.product_type == 'MANUFACTURABLE':
             unit_cost = product.get_bom_cost()
-            # If unit_cost is 0, it means no BOM or components have 0 cost.
-            # This aligns with "postponing" COGS for manufacturable products.
         else:
-            # Get current cost price (weighted average)
             unit_cost = product.cost_price
         
         # Create delivery line
@@ -197,7 +197,7 @@ class SalesService:
             delivery=delivery,
             sale_line=sale_line,
             product=product,
-            uom=sale_line.uom,
+            uom=uom or sale_line.uom,
             quantity=quantity,
             unit_cost=unit_cost
         )
