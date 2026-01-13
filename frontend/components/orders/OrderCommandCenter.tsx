@@ -214,6 +214,22 @@ export function OrderCommandCenter({
         return Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
     })()
 
+    // Calculate if there are pending transaction numbers in treasury
+    const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
+    const hasPendingTransactions = payments.some((pay: any) => {
+        const requiresTR = (
+            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
+            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
+        )
+        return requiresTR && !pay.transaction_number
+    })
+
+    // Calculate if there are issues with invoices (drafts or missing folio)
+    const invoices = order.related_documents?.invoices || []
+    const billingIsComplete = invoices.length > 0 && !invoices.some((inv: any) =>
+        inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
+    )
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
@@ -383,7 +399,7 @@ export function OrderCommandCenter({
                             <PhaseCard
                                 title="Facturación"
                                 icon={Receipt}
-                                variant={(order.related_documents?.invoices?.length || 0) > 0 ? 'success' : 'neutral'}
+                                variant={billingIsComplete ? 'success' : 'neutral'}
                                 documents={(order.related_documents?.invoices || []).map((inv: any) => ({
                                     type: inv.type_display,
                                     number: `${inv.type_display} - #${inv.number || 'BORRADOR'}`,
@@ -427,8 +443,8 @@ export function OrderCommandCenter({
                                 title="Tesorería"
                                 icon={Banknote}
                                 variant={
-                                    (order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) ? 'success' :
-                                        (parseFloat(order.pending_amount) < parseFloat(order.total) && parseFloat(order.pending_amount) > 0) ? 'active' : 'neutral'
+                                    (order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) && !hasPendingTransactions ? 'success' :
+                                        (parseFloat(order.pending_amount) < parseFloat(order.total) || hasPendingTransactions) ? 'active' : 'neutral'
                                 }
                                 documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
                                     type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
