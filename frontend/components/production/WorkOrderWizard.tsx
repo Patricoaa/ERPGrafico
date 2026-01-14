@@ -274,7 +274,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     <div>
                         <DialogTitle className="text-2xl">Gestión de Orden de Trabajo OT-{order?.number}</DialogTitle>
                         <DialogDescription>
-                            {order?.description} | Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
+                            {order?.description} | Cliente: {order?.sale_order_client_name || 'Manual'}
                         </DialogDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={handlePrint}>
@@ -643,6 +643,18 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
                             <div className="p-3 bg-background rounded-lg border space-y-2">
                                 <p className="font-semibold text-sm">{productName}</p>
+                                {order?.product_description && (
+                                    <p className="text-xs text-muted-foreground">{order.product_description}</p>
+                                )}
+
+                                {order?.sale_order_delivery_date && (
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground border-t pt-2 mt-2">
+                                        <div className="flex-1">
+                                            <p className="font-bold text-[10px] uppercase">Fecha de Entrega</p>
+                                            <p className="font-medium">{new Date(order.sale_order_delivery_date + 'T12:00:00').toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {order?.sale_customer_name && (
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground border-t pt-2">
@@ -654,7 +666,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     </div>
                                 )}
 
-                                {stageData.product_description && (
+                                {stageData.product_description && stageData.product_description !== order?.product_description && (
                                     <div className="border-t pt-2">
                                         <p className="text-xs text-muted-foreground italic">{stageData.product_description}</p>
                                     </div>
@@ -739,6 +751,15 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     <p className="text-xs whitespace-pre-wrap">
                                         {order?.current_stage === 'PRESS' ? stageData.press_specs : stageData.postpress_specs}
                                     </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {order?.current_stage === 'PRESS' && stageData.folio_enabled && (
+                            <div className="space-y-2">
+                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Folio</h4>
+                                <div className="p-3 bg-background rounded-lg border">
+                                    <p className="text-xs">Folio inicial: <span className="font-semibold">{stageData.folio_start}</span></p>
                                 </div>
                             </div>
                         )}

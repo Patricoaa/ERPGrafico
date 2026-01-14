@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, Paintbrush, Plus, FileText, Upload, X, FileIcon, User } from "lucide-react"
+import { CalendarIcon, Paintbrush, Plus, FileText, Upload, X, FileIcon, User, ExternalLink } from "lucide-react"
 import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import Link from "next/link"
 import {
     Dialog,
     DialogContent,
@@ -39,13 +41,14 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
 const workOrderSchema = z.object({
     description: z.string().min(1, "La descripción es requerida"),
     sale_order: z.string().optional().or(z.literal("")),
-    status: z.string(),
-    qty_planned: z.number().min(0.01, "La cantidad planeada debe ser mayor a 0"),
+    // status: z.string(), // Removing status from form
+    // qty_planned: z.number().min(0.01, "La cantidad planeada debe ser mayor a 0"), // Removing planned qty from form
     qty_produced: z.number().min(0),
     start_date: z.date().optional().nullable(),
     due_date: z.date().optional().nullable(),
@@ -95,10 +98,10 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         defaultValues: {
             description: "",
             sale_order: "",
-            status: "PLANNED",
-            qty_planned: 0,
+            // status: "PLANNED",
+            // qty_planned: 0,
             qty_produced: 0,
-            start_date: null,
+            start_date: new Date(), // Default to today
             due_date: null,
             product_description: "",
             internal_notes: "",
@@ -123,10 +126,10 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 form.reset({
                     description: initialData.description || "",
                     sale_order: initialData.sale_order?.id?.toString() || initialData.sale_order?.toString() || "",
-                    status: initialData.status || "PLANNED",
-                    qty_planned: parseFloat(initialData.qty_planned) || 0,
+                    // status: initialData.status || "PLANNED",
+                    // qty_planned: parseFloat(initialData.qty_planned) || 0,
                     qty_produced: parseFloat(initialData.qty_produced) || 0,
-                    start_date: initialData.start_date ? new Date(initialData.start_date) : null,
+                    start_date: initialData.start_date ? new Date(initialData.start_date) : new Date(),
                     due_date: initialData.due_date ? new Date(initialData.due_date) : null,
                     // Load stage_data into fields
                     product_description: initialData.stage_data?.product_description || "",
@@ -139,8 +142,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
                 // Contact
                 if (mfgData.contact_id) {
-                    // Ideally we should fetch full contact object or store enough in stage_data
-                    // For now, we assume if we have contact_id we might have contact_name
                     setSelectedContact({
                         id: mfgData.contact_id,
                         name: mfgData.contact_name || "Contacto",
@@ -156,9 +157,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     setEnablePress(mfgData.phases.press || false)
                     setEnablePostpress(mfgData.phases.postpress || false)
                 } else {
-                    // Fallback to product defaults if not explicitly saved in OT yet?
-                    // But usually OT takes snapshot. If stage_data is empty, assume defaults false or try to read from product if available
-                    // For safety, start false or rely on what's saved.
                     setEnablePrepress(false)
                     setEnablePress(false)
                     setEnablePostpress(false)
@@ -175,7 +173,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 setPrintType(mfgData.print_type || null)
 
                 // Files
-                // Handle existing file names (strings) separate from new File objects
                 setExistingDesignFiles(mfgData.design_attachments || [])
                 setDesignFiles([])
 
@@ -183,10 +180,10 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 form.reset({
                     description: "",
                     sale_order: "",
-                    status: "PLANNED",
-                    qty_planned: 0,
+                    // status: "PLANNED",
+                    // qty_planned: 0,
                     qty_produced: 0,
-                    start_date: null,
+                    start_date: new Date(),
                     due_date: null,
                     product_description: "",
                     internal_notes: "",
@@ -229,7 +226,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
         // Prepare stage_data structure
         const stage_data = {
-            ...(initialData?.stage_data || {}), // Keep existing data we might not touch
+            ...(initialData?.stage_data || {}),
             product_description: data.product_description,
             internal_notes: data.internal_notes,
             contact_id: selectedContact?.id,
@@ -247,22 +244,14 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             folio_enabled: folioEnabled,
             folio_start: folioStart,
             print_type: printType,
-            // For files, we need special handling. 
-            // In a real app we'd upload them or keep reference. 
-            // Here we are just simulating keeping the names or updating the list.
-            // If backend supports File uploads in same request, we'd use FormData.
-            // Assuming this endpoint receives JSON, we can't upload files directly here easily unless we convert to Base64 or use FormData.
-            // Let's assume we keep existing file references and ignoring new file UPLOAD for now unless we switch to FormData.
-            // Ideally: we should use FormData if we have files.
-
             design_attachments: [...existingDesignFiles, ...designFiles.map(f => f.name)]
         }
 
         const formattedData = {
             description: data.description,
             sale_order: (data.sale_order === "" || data.sale_order === "__none__" || data.sale_order === "none") ? null : data.sale_order,
-            status: data.status,
-            qty_planned: data.qty_planned,
+            // status: data.status, // Not editing status directly
+            // qty_planned: data.qty_planned, // Not editing qty planned directly?
             qty_produced: data.qty_produced,
             start_date: data.start_date ? format(data.start_date, 'yyyy-MM-dd') : null,
             due_date: data.due_date ? format(data.due_date, 'yyyy-MM-dd') : null,
@@ -271,9 +260,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
         try {
             if (initialData) {
-                // Determine if we need FormData for file upload?
-                // For simplicity now, we send JSON. Real file upload would require a separate endpoint or multipart/form-data.
-                // Given the context, let's stick to JSON updates for metadata.
                 await api.put(`/production/orders/${initialData.id}/`, formattedData)
                 toast.success("Orden de Trabajo actualizada correctamente")
             } else {
@@ -294,6 +280,32 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const isAutoCreated = !!initialData?.sale_line
     const linkedSaleOrder = initialData?.sale_order
 
+    // Helper for Status Badge
+    const renderStatusBadge = () => {
+        if (!initialData) return null
+
+        const stageMap: Record<string, string> = {
+            'MATERIAL_ASSIGNMENT': 'Asignación Materiales',
+            'MATERIAL_APPROVAL': 'Aprobación Stock',
+            'PREPRESS': 'Pre-Impresión',
+            'PRESS': 'Impresión',
+            'POSTPRESS': 'Post-Impresión',
+            'FINISHED': 'Terminado',
+            'CANCELLED': 'Anulado'
+        }
+
+        return (
+            <div className="flex items-center gap-2">
+                <Badge variant={initialData.status === 'FINISHED' ? 'default' : initialData.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
+                    {initialData.status === 'FINISHED' ? 'TERMINADA' : initialData.status === 'CANCELLED' ? 'ANULADA' : initialData.status === 'IN_PROGRESS' ? 'EN PROCESO' : 'PLANIFICADA'}
+                </Badge>
+                <Badge variant="outline">
+                    {stageMap[initialData.current_stage] || initialData.current_stage}
+                </Badge>
+            </div>
+        )
+    }
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             {!initialData && (
@@ -302,17 +314,24 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 </DialogTrigger>
             )}
             <DialogContent className="sm:max-w-[1000px] w-[95vw] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Orden de Trabajo" : "Crear Orden de Trabajo"}</DialogTitle>
-                    <DialogDescription>
-                        {initialData ? "Modifique los datos de la OT y detalles de producción." : "Ingrese los detalles de la nueva OT manual."}
-                    </DialogDescription>
+                <DialogHeader className="border-b pb-4 mb-4">
+                    <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                            <DialogTitle>
+                                {initialData ? `Orden de Trabajo #${initialData?.number}` : "Crear Orden de Trabajo"}
+                            </DialogTitle>
+                            <DialogDescription>
+                                {initialData ? "Administre los detalles de producción." : "Ingrese los detalles de la nueva OT manual."}
+                            </DialogDescription>
+                        </div>
+                        {renderStatusBadge()}
+                    </div>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-                        {/* 1. Header & General Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b pb-4">
+                        {/* 1. General Info & Link */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="description"
@@ -330,14 +349,29 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 {isAutoCreated ? (
                                     <div className="space-y-2">
                                         <Label className="text-sm">Vínculo de Venta</Label>
-                                        <div className="p-2 bg-muted/30 rounded border text-sm">
-                                            <p className="font-semibold">
-                                                {linkedSaleOrder ? `NV-${linkedSaleOrder.number}` : "Sin NV"}
-                                                {initialData?.sale_line?.product && ` - ${initialData.sale_line.product.name}`}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                OT Generada Automáticamente
-                                            </p>
+                                        <div className="p-3 bg-muted/40 rounded-md border text-sm flex items-center justify-between group">
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-primary">
+                                                        {linkedSaleOrder ? `NV-${linkedSaleOrder.number}` : "Sin NV"}
+                                                    </span>
+                                                    {initialData?.sale_line?.product && (
+                                                        <span className="text-muted-foreground">
+                                                            - {initialData.sale_line.product.name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-1 flex gap-2">
+                                                    <span>Cantidad Solicitada: <strong>{initialData?.sale_line?.quantity || 0}</strong></span>
+                                                </div>
+                                            </div>
+                                            {linkedSaleOrder && (
+                                                <Link href={`/sales/command-center?id=${linkedSaleOrder.id}`} target="_blank" passHref>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                                                        <ExternalLink className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
@@ -370,49 +404,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                             </div>
                         </div>
 
-                        {/* 2. Planning Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 border-b pb-4">
-                            <FormField
-                                control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Estado</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Estado" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="PLANNED">Planificada</SelectItem>
-                                                <SelectItem value="IN_PROGRESS">En Proceso</SelectItem>
-                                                <SelectItem value="FINISHED">Terminada</SelectItem>
-                                                <SelectItem value="CANCELLED">Anulada</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="qty_planned"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Cant. Planificada</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                step="1"
-                                                {...field}
-                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        {/* 2. Dates & Progress */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b">
                             <FormField
                                 control={form.control}
                                 name="start_date"
@@ -430,7 +423,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         )}
                                                     >
                                                         {field.value ? (
-                                                            format(field.value, "PPP")
+                                                            format(field.value, "PPP", { locale: es })
                                                         ) : (
                                                             <span>Elegir fecha</span>
                                                         )}
@@ -468,7 +461,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                         )}
                                                     >
                                                         {field.value ? (
-                                                            format(field.value, "PPP")
+                                                            format(field.value, "PPP", { locale: es })
                                                         ) : (
                                                             <span>Elegir fecha</span>
                                                         )}
@@ -485,6 +478,24 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 />
                                             </PopoverContent>
                                         </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="qty_produced"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Cant. Producida</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                step="1"
+                                                {...field}
+                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

@@ -266,6 +266,9 @@ class WorkOrderService:
             'press_specs': mfg_data.get('specifications', {}).get('press', ''),
             'postpress_specs': mfg_data.get('specifications', {}).get('postpress', ''),
             # Map phases to root keys for serializer to pick up if needed, or just store them
-            'phases': mfg_data.get('phases', {})
+            'phases': mfg_data.get('phases', {}),
+            # Missing fields added
+            'design_needed': mfg_data.get('design_needed', False),
+            'print_type': mfg_data.get('print_type')
         }
         return stage_data

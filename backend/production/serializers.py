@@ -96,6 +96,8 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     history = WorkOrderHistorySerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
     sale_order_date = serializers.DateField(source='sale_order.date', read_only=True, allow_null=True)
+    sale_order_delivery_date = serializers.DateField(source='sale_order.delivery_date', read_only=True, allow_null=True)
+    product_description = serializers.SerializerMethodField()
     sale_customer_name = serializers.SerializerMethodField()
     sale_customer_rut = serializers.SerializerMethodField()
     product_info = serializers.ReadOnlyField()
@@ -103,10 +105,16 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     production_progress = serializers.SerializerMethodField()
     
     # Metadata helpers
-    # Metadata helpers
     requires_prepress = serializers.SerializerMethodField()
     requires_press = serializers.SerializerMethodField()
     requires_postpress = serializers.SerializerMethodField()
+
+    def get_product_description(self, obj):
+        if obj.sale_line and obj.sale_line.product:
+            return obj.sale_line.product.description or ""
+        if obj.is_manual and obj.product:
+            return obj.product.description or ""
+        return ""
 
     def get_sale_customer_name(self, obj):
         # 1. Prefer override from stage_data (set via Manufacturing Dialog)
