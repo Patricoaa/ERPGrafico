@@ -270,26 +270,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     <div>
                         <DialogTitle className="text-2xl flex items-center gap-3">
                             Gestión de Orden de Trabajo OT-{order?.number}
-                            <div className="flex items-center gap-1">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                    onClick={() => setIsEditOpen(true)}
-                                    title="Editar OT"
-                                >
-                                    <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                    onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
-                                    title="Ver Centro de Comando"
-                                >
-                                    <LayoutDashboard className="h-4 w-4" />
-                                </Button>
-                            </div>
                         </DialogTitle>
                         <DialogDescription>
                             {order?.description} | Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
@@ -653,6 +633,31 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                     {/* Right Sidebar - Information */}
                     <div className="w-80 border-l bg-muted/5 p-4 space-y-4 overflow-y-auto hidden lg:block">
+                        {/* Acciones Section */}
+                        <div className="space-y-2">
+                            <h4 className="text-xs font-bold uppercase text-muted-foreground">Acciones</h4>
+                            <div className="flex items-center gap-2 p-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 gap-2 h-9"
+                                    onClick={() => setIsEditOpen(true)}
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                    Editar OT
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 gap-2 h-9"
+                                    onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
+                                >
+                                    <LayoutDashboard className="h-4 w-4" />
+                                    Comandos
+                                </Button>
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
                             <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
                             <div className="p-3 bg-background rounded-lg border space-y-2">

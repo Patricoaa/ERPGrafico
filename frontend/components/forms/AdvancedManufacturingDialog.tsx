@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
-    User, Paintbrush, FileText, Plus, X, Upload, FileIcon
+    User, Paintbrush, FileText, Plus, X, Upload, FileIcon, Printer
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
@@ -322,7 +322,7 @@ export function AdvancedManufacturingDialog({
                                 <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
                                     <div className="flex items-center justify-between mb-2">
                                         <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                            <Plus className="h-3 w-3" /> Impresión
+                                            <Printer className="h-3 w-3" /> Impresión
                                         </h4>
                                         <Switch
                                             checked={enablePress}

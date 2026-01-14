@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, Paintbrush, Plus, FileText, Upload, X, FileIcon, User, ExternalLink } from "lucide-react"
+import { Printer, CalendarIcon, Paintbrush, Plus, FileText, Upload, X, FileIcon, User, ExternalLink } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
@@ -671,7 +671,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
                                     <div className="flex items-center justify-between mb-2">
                                         <h4 className="text-sm font-bold flex items-center gap-2">
-                                            <Plus className="h-4 w-4 text-muted-foreground" /> Impresión
+                                            <Printer className="h-4 w-4 text-muted-foreground" /> Impresión
                                         </h4>
                                         <Switch
                                             checked={enablePress}
