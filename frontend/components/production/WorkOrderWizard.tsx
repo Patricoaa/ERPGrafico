@@ -28,14 +28,11 @@ import {
     Check,
     X,
     Pencil,
-    User,
-    LayoutDashboard
+    User
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { WorkOrderForm } from "@/components/forms/WorkOrderForm"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -76,8 +73,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [clientApprovalFile, setClientApprovalFile] = useState<File | null>(null)
     const [clientApproved, setClientApproved] = useState(false)
     const [supervisorApproved, setSupervisorApproved] = useState(false)
-    const [isEditOpen, setIsEditOpen] = useState(false)
-    const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false)
 
     const fetchOrder = async () => {
         setLoading(true)
@@ -261,37 +256,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <div className="p-6 border-b flex justify-between items-center bg-muted/30">
-                    <div className="flex items-center justify-between w-full">
-                        <div>
-                            <div className="flex items-center gap-3">
-                                <DialogTitle className="text-2xl">Gestión de Orden de Trabajo OT-{order?.number}</DialogTitle>
-                                <div className="flex items-center gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                                        title="Editar Orden de Trabajo"
-                                        onClick={() => setIsEditOpen(true)}
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    {order?.sale_order && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                            title="Ver Centro de Comandos de la Venta"
-                                            onClick={() => setIsCommandCenterOpen(true)}
-                                        >
-                                            <LayoutDashboard className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                            <DialogDescription>
-                                {order?.description} | Cliente: {order?.sale_order_client_name || 'Manual'}
-                            </DialogDescription>
-                        </div>
+                    <div>
+                        <DialogTitle className="text-2xl">Gestión de Orden de Trabajo OT-{order?.number}</DialogTitle>
+                        <DialogDescription>
+                            {order?.description} | Cliente: {order?.sale_order_client_name || 'Manual'}
+                        </DialogDescription>
                     </div>
                 </div>
 
@@ -778,27 +747,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     </div>
                 </div>
             </DialogContent>
-
-            {/* Edit OT Modal */}
-            <WorkOrderForm
-                open={isEditOpen}
-                onOpenChange={setIsEditOpen}
-                initialData={order}
-                onSuccess={() => {
-                    fetchOrder()
-                    if (onSuccess) onSuccess()
-                }}
-            />
-
-            {/* Sale Order Command Center */}
-            {order?.sale_order && (
-                <OrderCommandCenter
-                    open={isCommandCenterOpen}
-                    onOpenChange={setIsCommandCenterOpen}
-                    orderId={order.sale_order}
-                    type="sale"
-                />
-            )}
         </Dialog>
     )
 }
