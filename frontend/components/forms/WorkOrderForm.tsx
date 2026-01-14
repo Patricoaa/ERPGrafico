@@ -49,7 +49,7 @@ const workOrderSchema = z.object({
     sale_order: z.string().optional().or(z.literal("")),
     // status: z.string(), // Removing status from form
     // qty_planned: z.number().min(0.01, "La cantidad planeada debe ser mayor a 0"), // Removing planned qty from form
-    qty_produced: z.number().min(0),
+    // qty_produced: z.number().min(0), // Removing produced qty from form
     start_date: z.date().optional().nullable(),
     due_date: z.date().optional().nullable(),
     // New Fields
@@ -100,7 +100,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             sale_order: "",
             // status: "PLANNED",
             // qty_planned: 0,
-            qty_produced: 0,
+            // qty_produced: 0,
             start_date: new Date(), // Default to today
             due_date: null,
             product_description: "",
@@ -128,9 +128,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     sale_order: initialData.sale_order?.id?.toString() || initialData.sale_order?.toString() || "",
                     // status: initialData.status || "PLANNED",
                     // qty_planned: parseFloat(initialData.qty_planned) || 0,
-                    qty_produced: parseFloat(initialData.qty_produced) || 0,
+                    // qty_produced: parseFloat(initialData.qty_produced) || 0,
                     start_date: initialData.start_date ? new Date(initialData.start_date) : new Date(),
-                    due_date: initialData.due_date ? new Date(initialData.due_date) : null,
+                    due_date: initialData.due_date ? new Date(initialData.due_date) : (initialData.sale_order_delivery_date ? new Date(initialData.sale_order_delivery_date) : null),
                     // Load stage_data into fields
                     product_description: initialData.stage_data?.product_description || "",
                     internal_notes: initialData.stage_data?.internal_notes || "",
@@ -182,7 +182,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     sale_order: "",
                     // status: "PLANNED",
                     // qty_planned: 0,
-                    qty_produced: 0,
+                    // qty_produced: 0,
                     start_date: new Date(),
                     due_date: null,
                     product_description: "",
@@ -252,7 +252,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             sale_order: (data.sale_order === "" || data.sale_order === "__none__" || data.sale_order === "none") ? null : data.sale_order,
             // status: data.status, // Not editing status directly
             // qty_planned: data.qty_planned, // Not editing qty planned directly?
-            qty_produced: data.qty_produced,
+            // qty_produced: data.qty_produced,
             start_date: data.start_date ? format(data.start_date, 'yyyy-MM-dd') : null,
             due_date: data.due_date ? format(data.due_date, 'yyyy-MM-dd') : null,
             stage_data: stage_data
@@ -294,12 +294,20 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             'CANCELLED': 'Anulado'
         }
 
+        const statusMap: Record<string, string> = {
+            'DRAFT': 'BORRADOR',
+            'PLANNED': 'PLANIFICADA',
+            'IN_PROGRESS': 'EN PROCESO',
+            'FINISHED': 'TERMINADA',
+            'CANCELLED': 'ANULADA'
+        }
+
         return (
             <div className="flex items-center gap-2">
                 <Badge variant={initialData.status === 'FINISHED' ? 'default' : initialData.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
-                    {initialData.status === 'FINISHED' ? 'TERMINADA' : initialData.status === 'CANCELLED' ? 'ANULADA' : initialData.status === 'IN_PROGRESS' ? 'EN PROCESO' : 'PLANIFICADA'}
+                    {statusMap[initialData.status] || initialData.status}
                 </Badge>
-                <Badge variant="outline">
+                <Badge variant="outline" className="border-primary/20 text-primary">
                     {stageMap[initialData.current_stage] || initialData.current_stage}
                 </Badge>
             </div>
@@ -353,7 +361,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-primary">
-                                                        {linkedSaleOrder ? `NV-${linkedSaleOrder.number}` : "Sin NV"}
+                                                        {initialData.sale_order_number ? `NV-${initialData.sale_order_number}` : "Sin NV"}
                                                     </span>
                                                     {initialData?.sale_line?.product && (
                                                         <span className="text-muted-foreground">
@@ -366,7 +374,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 </div>
                                             </div>
                                             {linkedSaleOrder && (
-                                                <Link href={`/sales/command-center?id=${linkedSaleOrder.id}`} target="_blank" passHref>
+                                                <Link href={`/sales/command-center?id=${linkedSaleOrder?.id || linkedSaleOrder}`} target="_blank" passHref>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
                                                         <ExternalLink className="h-4 w-4" />
                                                     </Button>
@@ -404,8 +412,37 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                             </div>
                         </div>
 
-                        {/* 2. Dates & Progress */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b">
+                        {/* 1.5 Sale Line Display (Readonly) */}
+                        {initialData?.sale_line && (
+                            <div className="p-3 bg-muted/20 border rounded-lg space-y-2">
+                                <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
+                                    <FileText className="h-3 w-3" /> Detalle de Producto en Venta
+                                </Label>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Producto</p>
+                                        <p className="font-medium truncate">{initialData.sale_line.product?.name || initialData.sale_line.description}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Cantidad</p>
+                                        <p className="font-medium">{initialData.sale_line.quantity} {initialData.sale_line.uom?.name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">F. Despacho Venta</p>
+                                        <p className="font-medium text-primary">
+                                            {initialData.sale_order_delivery_date ? format(new Date(initialData.sale_order_delivery_date), "dd/MM/yyyy") : "No definida"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Estado Producción</p>
+                                        <p className="font-medium">{initialData.production_progress}%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 2. Dates */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b">
                             <FormField
                                 control={form.control}
                                 name="start_date"
@@ -478,25 +515,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 />
                                             </PopoverContent>
                                         </Popover>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="qty_produced"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Cant. Producida</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                step="1"
-                                                {...field}
-                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
@@ -592,31 +610,41 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 <Switch checked={designNeeded} onCheckedChange={setDesignNeeded} className="scale-75" />
                                             </div>
                                             {(designNeeded || existingDesignFiles.length > 0) && (
-                                                <div className="space-y-2 pt-2 border-t">
-                                                    <div className="space-y-1">
-                                                        {existingDesignFiles.map((file, idx) => (
-                                                            <div key={`existing-${idx}`} className="flex items-center justify-between p-1.5 bg-background rounded text-xs border">
-                                                                <div className="flex items-center gap-2 truncate">
-                                                                    <FileIcon className="h-3 w-3 shrink-0" />
-                                                                    <span className="truncate">{file}</span>
-                                                                </div>
-                                                                <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeExistingFile(idx)}>
-                                                                    <X className="h-3 w-3" />
-                                                                </Button>
+                                                <div className="space-y-3 pt-2 border-t">
+                                                    <div className="space-y-2">
+                                                        {existingDesignFiles.length > 0 && (
+                                                            <div className="space-y-1">
+                                                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">Archivos del Checkout</Label>
+                                                                {existingDesignFiles.map((file, idx) => (
+                                                                    <div key={`existing-${idx}`} className="flex items-center justify-between p-1.5 bg-primary/5 rounded text-xs border border-primary/10">
+                                                                        <div className="flex items-center gap-2 truncate">
+                                                                            <FileIcon className="h-3 w-3 shrink-0 text-primary" />
+                                                                            <span className="truncate font-medium">{file}</span>
+                                                                        </div>
+                                                                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 hover:text-destructive" onClick={() => removeExistingFile(idx)}>
+                                                                            <X className="h-3 w-3" />
+                                                                        </Button>
+                                                                    </div>
+                                                                ))}
                                                             </div>
-                                                        ))}
-                                                        {designFiles.map((file, idx) => (
-                                                            <div key={`new-${idx}`} className="flex items-center justify-between p-1.5 bg-background rounded text-xs border">
-                                                                <div className="flex items-center gap-2 truncate">
-                                                                    <Upload className="h-3 w-3 shrink-0" />
-                                                                    <span className="truncate">{file.name}</span>
+                                                        )}
+
+                                                        <div className="space-y-1">
+                                                            {designFiles.length > 0 && <Label className="text-[10px] uppercase text-muted-foreground font-bold">Nuevos Archivos</Label>}
+                                                            {designFiles.map((file, idx) => (
+                                                                <div key={`new-${idx}`} className="flex items-center justify-between p-1.5 bg-background rounded text-xs border">
+                                                                    <div className="flex items-center gap-2 truncate">
+                                                                        <Upload className="h-3 w-3 shrink-0" />
+                                                                        <span className="truncate">{file.name}</span>
+                                                                    </div>
+                                                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeNewFile(idx)}>
+                                                                        <X className="h-3 w-3" />
+                                                                    </Button>
                                                                 </div>
-                                                                <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeNewFile(idx)}>
-                                                                    <X className="h-3 w-3" />
-                                                                </Button>
-                                                            </div>
-                                                        ))}
-                                                        <label className="flex items-center gap-2 text-xs text-primary cursor-pointer hover:underline p-1">
+                                                            ))}
+                                                        </div>
+
+                                                        <label className="flex items-center gap-2 text-xs text-primary cursor-pointer hover:underline p-1 w-fit">
                                                             <Plus className="h-3 w-3" /> Agregar archivo
                                                             <input type="file" multiple className="hidden" onChange={handleFileChange} />
                                                         </label>
@@ -742,6 +770,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     </form>
                 </Form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }
