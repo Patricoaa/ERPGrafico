@@ -117,6 +117,12 @@ export function AdvancedManufacturingDialog({
     }
 
     const handleConfirm = () => {
+        // Validation: Product description is required if shown
+        if (showProductDescription && !productDescription?.trim()) {
+            toast.error("La descripción del producto es obligatoria para productos sin lista de materiales (BOM).")
+            return
+        }
+
         // Validation: at least one stage must be enabled
         if (!enablePrepress && !enablePress && !enablePostpress) {
             toast.error("Debe habilitar al menos una etapa de fabricación")
@@ -149,10 +155,8 @@ export function AdvancedManufacturingDialog({
 
     if (!product) return null
 
-    // Check if product description should be shown: Manufacturable, Advanced, but NO BOM
-    const showProductDescription = product.product_type === 'MANUFACTURABLE' &&
-        product.requires_advanced_manufacturing &&
-        !product.has_bom
+    // Check if product description should be shown: Manufacturable but NO BOM
+    const showProductDescription = product.product_type === 'MANUFACTURABLE' && !product.has_bom
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

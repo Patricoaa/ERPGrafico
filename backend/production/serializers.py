@@ -110,9 +110,8 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     requires_postpress = serializers.SerializerMethodField()
 
     def get_product_description(self, obj):
-        # Product model does not have a description field, so we return empty string
-        # or we could return the product name if that was the intent.
-        # But 'description' usually implies long text.
+        if obj.stage_data and obj.stage_data.get('product_description'):
+            return obj.stage_data.get('product_description')
         return ""
 
     def get_sale_customer_name(self, obj):

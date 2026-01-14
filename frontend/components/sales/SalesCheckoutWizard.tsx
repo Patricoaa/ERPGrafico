@@ -88,7 +88,8 @@ export function SalesCheckoutWizard({
     })
 
     const hasManufacturing = currentOrderLines.some((line: any) =>
-        line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
+        (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) ||
+        (line.product_type === 'MANUFACTURABLE' && !line.has_bom)
     );
 
     // Auto-suggest delivery date if fabricable (includes any mfg or BOM)
