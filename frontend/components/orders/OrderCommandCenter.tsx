@@ -1,8 +1,25 @@
 "use client"
 
+import { useState, useEffect, useRef, useCallback } from "react"
 import { WorkOrderWizard } from "@/components/production/WorkOrderWizard"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Eye, Info, Settings2 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
+import { ActionCategory } from "./ActionCategory"
+import api from "@/lib/api"
+import { toast } from "sonner"
 
-// ... existing code ...
+interface OrderCommandCenterProps {
+    orderId: number | string | null
+    type: string
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    onActionSuccess?: () => void
+}
 
 export function OrderCommandCenter({
     orderId,
@@ -23,7 +40,37 @@ export function OrderCommandCenter({
     })
     const actionEngineRef = useRef<any>(null)
 
-    // ... existing code ...
+    const fetchOrderDetails = useCallback(async () => {
+        if (!orderId) return
+        setLoading(true)
+        try {
+            // Determine endpoint based on type
+            let endpoint = ''
+            if (type === 'sale') {
+                endpoint = `/sales/orders/${orderId}/`
+            } else if (type === 'purchase') {
+                endpoint = `/purchasing/orders/${orderId}/` // Adjust if needed
+            } else if (type === 'work_order') {
+                endpoint = `/production/work-orders/${orderId}/`
+            } else {
+                endpoint = `/sales/orders/${orderId}/` // Default fallback
+            }
+
+            const response = await api.get(endpoint)
+            setOrder(response.data)
+        } catch (error) {
+            console.error("Error fetching order details:", error)
+            toast.error("Error al cargar detalles de la orden")
+        } finally {
+            setLoading(false)
+        }
+    }, [orderId, type])
+
+    useEffect(() => {
+        if (open && orderId) {
+            fetchOrderDetails()
+        }
+    }, [open, orderId, fetchOrderDetails])
 
     const openDetails = (docType: string, docId: number | string) => {
         if (docType === 'work_order') {
