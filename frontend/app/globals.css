@@ -27,19 +27,19 @@
   --ring: oklch(0.87 0 0);
   --radius: 0.5rem;
 
-  --sidebar: oklch(0.12 0.02 260);
-  /* Rich Midnight Deep Slate */
+  --sidebar: oklch(0.18 0.06 255);
+  /* Deep Modern Blue */
   --sidebar-foreground: oklch(0.95 0.01 260);
   /* Very light blue-ish white */
   --sidebar-primary: oklch(0.627 0.265 303.9);
   /* Vibrant brand blue */
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.18 0.03 260);
-  /* Slightly lighter slate for hover */
+  --sidebar-accent: oklch(0.24 0.07 255);
+  /* Lighter blue for hover */
   --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.18 0.03 260);
-  /* Same as accent for seamless borders */
-  --sidebar-ring: oklch(0.6 0.25 260);
+  --sidebar-border: oklch(0.24 0.07 255);
+  /* Consistent with accent */
+  --sidebar-ring: oklch(0.627 0.265 303.9);
 }
 
 .dark {
