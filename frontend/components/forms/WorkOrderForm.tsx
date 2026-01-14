@@ -56,6 +56,7 @@ const workOrderSchema = z.object({
     product_description: z.string().optional(),
     internal_notes: z.string().optional(),
     contact_id: z.string().optional().or(z.literal("")),
+    sale_line: z.string().optional().or(z.literal("")),
 })
 
 type WorkOrderFormValues = z.infer<typeof workOrderSchema>
@@ -74,6 +75,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     const [loading, setLoading] = useState(false)
     const [saleOrders, setSaleOrders] = useState<any[]>([])
+    const [saleLines, setSaleLines] = useState<any[]>([])
+    const [loadingLines, setLoadingLines] = useState(false)
 
     // Advanced Manufacturing States
     const [enablePrepress, setEnablePrepress] = useState(false)
@@ -106,6 +109,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             product_description: "",
             internal_notes: "",
             contact_id: "",
+            sale_line: "",
         },
     })
 
@@ -130,11 +134,12 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     // qty_planned: parseFloat(initialData.qty_planned) || 0,
                     // qty_produced: parseFloat(initialData.qty_produced) || 0,
                     start_date: initialData.start_date ? new Date(initialData.start_date) : new Date(),
-                    due_date: initialData.due_date ? new Date(initialData.due_date) : (initialData.sale_order_delivery_date ? new Date(initialData.sale_order_delivery_date) : null),
+                    due_date: initialData.estimated_completion_date ? new Date(initialData.estimated_completion_date) : (initialData.sale_order_delivery_date ? new Date(initialData.sale_order_delivery_date) : null),
                     // Load stage_data into fields
                     product_description: initialData.stage_data?.product_description || "",
                     internal_notes: initialData.stage_data?.internal_notes || "",
                     contact_id: initialData.stage_data?.contact_id?.toString() || "",
+                    sale_line: initialData.sale_line?.id?.toString() || "",
                 })
 
                 // Initialize Manufacturing States
@@ -177,35 +182,44 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 setDesignFiles([])
 
             } else {
-                form.reset({
-                    description: "",
-                    sale_order: "",
-                    // status: "PLANNED",
-                    // qty_planned: 0,
-                    // qty_produced: 0,
-                    start_date: new Date(),
-                    due_date: null,
-                    product_description: "",
-                    internal_notes: "",
-                    contact_id: "",
-                })
-                // Reset custom states
-                setEnablePrepress(false)
-                setEnablePress(false)
-                setEnablePostpress(false)
-                setPrepressSpecs("")
-                setPressSpecs("")
-                setPostpressSpecs("")
-                setDesignNeeded(false)
-                setFolioEnabled(false)
-                setFolioStart("")
-                setPrintType(null)
-                setDesignFiles([])
                 setExistingDesignFiles([])
                 setSelectedContact(null)
+                setSaleLines([])
             }
         }
     }, [open, initialData, form])
+
+    // Watch for Sale Order changes to fetch lines
+    const watchedSaleOrder = form.watch('sale_order')
+
+    useEffect(() => {
+        if (watchedSaleOrder && watchedSaleOrder !== "__none__" && !initialData) {
+            setLoadingLines(true)
+            api.get(`/sales/orders/${watchedSaleOrder}/`).then(res => {
+                const lines = res.data.lines || []
+                // Filter only manufacturable lines without existing OTs
+                const filtered = lines.filter((l: any) =>
+                    l.product_type === 'MANUFACTURABLE' &&
+                    (!l.work_order_summary) // work_order_summary is null if no OT
+                )
+                setSaleLines(filtered)
+            }).finally(() => setLoadingLines(false))
+        } else {
+            setSaleLines([])
+        }
+    }, [watchedSaleOrder, initialData])
+
+    // When a sale line is selected, auto-fill details
+    const watchedSaleLineId = form.watch('sale_line')
+    useEffect(() => {
+        if (watchedSaleLineId && !initialData) {
+            const selectedLine = saleLines.find(l => l.id.toString() === watchedSaleLineId)
+            if (selectedLine) {
+                form.setValue('description', `OT: ${selectedLine.product_name || selectedLine.description}`)
+                form.setValue('product_description', selectedLine.product_name || selectedLine.description)
+            }
+        }
+    }, [watchedSaleLineId, saleLines, initialData, form])
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -254,7 +268,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             // qty_planned: data.qty_planned, // Not editing qty planned directly?
             // qty_produced: data.qty_produced,
             start_date: data.start_date ? format(data.start_date, 'yyyy-MM-dd') : null,
-            due_date: data.due_date ? format(data.due_date, 'yyyy-MM-dd') : null,
+            estimated_completion_date: data.due_date ? format(data.due_date, 'yyyy-MM-dd') : null,
+            sale_line: data.sale_line || null,
             stage_data: stage_data
         }
 
@@ -328,8 +343,11 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                             <DialogTitle>
                                 {initialData ? `Orden de Trabajo #${initialData?.number}` : "Crear Orden de Trabajo"}
                             </DialogTitle>
-                            <DialogDescription>
-                                {initialData ? "Administre los detalles de producción." : "Ingrese los detalles de la nueva OT manual."}
+                            <DialogDescription className="text-primary font-medium flex items-center gap-2">
+                                <CalendarIcon className="h-3.5 w-3.5" />
+                                {form.getValues("start_date") ?
+                                    `Inicio: ${format(form.getValues("start_date")!, "PPP", { locale: es })}` :
+                                    "Fecha de inicio automática"}
                             </DialogDescription>
                         </div>
                         {renderStatusBadge()}
@@ -363,14 +381,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                     <span className="font-bold text-primary">
                                                         {initialData.sale_order_number ? `NV-${initialData.sale_order_number}` : "Sin NV"}
                                                     </span>
-                                                    {initialData?.sale_line?.product && (
-                                                        <span className="text-muted-foreground">
-                                                            - {initialData.sale_line.product.name}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground mt-1 flex gap-2">
-                                                    <span>Cantidad Solicitada: <strong>{initialData?.sale_line?.quantity || 0}</strong></span>
+                                                    <span className="text-muted-foreground">
+                                                        - {initialData.sale_line.product?.name || initialData.sale_line.description}
+                                                    </span>
                                                 </div>
                                             </div>
                                             {linkedSaleOrder && (
@@ -412,32 +425,92 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                             </div>
                         </div>
 
-                        {/* 1.5 Sale Line Display (Readonly) */}
-                        {initialData?.sale_line && (
-                            <div className="p-3 bg-muted/20 border rounded-lg space-y-2">
+                        {/* 1.5 Sale Line Selector / Display */}
+                        {(initialData?.sale_line || (watchedSaleOrder && watchedSaleOrder !== "__none__")) && (
+                            <div className="p-4 bg-muted/20 border rounded-lg space-y-4">
                                 <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
-                                    <FileText className="h-3 w-3" /> Detalle de Producto en Venta
+                                    <FileText className="h-3.5 w-3.5" /> Detalle de Producto en Venta
                                 </Label>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Producto</p>
-                                        <p className="font-medium truncate">{initialData.sale_line.product?.name || initialData.sale_line.description}</p>
+
+                                {initialData ? (
+                                    /* Edit Mode - Read Only */
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground uppercase font-semibold">Producto</p>
+                                            <p className="font-medium truncate">{initialData.sale_line.product?.name || initialData.sale_line.description}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground uppercase font-semibold">Cantidad</p>
+                                            <p className="font-medium">{initialData.sale_line.quantity} {initialData.sale_line.uom?.name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground uppercase font-semibold">F. Entrega Planificada</p>
+                                            <p className="font-medium text-primary">
+                                                {initialData.sale_order_delivery_date ? format(new Date(initialData.sale_order_delivery_date + 'T12:00:00'), "dd/MM/yyyy") : "No definida"}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground uppercase font-semibold">Progreso OT</p>
+                                            <p className="font-medium">{initialData.production_progress}%</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Cantidad</p>
-                                        <p className="font-medium">{initialData.sale_line.quantity} {initialData.sale_line.uom?.name}</p>
+                                ) : (
+                                    /* Creation Mode - Selector */
+                                    <div className="space-y-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="sale_line"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Ítem de Venta a Fabricar</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger className="bg-background">
+                                                                <SelectValue placeholder={loadingLines ? "Cargando ítems..." : "Selecciona el producto a fabricar..."} />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {saleLines.length === 0 && !loadingLines && (
+                                                                <SelectItem value="none" disabled>No hay productos fabricables pendientes</SelectItem>
+                                                            )}
+                                                            {saleLines.map((l) => (
+                                                                <SelectItem key={l.id} value={l.id.toString()}>
+                                                                    {l.product_name || l.description} - Cant: {l.quantity} {l.uom_name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {watchedSaleLineId && (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-3 bg-background rounded border animate-in fade-in slide-in-from-top-1">
+                                                {(() => {
+                                                    const l = saleLines.find(x => x.id.toString() === watchedSaleLineId)
+                                                    if (!l) return null
+                                                    return (
+                                                        <>
+                                                            <div>
+                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Cantidad</p>
+                                                                <p className="text-sm font-medium">{l.quantity} {l.uom_name}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Precio Unit.</p>
+                                                                <p className="text-sm font-medium">${parseFloat(l.unit_price).toLocaleString()}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal</p>
+                                                                <p className="text-sm font-bold text-primary">${parseFloat(l.subtotal).toLocaleString()}</p>
+                                                            </div>
+                                                        </>
+                                                    )
+                                                })()}
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">F. Despacho Venta</p>
-                                        <p className="font-medium text-primary">
-                                            {initialData.sale_order_delivery_date ? format(new Date(initialData.sale_order_delivery_date), "dd/MM/yyyy") : "No definida"}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Estado Producción</p>
-                                        <p className="font-medium">{initialData.production_progress}%</p>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         )}
 

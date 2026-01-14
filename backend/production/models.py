@@ -78,6 +78,7 @@ class WorkOrder(models.Model):
     specifications = models.TextField(_("Especificaciones Técnicas"), blank=True, help_text="Papel, Tintas, Terminaciones, etc.")
 
     estimated_completion_date = models.DateField(_("Fecha Estimada de Finalización"), null=True, blank=True)
+    start_date = models.DateField(_("Fecha de Inicio"), null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

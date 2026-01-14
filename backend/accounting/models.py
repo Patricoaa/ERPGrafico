@@ -336,6 +336,16 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta de gasto usada por defecto para productos consumibles (tintas, papel, etc.)")
     )
 
+    # Service Products Account
+    default_service_expense_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_service_expense',
+        verbose_name=_("Cuenta de Gastos por Servicios"),
+        help_text=_("Cuenta de gasto usada por defecto para productos de tipo servicio.")
+    )
+
     # Adjustment Accounts
     adjustment_income_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,

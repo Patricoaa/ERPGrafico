@@ -30,7 +30,8 @@ import {
     Pencil,
     User,
     Eye,
-    LayoutDashboard
+    LayoutDashboard,
+    CalendarIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
@@ -271,8 +272,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <DialogTitle className="text-2xl flex items-center gap-3">
                             Gestión de Orden de Trabajo OT-{order?.number}
                         </DialogTitle>
-                        <DialogDescription>
-                            {order?.description} | Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
+                        <DialogDescription className="flex items-center gap-4 mt-1">
+                            <span className="flex items-center gap-1.5 text-primary font-medium">
+                                <CalendarIcon className="h-3.5 w-3.5" />
+                                {order?.start_date ?
+                                    `Inicio: ${new Date(order.start_date + 'T12:00:00').toLocaleDateString()}` :
+                                    "Sin fecha de inicio"}
+                            </span>
+                            <span className="text-muted-foreground">|</span>
+                            <span className="text-muted-foreground truncate">
+                                {order?.description} | Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
+                            </span>
                         </DialogDescription>
                     </div>
                 </div>
@@ -644,7 +654,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     onClick={() => setIsEditOpen(true)}
                                 >
                                     <Pencil className="h-4 w-4" />
-                                    Editar OT
+
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -653,7 +663,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
                                 >
                                     <LayoutDashboard className="h-4 w-4" />
-                                    Comandos
+
                                 </Button>
                             </div>
                         </div>
