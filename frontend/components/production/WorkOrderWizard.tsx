@@ -274,7 +274,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     <div>
                         <DialogTitle className="text-2xl">Gestión de Orden de Trabajo OT-{order?.number}</DialogTitle>
                         <DialogDescription>
-                            {order?.description} | Cliente: {order?.sale_customer_name || 'Manual'}
+                            {order?.description} | Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
                         </DialogDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={handlePrint}>

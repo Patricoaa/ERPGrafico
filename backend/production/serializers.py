@@ -95,6 +95,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     materials = WorkOrderMaterialSerializer(many=True, read_only=True)
     history = WorkOrderHistorySerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
+    sale_order_date = serializers.DateField(source='sale_order.date', read_only=True, allow_null=True)
     sale_customer_name = serializers.SerializerMethodField()
     sale_customer_rut = serializers.SerializerMethodField()
     product_info = serializers.ReadOnlyField()
@@ -115,6 +116,11 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         if obj.sale_order and obj.sale_order.customer:
             return obj.sale_order.customer.name
         return "Manual / Interno"
+
+    def get_sale_order_client_name(self, obj):
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.name
+        return None
 
     def get_sale_customer_rut(self, obj):
         if obj.stage_data and obj.stage_data.get('contact_tax_id'):

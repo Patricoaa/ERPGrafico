@@ -87,7 +87,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                             </div>
                                             <div className="flex items-center text-[11px] text-muted-foreground">
                                                 <Clock className="mr-1.5 h-3 w-3" />
-                                                <span>{order.due_date || "Sin fecha"}</span>
+                                                <span>{order.sale_order_date || order.due_date || "Sin fecha"}</span>
                                             </div>
                                         </div>
 
