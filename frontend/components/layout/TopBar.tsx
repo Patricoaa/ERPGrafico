@@ -24,34 +24,34 @@ export function TopBar() {
     }
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between px-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            {/* Left: Optional space or breadcrumbs if needed later */}
+        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between px-6 bg-background/80 backdrop-blur-xl border-b border-sidebar-border/5">
+            {/* Left: Optional breadcrumbs */}
             <div className="flex-1 md:flex-none">
-                {/* Empty on purpose if we want the search perfectly centered */}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest opacity-50">ERP Sistema</p>
             </div>
 
             {/* Center: Search Bar */}
-            <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative w-full max-w-lg mx-8">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
                 <Input
-                    placeholder="Buscador global..."
-                    className="w-full pl-10 bg-muted/50 border-none h-10 focus-visible:ring-1 focus-visible:ring-primary/20"
+                    placeholder="Buscar cualquier cosa..."
+                    className="w-full pl-12 bg-muted/30 border-none h-11 rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium placeholder:text-muted-foreground/30 shadow-inner"
                 />
             </div>
 
             {/* Right: Notifications & User Profile */}
-            <div className="flex items-center gap-4 flex-1 justify-end">
-                <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+            <div className="flex items-center gap-6 flex-1 justify-end">
+                <Button variant="ghost" size="icon" className="relative text-muted-foreground/60 hover:text-primary transition-colors">
                     <Bell className="h-5 w-5" />
-                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
+                    <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-primary ring-2 ring-background" />
                 </Button>
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                            <Avatar className="h-10 w-10 border-2 border-background shadow-sm hover:border-primary/20 transition-all">
+                        <Button variant="ghost" className="relative h-11 w-11 rounded-2xl p-0 hover:scale-105 transition-transform">
+                            <Avatar className="h-11 w-11 border-2 border-primary/10 shadow-lg">
                                 <AvatarImage src="" alt="User" />
-                                <AvatarFallback className="bg-primary/10 text-primary">JD</AvatarFallback>
+                                <AvatarFallback className="bg-primary/5 text-primary font-bold">JD</AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>

@@ -29,12 +29,26 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }, [pathname, router])
 
     const [activeCategory, setActiveCategory] = useState<string | null>("dashboard")
+    const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
+    const [isSidebarVisible, setIsSidebarVisible] = useState(false)
 
     useEffect(() => {
         // Sync active category with URL
         const path = pathname.split('/')[1] || "dashboard"
         setActiveCategory(path)
     }, [pathname])
+
+    useEffect(() => {
+        let timeout: NodeJS.Timeout
+        if (hoveredCategory) {
+            setIsSidebarVisible(true)
+        } else {
+            timeout = setTimeout(() => {
+                setIsSidebarVisible(false)
+            }, 300) // Small delay before hiding
+        }
+        return () => clearTimeout(timeout)
+    }, [hoveredCategory])
 
     if (!authorized) {
         // Can show a loading spinner here
@@ -64,8 +78,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         "finances": "/finances/statements",
     }
 
+    // Determine which category to show in the detailed sidebar
+    const displayCategory = hoveredCategory || activeCategory
+
     return (
-        <div className="flex h-screen bg-background overflow-hidden font-sans">
+        <div className="flex h-screen bg-background overflow-hidden font-sans border-t border-sidebar-border/10">
             {/* First Level: Mini Sidebar */}
             <MiniSidebar
                 activeCategory={activeCategory}
@@ -74,16 +91,24 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                         router.push(categoryToUrl[cat])
                     }
                 }}
+                onHoverCategory={setHoveredCategory}
             />
 
-            {/* Second Level: Detailed Sidebar (Conditional) */}
-            <AppSidebar activeCategory={activeCategory} />
+            {/* Second Level: Detailed Sidebar (Floating Glass Effect) */}
+            <AppSidebar
+                activeCategory={displayCategory}
+                isVisible={isSidebarVisible}
+                onMouseEnter={() => setHoveredCategory(displayCategory)}
+                onMouseLeave={() => setHoveredCategory(null)}
+            />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 relative">
                 <TopBar />
                 <main className="flex-1 overflow-y-auto scrollbar-hide">
-                    {children}
+                    <div className="p-6 w-full">
+                        {children}
+                    </div>
                 </main>
             </div>
 

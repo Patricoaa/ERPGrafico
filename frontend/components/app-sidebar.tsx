@@ -1,4 +1,5 @@
-import { Calendar, Home, Inbox, Search, Settings, Calculator, ShoppingCart, Package, Printer, Banknote, FileText, ShoppingBag, Users } from "lucide-react"
+import { Home, Calculator, Users, ShoppingCart, FileText, Package, Printer, Banknote, ShoppingBag, Calendar, PieChart, Settings } from "lucide-react"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 
 import {
@@ -75,46 +76,45 @@ const titles: Record<string, string> = {
 
 interface AppSidebarProps {
     activeCategory: string | null
+    isVisible?: boolean
+    onMouseEnter?: () => void
+    onMouseLeave?: () => void
 }
 
-export function AppSidebar({ activeCategory }: AppSidebarProps) {
+export function AppSidebar({ activeCategory, isVisible, onMouseEnter, onMouseLeave }: AppSidebarProps) {
     if (!activeCategory || activeCategory === "dashboard") return null
 
     const items = categoryItems[activeCategory] || []
     const title = titles[activeCategory] || ""
 
-    // If a category has no items but is not dashboard, it might just be a direct link
-    // However, the user wants the second sidebar to show hierarchy.
     if (items.length === 0) return null
 
     return (
-        <aside className="w-64 bg-sidebar/50 border-r border-sidebar-border h-screen sticky top-0 flex flex-col pt-8">
+        <aside
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            className={cn(
+                "w-64 bg-sidebar/80 backdrop-blur-xl border-r border-sidebar-border/50 h-screen absolute top-0 left-[70px] flex flex-col pt-8 transition-all duration-300 ease-in-out z-40 shadow-2xl overflow-hidden",
+                isVisible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"
+            )}
+        >
             <div className="px-6 mb-8">
                 <h2 className="text-xl font-bold text-sidebar-foreground tracking-tight">{title}</h2>
-                <div className="h-1 w-8 bg-primary rounded-full mt-2" />
+                <div className="h-0.5 w-6 bg-primary rounded-full mt-2" />
             </div>
 
-            <nav className="flex-1 px-3 space-y-1">
+            <nav className="flex-1 px-3 space-y-0.5">
                 {items.map((item: any) => (
                     <Link
                         key={item.url}
                         href={item.url}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all group"
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-all group"
                     >
-                        <div className="h-1.5 w-1.5 rounded-full bg-sidebar-foreground/20 group-hover:bg-primary transition-colors" />
+                        <div className="h-1 w-1 rounded-full bg-sidebar-foreground/20 group-hover:bg-primary group-hover:scale-150 transition-all" />
                         {item.title}
                     </Link>
                 ))}
             </nav>
-
-            <div className="p-6">
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                    <p className="text-[10px] uppercase font-bold text-primary/60 mb-1">Acceso Rápido</p>
-                    <p className="text-xs text-sidebar-foreground/60 leading-relaxed">
-                        Gestiona {title.toLowerCase()} de forma eficiente.
-                    </p>
-                </div>
-            </div>
         </aside>
     )
 }
