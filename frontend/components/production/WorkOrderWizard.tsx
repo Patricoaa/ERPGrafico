@@ -36,6 +36,7 @@ import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { formatCurrency } from "@/lib/currency"
 
 interface WorkOrderWizardProps {
     orderId: number
@@ -251,7 +252,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
     const handleDeleteMaterial = async (materialId: number) => {
         try {
-            await api.delete(`/production/orders/${orderId}/materials/${materialId}/`)
+            await api.post(`/production/orders/${orderId}/remove_material/`, {
+                material_id: materialId
+            })
             toast.success("Material eliminado")
             fetchOrder()
         } catch (error: any) {
@@ -324,6 +327,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     <th className="p-2 text-left">Componente</th>
                                                     <th className="p-2 text-right">Cant. Planificada</th>
                                                     <th className="p-2 text-left">UoM</th>
+                                                    <th className="p-2 text-right">Costo Unit.</th>
+                                                    <th className="p-2 text-right">Costo Total</th>
                                                     <th className="p-2 text-left">Origen</th>
                                                     <th className="p-2 w-10"></th>
                                                 </tr>
@@ -334,6 +339,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         <td className="p-2">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></td>
                                                         <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
                                                         <td className="p-2">{m.uom_name}</td>
+                                                        <td className="p-2 text-right text-muted-foreground">{formatCurrency(m.component_cost)}</td>
+                                                        <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
                                                         <td className="p-2"><Badge variant="outline" className="text-[10px]">{m.source}</Badge></td>
                                                         <td className="p-2">
                                                             {m.source === 'MANUAL' && (
@@ -361,7 +368,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 ))}
                                                 {(!order?.materials || order.materials.length === 0) && (
                                                     <tr>
-                                                        <td colSpan={5} className="p-4 text-center text-muted-foreground italic">No hay materiales asignados.</td>
+                                                        <td colSpan={7} className="p-4 text-center text-muted-foreground italic">No hay materiales asignados.</td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -452,10 +459,23 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         {order?.materials?.map((m: any) => (
                                             <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg">
                                                 <div className="space-y-1">
-                                                    <p className="text-sm font-medium">{m.component_name}</p>
+                                                    <p className="text-sm font-medium">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></p>
                                                     <p className="text-xs text-muted-foreground">Requerido: {m.quantity_planned} {m.uom_name}</p>
                                                 </div>
-                                                <Badge variant="default" className="bg-green-500">Disponible</Badge>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="text-right mr-2">
+                                                        <p className="text-[10px] font-bold uppercase text-muted-foreground">En Bodega</p>
+                                                        <p className={cn("text-sm font-bold", m.is_available ? "text-green-600" : "text-destructive")}>
+                                                            {m.stock_available >= 999999 ? "∞" : m.stock_available} {m.uom_name}
+                                                        </p>
+                                                    </div>
+                                                    <Badge
+                                                        variant={m.is_available ? "default" : "destructive"}
+                                                        className={cn(m.is_available ? "bg-green-500 hover:bg-green-600" : "")}
+                                                    >
+                                                        {m.is_available ? "Disponible" : "Sin Stock"}
+                                                    </Badge>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -599,7 +619,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {order?.status !== 'FINISHED' && (
                                 <Button
-                                    disabled={transitioning}
+                                    disabled={
+                                        transitioning ||
+                                        (order?.current_stage === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available))
+                                    }
                                     onClick={() => {
                                         const nextStage = STAGES[currentStep + 1]
                                         if (nextStage) {

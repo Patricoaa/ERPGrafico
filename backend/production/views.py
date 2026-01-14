@@ -38,6 +38,19 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
             if not stage_match:
                 return Response({'error': f'Etapa inválida: {next_stage}'}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Validation: Stock Availability for Stage Transition
+            if work_order.current_stage == 'MATERIAL_APPROVAL' and next_stage not in ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'CANCELLED']:
+                # The user is trying to move forward from Stock Approval
+                serializer = WorkOrderSerializer(work_order)
+                materials = serializer.data.get('materials', [])
+                for m in materials:
+                    if not m.get('is_available', False):
+                        return Response({
+                            'error': f"No hay suficiente stock para el componente: {m.get('component_name')}. "
+                                     f"Requerido: {m.get('quantity_planned')} {m.get('uom_name')}, "
+                                     f"Disponible: {m.get('stock_available')}."
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
             WorkOrderService.transition_to(
                 work_order=work_order,
                 next_stage=stage_match,
@@ -122,6 +135,22 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
                 material.uom_id = uom_id
             material.save()
             
+            return Response(WorkOrderSerializer(work_order).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def remove_material(self, request, pk=None):
+        """Remove a manually added material"""
+        work_order = self.get_object()
+        try:
+            material_id = request.data.get('material_id')
+            material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
+            
+            if material.source != 'MANUAL':
+                return Response({'error': 'Solo se pueden eliminar materiales agregados manualmente.'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            material.delete()
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

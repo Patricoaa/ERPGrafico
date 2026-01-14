@@ -28,10 +28,67 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
     component_name = serializers.CharField(source='component.name', read_only=True)
     component_code = serializers.CharField(source='component.code', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
+    stock_available = serializers.SerializerMethodField()
+    is_available = serializers.SerializerMethodField()
+    component_cost = serializers.DecimalField(source='component.cost_price', read_only=True, max_digits=12, decimal_places=2)
+    total_cost = serializers.SerializerMethodField()
     
     class Meta:
         model = WorkOrderMaterial
         fields = '__all__'
+
+    def get_stock_available(self, obj):
+        component = obj.component
+        if component.product_type == 'SERVICE':
+            return 999999 # Practically infinite
+            
+        if component.product_type == 'MANUFACTURABLE' and not component.requires_advanced_manufacturing:
+            # Express manufacturable: calculate what can be made
+            return component.get_manufacturable_quantity() or 0.0
+            
+        # Standard storable or advanced manufacturable: check warehouse stock
+        from django.db.models import Sum
+        warehouse = obj.work_order.warehouse
+        if not warehouse:
+            return 0.0
+            
+        # Simplified: sum moves for this product in this warehouse
+        stock = component.stock_moves.filter(warehouse=warehouse).aggregate(total=Sum('quantity'))['total'] or 0.0
+        
+        # Convert to the UoM used in the OT material line for display consistency
+        from inventory.services import UoMService
+        try:
+             # Logic from services.convert_quantity: converts FROM base TO line uom
+             # component stock is always in base uom
+             if component.uom and obj.uom and component.uom != obj.uom:
+                 stock = UoMService.convert_quantity(stock, component.uom, obj.uom)
+        except:
+             pass
+             
+        return float(stock)
+
+    def get_is_available(self, obj):
+        quantity_planned = float(obj.quantity_planned)
+        stock_available = self.get_stock_available(obj)
+        return stock_available >= quantity_planned
+
+    def get_total_cost(self, obj):
+        from decimal import Decimal
+        from inventory.services import UoMService
+        
+        qty = obj.quantity_planned
+        component = obj.component
+        
+        # Convert quantity from Material Line UoM to Component Base UoM if they differ
+        # component.cost_price is always per Base UoM
+        if obj.uom and component.uom and obj.uom != component.uom:
+            try:
+                qty = UoMService.convert_quantity(obj.quantity_planned, obj.uom, component.uom)
+            except:
+                pass
+                
+        total = qty * component.cost_price
+        return float(total)
 
 class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
