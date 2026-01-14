@@ -160,22 +160,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         }
     }
 
-    const handlePrint = async () => {
-        try {
-            const response = await api.get(`/production/orders/${orderId}/print_pdf/`, {
-                responseType: 'blob'
-            })
-            const url = window.URL.createObjectURL(new Blob([response.data]))
-            const link = document.createElement('a')
-            link.href = url
-            link.setAttribute('download', `OT-${order.number}.pdf`)
-            document.body.appendChild(link)
-            link.click()
-            link.remove()
-        } catch (error) {
-            toast.error("Error al generar el PDF")
-        }
-    }
+
 
     useEffect(() => {
         // Fetch UoMs
@@ -277,10 +262,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             {order?.description} | Cliente: {order?.sale_order_client_name || 'Manual'}
                         </DialogDescription>
                     </div>
-                    <Button variant="outline" size="sm" onClick={handlePrint}>
-                        <Printer className="mr-2 h-4 w-4" />
-                        Imprimir OT
-                    </Button>
                 </div>
 
                 <div className="flex flex-1 overflow-hidden">

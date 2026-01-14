@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, Printer, Settings, LayoutGrid, List } from "lucide-react"
+import { Pencil, Trash2, Ban, Settings, LayoutGrid, List } from "lucide-react"
 import { WorkOrderForm } from "@/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/components/production/WorkOrderWizard"
 import { WorkOrderKanban } from "@/components/production/WorkOrderKanban"
@@ -62,7 +62,7 @@ export default function WorkOrdersPage() {
     }
 
     const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar esta OT?")) return
+        if (!confirm("¿Está seguro de que desea eliminar esta OT? Esta acción es irreversible.")) return
         try {
             await api.delete(`/production/orders/${id}/`)
             toast.success("OT eliminada correctamente.")
@@ -70,6 +70,20 @@ export default function WorkOrdersPage() {
         } catch (error) {
             console.error("Error deleting order:", error)
             toast.error("Error al eliminar la OT.")
+        }
+    }
+
+    const handleCancel = async (id: number) => {
+        if (!confirm("¿Está seguro de que desea ANULAR esta OT? Esto detendrá el proceso y liberará reservas.")) return
+        try {
+            await api.post(`/production/orders/${id}/transition/`, {
+                next_stage: 'CANCELLED'
+            })
+            toast.success("OT anulada correctamente.")
+            fetchOrders()
+        } catch (error) {
+            console.error("Error canceling order:", error)
+            toast.error("Error al anular la OT.")
         }
     }
 
@@ -82,23 +96,6 @@ export default function WorkOrdersPage() {
     useEffect(() => {
         fetchOrders()
     }, [])
-
-    const handlePrint = async (order: WorkOrder) => {
-        try {
-            const response = await api.get(`/production/orders/${order.id}/print_pdf/`, {
-                responseType: 'blob'
-            })
-            const url = window.URL.createObjectURL(new Blob([response.data]))
-            const link = document.createElement('a')
-            link.href = url
-            link.setAttribute('download', `OT-${order.number}.pdf`)
-            document.body.appendChild(link)
-            link.click()
-            link.remove()
-        } catch (error) {
-            toast.error("Error al generar el PDF")
-        }
-    }
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -219,15 +216,6 @@ export default function WorkOrdersPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8"
-                                                    onClick={() => handlePrint(order)}
-                                                    title="Imprimir"
-                                                >
-                                                    <Printer className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8"
                                                     onClick={() => {
                                                         setEditingOrder(order)
                                                         setIsFormOpen(true)
@@ -235,14 +223,30 @@ export default function WorkOrdersPage() {
                                                 >
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-destructive hover:text-destructive"
-                                                    onClick={() => handleDelete(order.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+
+                                                {order.status === 'DRAFT' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                                        onClick={() => handleDelete(order.id)}
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+
+                                                {!['DRAFT', 'FINISHED', 'CANCELLED'].includes(order.status) && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-orange-500 hover:text-orange-600"
+                                                        onClick={() => handleCancel(order.id)}
+                                                        title="Anular"
+                                                    >
+                                                        <Ban className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

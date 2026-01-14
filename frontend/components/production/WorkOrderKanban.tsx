@@ -23,8 +23,8 @@ interface KanbanProps {
 }
 
 const STAGES = [
-    { id: 'MATERIAL_ASSIGNMENT', label: 'Materiales', color: 'bg-slate-100', icon: Package },
-    { id: 'MATERIAL_APPROVAL', label: 'Aprobación', color: 'bg-blue-50', icon: CheckCircle2 },
+    { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', color: 'bg-slate-100', icon: Package },
+    { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Materiales', color: 'bg-blue-50', icon: CheckCircle2 },
     { id: 'PREPRESS', label: 'Pre-Prensa', color: 'bg-purple-50', icon: FileText },
     { id: 'PRESS', label: 'Impresión', color: 'bg-orange-50', icon: Printer },
     { id: 'POSTPRESS', label: 'Post-Impresión', color: 'bg-cyan-50', icon: Layers },

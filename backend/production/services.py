@@ -128,6 +128,13 @@ class WorkOrderService:
             WorkOrderService.finalize_production(work_order, user)
             work_order.status = WorkOrder.Status.FINISHED
 
+        elif next_stage == WorkOrder.Stage.CANCELLED:
+             work_order.status = WorkOrder.Status.CANCELLED
+             
+        elif next_stage not in [WorkOrder.Stage.MATERIAL_ASSIGNMENT, WorkOrder.Stage.MATERIAL_APPROVAL] and work_order.status != WorkOrder.Status.IN_PROGRESS:
+            # If moving past initial stages (Assignment/Approval), status becomes IN_PROGRESS
+            work_order.status = WorkOrder.Status.IN_PROGRESS
+
         work_order.current_stage = next_stage
         work_order.save()
 
