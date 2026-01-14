@@ -68,6 +68,7 @@ class ProductSerializer(serializers.ModelSerializer):
     effective_price = serializers.SerializerMethodField()
     last_purchase_price = serializers.SerializerMethodField()
     manufacturable_quantity = serializers.SerializerMethodField()
+    bom_cost = serializers.SerializerMethodField()
     
     qty_reserved = serializers.FloatField(read_only=True)
     qty_available = serializers.FloatField(read_only=True)
@@ -152,6 +153,10 @@ class ProductSerializer(serializers.ModelSerializer):
         """Return the calculated manufacturable quantity for MANUFACTURABLE products."""
         qty = obj.get_manufacturable_quantity()
         return float(qty) if qty is not None else None
+
+    def get_bom_cost(self, obj):
+        """Returns the total cost from the active BoM."""
+        return float(obj.get_bom_cost())
 
     def validate(self, data):
         # Fallback for base UoM if missing but others are present

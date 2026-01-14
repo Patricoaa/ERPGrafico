@@ -20,9 +20,14 @@ interface ProductPricingSectionProps {
 
 export function ProductPricingSection({ form, initialData, canBeSold, uoms }: ProductPricingSectionProps) {
     const salePrice = form.watch("sale_price") || 0
+    const productType = form.watch("product_type")
     const ivaCalculated = PricingUtils.calculateTax(Number(salePrice))
     const totalCalculated = PricingUtils.netToGross(Number(salePrice))
-    const costPrice = Number(initialData?.cost_price || 0)
+
+    // Choose cost: BoM cost for manufacturable products (if available), otherwise weighed average cost
+    const costPrice = (productType === 'MANUFACTURABLE' && initialData?.bom_cost > 0)
+        ? Number(initialData.bom_cost)
+        : Number(initialData?.cost_price || 0)
 
     const marginPercentage = PricingUtils.calculateMargin(salePrice, costPrice)
 
