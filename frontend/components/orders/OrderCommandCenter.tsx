@@ -1,12 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import dynamic from "next/dynamic"
-
-const WorkOrderWizard = dynamic(() => import("@/components/production/WorkOrderWizard").then(mod => mod.WorkOrderWizard), {
-    ssr: false,
-    loading: () => <div className="p-4 text-center">Cargando Gestor de OT...</div>
-})
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 import {
     Dialog,
@@ -78,7 +73,7 @@ export function OrderCommandCenter({
     const [loading, setLoading] = useState(false)
     const [userPermissions, setUserPermissions] = useState<string[]>([])
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
-    const [otWizard, setOtWizard] = useState<{ open: boolean, id: number | null }>({ open: false, id: null })
+    const { openWorkOrder } = useGlobalModals()
     const [trForm, setTrForm] = useState<{ open: boolean, id: number | null, initialValue: string }>({
         open: false,
         id: null,
@@ -181,7 +176,7 @@ export function OrderCommandCenter({
 
     const openDetails = (docType: string, docId: number | string) => {
         if (docType === 'work_order') {
-            setOtWizard({ open: true, id: Number(docId) })
+            openWorkOrder(Number(docId))
             return
         }
         setDetailsModal({ open: true, type: docType, id: docId })
@@ -591,17 +586,6 @@ export function OrderCommandCenter({
                 onSuccess={fetchOrderDetails}
             />
 
-            {otWizard.id && (
-                <WorkOrderWizard
-                    orderId={otWizard.id}
-                    open={otWizard.open}
-                    onOpenChange={(isOpen) => setOtWizard(prev => ({ ...prev, open: isOpen }))}
-                    onSuccess={() => {
-                        fetchOrderDetails()
-                        onActionSuccess?.()
-                    }}
-                />
-            )}
         </>
     )
 }

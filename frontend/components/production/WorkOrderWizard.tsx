@@ -28,16 +28,18 @@ import {
     Check,
     X,
     Pencil,
-    User
+    User,
+    Eye
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { UoMSelector } from "@/components/selectors/UoMSelector"
 import dynamic from "next/dynamic"
 
-const OrderCommandCenter = dynamic(() => import("@/components/orders/OrderCommandCenter").then(mod => mod.OrderCommandCenter), {
-    ssr: false,
-    loading: () => <div className="p-4 text-center">Cargando Centro de Comando...</div>
-})
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
     ssr: false,
@@ -80,7 +82,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [clientApproved, setClientApproved] = useState(false)
     const [supervisorApproved, setSupervisorApproved] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
-    const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false)
+    const { openCommandCenter } = useGlobalModals()
 
     const fetchOrder = async () => {
         setLoading(true)
@@ -281,7 +283,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                    onClick={() => setIsCommandCenterOpen(true)}
+                                    onClick={() => openCommandCenter(order.sale_order, 'sale')}
                                     title="Ver Centro de Comando"
                                 >
                                     <Eye className="h-4 w-4" />
@@ -393,7 +395,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     <ProductSelector
                                                         value={newMaterialProduct}
                                                         onChange={setNewMaterialProduct}
-                                                        onSelect={(p) => {
+                                                        onSelect={(p: any) => {
                                                             setSelectedProductObj(p)
                                                             // Auto-select base UoM
                                                             if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
@@ -421,7 +423,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     <Input
                                                         type="number"
                                                         value={newMaterialQty}
-                                                        onChange={(e) => setNewMaterialQty(e.target.value)}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMaterialQty(e.target.value)}
                                                     />
                                                 </div>
                                                 <div className="w-full md:w-40 space-y-2">
@@ -504,7 +506,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     <Input
                                                         placeholder="https://..."
                                                         value={designUrl}
-                                                        onChange={(e) => setDesignUrl(e.target.value)}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDesignUrl(e.target.value)}
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
@@ -790,14 +792,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 />
             )}
 
-            {isCommandCenterOpen && order?.sale_order && (
-                <OrderCommandCenter
-                    open={isCommandCenterOpen}
-                    onOpenChange={setIsCommandCenterOpen}
-                    orderId={order.sale_order}
-                    type="sale"
-                />
-            )}
         </Dialog>
     )
 }
