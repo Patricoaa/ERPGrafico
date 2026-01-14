@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { WorkOrderWizard } from "@/components/production/WorkOrderWizard"
 import {
     Dialog,
     DialogContent,
@@ -72,7 +71,6 @@ export function OrderCommandCenter({
     const [loading, setLoading] = useState(false)
     const [userPermissions, setUserPermissions] = useState<string[]>([])
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
-    const [otWizard, setOtWizard] = useState<{ open: boolean, id: number | null }>({ open: false, id: null })
     const [trForm, setTrForm] = useState<{ open: boolean, id: number | null, initialValue: string }>({
         open: false,
         id: null,
@@ -174,10 +172,6 @@ export function OrderCommandCenter({
     const billingActions = registry.notes?.actions || []
 
     const openDetails = (docType: string, docId: number | string) => {
-        if (docType === 'work_order') {
-            setOtWizard({ open: true, id: Number(docId) })
-            return
-        }
         setDetailsModal({ open: true, type: docType, id: docId })
     }
 
@@ -584,18 +578,6 @@ export function OrderCommandCenter({
                 initialValue={trForm.initialValue}
                 onSuccess={fetchOrderDetails}
             />
-
-            {otWizard.id && (
-                <WorkOrderWizard
-                    orderId={otWizard.id}
-                    open={otWizard.open}
-                    onOpenChange={(isOpen) => setOtWizard(prev => ({ ...prev, open: isOpen }))}
-                    onSuccess={() => {
-                        fetchOrderDetails()
-                        onActionSuccess?.()
-                    }}
-                />
-            )}
         </>
     )
 }
