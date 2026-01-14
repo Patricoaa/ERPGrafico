@@ -1,0 +1,3 @@
+﻿frontend/components/forms/AdvancedManufacturingDialog.tsx
+frontend/components/forms/SaleOrderForm.tsx
+frontend/components/forms/WorkOrderForm.tsx

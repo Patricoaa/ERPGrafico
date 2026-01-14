@@ -1,7 +1,13 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { WorkOrderWizard } from "@/components/production/WorkOrderWizard"
+import dynamic from "next/dynamic"
+
+const WorkOrderWizard = dynamic(() => import("@/components/production/WorkOrderWizard").then(mod => mod.WorkOrderWizard), {
+    ssr: false,
+    loading: () => <div className="p-4 text-center">Cargando Gestor de OT...</div>
+})
+
 import {
     Dialog,
     DialogContent,

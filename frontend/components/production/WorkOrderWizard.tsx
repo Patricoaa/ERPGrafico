@@ -31,12 +31,18 @@ import {
     User
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/currency"
+import dynamic from "next/dynamic"
+
+const OrderCommandCenter = dynamic(() => import("@/components/orders/OrderCommandCenter").then(mod => mod.OrderCommandCenter), {
+    ssr: false,
+    loading: () => <div className="p-4 text-center">Cargando Centro de Comando...</div>
+})
+
+const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
+    ssr: false,
+    loading: () => <div className="p-4 text-center">Cargando Formulario...</div>
+})
 
 interface WorkOrderWizardProps {
     orderId: number
@@ -73,6 +79,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [clientApprovalFile, setClientApprovalFile] = useState<File | null>(null)
     const [clientApproved, setClientApproved] = useState(false)
     const [supervisorApproved, setSupervisorApproved] = useState(false)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false)
 
     const fetchOrder = async () => {
         setLoading(true)
@@ -257,9 +265,31 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <div className="p-6 border-b flex justify-between items-center bg-muted/30">
                     <div>
-                        <DialogTitle className="text-2xl">Gestión de Orden de Trabajo OT-{order?.number}</DialogTitle>
+                        <DialogTitle className="text-2xl flex items-center gap-3">
+                            Gestión de Orden de Trabajo OT-{order?.number}
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                    onClick={() => setIsEditOpen(true)}
+                                    title="Editar OT"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                    onClick={() => setIsCommandCenterOpen(true)}
+                                    title="Ver Centro de Comando"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </DialogTitle>
                         <DialogDescription>
-                            {order?.description} | Cliente: {order?.sale_order_client_name || 'Manual'}
+                            {order?.description} | Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
                         </DialogDescription>
                     </div>
                 </div>
@@ -747,6 +777,27 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     </div>
                 </div>
             </DialogContent>
+            {/* Modals for Edit and Command Center */}
+            {isEditOpen && order && (
+                <WorkOrderForm
+                    open={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    initialData={order}
+                    onSuccess={() => {
+                        setIsEditOpen(false)
+                        fetchOrder()
+                    }}
+                />
+            )}
+
+            {isCommandCenterOpen && order?.sale_order && (
+                <OrderCommandCenter
+                    open={isCommandCenterOpen}
+                    onOpenChange={setIsCommandCenterOpen}
+                    orderId={order.sale_order}
+                    type="sale"
+                />
+            )}
         </Dialog>
     )
 }
