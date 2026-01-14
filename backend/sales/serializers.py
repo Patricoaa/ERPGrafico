@@ -28,7 +28,8 @@ class SaleLineSerializer(serializers.ModelSerializer):
             'id', 'product', 'product_name', 'product_type', 'track_inventory', 
             'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
             'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 
-            'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing'
+            'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',
+            'is_production_finished', 'work_order_summary'
         ]
 
     def get_product_type(self, obj):
@@ -47,6 +48,39 @@ class SaleLineSerializer(serializers.ModelSerializer):
     
     def get_requires_advanced_manufacturing(self, obj):
         return obj.product.requires_advanced_manufacturing if obj.product else False
+
+    is_production_finished = serializers.SerializerMethodField()
+    work_order_summary = serializers.SerializerMethodField()
+
+    def get_is_production_finished(self, obj):
+        # If not manufacturable, we consider "production" as N/A (True for dispatch purposes)
+        if not obj.product or obj.product.product_type != 'MANUFACTURABLE':
+            return True
+        
+        # If it's express manufacturing (mfg_auto_finalize), it's considered finished
+        # but we also need to check if an OT actually exists and is finished
+        # because even express items generate an OT that might be manually handled.
+        ots = obj.work_orders.all()
+        if not ots.exists():
+            # If no OT yet, but it's manufacturable, it's not finished
+            return False
+            
+        return all(ot.status == 'FINISHED' for ot in ots)
+
+    def get_work_order_summary(self, obj):
+        ots = obj.work_orders.all()
+        if not ots.exists():
+            return None
+        
+        # Return summary of first OT for simple UI display
+        ot = ots.first()
+        return {
+            'number': ot.number,
+            'status': ot.status,
+            'status_display': ot.get_status_display(),
+            'current_stage': ot.current_stage,
+            'current_stage_display': ot.get_current_stage_display()
+        }
 
     def validate(self, data):
         product = data.get('product')

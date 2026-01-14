@@ -97,17 +97,42 @@ class SalesService:
         if not delivery_date:
             delivery_date = timezone.now().date()
 
-        # VALIDATION: Prevent dispatch of manufacturable products (Simple or Advanced)
-        # These must go through production (Work Orders) and cannot be dispatched directly from this endpoint
-        # unless we explicitly allow "selling from stock" which currently we are restricting.
+        # VALIDATION: Prevent dispatch of products based on stock/production status
         for sale_line in order.lines.all():
             if sale_line.quantity_pending > 0:
-                # Check if product is manufacturable
-                if sale_line.product and sale_line.product.product_type == 'MANUFACTURABLE':
-                     raise ValidationError(
-                        f"No se puede despachar inmediatamente el producto '{sale_line.product.name}' "
-                        "porque requiere fabricación. Debe procesar la Orden de Trabajo primero."
-                    )
+                product = sale_line.product
+                if not product:
+                    continue
+
+                requested_qty = sale_line.quantity_pending
+
+                # Case 1: Advanced Manufacturing (Needs Finished OT)
+                if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
+                    # Check if all associated OTs are finished
+                    if not sale_line.work_orders.exists() or not all(ot.status == 'FINISHED' for ot in sale_line.work_orders.all()):
+                         raise ValidationError(
+                            f"No se puede despachar '{product.name}' porque requiere fabricación avanzada "
+                            "y su Orden de Trabajo aún no está finalizada."
+                        )
+
+                # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
+                elif product.product_type == 'MANUFACTURABLE' and not product.requires_advanced_manufacturing:
+                    if product.has_bom:
+                        manufacturable_qty = product.get_manufacturable_quantity()
+                        # get_manufacturable_quantity returns None if no BOM or no constraints
+                        if manufacturable_qty is not None and manufacturable_qty < requested_qty:
+                            raise ValidationError(
+                                f"Stock insuficiente de componentes para fabricar '{product.name}'. "
+                                f"Máximo posible: {manufacturable_qty}, Solicitado: {requested_qty}"
+                            )
+                
+                # Case 3: Storable Product (Needs physical stock)
+                elif product.product_type == 'STORABLE' and product.track_inventory:
+                    if product.qty_available < requested_qty:
+                         raise ValidationError(
+                            f"Stock insuficiente para '{product.name}'. "
+                            f"Disponible: {product.qty_available}, Solicitado: {requested_qty}"
+                        )
         
         # Create delivery
         delivery = SaleDelivery.objects.create(
@@ -167,12 +192,34 @@ class SalesService:
 
             sale_line = order.lines.get(id=line_id)
             
-            # VALIDATION: Prevent dispatch of manufacturable products in partial dispatch
-            if sale_line.product and sale_line.product.product_type == 'MANUFACTURABLE':
-                 raise ValidationError(
-                    f"No se puede despachar el producto '{sale_line.product.name}' "
-                    "porque requiere fabricación. No debe incluirse en despachos directos."
-                )
+            # VALIDATION: Prevent dispatch based on stock/production status
+            product = sale_line.product
+            if product:
+                # Case 1: Advanced Manufacturing (Needs Finished OT)
+                if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
+                    if not sale_line.work_orders.exists() or not all(ot.status == 'FINISHED' for ot in sale_line.work_orders.all()):
+                         raise ValidationError(
+                            f"No se puede despachar '{product.name}' porque requiere fabricación avanzada "
+                            "y su Orden de Trabajo aún no está finalizada."
+                        )
+
+                # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
+                elif product.product_type == 'MANUFACTURABLE' and not product.requires_advanced_manufacturing:
+                    if product.has_bom:
+                        manufacturable_qty = product.get_manufacturable_quantity()
+                        if manufacturable_qty is not None and manufacturable_qty < quantity:
+                            raise ValidationError(
+                                f"Stock insuficiente de componentes para fabricar '{product.name}'. "
+                                f"Máximo posible: {manufacturable_qty}, Solicitado: {quantity}"
+                            )
+                
+                # Case 3: Storable Product (Needs physical stock)
+                elif product.product_type == 'STORABLE' and product.track_inventory:
+                    if product.qty_available < quantity:
+                         raise ValidationError(
+                            f"Stock insuficiente para '{product.name}'. "
+                            f"Disponible: {product.qty_available}, Solicitado: {quantity}"
+                        )
 
             if quantity > sale_line.quantity_pending:
                 # Validation might need UoM conversion if uom_id differs

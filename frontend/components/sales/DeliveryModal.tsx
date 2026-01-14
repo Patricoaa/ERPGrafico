@@ -25,6 +25,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { cn } from "@/lib/utils"
 
 interface SaleOrderLine {
     id: number
@@ -39,6 +40,7 @@ interface SaleOrderLine {
     product_type: string
     track_inventory: boolean
     manufacturable_quantity: number | null
+    requires_advanced_manufacturing: boolean
 }
 
 interface SaleOrder {
@@ -234,26 +236,50 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
 
     const getStockStatus = (line: SaleOrderLine) => {
         const requestedQty = deliveryQuantities[line.id] || 0
-
-        let availableStock = stockLevels[line.product] || 0
-        if (!line.track_inventory && line.product_type === 'MANUFACTURABLE') {
-            availableStock = line.manufacturable_quantity ?? 0
-        }
-
         if (requestedQty === 0) return null
 
-        // Skip stock check for non-tracked services or products without BOM
-        if (!line.track_inventory && line.product_type !== 'MANUFACTURABLE') {
-            return { type: 'success', message: 'Servicio/Sin stock' }
+        let availableStock = stockLevels[line.product] || 0
+
+        // 1. Advanced Manufacturing Check
+        if (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) {
+            const isFinished = (line as any).is_production_finished
+            if (!isFinished) {
+                return {
+                    type: 'error',
+                    message: 'Producción Pendiente (OT debe estar terminada)',
+                    icon: AlertTriangle
+                }
+            }
         }
 
-        if (requestedQty > availableStock) {
-            return { type: 'error', message: `Stock insuficiente (${availableStock} disponibles)` }
+        // 2. Express Manufacturing Check (BOM Components)
+        if (line.product_type === 'MANUFACTURABLE' && !line.requires_advanced_manufacturing) {
+            availableStock = line.manufacturable_quantity ?? Infinity
+            if (requestedQty > availableStock) {
+                return {
+                    type: 'error',
+                    message: `Stock de componentes insuficiente (Máx: ${availableStock})`,
+                    icon: AlertTriangle
+                }
+            }
         }
+
+        // 3. Storable Product Check
+        if (line.product_type === 'STORABLE' && line.track_inventory) {
+            if (requestedQty > availableStock) {
+                return {
+                    type: 'error',
+                    message: `Stock insuficiente (${availableStock} disponibles)`,
+                    icon: AlertTriangle
+                }
+            }
+        }
+
+        // If we reach here, validation passed
         if (requestedQty === line.quantity_pending) {
-            return { type: 'success', message: 'Despacho completo' }
+            return { type: 'success', message: 'Despacho completo', icon: CheckCircle2 }
         }
-        return { type: 'warning', message: 'Despacho parcial' }
+        return { type: 'warning', message: 'Despacho parcial', icon: AlertTriangle }
     }
 
     return (
@@ -358,10 +384,27 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                         <div className="flex flex-col items-center gap-1">
                                                             {line.product_type === 'MANUFACTURABLE' ? (
                                                                 <>
-                                                                    <Badge variant="outline" className="text-[9px] border-blue-200 bg-blue-50 text-blue-700">Fabricable</Badge>
-                                                                    <Badge variant={(line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "success" : "destructive"} className="text-[10px]">
-                                                                        {line.manufacturable_quantity ?? 0}
+                                                                    <Badge variant="outline" className="text-[9px] border-blue-200 bg-blue-50 text-blue-700">
+                                                                        {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
                                                                     </Badge>
+
+                                                                    {line.requires_advanced_manufacturing && (line as any).work_order_summary ? (
+                                                                        <div className="flex flex-col items-center mt-1">
+                                                                            <Badge
+                                                                                variant={(line as any).work_order_summary.status === 'FINISHED' ? "success" : "outline"}
+                                                                                className={cn("text-[9px] px-1.5 py-0", (line as any).work_order_summary.status === 'FINISHED' ? "" : "bg-orange-50 text-orange-700 border-orange-200")}
+                                                                            >
+                                                                                OT: {(line as any).work_order_summary.status_display}
+                                                                            </Badge>
+                                                                            <span className="text-[8px] text-muted-foreground mt-0.5">{(line as any).work_order_summary.number}</span>
+                                                                        </div>
+                                                                    ) : !line.requires_advanced_manufacturing ? (
+                                                                        <Badge variant={(line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "success" : "destructive"} className="text-[10px]">
+                                                                            {line.manufacturable_quantity ?? 0}
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <span className="text-[8px] text-destructive">Sin OT registrada</span>
+                                                                    )}
                                                                 </>
                                                             ) : (
                                                                 <Badge variant="outline" className="text-[9px] border-emerald-200 bg-emerald-50 text-emerald-700">Disponible</Badge>
