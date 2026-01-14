@@ -27,7 +27,8 @@ import {
     Trash2,
     X,
     Hash,
-    ScrollText
+    ScrollText,
+    LayoutDashboard
 } from "lucide-react"
 import { ActionCategory } from "./ActionCategory"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
@@ -265,7 +266,7 @@ export function OrderCommandCenter({
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div className="space-y-1">
                                     <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                                        <Settings2 className="h-6 w-6 text-primary" />
+                                        <LayoutDashboard className="h-6 w-6 text-primary" />
                                         {order.document_type === 'SERVICE_OBLIGATION' || type === 'obligation' ? 'Obligación de Servicio' : 'Centro de Comandos'}
                                         <span className="text-muted-foreground font-light mx-2">|</span>
                                         <span className="font-mono text-xl">{type === 'purchase' ? 'OC' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>

@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical } from "lucide-react"
+import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -238,7 +238,7 @@ export default function PurchaseOrdersPage() {
                                             onClick={() => setSelectedOrderId(order.id)}
                                             className="h-8 px-3 w-full"
                                         >
-                                            <MoreVertical className="h-4 w-4 mr-1" />
+                                            <LayoutDashboard className="h-4 w-4 mr-1" />
                                             Gestionar
                                         </Button>
                                     </div>

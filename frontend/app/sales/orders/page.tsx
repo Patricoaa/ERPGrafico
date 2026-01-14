@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit, X, MoreVertical } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit, X, MoreVertical, LayoutDashboard } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -291,7 +291,7 @@ export default function SalesOrdersPage() {
                                             onClick={() => setSelectedOrderId(order.id)}
                                             className="h-8 px-3 w-full"
                                         >
-                                            <MoreVertical className="h-4 w-4 mr-1" />
+                                            <LayoutDashboard className="h-4 w-4 mr-1" />
                                             Gestionar
                                         </Button>
                                     </div>

@@ -29,7 +29,8 @@ import {
     X,
     Pencil,
     User,
-    Eye
+    Eye,
+    LayoutDashboard
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
@@ -286,7 +287,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
                                     title="Ver Centro de Comando"
                                 >
-                                    <Eye className="h-4 w-4" />
+                                    <LayoutDashboard className="h-4 w-4" />
                                 </Button>
                             </div>
                         </DialogTitle>

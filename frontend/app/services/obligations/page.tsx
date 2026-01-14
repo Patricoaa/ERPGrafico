@@ -10,7 +10,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ServiceInvoiceDialog } from "@/components/services/ServiceInvoiceDialog"
 import { ServicePaymentDialog } from "@/components/services/ServicePaymentDialog"
-import { FileText, MoreVertical } from "lucide-react"
+import { FileText, MoreVertical, LayoutDashboard } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { ServiceContractDetailModal } from "@/components/services/ServiceContractDetailModal"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
@@ -138,7 +138,7 @@ export default function ServiceObligationsPage() {
                                                 onClick={() => setSelectedOrderId(o.id)}
                                                 className="h-8 px-3 w-full max-w-[120px]"
                                             >
-                                                <MoreVertical className="h-4 w-4 mr-1" />
+                                                <LayoutDashboard className="h-4 w-4 mr-1" />
                                                 Gestionar
                                             </Button>
                                         </div>
