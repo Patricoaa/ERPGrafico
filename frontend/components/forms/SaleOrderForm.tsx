@@ -269,6 +269,14 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     product_type: product?.product_type,
                     requires_advanced_manufacturing: product?.requires_advanced_manufacturing,
                     has_bom: product?.has_bom,
+                    mfg_enable_prepress: product?.mfg_enable_prepress,
+                    mfg_enable_press: product?.mfg_enable_press,
+                    mfg_enable_postpress: product?.mfg_enable_postpress,
+                    mfg_prepress_design: product?.mfg_prepress_design,
+                    mfg_prepress_folio: product?.mfg_prepress_folio,
+                    mfg_press_offset: product?.mfg_press_offset,
+                    mfg_press_digital: product?.mfg_press_digital,
+                    mfg_press_special: product?.mfg_press_special,
                 };
             });
             onConfirmCheckout({ ...data, lines: enrichedLines });
