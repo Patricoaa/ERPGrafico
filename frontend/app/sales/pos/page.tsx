@@ -59,6 +59,7 @@ interface Customer {
 }
 
 interface CartItem extends Product {
+    cartItemId: string
     qty: number
     total_net: number
     total_tax: number
@@ -190,7 +191,8 @@ export default function POSPage() {
     }
 
     const addToCart = (product: Product, mfgData?: any) => {
-        const existing = items.find(i => i.id === product.id)
+        const isManufacturable = product.product_type === 'MANUFACTURABLE' || product.requires_advanced_manufacturing;
+        const existing = !isManufacturable ? items.find(i => i.id === product.id) : null;
 
         // Prioritize sale_uom if available
         const saleUoMId = (product as any).sale_uom
@@ -200,7 +202,7 @@ export default function POSPage() {
         if (existing) {
             const newQty = existing.qty + 1
             const netPrice = getEffectivePrice(product, newQty, existing.uom)
-            setItems(items.map(i => i.id === product.id
+            setItems(items.map(i => i.cartItemId === existing.cartItemId
                 ? {
                     ...i,
                     qty: newQty,
@@ -216,6 +218,7 @@ export default function POSPage() {
             const netPrice = getEffectivePrice(product, 1, defaultUoM)
             setItems([...items, {
                 ...product,
+                cartItemId: Math.random().toString(36).substring(2, 9),
                 qty: 1,
                 uom: defaultUoM,
                 uom_name: uomName,
@@ -229,9 +232,9 @@ export default function POSPage() {
     }
 
 
-    const updateQty = (id: number, qty: number | string) => {
+    const updateQty = (cartItemId: string, qty: number | string) => {
         setItems(items.map(i => {
-            if (i.id === id) {
+            if (i.cartItemId === cartItemId) {
                 let newQty = typeof qty === 'string' ? parseInt(qty) : qty
                 if (isNaN(newQty) || newQty < 1) newQty = 1
 
@@ -249,8 +252,8 @@ export default function POSPage() {
         }))
     }
 
-    const removeItem = (id: number) => {
-        setItems(items.filter(i => i.id !== id))
+    const removeItem = (cartItemId: string) => {
+        setItems(items.filter(i => i.cartItemId !== cartItemId))
     }
 
     const handleConfirm = () => {
@@ -438,7 +441,7 @@ export default function POSPage() {
                                             }
 
                                             return (
-                                                <TableRow key={item.id}>
+                                                <TableRow key={item.cartItemId}>
                                                     <TableCell className="max-w-[120px]">
                                                         <div className="flex flex-col gap-1">
                                                             <span className="truncate font-medium">
@@ -453,7 +456,7 @@ export default function POSPage() {
                                                                 type="number"
                                                                 className="h-8 w-16 text-center text-xs font-mono"
                                                                 value={item.qty}
-                                                                onChange={(e) => updateQty(item.id, e.target.value)}
+                                                                onChange={(e) => updateQty(item.cartItemId, e.target.value)}
                                                                 min="1"
                                                             />
                                                         </div>
@@ -464,7 +467,7 @@ export default function POSPage() {
                                                                 value={item.uom?.toString()}
                                                                 onValueChange={(val) => {
                                                                     const newUom = uoms.find(u => u.id.toString() === val)
-                                                                    setItems(items.map(i => i.id === item.id ? { ...i, uom: parseInt(val), uom_name: newUom?.name } : i))
+                                                                    setItems(items.map(i => i.cartItemId === item.cartItemId ? { ...i, uom: parseInt(val), uom_name: newUom?.name } : i))
                                                                 }}
                                                             >
                                                                 <SelectTrigger className="h-6 text-[10px] w-full border-none bg-muted/50 py-0 px-2 min-h-0">
@@ -489,7 +492,7 @@ export default function POSPage() {
                                                     <TableCell className="text-right font-bold text-sm">{formatCurrency(item.total_gross)}</TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-1">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(item.id)}>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(item.cartItemId)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </div>
