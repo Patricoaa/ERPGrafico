@@ -81,22 +81,17 @@ export function AdvancedManufacturingDialog({
                     setPostpressSpecs("")
                 }
             } else {
-                setDesignNeeded(!!product.mfg_prepress_design)
+                setDesignNeeded(false)
                 setContact(null)
                 setDescription("")
                 setProductDescription("")
                 setDesignFiles([])
-                setFolioEnabled(!!product.mfg_prepress_folio)
+                setFolioEnabled(false)
                 setFolioStart("")
                 setPrepressSpecs("")
                 setPressSpecs("")
                 setPostpressSpecs("")
-
-                // Initialize printType from product flags
-                if (product.mfg_press_offset) setPrintType('offset')
-                else if (product.mfg_press_digital) setPrintType('digital')
-                else if (product.mfg_press_special) setPrintType('especial')
-                else setPrintType(null)
+                setPrintType(null)
 
                 // Initialize switches from product configuration
                 setEnablePrepress(!!product.mfg_enable_prepress)
