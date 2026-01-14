@@ -283,7 +283,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                    onClick={() => openCommandCenter(order.sale_order, 'sale')}
+                                    onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
                                     title="Ver Centro de Comando"
                                 >
                                     <Eye className="h-4 w-4" />

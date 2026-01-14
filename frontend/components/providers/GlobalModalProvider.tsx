@@ -26,10 +26,12 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const [occType, setOccType] = useState<'purchase' | 'sale' | 'obligation'>('sale')
 
     const openWorkOrder = (id: number) => {
+        setOccId(null)
         setWoId(id)
     }
 
     const openCommandCenter = (id: number, type: 'purchase' | 'sale' | 'obligation') => {
+        setWoId(null)
         setOccId(id)
         setOccType(type)
     }
