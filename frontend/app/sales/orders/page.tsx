@@ -199,7 +199,6 @@ export default function SalesOrdersPage() {
                             setIsFormOpen(open)
                             if (!open) {
                                 setEditingOrder(null)
-                                setCheckoutData(null)
                             }
                         }}
                     />

@@ -266,6 +266,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     ...line,
                     product_name: product?.name || line.description,
                     uom_name: uom?.name || "",
+                    product_type: product?.product_type,
+                    requires_advanced_manufacturing: product?.requires_advanced_manufacturing,
+                    has_bom: product?.has_bom,
                 };
             });
             onConfirmCheckout({ ...data, lines: enrichedLines });
