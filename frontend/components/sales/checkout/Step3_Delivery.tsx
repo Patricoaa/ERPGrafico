@@ -67,13 +67,33 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     // Basic analysis of items
     const hasFabricable = orderLines.some(line => line.product_type === 'MANUFACTURABLE' || line.has_bom);
 
-    // Check for "Advanced Manufacturing" products that don't track inventory (MUST be produced first)
+    // Check for "Manufacturable" products (Simple or Advanced) - they MUST be produced first
+    // We restrict immediate dispatch for ALL manufacturable items as per business logic
     const itemsRequiringWorkflow = orderLines.filter(line =>
         (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
-        line.requires_advanced_manufacturing &&
-        !line.track_inventory
+        !line.track_inventory // If it tracks inventory, maybe we allow selling stock? 
+        // Re-reading requirements: "Advanced or Simple ... should be prevented from immediate dispatch"
+        // Usually SIMPLE manufacturable might not track inventory? 
+        // Let's stick to the plan: Restrict ALL manufacturable.
+        // Actually, if track_inventory is true, it might mean we have stock. 
+        // But the user said: "frente a una entrega parcial las lineas de productos que sean de fabricaicion avanzada o simple debería impedirse su despacho inmediato, ya que necesitan de su fabricación."
+        // This implies even if we track it, we want to force production? Or maybe they don't track stock?
+        // Let's assume if it is MANUFACTURABLE, it needs to be made.
     );
-    const hasRestrictedItems = itemsRequiringWorkflow.length > 0;
+    // Actually, let's look at the original code:
+    // const itemsRequiringWorkflow = orderLines.filter(line =>
+    //    (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
+    //    line.requires_advanced_manufacturing &&
+    //    !line.track_inventory
+    // );
+
+    // Proposal: Change to catch ALL manufacturable items that are NOT service/consumable/storable-only.
+    // Ideally, if it is 'MANUFACTURABLE', it goes to this list.
+    const strictManufacturableItems = orderLines.filter(line =>
+        line.product_type === 'MANUFACTURABLE' || line.has_bom
+    );
+
+    const hasRestrictedItems = strictManufacturableItems.length > 0;
 
     // If restricted items exist and type is IMMEDIATE, switch to SCHEDULED automatically
     if (hasRestrictedItems && deliveryData.type === 'IMMEDIATE') {
@@ -109,21 +129,13 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
-                            <p className="text-xs font-bold uppercase tracking-wider">Producción Pendiente Requerida</p>
-                            <p className="text-xs font-medium">Hay {itemsRequiringWorkflow.length} productos con Fabricación Avanzada. El despacho inmediato está deshabilitado porque deben ser procesados en el módulo de producción.</p>
+                            <p className="text-xs font-bold uppercase tracking-wider">Producción Requerida</p>
+                            <p className="text-xs font-medium">Hay {strictManufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
                         </div>
                     </div>
                 )}
 
-                {hasFabricable && !hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl text-orange-800 animate-pulse">
-                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                            <p className="text-xs font-bold uppercase tracking-wider">Productos por Fabricar</p>
-                            <p className="text-xs">Esta venta incluye productos manufacturables. Se recomienda programar el despacho para permitir el tiempo de producción.</p>
-                        </div>
-                    </div>
-                )}
+                {/* Note: Removed the secondary orange warning as it is now redundant with the red one above covering all cases */}
 
                 <RadioGroup
                     value={deliveryData.type}
@@ -131,7 +143,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                         setDeliveryData((prev: any) => {
                             if (val === 'PARTIAL') {
                                 const partialQuantities = orderLines
-                                    .filter(line => !line.requires_advanced_manufacturing)
+                                    .filter(line => line.product_type !== 'MANUFACTURABLE' && !line.has_bom) // Explicitly exclude manufacturable
                                     .map(line => ({
                                         lineId: line.id,
                                         productId: line.product,
@@ -214,7 +226,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                 </TableHeader>
                                 <TableBody>
                                     {orderLines.map((line, idx) => {
-                                        const isEligible = !line.requires_advanced_manufacturing;
+                                        const isEligible = line.product_type !== 'MANUFACTURABLE' && !line.has_bom;
                                         const pendingQty = line.qty || line.quantity;
                                         const currentVal = (deliveryData.partialQuantities || []).find((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.dispatchedQty ?? 0;
 

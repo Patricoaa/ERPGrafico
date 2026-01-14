@@ -96,6 +96,18 @@ class SalesService:
         
         if not delivery_date:
             delivery_date = timezone.now().date()
+
+        # VALIDATION: Prevent dispatch of manufacturable products (Simple or Advanced)
+        # These must go through production (Work Orders) and cannot be dispatched directly from this endpoint
+        # unless we explicitly allow "selling from stock" which currently we are restricting.
+        for sale_line in order.lines.all():
+            if sale_line.quantity_pending > 0:
+                # Check if product is manufacturable
+                if sale_line.product and sale_line.product.product_type == 'MANUFACTURABLE':
+                     raise ValidationError(
+                        f"No se puede despachar inmediatamente el producto '{sale_line.product.name}' "
+                        "porque requiere fabricación. Debe procesar la Orden de Trabajo primero."
+                    )
         
         # Create delivery
         delivery = SaleDelivery.objects.create(
@@ -150,25 +162,34 @@ class SalesService:
             quantity = Decimal(str(item.get('quantity', 0)))
             uom_id = item.get('uom_id')
             
+            if quantity <= 0:
+                continue
+
             sale_line = order.lines.get(id=line_id)
             
+            # VALIDATION: Prevent dispatch of manufacturable products in partial dispatch
+            if sale_line.product and sale_line.product.product_type == 'MANUFACTURABLE':
+                 raise ValidationError(
+                    f"No se puede despachar el producto '{sale_line.product.name}' "
+                    "porque requiere fabricación. No debe incluirse en despachos directos."
+                )
+
             if quantity > sale_line.quantity_pending:
                 # Validation might need UoM conversion if uom_id differs
                 pass
             
-            if quantity > 0:
-                uom = None
-                if uom_id:
-                    from inventory.models import UoM
-                    uom = UoM.objects.filter(id=uom_id).first()
+            uom = None
+            if uom_id:
+                from inventory.models import UoM
+                uom = UoM.objects.filter(id=uom_id).first()
 
-                SalesService._create_delivery_line(
-                    delivery=delivery,
-                    sale_line=sale_line,
-                    quantity=quantity,
-                    warehouse=warehouse,
-                    uom=uom
-                )
+            SalesService._create_delivery_line(
+                delivery=delivery,
+                sale_line=sale_line,
+                quantity=quantity,
+                warehouse=warehouse,
+                uom=uom
+            )
         
         # Confirm delivery
         SalesService.confirm_delivery(delivery)
