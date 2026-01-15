@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Building2, User, AlertCircle } from "lucide-react"
+import { Building2, User, AlertCircle, Package } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { AdvancedWorkOrderSelector } from "@/components/selectors/AdvancedWorkOrderSelector"
 import { Label } from "@/components/ui/label"
 import api from "@/lib/api"
 
@@ -10,12 +11,16 @@ export interface Step0_SupplierProps {
     selectedSupplierId: string | null
     setSelectedSupplierId: (id: string | null) => void
     setSelectedSupplierName: (name: string) => void
+    selectedWorkOrderId: string | null
+    setSelectedWorkOrderId: (id: string | null) => void
 }
 
 export function Step0_Supplier({
     selectedSupplierId,
     setSelectedSupplierId,
-    setSelectedSupplierName
+    setSelectedSupplierName,
+    selectedWorkOrderId,
+    setSelectedWorkOrderId
 }: Step0_SupplierProps) {
     const [loading, setLoading] = useState(false)
 
@@ -58,7 +63,7 @@ export function Step0_Supplier({
                 </p>
             </div>
 
-            <div className="w-full space-y-4">
+            <div className="w-full space-y-6">
                 <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
                         Proveedor
@@ -70,6 +75,19 @@ export function Step0_Supplier({
                         contactType="SUPPLIER"
                         placeholder="Buscar por Nombre, RUT o Email..."
                     />
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
+                        <Package className="h-3 w-3" /> Orden de Trabajo (Opcional)
+                    </Label>
+                    <AdvancedWorkOrderSelector
+                        value={selectedWorkOrderId}
+                        onChange={setSelectedWorkOrderId}
+                    />
+                    <p className="text-[10px] text-muted-foreground italic">
+                        Seleccione una OT si desea vincular esta compra manualmente a un trabajo de producción.
+                    </p>
                 </div>
 
                 {!selectedSupplierId && !loading && (

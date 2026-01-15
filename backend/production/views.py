@@ -146,14 +146,25 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
             quantity = Decimal(str(request.data.get('quantity')))
             uom_id = request.data.get('uom_id')
             
+            # New fields
+            is_outsourced = request.data.get('is_outsourced', False)
+            supplier_id = request.data.get('supplier_id')
+            unit_price = Decimal(str(request.data.get('unit_price', 0)))
+            
             product = Product.objects.get(pk=product_id)
             uom = UoM.objects.get(pk=uom_id) if uom_id else None
+            
+            from contacts.models import Contact
+            supplier = Contact.objects.get(pk=supplier_id) if supplier_id else None
             
             WorkOrderService.add_material(
                 work_order=work_order,
                 component=product,
                 quantity=quantity,
-                uom=uom
+                uom=uom,
+                is_outsourced=is_outsourced,
+                supplier=supplier,
+                unit_price=unit_price
             )
             
             return Response(WorkOrderSerializer(work_order).data)
@@ -173,6 +184,15 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
             material.quantity_planned = quantity
             if uom_id:
                 material.uom_id = uom_id
+            
+            # New fields
+            if 'is_outsourced' in request.data:
+                material.is_outsourced = request.data.get('is_outsourced')
+            if 'supplier_id' in request.data:
+                material.supplier_id = request.data.get('supplier_id')
+            if 'unit_price' in request.data:
+                material.unit_price = Decimal(str(request.data.get('unit_price', 0)))
+                
             material.save()
             
             return Response(WorkOrderSerializer(work_order).data)

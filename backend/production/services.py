@@ -6,6 +6,7 @@ from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from inventory.models import StockMove, Product, UoM, Warehouse
 from inventory.services import StockService
+from purchasing.models import PurchaseOrder, PurchaseLine
 from decimal import Decimal
 
 class WorkOrderService:
@@ -140,6 +141,10 @@ class WorkOrderService:
                     # We allow proceeding but maybe log a warning or require explicit approval
                     pass
         
+        # When moving forward from MATERIAL_APPROVAL, create POs for outsourced services
+        if old_stage == WorkOrder.Stage.MATERIAL_APPROVAL and next_stage not in [WorkOrder.Stage.CANCELLED, WorkOrder.Stage.MATERIAL_ASSIGNMENT]:
+            WorkOrderService._create_outsourcing_purchase_orders(work_order)
+        
         elif next_stage == WorkOrder.Stage.FINISHED:
             # Finalize: stock movements
             WorkOrderService.finalize_production(work_order, user)
@@ -182,6 +187,17 @@ class WorkOrderService:
 
         # 1. Consume materials
         for mat in work_order.materials.all():
+            # Skip stock moves for services
+            if mat.component.product_type == Product.Type.SERVICE:
+                mat.quantity_consumed = mat.quantity_planned
+                mat.save()
+                
+                # Add service cost to production total
+                # Use unit_price (OC price) if outsourced, else component base cost
+                service_cost = mat.unit_price if mat.is_outsourced else mat.component.cost_price
+                total_material_cost += (mat.quantity_planned * service_cost)
+                continue
+
             # Convert quantity from planned UoM to component base UoM
             base_comp_qty = UoMService.convert_quantity(
                 mat.quantity_planned,
@@ -274,7 +290,7 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
-    def add_material(work_order, component, quantity, uom=None):
+    def add_material(work_order, component, quantity, uom=None, is_outsourced=False, supplier=None, unit_price=0):
         """
         Adds a material manually to a Work Order.
         """
@@ -284,14 +300,73 @@ class WorkOrderService:
             defaults={
                 'quantity_planned': Decimal(str(quantity)),
                 'uom': uom or component.uom,
-                'source': 'MANUAL'
+                'source': 'MANUAL',
+                'is_outsourced': is_outsourced,
+                'supplier': supplier,
+                'unit_price': Decimal(str(unit_price))
             }
         )
         if not created:
             material.quantity_planned += Decimal(str(quantity))
+            material.is_outsourced = is_outsourced
+            material.supplier = supplier
+            material.unit_price = Decimal(str(unit_price))
             material.save()
         
         return material
+
+    @staticmethod
+    def _create_outsourcing_purchase_orders(work_order):
+        """
+        Creates or updates draft Purchase Orders for outsourced materials in the Work Order.
+        Groups materials by supplier and ensures only one PO per supplier is created for this OT.
+        """
+        outsourced_mats = work_order.materials.filter(is_outsourced=True, supplier__isnull=False, purchase_line__isnull=True)
+        if not outsourced_mats.exists():
+            return
+
+        # Group by supplier
+        mats_by_supplier = {}
+        for mat in outsourced_mats:
+            if mat.supplier_id not in mats_by_supplier:
+                mats_by_supplier[mat.supplier_id] = []
+            mats_by_supplier[mat.supplier_id].append(mat)
+
+        for supplier_id, mats in mats_by_supplier.items():
+            # Find an existing DRAFT PO for this OT and supplier, or create one
+            po = PurchaseOrder.objects.filter(
+                work_order=work_order,
+                supplier_id=supplier_id,
+                status=PurchaseOrder.Status.DRAFT
+            ).first()
+
+            if not po:
+                from core.services import SequenceService
+                po = PurchaseOrder.objects.create(
+                    number=SequenceService.get_next_sequence('OC'),
+                    supplier_id=supplier_id,
+                    work_order=work_order,
+                    warehouse=work_order.warehouse or Warehouse.objects.first(),
+                    status=PurchaseOrder.Status.DRAFT,
+                    notes=f"Generado automáticamente desde {work_order.display_id}"
+                )
+
+            for mat in mats:
+                line = PurchaseLine.objects.create(
+                    order=po,
+                    product=mat.component,
+                    description=f"{mat.component.name} (OT-{work_order.number})",
+                    quantity=mat.quantity_planned,
+                    unit_price=mat.unit_price,
+                    uom=mat.uom,
+                    subtotal=mat.quantity_planned * mat.unit_price
+                )
+                mat.purchase_line = line
+                mat.save()
+            
+            # Recalculate PO totals
+            po.calculate_totals()
+            po.save()
 
     @staticmethod
     def _map_manufacturing_data(mfg_data):

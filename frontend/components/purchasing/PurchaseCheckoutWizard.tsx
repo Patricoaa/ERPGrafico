@@ -70,6 +70,7 @@ export function PurchaseCheckoutWizard({
 
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
     const [selectedSupplierName, setSelectedSupplierName] = useState("")
+    const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
     const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
     const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
 
@@ -216,6 +217,7 @@ export function PurchaseCheckoutWizard({
             const payloadOrder = order ? { id: order.id } : {
                 supplier: selectedSupplierId ? parseInt(selectedSupplierId) : 0,
                 warehouse: parseInt(selectedWarehouseId),
+                work_order: selectedWorkOrderId ? parseInt(selectedWorkOrderId) : null,
                 lines: currentOrderLines.map(l => ({
                     product: l.id || l.product,
                     quantity: l.qty || l.quantity,
@@ -317,6 +319,8 @@ export function PurchaseCheckoutWizard({
                                     selectedSupplierId={selectedSupplierId}
                                     setSelectedSupplierId={setSelectedSupplierId}
                                     setSelectedSupplierName={setSelectedSupplierName}
+                                    selectedWorkOrderId={selectedWorkOrderId}
+                                    setSelectedWorkOrderId={setSelectedWorkOrderId}
                                 />
                             )}
                             {step === 2 && (

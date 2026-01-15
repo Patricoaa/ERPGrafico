@@ -48,6 +48,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     is_invoiced = serializers.SerializerMethodField()
     invoice_details = serializers.SerializerMethodField()
     serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
+    work_order_number = serializers.CharField(source='work_order.number', read_only=True, allow_null=True)
     related_documents = serializers.SerializerMethodField()
 
     class Meta:
@@ -162,7 +163,7 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseOrder
-        fields = ['id', 'supplier', 'warehouse', 'notes', 'lines', 'supplier_reference', 'payment_method']
+        fields = ['id', 'supplier', 'warehouse', 'work_order', 'notes', 'lines', 'supplier_reference', 'payment_method']
         read_only_fields = ['id']
 
     def create(self, validated_data):

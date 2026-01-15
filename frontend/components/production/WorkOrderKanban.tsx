@@ -65,14 +65,24 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                     )}
                                 >
                                     <CardContent className="p-3 space-y-3">
-                                        <div className="flex justify-between items-start">
+                                        <div className="flex gap-2 items-center">
                                             <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                                                 OT-{order.number}
                                             </span>
-                                            {order.status === 'FINISHED' && (
-                                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                            {order.outsourcing_status === 'partial' && (
+                                                <Badge variant="secondary" className="text-[9px] bg-blue-50 text-blue-700 border-blue-200 py-0 h-4">
+                                                    Parcial
+                                                </Badge>
+                                            )}
+                                            {order.outsourcing_status === 'full' && (
+                                                <Badge variant="secondary" className="text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200 py-0 h-4 font-bold">
+                                                    Tercerizado
+                                                </Badge>
                                             )}
                                         </div>
+                                        {order.status === 'FINISHED' && (
+                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                        )}
 
                                         <div>
                                             <p className="text-sm font-semibold line-clamp-2 leading-snug">

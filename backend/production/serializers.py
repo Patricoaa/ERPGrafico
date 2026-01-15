@@ -31,6 +31,8 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
     stock_available = serializers.SerializerMethodField()
     is_available = serializers.SerializerMethodField()
     component_cost = serializers.DecimalField(source='component.cost_price', read_only=True, max_digits=12, decimal_places=2)
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    purchase_order_number = serializers.CharField(source='purchase_line.order.number', read_only=True)
     total_cost = serializers.SerializerMethodField()
     
     class Meta:
@@ -103,6 +105,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     product_info = serializers.ReadOnlyField()
     main_product_id = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
+    outsourcing_status = serializers.SerializerMethodField()
     
     # Metadata helpers
     requires_prepress = serializers.SerializerMethodField()
@@ -182,6 +185,19 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             WorkOrder.Stage.CANCELLED.value: 0
         }
         return weights.get(obj.current_stage, 0)
+    
+    def get_outsourcing_status(self, obj):
+        mats = obj.materials.all()
+        if not mats.exists():
+            return 'none'
+        
+        outsourced = mats.filter(is_outsourced=True)
+        if not outsourced.exists():
+            return 'none'
+        
+        if outsourced.count() == mats.count():
+            return 'full'
+        return 'partial'
     
     class Meta:
         model = WorkOrder

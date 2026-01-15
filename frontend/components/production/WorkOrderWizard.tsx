@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
+import { ContactSelector } from "@/components/selectors/ContactSelector"
 import dynamic from "next/dynamic"
 
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -84,6 +85,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [clientApproved, setClientApproved] = useState(false)
     const [supervisorApproved, setSupervisorApproved] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
+    const [isOutsourced, setIsOutsourced] = useState(false)
+    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
+    const [unitPrice, setUnitPrice] = useState("0")
+    const [showPOPreview, setShowPOPreview] = useState(false)
+    const [outsourcedPending, setOutsourcedPending] = useState<any[]>([])
     const { openCommandCenter } = useGlobalModals()
 
     const getFilteredStages = (orderData: any) => {
@@ -146,6 +152,20 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             }
         }
 
+        // PO Preview Logic
+        const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
+        const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
+        const isMovingForward = nextIndex > currentIndex
+
+        if (order.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
+            const pending = order.materials?.filter((m: any) => m.is_outsourced && !m.purchase_order_number) || []
+            if (pending.length > 0 && !showPOPreview) {
+                setOutsourcedPending(pending)
+                setShowPOPreview(true)
+                return
+            }
+        }
+
         setTransitioning(true)
         try {
             await api.post(`/production/orders/${orderId}/transition/`, {
@@ -188,7 +208,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 await api.post(`/production/orders/${orderId}/update_material/`, {
                     material_id: editingMaterialId,
                     quantity: newMaterialQty,
-                    uom_id: newMaterialUoM
+                    uom_id: newMaterialUoM,
+                    is_outsourced: isOutsourced,
+                    supplier_id: selectedSupplierId,
+                    unit_price: unitPrice
                 })
                 toast.success("Material actualizado")
             } else {
@@ -196,7 +219,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 await api.post(`/production/orders/${orderId}/add_material/`, {
                     product_id: newMaterialProduct,
                     quantity: newMaterialQty,
-                    uom_id: newMaterialUoM
+                    uom_id: newMaterialUoM,
+                    is_outsourced: isOutsourced,
+                    supplier_id: selectedSupplierId,
+                    unit_price: unitPrice
                 })
                 toast.success("Material agregado")
             }
@@ -217,16 +243,19 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         setNewMaterialUoM("")
         setSelectedProductObj(null)
         setEditingMaterialId(null)
+        setIsOutsourced(false)
+        setSelectedSupplierId(null)
+        setUnitPrice("0")
     }
 
     const handleEditMaterial = (material: any) => {
         setEditingMaterialId(material.id)
         setNewMaterialProduct(material.component.toString()) // Assuming component is ID
-        // Note: material.component might be an object or ID depending on serializer.
-        // WorkOrderMaterialSerializer: component_name, component_code. But 'component' field?
-        // Let's check serializer: fields = '__all__', so 'component' is ID.
         setNewMaterialQty(material.quantity_planned)
         setNewMaterialUoM(material.uom.toString())
+        setIsOutsourced(material.is_outsourced)
+        setSelectedSupplierId(material.supplier?.toString() || null)
+        setUnitPrice(material.unit_price?.toString() || "0")
 
         // We need the product object for UoM selector. 
         // We might need to fetch it or finding it if we have it. 
@@ -261,6 +290,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     <div>
                         <DialogTitle className="text-2xl flex items-center gap-3">
                             Gestión de Orden de Trabajo OT-{order?.number}
+                            {order?.outsourcing_status === 'partial' && (
+                                <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    Parcialmente Tercerizado
+                                </Badge>
+                            )}
+                            {order?.outsourcing_status === 'full' && (
+                                <Badge variant="secondary" className="text-xs bg-indigo-50 text-indigo-700 border-indigo-200 font-bold">
+                                    Totalmente Tercerizado
+                                </Badge>
+                            )}
                         </DialogTitle>
                         <DialogDescription className="flex items-center gap-4 mt-1">
                             <span className="flex items-center gap-1.5 text-primary font-medium">
@@ -363,7 +402,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         <td className="p-2">{m.uom_name}</td>
                                                         <td className="p-2 text-right text-muted-foreground">{formatCurrency(m.component_cost)}</td>
                                                         <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
-                                                        <td className="p-2"><Badge variant="outline" className="text-[10px]">{m.source}</Badge></td>
+                                                        <td className="p-2 flex flex-col gap-1">
+                                                            <Badge variant="outline" className="text-[10px] w-fit">{m.source}</Badge>
+                                                            {m.is_outsourced && (
+                                                                <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200 w-fit">
+                                                                    Tercerizado: {m.supplier_name || 'Sin prov.'}
+                                                                </Badge>
+                                                            )}
+                                                        </td>
                                                         <td className="p-2">
                                                             {m.source === 'MANUAL' && (
                                                                 <div className="flex gap-1">
@@ -411,6 +457,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         }}
                                                         disabled={!!editingMaterialId} // Disable product change when editing
                                                         customFilter={(p: any) => {
+                                                            if (isOutsourced) {
+                                                                return p.product_type === 'SERVICE' && p.can_be_purchased;
+                                                            }
+
                                                             // 1. Exclude the product being manufactured
                                                             if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
 
@@ -455,21 +505,59 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     </Button>
                                                 </div>
                                             </div>
+
+                                            {isOutsourced && (
+                                                <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t mt-2">
+                                                    <div className="flex-1 space-y-2">
+                                                        <label className="text-xs font-bold uppercase text-primary">Proveedor del Servicio</label>
+                                                        <ContactSelector
+                                                            value={selectedSupplierId}
+                                                            onChange={setSelectedSupplierId}
+                                                            type="SUPPLIER"
+                                                        />
+                                                    </div>
+                                                    <div className="w-full md:w-40 space-y-2">
+                                                        <label className="text-xs font-bold uppercase text-primary">Precio OC (Neto)</label>
+                                                        <Input
+                                                            type="number"
+                                                            value={unitPrice}
+                                                            onChange={(e) => setUnitPrice(e.target.value)}
+                                                            className="border-primary/30 focus-visible:ring-primary"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="w-full border-dashed"
-                                            onClick={() => {
-                                                resetMaterialForm()
-                                                setIsAddMaterialOpen(true)
-                                            }}
-                                            disabled={order?.status === 'FINISHED'}
-                                        >
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Agregar Material Manualmente
-                                        </Button>
+                                        <div className="flex gap-4">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1 border-dashed"
+                                                onClick={() => {
+                                                    resetMaterialForm()
+                                                    setIsAddMaterialOpen(true)
+                                                }}
+                                                disabled={order?.status === 'FINISHED'}
+                                            >
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Agregar Material
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1 border-dashed text-primary border-primary/20 bg-primary/5 hover:bg-primary/10"
+                                                onClick={() => {
+                                                    resetMaterialForm()
+                                                    setIsOutsourced(true)
+                                                    setIsAddMaterialOpen(true)
+                                                }}
+                                                disabled={order?.status === 'FINISHED'}
+                                            >
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Agregar Servicio Tercerizado
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -844,6 +932,73 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     }}
                 />
             )}
+
+            {/* PO Preview Modal */}
+            <Dialog open={showPOPreview} onOpenChange={setShowPOPreview}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Package className="h-5 w-5 text-primary" />
+                            Vista Previa de Órdenes de Compra
+                        </DialogTitle>
+                        <DialogDescription>
+                            Se generarán las siguientes Órdenes de Compra en borrador para los servicios tercerizados asignados.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="border rounded-lg overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-muted">
+                                    <tr>
+                                        <th className="p-2 text-left">Proveedor</th>
+                                        <th className="p-2 text-left">Servicio</th>
+                                        <th className="p-2 text-right">Cant.</th>
+                                        <th className="p-2 text-right">Precio Un.</th>
+                                        <th className="p-2 text-right">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {outsourcedPending.map((m, i) => (
+                                        <tr key={i} className="border-t">
+                                            <td className="p-2 font-medium">{m.supplier_name}</td>
+                                            <td className="p-2">{m.component_name}</td>
+                                            <td className="p-2 text-right">{m.quantity_planned}</td>
+                                            <td className="p-2 text-right">{formatCurrency(m.unit_price)}</td>
+                                            <td className="p-2 text-right font-bold">{formatCurrency((m.quantity_planned * m.unit_price))}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="bg-blue-50 p-4 rounded-lg flex gap-3 border border-blue-100">
+                            <div className="bg-blue-100 p-2 rounded-full h-fit">
+                                <FileText className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div className="text-xs text-blue-700 leading-relaxed">
+                                <p className="font-bold mb-1">Nota importante:</p>
+                                <p>Las órdenes de compra se crearán en estado <span className="font-bold">Borrador</span>. Deberá confirmarlas manualmente desde el módulo de Compras para procesar el pago y la recepción.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => setShowPOPreview(false)}>
+                            Cancelar y Revisar
+                        </Button>
+                        <Button onClick={() => {
+                            setShowPOPreview(false)
+                            // Call handleTransition again but skip preview
+                            const nextStage = STAGES[actualStepIndex + 1]?.id
+                            if (nextStage) {
+                                handleTransition(nextStage)
+                            }
+                        }}>
+                            Confirmar y Generar OC
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
         </Dialog>
     )

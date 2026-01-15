@@ -52,13 +52,21 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
     total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
 
     # Links
+    work_order = models.ForeignKey(
+        'production.WorkOrder', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='purchase_orders',
+        verbose_name=_("Orden de Trabajo")
+    )
+    
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
         on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='purchase_order'
     )
-
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -478,6 +478,55 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             </Table>
                                         </div>
                                     </div>
+                                ) : currentType === 'purchase_order' ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 border-t">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Proveedor</h4>
+                                                <p className="font-black text-lg leading-tight">{data.supplier_name}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Bodega</h4>
+                                                <p className="text-sm font-bold">{data.warehouse_name}</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Estado Recepción</h4>
+                                                <Badge className="mt-1 font-black px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 border-none">
+                                                    {data.receiving_status}
+                                                </Badge>
+                                            </div>
+                                            {data.work_order && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 text-indigo-600">Origen: Orden de Trabajo</h4>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full justify-start gap-2 font-bold h-12 border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50"
+                                                        onClick={() => navigateTo('work_order', data.work_order)}
+                                                    >
+                                                        <Package className="h-4 w-4 text-indigo-600" />
+                                                        OT-{data.work_order_number || data.work_order}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Resumen de Totales</h4>
+                                                <div className="space-y-1">
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">Pagado:</span>
+                                                        <span className="font-bold text-emerald-600">${Number(data.total_paid).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">Pendiente:</span>
+                                                        <span className="font-bold text-red-600">${Number(data.pending_amount).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div className="space-y-6 pt-4 border-t">
                                         {currentType === 'journal_entry' ? (

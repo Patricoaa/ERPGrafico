@@ -170,7 +170,24 @@ class WorkOrderMaterial(models.Model):
         _("Origen"), 
         max_length=20, 
         choices=[('BOM', 'Lista de Materiales'), ('MANUAL', 'Manual')], 
-        default='MANUAL'
+    )
+    
+    # Outsourcing fields
+    is_outsourced = models.BooleanField(_("Es Tercerizado"), default=False)
+    supplier = models.ForeignKey(
+        'contacts.Contact', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='work_order_materials',
+        verbose_name=_("Proveedor")
+    )
+    unit_price = models.DecimalField(_("Precio Unitario OC"), max_digits=12, decimal_places=0, default=0)
+    purchase_line = models.ForeignKey(
+        'purchasing.PurchaseLine', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='work_order_materials',
+        verbose_name=_("Línea de Compra")
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
