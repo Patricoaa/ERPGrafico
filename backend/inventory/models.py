@@ -253,6 +253,20 @@ class Product(models.Model):
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0)
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
     
+    # Accounting Overrides
+    income_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='product_incomes',
+        limit_choices_to={'account_type': AccountType.INCOME},
+        verbose_name=_("Cuenta de Ingresos (Personalizada)"),
+        help_text=_("Sobreescribe la cuenta de la categoría para este producto.")
+    )
+    expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='product_expenses',
+        limit_choices_to={'account_type': AccountType.EXPENSE},
+        verbose_name=_("Cuenta de Gastos (Personalizada)"),
+        help_text=_("Sobreescribe la cuenta de la categoría para este producto.")
+    )
+
     active = models.BooleanField(_("Activo"), default=True, help_text=_("Desactivar para archivar el producto en lugar de eliminarlo."))
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -337,16 +351,18 @@ class Product(models.Model):
         elif self.product_type == self.Type.CONSUMABLE:
             return settings.default_consumable_account
         
-        else:  # SERVICE
+        elif self.product_type in [self.Type.SERVICE, self.Type.SUBSCRIPTION]:
             return None
+        
+        return None
     
     @property
     def get_income_account(self):
-        return self.category.income_account
+        return self.income_account or self.category.income_account
 
     @property
     def get_expense_account(self):
-        return self.category.expense_account
+        return self.expense_account or self.category.expense_account
     
     def get_allowed_sale_uoms(self):
         """

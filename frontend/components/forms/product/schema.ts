@@ -38,6 +38,8 @@ export const productSchema = z.object({
     recurrence_period: z.enum(['MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL', 'WEEKLY']).optional(),
     renewal_notice_days: z.preprocess((v) => Number(v) || 30, z.number().min(0)).optional(),
     is_variable_amount: z.boolean().optional(),
+    income_account: z.string().optional().or(z.literal("")).nullable(),
+    expense_account: z.string().optional().or(z.literal("")).nullable(),
     boms: z.array(z.object({
         id: z.number().optional(),
         name: z.string().min(1, "Nombre requerido"),

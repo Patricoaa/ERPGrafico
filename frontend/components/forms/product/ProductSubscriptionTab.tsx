@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { CalendarClock, AlertTriangle, DollarSign } from "lucide-react"
+import { CalendarClock, AlertTriangle, DollarSign, Wallet } from "lucide-react"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 interface ProductSubscriptionTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -108,6 +109,60 @@ export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
                                             onCheckedChange={field.onChange}
                                         />
                                     </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Wallet className="h-5 w-5 text-primary" />
+                            Configuración Contable
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="expense_account"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Cuenta de Gasto (Personalizada)</FormLabel>
+                                    <FormControl>
+                                        <AccountSelector
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            accountType="EXPENSE"
+                                            placeholder="Cuenta de gasto por defecto..."
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Mapeo contable específico para este producto.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="income_account"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Cuenta de Ingreso (Personalizada)</FormLabel>
+                                    <FormControl>
+                                        <AccountSelector
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            accountType="INCOME"
+                                            placeholder="Cuenta de ingreso por defecto..."
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Mapeo contable específico para este producto.
+                                    </FormDescription>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />

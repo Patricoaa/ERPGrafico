@@ -133,8 +133,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                         }]
                     })
             
-            # Add entry for service delivery if this receipt has services
-            if rec.lines.filter(product__product_type='SERVICE').exists():
+            # Add entry for service/subscription delivery if this receipt has them
+            if rec.lines.filter(product__product_type__in=['SERVICE', 'SUBSCRIPTION']).exists():
                 docs['receipts'].append({
                     'id': rec.id,
                     'number': f"REC-{str(rec.id).zfill(5)}",

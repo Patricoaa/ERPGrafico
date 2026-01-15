@@ -304,11 +304,31 @@ class PurchasingService:
         has_boleta = receipt.purchase_order.invoices.filter(dte_type='BOLETA').exists()
         
         for line in receipt.lines.all():
-            # Skip stock moves for SERVICE type products (they don't have physical inventory)
-            if line.product.product_type == 'SERVICE':
+            # Skip stock moves for SERVICE and SUBSCRIPTION type products
+            if line.product.product_type in ['SERVICE', 'SUBSCRIPTION']:
                 # Update Purchase Line (mark as received even though no physical stock)
                 line.purchase_line.quantity_received += line.quantity_received
                 line.purchase_line.save()
+
+                # Special logic for SUBSCRIPTION: Create active Subscription record
+                if line.product.product_type == 'SUBSCRIPTION':
+                    from inventory.models import Subscription
+                    
+                    # Ensure we don't create multiple subscriptions for the same line if re-run 
+                    # (though confirm_receipt checks status)
+                    Subscription.objects.get_or_create(
+                        product=line.product,
+                        supplier=receipt.purchase_order.supplier,
+                        defaults={
+                            'start_date': receipt.receipt_date,
+                            'next_payment_date': receipt.receipt_date + timezone.timedelta(days=30), # Default 30 days
+                            'amount': line.total_cost,
+                            'currency': receipt.purchase_order.currency if hasattr(receipt.purchase_order, 'currency') else 'CLP',
+                            'status': Subscription.Status.ACTIVE,
+                            'recurrence_period': line.product.recurrence_period or 'MONTHLY',
+                            'notes': f"Creado automáticamente desde OC-{receipt.purchase_order.number}"
+                        }
+                    )
                 continue
             
             # Determine the effective unit cost (including VAT if Boleta)

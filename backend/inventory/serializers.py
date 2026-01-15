@@ -102,7 +102,18 @@ class ProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = [
+            'id', 'internal_code', 'code', 'name', 'category', 'product_type', 'image',
+            'custom_fields_schema', 'has_bom', 'requires_advanced_manufacturing',
+            'mfg_auto_finalize', 'mfg_enable_prepress', 'mfg_enable_press',
+            'mfg_enable_postpress', 'mfg_prepress_design', 'mfg_prepress_specs',
+            'mfg_prepress_folio', 'mfg_press_offset', 'mfg_press_digital',
+            'mfg_press_special', 'mfg_postpress_finishing', 'mfg_postpress_binding',
+            'mfg_default_delivery_days', 'recurrence_period', 'renewal_notice_days',
+            'is_variable_amount', 'track_inventory', 'can_be_sold', 'can_be_purchased',
+            'uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse',
+            'sale_price', 'cost_price', 'active', 'income_account', 'expense_account'
+        ]
 
     def get_uom_category(self, obj):
         return obj.uom.category_id if obj.uom else None

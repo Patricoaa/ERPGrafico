@@ -493,7 +493,7 @@ class AccountingMapper:
                 if not target_account:
                     # Fallback to asset if no expense account found
                     target_account = line.product.get_asset_account if not callable(line.product.get_asset_account) else line.product.get_asset_account()
-            elif line.product.product_type == 'SERVICE':
+            elif line.product.product_type in ['SERVICE', 'SUBSCRIPTION']:
                 target_account = line.product.get_expense_account or settings.default_service_expense_account
                 if not target_account:
                      # Fallback to asset/inventory if no expense found
