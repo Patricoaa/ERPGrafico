@@ -376,6 +376,34 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta de gasto usada por defecto para productos de tipo servicio.")
     )
 
+    default_service_revenue_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_service_revenue',
+        verbose_name=_("Cuenta de Ingresos por Servicios"),
+        help_text=_("Cuenta de ingreso usada por defecto para productos de tipo servicio.")
+    )
+
+    # Subscription Products Accounts
+    default_subscription_expense_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_subscription_expense',
+        verbose_name=_("Cuenta de Gastos por Suscripciones"),
+        help_text=_("Cuenta de gasto usada por defecto para productos de tipo suscripción.")
+    )
+
+    default_subscription_revenue_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_subscription_revenue',
+        verbose_name=_("Cuenta de Ingresos por Suscripciones"),
+        help_text=_("Cuenta de ingreso usada por defecto para productos de tipo suscripción.")
+    )
+
     # Adjustment Accounts
     adjustment_income_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,

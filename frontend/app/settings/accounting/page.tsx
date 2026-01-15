@@ -36,6 +36,11 @@ const accountingSchema = z.object({
     initial_inventory_account: z.string().nullable(),
     revaluation_account: z.string().nullable(),
 
+    default_service_expense_account: z.string().nullable(),
+    default_service_revenue_account: z.string().nullable(),
+    default_subscription_expense_account: z.string().nullable(),
+    default_subscription_revenue_account: z.string().nullable(),
+
     code_format: z.string(),
     asset_prefix: z.string(),
     liability_prefix: z.string(),
@@ -72,6 +77,10 @@ export default function AccountingSettingsPage() {
             adjustment_expense_account: null,
             initial_inventory_account: null,
             revaluation_account: null,
+            default_service_expense_account: null,
+            default_service_revenue_account: null,
+            default_subscription_expense_account: null,
+            default_subscription_revenue_account: null,
 
             code_format: "X.X.XX.XXX",
             asset_prefix: "1",
@@ -199,6 +208,19 @@ export default function AccountingSettingsPage() {
                                         <AccountField form={form} name="default_payable_account" label="CxP Proveedores (Pasivo)" accountType="LIABILITY" />
                                         <AccountField form={form} name="default_revenue_account" label="Ingresos por Ventas (Ingreso)" accountType="INCOME" />
                                         <AccountField form={form} name="default_expense_account" label="Gastos Generales (Gasto)" accountType="EXPENSE" />
+
+                                        <Separator className="my-4" />
+                                        <h4 className="text-sm font-medium mb-2">Servicios y Suscripciones</h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-3 rounded-md bg-muted/30">
+                                            <div className="space-y-4">
+                                                <AccountField form={form} name="default_service_revenue_account" label="Ingresos Servicios" accountType="INCOME" />
+                                                <AccountField form={form} name="default_service_expense_account" label="Gastos Servicios" accountType="EXPENSE" />
+                                            </div>
+                                            <div className="space-y-4">
+                                                <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos Suscripciones" accountType="INCOME" />
+                                                <AccountField form={form} name="default_subscription_expense_account" label="Gastos Suscripciones" accountType="EXPENSE" />
+                                            </div>
+                                        </div>
                                     </CardContent>
                                 </Card>
 

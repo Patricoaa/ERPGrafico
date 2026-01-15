@@ -223,6 +223,9 @@ class AccountingService:
             'stock_input_account': '2.1.06.01',
             'stock_output_account': '1.1.06.01',
             'default_service_expense_account': '5.1.02',
+            'default_service_revenue_account': '4.1.02',
+            'default_subscription_expense_account': '5.1.02',
+            'default_subscription_revenue_account': '4.1.02',
             'default_prepayment_account': '1.1.02.02',
             'default_advance_payment_account': '2.1.01.02',
         }

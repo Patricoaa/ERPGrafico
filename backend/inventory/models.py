@@ -358,11 +358,59 @@ class Product(models.Model):
     
     @property
     def get_income_account(self):
-        return self.income_account or self.category.income_account
+        """
+        Returns the income account for this product.
+        Priority:
+        1. Product-specific override
+        2. Category-specific account
+        3. Type-specific account from settings
+        4. General revenue account (fallback)
+        """
+        if self.income_account:
+            return self.income_account
+        if self.category and self.category.income_account:
+            return self.category.income_account
+            
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
+        if not settings:
+            return None
+            
+        if self.product_type == self.Type.SERVICE:
+            return settings.default_service_revenue_account or settings.default_revenue_account
+        elif self.product_type == self.Type.SUBSCRIPTION:
+            return settings.default_subscription_revenue_account or settings.default_revenue_account
+            
+        return settings.default_revenue_account
 
     @property
     def get_expense_account(self):
-        return self.expense_account or self.category.expense_account
+        """
+        Returns the expense/cost account for this product.
+        Priority:
+        1. Product-specific override
+        2. Category-specific account
+        3. Type-specific account from settings
+        4. General expense account (fallback)
+        """
+        if self.expense_account:
+            return self.expense_account
+        if self.category and self.category.expense_account:
+            return self.category.expense_account
+            
+        from accounting.models import AccountingSettings
+        settings = AccountingSettings.objects.first()
+        if not settings:
+            return None
+            
+        if self.product_type == self.Type.SERVICE:
+            return settings.default_service_expense_account or settings.default_expense_account
+        elif self.product_type == self.Type.SUBSCRIPTION:
+            return settings.default_subscription_expense_account or settings.default_expense_account
+        elif self.product_type == self.Type.CONSUMABLE:
+            return settings.default_consumable_account or settings.default_expense_account
+            
+        return settings.default_expense_account
     
     def get_allowed_sale_uoms(self):
         """

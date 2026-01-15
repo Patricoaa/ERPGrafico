@@ -245,6 +245,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     recurrence_period: initialData.recurrence_period || "MONTHLY",
                     renewal_notice_days: initialData.renewal_notice_days || 30,
                     is_variable_amount: initialData.is_variable_amount ?? false,
+                    income_account: initialData.income_account?.id?.toString() || initialData.income_account?.toString() || "",
+                    expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "",
                 })
                 setImagePreview(initialData.image || null)
                 fetchPricingRules()
@@ -282,6 +284,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     mfg_auto_finalize: false,
                     boms: [],
                     product_custom_fields: [],
+                    income_account: "",
+                    expense_account: "",
                 })
                 setImagePreview(null)
                 setPricingRules([])
@@ -318,6 +322,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('sale_uom', data.sale_uom || '')
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
             if (data.receiving_warehouse) formData.append('receiving_warehouse', data.receiving_warehouse)
+            if (data.income_account) formData.append('income_account', data.income_account)
+            if (data.expense_account) formData.append('expense_account', data.expense_account)
 
             if (data.allowed_sale_uoms && data.allowed_sale_uoms.length > 0) {
                 data.allowed_sale_uoms.forEach(id => formData.append('allowed_sale_uoms', id))
