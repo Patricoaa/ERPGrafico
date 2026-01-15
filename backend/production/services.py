@@ -355,11 +355,9 @@ class WorkOrderService:
                 line = PurchaseLine.objects.create(
                     order=po,
                     product=mat.component,
-                    description=f"{mat.component.name} (OT-{work_order.number})",
                     quantity=mat.quantity_planned,
-                    unit_price=mat.unit_price,
-                    uom=mat.uom,
-                    subtotal=mat.quantity_planned * mat.unit_price
+                    unit_cost=mat.unit_price,
+                    uom=mat.uom
                 )
                 mat.purchase_line = line
                 mat.save()

@@ -70,12 +70,12 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                                 OT-{order.number}
                                             </span>
                                             {order.outsourcing_status === 'partial' && (
-                                                <Badge variant="secondary" className="text-[9px] bg-blue-50 text-blue-700 border-blue-200 py-0 h-4">
+                                                <Badge variant="secondary" className="text-[11px] bg-blue-50 text-blue-700 border-blue-200 py-0 h-4">
                                                     Parcial
                                                 </Badge>
                                             )}
                                             {order.outsourcing_status === 'full' && (
-                                                <Badge variant="secondary" className="text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200 py-0 h-4 font-bold">
+                                                <Badge variant="secondary" className="text-[11px] bg-indigo-50 text-indigo-700 border-indigo-200 py-0 h-4 font-bold">
                                                     Tercerizado
                                                 </Badge>
                                             )}
