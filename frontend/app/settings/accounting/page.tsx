@@ -225,13 +225,6 @@ export default function AccountingSettingsPage() {
                                     <CardContent>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-4">
-                                                <Alert className="mb-4">
-                                                    <Settings2 className="h-4 w-4" />
-                                                    <AlertTitle>Cuentas por Tipo de Producto</AlertTitle>
-                                                    <AlertDescription>
-                                                        Asigne cuentas específicas según el tipo de producto para mayor control contable.
-                                                    </AlertDescription>
-                                                </Alert>
 
                                                 <AccountField
                                                     form={form}
@@ -260,9 +253,6 @@ export default function AccountingSettingsPage() {
                                                     label="Inventario General (Fallback - Deprecated)"
                                                     accountType="ASSET"
                                                 />
-                                                <p className="text-xs text-muted-foreground">
-                                                    ⚠️ Esta cuenta se usa como fallback si no se configuran las cuentas específicas por tipo.
-                                                </p>
                                             </div>
 
                                             <div className="space-y-4">

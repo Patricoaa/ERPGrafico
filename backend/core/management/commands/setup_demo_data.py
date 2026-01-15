@@ -291,10 +291,17 @@ class Command(BaseCommand):
     def _create_inventory(self, accounts, uoms):
         wh, _ = Warehouse.objects.get_or_create(code="WH-CITY", defaults={'name': "Bodega Taller Central"})
 
-        cat_raw, _ = ProductCategory.objects.get_or_create(name="Materias Primas", defaults={'asset_account': accounts['inventory_raw'], 'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'MP'})
-        cat_supplies, _ = ProductCategory.objects.get_or_create(name="Insumos", defaults={'asset_account': accounts['inventory_raw'], 'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'INS'})
-        cat_finished, _ = ProductCategory.objects.get_or_create(name="Productos Terminados", defaults={'asset_account': accounts['inventory_finished'], 'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'PT'})
-        cat_services, _ = ProductCategory.objects.get_or_create(name="Servicios Gráficos", defaults={'asset_account': accounts['inventory_finished'], 'income_account': accounts['sales_service'], 'expense_account': accounts['cogs_service'], 'prefix': 'SRV'})
+        cat_raw, _ = ProductCategory.objects.get_or_create(name="Materias Primas", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'MP'})
+        if cat_raw.asset_account: cat_raw.asset_account = None; cat_raw.save()
+        
+        cat_supplies, _ = ProductCategory.objects.get_or_create(name="Insumos", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'INS'})
+        if cat_supplies.asset_account: cat_supplies.asset_account = None; cat_supplies.save()
+        
+        cat_finished, _ = ProductCategory.objects.get_or_create(name="Productos Terminados", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'PT'})
+        if cat_finished.asset_account: cat_finished.asset_account = None; cat_finished.save()
+        
+        cat_services, _ = ProductCategory.objects.get_or_create(name="Servicios Gráficos", defaults={'income_account': accounts['sales_service'], 'expense_account': accounts['cogs_service'], 'prefix': 'SRV'})
+        if cat_services.asset_account: cat_services.asset_account = None; cat_services.save()
 
         # RAW MATERIALS
         p_papel, _ = Product.objects.get_or_create(code="INS-0001", defaults={'name': "Resma de papel", 'category': cat_supplies, 'product_type': Product.Type.STORABLE, 'uom': uoms['resma'], 'purchase_uom': uoms['hoja'], 'sale_price': 5000})

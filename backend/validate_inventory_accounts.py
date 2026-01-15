@@ -44,10 +44,11 @@ def validate_migration():
     # 3. Verificar asignación de cuentas
     print("\n3. ASIGNACIÓN DE CUENTAS:")
     errors = []
-    for product in Product.objects.filter(track_inventory=True):
+    # Only check products that are NOT services
+    for product in Product.objects.filter(track_inventory=True).exclude(product_type='SERVICE'):
         account = product.get_asset_account
         if not account:
-            errors.append(f"   ❌ {product.internal_code}: Sin cuenta asignada")
+            errors.append(f"   ❌ {product.code}: Sin cuenta asignada")
     
     if errors:
         print("\n".join(errors))
@@ -67,6 +68,26 @@ def validate_migration():
     print(f"   ✓ {consumable} productos CONSUMABLE")
     print(f"   ✓ {service} productos SERVICE")
     
+    # NEW: Verificar consistencia de STORABLE
+    print("\n4.5. VERIFICACIÓN DE CONSISTENCIA (STORABLE):")
+    storable_setting = settings.storable_inventory_account
+    if not storable_setting:
+         print("   ⚠️ No se puede verificar: storable_inventory_account no configurada")
+    else:
+        mismatches = []
+        # Check first 5 storable products to avoid spam
+        for product in Product.objects.filter(track_inventory=True, product_type='STORABLE')[:10]:
+            account = product.get_asset_account
+            if account and account.id != storable_setting.id:
+                 mismatches.append(f"   ⚠️ {product.code}: Usa {account.code} pero configuración dice {storable_setting.code}")
+        
+        if mismatches:
+            print("\n".join(mismatches))
+            print("   ❌ ERROR: Productos STORABLE no están usando la cuenta configurada (¿Override de categoría?)")
+            return False
+        else:
+            print(f"   ✓ Productos STORABLE están usando {storable_setting.code} correctamente")
+
     # 5. Verificar que nuevos campos apuntan a cuenta correcta
     print("\n5. VERIFICACIÓN DE MIGRACIÓN:")
     if settings.storable_inventory_account and settings.default_inventory_account:

@@ -8,6 +8,8 @@ import { Printer, CalendarIcon, Paintbrush, Plus, FileText, Upload, X, FileIcon,
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { UoMSelector } from "@/components/selectors/UoMSelector"
 import {
     Dialog,
     DialogContent,
@@ -57,6 +59,10 @@ const workOrderSchema = z.object({
     internal_notes: z.string().optional(),
     contact_id: z.string().optional().or(z.literal("")),
     sale_line: z.string().optional().or(z.literal("")),
+    // --- Fields for manual creation ---
+    product_id: z.string().optional().or(z.literal("")),
+    quantity: z.string().optional(), // Using string for input, converting later
+    uom_id: z.string().optional().or(z.literal("")),
 })
 
 type WorkOrderFormValues = z.infer<typeof workOrderSchema>
@@ -95,6 +101,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [printType, setPrintType] = useState<string | null>(null)
 
     const [selectedContact, setSelectedContact] = useState<any>(null)
+    const [selectedManualProduct, setSelectedManualProduct] = useState<any>(null)
 
     const form = useForm<WorkOrderFormValues>({
         resolver: zodResolver(workOrderSchema),
@@ -220,6 +227,19 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             }
         }
     }, [watchedSaleLineId, saleLines, initialData, form])
+
+    // Manual Product Selection Handler
+    const handleManualProductSelect = (product: any) => {
+        setSelectedManualProduct(product)
+        if (product) {
+            form.setValue('product_description', product.name)
+            form.setValue('description', `OT: ${product.name}`)
+            // Default UoM
+            if (product.uom?.id) {
+                form.setValue('uom_id', product.uom.id.toString())
+            }
+        }
+    }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
