@@ -414,8 +414,6 @@ class BillingService:
                 entry.description = f"{invoice.get_dte_type_display()} Compra {number} - OC {invoice.purchase_order.number}"
             elif invoice.sale_order:
                 entry.description = f"{invoice.get_dte_type_display()} {number} - Pedido {invoice.sale_order.number}"
-            elif invoice.service_obligation:
-                entry.description = f"Gasto Servicio {invoice.service_obligation.contract.name} - {invoice.get_dte_type_display()} {number}"
             
             entry.reference = f"{invoice.dte_type[:3]}-{number}"
             entry.save()
