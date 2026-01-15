@@ -39,7 +39,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { ContactSelector } from "@/components/selectors/ContactSelector"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import dynamic from "next/dynamic"
 
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -510,10 +510,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t mt-2">
                                                     <div className="flex-1 space-y-2">
                                                         <label className="text-xs font-bold uppercase text-primary">Proveedor del Servicio</label>
-                                                        <ContactSelector
+                                                        <AdvancedContactSelector
                                                             value={selectedSupplierId}
                                                             onChange={setSelectedSupplierId}
-                                                            type="SUPPLIER"
+                                                            contactType="SUPPLIER"
                                                         />
                                                     </div>
                                                     <div className="w-full md:w-40 space-y-2">
