@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Building2, User } from "lucide-react"
+import { Building2, User, AlertCircle } from "lucide-react"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { Label } from "@/components/ui/label"
 import api from "@/lib/api"
 
 export interface Step0_SupplierProps {
@@ -15,82 +17,66 @@ export function Step0_Supplier({
     setSelectedSupplierId,
     setSelectedSupplierName
 }: Step0_SupplierProps) {
-    const [suppliers, setSuppliers] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        const fetchSuppliers = async () => {
-            try {
-                const response = await api.get('/contacts/suppliers/')
-                const suppliersList = response.data.results || response.data
-                setSuppliers(suppliersList)
-
-                // Auto-select default supplier if exists and none selected
-                if (!selectedSupplierId) {
-                    const defaultSupplier = suppliersList.find((s: any) => s.is_default)
-                    if (defaultSupplier) {
+        const fetchDefaultSupplier = async () => {
+            if (!selectedSupplierId) {
+                setLoading(true)
+                try {
+                    // Fetch contacts filtered by default vendor flag
+                    const response = await api.get('/contacts/?is_default_vendor=true')
+                    const results = response.data.results || response.data
+                    if (results && results.length > 0) {
+                        const defaultSupplier = results[0]
                         setSelectedSupplierId(defaultSupplier.id.toString())
                         setSelectedSupplierName(defaultSupplier.name)
                     }
+                } catch (error) {
+                    console.error("Failed to fetch default supplier", error)
+                } finally {
+                    setLoading(false)
                 }
-            } catch (error) {
-                console.error("Failed to fetch suppliers", error)
-            } finally {
-                setLoading(false)
             }
         }
-        fetchSuppliers()
+        fetchDefaultSupplier()
     }, [selectedSupplierId, setSelectedSupplierId, setSelectedSupplierName])
 
-    const handleSupplierChange = (val: string) => {
-        setSelectedSupplierId(val)
-        const supplier = suppliers.find(s => s.id.toString() === val)
-        if (supplier) {
-            setSelectedSupplierName(supplier.name)
-        } else {
-            setSelectedSupplierName("")
-        }
-    }
-
     return (
-        <div className="flex flex-col items-center justify-center space-y-8 py-12 max-w-2xl mx-auto text-center">
+        <div className="space-y-8 flex flex-col items-center justify-center min-h-[400px] max-w-2xl mx-auto">
             <div className="relative">
                 <div className="absolute -inset-4 bg-primary/10 rounded-full blur-xl animate-pulse" />
                 <div className="relative bg-background p-6 rounded-2xl shadow-xl border-2 border-primary/20">
-                    <Building2 className="h-16 w-16 text-primary" />
+                    <Building2 className="h-12 w-12 text-primary" />
                 </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="text-center space-y-2">
                 <h3 className="text-2xl font-bold tracking-tight">Seleccionar Proveedor</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
+                <p className="text-muted-foreground">
                     Busque un proveedor por nombre o RUT para asociar a esta compra.
                 </p>
             </div>
 
             <div className="w-full space-y-4">
-                <div className="relative group text-left">
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none px-3">
-                        <User className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    </div>
-                    <select
-                        id="supplier"
-                        className="flex h-14 w-full rounded-xl border-2 border-input bg-background/50 pl-12 pr-4 py-2 text-lg font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-background/80 appearance-none"
+                <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
+                        Proveedor
+                    </Label>
+                    <AdvancedContactSelector
                         value={selectedSupplierId}
-                        onChange={(e) => handleSupplierChange(e.target.value)}
-                        disabled={loading}
-                    >
-                        <option value="">{loading ? "Cargando proveedores..." : "Seleccionar un proveedor..."}</option>
-                        {suppliers.map((s) => (
-                            <option key={s.id} value={s.id.toString()}>{s.name} ({s.tax_id})</option>
-                        ))}
-                    </select>
+                        onChange={setSelectedSupplierId}
+                        onSelectContact={(contact) => setSelectedSupplierName(contact.name)}
+                        contactType="SUPPLIER"
+                        placeholder="Buscar por Nombre, RUT o Email..."
+                    />
                 </div>
 
                 {!selectedSupplierId && !loading && (
-                    <p className="text-sm text-amber-600 font-medium animate-in fade-in slide-in-from-top-2">
-                        Debe seleccionar un proveedor para proceder con la selección de productos.
-                    </p>
+                    <div className="flex items-center gap-2 text-sm text-amber-600 font-medium py-2 px-3 bg-amber-50 rounded-lg border border-amber-100 animate-in fade-in slide-in-from-top-2">
+                        <AlertCircle className="h-4 w-4" />
+                        Debe seleccionar un proveedor para proceder.
+                    </div>
                 )}
             </div>
         </div>
