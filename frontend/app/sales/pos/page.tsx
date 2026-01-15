@@ -371,13 +371,13 @@ export default function POSPage() {
                                                 )}
                                                 {product.product_type === 'MANUFACTURABLE' && (
                                                     <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
-                                                        <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity || 0) > 0 || !product.has_bom ? 'bg-blue-500' : 'bg-red-500'}`} />
-                                                        {(product.manufacturable_quantity === null || product.manufacturable_quantity === undefined || product.manufacturable_quantity > 999999 || !product.has_bom)
+                                                        <div className={`h-2 w-2 rounded-full ${(!product.has_bom || (product.manufacturable_quantity || 0) > 0 || product.manufacturable_quantity === null || product.manufacturable_quantity === undefined) ? 'bg-blue-500' : 'bg-red-500'}`} />
+                                                        {(!product.has_bom || product.manufacturable_quantity === null || product.manufacturable_quantity === undefined || product.manufacturable_quantity > 999999)
                                                             ? 'Disponible'
                                                             : `${product.manufacturable_quantity} fab.`}
                                                     </div>
                                                 )}
-                                                {product.product_type === 'SERVICE' && (
+                                                {(product.product_type === 'SERVICE' || product.product_type === 'SUBSCRIPTION' || product.product_type === 'CONSUMABLE') && (
                                                     <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                                         <div className="h-2 w-2 rounded-full bg-green-500" />
                                                         Disponible

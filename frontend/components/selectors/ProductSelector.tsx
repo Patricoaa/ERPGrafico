@@ -119,6 +119,8 @@ export function ProductSelector({
         if (product.product_type === 'MANUFACTURABLE') {
             // Exception: If it has no BOM, it's always available for manufacturing (express)
             if (!product.has_bom) return false
+            // If quantity is unknown (null/undefined), we assume it's available (or at least selectable)
+            if (product.manufacturable_quantity === null || product.manufacturable_quantity === undefined) return false
             return (product.manufacturable_quantity || 0) <= 0
         }
 
@@ -236,7 +238,11 @@ export function ProductSelector({
                                                 <div className="flex justify-between mt-0.5">
                                                     <span className="text-[10px] text-muted-foreground">
                                                         {product.product_type === 'STORABLE' && `Stock: ${(product.current_stock || 0)}`}
-                                                        {product.product_type === 'MANUFACTURABLE' && product.has_bom && `Fab: ${(product.manufacturable_quantity || 0)}`}
+                                                        {product.product_type === 'MANUFACTURABLE' && product.has_bom && (
+                                                            (product.manufacturable_quantity === null || product.manufacturable_quantity === undefined)
+                                                                ? 'Fab: Disponible'
+                                                                : `Fab: ${(product.manufacturable_quantity || 0)}`
+                                                        )}
                                                     </span>
                                                     <span className="text-[10px] font-bold">
                                                         ${PricingUtils.netToGross(Number(product.sale_price)).toLocaleString()}
