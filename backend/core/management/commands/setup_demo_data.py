@@ -143,10 +143,24 @@ class Command(BaseCommand):
         # Update Settings
         settings = AccountingSettings.objects.first()
         if settings:
+            # Cuentas de ajuste (ya existentes)
             if acc_gain: settings.adjustment_income_account = acc_gain
             if acc_loss: settings.adjustment_expense_account = acc_loss
             if acc_initial: settings.initial_inventory_account = acc_initial
             if acc_reval: settings.revaluation_account = acc_reval
+            
+            # NUEVO: Configurar cuentas por tipo de producto
+            inventory_account = Account.objects.filter(code='1.1.03.01').first()
+            consumable_account = Account.objects.filter(code='5.2.05').first()
+            
+            if inventory_account:
+                settings.storable_inventory_account = inventory_account
+                settings.manufacturable_inventory_account = inventory_account
+                self.stdout.write("  ✓ Cuentas de inventario por tipo configuradas")
+            
+            if consumable_account:
+                settings.default_consumable_account = consumable_account
+                self.stdout.write("  ✓ Cuenta de consumibles configurada")
             
             # Map service expense account (5.1.02 - Costo de Servicios Prestados)
             service_expense_acc = Account.objects.filter(code='5.1.02').first()
@@ -154,7 +168,7 @@ class Command(BaseCommand):
                 settings.default_service_expense_account = service_expense_acc
             
             settings.save()
-            self.stdout.write("  Inventory accounting settings updated.")
+            self.stdout.write("  ✓ Inventory accounting settings updated.")
 
     def _purge_data(self):
         def _safe_delete(model_class, name):

@@ -306,7 +306,14 @@ class AccountingSettings(models.Model):
     default_expense_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_expense')
     default_tax_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_receivable')
     default_tax_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_payable')
-    default_inventory_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_inventory')
+    default_inventory_account = models.ForeignKey(
+        Account, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='settings_inventory',
+        verbose_name=_("Cuenta Inventario General (Deprecated)"),
+        help_text=_("⚠️ DEPRECATED: Use cuentas específicas por tipo de producto. Se mantiene como fallback.")
+    )
     
     # Stock Interim Accounts
     stock_input_account = models.ForeignKey(
@@ -324,6 +331,25 @@ class AccountingSettings(models.Model):
         related_name='settings_stock_output',
         verbose_name=_("Cuenta de Salida de Stock (Puente)"),
         help_text=_("Cuenta usada como contrapartida en salidas no facturadas (si aplica).")
+    )
+    
+    # Type-Based Inventory Accounts
+    storable_inventory_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_storable_inventory',
+        verbose_name=_("Cuenta Inventario Almacenables"),
+        help_text=_("Cuenta para productos STORABLE (ej: 1.1.03.01)")
+    )
+    
+    manufacturable_inventory_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_manufacturable_inventory',
+        verbose_name=_("Cuenta Inventario Fabricables"),
+        help_text=_("Cuenta para productos MANUFACTURABLE (ej: 1.1.03.01)")
     )
     
     # Consumable Products Account

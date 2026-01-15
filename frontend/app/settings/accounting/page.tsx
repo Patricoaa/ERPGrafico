@@ -26,8 +26,8 @@ const accountingSchema = z.object({
     default_tax_receivable_account: z.string().nullable(),
     default_tax_payable_account: z.string().nullable(),
     default_inventory_account: z.string().nullable(),
-    stock_input_account: z.string().nullable(),
-    stock_output_account: z.string().nullable(),
+    storable_inventory_account: z.string().nullable(),
+    manufacturable_inventory_account: z.string().nullable(),
     default_consumable_account: z.string().nullable(),
     default_prepayment_account: z.string().nullable(),
     default_advance_payment_account: z.string().nullable(),
@@ -63,8 +63,8 @@ export default function AccountingSettingsPage() {
             default_tax_receivable_account: null,
             default_tax_payable_account: null,
             default_inventory_account: null,
-            stock_input_account: null,
-            stock_output_account: null,
+            storable_inventory_account: null,
+            manufacturable_inventory_account: null,
             default_consumable_account: null,
             default_prepayment_account: null,
             default_advance_payment_account: null,
@@ -218,28 +218,99 @@ export default function AccountingSettingsPage() {
                                 <Card className="md:col-span-2">
                                     <CardHeader>
                                         <CardTitle className="text-lg">Gestión de Inventario</CardTitle>
-                                        <CardDescription>Configuración de cuentas para control de stock.</CardDescription>
+                                        <CardDescription>
+                                            Configuración de cuentas para control de stock por tipo de producto.
+                                        </CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-4">
-                                                <AccountField form={form} name="default_inventory_account" label="Inventario (Activo)" accountType="ASSET" />
-                                                <AccountField form={form} name="default_consumable_account" label="Gastos Consumibles (Gasto)" accountType="EXPENSE" />
+                                                <Alert className="mb-4">
+                                                    <Settings2 className="h-4 w-4" />
+                                                    <AlertTitle>Cuentas por Tipo de Producto</AlertTitle>
+                                                    <AlertDescription>
+                                                        Asigne cuentas específicas según el tipo de producto para mayor control contable.
+                                                    </AlertDescription>
+                                                </Alert>
+
+                                                <AccountField
+                                                    form={form}
+                                                    name="storable_inventory_account"
+                                                    label="Inventario Almacenables (STORABLE)"
+                                                    accountType="ASSET"
+                                                />
+                                                <AccountField
+                                                    form={form}
+                                                    name="manufacturable_inventory_account"
+                                                    label="Inventario Fabricables (MANUFACTURABLE)"
+                                                    accountType="ASSET"
+                                                />
+                                                <AccountField
+                                                    form={form}
+                                                    name="default_consumable_account"
+                                                    label="Gastos Consumibles (CONSUMABLE)"
+                                                    accountType="EXPENSE"
+                                                />
+
+                                                <Separator className="my-2" />
+
+                                                <AccountField
+                                                    form={form}
+                                                    name="default_inventory_account"
+                                                    label="Inventario General (Fallback - Deprecated)"
+                                                    accountType="ASSET"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    ⚠️ Esta cuenta se usa como fallback si no se configuran las cuentas específicas por tipo.
+                                                </p>
                                             </div>
+
                                             <div className="space-y-4">
-                                                <AccountField form={form} name="stock_input_account" label="Puente Recepciones (Pasivo)" accountType="LIABILITY" />
-                                                <AccountField form={form} name="stock_output_account" label="Puente Despachos (Activo)" accountType="ASSET" />
+                                                <AccountField
+                                                    form={form}
+                                                    name="stock_input_account"
+                                                    label="Puente Recepciones (Pasivo)"
+                                                    accountType="LIABILITY"
+                                                />
+                                                <AccountField
+                                                    form={form}
+                                                    name="stock_output_account"
+                                                    label="Puente Despachos (Activo)"
+                                                    accountType="ASSET"
+                                                />
                                             </div>
                                         </div>
+
                                         <Separator className="my-4" />
+
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                             <div className="space-y-4">
-                                                <AccountField form={form} name="adjustment_income_account" label="Ingreso por Ajuste/Sobrante (Ingreso)" accountType="INCOME" />
-                                                <AccountField form={form} name="adjustment_expense_account" label="Gasto por Ajuste/Merma (Gasto)" accountType="EXPENSE" />
+                                                <AccountField
+                                                    form={form}
+                                                    name="adjustment_income_account"
+                                                    label="Ingreso por Ajuste/Sobrante (Ingreso)"
+                                                    accountType="INCOME"
+                                                />
+                                                <AccountField
+                                                    form={form}
+                                                    name="adjustment_expense_account"
+                                                    label="Gasto por Ajuste/Merma (Gasto)"
+                                                    accountType="EXPENSE"
+                                                />
                                             </div>
                                             <div className="space-y-4">
-                                                <AccountField form={form} name="initial_inventory_account" label="Carga de Stock Inicial (Patrimonio/Activo)" accountType="EQUITY" />
-                                                <AccountField form={form} name="revaluation_account" label="Revalorización de Stock (Ingreso/Gasto)" accountType="INCOME" />
+                                                <AccountField
+                                                    form={form}
+                                                    name="initial_inventory_account"
+                                                    label="Carga de Stock Inicial (Patrimonio/Activo)"
+                                                    accountType="EQUITY"
+                                                />
+                                                <AccountField
+                                                    form={form}
+                                                    name="revaluation_account"
+                                                    label="Revalorización de Stock (Ingreso/Gasto)"
+                                                    accountType="INCOME"
+                                                />
                                             </div>
                                         </div>
                                     </CardContent>

@@ -271,10 +271,40 @@ class Product(models.Model):
             
         super().save(*args, **kwargs)
 
-    # Helpers to get effective accounts (Product override > Category > None)
+    # Helpers to get effective accounts (Product override > Category > Type-based > Fallback)
     @property
     def get_asset_account(self):
-        return self.category.asset_account
+        """
+        Returns the asset account for this product.
+        Priority:
+        1. Category-specific account (allows customization)
+        2. Type-specific account from settings
+        3. General inventory account (fallback)
+        """
+        from accounting.models import AccountingSettings
+        
+        # 1. Category override (highest priority)
+        if self.category and self.category.asset_account:
+            return self.category.asset_account
+        
+        # 2. Type-based account from settings
+        settings = AccountingSettings.objects.first()
+        if not settings:
+            return None
+        
+        if self.product_type == self.Type.STORABLE:
+            return (settings.storable_inventory_account or 
+                    settings.default_inventory_account)
+        
+        elif self.product_type == self.Type.MANUFACTURABLE:
+            return (settings.manufacturable_inventory_account or 
+                    settings.default_inventory_account)
+        
+        elif self.product_type == self.Type.CONSUMABLE:
+            return settings.default_consumable_account
+        
+        else:  # SERVICE
+            return None
     
     @property
     def get_income_account(self):

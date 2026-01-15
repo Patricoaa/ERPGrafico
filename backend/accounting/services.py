@@ -213,10 +213,15 @@ class AccountingService:
             'default_expense_account': '5.2.06',
             'default_tax_receivable_account': '1.1.04.01',
             'default_tax_payable_account': '2.1.02.01',
-            'default_inventory_account': '1.1.03.01',
+            
+            # Cuentas de inventario
+            'default_inventory_account': '1.1.03.01',  # Mantener para compatibilidad
+            'storable_inventory_account': '1.1.03.01',  # NUEVO
+            'manufacturable_inventory_account': '1.1.03.01',  # NUEVO
+            'default_consumable_account': '5.2.05',
+            
             'stock_input_account': '2.1.06.01',
             'stock_output_account': '1.1.06.01',
-            'default_consumable_account': '5.2.05',
             'default_service_expense_account': '5.1.02',
             'default_prepayment_account': '1.1.02.02',
             'default_advance_payment_account': '2.1.01.02',
