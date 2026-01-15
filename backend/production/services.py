@@ -69,12 +69,17 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
-    def create_manual(product, quantity, description, warehouse=None):
+    def create_manual(product, quantity, description, uom=None, warehouse=None):
         """
         Creates a manual Work Order for internal needs.
         """
         if product.product_type != Product.Type.MANUFACTURABLE:
             raise ValidationError("El producto debe ser fabricable.")
+
+        stage_data = {'quantity': float(quantity)}
+        if uom:
+             stage_data['uom_id'] = uom.id
+             stage_data['uom_name'] = uom.name
 
         work_order = WorkOrder.objects.create(
             description=description,
@@ -83,17 +88,26 @@ class WorkOrderService:
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=warehouse,
-            stage_data={'quantity': float(quantity)}
+            stage_data=stage_data
         )
 
         # Auto-assign materials from BOM if active
         active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
         if active_bom:
+            from inventory.services import UoMService
+            
+            # Convert produced quantity to product base UoM if necessary for BOM calculation
+            # BOM quantities are usually per 1 unit of Product Base UoM
+            
+            qty_base = Decimal(str(quantity))
+            if uom and uom != product.uom:
+                 qty_base = UoMService.convert_quantity(Decimal(str(quantity)), uom, product.uom)
+
             for line in active_bom.lines.all():
                 WorkOrderMaterial.objects.create(
                     work_order=work_order,
                     component=line.component,
-                    quantity_planned=line.quantity * quantity,
+                    quantity_planned=line.quantity * qty_base,
                     uom=line.uom or line.component.uom,
                     source='BOM'
                 )

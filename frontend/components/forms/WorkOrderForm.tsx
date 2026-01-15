@@ -290,6 +290,12 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             start_date: data.start_date ? format(data.start_date, 'yyyy-MM-dd') : null,
             estimated_completion_date: data.due_date ? format(data.due_date, 'yyyy-MM-dd') : null,
             sale_line: data.sale_line || null,
+
+            // Manual creation fields
+            product_id: data.product_id || null,
+            quantity: data.quantity ? parseFloat(data.quantity) : null,
+            uom_id: data.uom_id || null,
+
             stage_data: stage_data
         }
 
@@ -476,57 +482,125 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     </div>
                                 ) : (
                                     /* Creation Mode - Selector */
-                                    <div className="space-y-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="sale_line"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Ítem de Venta a Fabricar</FormLabel>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl>
-                                                            <SelectTrigger className="bg-background">
-                                                                <SelectValue placeholder={loadingLines ? "Cargando ítems..." : "Selecciona el producto a fabricar..."} />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            {saleLines.length === 0 && !loadingLines && (
-                                                                <SelectItem value="none" disabled>No hay productos fabricables pendientes</SelectItem>
-                                                            )}
-                                                            {saleLines.map((l) => (
-                                                                <SelectItem key={l.id} value={l.id.toString()}>
-                                                                    {l.product_name || l.description} - Cant: {l.quantity} {l.uom_name}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                    /* Creation Mode */
+                                    <div className="space-y-6">
 
-                                        {watchedSaleLineId && (
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-3 bg-background rounded border animate-in fade-in slide-in-from-top-1">
-                                                {(() => {
-                                                    const l = saleLines.find(x => x.id.toString() === watchedSaleLineId)
-                                                    if (!l) return null
-                                                    return (
-                                                        <>
-                                                            <div>
-                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Cantidad</p>
-                                                                <p className="text-sm font-medium">{l.quantity} {l.uom_name}</p>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Precio Unit.</p>
-                                                                <p className="text-sm font-medium">${parseFloat(l.unit_price).toLocaleString()}</p>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal</p>
-                                                                <p className="text-sm font-bold text-primary">${parseFloat(l.subtotal).toLocaleString()}</p>
-                                                            </div>
-                                                        </>
-                                                    )
-                                                })()}
+                                        {/* OPTION A: Manual Creation (No Sale Order) */}
+                                        {(!watchedSaleOrder || watchedSaleOrder === "__none__" || watchedSaleOrder === "none") && (
+                                            <div className="space-y-4 border rounded-md p-4 bg-muted/20">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Producción Interna / Stock</Badge>
+                                                </div>
+
+                                                <FormField
+                                                    control={form.control}
+                                                    name="product_id"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-col">
+                                                            <FormLabel>Producto a Fabricar <span className="text-destructive">*</span></FormLabel>
+                                                            <ProductSelector
+                                                                value={field.value}
+                                                                onChange={field.onChange}
+                                                                onSelect={handleManualProductSelect}
+                                                                productType="MANUFACTURABLE"
+                                                                placeholder="Buscar producto fabricable..."
+                                                            />
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="quantity"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Cantidad <span className="text-destructive">*</span></FormLabel>
+                                                                <FormControl>
+                                                                    <Input {...field} type="number" min="0.01" step="0.01" placeholder="0.00" />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="uom_id"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Unidad de Medida <span className="text-destructive">*</span></FormLabel>
+                                                                <FormControl>
+                                                                    <UoMSelector
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
+                                                                        categoryId={selectedManualProduct?.uom?.category_id}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* OPTION B: Sale Line Selector (If Sale Order Linked) */}
+                                        {watchedSaleOrder && watchedSaleOrder !== "__none__" && watchedSaleOrder !== "none" && (
+                                            <div className="space-y-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="sale_line"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Ítem de Venta a Fabricar</FormLabel>
+                                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger className="bg-background">
+                                                                        <SelectValue placeholder={loadingLines ? "Cargando ítems..." : "Selecciona el producto a fabricar..."} />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {saleLines.length === 0 && !loadingLines && (
+                                                                        <SelectItem value="none" disabled>No hay productos fabricables pendientes</SelectItem>
+                                                                    )}
+                                                                    {saleLines.map((l) => (
+                                                                        <SelectItem key={l.id} value={l.id.toString()}>
+                                                                            {l.product_name || l.description} - Cant: {l.quantity} {l.uom_name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                {watchedSaleLineId && (
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-3 bg-background rounded border animate-in fade-in slide-in-from-top-1">
+                                                        {(() => {
+                                                            const l = saleLines.find(x => x.id.toString() === watchedSaleLineId)
+                                                            if (!l) return null
+                                                            return (
+                                                                <>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Cantidad</p>
+                                                                        <p className="text-sm font-medium">{l.quantity} {l.uom_name}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Precio Unit.</p>
+                                                                        <p className="text-sm font-medium">${parseFloat(l.unit_price).toLocaleString()}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal</p>
+                                                                        <p className="text-sm font-bold text-primary">${parseFloat(l.subtotal).toLocaleString()}</p>
+                                                                    </div>
+                                                                </>
+                                                            )
+                                                        })()}
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
