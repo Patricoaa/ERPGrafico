@@ -196,7 +196,11 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
         ordering = ['-delivery_date', '-created_at']
     
     def __str__(self):
-        return f"Despacho-{self.number} (NV-{self.sale_order.number})"
+        return f"{self.display_id} (NV-{self.sale_order.number})"
+    
+    @property
+    def display_id(self):
+        return f"DES-{self.number}"
     
     def save(self, *args, **kwargs):
         if not self.number:

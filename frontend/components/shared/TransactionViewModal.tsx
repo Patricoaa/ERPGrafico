@@ -123,7 +123,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             case 'work_order':
                 return { main: "Orden de Trabajo", sub: data.code || `OT-${data.id}` }
             case 'sale_delivery':
-                return { main: "Despacho de Venta", sub: data.number || `DESP-${data.id}` }
+                return { main: "Despacho de Venta", sub: data.display_id || `DES-${data.number || data.id}` }
             default:
                 return { main: "Detalles de Transacción", sub: "" }
         }
@@ -417,50 +417,56 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                     </div>
                                 ) : currentType === 'sale_delivery' ? (
                                     <div className="space-y-6 pt-4 border-t">
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                             <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Fecha Despacho</h4>
-                                                <p className="font-bold">{new Date(data.delivery_date).toLocaleDateString()}</p>
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Almacén</h4>
-                                                <p className="font-bold">{data.warehouse_name}</p>
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Nota de Venta</h4>
-                                                <Button
-                                                    variant="link"
-                                                    className="p-0 h-auto font-bold text-primary"
-                                                    onClick={() => navigateTo('sale_order', data.sale_order)}
-                                                >
-                                                    NV-{data.sale_order_number}
-                                                </Button>
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Estado</h4>
-                                                <Badge>{translateStatus(data.status)}</Badge>
+                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Fecha Despacho</h4>
+                                                <p className="font-black text-base">{new Date(data.delivery_date).toLocaleDateString()}</p>
                                             </div>
                                         </div>
 
-                                        <div className="border rounded-md">
+                                        <div className="border rounded-2xl overflow-hidden bg-muted/5">
                                             <Table>
-                                                <TableHeader className="bg-muted/50">
-                                                    <TableRow>
-                                                        <TableHead>Producto</TableHead>
-                                                        <TableHead className="text-right">Cantidad</TableHead>
+                                                <TableHeader className="bg-muted/10">
+                                                    <TableRow className="hover:bg-transparent border-muted/20">
+                                                        <TableHead className="text-[10px] font-black uppercase tracking-wider h-10">Producto</TableHead>
+                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-wider h-10 w-[120px]">Cant. Orden</TableHead>
+                                                        <TableHead className="text-center text-[10px] font-black uppercase tracking-wider h-10 w-[80px]">UOM</TableHead>
+                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-wider h-10 w-[120px]">Despachado</TableHead>
+                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-wider h-10 w-[120px]">Movimiento</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
                                                     {(data.lines || []).map((line: any) => (
-                                                        <TableRow key={line.id}>
+                                                        <TableRow key={line.id} className="hover:bg-muted/10 border-muted/10">
                                                             <TableCell>
                                                                 <div className="flex flex-col">
-                                                                    <span className="font-bold">{line.product_name}</span>
-                                                                    <span className="text-[10px] text-muted-foreground font-mono">{line.product_code}</span>
+                                                                    <span className="font-black text-sm">{line.product_name}</span>
+                                                                    <span className="text-[9px] text-muted-foreground font-mono tracking-tighter uppercase">{line.product_code}</span>
                                                                 </div>
                                                             </TableCell>
-                                                            <TableCell className="text-right font-bold">
+                                                            <TableCell className="text-right font-bold text-sm text-muted-foreground">
+                                                                {Number(line.order_quantity).toLocaleString()}
+                                                            </TableCell>
+                                                            <TableCell className="text-center font-bold text-[10px] uppercase">
+                                                                {line.uom_name || 'UN'}
+                                                            </TableCell>
+                                                            <TableCell className="text-right font-black text-base text-orange-600">
                                                                 {Number(line.quantity).toLocaleString()}
+                                                            </TableCell>
+                                                            <TableCell className="text-right">
+                                                                {line.stock_move ? (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 px-2 font-mono text-[10px] font-bold text-blue-600 gap-1.5"
+                                                                        onClick={() => navigateTo('inventory', line.stock_move)}
+                                                                    >
+                                                                        <Eye className="h-3 w-3" />
+                                                                        MOV-{String(line.stock_move).padStart(6, '0')}
+                                                                    </Button>
+                                                                ) : (
+                                                                    <span className="text-[10px] text-muted-foreground italic px-2">Sin mov.</span>
+                                                                )}
                                                             </TableCell>
                                                         </TableRow>
                                                     ))}

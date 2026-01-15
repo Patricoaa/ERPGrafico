@@ -219,6 +219,8 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
 class SaleDeliveryLineSerializer(serializers.ModelSerializer):
     product_code = serializers.CharField(source='product.code', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    order_quantity = serializers.DecimalField(source='sale_line.quantity', max_digits=12, decimal_places=2, read_only=True)
     
     class Meta:
         model = SaleDeliveryLine
