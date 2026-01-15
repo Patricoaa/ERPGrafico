@@ -41,7 +41,7 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
 
                 // Filter products to exclude SERVICE, MANUFACTURABLE_STANDARD, and MANUFACTURABLE_CUSTOM
                 const allProducts = productsRes.data.results || productsRes.data
-                const allowedTypes = ['STORABLE', 'CONSUMABLE']
+                const allowedTypes = ['STORABLE', 'CONSUMABLE', 'SERVICE']
                 const filteredProducts = allProducts.filter((p: any) => allowedTypes.includes(p.product_type))
 
                 setProducts(filteredProducts)
@@ -162,7 +162,7 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                                 <TableCell>
                                     <ProductSelector
                                         value={line.product?.toString() || line.id?.toString() || ""}
-                                        allowedTypes={['STORABLE', 'CONSUMABLE']}
+                                        allowedTypes={['STORABLE', 'CONSUMABLE', 'SERVICE']}
                                         context="purchase"
                                         onChange={(val) => handleProductChange(index, val)}
                                     />
