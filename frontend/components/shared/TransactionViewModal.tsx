@@ -55,6 +55,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             else if (currentType === 'inventory') endpoint = `/inventory/moves/${currentId}/`
             else if (currentType === 'service_obligation') endpoint = `/services/obligations/${currentId}/`
             else if (currentType === 'work_order') endpoint = `/manufacturing/work-orders/${currentId}/`
+            else if (currentType === 'sale_delivery') endpoint = `/sales/deliveries/${currentId}/`
             else if (currentType === 'purchase_receipt') endpoint = `/purchasing/receipts/${currentId}/`
 
             const response = await api.get(endpoint)
