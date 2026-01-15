@@ -165,6 +165,10 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     uom_id: initialData.stage_data?.uom_id?.toString() || "",
                 })
 
+                if (initialData.product) {
+                    setSelectedManualProduct(initialData.product)
+                }
+
                 // Initialize Manufacturing States
                 const mfgData = initialData.stage_data || {}
 
@@ -530,6 +534,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                         onChange={field.onChange}
                                                                         onSelect={handleManualProductSelect}
                                                                         productType="MANUFACTURABLE"
+                                                                        customFilter={(p) => p.requires_advanced_manufacturing === true}
                                                                         disabled={!!initialData} // Lock in Edit Mode
                                                                     />
                                                                 </FormControl>
@@ -565,7 +570,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                         value={field.value || ""}
                                                                         onChange={field.onChange}
                                                                         uoms={uoms}
-                                                                        categoryId={selectedManualProduct?.uom?.category}
+                                                                        categoryId={selectedManualProduct?.uom_category}
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />
