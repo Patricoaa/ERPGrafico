@@ -95,7 +95,7 @@ export default function POSPage() {
 
             // Fetch Products
             try {
-                const res = await api.get('/inventory/products/')
+                const res = await api.get('/inventory/products/?can_be_sold=true')
                 setProducts(res.data.results || res.data)
             } catch (error) {
                 console.error("Failed to fetch products", error)
@@ -350,8 +350,8 @@ export default function POSPage() {
                                                 "cursor-pointer hover:border-primary transition-all active:scale-95 relative flex flex-col overflow-hidden group",
                                                 // Disable if STORABLE with no stock
                                                 product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0 && "opacity-50 pointer-events-none grayscale-[0.5]",
-                                                // Disable if MANUFACTURABLE and quantity is 0 (specifically 0, not null/infinity)
-                                                product.product_type === 'MANUFACTURABLE' && (product.manufacturable_quantity === 0) && "opacity-50 pointer-events-none grayscale-[0.5]"
+                                                // Disable if MANUFACTURABLE and quantity is 0 (specifically 0, not null/infinity), EXCEPT if has no BOM
+                                                product.product_type === 'MANUFACTURABLE' && (product.manufacturable_quantity === 0) && product.has_bom && "opacity-50 pointer-events-none grayscale-[0.5]"
                                             )}
                                             onClick={() => addToCart(product)}
                                         >
@@ -371,8 +371,8 @@ export default function POSPage() {
                                                 )}
                                                 {product.product_type === 'MANUFACTURABLE' && (
                                                     <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
-                                                        <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity || 0) > 0 ? 'bg-blue-500' : 'bg-red-500'}`} />
-                                                        {(product.manufacturable_quantity === null || product.manufacturable_quantity === undefined || product.manufacturable_quantity > 999999)
+                                                        <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity || 0) > 0 || !product.has_bom ? 'bg-blue-500' : 'bg-red-500'}`} />
+                                                        {(product.manufacturable_quantity === null || product.manufacturable_quantity === undefined || product.manufacturable_quantity > 999999 || !product.has_bom)
                                                             ? 'Disponible'
                                                             : `${product.manufacturable_quantity} fab.`}
                                                     </div>

@@ -35,16 +35,12 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
         const fetchData = async () => {
             try {
                 const [productsRes, uomsRes] = await Promise.all([
-                    api.get('/inventory/products/'),
+                    api.get('/inventory/products/?can_be_purchased=true'),
                     api.get('/inventory/uoms/'),
                 ])
 
-                // Filter products to exclude SERVICE, MANUFACTURABLE_STANDARD, and MANUFACTURABLE_CUSTOM
                 const allProducts = productsRes.data.results || productsRes.data
-                const allowedTypes = ['STORABLE', 'CONSUMABLE', 'SERVICE']
-                const filteredProducts = allProducts.filter((p: any) => allowedTypes.includes(p.product_type))
-
-                setProducts(filteredProducts)
+                setProducts(allProducts)
                 setUoMs(uomsRes.data.results || uomsRes.data)
             } catch (error) {
                 console.error("Error fetching data:", error)
@@ -162,7 +158,6 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                                 <TableCell>
                                     <ProductSelector
                                         value={line.product?.toString() || line.id?.toString() || ""}
-                                        allowedTypes={['STORABLE', 'CONSUMABLE', 'SERVICE']}
                                         context="purchase"
                                         onChange={(val) => handleProductChange(index, val)}
                                     />

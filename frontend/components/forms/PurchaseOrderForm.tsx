@@ -131,16 +131,12 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
     const fetchData = async () => {
         try {
             const [productsRes, uomsRes] = await Promise.all([
-                api.get('/inventory/products/'),
+                api.get('/inventory/products/?can_be_purchased=true'),
                 api.get('/inventory/uoms/'),
             ])
 
-            // Filter products to exclude SERVICE, MANUFACTURABLE_STANDARD, and MANUFACTURABLE_CUSTOM
             const allProducts = productsRes.data.results || productsRes.data
-            const allowedTypes = ['STORABLE', 'CONSUMABLE']
-            const filteredProducts = allProducts.filter((p: any) => allowedTypes.includes(p.product_type))
-
-            setProducts(filteredProducts)
+            setProducts(allProducts)
             setUoMs(uomsRes.data.results || uomsRes.data)
         } catch (error) {
             console.error("Error fetching data:", error)
@@ -242,7 +238,6 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                             <div className="space-y-1">
                                                                 <ProductSelector
                                                                     value={field.value}
-                                                                    allowedTypes={['STORABLE', 'CONSUMABLE']}
                                                                     context="purchase"
                                                                     onChange={(val) => {
                                                                         field.onChange(val)

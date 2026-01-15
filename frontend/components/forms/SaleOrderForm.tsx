@@ -175,7 +175,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     const fetchData = async () => {
         try {
             const [productsRes, uomsRes, rulesRes] = await Promise.all([
-                api.get('/inventory/products/'),
+                api.get('/inventory/products/?can_be_sold=true'),
                 api.get('/inventory/uoms/'),
                 api.get('/inventory/pricing-rules/?active=true')
             ])

@@ -25,7 +25,6 @@ const mainItems = [
     { id: "production", icon: Printer, label: "Producción" },
     { id: "treasury", icon: Banknote, label: "Tesorería" },
     { id: "purchasing", icon: ShoppingBag, label: "Compras" },
-    { id: "services", icon: Calendar, label: "Servicios" },
     { id: "finances", icon: PieChart, label: "Finanzas" },
 ]
 
