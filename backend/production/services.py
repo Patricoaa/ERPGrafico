@@ -343,7 +343,7 @@ class WorkOrderService:
             if not po:
                 from core.services import SequenceService
                 po = PurchaseOrder.objects.create(
-                    number=SequenceService.get_next_sequence('OC'),
+                    number=f"OC-{SequenceService.get_next_number(PurchaseOrder)}",
                     supplier_id=supplier_id,
                     work_order=work_order,
                     warehouse=work_order.warehouse or Warehouse.objects.first(),
