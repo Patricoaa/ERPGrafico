@@ -187,6 +187,27 @@ class Command(BaseCommand):
             self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")
 
     def _purge_data(self):
+        from django.db import connection
+        
+        def _purge_legacy_tables():
+            self.stdout.write("  Checking for legacy tables...")
+            with connection.cursor() as cursor:
+                # Tables that might exist in DB but not in current apps
+                legacy_tables = [
+                    'services_serviceobligation',
+                    'services_servicecontract',
+                    'services_servicecategory'
+                ]
+                for table in legacy_tables:
+                    try:
+                        cursor.execute(f"TRUNCATE TABLE {table} CASCADE;")
+                        self.stdout.write(f"    ✓ Legacy table {table} truncated.")
+                    except Exception:
+                        # Table might not exist, ignore
+                        pass
+
+        _purge_legacy_tables()
+
         def _safe_delete(model_class, name):
             self.stdout.write(f"  Deleting {name}...")
             try:
