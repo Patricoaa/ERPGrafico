@@ -60,6 +60,10 @@ class Invoice(models.Model):
         verbose_name_plural = _("Facturas y Boletas")
 
     def __str__(self):
+        return self.display_id
+
+    @property
+    def display_id(self):
         prefix = 'FACT'
         if self.dte_type == 'NOTA_CREDITO': prefix = 'NC'
         elif self.dte_type == 'NOTA_DEBITO': prefix = 'ND'

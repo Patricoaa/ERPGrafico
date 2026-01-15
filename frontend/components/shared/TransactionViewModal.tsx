@@ -93,40 +93,43 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         setCurrentId(prev.id)
     }
 
-    const getTitle = () => {
-        if (!data) return "DETALLE DE TRANSACCIÓN"
-        if (view === 'history') return "HISTORIAL DE PAGOS"
+    const getHeaderInfo = () => {
+        if (!data) return { main: "DETALLE DE TRANSACCIÓN", sub: "" }
+        if (view === 'history') return { main: "HISTORIAL DE PAGOS", sub: data.display_id || data.number || data.id }
 
         switch (currentType) {
             case 'sale_order':
-                return `ORDEN DE VENTA NV-${data.number || data.id}`
+                return { main: "Comprobante de Venta", sub: `NV-${data.number || data.id}` }
             case 'purchase_order':
-                return `ORDEN DE COMPRA OC-${data.number || data.id}`
+                return { main: "Comprobante de Compra", sub: `OC-${data.number || data.id}` }
             case 'invoice':
-                const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'NOTA DE CRÉDITO' :
-                    data.dte_type === 'NOTA_DEBITO' ? 'NOTA DE DÉBITO' :
-                        data.dte_type === 'BOLETA' ? 'BOLETA' : 'FACTURA'
+                const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
+                    data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
+                        data.dte_type === 'BOLETA' ? 'Boleta de Venta' : 'Factura de Venta'
                 const prefix = data.dte_type === 'NOTA_CREDITO' ? 'NC' :
                     data.dte_type === 'NOTA_DEBITO' ? 'ND' :
                         data.dte_type === 'BOLETA' ? 'BOL' : 'FACT'
-                return `${typeLabel} ${prefix}-${data.number || data.id}`
+                return { main: `Comprobante de ${typeLabel}`, sub: `${prefix}-${data.number || data.id}` }
             case 'payment':
-                const payPrefix = data.payment_type === 'INBOUND' ? 'COMPROBANTE DE INGRESO' : 'COMPROBANTE DE EGRESO'
-                return `${payPrefix} ${data.code || data.id}`
+                const payPrefix = data.payment_type === 'INBOUND' ? 'Comprobante de Ingreso' : 'Comprobante de Egreso'
+                const payId = data.display_id || (data.payment_type === 'INBOUND' ? 'ING-' : 'EGR-') + data.id
+                return { main: payPrefix, sub: payId }
             case 'journal_entry':
-                return `ASIENTO CONTABLE AS-${data.number || data.id}`
+                return { main: "Asiento Contable", sub: `AS-${data.number || data.id}` }
             case 'inventory':
-                return `MOVIMIENTO DE INVENTARIO ${data.reference_code || `MOV-${data.id}`}`
+                return { main: "Movimiento de Inventario", sub: data.reference_code || `MOV-${data.id}` }
             case 'service_obligation':
-                return `OBLIGACIÓN DE SERVICIO OB-${data.id}`
+                return { main: "Obligación de Servicio", sub: `OB-${data.id}` }
             case 'work_order':
-                return `ORDEN DE TRABAJO ${data.code || `OT-${data.id}`}`
+                return { main: "Orden de Trabajo", sub: data.code || `OT-${data.id}` }
             case 'sale_delivery':
-                return `DESPACHO DE VENTA ${data.number || `DESP-${data.id}`}`
+                return { main: "Despacho de Venta", sub: data.number || `DESP-${data.id}` }
             default:
-                return "DETALLES DE TRANSACCIÓN"
+                return { main: "Detalles de Transacción", sub: "" }
         }
     }
+
+    const { main: mainTitle, sub: subTitle } = getHeaderInfo()
 
     const getIcon = () => {
         if (view === 'history') return <History className="h-5 w-5 text-emerald-600" />
@@ -145,28 +148,37 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className={`${currentType === 'journal_entry' ? 'max-w-5xl' : 'max-w-4xl'} max-h-[90vh] overflow-y-auto`}>
-                <DialogHeader className="border-b pb-4 flex flex-row items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        {history.length > 0 && (
-                            <Button variant="ghost" size="icon" onClick={goBack} className="mr-2">
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                        )}
-                        <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
-                            {getIcon()}
-                            {getTitle()}
-                            {data?.document_attachment && view !== 'history' && (
-                                <a
-                                    href={data.document_attachment}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="ml-2 text-muted-foreground hover:text-primary transition-colors"
-                                    title="Ver adjunto"
-                                >
-                                    <Paperclip className="h-5 w-5" />
-                                </a>
+                <DialogHeader className="border-b pb-4">
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                            {history.length > 0 && (
+                                <Button variant="ghost" size="icon" onClick={goBack} className="mr-2">
+                                    <ArrowLeft className="h-5 w-5" />
+                                </Button>
                             )}
-                        </DialogTitle>
+                            <div className="flex flex-col">
+                                <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tight text-primary">
+                                    {getIcon()}
+                                    <span className="uppercase">{mainTitle}</span>
+                                    {data?.document_attachment && view !== 'history' && (
+                                        <a
+                                            href={data.document_attachment}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ml-2 text-muted-foreground hover:text-primary transition-colors"
+                                            title="Ver adjunto"
+                                        >
+                                            <Paperclip className="h-5 w-5" />
+                                        </a>
+                                    )}
+                                </DialogTitle>
+                                {subTitle && (
+                                    <span className="text-sm font-bold text-muted-foreground font-mono mt-0.5">
+                                        {subTitle}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </DialogHeader>
 

@@ -88,7 +88,11 @@ class WorkOrder(models.Model):
         verbose_name_plural = _("Ordenes de Trabajo")
 
     def __str__(self):
-        return f"OT-{self.number} {self.description}"
+        return f"{self.display_id} {self.description}"
+    
+    @property
+    def display_id(self):
+        return f"OT-{self.number}"
     
     @property
     def product_info(self):

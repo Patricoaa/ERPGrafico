@@ -67,7 +67,11 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
         verbose_name_plural = _("Ordenes de Compra")
 
     def __str__(self):
-        return f"OC-{self.number} {self.supplier.name}"
+        return f"{self.display_id} {self.supplier.name}"
+    
+    @property
+    def display_id(self):
+        return f"OC-{self.number}"
     
     @property
     def effective_total(self):

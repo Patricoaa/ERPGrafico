@@ -121,7 +121,7 @@ export function MovementList() {
                                                                 doc.name.includes('NC') ? 'Nota de Crédito' :
                                                                     doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
                                                                 doc.type === 'purchase_order' ? 'Orden de Compra' :
-                                                                    doc.type === 'sale_order' ? 'Orden de Venta' : doc.type}
+                                                                    doc.type === 'sale_order' ? 'Nota de Venta' : doc.type}
                                                         </span>
                                                         <span className="truncate w-full">{doc.name}</span>
                                                     </button>

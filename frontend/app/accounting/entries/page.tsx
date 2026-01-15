@@ -129,7 +129,7 @@ export default function EntriesPage() {
                                                                 doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
                                                             doc.type === 'payment' ? (doc.name.includes('ING') ? 'Comprobante Ingreso' : 'Comprobante Egreso') :
                                                                 doc.type === 'purchase_order' ? 'Orden de Compra' :
-                                                                    doc.type === 'sale_order' ? 'Orden de Venta' :
+                                                                    doc.type === 'sale_order' ? 'Nota de Venta' :
                                                                         doc.type === 'inventory' ? 'Movimiento' : doc.type}
                                                     </span>
                                                     {doc.name}

@@ -167,7 +167,7 @@ export default function PaymentsPage() {
                                                     <span className="font-semibold uppercase text-[8px] text-muted-foreground">
                                                         {payment.document_info.type === 'invoice' ? (payment.document_info.label.includes('Bol') ? 'Boleta' : 'Factura') :
                                                             payment.document_info.type === 'purchase_order' ? 'Orden de Compra' :
-                                                                payment.document_info.type === 'sale_order' ? 'Orden de Venta' : payment.document_info.type}
+                                                                payment.document_info.type === 'sale_order' ? 'Nota de Venta' : payment.document_info.type}
                                                     </span>
                                                     <span className="text-[10px]">
                                                         {payment.document_info.type === 'purchase_order' ? `OC-${payment.document_info.number}` :

@@ -157,7 +157,7 @@ export default function SalesInvoicesPage() {
                                                 onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order })}
                                                 className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                             >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Orden de Venta</span>
+                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota de Venta</span>
                                                 NV-{inv.sale_order_number}
                                             </button>
                                         </div>

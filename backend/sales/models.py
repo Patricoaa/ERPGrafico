@@ -68,7 +68,11 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
         verbose_name_plural = _("Notas de Venta")
 
     def __str__(self):
-        return f"NV-{self.number} {self.customer.name}"
+        return f"{self.display_id} {self.customer.name}"
+    
+    @property
+    def display_id(self):
+        return f"NV-{self.number}"
     
     def save(self, *args, **kwargs):
         if not self.number:

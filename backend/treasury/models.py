@@ -75,8 +75,12 @@ class Payment(models.Model):
         verbose_name_plural = _("Pagos")
 
     def __str__(self):
+        return self.display_id
+
+    @property
+    def display_id(self):
         prefix = 'ING' if self.payment_type == 'INBOUND' else 'EGR'
-        return f"{prefix}-{str(self.id).zfill(5)}"
+        return f"{prefix}-{str(self.id).zfill(6)}"
 
 
 class TreasuryAccount(models.Model):
