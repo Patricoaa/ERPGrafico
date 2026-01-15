@@ -73,8 +73,8 @@ export function ProductUoMTab({ form, uoms, canBeSold, canBePurchased }: Product
                         </h3>
 
                         <div className="space-y-4">
-                            {/* Stock UoM: Storable, Consumable and Manufacturable */}
-                            {(productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'MANUFACTURABLE') && (
+                            {/* Stock UoM: Storable, Consumable, Manufacturable, Service, and Subscription */}
+                            {['STORABLE', 'CONSUMABLE', 'MANUFACTURABLE', 'SERVICE', 'SUBSCRIPTION'].includes(productType) && (
                                 <FormField<ProductFormValues>
                                     control={form.control}
                                     name="uom"
@@ -100,7 +100,7 @@ export function ProductUoMTab({ form, uoms, canBeSold, canBePurchased }: Product
                             )}
 
                             {/* Category-based Purchase UoM selector */}
-                            {canBePurchased && (productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'MANUFACTURABLE') && (
+                            {canBePurchased && ['STORABLE', 'CONSUMABLE', 'MANUFACTURABLE', 'SERVICE', 'SUBSCRIPTION'].includes(productType) && (
                                 <FormField<ProductFormValues>
                                     control={form.control}
                                     name="purchase_uom"
@@ -147,7 +147,7 @@ export function ProductUoMTab({ form, uoms, canBeSold, canBePurchased }: Product
                 </div>
 
                 <div className="space-y-6">
-                    {canBeSold && (productType === 'STORABLE' || productType === 'MANUFACTURABLE' || productType === 'SERVICE' || productType === 'CONSUMABLE') && (
+                    {canBeSold && ['STORABLE', 'MANUFACTURABLE', 'SERVICE', 'CONSUMABLE', 'SUBSCRIPTION'].includes(productType) && (
                         <div className="p-6 rounded-2xl border bg-card/50 space-y-8">
                             {/* 1. Permitted Units Selection */}
                             <div className="space-y-4">

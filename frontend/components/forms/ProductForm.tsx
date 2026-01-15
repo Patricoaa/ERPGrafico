@@ -136,7 +136,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         } else if (productType === "CONSUMABLE") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
             if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
-        } else if (productType === "SERVICE") {
+        } else if (productType === "SERVICE" || productType === "SUBSCRIPTION") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
         }
     }, [productType, form])
@@ -444,9 +444,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             )}
                                         </TabsTrigger>
                                     )}
-                                    <TabsTrigger value="inventory" className="px-8 flex gap-2">
-                                        Inventario
-                                    </TabsTrigger>
+                                    {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
+                                        <TabsTrigger value="inventory" className="px-8 flex gap-2">
+                                            Inventario
+                                        </TabsTrigger>
+                                    )}
                                     <TabsTrigger value="uoms" className="px-8 flex gap-2 relative">
                                         Und. de Medida
                                         {tabErrors['uoms'] && (
@@ -524,7 +526,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                 />
 
                                 <TabsContent value="subscription" className="mt-0">
-                                    <ProductSubscriptionTab form={form as any} />
+                                    <ProductSubscriptionTab form={form as any} uoms={uoms} />
                                 </TabsContent>
 
                                 <ProductPricingTab

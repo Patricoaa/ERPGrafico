@@ -6,14 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { CalendarClock, AlertTriangle, DollarSign, Wallet } from "lucide-react"
+import { CalendarClock, AlertTriangle, DollarSign, Wallet, Package } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 interface ProductSubscriptionTabProps {
     form: UseFormReturn<ProductFormValues>
+    uoms: any[]
 }
 
-export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
+export function ProductSubscriptionTab({ form, uoms }: ProductSubscriptionTabProps) {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -109,6 +110,40 @@ export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
                                             onCheckedChange={field.onChange}
                                         />
                                     </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Package className="h-5 w-5 text-primary" />
+                            Unidades de Medida
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="uom"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Unidad de Medida Base</FormLabel>
+                                    <FormControl>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccionar unidad..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {uoms.map((u) => (
+                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormControl>
+                                    <FormDescription>Usada para stock y coste interno.</FormDescription>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
