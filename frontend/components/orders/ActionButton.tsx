@@ -37,7 +37,7 @@ export function ActionButton({
             className={cn(
                 "w-full justify-start text-left font-medium transition-all duration-200 group h-auto",
                 compact ? "py-1.5 px-2" : "py-2 px-3",
-                ghost ? "hover:bg-transparent border-none shadow-none !text-black" : (action.variant === 'destructive' ? 'hover:bg-destructive/10' : 'hover:border-primary/50 hover:bg-primary/5'),
+                ghost ? "hover:bg-black/5 dark:hover:bg-white/5 border-none shadow-none !text-black active:scale-[0.98] transition-all duration-200" : (action.variant === 'destructive' ? 'hover:bg-destructive/10' : 'hover:border-primary/50 hover:bg-primary/5'),
                 className
             )}
         >
