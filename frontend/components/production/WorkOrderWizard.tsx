@@ -69,7 +69,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [order, setOrder] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [transitioning, setTransitioning] = useState(false)
-    const [currentStep, setCurrentStep] = useState(0)
+    const [viewingStepIndex, setViewingStepIndex] = useState(0)
     const [isAddMaterialOpen, setIsAddMaterialOpen] = useState(false)
     const [newMaterialProduct, setNewMaterialProduct] = useState<string | null>(null)
     const [newMaterialQty, setNewMaterialQty] = useState("1")
@@ -86,42 +86,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [isEditOpen, setIsEditOpen] = useState(false)
     const { openCommandCenter } = useGlobalModals()
 
-    const fetchOrder = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get(`/production/orders/${orderId}/`)
-            setOrder(response.data)
-
-            // Calculate steps
-            const filteredStages = getFilteredStages(response.data)
-
-            // If targetStage provided, try to find its index to set as current step?
-            // Actually, we usually want to show the CURRENT stage of the order, 
-            // but if the user dragged to a FUTURE stage, we want to allow them to confirm transition TO that stage.
-            // But WorkOrderWizard logic assumes we are AT current_stage.
-            // If we are transitioning, we are basically previewing the "Next" action.
-
-            // For now, let's stick to showing current stage, but maybe alert user or auto-advance if logical.
-            // The simplest "Kanban drop -> Modal" flow is just opening the modal to manage the current state, 
-            // and the user manually clicks "Next Stage" (which matches the drag intent).
-            // BUT user wants to understand which stages can be selected.
-
-            const index = filteredStages.findIndex(s => s.id === response.data.current_stage)
-            setCurrentStep(index !== -1 ? index : 0)
-        } catch (error) {
-            console.error("Error fetching order details:", error)
-            toast.error("No se pudo cargar la información de la OT")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        if (open && orderId) {
-            fetchOrder()
-        }
-    }, [open, orderId])
-
     const getFilteredStages = (orderData: any) => {
         if (!orderData) return BASE_STAGES.filter(s => s.alwaysShow)
 
@@ -135,6 +99,32 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     }
 
     const STAGES = getFilteredStages(order)
+    const actualStepIndex = STAGES.findIndex(s => s.id === order?.current_stage)
+    const isViewingCurrentStage = viewingStepIndex === actualStepIndex
+
+    const fetchOrder = async () => {
+        setLoading(true)
+        try {
+            const response = await api.get(`/production/orders/${orderId}/`)
+            setOrder(response.data)
+
+            const filteredStages = getFilteredStages(response.data)
+            const index = filteredStages.findIndex(s => s.id === response.data.current_stage)
+            const resolvedIndex = index !== -1 ? index : 0
+            setViewingStepIndex(resolvedIndex)
+        } catch (error) {
+            console.error("Error fetching order details:", error)
+            toast.error("No se pudo cargar la información de la OT")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        if (open && orderId) {
+            fetchOrder()
+        }
+    }, [open, orderId])
 
     const handleTransition = async (nextStageId: string, data: any = {}) => {
         // Validation: Materials
@@ -291,37 +281,65 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     {/* Left Sidebar - Steps */}
                     <div className="w-56 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">
                         {STAGES.map((stage, index) => {
-                            const Icon = stage.icon
-                            const isActive = currentStep === index
-                            const isPast = currentStep > index
+                            const isActive = viewingStepIndex === index
+                            const isPast = actualStepIndex > index
+                            const isCurrent = actualStepIndex === index
+                            const Icon = (isPast && !isActive) ? stage.icon : (isActive && isPast ? Eye : stage.icon)
 
                             return (
                                 <div
                                     key={stage.id}
+                                    onClick={() => {
+                                        if (isPast || isCurrent) {
+                                            setViewingStepIndex(index)
+                                        }
+                                    }}
                                     className={cn(
-                                        "flex items-center space-x-3 p-3 rounded-lg transition-colors",
+                                        "flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 group relative",
+                                        isCurrent && !isActive && "border-2 border-primary/20",
                                         isActive ? "bg-primary text-primary-foreground shadow-sm" :
-                                            isPast ? "text-green-600 bg-green-50" : "text-muted-foreground"
+                                            isPast ? "text-green-600 bg-green-50 hover:bg-green-100 cursor-pointer" : "text-muted-foreground opacity-50 cursor-not-allowed",
+                                        isPast && "hover:pl-4"
                                     )}
                                 >
-                                    <Icon className="h-5 w-5 shrink-0" />
+                                    <div className="relative h-5 w-5 shrink-0">
+                                        <stage.icon className={cn(
+                                            "h-5 w-5 absolute inset-0 transition-opacity duration-300",
+                                            isPast && !isActive ? "group-hover:opacity-0" : ""
+                                        )} />
+                                        {isPast && !isActive && (
+                                            <Eye className="h-5 w-5 absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-primary" />
+                                        )}
+                                        {isActive && <Icon className="h-5 w-5" />}
+                                    </div>
                                     <span className="text-sm font-medium">{stage.label}</span>
-                                    {isPast && <CheckCircle2 className="h-4 w-4 ml-auto" />}
+                                    {isPast && !isActive && <CheckCircle2 className="h-4 w-4 ml-auto opacity-50" />}
+                                    {isCurrent && !isActive && (
+                                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-full" />
+                                    )}
                                 </div>
                             )
                         })}
                     </div>
 
                     {/* Center - Content Area */}
-                    <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+                    <div className="flex-1 flex flex-col p-6 overflow-y-auto relative">
+                        {!isViewingCurrentStage && (
+                            <div className="absolute top-4 right-4 z-10">
+                                <Badge variant="secondary" className="gap-1.5 py-1 px-3 border-primary/20 bg-primary/5 text-primary">
+                                    <Eye className="h-3.5 w-3.5" />
+                                    Modo Visualización (Lectura)
+                                </Badge>
+                            </div>
+                        )}
                         <div className="mb-6 flex items-center justify-between">
-                            <h3 className="text-lg font-semibold">{STAGES[currentStep]?.label}</h3>
+                            <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
                             <Badge variant="outline">{order?.status}</Badge>
                         </div>
 
                         {/* Stage Content */}
-                        <div className="flex-1 space-y-6">
-                            {order?.current_stage === 'MATERIAL_ASSIGNMENT' && (
+                        <div className={cn("flex-1 space-y-6", !isViewingCurrentStage && "pointer-events-none opacity-80 cursor-not-allowed select-none")}>
+                            {STAGES[viewingStepIndex]?.id === 'MATERIAL_ASSIGNMENT' && (
                                 <div className="space-y-4">
                                     <p className="text-sm text-muted-foreground">Revise y asigne los materiales necesarios para esta pieza gráfica.</p>
                                     <div className="border rounded-md overflow-hidden">
@@ -456,7 +474,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 </div>
                             )}
 
-                            {order?.current_stage === 'MATERIAL_APPROVAL' && (
+                            {STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && (
                                 <div className="space-y-4">
                                     <p className="text-sm text-muted-foreground">Verifique la disponibilidad de stock en {order?.warehouse_name || 'la bodega seleccionada'}.</p>
                                     <div className="grid gap-4">
@@ -486,7 +504,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 </div>
                             )}
 
-                            {order?.current_stage === 'PREPRESS' && (
+                            {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
                                 <div className="space-y-6">
                                     <div className="space-y-4">
                                         <div>
@@ -567,7 +585,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 </div>
                             )}
 
-                            {order?.current_stage === 'PRESS' && (
+                            {STAGES[viewingStepIndex]?.id === 'PRESS' && (
                                 <div className="space-y-4 text-center py-10">
                                     <Printer className="h-16 w-16 mx-auto text-primary opacity-20" />
                                     <div className="max-w-md mx-auto space-y-2">
@@ -579,7 +597,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 </div>
                             )}
 
-                            {order?.current_stage === 'POSTPRESS' && (
+                            {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
                                 <div className="space-y-4 text-center py-10">
                                     <Layers className="h-16 w-16 mx-auto text-primary opacity-20" />
                                     <div className="max-w-md mx-auto space-y-2">
@@ -591,7 +609,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 </div>
                             )}
 
-                            {order?.current_stage === 'FINISHED' && (
+                            {STAGES[viewingStepIndex]?.id === 'FINISHED' && (
                                 <div className="space-y-4 text-center py-10">
                                     <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
                                     <div className="max-w-md mx-auto space-y-2">
@@ -609,34 +627,53 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                         {/* Progress Buttons */}
                         <div className="mt-8 pt-6 border-t flex justify-between">
-                            <Button
-                                variant="ghost"
-                                disabled={currentStep === 0 || transitioning || order?.status === 'FINISHED'}
-                                onClick={() => {
-                                    const prevStage = STAGES[currentStep - 1]
-                                    handleTransition(prevStage.id)
-                                }}
-                            >
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Anterior
-                            </Button>
-
-                            {order?.status !== 'FINISHED' && (
+                            {!isViewingCurrentStage ? (
                                 <Button
-                                    disabled={
-                                        transitioning ||
-                                        (order?.current_stage === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available))
-                                    }
-                                    onClick={() => {
-                                        const nextStage = STAGES[currentStep + 1]
-                                        if (nextStage) {
-                                            handleTransition(nextStage.id)
-                                        }
-                                    }}
+                                    variant="outline"
+                                    className="w-full gap-2 border-primary/20 hover:bg-primary/5"
+                                    onClick={() => setViewingStepIndex(actualStepIndex)}
                                 >
-                                    {transitioning ? "Procesando..." : currentStep === STAGES.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
-                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                    <LayoutDashboard className="h-4 w-4" />
+                                    Volver a la Etapa Actual
                                 </Button>
+                            ) : (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        disabled={viewingStepIndex === 0 || transitioning || order?.status === 'FINISHED'}
+                                        onClick={() => {
+                                            const prevStage = STAGES[viewingStepIndex - 1]
+                                            handleTransition(prevStage.id)
+                                        }}
+                                    >
+                                        <ArrowLeft className="mr-2 h-4 w-4" />
+                                        Anterior
+                                    </Button>
+
+                                    {order?.status !== 'FINISHED' && (
+                                        <Button
+                                            disabled={
+                                                transitioning ||
+                                                (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available))
+                                            }
+                                            onClick={() => {
+                                                const nextStage = STAGES[viewingStepIndex + 1]
+                                                if (nextStage) {
+                                                    if (nextStage.id === 'FINISHED') {
+                                                        if (confirm("¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar y el producto se encuentra disponible para despacho de inmediato.")) {
+                                                            handleTransition(nextStage.id)
+                                                        }
+                                                    } else {
+                                                        handleTransition(nextStage.id)
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            {transitioning ? "Procesando..." : viewingStepIndex === STAGES.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
+                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
@@ -712,7 +749,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             </div>
                         )}
 
-                        {(order?.current_stage === 'MATERIAL_ASSIGNMENT' || order?.current_stage === 'MATERIAL_APPROVAL') && (
+                        {(STAGES[viewingStepIndex]?.id === 'MATERIAL_ASSIGNMENT' || STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL') && (
                             <div className="space-y-3">
                                 <h4 className="text-xs font-bold uppercase text-muted-foreground">Especificaciones</h4>
                                 {stageData.prepress_specs && (
@@ -736,7 +773,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             </div>
                         )}
 
-                        {order?.current_stage === 'PREPRESS' && (
+                        {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
                             <div className="space-y-3">
                                 {stageData.prepress_specs && (
                                     <div className="space-y-2">
@@ -773,18 +810,18 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             </div>
                         )}
 
-                        {(order?.current_stage === 'PRESS' || order?.current_stage === 'POSTPRESS') && (
+                        {(STAGES[viewingStepIndex]?.id === 'PRESS' || STAGES[viewingStepIndex]?.id === 'POSTPRESS') && (
                             <div className="space-y-2">
                                 <h4 className="text-xs font-bold uppercase text-muted-foreground">Especificaciones</h4>
                                 <div className="p-3 bg-background rounded-lg border">
                                     <p className="text-xs whitespace-pre-wrap">
-                                        {order?.current_stage === 'PRESS' ? stageData.press_specs : stageData.postpress_specs}
+                                        {STAGES[viewingStepIndex]?.id === 'PRESS' ? stageData.press_specs : stageData.postpress_specs}
                                     </p>
                                 </div>
                             </div>
                         )}
 
-                        {order?.current_stage === 'PRESS' && stageData.folio_enabled && (
+                        {STAGES[viewingStepIndex]?.id === 'PRESS' && stageData.folio_enabled && (
                             <div className="space-y-2">
                                 <h4 className="text-xs font-bold uppercase text-muted-foreground">Folio</h4>
                                 <div className="p-3 bg-background rounded-lg border">

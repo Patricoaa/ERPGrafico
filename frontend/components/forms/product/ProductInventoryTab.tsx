@@ -113,6 +113,38 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                         </FormItem>
                                     )}
 
+                                    {field.value && (
+                                        <div className="space-y-4 pt-2 border-t border-dashed mt-4 animate-in fade-in slide-in-from-top-1 bg-background/30 p-4 rounded-xl">
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="receiving_warehouse"
+                                                render={({ field: whField }) => (
+                                                    <FormItem className="space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <Warehouse className="h-3.5 w-3.5 text-primary" />
+                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Bodega de Recepción por Defecto</FormLabel>
+                                                        </div>
+                                                        <FormControl>
+                                                            <select
+                                                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                                {...whField}
+                                                            >
+                                                                <option value="">Seleccionar bodega...</option>
+                                                                {warehouses.map((wh) => (
+                                                                    <option key={wh.id} value={wh.id.toString()}>{wh.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </FormControl>
+                                                        <FormDescription className="text-[10px]">
+                                                            Bodega sugerida automáticamente al registrar recepciones de este producto.
+                                                        </FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    )}
+
                                     {field.value && initialData && (
                                         <div className="grid grid-cols-3 gap-2 p-3 bg-muted/20 rounded-lg border border-dashed">
                                             <div className="flex flex-col items-center bg-background rounded p-2 shadow-sm">

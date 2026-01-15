@@ -11,6 +11,7 @@ export const productSchema = z.object({
     sale_uom: z.string().optional().or(z.literal("")),
     purchase_uom: z.string().optional().or(z.literal("")),
     allowed_sale_uoms: z.array(z.string()).default([]),
+    receiving_warehouse: z.string().optional().or(z.literal("")),
     image: z.any().optional(),
     track_inventory: z.boolean(),
     can_be_sold: z.boolean().default(true),

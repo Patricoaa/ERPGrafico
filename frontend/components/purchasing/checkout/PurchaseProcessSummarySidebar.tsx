@@ -36,11 +36,11 @@ const receiptLabels: Record<string, string> = {
 }
 
 const STEPS = [
-    { id: 1, label: 'Proveedor', icon: Building2, subLabel: 'Bodega', subIcon: Warehouse },
+    { id: 1, label: 'Proveedor', icon: Building2 },
     { id: 2, label: 'Productos', icon: ShoppingCart },
     { id: 3, label: 'Documento', icon: Tag },
     { id: 4, label: 'Pago', icon: CreditCard },
-    { id: 5, label: 'Recepción', icon: Package }
+    { id: 5, label: 'Recepción', icon: Package, subLabel: 'Bodega', subIcon: Warehouse }
 ]
 
 export function PurchaseProcessSummarySidebar({
@@ -85,18 +85,8 @@ export function PurchaseProcessSummarySidebar({
                         {/* Step Details */}
                         {isPast && (
                             <div className="px-3 pb-3 pt-1 space-y-1 animate-in fade-in duration-300">
-                                {step.id === 1 && (
-                                    <>
-                                        {supplierName && (
-                                            <p className="text-xs font-semibold truncate">{supplierName}</p>
-                                        )}
-                                        {warehouseName && step.subIcon && (
-                                            <div className="flex items-center gap-1.5 mt-1">
-                                                <step.subIcon className="h-3 w-3" />
-                                                <p className="text-[10px] font-semibold truncate">{warehouseName}</p>
-                                            </div>
-                                        )}
-                                    </>
+                                {step.id === 1 && supplierName && (
+                                    <p className="text-xs font-semibold truncate">{supplierName}</p>
                                 )}
                                 {step.id === 3 && dteType && (
                                     <p className="text-xs font-semibold">{dteType}</p>
@@ -117,9 +107,17 @@ export function PurchaseProcessSummarySidebar({
                                     </div>
                                 )}
                                 {step.id === 5 && receiptData && (
-                                    <p className="text-xs font-semibold">
-                                        {receiptLabels[receiptData.type]}
-                                    </p>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-semibold">
+                                            {receiptLabels[receiptData.type]}
+                                        </p>
+                                        {warehouseName && (
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <Warehouse className="h-3 w-3" />
+                                                <p className="text-[10px] font-semibold truncate">{warehouseName}</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         )}

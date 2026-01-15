@@ -137,15 +137,6 @@ export function PurchaseCheckoutWizard({
                 toast.error("Debe seleccionar un proveedor para continuar.")
                 return false
             }
-            // Check if all products are services (no warehouse needed)
-            const allServices = currentOrderLines.every(line => {
-                // Assuming product_type is available on the line or we need to check it
-                return line.product_type === 'SERVICE'
-            })
-            if (!selectedWarehouseId && !allServices) {
-                toast.error("Debe seleccionar una bodega destino.")
-                return false
-            }
         }
         if (targetStep === 2) {
             if (currentOrderLines.length === 0) {
@@ -326,8 +317,6 @@ export function PurchaseCheckoutWizard({
                                     selectedSupplierId={selectedSupplierId}
                                     setSelectedSupplierId={setSelectedSupplierId}
                                     setSelectedSupplierName={setSelectedSupplierName}
-                                    selectedWarehouseId={selectedWarehouseId}
-                                    setSelectedWarehouseId={setSelectedWarehouseId}
                                 />
                             )}
                             {step === 2 && (
@@ -338,7 +327,18 @@ export function PurchaseCheckoutWizard({
                             )}
                             {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
                             {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
-                            {step === 5 && <Step4_Receipt receiptData={receiptData} setReceiptData={setReceiptData} orderLines={currentOrderLines} />}
+                            {step === 5 && (
+                                <Step4_Receipt
+                                    receiptData={receiptData}
+                                    setReceiptData={(data) => {
+                                        setReceiptData(data)
+                                        if (data.warehouseId) {
+                                            setSelectedWarehouseId(data.warehouseId)
+                                        }
+                                    }}
+                                    orderLines={currentOrderLines}
+                                />
+                            )}
                         </div>
 
                         {/* Fixed Footer with Progress Buttons */}

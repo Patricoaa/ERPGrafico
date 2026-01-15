@@ -69,6 +69,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             sale_uom: "",
             purchase_uom: "",
             allowed_sale_uoms: [],
+            receiving_warehouse: "",
             track_inventory: true,
             custom_fields_schema: "",
             image: undefined,
@@ -203,6 +204,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     sale_uom: initialData.sale_uom?.id?.toString() || initialData.sale_uom?.toString() || "",
                     purchase_uom: initialData.purchase_uom?.id?.toString() || initialData.purchase_uom?.toString() || "",
                     allowed_sale_uoms: initialData.allowed_sale_uoms?.map((u: any) => u.id?.toString() || u.toString()) || [],
+                    receiving_warehouse: initialData.receiving_warehouse?.id?.toString() || initialData.receiving_warehouse?.toString() || "",
                     track_inventory: initialData.track_inventory ?? true,
                     can_be_sold: initialData.can_be_sold ?? true,
                     can_be_purchased: initialData.can_be_purchased ?? true,
@@ -311,6 +313,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('uom', data.uom || '')
             formData.append('sale_uom', data.sale_uom || '')
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
+            if (data.receiving_warehouse) formData.append('receiving_warehouse', data.receiving_warehouse)
 
             if (data.allowed_sale_uoms && data.allowed_sale_uoms.length > 0) {
                 data.allowed_sale_uoms.forEach(id => formData.append('allowed_sale_uoms', id))

@@ -216,6 +216,13 @@ class Product(models.Model):
         help_text=_("Unidades de medida permitidas para la venta de este producto (además de la unidad base).")
     )
 
+    receiving_warehouse = models.ForeignKey(
+        'Warehouse', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='receiving_products',
+        verbose_name=_("Bodega de Recepción por Defecto"),
+        help_text=_("Bodega sugerida automáticamente al recibir este producto.")
+    )
+
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0)
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
     

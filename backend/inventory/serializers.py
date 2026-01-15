@@ -63,6 +63,7 @@ class ProductSerializer(serializers.ModelSerializer):
     uom_category = serializers.SerializerMethodField()
     sale_uom_name = serializers.CharField(source='sale_uom.name', read_only=True)
     purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
+    receiving_warehouse_name = serializers.CharField(source='receiving_warehouse.name', read_only=True)
     
     current_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
