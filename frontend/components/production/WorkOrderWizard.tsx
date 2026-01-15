@@ -88,6 +88,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [isOutsourced, setIsOutsourced] = useState(false)
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
     const [unitPrice, setUnitPrice] = useState("0")
+    const [grossUnitPrice, setGrossUnitPrice] = useState("0")
     const [showPOPreview, setShowPOPreview] = useState(false)
     const [outsourcedPending, setOutsourcedPending] = useState<any[]>([])
     const { openCommandCenter } = useGlobalModals()
@@ -201,6 +202,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             return
         }
 
+        if (isOutsourced && !selectedSupplierId) {
+            toast.error("Seleccione un proveedor para el servicio tercerizado")
+            return
+        }
+
         setAddingMaterial(true)
         try {
             if (editingMaterialId) {
@@ -246,6 +252,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         setIsOutsourced(false)
         setSelectedSupplierId(null)
         setUnitPrice("0")
+        setGrossUnitPrice("0")
     }
 
     const handleEditMaterial = (material: any) => {
@@ -256,6 +263,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         setIsOutsourced(material.is_outsourced)
         setSelectedSupplierId(material.supplier?.toString() || null)
         setUnitPrice(material.unit_price?.toString() || "0")
+        setGrossUnitPrice(material.unit_price ? (parseFloat(material.unit_price) * 1.19).toFixed(2) : "0")
 
         // We need the product object for UoM selector. 
         // We might need to fetch it or finding it if we have it. 
@@ -509,19 +517,27 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {isOutsourced && (
                                                 <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t mt-2">
                                                     <div className="flex-1 space-y-2">
-                                                        <label className="text-xs font-bold uppercase text-primary">Proveedor del Servicio</label>
+                                                        <label className="text-xs font-bold uppercase text-primary flex items-center gap-1">
+                                                            Proveedor del Servicio
+                                                            <span className="text-destructive">*</span>
+                                                        </label>
                                                         <AdvancedContactSelector
                                                             value={selectedSupplierId}
                                                             onChange={setSelectedSupplierId}
                                                             contactType="SUPPLIER"
                                                         />
                                                     </div>
-                                                    <div className="w-full md:w-40 space-y-2">
-                                                        <label className="text-xs font-bold uppercase text-primary">Precio OC (Neto)</label>
+                                                    <div className="w-full md:w-32 space-y-2">
+                                                        <label className="text-xs font-bold uppercase text-primary">Precio Bruto</label>
                                                         <Input
                                                             type="number"
-                                                            value={unitPrice}
-                                                            onChange={(e) => setUnitPrice(e.target.value)}
+                                                            value={grossUnitPrice}
+                                                            onChange={(e) => {
+                                                                const gross = e.target.value
+                                                                setGrossUnitPrice(gross)
+                                                                // Always calculate and store Net for the backend
+                                                                setUnitPrice(gross ? (parseFloat(gross) / 1.19).toFixed(2) : "0")
+                                                            }}
                                                             className="border-primary/30 focus-visible:ring-primary"
                                                         />
                                                     </div>
