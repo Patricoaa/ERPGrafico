@@ -20,8 +20,9 @@ interface Product {
 }
 
 interface UoMSelectorProps {
-    product: Product | null
-    context: 'sale' | 'purchase' | 'bom' | 'stock'
+    product?: Product | null
+    categoryId?: number
+    context?: 'sale' | 'purchase' | 'bom' | 'stock'
     value: string
     onChange: (value: string) => void
     uoms: UoM[]
@@ -33,7 +34,8 @@ interface UoMSelectorProps {
 
 export function UoMSelector({
     product,
-    context,
+    categoryId,
+    context = 'stock', // Default context
     value,
     onChange,
     uoms,
@@ -44,6 +46,11 @@ export function UoMSelector({
 }: UoMSelectorProps) {
     // Get filtered UoMs based on context
     const filteredUoMs = useMemo(() => {
+        // If categoryId is directly provided, just filter by it (ignores context restrictions usually applied to product)
+        if (categoryId) {
+            return uoms.filter(u => u.category === categoryId)
+        }
+
         if (!product) return []
 
         const productUomId = typeof product.uom === 'object' ? product.uom.id : product.uom
@@ -65,7 +72,7 @@ export function UoMSelector({
         }
 
         return []
-    }, [product, context, uoms])
+    }, [product, categoryId, context, uoms])
 
     // Get conversion hint
     const conversionHint = useMemo(() => {

@@ -533,7 +533,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                 <FormLabel>Unidad de Medida <span className="text-destructive">*</span></FormLabel>
                                                                 <FormControl>
                                                                     <UoMSelector
-                                                                        value={field.value}
+                                                                        value={field.value || ""}
                                                                         onChange={field.onChange}
                                                                         categoryId={selectedManualProduct?.uom?.category_id}
                                                                     />
