@@ -147,6 +147,10 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     internal_notes: initialData.stage_data?.internal_notes || "",
                     contact_id: initialData.stage_data?.contact_id?.toString() || "",
                     sale_line: initialData.sale_line?.id?.toString() || "",
+                    // Manual OT fields
+                    product_id: initialData.product?.id?.toString() || "",
+                    quantity: initialData.stage_data?.quantity?.toString() || "",
+                    uom_id: initialData.stage_data?.uom_id?.toString() || "",
                 })
 
                 // Initialize Manufacturing States
@@ -452,7 +456,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         </div>
 
                         {/* 1.5 Sale Line Selector / Display */}
-                        {(initialData?.sale_line || (watchedSaleOrder && watchedSaleOrder !== "__none__")) && (
+                        {(!initialData || initialData?.sale_line || initialData?.is_manual || (watchedSaleOrder && watchedSaleOrder !== "__none__")) && (
                             <div className="p-4 bg-muted/20 border rounded-lg space-y-4">
                                 <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
                                     <FileText className="h-3.5 w-3.5" /> Detalle de Producto en Venta
@@ -463,18 +467,30 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                         <div>
                                             <p className="text-xs text-muted-foreground uppercase font-semibold">Producto</p>
-                                            <p className="font-medium truncate">{initialData.sale_line.product?.name || initialData.sale_line.description}</p>
+                                            <p className="font-medium truncate">
+                                                {initialData.sale_line
+                                                    ? (initialData.sale_line.product?.name || initialData.sale_line.description)
+                                                    : (initialData.product?.name || "Producto Manual")
+                                                }
+                                            </p>
                                         </div>
                                         <div>
                                             <p className="text-xs text-muted-foreground uppercase font-semibold">Cantidad</p>
-                                            <p className="font-medium">{initialData.sale_line.quantity} {initialData.sale_line.uom?.name}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground uppercase font-semibold">F. Entrega Planificada</p>
-                                            <p className="font-medium text-primary">
-                                                {initialData.sale_order_delivery_date ? format(new Date(initialData.sale_order_delivery_date + 'T12:00:00'), "dd/MM/yyyy") : "No definida"}
+                                            <p className="font-medium">
+                                                {initialData.sale_line
+                                                    ? `${initialData.sale_line.quantity} ${initialData.sale_line.uom?.name}`
+                                                    : `${initialData.stage_data?.quantity || 0} ${initialData.stage_data?.uom_name || ""}`
+                                                }
                                             </p>
                                         </div>
+                                        {initialData.sale_order_delivery_date && (
+                                            <div>
+                                                <p className="text-xs text-muted-foreground uppercase font-semibold">F. Entrega Planificada</p>
+                                                <p className="font-medium text-primary">
+                                                    {format(new Date(initialData.sale_order_delivery_date + 'T12:00:00'), "dd/MM/yyyy")}
+                                                </p>
+                                            </div>
+                                        )}
                                         <div>
                                             <p className="text-xs text-muted-foreground uppercase font-semibold">Progreso OT</p>
                                             <p className="font-medium">{initialData.production_progress}%</p>
