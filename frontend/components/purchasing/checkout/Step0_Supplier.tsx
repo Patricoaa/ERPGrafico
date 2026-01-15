@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label"
 import api from "@/lib/api"
 
 export interface Step0_SupplierProps {
-    selectedSupplierId: string
-    setSelectedSupplierId: (id: string) => void
+    selectedSupplierId: string | null
+    setSelectedSupplierId: (id: string | null) => void
     setSelectedSupplierName: (name: string) => void
 }
 

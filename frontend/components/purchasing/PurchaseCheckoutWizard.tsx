@@ -28,7 +28,7 @@ interface PurchaseCheckoutWizardProps {
     orderLines: any[]
     total: number
     onComplete: () => void
-    initialSupplierId?: string
+    initialSupplierId?: string | null
     initialWarehouseId?: string
 }
 
@@ -39,7 +39,7 @@ export function PurchaseCheckoutWizard({
     orderLines,
     total,
     onComplete,
-    initialSupplierId = "",
+    initialSupplierId = null,
     initialWarehouseId = ""
 }: PurchaseCheckoutWizardProps) {
     const [step, setStep] = useState(1)
@@ -68,7 +68,7 @@ export function PurchaseCheckoutWizard({
     }, [currentOrderLines])
 
 
-    const [selectedSupplierId, setSelectedSupplierId] = useState(initialSupplierId)
+    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
     const [selectedSupplierName, setSelectedSupplierName] = useState("")
     const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
     const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
@@ -214,7 +214,7 @@ export function PurchaseCheckoutWizard({
 
             // Order data
             const payloadOrder = order ? { id: order.id } : {
-                supplier: parseInt(selectedSupplierId),
+                supplier: selectedSupplierId ? parseInt(selectedSupplierId) : 0,
                 warehouse: parseInt(selectedWarehouseId),
                 lines: currentOrderLines.map(l => ({
                     product: l.id || l.product,
