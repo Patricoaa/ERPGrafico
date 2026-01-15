@@ -106,7 +106,7 @@ export function UoMSelector({
 
     return (
         <div className="flex items-center gap-1.5 min-w-0">
-            <Select onValueChange={onChange} value={value} disabled={disabled || !product}>
+            <Select onValueChange={onChange} value={value} disabled={disabled || (!product && !categoryId)}>
                 <SelectTrigger className="h-9">
                     <SelectValue placeholder="Und" />
                 </SelectTrigger>

@@ -10,6 +10,7 @@ import { es } from "date-fns/locale"
 import Link from "next/link"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
+import { AdvancedSaleOrderSelector } from "@/components/selectors/AdvancedSaleOrderSelector"
 import {
     Dialog,
     DialogContent,
@@ -82,6 +83,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [loading, setLoading] = useState(false)
     const [saleOrders, setSaleOrders] = useState<any[]>([])
     const [saleLines, setSaleLines] = useState<any[]>([])
+    const [uoms, setUoms] = useState<any[]>([])
     const [loadingLines, setLoadingLines] = useState(false)
 
     // Advanced Manufacturing States
@@ -129,9 +131,19 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         }
     }
 
+    const fetchUoMs = async () => {
+        try {
+            const response = await api.get('/inventory/uoms/')
+            setUoms(response.data.results || response.data)
+        } catch (error) {
+            console.error("Error fetching UoMs:", error)
+        }
+    }
+
     useEffect(() => {
         if (open) {
             fetchSaleOrders()
+            fetchUoMs()
             if (initialData) {
                 // Initialize main form
                 form.reset({
@@ -208,10 +220,14 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             setLoadingLines(true)
             api.get(`/sales/orders/${watchedSaleOrder}/`).then(res => {
                 const lines = res.data.lines || []
-                // Filter only manufacturable lines without existing OTs
+                // Filter lines:
+                // 1. Must be MANUFACTURABLE
+                // 2. Must require ADVANCED manufacturing (as requested)
+                // 3. Must NOT have an existing OT
                 const filtered = lines.filter((l: any) =>
                     l.product_type === 'MANUFACTURABLE' &&
-                    (!l.work_order_summary) // work_order_summary is null if no OT
+                    l.requires_advanced_manufacturing === true &&
+                    (!l.work_order_summary)
                 )
                 setSaleLines(filtered)
             }).finally(() => setLoadingLines(false))
@@ -228,6 +244,11 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             if (selectedLine) {
                 form.setValue('description', `OT: ${selectedLine.product_name || selectedLine.description}`)
                 form.setValue('product_description', selectedLine.product_name || selectedLine.description)
+                // Auto-fill Quantity and UoM for Sale-Linked (Read-Only later)
+                form.setValue('quantity', selectedLine.quantity.toString())
+                if (selectedLine.uom) {
+                    form.setValue('uom_id', selectedLine.uom.toString())
+                }
             }
         }
     }, [watchedSaleLineId, saleLines, initialData, form])
@@ -432,21 +453,13 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Nota de Venta (Opcional)</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Vincular con Venta..." />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="__none__">Sin Nota de Venta</SelectItem>
-                                                        {saleOrders.filter(so => so.id).map((so) => (
-                                                            <SelectItem key={so.id} value={so.id.toString()}>
-                                                                NV-{so.number} - {so.customer_name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                <FormControl>
+                                                    <AdvancedSaleOrderSelector
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        disabled={!!initialData} // Lock in Edit Mode
+                                                    />
+                                                </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -501,57 +514,58 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     /* Creation Mode */
                                     <div className="space-y-6">
 
-                                        {/* OPTION A: Manual Creation (No Sale Order) */}
-                                        {(!watchedSaleOrder || watchedSaleOrder === "__none__" || watchedSaleOrder === "none") && (
-                                            <div className="space-y-4 border rounded-md p-4 bg-muted/20">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Producción Interna / Stock</Badge>
-                                                </div>
-
-                                                <FormField
-                                                    control={form.control}
-                                                    name="product_id"
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-col">
-                                                            <FormLabel>Producto a Fabricar <span className="text-destructive">*</span></FormLabel>
-                                                            <ProductSelector
-                                                                value={field.value}
-                                                                onChange={field.onChange}
-                                                                onSelect={handleManualProductSelect}
-                                                                productType="MANUFACTURABLE"
-                                                                placeholder="Buscar producto fabricable..."
-                                                            />
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <div className="grid grid-cols-2 gap-4">
+                                        {/* 2. OPTION A: Manual Creation (No Sale Order) OR Display for Option B */}
+                                        {(!watchedSaleOrder || watchedSaleOrder === "__none__" || watchedSaleOrder === "none") ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-muted/10 p-4 rounded-lg border border-dashed">
+                                                <div className="md:col-span-6">
                                                     <FormField
                                                         control={form.control}
-                                                        name="quantity"
+                                                        name="product_id"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Cantidad <span className="text-destructive">*</span></FormLabel>
+                                                                <FormLabel className="text-xs uppercase font-bold text-muted-foreground">Producto a Fabricar (Stock)</FormLabel>
                                                                 <FormControl>
-                                                                    <Input {...field} type="number" min="0.01" step="0.01" placeholder="0.00" />
+                                                                    <ProductSelector
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
+                                                                        onSelect={handleManualProductSelect}
+                                                                        productType="MANUFACTURABLE"
+                                                                        disabled={!!initialData} // Lock in Edit Mode
+                                                                    />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
                                                         )}
                                                     />
-
+                                                </div>
+                                                <div className="md:col-span-3">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="quantity"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="text-xs uppercase font-bold text-muted-foreground">Cantidad</FormLabel>
+                                                                <FormControl>
+                                                                    <Input type="number" step="any" placeholder="0.00" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div className="md:col-span-3">
                                                     <FormField
                                                         control={form.control}
                                                         name="uom_id"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Unidad de Medida <span className="text-destructive">*</span></FormLabel>
+                                                                <FormLabel className="text-xs uppercase font-bold text-muted-foreground">U. Medida</FormLabel>
                                                                 <FormControl>
                                                                     <UoMSelector
                                                                         value={field.value || ""}
                                                                         onChange={field.onChange}
-                                                                        categoryId={selectedManualProduct?.uom?.category_id}
+                                                                        uoms={uoms}
+                                                                        categoryId={selectedManualProduct?.uom?.category}
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />
@@ -560,8 +574,57 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                     />
                                                 </div>
                                             </div>
+                                        ) : (
+                                            /* When Sale Order is linked, show Quantity and UoM as READ-ONLY or disabled */
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-primary/5 p-4 rounded-lg border">
+                                                <div className="md:col-span-6 opacity-60">
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs uppercase font-bold text-muted-foreground">Detalle de Producto (Vinculado)</FormLabel>
+                                                        <FormControl>
+                                                            <Input value={form.getValues('product_description')} disabled className="bg-muted" />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                </div>
+                                                <div className="md:col-span-3">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="quantity"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="text-xs uppercase font-bold text-muted-foreground">Cantidad</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="number"
+                                                                        disabled
+                                                                        className="bg-muted font-bold"
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div className="md:col-span-3">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="uom_id"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="text-xs uppercase font-bold text-muted-foreground">U. Medida</FormLabel>
+                                                                <FormControl>
+                                                                    <UoMSelector
+                                                                        value={field.value || ""}
+                                                                        onChange={field.onChange}
+                                                                        uoms={uoms}
+                                                                        disabled
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
                                         )}
-
                                         {/* OPTION B: Sale Line Selector (If Sale Order Linked) */}
                                         {watchedSaleOrder && watchedSaleOrder !== "__none__" && watchedSaleOrder !== "none" && (
                                             <div className="space-y-4">
@@ -571,21 +634,28 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormLabel>Ítem de Venta a Fabricar</FormLabel>
-                                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                            <Select
+                                                                onValueChange={field.onChange}
+                                                                value={field.value}
+                                                                disabled={!!initialData} // Lock in Edit Mode
+                                                            >
                                                                 <FormControl>
-                                                                    <SelectTrigger className="bg-background">
-                                                                        <SelectValue placeholder={loadingLines ? "Cargando ítems..." : "Selecciona el producto a fabricar..."} />
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Seleccionar ítem..." />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
-                                                                    {saleLines.length === 0 && !loadingLines && (
-                                                                        <SelectItem value="none" disabled>No hay productos fabricables pendientes</SelectItem>
+                                                                    {loadingLines ? (
+                                                                        <SelectItem value="loading" disabled>Cargando líneas...</SelectItem>
+                                                                    ) : saleLines.length === 0 ? (
+                                                                        <SelectItem value="none" disabled>No hay ítems fabricables avanzados pendientes</SelectItem>
+                                                                    ) : (
+                                                                        saleLines.map((line) => (
+                                                                            <SelectItem key={line.id} value={line.id.toString()}>
+                                                                                {line.product_name || line.description} ({line.quantity} {line.uom_name})
+                                                                            </SelectItem>
+                                                                        ))
                                                                     )}
-                                                                    {saleLines.map((l) => (
-                                                                        <SelectItem key={l.id} value={l.id.toString()}>
-                                                                            {l.product_name || l.description} - Cant: {l.quantity} {l.uom_name}
-                                                                        </SelectItem>
-                                                                    ))}
                                                                 </SelectContent>
                                                             </Select>
                                                             <FormMessage />
