@@ -75,25 +75,31 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         fetchUoMs()
     }, [])
 
+    // Detect if order contains services
+    const hasServices = orderLines.some(line => line.product_type === 'SERVICE')
+    const allServices = orderLines.every(line => line.product_type === 'SERVICE')
+    const receiptLabel = allServices ? 'Confirmación' : (hasServices ? 'Recepción/Confirmación' : 'Recepción')
+    const itemLabel = allServices ? 'servicios' : (hasServices ? 'productos/servicios' : 'mercancía')
+
     const receiptTypes = [
         {
             id: 'IMMEDIATE',
-            label: 'Recepción Inmediata',
-            description: 'Recibir toda la mercancía ahora',
+            label: `${receiptLabel} Inmediata`,
+            description: `Confirmar ${itemLabel} ahora`,
             icon: Receipt,
             color: 'text-emerald-600'
         },
         {
             id: 'DEFERRED',
-            label: 'Recepción Diferida',
-            description: 'Registrar factura sin recibir mercancía',
+            label: `${receiptLabel} Diferida`,
+            description: `Registrar factura sin confirmar ${itemLabel}`,
             icon: FileText,
             color: 'text-amber-600'
         },
         {
             id: 'PARTIAL',
-            label: 'Recepción Parcial',
-            description: 'Recibir cantidades específicas',
+            label: `${receiptLabel} Parcial`,
+            description: 'Confirmar cantidades específicas',
             icon: FileCheck,
             color: 'text-blue-600'
         }
@@ -148,7 +154,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
                 <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block flex items-center gap-2">
                     <Package className="h-4 w-4" />
-                    Tipo de Recepción
+                    Tipo de {receiptLabel}
                 </Label>
                 <RadioGroup
                     value={receiptData.type}
@@ -266,9 +272,12 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                         <FileText className="h-5 w-5" />
                     </div>
                     <div className="space-y-1">
-                        <p className="text-xs font-bold uppercase tracking-wider">Nota de Recepción Diferida</p>
+                        <p className="text-xs font-bold uppercase tracking-wider">Nota de {receiptLabel} Diferida</p>
                         <p className="text-sm">
-                            La mercancía no será recibida en inventario. Podrá registrar la recepción más tarde desde la lista de órdenes de compra.
+                            {allServices
+                                ? 'Los servicios no serán confirmados. Podrá registrar la confirmación más tarde desde la lista de órdenes de compra.'
+                                : 'La mercancía no será recibida en inventario. Podrá registrar la recepción más tarde desde la lista de órdenes de compra.'
+                            }
                         </p>
                     </div>
                 </div>

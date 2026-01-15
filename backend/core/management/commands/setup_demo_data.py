@@ -147,6 +147,12 @@ class Command(BaseCommand):
             if acc_loss: settings.adjustment_expense_account = acc_loss
             if acc_initial: settings.initial_inventory_account = acc_initial
             if acc_reval: settings.revaluation_account = acc_reval
+            
+            # Map service expense account (5.1.02 - Costo de Servicios Prestados)
+            service_expense_acc = Account.objects.filter(code='5.1.02').first()
+            if service_expense_acc:
+                settings.default_service_expense_account = service_expense_acc
+            
             settings.save()
             self.stdout.write("  Inventory accounting settings updated.")
 

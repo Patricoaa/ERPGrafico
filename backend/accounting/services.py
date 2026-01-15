@@ -217,6 +217,7 @@ class AccountingService:
             'stock_input_account': '2.1.06.01',
             'stock_output_account': '1.1.06.01',
             'default_consumable_account': '5.2.05',
+            'default_service_expense_account': '5.1.02',
             'default_prepayment_account': '1.1.02.02',
             'default_advance_payment_account': '2.1.01.02',
         }
@@ -487,6 +488,11 @@ class AccountingMapper:
                 if not target_account:
                     # Fallback to asset if no expense account found
                     target_account = line.product.get_asset_account if not callable(line.product.get_asset_account) else line.product.get_asset_account()
+            elif line.product.product_type == 'SERVICE':
+                target_account = line.product.get_expense_account or settings.default_service_expense_account
+                if not target_account:
+                     # Fallback to asset/inventory if no expense found
+                     target_account = line.product.get_asset_account if not callable(line.product.get_asset_account) else line.product.get_asset_account()
             else:
                 target_account = line.product.get_asset_account if not callable(line.product.get_asset_account) else line.product.get_asset_account()
             
@@ -502,6 +508,8 @@ class AccountingMapper:
             label = f"Ingreso Inventario: {line.product.code}"
             if line.product.product_type == 'CONSUMABLE':
                 label = f"Gasto Consumible: {line.product.code}"
+            elif line.product.product_type == 'SERVICE':
+                label = f"Gasto Servicio: {line.product.code}"
 
             items.append({
                 'account': target_account,

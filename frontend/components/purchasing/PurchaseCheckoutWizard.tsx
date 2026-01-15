@@ -137,7 +137,12 @@ export function PurchaseCheckoutWizard({
                 toast.error("Debe seleccionar un proveedor para continuar.")
                 return false
             }
-            if (!selectedWarehouseId) {
+            // Check if all products are services (no warehouse needed)
+            const allServices = currentOrderLines.every(line => {
+                // Assuming product_type is available on the line or we need to check it
+                return line.product_type === 'SERVICE'
+            })
+            if (!selectedWarehouseId && !allServices) {
                 toast.error("Debe seleccionar una bodega destino.")
                 return false
             }

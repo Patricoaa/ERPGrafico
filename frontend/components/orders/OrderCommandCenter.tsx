@@ -393,10 +393,15 @@ export function OrderCommandCenter({
                                 </PhaseCard>
                             )}
 
-                            {/* 3. Logística */}
+                            {/* 3. Logística / Cumplimiento */}
                             {order.document_type !== 'SERVICE_OBLIGATION' && (
                                 <PhaseCard
-                                    title="Logística"
+                                    title={(() => {
+                                        const lines = order.lines || order.items || []
+                                        const allServices = lines.every((l: any) => l.product_type === 'SERVICE')
+                                        const hasServices = lines.some((l: any) => l.product_type === 'SERVICE')
+                                        return allServices ? 'Cumplimiento' : (hasServices ? 'Logística/Cumplimiento' : 'Logística')
+                                    })()}
                                     icon={Package}
                                     variant={
                                         logisticsProgress === 100 ? 'success' :
@@ -416,7 +421,11 @@ export function OrderCommandCenter({
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground/60 uppercase tracking-tighter">
                                             <Package className="h-3 w-3" />
-                                            <span>Estado de Entrega/Recepción</span>
+                                            <span>{(() => {
+                                                const lines = order.lines || order.items || []
+                                                const allServices = lines.every((l: any) => l.product_type === 'SERVICE')
+                                                return allServices ? 'Estado de Cumplimiento' : 'Estado de Entrega/Recepción'
+                                            })()}</span>
                                         </div>
                                         <div className="max-h-[140px] overflow-y-auto custom-scrollbar space-y-2 pr-2 bg-white/5 rounded-2xl p-3 border border-white/5 shadow-inner">
                                             {(order.lines || order.items || []).map((line: any, idx: number) => {

@@ -304,6 +304,13 @@ class PurchasingService:
         has_boleta = receipt.purchase_order.invoices.filter(dte_type='BOLETA').exists()
         
         for line in receipt.lines.all():
+            # Skip stock moves for SERVICE type products (they don't have physical inventory)
+            if line.product.product_type == 'SERVICE':
+                # Update Purchase Line (mark as received even though no physical stock)
+                line.purchase_line.quantity_received += line.quantity_received
+                line.purchase_line.save()
+                continue
+            
             # Determine the effective unit cost (including VAT if Boleta)
             effective_unit_cost = line.unit_cost
             if has_boleta:
