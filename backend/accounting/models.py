@@ -151,7 +151,11 @@ class JournalEntry(models.Model):
         verbose_name_plural = _("Libro Diario")
 
     def __str__(self):
-        return f"{self.date} - {self.description}"
+        return self.display_id
+
+    @property
+    def display_id(self):
+        return f"AS-{self.number}"
 
     def check_balance(self):
         debit = sum(item.debit for item in self.items.all())

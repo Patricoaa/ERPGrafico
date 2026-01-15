@@ -188,7 +188,11 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
         ordering = ['-receipt_date', '-created_at']
     
     def __str__(self):
-        return f"REC-{self.number} (OC-{self.purchase_order.number})"
+        return f"{self.display_id} (OC-{self.purchase_order.number})"
+    
+    @property
+    def display_id(self):
+        return f"MOV-{self.number}"
     
     def save(self, *args, **kwargs):
         if not self.number:

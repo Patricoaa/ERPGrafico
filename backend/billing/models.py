@@ -66,6 +66,6 @@ class Invoice(models.Model):
     def display_id(self):
         prefix = 'FACT'
         if self.dte_type == 'NOTA_CREDITO': prefix = 'NC'
-        elif self.dte_type == 'NOTA_DEBITO': prefix = 'ND'
+        elif self.dte_type == 'NOTA_DEBITO': prefix = 'NB'
         elif self.dte_type == 'BOLETA': prefix = 'BOL'
         return f"{prefix}-{self.number or 'Draft'}"

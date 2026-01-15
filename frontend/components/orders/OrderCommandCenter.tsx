@@ -28,7 +28,11 @@ import {
     X,
     Hash,
     ScrollText,
-    LayoutDashboard
+    LayoutDashboard,
+    CheckCircleIcon,
+    PlayCircle,
+    AlertCircle,
+    XCircle
 } from "lucide-react"
 import { ActionCategory } from "./ActionCategory"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
@@ -108,12 +112,25 @@ export function OrderCommandCenter({
         }
     }
 
+    const [showAnimations, setShowAnimations] = useState(false)
+
     useEffect(() => {
         if (open && orderId) {
             fetchOrderDetails()
             fetchUserPermissions()
+        } else {
+            setOrder(null)
+            setShowAnimations(false)
         }
     }, [open, orderId])
+
+    useEffect(() => {
+        if (order) {
+            // Small delay to ensure the initial 0 is rendered before the target value
+            const timer = setTimeout(() => setShowAnimations(true), 100)
+            return () => clearTimeout(timer)
+        }
+    }, [order])
 
     const handleAnnulDocument = async (id: number, force: boolean = false) => {
         try {
@@ -215,7 +232,7 @@ export function OrderCommandCenter({
         const specificDocs = isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions)
         return (specificDocs || []).map((doc: any) => ({
             type: isSale ? 'Despacho' : 'Recepción',
-            number: `${isSale ? 'Despacho' : 'Recepción'} - ${doc.number || doc.reference || `MOV-${doc.id}`}`,
+            number: doc.display_id || `${isSale ? 'DES' : 'REC'}-${doc.number || doc.id}`,
             icon: Package,
             id: doc.id,
             docType: isSale ? 'sale_delivery' : 'inventory',
@@ -257,6 +274,25 @@ export function OrderCommandCenter({
         inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
     )
 
+    const getGlobalStatus = () => {
+        if (order.status === 'CANCELLED') return { label: 'Anulado', variant: 'destructive', icon: XCircle }
+
+        // Logic for completado/progreso/pendiente based on phases
+        const stages = []
+        if (isSale && totalOTs > 0) stages.push(totalOTProgress === 100)
+        if (order.document_type !== 'SERVICE_OBLIGATION') stages.push(logisticsProgress === 100)
+        stages.push(billingIsComplete)
+        stages.push((order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) && !hasPendingTransactions)
+
+        if (stages.every(s => s)) return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
+        if (stages.some(s => s)) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
+
+        return { label: 'Pendiente', variant: 'neutral', icon: AlertCircle }
+    }
+
+    const globalStatus = getGlobalStatus()
+    const StatusIcon = globalStatus.icon
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
@@ -265,20 +301,31 @@ export function OrderCommandCenter({
                         <DialogHeader className="pb-4 border-b">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div className="space-y-1">
-                                    <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                                        <LayoutDashboard className="h-6 w-6 text-primary" />
-                                        {order.document_type === 'SERVICE_OBLIGATION' || type === 'obligation' ? 'Obligación de Servicio' : 'Centro de Comandos'}
-                                        <span className="text-muted-foreground font-light mx-2">|</span>
-                                        <span className="font-mono text-xl">{type === 'purchase' ? 'OC' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>
-                                    </DialogTitle>
+                                    <div className="flex items-center gap-3">
+                                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                                            <LayoutDashboard className="h-6 w-6 text-primary" />
+                                            {order.document_type === 'SERVICE_OBLIGATION' || type === 'obligation' ? 'Obligación de Servicio' : 'HUB de mando'}
+                                            <span className="text-muted-foreground font-light mx-2">|</span>
+
+                                        </DialogTitle>
+
+                                        <Badge
+                                            variant='outline'
+                                            className={cn(
+                                                "rounded-sm border-2 px-2 py-0.5 gap-1.5 font-bold uppercase tracking-tight text-[10px]",
+                                                globalStatus.variant === 'success' && "border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 bg-green-500/5",
+                                                globalStatus.variant === 'active' && "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-500/5",
+                                                globalStatus.variant === 'destructive' && "border-red-600 text-red-600 dark:border-red-400 dark:text-red-400 bg-red-500/5",
+                                                globalStatus.variant === 'neutral' && "border-muted-foreground text-muted-foreground bg-muted/5"
+                                            )}
+                                        >
+                                            <StatusIcon className='size-3' />
+                                            {globalStatus.label}
+                                        </Badge>
+                                    </div>
                                     <DialogDescription className="flex items-center gap-4">
                                         <span className="flex items-center gap-1.5 text-xs font-medium">
-                                            <span className={cn("w-2 h-2 rounded-full",
-                                                order.status === 'PAID' ? 'bg-green-500' :
-                                                    order.status === 'CANCELLED' ? 'bg-destructive' :
-                                                        'bg-primary'
-                                            )} />
-                                            {getStatusLabel(order.status_display || order.status)}
+                                            <span className="text-muted-foreground/30 ml-2">{type === 'purchase' ? 'OC' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>
                                             <span className="text-muted-foreground/30">|</span>
                                             {new Date(order.created_at || order.date).toLocaleDateString()}
                                             <span className="text-muted-foreground/30 ml-2">|</span>
@@ -304,7 +351,7 @@ export function OrderCommandCenter({
                                 documents={[
                                     {
                                         type: (type === 'obligation' || order.document_type === 'SERVICE_OBLIGATION') ? 'Obligación' : (isSale ? 'Nota de Venta' : 'Orden de Compra'),
-                                        number: `${(type === 'obligation' || order.document_type === 'SERVICE_OBLIGATION') ? 'Obligación' : (isSale ? 'Nota de Venta' : 'Orden de Compra')} - ${(isSale ? 'NV' : (type === 'obligation' ? 'OB' : 'OC')) + '-' + (order.number || order.id)}`,
+                                        number: order.display_id || `${(isSale ? 'NV' : (type === 'obligation' ? 'OB' : 'OC'))}-${order.number || order.id}`,
                                         icon: FileText,
                                         id: order.id,
                                         docType: type === 'sale' ? 'sale_order' : (order.document_type === 'SERVICE_OBLIGATION' ? 'service_obligation' : 'purchase_order'),
@@ -331,23 +378,17 @@ export function OrderCommandCenter({
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 actionEngineRef={actionEngineRef}
                             >
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase mb-1">
-                                        <ScrollText className="h-3 w-3" />
-                                        <span>Productos</span>
-                                    </div>
-                                    <div className="max-h-[100px] overflow-y-auto custom-scrollbar space-y-1 pr-1 bg-muted/10 rounded p-1.5 border border-border/30">
-                                        {(order.lines || order.items || []).map((line: any, idx: number) => (
-                                            <div key={idx} className="flex items-start justify-between text-[10px] gap-2 border-b border-border/20 last:border-0 pb-1 mb-1 last:mb-0 last:pb-0">
-                                                <span className="font-medium text-foreground line-clamp-2 leading-tight">
-                                                    {line.product_name || line.description}
-                                                </span>
-                                                <span className="shrink-0 font-bold bg-primary/10 px-1 rounded text-primary">
-                                                    {Math.round(line.quantity)} {line.uom_name || line.unit_name || 'un'}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                <div className="space-y-1 py-1">
+                                    {(order.lines || order.items || []).map((line: any, idx: number) => (
+                                        <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
+                                            <span className="text-foreground/70 line-clamp-2 leading-tight">
+                                                {line.product_name || line.description}
+                                            </span>
+                                            <span className="shrink-0 font-bold text-primary/80">
+                                                {Math.round(line.quantity)} {line.uom_name || line.unit_name || 'un'}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             </PhaseCard>
 
@@ -359,7 +400,7 @@ export function OrderCommandCenter({
                                     variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
                                     documents={order.work_orders?.map((ot: any) => ({
                                         type: 'Orden de Trabajo',
-                                        number: `OT - ${ot.code || ot.id}`,
+                                        number: ot.display_id || `OT-${ot.code || ot.id}`,
                                         icon: ClipboardList,
                                         id: ot.id,
                                         docType: 'work_order',
@@ -378,17 +419,15 @@ export function OrderCommandCenter({
                                     isComplete={totalOTProgress === 100 && totalOTs > 0}
                                 >
                                     {totalOTs > 0 ? (
-                                        <div className="space-y-1.5 px-0.5">
-                                            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                                <span>General</span>
-                                                <span className="text-primary">{Math.round(totalOTProgress)}%</span>
+                                        <div className="space-y-1 px-1">
+                                            <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
+                                                <span>PROGRESO</span>
+                                                <span className="text-primary">{Math.round(showAnimations ? totalOTProgress : 0)}%</span>
                                             </div>
-                                            <Progress value={totalOTProgress} className="h-1.5" />
+                                            <Progress value={showAnimations ? totalOTProgress : 0} className="h-1 bg-white/5 transition-all duration-1000" />
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-center py-2 px-2 rounded-lg bg-muted/5 border border-dashed border-border/40">
-                                            <span className="text-[9px] text-muted-foreground/40 font-medium italic">Sin órdenes de trabajo iniciadas</span>
-                                        </div>
+                                        <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">Sin inicio</div>
                                     )}
                                 </PhaseCard>
                             )}
@@ -418,41 +457,31 @@ export function OrderCommandCenter({
                                     stageId="logistics"
                                     isComplete={logisticsProgress >= 100}
                                 >
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground/60 uppercase tracking-tighter">
-                                            <Package className="h-3 w-3" />
-                                            <span>{(() => {
-                                                const lines = order.lines || order.items || []
-                                                const allServices = lines.every((l: any) => l.product_type === 'SERVICE')
-                                                return allServices ? 'Estado de Cumplimiento' : 'Estado de Entrega/Recepción'
-                                            })()}</span>
-                                        </div>
-                                        <div className="max-h-[140px] overflow-y-auto custom-scrollbar space-y-2 pr-2 bg-white/5 rounded-2xl p-3 border border-white/5 shadow-inner">
-                                            {(order.lines || order.items || []).map((line: any, idx: number) => {
-                                                const total = parseFloat(line.quantity) || 1
-                                                const current = parseFloat(isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0))
-                                                const pct = Math.min(100, Math.round((current / total) * 100))
+                                    <div className="space-y-1.5 py-1">
+                                        {(order.lines || order.items || []).map((line: any, idx: number) => {
+                                            const total = parseFloat(line.quantity) || 1
+                                            const current = parseFloat(isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0))
+                                            const pct = Math.min(100, Math.round((current / total) * 100))
 
-                                                return (
-                                                    <div key={idx} className="space-y-1 group/line">
-                                                        <div className="flex items-center justify-between text-[11px] gap-2">
-                                                            <span className="font-bold text-foreground/80 line-clamp-1 flex-1">
-                                                                {line.product_name || line.description}
-                                                            </span>
-                                                            <span className="shrink-0 font-black text-primary px-1 rounded text-[10px]">
-                                                                {Math.round(current)}/{Math.round(total)} {line.uom_name || line.unit_name || 'un'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                                            <div
-                                                                className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/50" : "bg-primary/40")}
-                                                                style={{ width: `${pct}%` }}
-                                                            />
-                                                        </div>
+                                            return (
+                                                <div key={idx} className="space-y-0.5">
+                                                    <div className="flex items-center justify-between text-[10px] gap-2">
+                                                        <span className="text-foreground/70 line-clamp-1 flex-1">
+                                                            {line.product_name || line.description}
+                                                        </span>
+                                                        <span className="shrink-0 font-bold text-primary/80">
+                                                            {Math.round(showAnimations ? current : 0)}/{Math.round(total)}
+                                                        </span>
                                                     </div>
-                                                )
-                                            })}
-                                        </div>
+                                                    <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/30" : "bg-primary/30")}
+                                                            style={{ width: `${showAnimations ? pct : 0}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </PhaseCard>
                             )}
@@ -464,7 +493,7 @@ export function OrderCommandCenter({
                                 variant={billingIsComplete ? 'success' : 'neutral'}
                                 documents={(order.related_documents?.invoices || []).map((inv: any) => ({
                                     type: inv.type_display,
-                                    number: `${inv.type_display} - #${inv.number || 'BORRADOR'}`,
+                                    number: inv.display_id || `${inv.type_display} - #${inv.number || 'BORRADOR'}`,
                                     icon: Receipt,
                                     id: inv.id,
                                     docType: 'invoice',
@@ -492,11 +521,9 @@ export function OrderCommandCenter({
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 actionEngineRef={actionEngineRef}
                             >
-                                <div className="p-2.5 bg-muted/20 rounded-lg border border-border/40">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Monto Total</span>
-                                        <span className="text-sm font-black text-foreground">${parseFloat(order.total).toLocaleString()}</span>
-                                    </div>
+                                <div className="py-2 flex justify-between items-center border-t border-white/5 mt-2">
+                                    <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">TOTAL</span>
+                                    <span className="text-sm font-black text-foreground">${parseFloat(order.total).toLocaleString()}</span>
                                 </div>
                             </PhaseCard>
 
@@ -510,7 +537,7 @@ export function OrderCommandCenter({
                                 }
                                 documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
                                     type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
-                                    number: `${pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso'} - ${pay.transaction_number || `PAGO-${pay.id}`}`,
+                                    number: pay.display_id || `${pay.payment_type === 'INBOUND' ? 'ING' : 'EGR'}-${pay.id}`,
                                     icon: Banknote,
                                     id: pay.id,
                                     docType: 'payment',
@@ -548,21 +575,23 @@ export function OrderCommandCenter({
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 actionEngineRef={actionEngineRef}
                             >
-                                <div className="space-y-1.5 px-0.5">
-                                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                        <span>Pagado</span>
+                                <div className="space-y-1 py-1">
+                                    <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
+                                        <span>PAGADO</span>
                                         <span className="text-primary">
-                                            {Math.round((1 - (order.pending_amount / (order.total || 1))) * 100)}%
+                                            {Math.round(showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0)}%
                                         </span>
                                     </div>
                                     <Progress
-                                        value={(1 - (order.pending_amount / (order.total || 1))) * 100}
-                                        className="h-1.5 shadow-inner"
+                                        value={showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0}
+                                        className="h-1 bg-white/5 transition-all duration-1000"
                                     />
-                                    <div className="flex justify-between items-center text-[10px] pt-1">
-                                        <span className="text-muted-foreground font-semibold">POR PAGAR:</span>
-                                        <span className="font-bold text-red-500">${Math.round(order.pending_amount).toLocaleString()}</span>
-                                    </div>
+                                    {parseFloat(order.pending_amount) > 0 && (
+                                        <div className="flex justify-between items-center text-[10px] mt-1 border-t border-white/5 pt-1">
+                                            <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">POR PAGAR</span>
+                                            <span className="font-bold text-red-500/80">${Math.round(order.pending_amount).toLocaleString()}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </PhaseCard>
                         </div>
@@ -660,9 +689,9 @@ function PhaseCard({
 
     return (
         <Card className={cn(
-            "flex flex-col h-full transition-all duration-500 border-2 rounded-3xl relative overflow-hidden backdrop-blur-sm group/card",
+            "flex flex-col h-full transition-all duration-500 border-2 rounded-3xl relative overflow-hidden backdrop-blur-sm group/card bg-transparent",
             variantStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')],
-            "hover:translate-y-[-4px] hover:shadow-2xl hover:border-white/20",
+            "hover:translate-y-[-4px] hover:shadow-2xl hover:border-white/20 shadow-none",
             isSuccess && "animate-in fade-in zoom-in-95 duration-700"
         )}>
             {/* Background Gradient for Success */}
@@ -689,119 +718,100 @@ function PhaseCard({
                 <div className={cn("w-2 h-2 rounded-full shadow-[0_0_8px]", statusDot[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])} />
             </div>
 
-            <CardContent className="p-5 flex-1 flex flex-col gap-6 relative z-10">
-                {/* Documents List - Flat Design */}
-                <div className="space-y-2 min-h-[60px]">
+            <CardContent className="p-5 flex-1 flex flex-col gap-4 relative z-10">
+                {/* Documents List - Uniform Row Style */}
+                <div className="space-y-2 min-h-[40px]">
                     {documents.length > 0 ? (
                         documents.map((doc: any, i: number) => (
-                            <div key={i} className="flex flex-col p-3 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all duration-300 gap-2 group/doc shadow-sm">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3 overflow-hidden">
-                                        <div className="p-2 bg-background/50 rounded-xl shadow-sm shrink-0">
-                                            <doc.icon className="h-4 w-4 text-primary/80" />
-                                        </div>
-                                        <div className="flex flex-col overflow-hidden">
-                                            <span className="text-[11px] font-black text-foreground/90 truncate max-w-[140px]" title={doc.number}>{doc.number}</span>
-                                            {doc.status && (
-                                                <span className="text-[8px] font-black uppercase text-muted-foreground/40 tracking-widest">{doc.status}</span>
-                                            )}
-                                        </div>
+                            <div key={i} className="flex items-center justify-between p-2.5 bg-muted/5 rounded-2xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-12">
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                    <div className="h-8 w-8 flex items-center justify-center bg-background rounded-xl border border-border/20 shadow-sm shrink-0">
+                                        <doc.icon className="h-4 w-4 text-primary/80" />
                                     </div>
-
-                                    <div className="flex items-center gap-1 opacity-40 group-hover/doc:opacity-100 transition-opacity">
-                                        {doc.actions?.map((action: any, idx: number) => (
-                                            <Button
-                                                key={idx}
-                                                variant="ghost"
-                                                size="icon"
-                                                className={cn("h-7 w-7 rounded-lg", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10")}
-                                                onClick={(e) => { e.stopPropagation(); action.onClick() }}
-                                                title={action.title}
-                                            >
-                                                <action.icon className="h-4 w-4" />
-                                            </Button>
-                                        ))}
-
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/20 rounded-lg"
-                                            onClick={() => !doc.disabled && onViewDetail?.(doc.docType, doc.id)}
-                                            disabled={doc.disabled}
-                                            title="Ver Detalles"
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
+                                    <div className="flex flex-col overflow-hidden">
+                                        <span className="text-[11px] font-black text-foreground/90 truncate max-w-[120px]" title={doc.number}>
+                                            {doc.number}
+                                        </span>
                                     </div>
                                 </div>
 
-                                {showDocProgress && (doc.progressValue !== undefined) && (
-                                    <div className="px-1">
-                                        <div className="flex items-center justify-between text-[8px] font-black uppercase mb-1 text-muted-foreground/40 tracking-widest">
-                                            <span>Avance</span>
-                                            <span>{Math.round(doc.progressValue)}%</span>
-                                        </div>
-                                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full bg-primary/50 transition-all duration-700" style={{ width: `${doc.progressValue}%` }} />
-                                        </div>
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-0.5 opacity-20 group-hover/doc:opacity-100 transition-opacity">
+                                    {doc.actions?.map((action: any, idx: number) => (
+                                        <Button
+                                            key={idx}
+                                            variant="ghost"
+                                            size="icon"
+                                            className={cn("h-7 w-7 rounded-lg", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10")}
+                                            onClick={(e) => { e.stopPropagation(); action.onClick() }}
+                                            title={action.title}
+                                        >
+                                            <action.icon className="h-4 w-4" />
+                                        </Button>
+                                    ))}
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/20 rounded-lg"
+                                        onClick={() => !doc.disabled && onViewDetail?.(doc.docType, doc.id)}
+                                        disabled={doc.disabled}
+                                        title="Ver Detalles"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         ))
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-6 border border-dashed border-white/10 rounded-2xl bg-white/2">
-                            <Info className="h-5 w-5 text-muted-foreground/20 mb-2" />
-                            <span className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest">{emptyMessage}</span>
+                        <div className="flex flex-col items-center justify-center py-4 border border-dashed border-border/20 rounded-2xl bg-muted/5">
+                            <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
                         </div>
                     )}
                 </div>
 
-                <div className="flex-1 flex flex-col justify-center">
+                {/* Visual Support Container - FLAT */}
+                <div className="flex-1 flex flex-col justify-center min-h-[100px]">
                     {children}
                 </div>
 
                 {/* Actions Section */}
-                <div className="mt-auto space-y-4">
-                    {isSuccess ? (
-                        <div className="flex flex-col items-center justify-center py-5 px-3 border border-dotted border-white/10 rounded-2xl bg-white/2">
-                            <Settings2 className="h-5 w-5 text-muted-foreground/10 mb-2" />
-                            <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">Etapa Completada</span>
-                        </div>
-                    ) : (
-                        categorizedActions.primary.length > 0 && (
-                            <div className="space-y-3">
-                                <div className="h-px bg-white/5 w-full" />
-                                <ActionCategory
-                                    category={{ actions: categorizedActions.primary } as any}
-                                    order={order}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={onActionSuccess}
-                                    layout="grid"
-                                    compact={true}
-                                />
-                            </div>
-                        )
+                <div className="mt-auto">
+                    {!isSuccess && categorizedActions.primary.length > 0 && (
+                        <ActionCategory
+                            category={{ actions: categorizedActions.primary } as any}
+                            order={order}
+                            userPermissions={userPermissions}
+                            onActionSuccess={onActionSuccess}
+                            layout="grid"
+                            compact={true}
+                            showBadge={false}
+                        />
                     )}
 
-                    {categorizedActions.secondary.length > 0 && (
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-1">
-                                <div className="h-[1px] bg-white/5 flex-1" />
-                                <span className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground/30">Opciones</span>
-                                <div className="h-[1px] bg-white/5 flex-1" />
-                            </div>
-                            <ActionCategory
-                                category={{ actions: categorizedActions.secondary } as any}
-                                order={order}
-                                userPermissions={userPermissions}
-                                onActionSuccess={onActionSuccess}
-                                layout="grid"
-                                compact={true}
-                            />
+                    {isSuccess && (
+                        <div className="flex flex-col items-center justify-center py-2 opacity-30">
+                            <Settings2 className="h-3 w-3 text-muted-foreground mb-1" />
+                            <span className="text-[7px] text-muted-foreground font-black uppercase tracking-widest">Etapa Completada</span>
                         </div>
                     )}
                 </div>
             </CardContent>
+
+            {/* Bottom Ghost Actions - Centered and Borderless - FLAT */}
+            {categorizedActions.secondary.length > 0 && (
+                <div className="pb-1 px-4">
+                    <ActionCategory
+                        category={{ actions: categorizedActions.secondary } as any}
+                        order={order}
+                        userPermissions={userPermissions}
+                        onActionSuccess={onActionSuccess}
+                        layout="flex"
+                        compact={true}
+                        ghost={true}
+                        showBadge={false}
+                    />
+                </div>
+            )}
         </Card>
     )
 }

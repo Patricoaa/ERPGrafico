@@ -518,7 +518,11 @@ class StockMove(models.Model):
         ordering = ['-date', '-created_at']
 
     def __str__(self):
-        return f"{self.date} - {self.product.internal_code} ({self.quantity})"
+        return self.display_id
+
+    @property
+    def display_id(self):
+        return f"MOV-{str(self.id).zfill(6)}"
 
 class PricingRule(models.Model):
     class RuleType(models.TextChoices):

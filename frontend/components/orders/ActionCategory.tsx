@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, forwardRef, useImperativeHandle } from "react"
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ActionButton } from "./ActionButton"
 import { Action, ActionCategory as CategoryType } from "@/types/actions"
@@ -23,8 +24,10 @@ interface ActionCategoryProps {
     order: any
     userPermissions: string[]
     onActionSuccess?: () => void
-    layout?: 'list' | 'grid'
+    layout?: 'list' | 'grid' | 'flex'
     compact?: boolean
+    ghost?: boolean
+    showBadge?: boolean
 }
 
 export const ActionCategory = forwardRef(({
@@ -33,7 +36,9 @@ export const ActionCategory = forwardRef(({
     userPermissions,
     onActionSuccess,
     layout = 'list',
-    compact = false
+    compact = false,
+    ghost = false,
+    showBadge = true
 }: ActionCategoryProps, ref) => {
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
@@ -191,7 +196,9 @@ export const ActionCategory = forwardRef(({
     const categoryBadgeCount = filteredActions.reduce((acc, action) => acc + (getActionBadgeCount(action, order) || 0), 0)
 
     return (
-        <div className={layout === 'grid' ? "space-y-0" : "p-4 space-y-4 rounded-lg border bg-card/50"}>
+        <div className={cn(
+            layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-lg border bg-card/50")
+        )}>
             {layout === 'list' && (
                 <div className="flex items-center gap-2 pb-2 border-b border-border/50">
                     <div className="p-1.5 rounded-md bg-primary/10 text-primary">
@@ -206,7 +213,11 @@ export const ActionCategory = forwardRef(({
                 </div>
             )}
 
-            <div className={layout === 'grid' ? (compact ? "grid grid-cols-1 gap-2" : "grid grid-cols-1 sm:grid-cols-2 gap-4") : "space-y-2"}>
+            <div className={cn(
+                layout === 'grid' ? (compact ? "grid grid-cols-1 gap-2" : "grid grid-cols-1 sm:grid-cols-2 gap-4") :
+                    layout === 'flex' ? "flex flex-wrap items-center justify-center gap-2" :
+                        "space-y-2"
+            )}>
                 {filteredActions.map((action) => (
                     <ActionButton
                         key={action.id}
@@ -214,8 +225,10 @@ export const ActionCategory = forwardRef(({
                         order={order}
                         userPermissions={userPermissions}
                         onClick={() => handleActionClick(action.id)}
-                        showBadge={true}
+                        showBadge={showBadge}
                         compact={compact}
+                        ghost={ghost}
+                        className={layout === 'flex' ? "w-auto" : ""}
                     />
                 ))}
             </div>
