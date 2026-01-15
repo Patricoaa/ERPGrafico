@@ -56,8 +56,24 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['inventory.add_stockmove'],
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    // Show if not fully received
-                    return order.receiving_status !== 'RECEIVED'
+                    // Show if not fully received and has physical products
+                    const lines = order.lines || order.items || []
+                    const hasProducts = lines.some((l: any) => l.product_type !== 'SERVICE' && (parseFloat(l.quantity_pending) || 0) > 0)
+                    return order.receiving_status !== 'RECEIVED' && hasProducts
+                },
+                badge: { type: 'pending' }
+            },
+            {
+                id: 'confirm-service-delivery',
+                label: 'Confirmar Entrega de Servicio',
+                icon: FileBadge,
+                requiredPermissions: ['inventory.add_stockmove'],
+                excludedStatus: ['CANCELLED'],
+                checkAvailability: (order) => {
+                    // Show if not fully received and has service products
+                    const lines = order.lines || order.items || []
+                    const hasServices = lines.some((l: any) => l.product_type === 'SERVICE' && (parseFloat(l.quantity_pending) || 0) > 0)
+                    return order.receiving_status !== 'RECEIVED' && hasServices
                 },
                 badge: { type: 'pending' }
             },

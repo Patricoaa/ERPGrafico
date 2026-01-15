@@ -30,6 +30,7 @@ interface PurchaseOrderLine {
     id: number
     product: number
     product_name: string
+    product_type: string
     quantity: number
     quantity_received: number
     quantity_pending: number
@@ -58,9 +59,17 @@ interface ReceiptModalProps {
     orderId: number
     onSuccess?: () => void
     isRefund?: boolean
+    filterType?: 'PRODUCT' | 'SERVICE' | 'ALL'
 }
 
-export function ReceiptModal({ open, onOpenChange, orderId, onSuccess, isRefund = false }: ReceiptModalProps) {
+export function ReceiptModal({
+    open,
+    onOpenChange,
+    orderId,
+    onSuccess,
+    isRefund = false,
+    filterType = 'ALL'
+}: ReceiptModalProps) {
     const [order, setOrder] = useState<PurchaseOrder | null>(null)
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
@@ -207,7 +216,8 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess, isRefund 
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5" />
-                        {isRefund ? "Devolver Productos" : "Recibir Orden"} OC-{order?.number}
+                        {isRefund ? "Devolver Productos" :
+                            (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OC-{order?.number}
                     </DialogTitle>
                     <DialogDescription>
                         Proveedor: {order?.supplier_name}
@@ -297,63 +307,69 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess, isRefund 
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {order?.lines.map(line => {
-                                        const status = getStatus(line)
+                                    {order?.lines
+                                        .filter(line => {
+                                            if (filterType === 'PRODUCT') return line.product_type !== 'SERVICE';
+                                            if (filterType === 'SERVICE') return line.product_type === 'SERVICE';
+                                            return true;
+                                        })
+                                        .map(line => {
+                                            const status = getStatus(line)
 
-                                        return (
-                                            <TableRow key={line.id}>
-                                                <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">{line.product_name}</div>
-                                                        <div className="text-xs text-muted-foreground">Original: ${line.unit_cost}</div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant="outline">{line.quantity_pending}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Input
-                                                        type="number"
-                                                        min="0"
-                                                        max={line.quantity_pending}
-                                                        step="1"
-                                                        value={receiptQuantities[line.id] || 0}
-                                                        onChange={(e) => handleQuantityChange(line.id, e.target.value)}
-                                                        className="w-24 text-center mx-auto"
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Input
-                                                        type="number"
-                                                        min="0"
-                                                        step="1"
-                                                        value={receiptCosts[line.id] || 0}
-                                                        onChange={(e) => handleCostChange(line.id, e.target.value)}
-                                                        className="w-32 text-center mx-auto"
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    {status && (
-                                                        <div className="flex items-center gap-1 text-xs">
-                                                            {status.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
-                                                            {status.type === 'success' && <CheckCircle2 className="h-3 w-3 text-green-600" />}
-                                                            {status.type === 'warning' && <AlertTriangle className="h-3 w-3 text-yellow-600" />}
-                                                            <span className={
-                                                                status.type === 'error' ? 'text-destructive' :
-                                                                    status.type === 'success' ? 'text-green-600' :
-                                                                        'text-yellow-600'
-                                                            }>
-                                                                {status.message}
-                                                            </span>
+                                            return (
+                                                <TableRow key={line.id}>
+                                                    <TableCell>
+                                                        <div>
+                                                            <div className="font-medium">{line.product_name}</div>
+                                                            <div className="text-xs text-muted-foreground">Original: ${line.unit_cost}</div>
                                                         </div>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        <Badge variant="outline">{line.quantity_pending}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            max={line.quantity_pending}
+                                                            step="1"
+                                                            value={receiptQuantities[line.id] || 0}
+                                                            onChange={(e) => handleQuantityChange(line.id, e.target.value)}
+                                                            className="w-24 text-center mx-auto"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            value={receiptCosts[line.id] || 0}
+                                                            onChange={(e) => handleCostChange(line.id, e.target.value)}
+                                                            className="w-32 text-center mx-auto"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {status && (
+                                                            <div className="flex items-center gap-1 text-xs">
+                                                                {status.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
+                                                                {status.type === 'success' && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+                                                                {status.type === 'warning' && <AlertTriangle className="h-3 w-3 text-yellow-600" />}
+                                                                <span className={
+                                                                    status.type === 'error' ? 'text-destructive' :
+                                                                        status.type === 'success' ? 'text-green-600' :
+                                                                            'text-yellow-600'
+                                                                }>
+                                                                    {status.message}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
                                 </TableBody>
                             </Table>
                         </div>
@@ -376,7 +392,7 @@ export function ReceiptModal({ open, onOpenChange, orderId, onSuccess, isRefund 
                     </Button>
                     <Button onClick={handleReceive} disabled={loading || submitting || !selectedWarehouse}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isRefund ? 'Confirmar Devolución' : 'Confirmar Recepción'}
+                        {isRefund ? 'Confirmar Devolución' : (filterType === 'SERVICE' ? 'Confirmar Entrega' : 'Confirmar Recepción')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

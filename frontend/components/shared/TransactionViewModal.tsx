@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress"
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation' | 'work_order' | 'sale_delivery'
+    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation' | 'work_order' | 'sale_delivery' | 'purchase_receipt'
     id: number | string
     view?: 'details' | 'history' | 'all'
 }
@@ -55,7 +55,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             else if (currentType === 'inventory') endpoint = `/inventory/moves/${currentId}/`
             else if (currentType === 'service_obligation') endpoint = `/services/obligations/${currentId}/`
             else if (currentType === 'work_order') endpoint = `/manufacturing/work-orders/${currentId}/`
-            else if (currentType === 'sale_delivery') endpoint = `/sales/deliveries/${currentId}/`
+            else if (currentType === 'purchase_receipt') endpoint = `/purchasing/receipts/${currentId}/`
 
             const response = await api.get(endpoint)
             setData(response.data)
@@ -124,6 +124,9 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 return { main: "Orden de Trabajo", sub: data.code || `OT-${data.id}` }
             case 'sale_delivery':
                 return { main: "Despacho de Venta", sub: data.display_id || `DES-${data.number || data.id}` }
+            case 'purchase_receipt':
+                const isService = (data.lines || []).some((l: any) => l.product_type === 'SERVICE')
+                return { main: isService ? "Entrega de Servicio" : "Recepción de Compra", sub: `REC-${data.id}` }
             default:
                 return { main: "Detalles de Transacción", sub: "" }
         }
@@ -141,7 +144,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         if (currentType === 'payment') return <Banknote className="h-5 w-5 text-emerald-600" />
         if (currentType === 'service_obligation') return <Building2 className="h-5 w-5 text-indigo-600" />
         if (currentType === 'work_order') return <ClipboardList className="h-5 w-5 text-indigo-600" />
-        if (currentType === 'sale_delivery') return <Package className="h-5 w-5 text-orange-600" />
+        if (currentType === 'sale_delivery' || currentType === 'purchase_receipt') return <Package className="h-5 w-5 text-orange-600" />
         return <FileText className="h-5 w-5" />
     }
 

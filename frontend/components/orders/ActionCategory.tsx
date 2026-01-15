@@ -58,6 +58,7 @@ export const ActionCategory = forwardRef(({
             case 'complete-folio':
             case 'register-delivery':
             case 'register-reception':
+            case 'confirm-service-delivery':
             case 'payment-history':
             case 'register-payment':
             case 'register-payment-ref':
@@ -244,7 +245,7 @@ export const ActionCategory = forwardRef(({
                 />
             )}
 
-            {(activeModal === 'register-delivery' || activeModal === 'register-reception') && (
+            {(activeModal === 'register-delivery' || activeModal === 'register-reception' || activeModal === 'confirm-service-delivery') && (
                 isSale ? (
                     <DeliveryModal
                         open={true}
@@ -258,6 +259,7 @@ export const ActionCategory = forwardRef(({
                         onOpenChange={closeModal}
                         orderId={order.id}
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                        filterType={activeModal === 'confirm-service-delivery' ? 'SERVICE' : (activeModal === 'register-reception' ? 'PRODUCT' : 'ALL')}
                     />
                 )
             )}

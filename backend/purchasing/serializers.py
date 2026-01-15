@@ -7,13 +7,14 @@ from decimal import Decimal
 
 class PurchaseLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_type = serializers.CharField(source='product.product_type', read_only=True)
     quantity_pending = serializers.ReadOnlyField()
     id = serializers.IntegerField(required=False) # Helper for updates
     uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     
     class Meta:
         model = PurchaseLine
-        fields = ['id', 'product', 'product_name', 'quantity', 'uom', 'uom_name', 'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending']
+        fields = ['id', 'product', 'product_name', 'product_type', 'quantity', 'uom', 'uom_name', 'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending']
         read_only_fields = ['subtotal', 'quantity_received', 'quantity_pending']
 
     def validate(self, data):
@@ -113,14 +114,17 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 docs['invoices'].append(doc_info)
 
         for rec in obj.receipts.all():
+            processed_moves = set()
             for line in rec.lines.all():
-                if line.stock_move:
+                if line.stock_move and line.stock_move_id not in processed_moves:
                     move = line.stock_move
+                    processed_moves.add(move.id)
                     move_code = f"MOV-{str(move.id).zfill(6)}"
                     docs['receipts'].append({
                         'id': move.id,
                         'number': move_code,
                         'date': rec.receipt_date,
+                        'docType': 'inventory',
                         'stock_moves': [{
                             'id': move.id,
                             'product': move.product.name,
@@ -128,6 +132,16 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                             'is_return': move.quantity < 0
                         }]
                     })
+            
+            # Add entry for service delivery if this receipt has services
+            if rec.lines.filter(product__product_type='SERVICE').exists():
+                docs['receipts'].append({
+                    'id': rec.id,
+                    'number': f"REC-{str(rec.id).zfill(5)}",
+                    'date': rec.receipt_date,
+                    'docType': 'purchase_receipt',
+                    'is_service': True
+                })
 
         for pay in obj.payments.all():
             prefix = 'ING' if pay.payment_type == 'INBOUND' else 'EGR'

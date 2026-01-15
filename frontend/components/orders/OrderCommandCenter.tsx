@@ -235,7 +235,7 @@ export function OrderCommandCenter({
             number: doc.display_id || `${isSale ? 'DES' : 'REC'}-${doc.number || doc.id}`,
             icon: Package,
             id: doc.id,
-            docType: isSale ? 'sale_delivery' : 'inventory',
+            docType: doc.docType || (isSale ? 'sale_delivery' : 'inventory'),
             status: doc.status
         }))
     })()
