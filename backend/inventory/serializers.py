@@ -112,7 +112,11 @@ class ProductSerializer(serializers.ModelSerializer):
             'mfg_default_delivery_days', 'recurrence_period', 'renewal_notice_days',
             'is_variable_amount', 'track_inventory', 'can_be_sold', 'can_be_purchased',
             'uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse',
-            'sale_price', 'cost_price', 'active', 'income_account', 'expense_account'
+            'sale_price', 'cost_price', 'active', 'income_account', 'expense_account',
+            'category_name', 'uom_name', 'uom_category', 'sale_uom_name', 'purchase_uom_name',
+            'receiving_warehouse_name', 'current_stock', 'effective_price', 'last_purchase_price',
+            'manufacturable_quantity', 'bom_cost', 'qty_reserved', 'qty_available',
+            'boms', 'product_custom_fields', 'reordering_rules'
         ]
 
     def get_uom_category(self, obj):
