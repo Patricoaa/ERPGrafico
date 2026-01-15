@@ -1,6 +1,6 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { Package, RefreshCw, Settings2, Plus, Pencil, Trash2 } from "lucide-react"
+import { Package, RefreshCw, Settings2, Plus, Pencil, Trash2, Warehouse } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
