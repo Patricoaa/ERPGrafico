@@ -210,17 +210,12 @@ export default function AccountingSettingsPage() {
                                         <AccountField form={form} name="default_expense_account" label="Gastos Generales (Gasto)" accountType="EXPENSE" />
 
                                         <Separator className="my-4" />
-                                        <h4 className="text-sm font-medium mb-2">Servicios y Suscripciones</h4>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-3 rounded-md bg-muted/30">
-                                            <div className="space-y-4">
-                                                <AccountField form={form} name="default_service_revenue_account" label="Ingresos Servicios" accountType="INCOME" />
-                                                <AccountField form={form} name="default_service_expense_account" label="Gastos Servicios" accountType="EXPENSE" />
-                                            </div>
-                                            <div className="space-y-4">
-                                                <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos Suscripciones" accountType="INCOME" />
-                                                <AccountField form={form} name="default_subscription_expense_account" label="Gastos Suscripciones" accountType="EXPENSE" />
-                                            </div>
-                                        </div>
+                                        <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios (Ingreso)" accountType="INCOME" />
+                                        <AccountField form={form} name="default_service_expense_account" label="Gastos por Servicios (Gasto)" accountType="EXPENSE" />
+
+                                        <Separator className="my-4" />
+                                        <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos por Suscripciones (Ingreso)" accountType="INCOME" />
+                                        <AccountField form={form} name="default_subscription_expense_account" label="Gastos por Suscripciones (Gasto)" accountType="EXPENSE" />
                                     </CardContent>
                                 </Card>
 

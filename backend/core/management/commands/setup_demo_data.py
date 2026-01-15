@@ -166,9 +166,25 @@ class Command(BaseCommand):
             service_expense_acc = Account.objects.filter(code='5.1.02').first()
             if service_expense_acc:
                 settings.default_service_expense_account = service_expense_acc
+
+            # NUEVO: Mapeo de ingresos y suscripciones
+            service_revenue_acc = Account.objects.filter(code='4.1.02').first()
+            if service_revenue_acc:
+                settings.default_service_revenue_account = service_revenue_acc
+                self.stdout.write("  ✓ Cuenta de ingresos por servicios configurada")
+
+            subscription_expense_acc = Account.objects.filter(code='5.1.02').first()
+            if subscription_expense_acc:
+                settings.default_subscription_expense_account = subscription_expense_acc
+                self.stdout.write("  ✓ Cuenta de gastos por suscripción configurada")
+
+            subscription_revenue_acc = Account.objects.filter(code='4.1.02').first()
+            if subscription_revenue_acc:
+                settings.default_subscription_revenue_account = subscription_revenue_acc
+                self.stdout.write("  ✓ Cuenta de ingresos por suscripción configurada")
             
             settings.save()
-            self.stdout.write("  ✓ Inventory accounting settings updated.")
+            self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")
 
     def _purge_data(self):
         def _safe_delete(model_class, name):
