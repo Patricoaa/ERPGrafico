@@ -35,8 +35,14 @@ const categoryItems: Record<string, any> = {
     ],
     "inventory": [
         { title: "Productos", url: "/inventory/products" },
-        { title: "Stock", url: "/inventory/stock" },
+        { title: "Movimientos", url: "/inventory/moves" },
+        { title: "Suscripciones", url: "/inventory/subscriptions" },
+        { title: "Categorías", url: "/inventory/categories" },
+        { title: "Almacenes", url: "/inventory/warehouses" },
         { title: "Unidades de Medida", url: "/inventory/uoms" },
+        { title: "Reglas de Precios", url: "/inventory/pricing-rules" },
+        { title: "Reabastecimiento", url: "/inventory/replenishment" },
+        { title: "Reporte de Stock", url: "/inventory/report" },
     ],
     "production": [
         { title: "Ordenes de Trabajo", url: "/production/orders" },
@@ -48,10 +54,6 @@ const categoryItems: Record<string, any> = {
     ],
     "purchasing": [
         { title: "Ordenes de Compra", url: "/purchasing/orders" },
-    ],
-    "services": [
-        { title: "Contratos", url: "/services/contracts" },
-        { title: "Obligaciones", url: "/services/obligations" },
     ],
     "finances": [
         { title: "Estados Financieros", url: "/finances/statements" },
@@ -70,7 +72,6 @@ const titles: Record<string, string> = {
     "production": "Producción",
     "treasury": "Tesorería",
     "purchasing": "Compras",
-    "services": "Servicios",
     "finances": "Finanzas",
 }
 

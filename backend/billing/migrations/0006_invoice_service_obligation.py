@@ -8,13 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('billing', '0005_invoice_contact'),
-        ('services', '0002_remove_servicecategory_is_tax_deductible'),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='invoice',
-            name='service_obligation',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='invoices', to='services.serviceobligation', verbose_name='Obligación de Servicio'),
-        ),
     ]

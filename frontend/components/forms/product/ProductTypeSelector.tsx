@@ -34,7 +34,8 @@ export function ProductTypeSelector({ form, disabled }: ProductTypeSelectorProps
                                 { id: 'STORABLE', label: 'Almacenable' },
                                 { id: 'CONSUMABLE', label: 'Consumible' },
                                 { id: 'MANUFACTURABLE', label: 'Fabricable' },
-                                { id: 'SERVICE', label: 'Servicio' }
+                                { id: 'SERVICE', label: 'Servicio (Único)' },
+                                { id: 'SUBSCRIPTION', label: 'Suscripción (Recurrente)' }
                             ].map((t) => (
                                 <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                                     <FormControl>

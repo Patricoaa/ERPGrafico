@@ -65,7 +65,8 @@ class Product(models.Model):
         CONSUMABLE = 'CONSUMABLE', _('Consumible')
         STORABLE = 'STORABLE', _('Almacenable')
         MANUFACTURABLE = 'MANUFACTURABLE', _('Fabricable')
-        SERVICE = 'SERVICE', _('Servicio')
+        SERVICE = 'SERVICE', _('Servicio (Único)')
+        SUBSCRIPTION = 'SUBSCRIPTION', _('Suscripción (Recurrente)')
 
     internal_code = models.CharField(_("Código Interno"), max_length=50, unique=True, editable=False, null=True, blank=True)
     code = models.CharField(_("Código/SKU"), max_length=50, unique=True, null=True, blank=True)
@@ -166,6 +167,32 @@ class Product(models.Model):
         _("Días de Entrega por Defecto"),
         default=3,
         help_text=_("Días a sumar a la fecha actual para la fecha estimada de entrega")
+    )
+
+    # Subscription / Recurrence Configuration
+    class RecurrencePeriod(models.TextChoices):
+        MONTHLY = 'MONTHLY', _('Mensual')
+        QUARTERLY = 'QUARTERLY', _('Trimestral')
+        SEMIANNUAL = 'SEMIANNUAL', _('Semestral')
+        ANNUAL = 'ANNUAL', _('Anual')
+        WEEKLY = 'WEEKLY', _('Semanal')
+
+    recurrence_period = models.CharField(
+        _("Período de Recurrencia"),
+        max_length=20,
+        choices=RecurrencePeriod.choices,
+        null=True, blank=True,
+        help_text=_("Frecuencia de facturación/renovación para productos de tipo Suscripción")
+    )
+    renewal_notice_days = models.PositiveIntegerField(
+        _("Días de Aviso Renovación"), 
+        default=30,
+        help_text=_("Días de anticipación para avisar sobre la renovación del servicio")
+    )
+    is_variable_amount = models.BooleanField(
+        _("Monto Variable"),
+        default=False,
+        help_text=_("Indica si el costo mensual varía (ej: luz, agua)")
     )
     
     # Inventory Tracking Control
@@ -667,5 +694,46 @@ class ReplenishmentProposal(models.Model):
 
     def __str__(self):
         return f"Propuesta: {self.product.internal_code} ({self.qty_to_order})"
+
+
+class Subscription(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = 'ACTIVE', _('Activa')
+        PAUSED = 'PAUSED', _('Pausada')
+        CANCELLED = 'CANCELLED', _('Cancelada')
+        EXPIRED = 'EXPIRED', _('Vencida')
+
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='subscriptions')
+    supplier = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='subscriptions')
+    
+    start_date = models.DateField(_("Fecha Inicio"))
+    end_date = models.DateField(_("Fecha Fin"), null=True, blank=True)
+    next_payment_date = models.DateField(_("Próximo Pago"), null=True, blank=True)
+    
+    amount = models.DecimalField(_("Monto Recurrente"), max_digits=12, decimal_places=2)
+    currency = models.CharField(_("Moneda"), max_length=10, default="CLP")
+    
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    # Snapshot of configuration at time of creation? Or always use product's?
+    # Better to store instance specific config if it differs from product defaults
+    recurrence_period = models.CharField(
+        _("Frecuencia"), 
+        max_length=20, 
+        choices=Product.RecurrencePeriod.choices,
+        default=Product.RecurrencePeriod.MONTHLY
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Suscripción")
+        verbose_name_plural = _("Suscripciones")
+        ordering = ['-next_payment_date']
+
+    def __str__(self):
+        return f"{self.product.name} - {self.supplier.name}"
 
 

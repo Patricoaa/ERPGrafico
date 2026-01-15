@@ -5,11 +5,11 @@ from .serializers import (
     ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
     CustomFieldTemplateSerializer, ProductCustomFieldSerializer, ReorderingRuleSerializer,
-    ReplenishmentProposalSerializer
+    ReplenishmentProposalSerializer, SubscriptionSerializer
 )
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal
+    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal, Subscription
 )
 from .services import StockService, ProcurementService
 from django_filters.rest_framework import DjangoFilterBackend

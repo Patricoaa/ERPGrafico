@@ -4,7 +4,7 @@ from .views import (
     ProductViewSet, CategoryViewSet, WarehouseViewSet, StockMoveViewSet, 
     UoMViewSet, UoMCategoryViewSet, PricingRuleViewSet,
     CustomFieldTemplateViewSet, ProductCustomFieldViewSet, ReorderingRuleViewSet,
-    ReplenishmentProposalViewSet
+    ReplenishmentProposalViewSet, SubscriptionViewSet
 )
 
 router = DefaultRouter()
@@ -19,6 +19,7 @@ router.register(r'custom-field-templates', CustomFieldTemplateViewSet)
 router.register(r'product-custom-fields', ProductCustomFieldViewSet)
 router.register(r'reordering-rules', ReorderingRuleViewSet)
 router.register(r'replenishment-proposals', ReplenishmentProposalViewSet)
+router.register(r'subscriptions', SubscriptionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

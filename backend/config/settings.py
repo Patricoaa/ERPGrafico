@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     'treasury',
     'finances',
     'billing',
-    'services',
 ]
 
 MIDDLEWARE = [

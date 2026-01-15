@@ -28,6 +28,7 @@ import { ProductInventoryTab } from "./product/ProductInventoryTab"
 import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { ProductUoMTab } from "./product/ProductUoMTab"
+import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
 
 // Import dialogs
 import { PricingRuleForm } from "./PricingRuleForm"
@@ -241,6 +242,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                         template: pcf.template,
                         order: pcf.order || 0
                     })) || [],
+                    recurrence_period: initialData.recurrence_period || "MONTHLY",
+                    renewal_notice_days: initialData.renewal_notice_days || 30,
+                    is_variable_amount: initialData.is_variable_amount ?? false,
                 })
                 setImagePreview(initialData.image || null)
                 fetchPricingRules()
@@ -344,6 +348,14 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 formData.append('product_custom_fields', JSON.stringify(data.product_custom_fields))
             }
 
+            // Append Subscription fields
+            if (data.product_type === 'SUBSCRIPTION') {
+                formData.append('recurrence_period', data.recurrence_period || 'MONTHLY')
+                formData.append('renewal_notice_days', (data.renewal_notice_days || 30).toString())
+                formData.append('is_variable_amount', data.is_variable_amount ? 'true' : 'false')
+            }
+
+
             // Append Replenishment Rules
             if (reorderingRules && reorderingRules.length > 0) {
                 formData.append('reordering_rules', JSON.stringify(reorderingRules))
@@ -443,6 +455,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             </span>
                                         )}
                                     </TabsTrigger>
+                                    {form.watch("product_type") === 'SUBSCRIPTION' && (
+                                        <TabsTrigger value="subscription" className="px-8 flex gap-2">
+                                            Suscripción
+                                        </TabsTrigger>
+                                    )}
                                     {form.watch("can_be_sold") && (
                                         <TabsTrigger value="pricing" className="px-8 flex gap-2">
                                             Reglas de Precios
@@ -505,6 +522,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     canBeSold={form.watch("can_be_sold")}
                                     canBePurchased={form.watch("can_be_purchased")}
                                 />
+
+                                <TabsContent value="subscription" className="mt-0">
+                                    <ProductSubscriptionTab form={form as any} />
+                                </TabsContent>
 
                                 <ProductPricingTab
                                     initialData={initialData}
