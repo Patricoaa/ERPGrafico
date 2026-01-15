@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal
+    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal,
+    Subscription
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
 from production.serializers import BillOfMaterialsSerializer

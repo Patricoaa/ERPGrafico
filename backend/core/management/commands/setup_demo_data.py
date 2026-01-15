@@ -6,13 +6,13 @@ import random
 
 from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
 from accounting.services import AccountingService
-from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, PricingRule
+from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, PricingRule, Subscription
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
 from treasury.models import TreasuryAccount, Payment
 from billing.models import Invoice
-from services.models import ServiceCategory, ServiceContract, ServiceObligation
+# from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
 from core.models import User
 
@@ -61,8 +61,8 @@ class Command(BaseCommand):
         self.stdout.write('Creating Inventory & Manufacturing Data...')
         inventory = self._create_inventory(accounts, uoms)
 
-        self.stdout.write('Creating Service Contracts...')
-        self._create_contracts(accounts, partners['suppliers'])
+        self.stdout.write('Creating Subscriptions...')
+        self._create_subscriptions(accounts, partners['suppliers'])
 
         self.stdout.write('Creating Opening Balance...')
         self._create_opening_balance(accounts)
@@ -189,10 +189,8 @@ class Command(BaseCommand):
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
 
-        # 2. Services
-        _safe_delete(ServiceObligation, "ServiceObligation")
-        _safe_delete(ServiceContract, "ServiceContract")
-        _safe_delete(ServiceCategory, "ServiceCategory")
+        # 2. Subscriptions
+        _safe_delete(Subscription, "Subscription")
 
         # 3. Transactional documents
         _safe_delete(Payment, "Payment")
@@ -412,42 +410,90 @@ class Command(BaseCommand):
             'raw_materials': [p_papel, p_tinta_c, p_tinta_m, p_tinta_y, p_tinta_k]
         }
 
-    def _create_pricing_rules(self):
-        # Moved to _create_inventory for simplicity or can be separate. 
-        # Kept inline above for access to product variables.
-        pass
+    def _create_subscriptions(self, accounts, suppliers):
+        # Create Subscription Products
+        # 1. Maintenance Category
+        cat_maint, _ = ProductCategory.objects.get_or_create(
+            name="Servicios de Mantenimiento", 
+            defaults={
+                'income_account': accounts['sales_service'], 
+                'expense_account': accounts['expense_general'], 
+                'prefix': 'MNT'
+            }
+        )
 
-    def _create_contracts(self, accounts, suppliers):
-        cat_maint, _ = ServiceCategory.objects.get_or_create(code="MNT", defaults={'name': "Mantenimiento Máquinas", 'expense_account': accounts['expense_general'], 'payable_account': accounts['payable']})
-        cat_rent, _ = ServiceCategory.objects.get_or_create(code="ARR", defaults={'name': "Arriendo de Local", 'expense_account': accounts['expense_rent'], 'payable_account': accounts['payable']})
-        cat_utilities, _ = ServiceCategory.objects.get_or_create(code="SB", defaults={'name': "Servicios Básicos", 'expense_account': accounts['expense_utilities'], 'payable_account': accounts['payable']})
+        p_maint_offset, _ = Product.objects.get_or_create(
+            code="SUB-MNT-OFF",
+            defaults={
+                'name': "Mantención Preventiva Offset",
+                'category': cat_maint,
+                'product_type': Product.Type.SUBSCRIPTION,
+                'uom': UoM.objects.get(name="Unidad"),
+                'sale_price': 0, # Expense mostly
+                'recurrence_period': Product.RecurrencePeriod.MONTHLY,
+                'renewal_notice_days': 7,
+                'can_be_sold': False,
+                'can_be_purchased': True
+            }
+        )
+        
+        # 2. Utilities
+        cat_utilities, _ = ProductCategory.objects.get_or_create(
+            name="Servicios Básicos", 
+            defaults={
+                'income_account': accounts['sales_service'], 
+                'expense_account': accounts['expense_utilities'], 
+                'prefix': 'SB'
+            }
+        )
+
+        p_electric, _ = Product.objects.get_or_create(
+            code="SUB-ELEC",
+            defaults={
+                'name': "Suministro Eléctrico Taller",
+                'category': cat_utilities,
+                'product_type': Product.Type.SUBSCRIPTION,
+                'uom': UoM.objects.get(name="Unidad"),
+                'sale_price': 0,
+                'recurrence_period': Product.RecurrencePeriod.MONTHLY,
+                'is_variable_amount': True,
+                'renewal_notice_days': 5,
+                'can_be_sold': False,
+                'can_be_purchased': True
+            }
+        )
+
+        # Create Active Subscriptions
         
         # Contract for Machine maintenance
-        ServiceContract.objects.get_or_create(
-            name="Mantención Preventiva Offset",
+        # supplier[1] is Tintas Gráficas SpA (using as example provider)
+        Subscription.objects.get_or_create(
+            product=p_maint_offset,
+            supplier=suppliers[1],
             defaults={
-                'supplier': suppliers[1], # Tintas/Servicios
-                'category': cat_maint,
-                'recurrence_type': ServiceContract.RecurrenceType.MONTHLY,
-                'base_amount': 250000,
-                'payment_day': 5,
                 'start_date': timezone.now().date(),
-                'status': ServiceContract.Status.ACTIVE
+                'next_payment_date': timezone.now().date() + timezone.timedelta(days=5),
+                'amount': 250000,
+                'currency': "CLP",
+                'status': Subscription.Status.ACTIVE,
+                'recurrence_period': Product.RecurrencePeriod.MONTHLY,
+                'notes': "Contrato anual de mantenimiento preventivo máquina Heidelberg."
             }
         )
         
         # Contract for Electricity (Variable)
-        ServiceContract.objects.get_or_create(
-            name="Suministro Eléctrico Taller",
+        # supplier[2] is Servicios Eléctricos Enel
+        Subscription.objects.get_or_create(
+            product=p_electric,
+            supplier=suppliers[2],
             defaults={
-                'supplier': suppliers[2], # Enel
-                'category': cat_utilities,
-                'recurrence_type': ServiceContract.RecurrenceType.MONTHLY,
-                'base_amount': 0,
-                'is_amount_variable': True,
-                'payment_day': 20,
                 'start_date': timezone.now().date(),
-                'status': ServiceContract.Status.ACTIVE
+                'next_payment_date': timezone.now().date() + timezone.timedelta(days=20),
+                'amount': 0, # Variable
+                'currency': "CLP",
+                'status': Subscription.Status.ACTIVE,
+                'recurrence_period': Product.RecurrencePeriod.MONTHLY,
+                'notes': "Suministro eléctrico principal. Monto varía según consumo."
             }
         )
 

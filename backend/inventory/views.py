@@ -278,3 +278,9 @@ class ReplenishmentProposalViewSet(viewsets.ModelViewSet):
         ReplenishmentProposal.objects.filter(id__in=proposal_ids).update(status=ReplenishmentProposal.Status.IGNORED)
         return Response({'status': 'ok'})
 
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status', 'product', 'supplier']
