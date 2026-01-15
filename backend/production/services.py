@@ -69,17 +69,20 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
-    def create_manual(product, quantity, description, uom=None, warehouse=None):
+    def create_manual(product, quantity, description, uom=None, warehouse=None, stage_data=None):
         """
         Creates a manual Work Order for internal needs.
         """
         if product.product_type != Product.Type.MANUFACTURABLE:
             raise ValidationError("El producto debe ser fabricable.")
 
-        stage_data = {'quantity': float(quantity)}
+        final_stage_data = {'quantity': float(quantity)}
         if uom:
-             stage_data['uom_id'] = uom.id
-             stage_data['uom_name'] = uom.name
+             final_stage_data['uom_id'] = uom.id
+             final_stage_data['uom_name'] = uom.name
+        
+        if stage_data:
+            final_stage_data.update(stage_data)
 
         work_order = WorkOrder.objects.create(
             description=description,
@@ -88,7 +91,7 @@ class WorkOrderService:
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=warehouse,
-            stage_data=stage_data
+            stage_data=final_stage_data
         )
 
         # Auto-assign materials from BOM if active
@@ -169,10 +172,13 @@ class WorkOrderService:
         Performs the inventory movements:
         1. Decrease materials (Stock OUT).
         2. Increase product (Stock IN) if storable.
+        3. Calculate production cost and update product Weighted Average Cost.
         """
         from inventory.services import UoMService
         if not work_order.warehouse:
             raise ValidationError("Se requiere una bodega para finalizar la producción y registrar consumos.")
+
+        total_material_cost = Decimal('0')
 
         # 1. Consume materials
         for mat in work_order.materials.all():
@@ -182,6 +188,11 @@ class WorkOrderService:
                 from_uom=mat.uom,
                 to_uom=mat.component.uom
             )
+
+            # Calculate cost of this material usage
+            # cost_price is per Base Unit
+            material_cost = base_comp_qty * mat.component.cost_price
+            total_material_cost += material_cost
 
             move = StockMove.objects.create(
                 product=mat.component,
@@ -224,6 +235,28 @@ class WorkOrderService:
                 from_uom=uom,
                 to_uom=product.uom
             )
+
+            if base_qty > 0:
+                # 3. Cost Calculation & WAC Update
+                # Calculate Unit Production Cost
+                unit_production_cost = total_material_cost / base_qty
+                
+                # Update Weighted Average Cost
+                old_qty = product.qty_on_hand
+                old_cost = product.cost_price
+                new_total_qty = old_qty + base_qty
+                
+                if new_total_qty > 0:
+                    if old_qty <= 0:
+                        # If we had 0 or negative stock, new cost is just production cost
+                        new_wac = unit_production_cost
+                    else:
+                        current_val = old_qty * old_cost
+                        new_val = base_qty * unit_production_cost
+                        new_wac = (current_val + new_val) / new_total_qty
+                    
+                    product.cost_price = new_wac.quantize(Decimal('0.01'))
+                    product.save()
 
             StockMove.objects.create(
                 product=product,

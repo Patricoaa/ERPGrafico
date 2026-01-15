@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress"
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation' | 'work_order'
+    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation' | 'work_order' | 'sale_delivery'
     id: number | string
     view?: 'details' | 'history' | 'all'
 }
@@ -55,6 +55,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             else if (currentType === 'inventory') endpoint = `/inventory/moves/${currentId}/`
             else if (currentType === 'service_obligation') endpoint = `/services/obligations/${currentId}/`
             else if (currentType === 'work_order') endpoint = `/manufacturing/work-orders/${currentId}/`
+            else if (currentType === 'sale_delivery') endpoint = `/sales/deliveries/${currentId}/`
 
             const response = await api.get(endpoint)
             setData(response.data)
@@ -120,6 +121,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 return `OBLIGACIÓN DE SERVICIO OB-${data.id}`
             case 'work_order':
                 return `ORDEN DE TRABAJO ${data.code || `OT-${data.id}`}`
+            case 'sale_delivery':
+                return `DESPACHO DE VENTA ${data.number || `DESP-${data.id}`}`
             default:
                 return "DETALLES DE TRANSACCIÓN"
         }
@@ -135,6 +138,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         if (currentType === 'payment') return <Banknote className="h-5 w-5 text-emerald-600" />
         if (currentType === 'service_obligation') return <Building2 className="h-5 w-5 text-indigo-600" />
         if (currentType === 'work_order') return <ClipboardList className="h-5 w-5 text-indigo-600" />
+        if (currentType === 'sale_delivery') return <Package className="h-5 w-5 text-orange-600" />
         return <FileText className="h-5 w-5" />
     }
 
@@ -397,6 +401,59 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                     </p>
                                                 </div>
                                             )}
+                                        </div>
+                                    </div>
+                                ) : currentType === 'sale_delivery' ? (
+                                    <div className="space-y-6 pt-4 border-t">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Fecha Despacho</h4>
+                                                <p className="font-bold">{new Date(data.delivery_date).toLocaleDateString()}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Almacén</h4>
+                                                <p className="font-bold">{data.warehouse_name}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Nota de Venta</h4>
+                                                <Button
+                                                    variant="link"
+                                                    className="p-0 h-auto font-bold text-primary"
+                                                    onClick={() => navigateTo('sale_order', data.sale_order)}
+                                                >
+                                                    NV-{data.sale_order_number}
+                                                </Button>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase">Estado</h4>
+                                                <Badge>{translateStatus(data.status)}</Badge>
+                                            </div>
+                                        </div>
+
+                                        <div className="border rounded-md">
+                                            <Table>
+                                                <TableHeader className="bg-muted/50">
+                                                    <TableRow>
+                                                        <TableHead>Producto</TableHead>
+                                                        <TableHead className="text-right">Cantidad</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {(data.lines || []).map((line: any) => (
+                                                        <TableRow key={line.id}>
+                                                            <TableCell>
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold">{line.product_name}</span>
+                                                                    <span className="text-[10px] text-muted-foreground font-mono">{line.product_code}</span>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-right font-bold">
+                                                                {Number(line.quantity).toLocaleString()}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
                                         </div>
                                     </div>
                                 ) : (

@@ -218,7 +218,7 @@ export function OrderCommandCenter({
             number: `${isSale ? 'Despacho' : 'Recepción'} - ${doc.number || doc.reference || `MOV-${doc.id}`}`,
             icon: Package,
             id: doc.id,
-            docType: 'inventory',
+            docType: isSale ? 'sale_delivery' : 'inventory',
             status: doc.status
         }))
     })()

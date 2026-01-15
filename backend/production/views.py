@@ -19,6 +19,46 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
     queryset = WorkOrder.objects.all()
     serializer_class = WorkOrderSerializer
 
+    def create(self, request, *args, **kwargs):
+        """
+        Overridden create to handle Manual and Sale-Linked OTs via Service.
+        """
+        try:
+            data = request.data
+            product_id = data.get('product_id')
+            sale_line_id = data.get('sale_line')
+            
+            # 1. Manual Creation Flow (Product ID present, No Sale Line)
+            if product_id and (not sale_line_id or sale_line_id in ['none', '__none__', '']):
+                return self.create_manual(request)
+
+            # 2. Sale Linked Flow (Sale Line present)
+            elif sale_line_id and sale_line_id not in ['none', '__none__', '']:
+                from sales.models import SaleLine
+                sale_line = SaleLine.objects.get(pk=sale_line_id)
+                
+                # Check if we should enforce uniqueness or allow duplicates?
+                # Service check usually handles duplicates if auto-finalize is on or check existence.
+                # But here the user explicitly clicked "Create" (or Save), so we should allow it or return existing?
+                # Usually standard CRUD allows creation.
+                
+                work_order = WorkOrderService.create_from_sale_line(sale_line)
+                
+                if work_order:
+                    # Apply updates from form (dates, description override, stage_data)
+                    serializer = WorkOrderSerializer(work_order, data=data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                    return Response(WorkOrderSerializer(work_order).data, status=status.HTTP_201_CREATED)
+            
+            # 3. Fallback to standard (e.g. if sending nothing special)
+            return super().create(request, *args, **kwargs)
+            
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['post'])
     def transition(self, request, pk=None):
         """Transition OT to next stage with optional data"""
@@ -163,15 +203,20 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
             quantity = Decimal(str(request.data.get('quantity')))
             description = request.data.get('description', '')
             warehouse_id = request.data.get('warehouse_id')
+            uom_id = request.data.get('uom_id')
+            stage_data = request.data.get('stage_data', {})
             
             product = Product.objects.get(pk=product_id)
-            warehouse = Warehouse.objects.get(pk=warehouse_id) if warehouse_id else None
+            warehouse = Warehouse.objects.get(pk=warehouse_id) if warehouse_id else Warehouse.objects.first()
+            uom = UoM.objects.get(pk=uom_id) if uom_id else None
             
             work_order = WorkOrderService.create_manual(
                 product=product,
                 quantity=quantity,
                 description=description,
-                warehouse=warehouse
+                warehouse=warehouse,
+                uom=uom,
+                stage_data=stage_data
             )
             
             return Response(WorkOrderSerializer(work_order).data, status=status.HTTP_201_CREATED)
