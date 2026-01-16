@@ -255,7 +255,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     subscription_supplier: initialData.subscription_supplier?.id?.toString() || initialData.subscription_supplier?.toString() || "",
                     subscription_amount: initialData.subscription_amount || undefined,
                     subscription_start_date: initialData.subscription_start_date || "",
-                    auto_activate_subscription: initialData.auto_activate_subscription ?? false,
+                    auto_activate_subscription: initialData.auto_activate_subscription ?? true,
                     is_indefinite: initialData.is_indefinite ?? true,
                     contract_end_date: initialData.contract_end_date || "",
                     income_account: initialData.income_account?.id?.toString() || initialData.income_account?.toString() || "",
@@ -383,7 +383,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
 
                 // Direct Activation
                 if (data.subscription_supplier) formData.append('subscription_supplier', data.subscription_supplier)
-                if (data.subscription_amount) formData.append('subscription_amount', data.subscription_amount.toString())
+                if (data.subscription_amount !== undefined && data.subscription_amount !== null) formData.append('subscription_amount', data.subscription_amount.toString())
                 if (data.subscription_start_date) formData.append('subscription_start_date', data.subscription_start_date)
                 formData.append('auto_activate_subscription', data.auto_activate_subscription ? 'true' : 'false')
 

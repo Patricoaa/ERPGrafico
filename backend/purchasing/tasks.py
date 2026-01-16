@@ -41,10 +41,20 @@ def generate_subscription_orders():
         # Get product configuration for workflow automation
         product = sub.product
         
+        # Determine warehouse (Product default -> First available)
+        warehouse_id = None
+        if sub.product.receiving_warehouse:
+            warehouse_id = sub.product.receiving_warehouse.id
+        else:
+            from inventory.models import Warehouse
+            first_warehouse = Warehouse.objects.first()
+            if first_warehouse:
+                warehouse_id = first_warehouse.id
+
         # Create Purchase Order with metadata
         order_data = {
             'supplier': sub.supplier.id,
-            'warehouse': sub.product.category.warehouse.id if hasattr(sub.product.category, 'warehouse') and sub.product.category.warehouse else None, 
+            'warehouse': warehouse_id, 
             'date': today,
             'notes': f"Renovación automática de suscripción #{sub.id} para el periodo {sub.next_payment_date}",
             'currency': sub.currency,
@@ -66,23 +76,21 @@ def generate_subscription_orders():
             metadata_note = f"\n[METADATA] subscription_id={sub.id}"
             if product.default_invoice_type:
                 metadata_note += f", invoice_type={product.default_invoice_type}"
-            if product.auto_approve_renewals:
-                metadata_note += f", auto_approve=True"
-            if product.amount_confirmation_required:
-                metadata_note += f", amount_confirmation_required=True"
             
             order.notes = (order.notes or "") + metadata_note
             order.save()
             
-            # Auto-approval workflow
-            if product.auto_approve_renewals and not product.amount_confirmation_required:
-                try:
-                    from purchasing.services import PurchasingService
-                    # Confirm the order automatically
-                    PurchasingService.confirm_order(order)
-                    print(f"Auto-confirmed Order {order.number} for Subscription {sub.id}")
-                except Exception as e:
-                    print(f"Failed to auto-confirm Order {order.number}: {str(e)}")
+            # Auto-confirm the order as per configuration
+            # Auto-confirm the order as per configuration
+            try:
+                # PurchasingService.confirm_order does not exist, so we update status directly
+                from purchasing.models import PurchaseOrder
+                order.status = PurchaseOrder.Status.CONFIRMED
+                order.save()
+                print(f"Auto-confirmed Order {order.number} for Subscription {sub.id}")
+            except Exception as e:
+                print(f"Failed to auto-confirm Order {order.number}: {str(e)}")
+                # Continue anyway, order stays in DRAFT if confirmation fails
             
             # Update Subscription
             sub.next_payment_date = new_next_date

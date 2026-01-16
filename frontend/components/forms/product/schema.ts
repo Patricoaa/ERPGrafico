@@ -48,7 +48,7 @@ export const productSchema = z.object({
     subscription_supplier: z.string().optional().or(z.literal("")).nullable(),
     subscription_amount: z.preprocess((v) => Number(v) || undefined, z.number().min(0)).optional().nullable(),
     subscription_start_date: z.string().optional().or(z.literal("")).nullable(),
-    auto_activate_subscription: z.boolean().default(false),
+    auto_activate_subscription: z.boolean().default(true),
     // Contract Duration
     is_indefinite: z.boolean().default(true),
     contract_end_date: z.string().optional().or(z.literal("")).nullable(),
@@ -131,6 +131,15 @@ export const productSchema = z.object({
 }, {
     message: "La lista de materiales debe tener al menos un componente",
     path: ["boms"]
+}).refine((data) => {
+    // SUBSCRIPTION: Supplier is mandatory because auto-activation is implicit/always active
+    if (data.product_type === 'SUBSCRIPTION' && (!data.subscription_supplier || data.subscription_supplier === "")) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Debe seleccionar un proveedor para el producto de suscripción",
+    path: ["subscription_supplier"]
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>

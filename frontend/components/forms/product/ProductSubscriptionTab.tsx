@@ -357,27 +357,15 @@ export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
                             />
                         </div>
 
-                        <FormField
-                            control={form.control}
-                            name="auto_activate_subscription"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-primary/5">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Activar Producto Inmediatamente</FormLabel>
-                                        <FormDescription>
-                                            <strong>ON:</strong> Crea la suscripción activa ahora al guardar.<br />
-                                            <strong>OFF:</strong> Espera a recibir una Orden de Compra para activarse.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
+                        {/* Auto-Activation is now implicit and always active for new flow */}
+                        <div className="flex flex-row items-center justify-between rounded-lg border p-4 bg-primary/5">
+                            <div className="space-y-0.5">
+                                <FormLabel className="text-base text-primary">Activación Automática</FormLabel>
+                                <FormDescription>
+                                    La suscripción se activará y comenzará a generar renovaciones automáticamente al guardar.
+                                </FormDescription>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

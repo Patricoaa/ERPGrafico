@@ -84,6 +84,7 @@ class ProductSerializer(serializers.ModelSerializer):
     sale_uom_name = serializers.CharField(source='sale_uom.name', read_only=True)
     purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
     receiving_warehouse_name = serializers.CharField(source='receiving_warehouse.name', read_only=True)
+    subscription_supplier_name = serializers.CharField(source='subscription_supplier.name', read_only=True)
     
     current_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
@@ -116,7 +117,11 @@ class ProductSerializer(serializers.ModelSerializer):
             'category_name', 'uom_name', 'uom_category', 'sale_uom_name', 'purchase_uom_name',
             'receiving_warehouse_name', 'current_stock', 'effective_price', 'last_purchase_price',
             'manufacturable_quantity', 'bom_cost', 'qty_reserved', 'qty_available',
-            'boms', 'product_custom_fields', 'reordering_rules'
+            'boms', 'product_custom_fields', 'reordering_rules',
+            # Subscription Fields
+            'subscription_supplier', 'subscription_supplier_name', 'subscription_amount', 'subscription_start_date',
+            'auto_activate_subscription', 'default_invoice_type', 'is_indefinite', 'contract_end_date',
+            'payment_day_type', 'payment_day', 'payment_interval_days'
         ]
 
     def get_uom_category(self, obj):
