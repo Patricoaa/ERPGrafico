@@ -59,6 +59,41 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
             print(traceback.format_exc())
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Overridden to allow deletion only in early stages and without linked documents.
+        """
+        instance = self.get_object()
+        
+        # 1. Stage restriction: Only allow in MATERIAL_ASSIGNMENT
+        if instance.current_stage != WorkOrder.Stage.MATERIAL_ASSIGNMENT:
+            return Response({
+                'error': 'Solo se pueden eliminar órdenes en etapa de Asignación de Materiales. Para otras etapas, use la opción Anular.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        # 2. Document restriction: Check for linked POs
+        if instance.purchase_orders.exists():
+            return Response({
+                'error': 'No se puede eliminar una orden con Órdenes de Compra generadas. Anule la OT en su lugar.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        """Annul an OT and reverse its effects"""
+        work_order = self.get_object()
+        try:
+            notes = request.data.get('notes', '')
+            WorkOrderService.annul_work_order(
+                work_order=work_order,
+                user=request.user,
+                notes=notes
+            )
+            return Response(WorkOrderSerializer(work_order).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['post'])
     def transition(self, request, pk=None):
         """Transition OT to next stage with optional data"""

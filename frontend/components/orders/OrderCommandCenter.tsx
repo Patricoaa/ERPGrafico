@@ -92,8 +92,7 @@ export function OrderCommandCenter({
         try {
             const endpoint =
                 type === 'purchase' ? `/purchasing/orders/${orderId}/` :
-                    type === 'obligation' ? `/services/obligations/${orderId}/` :
-                        `/sales/orders/${orderId}/`
+                    `/sales/orders/${orderId}/`
             const response = await api.get(endpoint)
             setOrder(response.data)
         } catch (error) {
@@ -293,10 +292,33 @@ export function OrderCommandCenter({
     const globalStatus = getGlobalStatus()
     const StatusIcon = globalStatus.icon
 
+    // Calculate visible columns for dynamic width
+    const showProduction = isSale && (order.work_orders?.length > 0 || (order.lines || order.items || []).some((l: any) => l.is_manufacturable))
+    const showLogistics = (order.lines || order.items || []).length > 0
+
+    let visibleCols = 3 // Origen, Facturación, Tesorería
+    if (showProduction) visibleCols++
+    if (showLogistics) visibleCols++
+
+    const maxWidth = {
+        5: "max-w-[1600px]",
+        4: "max-w-[1300px]",
+        3: "max-w-[1000px]"
+    }[visibleCols as 3 | 4 | 5] || "max-w-[1600px]"
+
+    const gridCols = {
+        5: "lg:grid-cols-5",
+        4: "lg:grid-cols-4",
+        3: "lg:grid-cols-3"
+    }[visibleCols as 3 | 4 | 5] || "lg:grid-cols-5"
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="w-[95vw] max-w-[1600px] max-h-[95vh] overflow-y-auto bg-background/95 backdrop-blur-md border-border p-0 rounded-xl">
+                <DialogContent className={cn(
+                    "w-[95vw] max-h-[95vh] overflow-y-auto bg-background/95 backdrop-blur-md border-border p-0 rounded-xl transition-all duration-500",
+                    maxWidth
+                )}>
                     <div className="p-6 pb-2">
                         <DialogHeader className="pb-4 border-b">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -304,7 +326,7 @@ export function OrderCommandCenter({
                                     <div className="flex items-center gap-3">
                                         <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                                             <LayoutDashboard className="h-6 w-6 text-primary" />
-                                            {order.document_type === 'SERVICE_OBLIGATION' || type === 'obligation' ? 'Obligación de Servicio' : 'HUB de mando'}
+                                            HUB de mando
                                             <span className="text-muted-foreground font-light mx-2">|</span>
 
                                         </DialogTitle>
@@ -340,8 +362,8 @@ export function OrderCommandCenter({
                     </div>
 
                     <div className="p-6 pt-2">
-                        {/* Responsive Grid: sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pb-4">
+                        {/* Responsive Grid: dynamic columns based on content */}
+                        <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4", gridCols)}>
 
                             {/* 1. Origen */}
                             <PhaseCard
@@ -350,11 +372,11 @@ export function OrderCommandCenter({
                                 variant={order.status !== 'DRAFT' ? 'success' : 'neutral'}
                                 documents={[
                                     {
-                                        type: (type === 'obligation' || order.document_type === 'SERVICE_OBLIGATION') ? 'Obligación' : (isSale ? 'Nota de Venta' : 'Orden de Compra'),
-                                        number: order.display_id || `${(isSale ? 'NV' : (type === 'obligation' ? 'OB' : 'OC'))}-${order.number || order.id}`,
+                                        type: isSale ? 'Nota de Venta' : 'Orden de Compra',
+                                        number: order.display_id || `${(isSale ? 'NV' : 'OC')}-${order.number || order.id}`,
                                         icon: FileText,
                                         id: order.id,
-                                        docType: type === 'sale' ? 'sale_order' : (order.document_type === 'SERVICE_OBLIGATION' ? 'service_obligation' : 'purchase_order'),
+                                        docType: type === 'sale' ? 'sale_order' : 'purchase_order',
                                         actions: [
                                             ...(order.status === 'DRAFT' ? [{
                                                 icon: Trash2,
@@ -393,7 +415,7 @@ export function OrderCommandCenter({
                             </PhaseCard>
 
                             {/* 2. Producción */}
-                            {isSale && (
+                            {showProduction && (
                                 <PhaseCard
                                     title="Producción"
                                     icon={ClipboardList}
@@ -433,7 +455,7 @@ export function OrderCommandCenter({
                             )}
 
                             {/* 3. Logística / Cumplimiento */}
-                            {order.document_type !== 'SERVICE_OBLIGATION' && (
+                            {showLogistics && (
                                 <PhaseCard
                                     title={(() => {
                                         const lines = order.lines || order.items || []

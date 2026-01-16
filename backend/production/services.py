@@ -120,6 +120,84 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
+    def annul_work_order(work_order, user=None, notes=""):
+        """
+        Annuls a Work Order:
+        1. Checks if it can be annulled (optional: business rules).
+        2. Cancels linked Purchase Orders (if status permits).
+        3. Reverses stock movements (consumptions and finished products).
+        4. Updates status to CANCELLED and stage to CANCELLED.
+        """
+        # 1. Revert Stock Movements (if any)
+        # We find consumptions linked to this OT
+        consumptions = ProductionConsumption.objects.filter(work_order=work_order)
+        for consumption in consumptions:
+            move = consumption.stock_move
+            if move:
+                # Create a reversing move
+                StockMove.objects.create(
+                    product=move.product,
+                    warehouse=move.warehouse,
+                    uom=move.uom,
+                    quantity=abs(move.quantity), # If it was -5, now it's +5
+                    move_type=StockMove.Type.IN,
+                    description=f"Reversa consumo OT-{work_order.number} (Anulación)"
+                )
+                move.description += " (ANULADO)"
+                move.save()
+            consumption.delete()
+
+        # Revert Finished Product Entry (if finished)
+        if work_order.status == WorkOrder.Status.FINISHED:
+            product = work_order.product or (work_order.sale_line.product if work_order.sale_line else None)
+            if product:
+                # We need to find the entry move. Usually matching description or looking at StockMove
+                entry_move = StockMove.objects.filter(
+                    product=product,
+                    description=f"Entrada producción OT-{work_order.number}"
+                ).first()
+                if entry_move:
+                    StockMove.objects.create(
+                        product=entry_move.product,
+                        warehouse=entry_move.warehouse,
+                        uom=entry_move.uom,
+                        quantity=-abs(entry_move.quantity), # Revert entry
+                        move_type=StockMove.Type.OUT,
+                        description=f"Reversa entrada OT-{work_order.number} (Anulación)"
+                    )
+                    entry_move.description += " (ANULADO)"
+                    entry_move.save()
+
+        # 2. Cancel Linked Purchase Orders
+        for po in work_order.purchase_orders.all():
+            if po.status in [PurchaseOrder.Status.DRAFT, PurchaseOrder.Status.CONFIRMED]:
+                po.status = PurchaseOrder.Status.CANCELLED
+                po.notes += f"\nAnulado por anulación de OT-{work_order.number}"
+                po.save()
+                
+                # Also cancel draft invoices linked to this PO
+                from billing.models import Invoice
+                for invoice in po.invoices.filter(status=Invoice.Status.DRAFT):
+                    invoice.status = Invoice.Status.CANCELLED
+                    invoice.save()
+
+        # 3. Finalize Annulment
+        work_order.status = WorkOrder.Status.CANCELLED
+        work_order.current_stage = WorkOrder.Stage.CANCELLED
+        work_order.save()
+
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage=WorkOrder.Stage.CANCELLED,
+            status=WorkOrder.Status.CANCELLED,
+            notes=notes or "Orden de Trabajo Anulada.",
+            user=user
+        )
+
+        return work_order
+
+    @staticmethod
+    @transaction.atomic
     def transition_to(work_order, next_stage, user=None, notes="", data=None):
         """
         Handles transition between stages and business logic for each.

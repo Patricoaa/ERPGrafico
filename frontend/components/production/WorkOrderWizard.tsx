@@ -27,11 +27,15 @@ import {
     Download,
     Check,
     X,
+    Check,
+    X,
     Pencil,
     User,
     Eye,
     LayoutDashboard,
-    CalendarIcon
+    CalendarIcon,
+    Ban,
+    AlertTriangle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
@@ -91,6 +95,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [grossUnitPrice, setGrossUnitPrice] = useState("0")
     const [selectedDocumentType, setSelectedDocumentType] = useState<string>("FACTURA")
     const [showPOPreview, setShowPOPreview] = useState(false)
+    const [isAnnuling, setIsAnnuling] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [outsourcedPending, setOutsourcedPending] = useState<any[]>([])
     const { openCommandCenter } = useGlobalModals()
 
@@ -293,6 +299,37 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             fetchOrder()
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al eliminar material")
+        }
+    }
+
+    const handleAnnulOrder = async () => {
+        if (!window.confirm("¿Está seguro de que desea ANULAR esta Orden de Trabajo? Esta acción revertirá movimientos de stock y anulará documentos asociados.")) return
+
+        setIsAnnuling(true)
+        try {
+            await api.post(`/production/orders/${orderId}/annul/`)
+            toast.success("Orden de Trabajo anulada exitosamente")
+            fetchOrder()
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al anular la orden")
+        } finally {
+            setIsAnnuling(false)
+        }
+    }
+
+    const handleDeleteOrder = async () => {
+        if (!window.confirm("¿Está seguro de que desea ELIMINAR permanentemente esta Orden de Trabajo?")) return
+
+        setIsDeleting(true)
+        try {
+            await api.delete(`/production/orders/${orderId}/`)
+            toast.success("Orden de Trabajo eliminada")
+            onOpenChange(false) // Close wizard
+            if (onSuccess) onSuccess()
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al eliminar la orden")
+        } finally {
+            setIsDeleting(false)
         }
     }
 
@@ -831,6 +868,28 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     <LayoutDashboard className="h-4 w-4" />
 
                                 </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                    onClick={handleAnnulOrder}
+                                    disabled={isAnnuling || order?.status === 'CANCELLED'}
+                                    title="Anular OT"
+                                >
+                                    <Ban className="h-4 w-4" />
+                                </Button>
+                                {order?.current_stage === 'MATERIAL_ASSIGNMENT' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10"
+                                        onClick={handleDeleteOrder}
+                                        disabled={isDeleting}
+                                        title="Eliminar OT"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                )}
                             </div>
                         </div>
 
