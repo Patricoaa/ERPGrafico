@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
+import { showWarningToast } from "@/lib/utils/toast-utils"
 
 const supplierSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -122,7 +123,14 @@ export function SupplierForm({ onSuccess, initialData, open: openProp, onOpenCha
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+                        if (errors.tax_id) {
+                            showWarningToast("El RUT ingresado no es válido")
+                        }
+                        if (errors.name) {
+                            showWarningToast("El Nombre es requerido")
+                        }
+                    })} className="space-y-4">
                         <FormField
                             control={form.control}
                             name="name"

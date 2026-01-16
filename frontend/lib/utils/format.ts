@@ -25,7 +25,7 @@ export const formatRUT = (value: string) => {
 
 export const validateRUT = (rut: string) => {
     const clean = rut.replace(/\./g, "").replace(/-/g, "").toUpperCase();
-    if (clean.length < 8 || clean.length > 9) return false;
+    if (clean.length < 2 || clean.length > 9) return false;
 
     const dv = clean.slice(-1);
     const num = clean.slice(0, -1);
