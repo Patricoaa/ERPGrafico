@@ -18,6 +18,8 @@ class SaleLineSerializer(serializers.ModelSerializer):
     track_inventory = serializers.SerializerMethodField()
     manufacturable_quantity = serializers.SerializerMethodField()
     
+    product_code = serializers.CharField(source='product.code', read_only=True, allow_null=True)
+    
     quantity_pending = serializers.ReadOnlyField()
     uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     description = serializers.CharField(required=False, allow_blank=True)
@@ -25,7 +27,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaleLine
         fields = [
-            'id', 'product', 'product_name', 'product_type', 'track_inventory', 
+            'id', 'product', 'product_name', 'product_code', 'product_type', 'track_inventory', 
             'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
             'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 
             'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',

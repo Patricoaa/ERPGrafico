@@ -73,8 +73,8 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                 <TableRow key={item.originalIndex}>
                                     <TableCell className="font-medium">
                                         <div className="flex flex-col">
-                                            <span>{item.name}</span>
-                                            <span className="text-xs text-muted-foreground">{item.code}</span>
+                                            <span>{item.name || item.product_name || item.description}</span>
+                                            <span className="text-xs text-muted-foreground">{item.code || item.product_code || item.internal_code}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>{item.qty || item.quantity}</TableCell>

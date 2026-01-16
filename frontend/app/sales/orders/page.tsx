@@ -338,6 +338,8 @@ export default function SalesOrdersPage() {
                             ...l,
                             id: l.product, // Salesforce expects product ID in 'id' field for new orders
                             product_name: l.product_name || l.description,
+                            name: l.product_name || l.description, // Mapped for Step2
+                            code: l.product_code, // Mapped for Step2
                             qty: l.quantity,
                             unit_price_net: l.unit_price,
                             uom: l.uom,
@@ -347,6 +349,8 @@ export default function SalesOrdersPage() {
                             ...l,
                             id: l.product, // Salesforce expects product ID in 'id' field for new orders
                             product_name: l.product_name || l.description,
+                            name: l.product_name || l.description, // Mapped for Step2
+                            code: l.product_code || l.code,
                             qty: l.quantity,
                             unit_price_net: l.unit_price,
                             uom: l.uom,
