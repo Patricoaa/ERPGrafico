@@ -64,7 +64,7 @@ def auto_activate_subscription(sender, instance, created, **kwargs):
         supplier=instance.subscription_supplier,
         start_date=start_date,
         next_payment_date=start_date,  # Temporary, will be calculated below
-        amount=instance.subscription_amount,
+        amount=instance.subscription_amount or 0,
         currency='CLP',
         status=Subscription.Status.ACTIVE,
         recurrence_period=instance.recurrence_period or Product.RecurrencePeriod.MONTHLY,

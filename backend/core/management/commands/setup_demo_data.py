@@ -200,7 +200,8 @@ class Command(BaseCommand):
                 ]
                 for table in legacy_tables:
                     try:
-                        cursor.execute(f"TRUNCATE TABLE {table} CASCADE;")
+                        with transaction.atomic():
+                            cursor.execute(f"TRUNCATE TABLE {table} CASCADE;")
                         self.stdout.write(f"    ✓ Legacy table {table} truncated.")
                     except Exception:
                         # Table might not exist, ignore

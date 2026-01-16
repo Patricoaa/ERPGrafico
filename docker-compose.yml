@@ -9,7 +9,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "54321:5432"
+      - "5432:5432"
 
   redis:
     image: redis:7-alpine
@@ -84,7 +84,7 @@ services:
       - /app/.next
       - /app/.turbo
     ports:
-      - "3001:3000"
+      - "4000:3000"
     depends_on:
       - backend
     environment:
