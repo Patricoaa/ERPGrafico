@@ -472,8 +472,11 @@ export function OrderCommandCenter({
                                 <PhaseCard
                                     title={(() => {
                                         const lines = order.lines || order.items || []
-                                        const allServices = lines.every((l: any) => l.product_type === 'SERVICE')
-                                        const hasServices = lines.some((l: any) => l.product_type === 'SERVICE')
+                                        const allServices = lines.every((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
+                                        const hasServices = lines.some((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
+                                        const onlySubscriptions = lines.every((l: any) => l.product_type === 'SUBSCRIPTION')
+
+                                        if (onlySubscriptions) return 'Suscripciones'
                                         return allServices ? 'Cumplimiento' : (hasServices ? 'Logística/Cumplimiento' : 'Logística')
                                     })()}
                                     icon={Package}

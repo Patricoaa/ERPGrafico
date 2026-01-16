@@ -96,8 +96,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
     }, [orderLines, warehouses, receiptData.warehouseId, setReceiptData, receiptData])
 
     // Detect if order contains services
-    const hasServices = orderLines.some(line => line.product_type === 'SERVICE')
-    const allServices = orderLines.every(line => line.product_type === 'SERVICE')
+    const hasServices = orderLines.some(line => ['SERVICE', 'SUBSCRIPTION'].includes(line.product_type))
+    const allServices = orderLines.every(line => ['SERVICE', 'SUBSCRIPTION'].includes(line.product_type))
     const hasSubscriptions = orderLines.some(line => line.product_type === 'SUBSCRIPTION')
     const receiptLabel = allServices ? 'Confirmación' : (hasServices ? 'Recepción/Confirmación' : 'Recepción')
     const itemLabel = allServices ? 'servicios' : (hasServices ? 'productos/servicios' : 'mercancía')

@@ -136,8 +136,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         } else if (productType === "CONSUMABLE") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
             if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
-        } else if (productType === "SERVICE" || productType === "SUBSCRIPTION") {
+        } else if (productType === "SERVICE") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
+        } else if (productType === "SUBSCRIPTION") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
+            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
         }
     }, [productType, form])
 

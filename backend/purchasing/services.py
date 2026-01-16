@@ -333,6 +333,21 @@ class PurchasingService:
                         except (ValueError, TypeError):
                             pass  # Fall back to receipt_date if parsing fails
                     
+                    # Calculate next_payment_date based on recurrence
+                    from dateutil.relativedelta import relativedelta
+                    from inventory.models import Product
+                    
+                    recurrence = line.product.recurrence_period or Product.RecurrencePeriod.MONTHLY
+                    recurrence_map = {
+                        Product.RecurrencePeriod.MONTHLY: relativedelta(months=1),
+                        Product.RecurrencePeriod.QUARTERLY: relativedelta(months=3),
+                        Product.RecurrencePeriod.ANNUAL: relativedelta(years=1),
+                        Product.RecurrencePeriod.WEEKLY: relativedelta(weeks=1),
+                        Product.RecurrencePeriod.SEMIANNUAL: relativedelta(months=6),
+                    }
+                    delta = recurrence_map.get(recurrence, relativedelta(months=1))
+                    next_payment_date = start_date + delta
+
                     # Ensure we don't create multiple subscriptions for the same line if re-run 
                     # (though confirm_receipt checks status)
                     Subscription.objects.get_or_create(
@@ -340,11 +355,11 @@ class PurchasingService:
                         supplier=receipt.purchase_order.supplier,
                         defaults={
                             'start_date': start_date,
-                            'next_payment_date': start_date + timezone.timedelta(days=30), # Default 30 days
+                            'next_payment_date': next_payment_date,
                             'amount': line.total_cost,
                             'currency': receipt.purchase_order.currency if hasattr(receipt.purchase_order, 'currency') else 'CLP',
                             'status': Subscription.Status.ACTIVE,
-                            'recurrence_period': line.product.recurrence_period or 'MONTHLY',
+                            'recurrence_period': recurrence,
                             'notes': f"Creado automáticamente desde OCS-{receipt.purchase_order.number}"
                         }
                     )
@@ -993,9 +1008,18 @@ class PurchasingService:
             subscription_dates = receipt_data.get('subscriptionDates')
         
         if receipt_type == 'IMMEDIATE':
+            # For services/subscriptions, warehouse might be None if not selected
+             # Try to get from order or default, but allow None if service-only logic handles it
+            target_warehouse = warehouse 
+            if not target_warehouse and not order.lines.filter(product__product_type__in=['STORABLE', 'CONSUMABLE', 'MANUFACTURABLE']).exists():
+                 # No physical goods, so warehouse isn't strict requirement for stock moves
+                 # But PurchasingService.receive_order might expect it. 
+                 # Let's pass the first one just in case, or handle inside receive_order.
+                 target_warehouse = Warehouse.objects.first()
+
             receipt = PurchasingService.receive_order(
                 order=order,
-                warehouse=warehouse,
+                warehouse=target_warehouse or Warehouse.objects.first(),
                 receipt_date=timezone.now().date(),
                 delivery_reference=receipt_data.get('delivery_reference', '') if receipt_data else '',
                 notes=receipt_data.get('notes', '') if receipt_data else '',

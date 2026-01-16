@@ -117,7 +117,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                     <Switch
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
-                                        disabled={form.watch("product_type") === 'CONSUMABLE'}
+                                        disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(form.watch("product_type"))}
                                     />
                                 </FormControl>
                             </FormItem>

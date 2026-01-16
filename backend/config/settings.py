@@ -181,3 +181,11 @@ CELERY_TIMEZONE = TIME_ZONE
 
 # Celery Beat
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'generate_subscription_orders_daily': {
+        'task': 'purchasing.tasks.generate_subscription_orders',
+        'schedule': crontab(hour=7, minute=0), # Run daily at 7:00 AM
+    },
+}
