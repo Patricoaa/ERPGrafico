@@ -333,29 +333,19 @@ class PurchasingService:
                         except (ValueError, TypeError):
                             pass  # Fall back to receipt_date if parsing fails
                     
-                    # Calculate next_payment_date based on recurrence
-                    from dateutil.relativedelta import relativedelta
+                    # Create subscription instance
                     from inventory.models import Product
                     
                     recurrence = line.product.recurrence_period or Product.RecurrencePeriod.MONTHLY
-                    recurrence_map = {
-                        Product.RecurrencePeriod.MONTHLY: relativedelta(months=1),
-                        Product.RecurrencePeriod.QUARTERLY: relativedelta(months=3),
-                        Product.RecurrencePeriod.ANNUAL: relativedelta(years=1),
-                        Product.RecurrencePeriod.WEEKLY: relativedelta(weeks=1),
-                        Product.RecurrencePeriod.SEMIANNUAL: relativedelta(months=6),
-                    }
-                    delta = recurrence_map.get(recurrence, relativedelta(months=1))
-                    next_payment_date = start_date + delta
-
+                    
                     # Ensure we don't create multiple subscriptions for the same line if re-run 
                     # (though confirm_receipt checks status)
-                    Subscription.objects.get_or_create(
+                    subscription_instance, created = Subscription.objects.get_or_create(
                         product=line.product,
                         supplier=receipt.purchase_order.supplier,
                         defaults={
                             'start_date': start_date,
-                            'next_payment_date': next_payment_date,
+                            'next_payment_date': start_date,  # Temporary, will be calculated below
                             'amount': line.total_cost,
                             'currency': receipt.purchase_order.currency if hasattr(receipt.purchase_order, 'currency') else 'CLP',
                             'status': Subscription.Status.ACTIVE,
@@ -363,6 +353,16 @@ class PurchasingService:
                             'notes': f"Creado automáticamente desde OCS-{receipt.purchase_order.number}"
                         }
                     )
+                    
+                    # Calculate next_payment_date using SubscriptionService
+                    if created:
+                        from inventory.subscription_service import SubscriptionService
+                        subscription_instance.next_payment_date = SubscriptionService.calculate_next_payment_date(
+                            subscription_instance,
+                            from_date=start_date
+                        )
+                        subscription_instance.save()
+
                 continue
             
             # Determine the effective unit cost (including VAT if Boleta)

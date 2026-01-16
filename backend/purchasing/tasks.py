@@ -33,20 +33,10 @@ def generate_subscription_orders():
         # Standard practice: Generate the order, and assume it covers the period starting at 'next_payment_date'.
         # We need to advance 'next_payment_date' to avoid generating it again tomorrow.
         
-        # Calculate next period
-        next_date = sub.next_payment_date
-        if not next_date:
-            next_date = today
-
-        # Frequency mapping
-        recurrence_map = {
-            Product.RecurrencePeriod.MONTHLY: relativedelta(months=1),
-            Product.RecurrencePeriod.QUARTERLY: relativedelta(months=3),
-            Product.RecurrencePeriod.ANNUAL: relativedelta(years=1),
-        }
-        delta = recurrence_map.get(sub.recurrence_period, relativedelta(months=1))
+        # Calculate next period using SubscriptionService
+        from inventory.subscription_service import SubscriptionService
         
-        new_next_date = next_date + delta
+        new_next_date = SubscriptionService.calculate_next_payment_date(sub)
         
         # Create Purchase Order
         order_data = {
