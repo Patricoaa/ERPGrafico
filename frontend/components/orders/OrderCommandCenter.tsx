@@ -234,7 +234,6 @@ export function OrderCommandCenter({
     const logisticsDocs = (() => {
         if (order.related_stock_moves?.length > 0) return order.related_stock_moves.map((m: any) => ({
             type: m.move_type_display || 'Movimiento',
-            type: m.move_type_display || 'Movimiento',
             number: formatDocumentId('MOV', m.id, m.display_id),
             icon: Package,
             id: m.id,
@@ -244,7 +243,6 @@ export function OrderCommandCenter({
 
         const specificDocs = isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions)
         return (specificDocs || []).map((doc: any) => ({
-            type: isSale ? 'Despacho' : 'Recepción',
             type: isSale ? 'Despacho' : 'Recepción',
             number: formatDocumentId(isSale ? 'DES' : 'REC', doc.number || doc.id, doc.display_id),
             icon: Package,
@@ -388,7 +386,6 @@ export function OrderCommandCenter({
                                 documents={[
                                     {
                                         type: isSale ? 'Nota de Venta' : 'Orden de Compra',
-                                        type: isSale ? 'Nota de Venta' : 'Orden de Compra',
                                         number: formatDocumentId(isSale ? 'NV' : 'OC', order.number || order.id, order.display_id),
                                         icon: FileText,
                                         id: order.id,
@@ -531,7 +528,6 @@ export function OrderCommandCenter({
                                 variant={billingIsComplete ? 'success' : 'neutral'}
                                 documents={(order.related_documents?.invoices || []).map((inv: any) => ({
                                     type: inv.type_display,
-                                    type: inv.type_display,
                                     number: formatDocumentId(inv.type_display, inv.number || 'BORRADOR', inv.display_id),
                                     icon: Receipt,
                                     id: inv.id,
@@ -575,7 +571,6 @@ export function OrderCommandCenter({
                                         (parseFloat(order.pending_amount) < parseFloat(order.total) || hasPendingTransactions) ? 'active' : 'neutral'
                                 }
                                 documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
-                                    type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
                                     type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
                                     number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
                                     icon: Banknote,
