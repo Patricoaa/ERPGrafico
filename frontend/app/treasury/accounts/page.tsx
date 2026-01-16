@@ -249,7 +249,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>{account ? "Editar Cuenta" : "Nueva Cuenta de Tesorería"}</DialogTitle>
                     <DialogDescription>
