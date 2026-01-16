@@ -13,11 +13,6 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import {
-    CheckCircle2,
-    Circle,
-    Printer,
-    FileText,
-    Layers,
     Package,
     ArrowLeft,
     ArrowRight,
@@ -27,15 +22,18 @@ import {
     Download,
     Check,
     X,
-    Check,
-    X,
+    Ban,
+    AlertTriangle,
+    CheckCircle2,
+    Circle,
+    Printer,
+    FileText,
+    Layers,
     Pencil,
     User,
     Eye,
     LayoutDashboard,
-    CalendarIcon,
-    Ban,
-    AlertTriangle
+    CalendarIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
@@ -88,6 +86,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [clientApprovalFile, setClientApprovalFile] = useState<File | null>(null)
     const [clientApproved, setClientApproved] = useState(false)
     const [supervisorApproved, setSupervisorApproved] = useState(false)
+    const [pressSupervisorApproved, setPressSupervisorApproved] = useState(false)
+    const [postpressSupervisorApproved, setPostpressSupervisorApproved] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isOutsourced, setIsOutsourced] = useState(false)
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
@@ -155,6 +155,30 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             if (nextIndex > currentIndex) {
                 if (!clientApproved || !supervisorApproved) {
                     toast.error("Debe completar todas las aprobaciones requeridas.")
+                    return
+                }
+            }
+        }
+
+        // Validation: Press Approval
+        if (order.current_stage === 'PRESS' && nextStageId !== 'PRESS') {
+            const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
+            const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
+            if (nextIndex > currentIndex) {
+                if (!pressSupervisorApproved) {
+                    toast.error("Debe completar la aprobación del supervisor para continuar.")
+                    return
+                }
+            }
+        }
+
+        // Validation: Post-Press Approval
+        if (order.current_stage === 'POSTPRESS' && nextStageId !== 'POSTPRESS') {
+            const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
+            const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
+            if (nextIndex > currentIndex) {
+                if (!postpressSupervisorApproved) {
+                    toast.error("Debe completar la aprobación del supervisor para finalizar.")
                     return
                 }
             }
@@ -752,25 +776,71 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             )}
 
                             {STAGES[viewingStepIndex]?.id === 'PRESS' && (
-                                <div className="space-y-4 text-center py-10">
-                                    <Printer className="h-16 w-16 mx-auto text-primary opacity-20" />
-                                    <div className="max-w-md mx-auto space-y-2">
-                                        <p className="font-semibold">Confirmación de Impresión</p>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">
-                                            Al pasar a la siguiente etapa, se confirma que el trabajo ha pasado por la prensa y se están generando el producto final.
-                                        </p>
+                                <div className="space-y-6">
+                                    <div className="space-y-4 text-center py-6 border-b border-dashed">
+                                        <Printer className="h-12 w-12 mx-auto text-primary opacity-20" />
+                                        <div className="max-w-md mx-auto space-y-1">
+                                            <p className="font-semibold text-sm">Ejecución de Impresión</p>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                Registre que el trabajo ha pasado satisfactoriamente por la prensa.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <Label className="text-sm font-semibold block">Aprobación de la Impresión</Label>
+                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
+                                                    <p className="text-[10px] text-muted-foreground">Confirmación técnica de la calidad de impresión</p>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant={pressSupervisorApproved ? "default" : "outline"}
+                                                    className={cn("transition-all duration-300 min-w-[100px]", pressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                    onClick={() => setPressSupervisorApproved(!pressSupervisorApproved)}
+                                                >
+                                                    {pressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                    {pressSupervisorApproved ? "Aprobado" : "Aprobar"}
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
                             {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
-                                <div className="space-y-4 text-center py-10">
-                                    <Layers className="h-16 w-16 mx-auto text-primary opacity-20" />
-                                    <div className="max-w-md mx-auto space-y-2">
-                                        <p className="font-semibold">Acabados y Post-Impresión</p>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">
-                                            Aplicar los acabados finales según las especificaciones del trabajo.
-                                        </p>
+                                <div className="space-y-6">
+                                    <div className="space-y-4 text-center py-6 border-b border-dashed">
+                                        <Layers className="h-12 w-12 mx-auto text-primary opacity-20" />
+                                        <div className="max-w-md mx-auto space-y-1">
+                                            <p className="font-semibold text-sm">Acabados y Post-Impresión</p>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                Verificación final de acabados, cortes y empaque.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <Label className="text-sm font-semibold block">Aprobación de Post-Impresión</Label>
+                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
+                                                    <p className="text-[10px] text-muted-foreground">Visto bueno final antes de entrega</p>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant={postpressSupervisorApproved ? "default" : "outline"}
+                                                    className={cn("transition-all duration-300 min-w-[100px]", postpressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                    onClick={() => setPostpressSupervisorApproved(!postpressSupervisorApproved)}
+                                                >
+                                                    {postpressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                    {postpressSupervisorApproved ? "Aprobado" : "Aprobar"}
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -895,33 +965,46 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                         <div className="space-y-2">
                             <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
-                            <div className="p-3 bg-background rounded-lg border space-y-2">
-                                <p className="font-semibold text-sm">{productName}</p>
-                                {order?.product_description && (
-                                    <p className="text-xs text-muted-foreground">{order.product_description}</p>
-                                )}
+                            <div className="bg-background rounded-lg border divide-y overflow-hidden">
+                                {/* Section 1: Product */}
+                                <div className="p-3 space-y-1">
+                                    <p className="font-bold text-[10px] uppercase text-muted-foreground">Producto</p>
+                                    <p className="text-sm font-medium leading-tight">{productName}</p>
+                                    {order?.product_description && (
+                                        <p className="text-xs text-muted-foreground italic line-clamp-2">{order.product_description}</p>
+                                    )}
+                                </div>
 
+                                {/* Section 2: Delivery Date */}
                                 {order?.sale_order_delivery_date && (
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground border-t pt-2 mt-2">
-                                        <div className="flex-1">
-                                            <p className="font-bold text-[10px] uppercase">Fecha de Entrega</p>
-                                            <p className="font-medium">{new Date(order.sale_order_delivery_date + 'T12:00:00').toLocaleDateString()}</p>
+                                    <div className="p-3 space-y-1">
+                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Entrega</p>
+                                        <div className="flex items-center gap-2">
+                                            <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                                            <p className="text-sm font-medium">{new Date(order.sale_order_delivery_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
                                         </div>
                                     </div>
                                 )}
 
+                                {/* Section 3: Contact */}
                                 {order?.sale_customer_name && (
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground border-t pt-2">
-                                        <User className="h-3 w-3" />
-                                        <div>
-                                            <p className="font-medium">{order.sale_customer_name}</p>
-                                            <p>{order.sale_customer_rut}</p>
+                                    <div className="p-3 space-y-1">
+                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Cliente Relacionado</p>
+                                        <div className="flex items-start gap-3 pt-0.5">
+                                            <div className="bg-muted p-1.5 rounded-full mt-0.5">
+                                                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                            </div>
+                                            <div className="flex-1 overflow-hidden">
+                                                <p className="text-sm font-semibold truncate leading-tight">{order.sale_customer_name}</p>
+                                                <p className="text-[11px] text-muted-foreground truncate">{order.sale_customer_rut}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
 
                                 {stageData.product_description && stageData.product_description !== order?.product_description && (
-                                    <div className="border-t pt-2">
+                                    <div className="p-3 bg-muted/5">
+                                        <p className="font-bold text-[10px] uppercase text-muted-foreground mb-1">Especificación de Etapa</p>
                                         <p className="text-xs text-muted-foreground italic">{stageData.product_description}</p>
                                     </div>
                                 )}
