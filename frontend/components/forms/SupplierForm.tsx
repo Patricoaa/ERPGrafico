@@ -141,7 +141,7 @@ export function SupplierForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="tax_id"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>RUT</FormLabel>
+                                    <FormLabel>RUT *</FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="76.123.456-7"

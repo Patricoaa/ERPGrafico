@@ -147,7 +147,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                             name="tax_id"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>RUT / Identificación</FormLabel>
+                                    <FormLabel>RUT / Identificación *</FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="Ej: 12.345.678-9"

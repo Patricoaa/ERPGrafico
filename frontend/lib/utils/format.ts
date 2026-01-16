@@ -1,6 +1,12 @@
 export const formatRUT = (value: string) => {
     // Remove all non-alphanumeric characters
-    const cleanRUT = value.replace(/[^0-9kK]/g, "");
+    let cleanRUT = value.replace(/[^0-9kK]/g, "");
+
+    // Limit to 9 characters (8 digits + 1 verification digit)
+    if (cleanRUT.length > 9) {
+        cleanRUT = cleanRUT.slice(0, 9);
+    }
+
     if (cleanRUT.length <= 1) return cleanRUT;
 
     const dv = cleanRUT.slice(-1);

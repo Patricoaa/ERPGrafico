@@ -141,7 +141,7 @@ export function CustomerForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="tax_id"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>RUT</FormLabel>
+                                    <FormLabel>RUT *</FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="12.345.678-9"
