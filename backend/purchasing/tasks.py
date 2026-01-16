@@ -21,49 +21,57 @@ def generate_subscription_orders():
     generated_count = 0
 
     for sub in upcoming_subscriptions:
-        # Check if we already have a draft order for this subscription/date
-        # This is a basic check; might need robust logic to prevent dupes
-        # We check if there is a DRAFT order for this supplier created recently (e.g. last 7 days)
-        # that contains this product.
-        # Ideally, Subscription model tracks 'last_generated_order_date'
+        # 1. DUPLICATE/SAFETY CHECK
+        # Avoid generating multiple orders for the same period.
+        # We check if there's any PO for this supplier & product created in the last 20 days.
+        # (Assuming monthly frequency as default roughly, 20 days is a safe buffer to not dup)
+        cutoff_date = today - timezone.timedelta(days=20)
         
-        # Calculate new next_payment_date based on recurrence
-        # But we don't update subscription yet; we update it when the new order is CONFIRMED/PAID?
-        # OR we generate the order and move the date forward?
-        # Standard practice: Generate the order, and assume it covers the period starting at 'next_payment_date'.
-        # We need to advance 'next_payment_date' to avoid generating it again tomorrow.
+        # Look for existing orders (Draft or Confirmed) that contain this subscription's product
+        duplicate_exists = PurchaseOrder.objects.filter(
+            supplier=sub.supplier,
+            lines__product=sub.product,
+            date__gte=cutoff_date
+        ).exclude(status=PurchaseOrder.Status.CANCELLED).exists()
         
-        # Calculate next period using SubscriptionService
+        if duplicate_exists:
+            print(f"Skipping Subscription {sub.id}: Order already exists recently.")
+            continue
+
+        # 2. CALCULATE NEXT DATE
         from inventory.subscription_service import SubscriptionService
-        
         new_next_date = SubscriptionService.calculate_next_payment_date(sub)
         
-        # Get product configuration for workflow automation
         product = sub.product
         
-        # Determine warehouse (Product default -> First available)
+        # 3. WAREHOUSE LOGIC (Optional for Services)
         warehouse_id = None
         if sub.product.receiving_warehouse:
             warehouse_id = sub.product.receiving_warehouse.id
-        else:
-            from inventory.models import Warehouse
-            first_warehouse = Warehouse.objects.first()
-            if first_warehouse:
-                warehouse_id = first_warehouse.id
+        # Note: We NO LONGER force a default warehouse if product doesn't have one.
+        
+        # 4. VARIABLE AMOUNT LOGIC
+        # If product has variable amount (e.g. Electricity bill), we cannot know the cost.
+        # Set cost to 0 (or 1 as placeholder?) and keep as DRAFT.
+        is_variable = product.is_variable_amount
+        
+        estimated_cost = sub.amount if not is_variable else 0
+        if estimated_cost is None: 
+            estimated_cost = 0
 
         # Create Purchase Order with metadata
         order_data = {
             'supplier': sub.supplier.id,
             'warehouse': warehouse_id, 
             'date': today,
-            'notes': f"Renovación automática de suscripción #{sub.id} para el periodo {sub.next_payment_date}",
+            'notes': f"renovación automática de suscripción #{sub.id} para el periodo {sub.next_payment_date}",
             'currency': sub.currency,
             'lines': [
                 {
                     'product': sub.product.id,
                     'quantity': 1,
-                    'unit_cost': round(sub.amount, 0),
-                    'tax_rate': 0,
+                    'unit_cost': round(estimated_cost, 0),
+                    'tax_rate': 0, # Should fetch from product taxes ideally
                 }
             ]
         }
@@ -72,7 +80,7 @@ def generate_subscription_orders():
         if serializer.is_valid():
             order = serializer.save()
             
-            # Store subscription metadata in order notes for future reference
+            # Metadata notes
             metadata_note = f"\n[METADATA] subscription_id={sub.id}"
             if product.default_invoice_type:
                 metadata_note += f", invoice_type={product.default_invoice_type}"
@@ -80,17 +88,18 @@ def generate_subscription_orders():
             order.notes = (order.notes or "") + metadata_note
             order.save()
             
-            # Auto-confirm the order as per configuration
-            # Auto-confirm the order as per configuration
-            try:
-                # PurchasingService.confirm_order does not exist, so we update status directly
-                from purchasing.models import PurchaseOrder
-                order.status = PurchaseOrder.Status.CONFIRMED
-                order.save()
-                print(f"Auto-confirmed Order {order.number} for Subscription {sub.id}")
-            except Exception as e:
-                print(f"Failed to auto-confirm Order {order.number}: {str(e)}")
-                # Continue anyway, order stays in DRAFT if confirmation fails
+            # 5. AUTO-CONFIRMATION LOGIC
+            # Only auto-confirm if it's NOT a variable amount order.
+            # Variable amounts need manual input of the actual bill value.
+            if not is_variable:
+                try:
+                    order.status = PurchaseOrder.Status.CONFIRMED
+                    order.save()
+                    print(f"Auto-confirmed Order {order.number} for Subscription {sub.id}")
+                except Exception as e:
+                    print(f"Failed to auto-confirm Order {order.number}: {str(e)}")
+            else:
+                print(f"Created DRAFT Order {order.number} for Variable Subscription {sub.id}")
             
             # Update Subscription
             sub.next_payment_date = new_next_date

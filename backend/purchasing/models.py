@@ -35,7 +35,7 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='purchases', help_text="Bodega de recepción")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='purchases', help_text="Bodega de recepción", null=True, blank=True)
     notes = models.TextField(_("Notas"), blank=True)
     
     # Receiving fields

@@ -1,5 +1,7 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { useState, useEffect, useRef } from "react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
@@ -32,7 +34,9 @@ import {
     CheckCircleIcon,
     PlayCircle,
     AlertCircle,
-    XCircle
+    XCircle,
+    Edit,
+    Check
 } from "lucide-react"
 import { ActionCategory } from "./ActionCategory"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
@@ -136,6 +140,8 @@ export function OrderCommandCenter({
         }
     }, [open, orderId])
 
+    const router = useRouter()
+
     useEffect(() => {
         if (order) {
             // Small delay to ensure the initial 0 is rendered before the target value
@@ -143,6 +149,17 @@ export function OrderCommandCenter({
             return () => clearTimeout(timer)
         }
     }, [order])
+
+    const handleConfirmOrder = async (id: number) => {
+        try {
+            await api.post(`/purchasing/orders/${id}/confirm/`)
+            toast.success("Orden confirmada correctamente")
+            fetchOrderDetails()
+            onActionSuccess?.()
+        } catch (error: any) {
+            toast.error("Error al confirmar la orden")
+        }
+    }
 
     const handleAnnulDocument = async (id: number, force: boolean = false) => {
         try {
@@ -392,6 +409,22 @@ export function OrderCommandCenter({
                                         docType: type === 'sale' ? 'sale_order' : 'purchase_order',
                                         actions: [
                                             ...(order.status === 'DRAFT' ? [{
+                                                icon: Edit,
+                                                title: 'Editar Orden',
+                                                color: 'text-blue-500 hover:bg-blue-500/10',
+                                                onClick: () => {
+                                                    if (type === 'purchase') {
+                                                        router.push(`/purchasing/checkout?orderId=${order.id}`)
+                                                    } else {
+                                                        toast.info("Edición de ventas no implementada desde aquí")
+                                                    }
+                                                }
+                                            }, {
+                                                icon: Check,
+                                                title: 'Confirmar Orden',
+                                                color: 'text-green-500 hover:bg-green-500/10',
+                                                onClick: () => handleConfirmOrder(order.id)
+                                            }, {
                                                 icon: Trash2,
                                                 title: 'Eliminar Borrador',
                                                 color: 'text-red-500 hover:bg-red-500/10',
