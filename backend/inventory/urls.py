@@ -4,8 +4,10 @@ from .views import (
     ProductViewSet, CategoryViewSet, WarehouseViewSet, StockMoveViewSet, 
     UoMViewSet, UoMCategoryViewSet, PricingRuleViewSet,
     CustomFieldTemplateViewSet, ProductCustomFieldViewSet, ReorderingRuleViewSet,
-    ReplenishmentProposalViewSet, SubscriptionViewSet
+    ReplenishmentProposalViewSet
 )
+from .subscription_views import SubscriptionViewSet
+
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet)
