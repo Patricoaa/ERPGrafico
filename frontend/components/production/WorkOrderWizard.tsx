@@ -463,731 +463,770 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         {/* Stage Content */}
                         <div className={cn("flex-1 space-y-6", !isViewingCurrentStage && "pointer-events-none opacity-80 cursor-not-allowed select-none")}>
                             {STAGES[viewingStepIndex]?.id === 'MATERIAL_ASSIGNMENT' && (
-                                <div className="space-y-4">
-                                    <p className="text-sm text-muted-foreground">Revise y asigne los materiales necesarios para esta pieza gráfica.</p>
-                                    <div className="border rounded-md overflow-hidden">
-                                        <table className="w-full text-sm">
-                                            <thead className="bg-muted/50">
-                                                <tr>
-                                                    <th className="p-2 text-left">Componente</th>
-                                                    <th className="p-2 text-right">Cant. Planificada</th>
-                                                    <th className="p-2 text-left">UoM</th>
-                                                    <th className="p-2 text-right">Costo Unit.</th>
-                                                    <th className="p-2 text-right">Costo Total</th>
-                                                    <th className="p-2 text-left">Origen</th>
-                                                    <th className="p-2 w-10"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {order?.materials?.map((m: any) => (
-                                                    <tr key={m.id} className="border-t">
-                                                        <td className="p-2">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></td>
-                                                        <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
-                                                        <td className="p-2">{m.uom_name}</td>
-                                                        <td className="p-2 text-right text-muted-foreground">{formatCurrency(m.component_cost)}</td>
-                                                        <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
-                                                        <td className="p-2 flex flex-col gap-1">
-                                                            <Badge variant="outline" className="text-[10px] w-fit">{m.source}</Badge>
-                                                            {m.is_outsourced && (
-                                                                <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200 w-fit">
-                                                                    Tercerizado: {m.supplier_name || 'Sin prov.'}
-                                                                </Badge>
-                                                            )}
-                                                        </td>
-                                                        <td className="p-2">
-                                                            {m.source === 'MANUAL' && (
-                                                                <div className="flex gap-1">
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-6 w-6 text-primary"
-                                                                        onClick={() => handleEditMaterial(m)}
-                                                                    >
-                                                                        <Pencil className="h-3 w-3" />
-                                                                    </Button>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-6 w-6 text-destructive"
-                                                                        onClick={() => handleDeleteMaterial(m.id)}
-                                                                    >
-                                                                        <Trash2 className="h-3 w-3" />
-                                                                    </Button>
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {(!order?.materials || order.materials.length === 0) && (
-                                                    <tr>
-                                                        <td colSpan={7} className="p-4 text-center text-muted-foreground italic">No hay materiales asignados.</td>
-                                                    </tr>
+                                <div className="space-y-6">
+                                    {/* Consolidated Specs Section */}
+                                    {(stageData.prepress_specs || stageData.press_specs || stageData.postpress_specs) && (
+                                        <div className="p-4 bg-muted/5 border rounded-lg space-y-3">
+                                            <Label className="text-[10px] font-bold uppercase text-muted-foreground">Especificaciones Técnicas (Referencia)</Label>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                {stageData.prepress_specs && (
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-semibold text-primary/70">Pre-Impresión</p>
+                                                        <p className="text-xs italic">{stageData.prepress_specs}</p>
+                                                    </div>
                                                 )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    {isAddMaterialOpen ? (
-                                        <div className="p-4 border rounded-md bg-muted/20 space-y-4">
-                                            <div className="flex flex-col md:flex-row gap-4 items-end">
-                                                <div className="flex-1 space-y-2">
-                                                    <label className="text-xs font-bold uppercase">Producto / Componente</label>
-                                                    <ProductSelector
-                                                        value={newMaterialProduct}
-                                                        onChange={setNewMaterialProduct}
-                                                        onSelect={(p: any) => {
-                                                            setSelectedProductObj(p)
-                                                            // Auto-select base UoM
-                                                            if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
-                                                        }}
-                                                        disabled={!!editingMaterialId} // Disable product change when editing
-                                                        customFilter={(p: any) => {
-                                                            if (isOutsourced) {
-                                                                return p.product_type === 'SERVICE' && p.can_be_purchased;
-                                                            }
-
-                                                            // 1. Exclude the product being manufactured
-                                                            if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
-
-                                                            // 2. Exclude Consumable products
-                                                            if (p.product_type === 'CONSUMABLE') return false;
-
-                                                            // 3. Exclude Simple Manufacturable products
-                                                            if (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing) return false;
-
-                                                            // 4. Exclude Advanced Manufacturable WITHOUT stock control
-                                                            if (p.requires_advanced_manufacturing && !p.track_inventory) return false;
-
-                                                            return true;
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="w-full md:w-32 space-y-2">
-                                                    <label className="text-xs font-bold uppercase">Cantidad</label>
-                                                    <Input
-                                                        type="number"
-                                                        value={newMaterialQty}
-                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMaterialQty(e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="w-full md:w-40 space-y-2">
-                                                    <label className="text-xs font-bold uppercase">Unidad</label>
-                                                    <UoMSelector
-                                                        product={selectedProductObj}
-                                                        context="bom" // Flexible category selection
-                                                        value={newMaterialUoM}
-                                                        onChange={setNewMaterialUoM}
-                                                        uoms={uoms}
-                                                    />
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <Button variant="outline" size="sm" onClick={() => {
-                                                        setIsAddMaterialOpen(false)
-                                                        resetMaterialForm()
-                                                    }}>Cancelar</Button>
-                                                    <Button size="sm" onClick={handleAddMaterial} disabled={addingMaterial}>
-                                                        {addingMaterial ? (editingMaterialId ? "Guardando..." : "Añadiendo...") : (editingMaterialId ? "Guardar" : "Añadir")}
-                                                    </Button>
-                                                </div>
+                                                {stageData.press_specs && (
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-semibold text-primary/70">Impresión</p>
+                                                        <p className="text-xs italic">{stageData.press_specs}</p>
+                                                    </div>
+                                                )}
+                                                {stageData.postpress_specs && (
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-semibold text-primary/70">Post-Impresión</p>
+                                                        <p className="text-xs italic">{stageData.postpress_specs}</p>
+                                                    </div>
+                                                )}
                                             </div>
+                                        </div>
+                                    )}
 
-                                            {isOutsourced && (
-                                                <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t mt-2">
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-muted-foreground">Revise y asigne los materiales necesarios para esta pieza gráfica.</p>
+                                        <div className="border rounded-md overflow-hidden">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-muted/50">
+                                                    <tr>
+                                                        <th className="p-2 text-right">Cant. Planificada</th>
+                                                        <th className="p-2 text-left">UoM</th>
+                                                        <th className="p-2 text-right">Costo Unit.</th>
+                                                        <th className="p-2 text-right">Costo Total</th>
+                                                        <th className="p-2 text-left">Origen</th>
+                                                        <th className="p-2 w-10"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {order?.materials?.map((m: any) => (
+                                                        <tr key={m.id} className="border-t">
+                                                            <td className="p-2">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></td>
+                                                            <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
+                                                            <td className="p-2">{m.uom_name}</td>
+                                                            <td className="p-2 text-right text-muted-foreground">{formatCurrency(m.component_cost)}</td>
+                                                            <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
+                                                            <td className="p-2 flex flex-col gap-1">
+                                                                <Badge variant="outline" className="text-[10px] w-fit">{m.source}</Badge>
+                                                                {m.is_outsourced && (
+                                                                    <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200 w-fit">
+                                                                        Tercerizado: {m.supplier_name || 'Sin prov.'}
+                                                                    </Badge>
+                                                                )}
+                                                            </td>
+                                                            <td className="p-2">
+                                                                {m.source === 'MANUAL' && (
+                                                                    <div className="flex gap-1">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-6 w-6 text-primary"
+                                                                            onClick={() => handleEditMaterial(m)}
+                                                                        >
+                                                                            <Pencil className="h-3 w-3" />
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-6 w-6 text-destructive"
+                                                                            onClick={() => handleDeleteMaterial(m.id)}
+                                                                        >
+                                                                            <Trash2 className="h-3 w-3" />
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                    {(!order?.materials || order.materials.length === 0) && (
+                                                        <tr>
+                                                            <td colSpan={7} className="p-4 text-center text-muted-foreground italic">No hay materiales asignados.</td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {isAddMaterialOpen ? (
+                                            <div className="p-4 border rounded-md bg-muted/20 space-y-4">
+                                                <div className="flex flex-col md:flex-row gap-4 items-end">
                                                     <div className="flex-1 space-y-2">
-                                                        <label className="text-xs font-bold uppercase text-primary flex items-center gap-1">
-                                                            Proveedor del Servicio
-                                                            <span className="text-destructive">*</span>
-                                                        </label>
-                                                        <AdvancedContactSelector
-                                                            value={selectedSupplierId}
-                                                            onChange={setSelectedSupplierId}
-                                                            contactType="SUPPLIER"
+                                                        <label className="text-xs font-bold uppercase">Producto / Componente</label>
+                                                        <ProductSelector
+                                                            value={newMaterialProduct}
+                                                            onChange={setNewMaterialProduct}
+                                                            onSelect={(p: any) => {
+                                                                setSelectedProductObj(p)
+                                                                // Auto-select base UoM
+                                                                if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
+                                                            }}
+                                                            disabled={!!editingMaterialId} // Disable product change when editing
+                                                            customFilter={(p: any) => {
+                                                                if (isOutsourced) {
+                                                                    return p.product_type === 'SERVICE' && p.can_be_purchased;
+                                                                }
+
+                                                                // 1. Exclude the product being manufactured
+                                                                if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
+
+                                                                // 2. Exclude Consumable products
+                                                                if (p.product_type === 'CONSUMABLE') return false;
+
+                                                                // 3. Exclude Simple Manufacturable products
+                                                                if (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing) return false;
+
+                                                                // 4. Exclude Advanced Manufacturable WITHOUT stock control
+                                                                if (p.requires_advanced_manufacturing && !p.track_inventory) return false;
+
+                                                                return true;
+                                                            }}
                                                         />
                                                     </div>
                                                     <div className="w-full md:w-32 space-y-2">
-                                                        <label className="text-xs font-bold uppercase text-primary">Precio Bruto</label>
+                                                        <label className="text-xs font-bold uppercase">Cantidad</label>
                                                         <Input
                                                             type="number"
-                                                            value={grossUnitPrice}
-                                                            onChange={(e) => {
-                                                                const gross = e.target.value
-                                                                setGrossUnitPrice(gross)
-                                                                // Always calculate and store Net for the backend
-                                                                setUnitPrice(gross ? (parseFloat(gross) / 1.19).toFixed(2) : "0")
-                                                            }}
-                                                            className="border-primary/30 focus-visible:ring-primary"
+                                                            value={newMaterialQty}
+                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMaterialQty(e.target.value)}
                                                         />
                                                     </div>
-                                                    <div className="flex-1 space-y-2">
-                                                        <label className="text-xs font-bold uppercase text-primary flex items-center gap-1">
-                                                            Tipo de Documento
-                                                            <span className="text-destructive">*</span>
-                                                        </label>
-                                                        <select
-                                                            className="w-full rounded-md border border-primary/30 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                                                            value={selectedDocumentType}
-                                                            onChange={(e) => setSelectedDocumentType(e.target.value)}
-                                                        >
-                                                            <option value="">Seleccione...</option>
-                                                            <option value="FACTURA">Factura</option>
-                                                            <option value="BOLETA">Boleta</option>
-                                                        </select>
+                                                    <div className="w-full md:w-40 space-y-2">
+                                                        <label className="text-xs font-bold uppercase">Unidad</label>
+                                                        <UoMSelector
+                                                            product={selectedProductObj}
+                                                            context="bom" // Flexible category selection
+                                                            value={newMaterialUoM}
+                                                            onChange={setNewMaterialUoM}
+                                                            uoms={uoms}
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button variant="outline" size="sm" onClick={() => {
+                                                            setIsAddMaterialOpen(false)
+                                                            resetMaterialForm()
+                                                        }}>Cancelar</Button>
+                                                        <Button size="sm" onClick={handleAddMaterial} disabled={addingMaterial}>
+                                                            {addingMaterial ? (editingMaterialId ? "Guardando..." : "Añadiendo...") : (editingMaterialId ? "Guardar" : "Añadir")}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                {isOutsourced && (
+                                                    <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t mt-2">
+                                                        <div className="flex-1 space-y-2">
+                                                            <label className="text-xs font-bold uppercase text-primary flex items-center gap-1">
+                                                                Proveedor del Servicio
+                                                                <span className="text-destructive">*</span>
+                                                            </label>
+                                                            <AdvancedContactSelector
+                                                                value={selectedSupplierId}
+                                                                onChange={setSelectedSupplierId}
+                                                                contactType="SUPPLIER"
+                                                            />
+                                                        </div>
+                                                        <div className="w-full md:w-32 space-y-2">
+                                                            <label className="text-xs font-bold uppercase text-primary">Precio Bruto</label>
+                                                            <Input
+                                                                type="number"
+                                                                value={grossUnitPrice}
+                                                                onChange={(e) => {
+                                                                    const gross = e.target.value
+                                                                    setGrossUnitPrice(gross)
+                                                                    // Always calculate and store Net for the backend
+                                                                    setUnitPrice(gross ? (parseFloat(gross) / 1.19).toFixed(2) : "0")
+                                                                }}
+                                                                className="border-primary/30 focus-visible:ring-primary"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1 space-y-2">
+                                                            <label className="text-xs font-bold uppercase text-primary flex items-center gap-1">
+                                                                Tipo de Documento
+                                                                <span className="text-destructive">*</span>
+                                                            </label>
+                                                            <select
+                                                                className="w-full rounded-md border border-primary/30 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                                                                value={selectedDocumentType}
+                                                                onChange={(e) => setSelectedDocumentType(e.target.value)}
+                                                            >
+                                                                <option value="">Seleccione...</option>
+                                                                <option value="FACTURA">Factura</option>
+                                                                <option value="BOLETA">Boleta</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                ) : (
+                                                <div className="flex gap-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="flex-1 border-dashed"
+                                                        onClick={() => {
+                                                            resetMaterialForm()
+                                                            setIsAddMaterialOpen(true)
+                                                        }}
+                                                        disabled={order?.status === 'FINISHED'}
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Agregar Material
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="flex-1 border-dashed text-primary border-primary/20 bg-primary/5 hover:bg-primary/10"
+                                                        onClick={() => {
+                                                            resetMaterialForm()
+                                                            setIsOutsourced(true)
+                                                            setIsAddMaterialOpen(true)
+                                                        }}
+                                                        disabled={order?.status === 'FINISHED'}
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Agregar Servicio Tercerizado
+                                                    </Button>
+                                                </div>
+                                        )}
+                                            </div>
+                                </div>
+                            )}
+
+                                    {STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && (
+                                        <div className="space-y-6">
+                                            {/* Consolidated Specs Section */}
+                                            {(stageData.prepress_specs || stageData.press_specs || stageData.postpress_specs) && (
+                                                <div className="p-4 bg-muted/5 border rounded-lg space-y-3">
+                                                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Especificaciones Técnicas (Referencia)</Label>
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                        {stageData.prepress_specs && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-semibold text-primary/70">Pre-Impresión</p>
+                                                                <p className="text-xs italic">{stageData.prepress_specs}</p>
+                                                            </div>
+                                                        )}
+                                                        {stageData.press_specs && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-semibold text-primary/70">Impresión</p>
+                                                                <p className="text-xs italic">{stageData.press_specs}</p>
+                                                            </div>
+                                                        )}
+                                                        {stageData.postpress_specs && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-[10px] font-semibold text-primary/70">Post-Impresión</p>
+                                                                <p className="text-xs italic">{stageData.postpress_specs}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-4">
+                                                <p className="text-sm text-muted-foreground">Verifique la disponibilidad de stock en {order?.warehouse_name || 'la bodega seleccionada'}.</p>
+                                                <div className="grid gap-4">
+                                                    {order?.materials?.map((m: any) => (
+                                                        <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                                            <div className="space-y-1">
+                                                                <p className="text-sm font-medium">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></p>
+                                                                <p className="text-xs text-muted-foreground">Requerido: {m.quantity_planned} {m.uom_name}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="text-right mr-2">
+                                                                    <p className="text-[10px] font-bold uppercase text-muted-foreground">En Bodega</p>
+                                                                    <p className={cn("text-sm font-bold", m.is_available ? "text-green-600" : "text-destructive")}>
+                                                                        {m.stock_available >= 999999 ? "∞" : m.stock_available} {m.uom_name}
+                                                                    </p>
+                                                                </div>
+                                                                <Badge
+                                                                    variant={m.is_available ? "default" : "destructive"}
+                                                                    className={cn(m.is_available ? "bg-green-500 hover:bg-green-600" : "")}
+                                                                >
+                                                                    {m.is_available ? "Disponible" : "Sin Stock"}
+                                                                </Badge>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
+                                        <div className="space-y-6">
+                                            {/* Specifications Section */}
+                                            {(stageData.prepress_specs || (stageData.folio_enabled && stageData.folio_start)) && (
+                                                <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-3">
+                                                    {stageData.prepress_specs && (
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] font-bold uppercase text-primary">Especificaciones Técnicas</Label>
+                                                            <p className="text-sm border-l-2 border-primary/20 pl-3 py-1 italic">{stageData.prepress_specs}</p>
+                                                        </div>
+                                                    )}
+                                                    {stageData.folio_enabled && (
+                                                        <div className="flex items-center gap-4 pt-2 border-t border-primary/10">
+                                                            <div className="flex-1">
+                                                                <Label className="text-[10px] font-bold uppercase text-primary">Folio Inicial</Label>
+                                                                <p className="text-sm font-semibold">{stageData.folio_start}</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-4">
+                                                {stageData.design_attachments && stageData.design_attachments.length > 0 && (
+                                                    <div className="space-y-2 mb-6">
+                                                        <Label className="text-sm font-semibold">Archivos de Diseño Adjuntos</Label>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            {stageData.design_attachments.map((file: string, index: number) => (
+                                                                <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 rounded border text-xs">
+                                                                    <FileText className="h-3 w-3 text-primary" />
+                                                                    <span className="flex-1 truncate">{file}</span>
+                                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => window.open(file, '_blank')}>
+                                                                        <Download className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <Label className="text-sm font-semibold">Diseño</Label>
+                                                    <div className="mt-2 space-y-3">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs">URL del Diseño</Label>
+                                                            <Input
+                                                                placeholder="https://..."
+                                                                value={designUrl}
+                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDesignUrl(e.target.value)}
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs">O cargar archivo</Label>
+                                                            <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
+                                                                <Upload className="h-4 w-4" />
+                                                                <span className="text-sm">{designFile ? designFile.name : "Seleccionar archivo"}</span>
+                                                                <input
+                                                                    type="file"
+                                                                    className="hidden"
+                                                                    onChange={(e) => setDesignFile(e.target.files?.[0] || null)}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="border-t pt-4">
+                                                    <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
+                                                    <div className="space-y-3">
+                                                        <div className="p-4 border rounded-lg space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <Label className="text-sm">Aprobación del Cliente</Label>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant={clientApproved ? "default" : "outline"}
+                                                                    className={cn("transition-all duration-300", clientApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                                    onClick={() => setClientApproved(!clientApproved)}
+                                                                >
+                                                                    {clientApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                                    {clientApproved ? "Aprobado" : "Aprobar"}
+                                                                </Button>
+                                                            </div>
+                                                            {clientApproved && (
+                                                                <div className="space-y-2 animate-in fade-in">
+                                                                    <Label className="text-xs text-muted-foreground">Adjunto de aprobación (opcional)</Label>
+                                                                    <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-muted/50">
+                                                                        <Upload className="h-3 w-3" />
+                                                                        <span className="text-xs">{clientApprovalFile ? clientApprovalFile.name : "Cargar evidencia"}</span>
+                                                                        <input
+                                                                            type="file"
+                                                                            className="hidden"
+                                                                            onChange={(e) => setClientApprovalFile(e.target.files?.[0] || null)}
+                                                                        />
+                                                                    </label>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="p-4 border rounded-lg">
+                                                            <div className="flex items-center justify-between">
+                                                                <Label className="text-sm">Aprobación del Supervisor</Label>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant={supervisorApproved ? "default" : "outline"}
+                                                                    className={cn("transition-all duration-300", supervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                                    onClick={() => setSupervisorApproved(!supervisorApproved)}
+                                                                >
+                                                                    {supervisorApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                                    {supervisorApproved ? "Aprobado" : "Aprobar"}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                            )}
+
+                                            {STAGES[viewingStepIndex]?.id === 'PRESS' && (
+                                                <div className="space-y-6">
+                                                    {/* Specifications Section */}
+                                                    {(stageData.press_specs || (stageData.folio_enabled && stageData.folio_start)) && (
+                                                        <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-3">
+                                                            {stageData.press_specs && (
+                                                                <div className="space-y-1">
+                                                                    <Label className="text-[10px] font-bold uppercase text-primary">Especificaciones Técnicas</Label>
+                                                                    <p className="text-sm border-l-2 border-primary/20 pl-3 py-1 italic">{stageData.press_specs}</p>
+                                                                </div>
+                                                            )}
+                                                            {stageData.folio_enabled && (
+                                                                <div className="flex items-center gap-4 pt-2 border-t border-primary/10">
+                                                                    <div className="flex-1">
+                                                                        <Label className="text-[10px] font-bold uppercase text-primary">Folio Inicial</Label>
+                                                                        <p className="text-sm font-semibold">{stageData.folio_start}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="space-y-4 text-center py-6 border-b border-dashed">
+                                                        <Printer className="h-12 w-12 mx-auto text-primary opacity-20" />
+                                                        <div className="max-w-md mx-auto space-y-1">
+                                                            <p className="font-semibold text-sm">Ejecución de Impresión</p>
+                                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                                Registre que el trabajo ha pasado satisfactoriamente por la prensa.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-4">
+                                                        <Label className="text-sm font-semibold block">Aprobación de la Impresión</Label>
+                                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="space-y-0.5">
+                                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
+                                                                    <p className="text-[10px] text-muted-foreground">Confirmación técnica de la calidad de impresión</p>
+                                                                </div>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant={pressSupervisorApproved ? "default" : "outline"}
+                                                                    className={cn("transition-all duration-300 min-w-[100px]", pressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                                    onClick={() => setPressSupervisorApproved(!pressSupervisorApproved)}
+                                                                >
+                                                                    {pressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                                    {pressSupervisorApproved ? "Aprobado" : "Aprobar"}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
+                                                <div className="space-y-6">
+                                                    {/* Specifications Section */}
+                                                    {stageData.postpress_specs && (
+                                                        <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-1">
+                                                            <Label className="text-[10px] font-bold uppercase text-primary">Especificaciones Técnicas</Label>
+                                                            <p className="text-sm border-l-2 border-primary/20 pl-3 py-1 italic">{stageData.postpress_specs}</p>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="space-y-4 text-center py-6 border-b border-dashed">
+                                                        <Layers className="h-12 w-12 mx-auto text-primary opacity-20" />
+                                                        <div className="max-w-md mx-auto space-y-1">
+                                                            <p className="font-semibold text-sm">Acabados y Post-Impresión</p>
+                                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                                Verificación final de acabados, cortes y empaque.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-4">
+                                                        <Label className="text-sm font-semibold block">Aprobación de Post-Impresión</Label>
+                                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="space-y-0.5">
+                                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
+                                                                    <p className="text-[10px] text-muted-foreground">Visto bueno final antes de entrega</p>
+                                                                </div>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant={postpressSupervisorApproved ? "default" : "outline"}
+                                                                    className={cn("transition-all duration-300 min-w-[100px]", postpressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                                    onClick={() => setPostpressSupervisorApproved(!postpressSupervisorApproved)}
+                                                                >
+                                                                    {postpressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                                    {postpressSupervisorApproved ? "Aprobado" : "Aprobar"}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {STAGES[viewingStepIndex]?.id === 'FINISHED' && (
+                                                <div className="space-y-4 text-center py-10">
+                                                    <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
+                                                    <div className="max-w-md mx-auto space-y-2">
+                                                        <p className="font-semibold">Producción Finalizada</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Se han registrado los consumos de material y se ha sumado el stock del producto terminado (si aplica).
+                                                        </p>
+                                                    </div>
+                                                    <div className="pt-4">
+                                                        <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar Gestión</Button>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
-                                    ) : (
-                                        <div className="flex gap-4">
+
+                                                {/* Progress Buttons */}
+                                    <div className="mt-8 pt-6 border-t flex justify-between">
+                                        {!isViewingCurrentStage ? (
                                             <Button
                                                 variant="outline"
-                                                size="sm"
-                                                className="flex-1 border-dashed"
-                                                onClick={() => {
-                                                    resetMaterialForm()
-                                                    setIsAddMaterialOpen(true)
-                                                }}
-                                                disabled={order?.status === 'FINISHED'}
+                                                className="w-full gap-2 border-primary/20 hover:bg-primary/5"
+                                                onClick={() => setViewingStepIndex(actualStepIndex)}
                                             >
-                                                <Plus className="mr-2 h-4 w-4" />
-                                                Agregar Material
+                                                <LayoutDashboard className="h-4 w-4" />
+                                                Volver a la Etapa Actual
                                             </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="flex-1 border-dashed text-primary border-primary/20 bg-primary/5 hover:bg-primary/10"
-                                                onClick={() => {
-                                                    resetMaterialForm()
-                                                    setIsOutsourced(true)
-                                                    setIsAddMaterialOpen(true)
-                                                }}
-                                                disabled={order?.status === 'FINISHED'}
-                                            >
-                                                <Plus className="mr-2 h-4 w-4" />
-                                                Agregar Servicio Tercerizado
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && (
-                                <div className="space-y-4">
-                                    <p className="text-sm text-muted-foreground">Verifique la disponibilidad de stock en {order?.warehouse_name || 'la bodega seleccionada'}.</p>
-                                    <div className="grid gap-4">
-                                        {order?.materials?.map((m: any) => (
-                                            <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                                <div className="space-y-1">
-                                                    <p className="text-sm font-medium">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></p>
-                                                    <p className="text-xs text-muted-foreground">Requerido: {m.quantity_planned} {m.uom_name}</p>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="text-right mr-2">
-                                                        <p className="text-[10px] font-bold uppercase text-muted-foreground">En Bodega</p>
-                                                        <p className={cn("text-sm font-bold", m.is_available ? "text-green-600" : "text-destructive")}>
-                                                            {m.stock_available >= 999999 ? "∞" : m.stock_available} {m.uom_name}
-                                                        </p>
-                                                    </div>
-                                                    <Badge
-                                                        variant={m.is_available ? "default" : "destructive"}
-                                                        className={cn(m.is_available ? "bg-green-500 hover:bg-green-600" : "")}
-                                                    >
-                                                        {m.is_available ? "Disponible" : "Sin Stock"}
-                                                    </Badge>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
-                                <div className="space-y-6">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <Label className="text-sm font-semibold">Diseño</Label>
-                                            <div className="mt-2 space-y-3">
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs">URL del Diseño</Label>
-                                                    <Input
-                                                        placeholder="https://..."
-                                                        value={designUrl}
-                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDesignUrl(e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs">O cargar archivo</Label>
-                                                    <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
-                                                        <Upload className="h-4 w-4" />
-                                                        <span className="text-sm">{designFile ? designFile.name : "Seleccionar archivo"}</span>
-                                                        <input
-                                                            type="file"
-                                                            className="hidden"
-                                                            onChange={(e) => setDesignFile(e.target.files?.[0] || null)}
-                                                        />
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="border-t pt-4">
-                                            <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
-                                            <div className="space-y-3">
-                                                <div className="p-4 border rounded-lg space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="text-sm">Aprobación del Cliente</Label>
-                                                        <Button
-                                                            size="sm"
-                                                            variant={clientApproved ? "default" : "outline"}
-                                                            className={cn("transition-all duration-300", clientApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                            onClick={() => setClientApproved(!clientApproved)}
-                                                        >
-                                                            {clientApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                            {clientApproved ? "Aprobado" : "Aprobar"}
-                                                        </Button>
-                                                    </div>
-                                                    {clientApproved && (
-                                                        <div className="space-y-2 animate-in fade-in">
-                                                            <Label className="text-xs text-muted-foreground">Adjunto de aprobación (opcional)</Label>
-                                                            <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-muted/50">
-                                                                <Upload className="h-3 w-3" />
-                                                                <span className="text-xs">{clientApprovalFile ? clientApprovalFile.name : "Cargar evidencia"}</span>
-                                                                <input
-                                                                    type="file"
-                                                                    className="hidden"
-                                                                    onChange={(e) => setClientApprovalFile(e.target.files?.[0] || null)}
-                                                                />
-                                                            </label>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="p-4 border rounded-lg">
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="text-sm">Aprobación del Supervisor</Label>
-                                                        <Button
-                                                            size="sm"
-                                                            variant={supervisorApproved ? "default" : "outline"}
-                                                            className={cn("transition-all duration-300", supervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                            onClick={() => setSupervisorApproved(!supervisorApproved)}
-                                                        >
-                                                            {supervisorApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                            {supervisorApproved ? "Aprobado" : "Aprobar"}
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {STAGES[viewingStepIndex]?.id === 'PRESS' && (
-                                <div className="space-y-6">
-                                    <div className="space-y-4 text-center py-6 border-b border-dashed">
-                                        <Printer className="h-12 w-12 mx-auto text-primary opacity-20" />
-                                        <div className="max-w-md mx-auto space-y-1">
-                                            <p className="font-semibold text-sm">Ejecución de Impresión</p>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                                Registre que el trabajo ha pasado satisfactoriamente por la prensa.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <Label className="text-sm font-semibold block">Aprobación de la Impresión</Label>
-                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-0.5">
-                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
-                                                    <p className="text-[10px] text-muted-foreground">Confirmación técnica de la calidad de impresión</p>
-                                                </div>
+                                        ) : (
+                                            <>
                                                 <Button
-                                                    size="sm"
-                                                    variant={pressSupervisorApproved ? "default" : "outline"}
-                                                    className={cn("transition-all duration-300 min-w-[100px]", pressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                    onClick={() => setPressSupervisorApproved(!pressSupervisorApproved)}
+                                                    variant="ghost"
+                                                    disabled={viewingStepIndex === 0 || transitioning || order?.status === 'FINISHED'}
+                                                    onClick={() => {
+                                                        const prevStage = STAGES[viewingStepIndex - 1]
+                                                        handleTransition(prevStage.id)
+                                                    }}
                                                 >
-                                                    {pressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                    {pressSupervisorApproved ? "Aprobado" : "Aprobar"}
+                                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                                    Anterior
                                                 </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
-                            {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
-                                <div className="space-y-6">
-                                    <div className="space-y-4 text-center py-6 border-b border-dashed">
-                                        <Layers className="h-12 w-12 mx-auto text-primary opacity-20" />
-                                        <div className="max-w-md mx-auto space-y-1">
-                                            <p className="font-semibold text-sm">Acabados y Post-Impresión</p>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                                Verificación final de acabados, cortes y empaque.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <Label className="text-sm font-semibold block">Aprobación de Post-Impresión</Label>
-                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-0.5">
-                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
-                                                    <p className="text-[10px] text-muted-foreground">Visto bueno final antes de entrega</p>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant={postpressSupervisorApproved ? "default" : "outline"}
-                                                    className={cn("transition-all duration-300 min-w-[100px]", postpressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                    onClick={() => setPostpressSupervisorApproved(!postpressSupervisorApproved)}
-                                                >
-                                                    {postpressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                    {postpressSupervisorApproved ? "Aprobado" : "Aprobar"}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {STAGES[viewingStepIndex]?.id === 'FINISHED' && (
-                                <div className="space-y-4 text-center py-10">
-                                    <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
-                                    <div className="max-w-md mx-auto space-y-2">
-                                        <p className="font-semibold">Producción Finalizada</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Se han registrado los consumos de material y se ha sumado el stock del producto terminado (si aplica).
-                                        </p>
-                                    </div>
-                                    <div className="pt-4">
-                                        <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar Gestión</Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Progress Buttons */}
-                        <div className="mt-8 pt-6 border-t flex justify-between">
-                            {!isViewingCurrentStage ? (
-                                <Button
-                                    variant="outline"
-                                    className="w-full gap-2 border-primary/20 hover:bg-primary/5"
-                                    onClick={() => setViewingStepIndex(actualStepIndex)}
-                                >
-                                    <LayoutDashboard className="h-4 w-4" />
-                                    Volver a la Etapa Actual
-                                </Button>
-                            ) : (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        disabled={viewingStepIndex === 0 || transitioning || order?.status === 'FINISHED'}
-                                        onClick={() => {
-                                            const prevStage = STAGES[viewingStepIndex - 1]
-                                            handleTransition(prevStage.id)
-                                        }}
-                                    >
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
-                                        Anterior
-                                    </Button>
-
-                                    {order?.status !== 'FINISHED' && (
-                                        <Button
-                                            disabled={
-                                                transitioning ||
-                                                (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available))
-                                            }
-                                            onClick={() => {
-                                                const nextStage = STAGES[viewingStepIndex + 1]
-                                                if (nextStage) {
-                                                    if (nextStage.id === 'FINISHED') {
-                                                        if (confirm("¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar y el producto se encuentra disponible para despacho de inmediato.")) {
-                                                            handleTransition(nextStage.id)
+                                                {order?.status !== 'FINISHED' && (
+                                                    <Button
+                                                        disabled={
+                                                            transitioning ||
+                                                            (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available))
                                                         }
-                                                    } else {
-                                                        handleTransition(nextStage.id)
-                                                    }
-                                                }
-                                            }}
+                                                        onClick={() => {
+                                                            const nextStage = STAGES[viewingStepIndex + 1]
+                                                            if (nextStage) {
+                                                                if (nextStage.id === 'FINISHED') {
+                                                                    if (confirm("¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar y el producto se encuentra disponible para despacho de inmediato.")) {
+                                                                        handleTransition(nextStage.id)
+                                                                    }
+                                                                } else {
+                                                                    handleTransition(nextStage.id)
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        {transitioning ? "Procesando..." : viewingStepIndex === STAGES.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
+                                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                            {/* Right Sidebar - Information */}
+                            <div className="w-80 border-l bg-muted/5 p-4 space-y-4 overflow-y-auto hidden lg:block">
+                                {/* Acciones Section */}
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Acciones</h4>
+                                    <div className="flex items-center gap-2 p-1">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 gap-2 h-9"
+                                            onClick={() => setIsEditOpen(true)}
                                         >
-                                            {transitioning ? "Procesando..." : viewingStepIndex === STAGES.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
-                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                            <Pencil className="h-4 w-4" />
+
                                         </Button>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 gap-2 h-9"
+                                            onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
+                                        >
+                                            <LayoutDashboard className="h-4 w-4" />
 
-                    {/* Right Sidebar - Information */}
-                    <div className="w-80 border-l bg-muted/5 p-4 space-y-4 overflow-y-auto hidden lg:block">
-                        {/* Acciones Section */}
-                        <div className="space-y-2">
-                            <h4 className="text-xs font-bold uppercase text-muted-foreground">Acciones</h4>
-                            <div className="flex items-center gap-2 p-1">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex-1 gap-2 h-9"
-                                    onClick={() => setIsEditOpen(true)}
-                                >
-                                    <Pencil className="h-4 w-4" />
-
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex-1 gap-2 h-9"
-                                    onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
-                                >
-                                    <LayoutDashboard className="h-4 w-4" />
-
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex-1 gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                                    onClick={handleAnnulOrder}
-                                    disabled={isAnnuling || order?.status === 'CANCELLED'}
-                                    title="Anular OT"
-                                >
-                                    <Ban className="h-4 w-4" />
-                                </Button>
-                                {order?.current_stage === 'MATERIAL_ASSIGNMENT' && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10"
-                                        onClick={handleDeleteOrder}
-                                        disabled={isDeleting}
-                                        title="Eliminar OT"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
-                            <div className="bg-background rounded-lg border divide-y overflow-hidden">
-                                {/* Section 1: Product */}
-                                <div className="p-3 space-y-1">
-                                    <p className="font-bold text-[10px] uppercase text-muted-foreground">Producto</p>
-                                    <p className="text-sm font-medium leading-tight">{productName}</p>
-                                    {order?.product_description && (
-                                        <p className="text-xs text-muted-foreground italic line-clamp-2">{order.product_description}</p>
-                                    )}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                            onClick={handleAnnulOrder}
+                                            disabled={isAnnuling || order?.status === 'CANCELLED'}
+                                            title="Anular OT"
+                                        >
+                                            <Ban className="h-4 w-4" />
+                                        </Button>
+                                        {order?.current_stage === 'MATERIAL_ASSIGNMENT' && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10"
+                                                onClick={handleDeleteOrder}
+                                                disabled={isDeleting}
+                                                title="Eliminar OT"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {/* Section 2: Delivery Date */}
-                                {order?.sale_order_delivery_date && (
-                                    <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Entrega</p>
-                                        <div className="flex items-center gap-2">
-                                            <CalendarIcon className="h-3.5 w-3.5 text-primary" />
-                                            <p className="text-sm font-medium">{new Date(order.sale_order_delivery_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
+                                    <div className="bg-background rounded-lg border divide-y overflow-hidden">
+                                        {/* Section 1: Product */}
+                                        <div className="p-3 space-y-1">
+                                            <p className="font-bold text-[10px] uppercase text-muted-foreground">Producto</p>
+                                            <p className="text-sm font-medium leading-tight">{productName}</p>
+                                            {order?.product_description && (
+                                                <p className="text-xs text-muted-foreground italic line-clamp-2">{order.product_description}</p>
+                                            )}
                                         </div>
-                                    </div>
-                                )}
 
-                                {/* Section 3: Contact */}
-                                {order?.sale_customer_name && (
-                                    <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Cliente Relacionado</p>
-                                        <div className="flex items-start gap-3 pt-0.5">
-                                            <div className="bg-muted p-1.5 rounded-full mt-0.5">
-                                                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                            </div>
-                                            <div className="flex-1 overflow-hidden">
-                                                <p className="text-sm font-semibold truncate leading-tight">{order.sale_customer_name}</p>
-                                                <p className="text-[11px] text-muted-foreground truncate">{order.sale_customer_rut}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {stageData.product_description && stageData.product_description !== order?.product_description && (
-                                    <div className="p-3 bg-muted/5">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground mb-1">Especificación de Etapa</p>
-                                        <p className="text-xs text-muted-foreground italic">{stageData.product_description}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {stageData.internal_notes && (
-                            <div className="space-y-2">
-                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Observaciones Internas</h4>
-                                <div className="p-3 bg-background rounded-lg border">
-                                    <p className="text-xs whitespace-pre-wrap">{stageData.internal_notes}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {(STAGES[viewingStepIndex]?.id === 'MATERIAL_ASSIGNMENT' || STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL') && (
-                            <div className="space-y-3">
-                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Especificaciones</h4>
-                                {stageData.prepress_specs && (
-                                    <div className="p-3 bg-background rounded-lg border space-y-1">
-                                        <p className="text-[10px] font-semibold text-primary">Pre-Impresión</p>
-                                        <p className="text-xs">{stageData.prepress_specs}</p>
-                                    </div>
-                                )}
-                                {stageData.press_specs && (
-                                    <div className="p-3 bg-background rounded-lg border space-y-1">
-                                        <p className="text-[10px] font-semibold text-primary">Impresión</p>
-                                        <p className="text-xs">{stageData.press_specs}</p>
-                                    </div>
-                                )}
-                                {stageData.postpress_specs && (
-                                    <div className="p-3 bg-background rounded-lg border space-y-1">
-                                        <p className="text-[10px] font-semibold text-primary">Post-Impresión</p>
-                                        <p className="text-xs">{stageData.postpress_specs}</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
-                            <div className="space-y-3">
-                                {stageData.prepress_specs && (
-                                    <div className="space-y-2">
-                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Especificaciones</h4>
-                                        <div className="p-3 bg-background rounded-lg border">
-                                            <p className="text-xs whitespace-pre-wrap">{stageData.prepress_specs}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {stageData.design_attachments && stageData.design_attachments.length > 0 && (
-                                    <div className="space-y-2">
-                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Adjuntos de Diseño</h4>
-                                        <div className="space-y-1">
-                                            {stageData.design_attachments.map((file: string, index: number) => (
-                                                <div key={index} className="flex items-center gap-2 p-2 bg-background rounded border text-xs">
-                                                    <FileText className="h-3 w-3" />
-                                                    <span className="flex-1 truncate">{file}</span>
-                                                    <Download className="h-3 w-3 cursor-pointer" />
+                                        {/* Section 2: Delivery Date */}
+                                        {order?.sale_order_delivery_date && (
+                                            <div className="p-3 space-y-1">
+                                                <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Entrega</p>
+                                                <div className="flex items-center gap-2">
+                                                    <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                                                    <p className="text-sm font-medium">{new Date(order.sale_order_delivery_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                            </div>
+                                        )}
 
-                                {stageData.folio_enabled && (
+                                        {/* Section 3: Contact */}
+                                        {order?.sale_customer_name && (
+                                            <div className="p-3 space-y-1">
+                                                <p className="font-bold text-[10px] uppercase text-muted-foreground">Cliente Relacionado</p>
+                                                <div className="flex items-start gap-3 pt-0.5">
+                                                    <div className="bg-muted p-1.5 rounded-full mt-0.5">
+                                                        <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    </div>
+                                                    <div className="flex-1 overflow-hidden">
+                                                        <p className="text-sm font-semibold truncate leading-tight">{order.sale_customer_name}</p>
+                                                        <p className="text-[11px] text-muted-foreground truncate">{order.sale_customer_rut}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {stageData.product_description && stageData.product_description !== order?.product_description && (
+                                            <div className="p-3 bg-muted/5">
+                                                <p className="font-bold text-[10px] uppercase text-muted-foreground mb-1">Especificación de Etapa</p>
+                                                <p className="text-xs text-muted-foreground italic">{stageData.product_description}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {stageData.internal_notes && (
                                     <div className="space-y-2">
-                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Folio</h4>
+                                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Observaciones Internas</h4>
                                         <div className="p-3 bg-background rounded-lg border">
-                                            <p className="text-xs">Folio inicial: <span className="font-semibold">{stageData.folio_start}</span></p>
+                                            <p className="text-xs whitespace-pre-wrap">{stageData.internal_notes}</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
-                        )}
+                        </div>
+                    </DialogContent>
+                    {/* Modals for Edit and Command Center */}
+                    {isEditOpen && order && (
+                        <WorkOrderForm
+                            open={isEditOpen}
+                            onOpenChange={setIsEditOpen}
+                            initialData={order}
+                            onSuccess={() => {
+                                setIsEditOpen(false)
+                                fetchOrder()
+                            }}
+                        />
+                    )}
 
-                        {(STAGES[viewingStepIndex]?.id === 'PRESS' || STAGES[viewingStepIndex]?.id === 'POSTPRESS') && (
-                            <div className="space-y-2">
-                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Especificaciones</h4>
-                                <div className="p-3 bg-background rounded-lg border">
-                                    <p className="text-xs whitespace-pre-wrap">
-                                        {STAGES[viewingStepIndex]?.id === 'PRESS' ? stageData.press_specs : stageData.postpress_specs}
-                                    </p>
+                    {/* PO Preview Modal */}
+                    <Dialog open={showPOPreview} onOpenChange={setShowPOPreview}>
+                        <DialogContent className="sm:max-w-[600px]">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <Package className="h-5 w-5 text-primary" />
+                                    Vista Previa de Órdenes de Compra
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Se generarán las siguientes Órdenes de Compra en borrador para los servicios tercerizados asignados.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-4 py-4">
+                                <div className="border rounded-lg overflow-hidden">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted">
+                                            <tr>
+                                                <th className="p-2 text-left">Proveedor</th>
+                                                <th className="p-2 text-left">Servicio</th>
+                                                <th className="p-2 text-right">Cant.</th>
+                                                <th className="p-2 text-right">Precio Un.</th>
+                                                <th className="p-2 text-right">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {outsourcedPending.map((m, i) => (
+                                                <tr key={i} className="border-t">
+                                                    <td className="p-2 font-medium">{m.supplier_name}</td>
+                                                    <td className="p-2">{m.component_name}</td>
+                                                    <td className="p-2 text-right">{m.quantity_planned}</td>
+                                                    <td className="p-2 text-right">{formatCurrency(m.unit_price)}</td>
+                                                    <td className="p-2 text-right font-bold">{formatCurrency((m.quantity_planned * m.unit_price))}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="bg-blue-50 p-4 rounded-lg flex gap-3 border border-blue-100">
+                                    <div className="bg-blue-100 p-2 rounded-full h-fit">
+                                        <FileText className="h-4 w-4 text-blue-600" />
+                                    </div>
+                                    <div className="text-xs text-blue-700 leading-relaxed">
+                                        <p className="font-bold mb-1">Nota importante:</p>
+                                        <p>Las órdenes de compra se crearán en estado <span className="font-bold">Borrador</span>. Deberá confirmarlas manualmente desde el módulo de Compras para procesar el pago y la recepción.</p>
+                                    </div>
                                 </div>
                             </div>
-                        )}
 
-                        {STAGES[viewingStepIndex]?.id === 'PRESS' && stageData.folio_enabled && (
-                            <div className="space-y-2">
-                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Folio</h4>
-                                <div className="p-3 bg-background rounded-lg border">
-                                    <p className="text-xs">Folio inicial: <span className="font-semibold">{stageData.folio_start}</span></p>
-                                </div>
+                            <div className="flex justify-end gap-3">
+                                <Button variant="outline" onClick={() => setShowPOPreview(false)}>
+                                    Cancelar y Revisar
+                                </Button>
+                                <Button onClick={() => {
+                                    setShowPOPreview(false)
+                                    // Call handleTransition again but skip preview
+                                    const nextStage = STAGES[actualStepIndex + 1]?.id
+                                    if (nextStage) {
+                                        handleTransition(nextStage)
+                                    }
+                                }}>
+                                    Confirmar y Generar OC
+                                </Button>
                             </div>
-                        )}
-                    </div>
-                </div>
-            </DialogContent>
-            {/* Modals for Edit and Command Center */}
-            {isEditOpen && order && (
-                <WorkOrderForm
-                    open={isEditOpen}
-                    onOpenChange={setIsEditOpen}
-                    initialData={order}
-                    onSuccess={() => {
-                        setIsEditOpen(false)
-                        fetchOrder()
-                    }}
-                />
-            )}
+                        </DialogContent>
+                    </Dialog>
 
-            {/* PO Preview Modal */}
-            <Dialog open={showPOPreview} onOpenChange={setShowPOPreview}>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Package className="h-5 w-5 text-primary" />
-                            Vista Previa de Órdenes de Compra
-                        </DialogTitle>
-                        <DialogDescription>
-                            Se generarán las siguientes Órdenes de Compra en borrador para los servicios tercerizados asignados.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-4">
-                        <div className="border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        <th className="p-2 text-left">Proveedor</th>
-                                        <th className="p-2 text-left">Servicio</th>
-                                        <th className="p-2 text-right">Cant.</th>
-                                        <th className="p-2 text-right">Precio Un.</th>
-                                        <th className="p-2 text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {outsourcedPending.map((m, i) => (
-                                        <tr key={i} className="border-t">
-                                            <td className="p-2 font-medium">{m.supplier_name}</td>
-                                            <td className="p-2">{m.component_name}</td>
-                                            <td className="p-2 text-right">{m.quantity_planned}</td>
-                                            <td className="p-2 text-right">{formatCurrency(m.unit_price)}</td>
-                                            <td className="p-2 text-right font-bold">{formatCurrency((m.quantity_planned * m.unit_price))}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="bg-blue-50 p-4 rounded-lg flex gap-3 border border-blue-100">
-                            <div className="bg-blue-100 p-2 rounded-full h-fit">
-                                <FileText className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <div className="text-xs text-blue-700 leading-relaxed">
-                                <p className="font-bold mb-1">Nota importante:</p>
-                                <p>Las órdenes de compra se crearán en estado <span className="font-bold">Borrador</span>. Deberá confirmarlas manualmente desde el módulo de Compras para procesar el pago y la recepción.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => setShowPOPreview(false)}>
-                            Cancelar y Revisar
-                        </Button>
-                        <Button onClick={() => {
-                            setShowPOPreview(false)
-                            // Call handleTransition again but skip preview
-                            const nextStage = STAGES[actualStepIndex + 1]?.id
-                            if (nextStage) {
-                                handleTransition(nextStage)
-                            }
-                        }}>
-                            Confirmar y Generar OC
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-        </Dialog>
-    )
+                </Dialog>
+                )
 }
