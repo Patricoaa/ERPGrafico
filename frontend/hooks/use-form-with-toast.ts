@@ -1,4 +1,4 @@
-import { FieldValues, UseFormProps, useForm, UseFormReturn, SubmitHandler, SubmitErrorHandler } from "react-hook-form"
+import { FieldValues, UseFormProps, useForm, SubmitHandler, SubmitErrorHandler } from "react-hook-form"
 import { showWarningToast } from "@/lib/utils/toast-utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -9,9 +9,9 @@ interface UseFormWithToastProps<T extends FieldValues> extends Omit<UseFormProps
 
 export function useFormWithToast<T extends FieldValues>({ schema, ...props }: UseFormWithToastProps<T>) {
     const form = useForm<T>({
-        resolver: schema ? zodResolver(schema) as any : undefined,
+        ...(schema && { resolver: zodResolver(schema as any as z.ZodType<any>) }),
         ...props
-    })
+    } as any)
 
     const originalHandleSubmit = form.handleSubmit
 
@@ -43,5 +43,5 @@ export function useFormWithToast<T extends FieldValues>({ schema, ...props }: Us
     return {
         ...form,
         handleSubmit: wrappedHandleSubmit
-    }
+    } as any
 }

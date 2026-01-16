@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Phone, Mail, Plus, Search } from "lucide-react"
+import { Edit, Trash2, Phone, Mail, Plus } from "lucide-react"
 import api from "@/lib/api"
 import { ContactModal } from "@/components/contacts/ContactModal"
 import { toast } from "sonner"
@@ -21,7 +21,6 @@ import { formatRUT } from "@/lib/utils/format"
 export default function ContactsPage() {
     const [contacts, setContacts] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState("")
     const [selectedContact, setSelectedContact] = useState<any>(null)
     const [modalOpen, setModalOpen] = useState(false)
 
@@ -54,11 +53,7 @@ export default function ContactsPage() {
         }
     }
 
-    const filteredContacts = contacts.filter(contact =>
-        contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.tax_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+
 
     const getContactTypeBadge = (type: string) => {
         switch (type) {
@@ -84,17 +79,7 @@ export default function ContactsPage() {
                 </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Buscar por nombre, RUT, email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8"
-                    />
-                </div>
-            </div>
+
 
             <div className="rounded-md border">
                 <Table>
@@ -114,14 +99,14 @@ export default function ContactsPage() {
                                     Cargando...
                                 </TableCell>
                             </TableRow>
-                        ) : filteredContacts.length === 0 ? (
+                        ) : contacts.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                     No se encontraron contactos
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredContacts.map((contact) => (
+                            contacts.map((contact) => (
                                 <TableRow key={contact.id}>
                                     <TableCell className="font-medium">{contact.name}</TableCell>
                                     <TableCell>{contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}</TableCell>

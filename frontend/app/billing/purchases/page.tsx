@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X, MoreVertical } from "lucide-react"
+import { Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X, MoreVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -53,7 +53,6 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 export default function PurchaseInvoicesPage() {
     const [documents, setDocuments] = useState<PurchaseDocument[]>([])
     const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState("")
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
 
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
@@ -158,11 +157,7 @@ export default function PurchaseInvoicesPage() {
         }
     }
 
-    const filtered = documents.filter(i =>
-        (i.number && i.number.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (i.partner_name && i.partner_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (i.purchase_order_number && i.purchase_order_number.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
+
 
     return (
         <div className="p-6 space-y-6">
@@ -171,17 +166,6 @@ export default function PurchaseInvoicesPage() {
             </div>
 
             <Card>
-                <CardHeader>
-                    <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar por número, proveedor u OC..."
-                            className="pl-8"
-                            value={searchTerm}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
@@ -200,9 +184,9 @@ export default function PurchaseInvoicesPage() {
                         <TableBody>
                             {loading ? (
                                 <TableRow><TableCell colSpan={8} className="text-center py-10">Cargando...</TableCell></TableRow>
-                            ) : filtered.length === 0 ? (
+                            ) : documents.length === 0 ? (
                                 <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No se encontraron documentos.</TableCell></TableRow>
-                            ) : filtered.map((doc) => {
+                            ) : documents.map((doc) => {
                                 const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type)
                                 const badgeStyle = statusMap[doc.status] || { label: doc.status, variant: 'secondary' }
 

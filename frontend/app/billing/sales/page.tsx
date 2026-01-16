@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Search, Eye, Banknote, History, X, FileBadge, Receipt, FileUp, MoreVertical } from "lucide-react"
+import { Eye, Banknote, History, X, FileBadge, Receipt, FileUp, MoreVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -18,7 +18,6 @@ import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState("")
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<any | null>(null)
     const [payingInv, setPayingInv] = useState<any | null>(null)
@@ -101,10 +100,7 @@ export default function SalesInvoicesPage() {
         }
     }
 
-    const filtered = invoices.filter(i =>
-        (i.number && i.number.includes(searchTerm)) ||
-        (i.partner_name && i.partner_name.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
+
 
     return (
         <div className="p-6 space-y-6">
@@ -113,17 +109,6 @@ export default function SalesInvoicesPage() {
             </div>
 
             <Card>
-                <CardHeader>
-                    <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar por número o cliente..."
-                            className="pl-8"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
@@ -141,9 +126,9 @@ export default function SalesInvoicesPage() {
                         <TableBody>
                             {loading ? (
                                 <TableRow><TableCell colSpan={8} className="text-center py-10">Cargando...</TableCell></TableRow>
-                            ) : filtered.length === 0 ? (
+                            ) : invoices.length === 0 ? (
                                 <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No se encontraron documentos.</TableCell></TableRow>
-                            ) : filtered.map((inv) => (
+                            ) : invoices.map((inv) => (
                                 <TableRow key={inv.id}>
                                     <TableCell>
                                         <span className="font-mono font-medium">{inv.number || '---'}</span>

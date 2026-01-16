@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, Pencil, Trash2, Layers, CheckCircle2, XCircle } from "lucide-react"
+import { Plus, Pencil, Trash2, Layers, CheckCircle2, XCircle } from "lucide-react"
 import api from "@/lib/api"
 import { BOMFormDialog } from "@/components/production/BOMFormDialog"
 import { toast } from "sonner"
@@ -30,7 +30,6 @@ interface BOM {
 export default function BOMsPage() {
     const [boms, setBoms] = useState<BOM[]>([])
     const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState("")
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBom, setEditingBom] = useState<any | null>(null)
 
@@ -72,10 +71,7 @@ export default function BOMsPage() {
         fetchBoms()
     }, [])
 
-    const filteredBoms = boms.filter(bom =>
-        bom.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        bom.product_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -88,14 +84,7 @@ export default function BOMsPage() {
                 </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-                <Input
-                    placeholder="Buscar por nombre o producto..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                />
-            </div>
+
 
             <div className="rounded-md border">
                 <Table>
@@ -110,7 +99,7 @@ export default function BOMsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredBoms.map((bom) => (
+                        {boms.map((bom) => (
                             <TableRow key={bom.id}>
                                 <TableCell className="font-medium">{bom.product_name}</TableCell>
                                 <TableCell>{bom.name}</TableCell>
@@ -162,7 +151,7 @@ export default function BOMsPage() {
                                 </TableCell>
                             </TableRow>
                         )}
-                        {!loading && filteredBoms.length === 0 && (
+                        {!loading && boms.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                     No se encontraron listas de materiales.

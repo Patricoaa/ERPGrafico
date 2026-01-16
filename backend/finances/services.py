@@ -398,7 +398,7 @@ class FinanceService:
         Aggregates cross-module data for BI Analytics.
         """
         from sales.models import SaleOrder
-        from inventory.models import Product, ProductCategory
+        from inventory.models import Product, ProductCategory, StockMove
         from purchasing.models import PurchaseOrder
         from billing.models import Invoice
         
@@ -441,7 +441,7 @@ class FinanceService:
                 asset_vals[product.id] = val
 
         # Breakdown by category
-        results = []
+        dist = []
         categories = ProductCategory.objects.all()
         total_inventory_value = Decimal('0')
         for cat in categories:
@@ -449,7 +449,6 @@ class FinanceService:
             cat_val = 0
             items_count = 0
             for p in cat_products:
-                from inventory.models import StockMove
                 balance = StockMove.objects.filter(product=p, date__lte=end_date).aggregate(total=Sum('quantity'))['total'] or 0
                 cat_val += float(balance) * float(p.cost_price)
                 if balance > 0:
@@ -498,7 +497,7 @@ class FinanceService:
                 'growth': 0 
             },
             'inventory': {
-                'total_value': total_inv_value,
+                'total_value': float(total_inventory_value),
                 'item_count': products.count(),
                 'stock_distribution': dist,
                 'turnover_ratio': 0,

@@ -4,14 +4,13 @@ import { useState, useEffect } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react"
+import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 
 export default function StockReportPage() {
     const [report, setReport] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState("")
 
     useEffect(() => {
         fetchReport()
@@ -28,10 +27,7 @@ export default function StockReportPage() {
         }
     }
 
-    const filtered = report.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.code.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+
 
     return (
         <div className="p-6 space-y-6">
@@ -40,17 +36,6 @@ export default function StockReportPage() {
             </div>
 
             <Card>
-                <CardHeader>
-                    <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar por código o nombre..."
-                            className="pl-8"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </CardHeader>
                 <CardContent>
                     <div className="rounded-md border">
                         <Table>
@@ -70,9 +55,9 @@ export default function StockReportPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow><TableCell colSpan={9} className="text-center py-10">Cargando...</TableCell></TableRow>
-                                ) : filtered.length === 0 ? (
+                                ) : report.length === 0 ? (
                                     <TableRow><TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
-                                ) : filtered.map((item) => (
+                                ) : report.map((item) => (
                                     <TableRow key={item.id}>
                                         <TableCell className="font-mono">{item.code}</TableCell>
                                         <TableCell className="font-medium">{item.name}</TableCell>
