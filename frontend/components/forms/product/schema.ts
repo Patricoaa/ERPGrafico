@@ -38,6 +38,16 @@ export const productSchema = z.object({
     recurrence_period: z.enum(['MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL', 'WEEKLY']).optional(),
     renewal_notice_days: z.preprocess((v) => Number(v) || 30, z.number().min(0)).optional(),
     is_variable_amount: z.boolean().optional(),
+    // Payment Configuration
+    payment_day_type: z.enum(['INTERVAL', 'FIXED_DAY']).optional(),
+    payment_day: z.preprocess((v) => Number(v) || undefined, z.number().min(1).max(31)).optional().nullable(),
+    payment_interval_days: z.preprocess((v) => Number(v) || undefined, z.number().min(1)).optional().nullable(),
+    // Invoice Configuration
+    default_invoice_type: z.enum(['FACTURA', 'BOLETA']).optional(),
+    // Workflow Automation
+    auto_approve_renewals: z.boolean().default(false),
+    amount_confirmation_required: z.boolean().default(false),
+    // Accounting
     income_account: z.string().optional().or(z.literal("")).nullable(),
     expense_account: z.string().optional().or(z.literal("")).nullable(),
     boms: z.array(z.object({

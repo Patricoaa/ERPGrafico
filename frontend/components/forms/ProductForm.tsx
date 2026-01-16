@@ -248,6 +248,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     recurrence_period: initialData.recurrence_period || "MONTHLY",
                     renewal_notice_days: initialData.renewal_notice_days || 30,
                     is_variable_amount: initialData.is_variable_amount ?? false,
+                    payment_day_type: initialData.payment_day_type || undefined,
+                    payment_day: initialData.payment_day || undefined,
+                    payment_interval_days: initialData.payment_interval_days || undefined,
+                    default_invoice_type: initialData.default_invoice_type || undefined,
+                    auto_approve_renewals: initialData.auto_approve_renewals ?? false,
+                    amount_confirmation_required: initialData.amount_confirmation_required ?? false,
                     income_account: initialData.income_account?.id?.toString() || initialData.income_account?.toString() || "",
                     expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "",
                 })
@@ -362,7 +368,20 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 formData.append('recurrence_period', data.recurrence_period || 'MONTHLY')
                 formData.append('renewal_notice_days', (data.renewal_notice_days || 30).toString())
                 formData.append('is_variable_amount', data.is_variable_amount ? 'true' : 'false')
+
+                // Payment Configuration
+                if (data.payment_day_type) formData.append('payment_day_type', data.payment_day_type)
+                if (data.payment_day) formData.append('payment_day', data.payment_day.toString())
+                if (data.payment_interval_days) formData.append('payment_interval_days', data.payment_interval_days.toString())
+
+                // Invoice Configuration
+                if (data.default_invoice_type) formData.append('default_invoice_type', data.default_invoice_type)
+
+                // Workflow Automation
+                formData.append('auto_approve_renewals', data.auto_approve_renewals ? 'true' : 'false')
+                formData.append('amount_confirmation_required', data.amount_confirmation_required ? 'true' : 'false')
             }
+
 
 
             // Append Replenishment Rules

@@ -195,6 +195,55 @@ class Product(models.Model):
         help_text=_("Indica si el costo mensual varía (ej: luz, agua)")
     )
     
+    # Payment Day Configuration
+    class PaymentDayType(models.TextChoices):
+        INTERVAL = 'INTERVAL', _('Cada N días')
+        FIXED_DAY = 'FIXED_DAY', _('Día fijo del mes')
+    
+    payment_day_type = models.CharField(
+        _("Tipo de Fecha de Pago"),
+        max_length=20,
+        choices=PaymentDayType.choices,
+        null=True, blank=True,
+        help_text=_("Define si el pago es cada N días o un día fijo del mes")
+    )
+    payment_day = models.PositiveIntegerField(
+        _("Día de Pago"),
+        null=True, blank=True,
+        help_text=_("Día del mes para pago (1-31). Solo aplica si payment_day_type es FIXED_DAY")
+    )
+    payment_interval_days = models.PositiveIntegerField(
+        _("Intervalo de Días"),
+        null=True, blank=True,
+        help_text=_("Cantidad de días entre pagos. Solo aplica si payment_day_type es INTERVAL")
+    )
+    
+    # Invoice Configuration
+    class DefaultInvoiceType(models.TextChoices):
+        FACTURA = 'FACTURA', _('Factura')
+        BOLETA = 'BOLETA', _('Boleta')
+    
+    default_invoice_type = models.CharField(
+        _("Tipo de Documento por Defecto"),
+        max_length=20,
+        choices=DefaultInvoiceType.choices,
+        null=True, blank=True,
+        help_text=_("Tipo de documento a usar en renovaciones automáticas")
+    )
+    
+    # Workflow Automation
+    auto_approve_renewals = models.BooleanField(
+        _("Auto-aprobar Renovaciones"),
+        default=False,
+        help_text=_("Si está activo, las renovaciones se confirman automáticamente sin revisión manual")
+    )
+    amount_confirmation_required = models.BooleanField(
+        _("Requiere Confirmación de Monto"),
+        default=False,
+        help_text=_("Si está activo, requiere confirmación manual del monto antes de procesar el pago")
+    )
+    
+    
     # Inventory Tracking Control
     track_inventory = models.BooleanField(
         _("Controlar Stock"),
