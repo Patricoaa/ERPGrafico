@@ -310,12 +310,14 @@ export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
                                 name="subscription_amount"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Monto</FormLabel>
+                                        <FormLabel>
+                                            {form.watch("is_variable_amount") ? "Monto de Referencia" : "Monto Fijo"}
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
                                                 min={0}
-                                                placeholder="50000"
+                                                placeholder={form.watch("is_variable_amount") ? "Ej: 0" : "50000"}
                                                 onChange={field.onChange}
                                                 onBlur={field.onBlur}
                                                 name={field.name}
@@ -324,7 +326,9 @@ export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            Monto periódico de la suscripción.
+                                            {form.watch("is_variable_amount")
+                                                ? "Monto base estimado (puede ser 0)."
+                                                : "Monto periódico de la suscripción."}
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -345,7 +349,7 @@ export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            Fecha de inicio (default: hoy).
+                                            Cuándo comienza el servicio.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -357,11 +361,12 @@ export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
                             control={form.control}
                             name="auto_activate_subscription"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-muted/50">
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-primary/5">
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Activar Automáticamente</FormLabel>
+                                        <FormLabel className="text-base">Activar Producto Inmediatamente</FormLabel>
                                         <FormDescription>
-                                            Al guardar el producto, se creará automáticamente el registro de suscripción activa.
+                                            <strong>ON:</strong> Crea la suscripción activa ahora al guardar.<br />
+                                            <strong>OFF:</strong> Espera a recibir una Orden de Compra para activarse.
                                         </FormDescription>
                                     </div>
                                     <FormControl>

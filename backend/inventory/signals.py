@@ -28,17 +28,17 @@ def auto_activate_subscription(sender, instance, created, **kwargs):
     Only creates if no active subscription exists for this product + supplier combination.
     """
     # Only process SUBSCRIPTION products
-    if instance.product_type != Product.ProductType.SUBSCRIPTION:
+    if instance.product_type != Product.Type.SUBSCRIPTION:
         return
     
     # Only if auto-activation is enabled
     if not instance.auto_activate_subscription:
         return
     
-    # Require supplier and amount
-    if not instance.subscription_supplier or not instance.subscription_amount:
+    # Require supplier and amount (amount can be 0 if variable)
+    if not instance.subscription_supplier or (not instance.is_variable_amount and not instance.subscription_amount):
         logger.warning(
-            f"Product {instance.id} has auto_activate_subscription=True but missing supplier or amount"
+            f"Product {instance.id} has auto_activate_subscription=True but missing supplier or fixed amount"
         )
         return
     
