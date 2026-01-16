@@ -180,6 +180,7 @@ export function SaleNoteModal({
                             <thead className="bg-muted/50 border-b">
                                 <tr>
                                     <th className="px-3 py-2 text-left font-bold text-[10px] uppercase">Producto</th>
+                                    <th className="px-3 py-2 text-center font-bold text-[10px] uppercase w-20">Unidad</th>
                                     <th className="px-3 py-2 text-center font-bold text-[10px] uppercase w-20">Cant. Orig.</th>
                                     <th className="px-3 py-2 text-center font-bold text-[10px] uppercase w-24">Cant. Nota</th>
                                     <th className="px-3 py-2 text-right font-bold text-[10px] uppercase w-32">Precio Unit.</th>
@@ -198,6 +199,7 @@ export function SaleNoteModal({
                                 ) : lines.map((line, idx) => (
                                     <tr key={line.id} className={line.note_quantity > 0 ? "bg-purple-50/30" : ""}>
                                         <td className="px-3 py-2 font-medium">{line.product_name || line.description}</td>
+                                        <td className="px-3 py-2 text-center text-xs text-muted-foreground">{line.uom_name || '-'}</td>
                                         <td className="px-3 py-2 text-center text-muted-foreground font-bold">{line.quantity}</td>
                                         <td className="px-3 py-2">
                                             <Input

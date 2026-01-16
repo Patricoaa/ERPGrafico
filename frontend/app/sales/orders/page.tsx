@@ -334,12 +334,24 @@ export default function SalesOrdersPage() {
                             }
                         }}
                         order={payingOrder}
-                        orderLines={payingOrder ? (payingOrder.lines || []) : (checkoutData?.lines?.map((l: any) => ({
+                        orderLines={payingOrder ? (payingOrder.lines || []).map((l: any) => ({
                             ...l,
                             id: l.product, // Salesforce expects product ID in 'id' field for new orders
-                            product_name: l.description,
+                            product_name: l.product_name || l.description,
                             qty: l.quantity,
-                            unit_price_net: l.unit_price
+                            unit_price_net: l.unit_price,
+                            uom: l.uom,
+                            uom_name: l.uom_name,
+                            manufacturing_data: l.manufacturing_data
+                        })) : (checkoutData?.lines?.map((l: any) => ({
+                            ...l,
+                            id: l.product, // Salesforce expects product ID in 'id' field for new orders
+                            product_name: l.product_name || l.description,
+                            qty: l.quantity,
+                            unit_price_net: l.unit_price,
+                            uom: l.uom,
+                            uom_name: l.uom_name,
+                            manufacturing_data: l.manufacturing_data
                         })) || [])}
                         total={payingOrder ? parseFloat(payingOrder.total) : (checkoutData?.lines?.reduce((sum: number, l: any) => {
                             const net = l.quantity * (l.unit_price || 0);

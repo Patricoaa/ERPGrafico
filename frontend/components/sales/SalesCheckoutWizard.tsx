@@ -210,9 +210,8 @@ export function SalesCheckoutWizard({
             if (step === currentStepNum) {
                 // Check if all mfg items have data
                 const pendingItems = currentOrderLines.filter((line: any) =>
-                    line.product_type === 'MANUFACTURABLE' &&
-                    line.requires_advanced_manufacturing &&
-                    !line.manufacturing_data
+                    (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data) ||
+                    (line.product_type === 'MANUFACTURABLE' && !line.has_bom && !line.manufacturing_data)
                 )
                 if (pendingItems.length > 0) {
                     toast.error(`Tiene ${pendingItems.length} productos sin configurar detalles de fabricación.`)
