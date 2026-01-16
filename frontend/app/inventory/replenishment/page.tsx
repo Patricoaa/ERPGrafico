@@ -341,13 +341,6 @@ export default function ReplenishmentPage() {
             </div>
 
             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Settings2 className="h-5 w-5" />
-                        Reglas Configuradas
-                    </CardTitle>
-                    <CardDescription>Lista de productos con control automatizado.</CardDescription>
-                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>

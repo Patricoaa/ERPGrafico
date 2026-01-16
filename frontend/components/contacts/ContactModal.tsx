@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
 import {
     Dialog,
@@ -47,8 +46,8 @@ interface ContactModalProps {
 }
 
 export function ContactModal({ open, onOpenChange, contact, onSuccess }: ContactModalProps) {
-    const form = useForm<z.infer<typeof contactSchema>>({
-        resolver: zodResolver(contactSchema),
+    const form = useFormWithToast<z.infer<typeof contactSchema>>({
+        schema: contactSchema,
         defaultValues: contact ? {
             name: contact.name || "",
             tax_id: contact.tax_id || "",
@@ -128,14 +127,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
-                        if (errors.tax_id) {
-                            showWarningToast("El RUT ingresado no es válido")
-                        }
-                        if (errors.name) {
-                            showWarningToast("El Nombre es requerido")
-                        }
-                    })} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
                             control={form.control}
                             name="name"
