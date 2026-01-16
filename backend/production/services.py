@@ -290,7 +290,7 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
-    def add_material(work_order, component, quantity, uom=None, is_outsourced=False, supplier=None, unit_price=0):
+    def add_material(work_order, component, quantity, uom=None, is_outsourced=False, supplier=None, unit_price=0, document_type='FACTURA'):
         """
         Adds a material manually to a Work Order.
         """
@@ -303,7 +303,8 @@ class WorkOrderService:
                 'source': 'MANUAL',
                 'is_outsourced': is_outsourced,
                 'supplier': supplier,
-                'unit_price': Decimal(str(unit_price))
+                'unit_price': Decimal(str(unit_price)),
+                'document_type': document_type
             }
         )
         if not created:
@@ -311,6 +312,7 @@ class WorkOrderService:
             material.is_outsourced = is_outsourced
             material.supplier = supplier
             material.unit_price = Decimal(str(unit_price))
+            material.document_type = document_type
             material.save()
         
         return material
@@ -318,38 +320,35 @@ class WorkOrderService:
     @staticmethod
     def _create_outsourcing_purchase_orders(work_order):
         """
-        Creates or updates draft Purchase Orders for outsourced materials in the Work Order.
-        Groups materials by supplier and ensures only one PO per supplier is created for this OT.
+        Creates confirmed Purchase Orders and draft Invoices for outsourced materials in the Work Order.
+        Groups materials by supplier and document type (Factura/Boleta).
         """
         outsourced_mats = work_order.materials.filter(is_outsourced=True, supplier__isnull=False, purchase_line__isnull=True)
         if not outsourced_mats.exists():
             return
 
-        # Group by supplier
-        mats_by_supplier = {}
+        # Group by (supplier_id, document_type)
+        mats_by_group = {}
         for mat in outsourced_mats:
-            if mat.supplier_id not in mats_by_supplier:
-                mats_by_supplier[mat.supplier_id] = []
-            mats_by_supplier[mat.supplier_id].append(mat)
+            key = (mat.supplier_id, mat.document_type)
+            if key not in mats_by_group:
+                mats_by_group[key] = []
+            mats_by_group[key].append(mat)
 
-        for supplier_id, mats in mats_by_supplier.items():
-            # Find an existing DRAFT PO for this OT and supplier, or create one
-            po = PurchaseOrder.objects.filter(
-                work_order=work_order,
+        for (supplier_id, document_type), mats in mats_by_group.items():
+            from core.services import SequenceService
+            from billing.services import BillingService
+            from billing.models import Invoice
+
+            # 1. Create Purchase Order in CONFIRMED status
+            po = PurchaseOrder.objects.create(
+                number=f"OC-{SequenceService.get_next_number(PurchaseOrder)}",
                 supplier_id=supplier_id,
-                status=PurchaseOrder.Status.DRAFT
-            ).first()
-
-            if not po:
-                from core.services import SequenceService
-                po = PurchaseOrder.objects.create(
-                    number=f"OC-{SequenceService.get_next_number(PurchaseOrder)}",
-                    supplier_id=supplier_id,
-                    work_order=work_order,
-                    warehouse=work_order.warehouse or Warehouse.objects.first(),
-                    status=PurchaseOrder.Status.DRAFT,
-                    notes=f"Generado automáticamente desde {work_order.display_id}"
-                )
+                work_order=work_order,
+                warehouse=work_order.warehouse or Warehouse.objects.first(),
+                status=PurchaseOrder.Status.CONFIRMED,
+                notes=f"Generado automáticamente desde {work_order.display_id}"
+            )
 
             for mat in mats:
                 line = PurchaseLine.objects.create(
@@ -363,8 +362,21 @@ class WorkOrderService:
                 mat.save()
             
             # Recalculate PO totals
-            po.calculate_totals()
+            po.recalculate_totals()
             po.save()
+
+            # 2. Create Draft Invoice (Factura/Boleta)
+            # Map production document type to billing DTEType
+            dte_type = Invoice.DTEType.PURCHASE_INV # Default Factura
+            if document_type == 'BOLETA':
+                dte_type = Invoice.DTEType.BOLETA
+            
+            BillingService.create_purchase_bill(
+                order=po,
+                supplier_invoice_number='', # Empty for draft
+                dte_type=dte_type,
+                status=Invoice.Status.DRAFT
+            )
 
     @staticmethod
     def _map_manufacturing_data(mfg_data):

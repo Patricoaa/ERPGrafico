@@ -89,6 +89,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
     const [unitPrice, setUnitPrice] = useState("0")
     const [grossUnitPrice, setGrossUnitPrice] = useState("0")
+    const [selectedDocumentType, setSelectedDocumentType] = useState<string>("FACTURA")
     const [showPOPreview, setShowPOPreview] = useState(false)
     const [outsourcedPending, setOutsourcedPending] = useState<any[]>([])
     const { openCommandCenter } = useGlobalModals()
@@ -207,6 +208,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             return
         }
 
+        if (isOutsourced && !selectedDocumentType) {
+            toast.error("Seleccione el tipo de documento (Factura o Boleta)")
+            return
+        }
+
         setAddingMaterial(true)
         try {
             if (editingMaterialId) {
@@ -217,7 +223,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     uom_id: newMaterialUoM,
                     is_outsourced: isOutsourced,
                     supplier_id: selectedSupplierId,
-                    unit_price: unitPrice
+                    unit_price: unitPrice,
+                    document_type: selectedDocumentType
                 })
                 toast.success("Material actualizado")
             } else {
@@ -228,7 +235,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     uom_id: newMaterialUoM,
                     is_outsourced: isOutsourced,
                     supplier_id: selectedSupplierId,
-                    unit_price: unitPrice
+                    unit_price: unitPrice,
+                    document_type: selectedDocumentType
                 })
                 toast.success("Material agregado")
             }
@@ -253,6 +261,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         setSelectedSupplierId(null)
         setUnitPrice("0")
         setGrossUnitPrice("0")
+        setSelectedDocumentType("FACTURA")
     }
 
     const handleEditMaterial = (material: any) => {
@@ -264,6 +273,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         setSelectedSupplierId(material.supplier?.toString() || null)
         setUnitPrice(material.unit_price?.toString() || "0")
         setGrossUnitPrice(material.unit_price ? (parseFloat(material.unit_price) * 1.19).toFixed(2) : "0")
+        setSelectedDocumentType(material.document_type || "FACTURA")
 
         // We need the product object for UoM selector. 
         // We might need to fetch it or finding it if we have it. 
@@ -540,6 +550,21 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             }}
                                                             className="border-primary/30 focus-visible:ring-primary"
                                                         />
+                                                    </div>
+                                                    <div className="flex-1 space-y-2">
+                                                        <label className="text-xs font-bold uppercase text-primary flex items-center gap-1">
+                                                            Tipo de Documento
+                                                            <span className="text-destructive">*</span>
+                                                        </label>
+                                                        <select
+                                                            className="w-full rounded-md border border-primary/30 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                                                            value={selectedDocumentType}
+                                                            onChange={(e) => setSelectedDocumentType(e.target.value)}
+                                                        >
+                                                            <option value="">Seleccione...</option>
+                                                            <option value="FACTURA">Factura</option>
+                                                            <option value="BOLETA">Boleta</option>
+                                                        </select>
                                                     </div>
                                                 </div>
                                             )}

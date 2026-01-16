@@ -190,6 +190,13 @@ class WorkOrderMaterial(models.Model):
         verbose_name=_("Línea de Compra")
     )
     
+    document_type = models.CharField(
+        _("Tipo de Documento"),
+        max_length=20,
+        choices=[('FACTURA', 'Factura'), ('BOLETA', 'Boleta')],
+        default='FACTURA'
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

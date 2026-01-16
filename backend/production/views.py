@@ -150,6 +150,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
             is_outsourced = request.data.get('is_outsourced', False)
             supplier_id = request.data.get('supplier_id')
             unit_price = Decimal(str(request.data.get('unit_price', 0)))
+            document_type = request.data.get('document_type', 'FACTURA')
             
             product = Product.objects.get(pk=product_id)
             uom = UoM.objects.get(pk=uom_id) if uom_id else None
@@ -164,7 +165,8 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
                 uom=uom,
                 is_outsourced=is_outsourced,
                 supplier=supplier,
-                unit_price=unit_price
+                unit_price=unit_price,
+                document_type=document_type
             )
             
             return Response(WorkOrderSerializer(work_order).data)
@@ -192,6 +194,8 @@ class WorkOrderViewSet(viewsets.ModelViewSet):
                 material.supplier_id = request.data.get('supplier_id')
             if 'unit_price' in request.data:
                 material.unit_price = Decimal(str(request.data.get('unit_price', 0)))
+            if 'document_type' in request.data:
+                material.document_type = request.data.get('document_type')
                 
             material.save()
             

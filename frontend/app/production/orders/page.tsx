@@ -102,7 +102,7 @@ export default function WorkOrdersPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0 border-b pb-6">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Ordenes de Trabajo (OT)</h2>
-                    <p className="text-muted-foreground mt-1">Gestión de flujo de producción para industria gráfica.</p>
+                    <p className="text-muted-foreground mt-1">Gestión de flujo de producción</p>
                 </div>
 
                 <div className="flex items-center space-x-4">
