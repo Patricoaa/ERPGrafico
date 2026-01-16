@@ -6,18 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { CalendarClock, AlertTriangle, DollarSign, Wallet, Package } from "lucide-react"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { CalendarClock, DollarSign, Users, Calendar } from "lucide-react"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
 interface ProductSubscriptionTabProps {
     form: UseFormReturn<ProductFormValues>
-    uoms: any[]
 }
 
-export function ProductSubscriptionTab({ form, uoms }: ProductSubscriptionTabProps) {
+export function ProductSubscriptionTab({ form }: ProductSubscriptionTabProps) {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Configuración de Recurrencia */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
@@ -60,31 +60,28 @@ export function ProductSubscriptionTab({ form, uoms }: ProductSubscriptionTabPro
 
                         <FormField
                             control={form.control}
-                            name="renewal_notice_days"
+                            name="is_variable_amount"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Días de Aviso Renovación</FormLabel>
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Monto Variable</FormLabel>
+                                        <FormDescription>
+                                            Activar si el costo cambia cada periodo (ej: Luz, Agua).
+                                        </FormDescription>
+                                    </div>
                                     <FormControl>
-                                        <div className="relative">
-                                            <Input
-                                                type="number"
-                                                className="pl-8"
-                                                min={0}
-                                                {...field}
-                                            />
-                                            <AlertTriangle className="h-4 w-4 absolute left-2.5 top-3 text-muted-foreground" />
-                                        </div>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
                                     </FormControl>
-                                    <FormDescription>
-                                        Días antes del vencimiento para alertar.
-                                    </FormDescription>
-                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
                     </CardContent>
                 </Card>
 
+                {/* Configuración de Fecha de Pago */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
@@ -181,6 +178,7 @@ export function ProductSubscriptionTab({ form, uoms }: ProductSubscriptionTabPro
                     </CardContent>
                 </Card>
 
+                {/* Configuración de Facturación */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
@@ -220,23 +218,24 @@ export function ProductSubscriptionTab({ form, uoms }: ProductSubscriptionTabPro
                     </CardContent>
                 </Card>
 
+                {/* Duración del Contrato */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
-                            <AlertTriangle className="h-5 w-5 text-primary" />
-                            Automatización de Workflow
+                            <Calendar className="h-5 w-5 text-primary" />
+                            Duración del Contrato
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <FormField
                             control={form.control}
-                            name="auto_approve_renewals"
+                            name="is_indefinite"
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Auto-aprobar Renovaciones</FormLabel>
+                                        <FormLabel className="text-base">Suscripción Indefinida</FormLabel>
                                         <FormDescription>
-                                            Las renovaciones se confirmarán automáticamente sin revisión manual.
+                                            La suscripción no tiene fecha de finalización.
                                         </FormDescription>
                                     </div>
                                     <FormControl>
@@ -249,15 +248,120 @@ export function ProductSubscriptionTab({ form, uoms }: ProductSubscriptionTabPro
                             )}
                         />
 
+                        {!form.watch("is_indefinite") && (
+                            <FormField
+                                control={form.control}
+                                name="contract_end_date"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fecha de Finalización</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="date"
+                                                {...field}
+                                                value={field.value || ""}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Fecha en que finaliza el contrato.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Activación de Suscripción */}
+                <Card className="md:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Users className="h-5 w-5 text-primary" />
+                            Activación de Suscripción
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="subscription_supplier"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Proveedor</FormLabel>
+                                        <FormControl>
+                                            <AdvancedContactSelector
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                contactType="SUPPLIER"
+                                                placeholder="Seleccionar proveedor..."
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Proveedor de la suscripción.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="subscription_amount"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Monto</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                placeholder="50000"
+                                                onChange={field.onChange}
+                                                onBlur={field.onBlur}
+                                                name={field.name}
+                                                ref={field.ref}
+                                                value={field.value ?? ""}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Monto periódico de la suscripción.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="subscription_start_date"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fecha de Inicio</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="date"
+                                                {...field}
+                                                value={field.value || ""}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Fecha de inicio (default: hoy).
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
                         <FormField
                             control={form.control}
-                            name="amount_confirmation_required"
+                            name="auto_activate_subscription"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-muted/50">
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Requiere Confirmación de Monto</FormLabel>
+                                        <FormLabel className="text-base">Activar Automáticamente</FormLabel>
                                         <FormDescription>
-                                            Solicitar confirmación manual del monto antes de procesar el pago.
+                                            Al guardar el producto, se creará automáticamente el registro de suscripción activa.
                                         </FormDescription>
                                     </div>
                                     <FormControl>
@@ -266,125 +370,6 @@ export function ProductSubscriptionTab({ form, uoms }: ProductSubscriptionTabPro
                                             onCheckedChange={field.onChange}
                                         />
                                     </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <DollarSign className="h-5 w-5 text-primary" />
-                            Detalles del Costo
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="is_variable_amount"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Monto Variable</FormLabel>
-                                        <FormDescription>
-                                            Activar si el costo cambia cada periodo (ej: Luz, Agua).
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Package className="h-5 w-5 text-primary" />
-                            Unidades de Medida
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="uom"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Unidad de Medida Base</FormLabel>
-                                    <FormControl>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccionar unidad..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {uoms.map((u) => (
-                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </FormControl>
-                                    <FormDescription>Usada para stock y coste interno.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Wallet className="h-5 w-5 text-primary" />
-                            Configuración Contable
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="expense_account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Cuenta de Gasto (Personalizada)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="EXPENSE"
-                                            placeholder="Cuenta de gasto por defecto..."
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Mapeo contable específico para este producto.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="income_account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Cuenta de Ingreso (Personalizada)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="INCOME"
-                                            placeholder="Cuenta de ingreso por defecto..."
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Mapeo contable específico para este producto.
-                                    </FormDescription>
-                                    <FormMessage />
                                 </FormItem>
                             )}
                         />

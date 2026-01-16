@@ -44,9 +44,14 @@ export const productSchema = z.object({
     payment_interval_days: z.preprocess((v) => Number(v) || undefined, z.number().min(1)).optional().nullable(),
     // Invoice Configuration
     default_invoice_type: z.enum(['FACTURA', 'BOLETA']).optional(),
-    // Workflow Automation
-    auto_approve_renewals: z.boolean().default(false),
-    amount_confirmation_required: z.boolean().default(false),
+    // Direct Activation
+    subscription_supplier: z.string().optional().or(z.literal("")).nullable(),
+    subscription_amount: z.preprocess((v) => Number(v) || undefined, z.number().min(0)).optional().nullable(),
+    subscription_start_date: z.string().optional().or(z.literal("")).nullable(),
+    auto_activate_subscription: z.boolean().default(false),
+    // Contract Duration
+    is_indefinite: z.boolean().default(true),
+    contract_end_date: z.string().optional().or(z.literal("")).nullable(),
     // Accounting
     income_account: z.string().optional().or(z.literal("")).nullable(),
     expense_account: z.string().optional().or(z.literal("")).nullable(),

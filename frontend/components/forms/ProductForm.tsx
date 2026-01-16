@@ -252,8 +252,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     payment_day: initialData.payment_day || undefined,
                     payment_interval_days: initialData.payment_interval_days || undefined,
                     default_invoice_type: initialData.default_invoice_type || undefined,
-                    auto_approve_renewals: initialData.auto_approve_renewals ?? false,
-                    amount_confirmation_required: initialData.amount_confirmation_required ?? false,
+                    subscription_supplier: initialData.subscription_supplier?.id?.toString() || initialData.subscription_supplier?.toString() || "",
+                    subscription_amount: initialData.subscription_amount || undefined,
+                    subscription_start_date: initialData.subscription_start_date || "",
+                    auto_activate_subscription: initialData.auto_activate_subscription ?? false,
+                    is_indefinite: initialData.is_indefinite ?? true,
+                    contract_end_date: initialData.contract_end_date || "",
                     income_account: initialData.income_account?.id?.toString() || initialData.income_account?.toString() || "",
                     expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "",
                 })
@@ -377,9 +381,15 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                 // Invoice Configuration
                 if (data.default_invoice_type) formData.append('default_invoice_type', data.default_invoice_type)
 
-                // Workflow Automation
-                formData.append('auto_approve_renewals', data.auto_approve_renewals ? 'true' : 'false')
-                formData.append('amount_confirmation_required', data.amount_confirmation_required ? 'true' : 'false')
+                // Direct Activation
+                if (data.subscription_supplier) formData.append('subscription_supplier', data.subscription_supplier)
+                if (data.subscription_amount) formData.append('subscription_amount', data.subscription_amount.toString())
+                if (data.subscription_start_date) formData.append('subscription_start_date', data.subscription_start_date)
+                formData.append('auto_activate_subscription', data.auto_activate_subscription ? 'true' : 'false')
+
+                // Contract Duration
+                formData.append('is_indefinite', data.is_indefinite ? 'true' : 'false')
+                if (data.contract_end_date) formData.append('contract_end_date', data.contract_end_date)
             }
 
 
@@ -554,7 +564,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                 />
 
                                 <TabsContent value="subscription" className="mt-0">
-                                    <ProductSubscriptionTab form={form as any} uoms={uoms} />
+                                    <ProductSubscriptionTab form={form} />
                                 </TabsContent>
 
                                 <ProductPricingTab

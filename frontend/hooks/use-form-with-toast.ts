@@ -9,7 +9,7 @@ interface UseFormWithToastProps<T extends FieldValues> extends Omit<UseFormProps
 
 export function useFormWithToast<T extends FieldValues>({ schema, ...props }: UseFormWithToastProps<T>) {
     const form = useForm<T>({
-        ...(schema && { resolver: zodResolver(schema as any as z.ZodType<any>) }),
+        ...(schema && { resolver: zodResolver(schema as any) }),
         ...props
     } as any)
 

@@ -231,16 +231,43 @@ class Product(models.Model):
         help_text=_("Tipo de documento a usar en renovaciones automáticas")
     )
     
-    # Workflow Automation
-    auto_approve_renewals = models.BooleanField(
-        _("Auto-aprobar Renovaciones"),
-        default=False,
-        help_text=_("Si está activo, las renovaciones se confirman automáticamente sin revisión manual")
+    # Direct Activation Fields
+    subscription_supplier = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='subscription_products',
+        verbose_name=_("Proveedor de Suscripción"),
+        help_text=_("Proveedor para activar la suscripción automáticamente")
     )
-    amount_confirmation_required = models.BooleanField(
-        _("Requiere Confirmación de Monto"),
+    subscription_amount = models.DecimalField(
+        _("Monto de Suscripción"),
+        max_digits=12,
+        decimal_places=0,
+        null=True, blank=True,
+        help_text=_("Monto mensual/periódico de la suscripción")
+    )
+    subscription_start_date = models.DateField(
+        _("Fecha de Inicio"),
+        null=True, blank=True,
+        help_text=_("Fecha de inicio de la suscripción (default: hoy)")
+    )
+    auto_activate_subscription = models.BooleanField(
+        _("Activar Suscripción Automáticamente"),
         default=False,
-        help_text=_("Si está activo, requiere confirmación manual del monto antes de procesar el pago")
+        help_text=_("Si está activo, crea el registro de suscripción al guardar el producto")
+    )
+    
+    # Contract Duration
+    is_indefinite = models.BooleanField(
+        _("Suscripción Indefinida"),
+        default=True,
+        help_text=_("Si está activo, la suscripción no tiene fecha de finalización")
+    )
+    contract_end_date = models.DateField(
+        _("Fecha de Finalización del Contrato"),
+        null=True, blank=True,
+        help_text=_("Fecha en que finaliza el contrato (solo si no es indefinida)")
     )
     
     
