@@ -38,19 +38,22 @@ def generate_subscription_orders():
         
         new_next_date = SubscriptionService.calculate_next_payment_date(sub)
         
-        # Create Purchase Order
+        # Get product configuration for workflow automation
+        product = sub.product
+        
+        # Create Purchase Order with metadata
         order_data = {
             'supplier': sub.supplier.id,
             'warehouse': sub.product.category.warehouse.id if hasattr(sub.product.category, 'warehouse') and sub.product.category.warehouse else None, 
             'date': today,
-            'notes': f"Renovación automática de suscripción #{sub.id} para el periodo {next_date}",
+            'notes': f"Renovación automática de suscripción #{sub.id} para el periodo {sub.next_payment_date}",
             'currency': sub.currency,
             'lines': [
                 {
                     'product': sub.product.id,
                     'quantity': 1,
-                    'unit_cost': round(sub.amount, 0), # Serializer uses unit_cost, not price
-                    'tax_rate': 0, # Defaulting to 0 for now
+                    'unit_cost': round(sub.amount, 0),
+                    'tax_rate': 0,
                 }
             ]
         }
@@ -58,6 +61,28 @@ def generate_subscription_orders():
         serializer = WritePurchaseOrderSerializer(data=order_data)
         if serializer.is_valid():
             order = serializer.save()
+            
+            # Store subscription metadata in order notes for future reference
+            metadata_note = f"\n[METADATA] subscription_id={sub.id}"
+            if product.default_invoice_type:
+                metadata_note += f", invoice_type={product.default_invoice_type}"
+            if product.auto_approve_renewals:
+                metadata_note += f", auto_approve=True"
+            if product.amount_confirmation_required:
+                metadata_note += f", amount_confirmation_required=True"
+            
+            order.notes = (order.notes or "") + metadata_note
+            order.save()
+            
+            # Auto-approval workflow
+            if product.auto_approve_renewals and not product.amount_confirmation_required:
+                try:
+                    from purchasing.services import PurchasingService
+                    # Confirm the order automatically
+                    PurchasingService.confirm_order(order)
+                    print(f"Auto-confirmed Order {order.number} for Subscription {sub.id}")
+                except Exception as e:
+                    print(f"Failed to auto-confirm Order {order.number}: {str(e)}")
             
             # Update Subscription
             sub.next_payment_date = new_next_date
@@ -67,5 +92,6 @@ def generate_subscription_orders():
             print(f"Generated Order {order.number} for Subscription {sub.id}")
         else:
             print(f"Failed to generate order for Subscription {sub.id}: {serializer.errors}")
+
 
     return f"Generated {generated_count} subscription orders."
