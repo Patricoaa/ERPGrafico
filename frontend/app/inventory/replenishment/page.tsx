@@ -46,6 +46,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 // Interfaces
 interface ReorderingRule {
@@ -60,12 +61,7 @@ interface ReorderingRule {
     active: boolean
 }
 
-interface Product {
-    id: number
-    name: string
-    code: string
-    internal_code: string
-}
+
 
 interface Warehouse {
     id: number
@@ -88,7 +84,7 @@ type FormValues = z.infer<typeof ruleSchema>
 
 export default function ReplenishmentPage() {
     const [rules, setRules] = useState<ReorderingRule[]>([])
-    const [products, setProducts] = useState<Product[]>([])
+    // const [products, setProducts] = useState<Product[]>([]) // Removed in favor of ProductSelector
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -100,14 +96,12 @@ export default function ReplenishmentPage() {
     const fetchData = async () => {
         setIsLoading(true)
         try {
-            const [rulesRes, productsRes, warehousesRes] = await Promise.all([
+            const [rulesRes, warehousesRes] = await Promise.all([
                 api.get('/inventory/reordering-rules/'),
-                api.get('/inventory/products/'),
                 api.get('/inventory/warehouses/')
             ])
 
             setRules(rulesRes.data.results || rulesRes.data)
-            setProducts(productsRes.data.results || productsRes.data)
             setWarehouses(warehousesRes.data.results || warehousesRes.data)
         } catch (error) {
             console.error("Failed to fetch data", error)
@@ -230,59 +224,51 @@ export default function ReplenishmentPage() {
                             </DialogHeader>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="product"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Producto</FormLabel>
-                                                <Select
-                                                    onValueChange={field.onChange}
-                                                    value={field.value}
-                                                    disabled={!!editingRule} // Disable changing product on edit to simplify
-                                                >
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="product"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Producto</FormLabel>
                                                     <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Seleccionar producto..." />
-                                                        </SelectTrigger>
+                                                        <ProductSelector
+                                                            value={field.value}
+                                                            onChange={field.onChange}
+                                                            disabled={!!editingRule}
+                                                            placeholder="Seleccionar producto..."
+                                                        />
                                                     </FormControl>
-                                                    <SelectContent>
-                                                        {products.map((p) => (
-                                                            <SelectItem key={p.id} value={p.id.toString()}>
-                                                                {p.internal_code} - {p.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                    <FormField
-                                        control={form.control}
-                                        name="warehouse"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Almacén</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Seleccionar almacén..." />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {warehouses.map((w) => (
-                                                            <SelectItem key={w.id} value={w.id.toString()}>
-                                                                {w.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                        <FormField
+                                            control={form.control}
+                                            name="warehouse"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Almacén</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Seleccionar almacén..." />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {warehouses.map((w) => (
+                                                                <SelectItem key={w.id} value={w.id.toString()}>
+                                                                    {w.name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <FormField
