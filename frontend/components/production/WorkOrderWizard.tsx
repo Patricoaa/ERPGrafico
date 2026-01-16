@@ -238,8 +238,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             return
         }
 
-        if (isOutsourced && !selectedDocumentType) {
+        if (isOutsourced && (!selectedDocumentType)) {
             toast.error("Seleccione el tipo de documento (Factura o Boleta)")
+            return
+        }
+
+        if (isOutsourced && parseFloat(grossUnitPrice) <= 0) {
+            toast.error("Debe ingresar un monto bruto mayor a 0 para servicios tercerizados.")
             return
         }
 
