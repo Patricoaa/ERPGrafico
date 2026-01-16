@@ -364,7 +364,7 @@ class BillingService:
         if payment_method != 'CREDIT':
             # Ensure amount is Decimal (from request it might be string)
             # Cap the payment amount at the order total to avoid overvaluing treasury when change is given
-            received_amount = Decimal(str(amount)) if amount else order.total
+            received_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
             payment_amount = min(received_amount, order.total)
             
             TreasuryService.register_payment(

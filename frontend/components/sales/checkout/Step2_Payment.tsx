@@ -162,7 +162,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                     ) : null}
                 </div>
 
-                {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
+                {(paymentData.amount > 0 && (paymentData.method === 'CARD' || paymentData.method === 'TRANSFER')) && (
                     <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">

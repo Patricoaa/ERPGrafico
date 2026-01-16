@@ -949,7 +949,7 @@ class PurchasingService:
         # 3. Register Payment (if not CREDIT)
         payment = None
         if payment_method != 'CREDIT':
-            payment_amount = Decimal(str(amount)) if amount else order.total
+            payment_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
             
             payment = TreasuryService.register_payment(
                 amount=payment_amount,

@@ -242,7 +242,7 @@ export function SalesCheckoutWizard({
                 return false
             }
 
-            if (paymentData.method !== 'CREDIT') {
+            if (paymentData.method !== 'CREDIT' && paymentData.amount > 0) {
                 if (accounts.length === 0) {
                     toast.error("No se puede continuar: No hay cuentas de tesorería configuradas.")
                     return false
@@ -305,11 +305,12 @@ export function SalesCheckoutWizard({
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
 
             // Payment data
-            formData.append('payment_method', paymentData.method)
+            const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : paymentData.method
+            formData.append('payment_method', finalPaymentMethod)
             formData.append('amount', paymentData.amount.toString())
             formData.append('payment_is_pending', paymentData.isPending.toString())
-            if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
-            if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
+            if (paymentData.transactionNumber && paymentData.amount > 0) formData.append('transaction_number', paymentData.transactionNumber)
+            if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId)
             formData.append('payment_type', 'INBOUND')
 
             // Delivery data

@@ -32,9 +32,9 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
         fetchAccounts()
     }, [])
 
-    // Initialize amount to total if not set
+    // Initialize amount to total if not set (but allow 0)
     useEffect(() => {
-        if (paymentData.amount === 0 || !paymentData.amount) {
+        if (paymentData.amount === undefined || paymentData.amount === null) {
             setPaymentData({ ...paymentData, amount: total })
         }
     }, [total])
@@ -107,93 +107,91 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                 </Alert>
             )}
 
-            {paymentData.amount > 0 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                    <Label className="text-sm font-semibold">Método de Pago</Label>
-                    <RadioGroup
-                        value={paymentData.method}
-                        onValueChange={(val) => setPaymentData({ ...paymentData, method: val })}
-                        className="grid grid-cols-3 gap-4"
-                    >
-                        {methods.map((m) => (
-                            <div key={m.id} className="relative group">
-                                <Label
-                                    htmlFor={`method-${m.id}`}
-                                    className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5' : ''} ${!m.hasAccounts ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
-                                    onClick={(e) => {
-                                        if (!m.hasAccounts) {
-                                            e.preventDefault()
-                                            return
-                                        }
-                                    }}
-                                >
-                                    <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts} />
-                                    <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
-                                        <m.icon className="h-5 w-5" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-medium">{m.label}</span>
-                                        {!m.hasAccounts && (
-                                            <span className="text-[8px] font-bold text-destructive uppercase">Sin Configurar</span>
-                                        )}
-                                    </div>
-                                </Label>
-                            </div>
-                        ))}
-                    </RadioGroup>
-
-                    {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
-                        <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="tx-number" className="text-xs font-bold uppercase flex items-center justify-between">
-                                        N° Transacción
-                                        {paymentData.isPending && <span className="text-[8px] text-amber-600 font-bold uppercase">Ingresar luego</span>}
-                                    </Label>
-                                    <Input
-                                        id="tx-number"
-                                        placeholder="Ej: 123456"
-                                        value={paymentData.transactionNumber}
-                                        onChange={(e) => setPaymentData({ ...paymentData, transactionNumber: e.target.value })}
-                                        disabled={paymentData.isPending}
-                                        required={!paymentData.isPending && paymentData.method === 'TRANSFER'}
-                                    />
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                <Label className="text-sm font-semibold">Método de Pago</Label>
+                <RadioGroup
+                    value={paymentData.method}
+                    onValueChange={(val) => setPaymentData({ ...paymentData, method: val })}
+                    className="grid grid-cols-3 gap-4"
+                >
+                    {methods.map((m) => (
+                        <div key={m.id} className="relative group">
+                            <Label
+                                htmlFor={`method-${m.id}`}
+                                className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5' : ''} ${!m.hasAccounts ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                onClick={(e) => {
+                                    if (!m.hasAccounts) {
+                                        e.preventDefault()
+                                        return
+                                    }
+                                }}
+                            >
+                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts} />
+                                <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
+                                    <m.icon className="h-5 w-5" />
                                 </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium">{m.label}</span>
+                                    {!m.hasAccounts && (
+                                        <span className="text-[8px] font-bold text-destructive uppercase">Sin Configurar</span>
+                                    )}
+                                </div>
+                            </Label>
+                        </div>
+                    ))}
+                </RadioGroup>
 
-                                {filteredAccounts.length > 1 && (
-                                    <div className="space-y-2">
-                                        <Label htmlFor="account" className="text-xs font-bold uppercase">Cuenta Origen</Label>
-                                        <select
-                                            id="account"
-                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={paymentData.treasuryAccountId || ""}
-                                            onChange={(e) => setPaymentData({ ...paymentData, treasuryAccountId: e.target.value })}
-                                        >
-                                            <option value="">Seleccionar cuenta...</option>
-                                            {filteredAccounts.map((acc) => (
-                                                <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
+                {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
+                    <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="tx-number" className="text-xs font-bold uppercase flex items-center justify-between">
+                                    N° Transacción
+                                    {paymentData.isPending && <span className="text-[8px] text-amber-600 font-bold uppercase">Ingresar luego</span>}
+                                </Label>
+                                <Input
+                                    id="tx-number"
+                                    placeholder="Ej: 123456"
+                                    value={paymentData.transactionNumber}
+                                    onChange={(e) => setPaymentData({ ...paymentData, transactionNumber: e.target.value })}
+                                    disabled={paymentData.isPending}
+                                    required={!paymentData.isPending && paymentData.method === 'TRANSFER'}
+                                />
                             </div>
 
-                            {paymentData.method === 'TRANSFER' && (
-                                <div className="flex items-center space-x-2 pt-2">
-                                    <Checkbox
-                                        id="pending-tx"
-                                        checked={paymentData.isPending}
-                                        onCheckedChange={(checked) => setPaymentData({ ...paymentData, isPending: !!checked, transactionNumber: !!checked ? "" : paymentData.transactionNumber })}
-                                    />
-                                    <Label htmlFor="pending-tx" className="text-xs font-medium cursor-pointer">
-                                        Informar N° de transferencia luego (Pendiente de Validación)
-                                    </Label>
+                            {filteredAccounts.length > 1 && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="account" className="text-xs font-bold uppercase">Cuenta Origen</Label>
+                                    <select
+                                        id="account"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        value={paymentData.treasuryAccountId || ""}
+                                        onChange={(e) => setPaymentData({ ...paymentData, treasuryAccountId: e.target.value })}
+                                    >
+                                        <option value="">Seleccionar cuenta...</option>
+                                        {filteredAccounts.map((acc) => (
+                                            <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             )}
                         </div>
-                    )}
-                </div>
-            )}
+
+                        {paymentData.method === 'TRANSFER' && (
+                            <div className="flex items-center space-x-2 pt-2">
+                                <Checkbox
+                                    id="pending-tx"
+                                    checked={paymentData.isPending}
+                                    onCheckedChange={(checked) => setPaymentData({ ...paymentData, isPending: !!checked, transactionNumber: !!checked ? "" : paymentData.transactionNumber })}
+                                />
+                                <Label htmlFor="pending-tx" className="text-xs font-medium cursor-pointer">
+                                    Informar N° de transferencia luego (Pendiente de Validación)
+                                </Label>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
 
             <div className={`grid gap-4 ${pendingDebt > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 <div className="space-y-2">

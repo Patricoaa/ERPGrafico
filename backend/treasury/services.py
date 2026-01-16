@@ -17,8 +17,8 @@ class TreasuryService:
         """
         Registers a payment and creates the corresponding Accounting Entry.
         """
-        if amount <= 0:
-            raise ValidationError("El monto debe ser mayor a 0.")
+        if amount < 0:
+            raise ValidationError("El monto no puede ser negativo.")
             
         if not date:
             date = timezone.now().date()

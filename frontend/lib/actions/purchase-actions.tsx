@@ -104,7 +104,7 @@ export const purchaseOrderActions: ActionRegistry = {
                     // Show if there's a posted invoice with pending amount
                     const hasPostedInvoice = order.related_documents?.invoices?.some((inv: any) => inv.status === 'POSTED')
                     const hasPendingAmount = (order.pending_amount ?? 0) > 0
-                    return hasPostedInvoice && hasPendingAmount
+                    return hasPostedInvoice && (hasPendingAmount || order.status !== 'PAID')
                 },
                 badge: { type: 'pending' }
             },
