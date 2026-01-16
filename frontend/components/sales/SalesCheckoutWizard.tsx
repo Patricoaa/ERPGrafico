@@ -285,11 +285,11 @@ export function SalesCheckoutWizard({
                 payment_method: paymentData.method,
                 channel: channel,
                 lines: currentOrderLines.map((l: any) => ({
-                    product: l.id,
+                    product: l.id || null,
                     description: l.name || l.product_name || l.description,
                     quantity: l.qty || l.quantity,
                     unit_price: l.unit_price_net || l.unit_price,
-                    uom: l.uom,
+                    uom: l.uom || null,
                     tax_rate: 19,
                     manufacturing_data: l.manufacturing_data
                 }))
