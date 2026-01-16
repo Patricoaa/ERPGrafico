@@ -1095,7 +1095,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             <div className="bg-background rounded-lg border divide-y overflow-hidden">
                                 {/* Section 1: Product */}
                                 <div className="p-3 space-y-1">
-                                    <p className="font-bold text-[10px] uppercase text-muted-foreground">Producto</p>
                                     <p className="text-sm font-medium leading-tight">{productName}</p>
                                     {order?.product_description && (
                                         <p className="text-xs text-muted-foreground italic line-clamp-2">{order.product_description}</p>

@@ -67,6 +67,19 @@ const pulseGlow = `
 }
 `
 
+// Helper to prevent duplicate prefixes (e.g. OC-OC-123)
+const formatDocumentId = (prefix: string, number: string | number, displayId?: string) => {
+    if (displayId) return displayId
+    const numStr = String(number || '')
+    const cleanPrefix = prefix.replace('-', '') // Handle both "OC" and "OC-" inputs if needed, though we usually pass "OC"
+
+    // Check if it already starts with the prefix (case insensitive)
+    if (numStr.toUpperCase().startsWith(cleanPrefix.toUpperCase())) {
+        return numStr
+    }
+    return `${prefix}-${numStr}`
+}
+
 export function OrderCommandCenter({
     orderId,
     type,
@@ -221,7 +234,8 @@ export function OrderCommandCenter({
     const logisticsDocs = (() => {
         if (order.related_stock_moves?.length > 0) return order.related_stock_moves.map((m: any) => ({
             type: m.move_type_display || 'Movimiento',
-            number: `${m.move_type_display || 'Movimiento'} - MOV-${m.id}`,
+            type: m.move_type_display || 'Movimiento',
+            number: formatDocumentId('MOV', m.id, m.display_id),
             icon: Package,
             id: m.id,
             docType: 'inventory',
@@ -231,7 +245,8 @@ export function OrderCommandCenter({
         const specificDocs = isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions)
         return (specificDocs || []).map((doc: any) => ({
             type: isSale ? 'Despacho' : 'Recepción',
-            number: doc.display_id || `${isSale ? 'DES' : 'REC'}-${doc.number || doc.id}`,
+            type: isSale ? 'Despacho' : 'Recepción',
+            number: formatDocumentId(isSale ? 'DES' : 'REC', doc.number || doc.id, doc.display_id),
             icon: Package,
             id: doc.id,
             docType: doc.docType || (isSale ? 'sale_delivery' : 'inventory'),
@@ -373,7 +388,8 @@ export function OrderCommandCenter({
                                 documents={[
                                     {
                                         type: isSale ? 'Nota de Venta' : 'Orden de Compra',
-                                        number: order.display_id || `${(isSale ? 'NV' : 'OC')}-${order.number || order.id}`,
+                                        type: isSale ? 'Nota de Venta' : 'Orden de Compra',
+                                        number: formatDocumentId(isSale ? 'NV' : 'OC', order.number || order.id, order.display_id),
                                         icon: FileText,
                                         id: order.id,
                                         docType: type === 'sale' ? 'sale_order' : 'purchase_order',
@@ -515,7 +531,8 @@ export function OrderCommandCenter({
                                 variant={billingIsComplete ? 'success' : 'neutral'}
                                 documents={(order.related_documents?.invoices || []).map((inv: any) => ({
                                     type: inv.type_display,
-                                    number: inv.display_id || `${inv.type_display} - #${inv.number || 'BORRADOR'}`,
+                                    type: inv.type_display,
+                                    number: formatDocumentId(inv.type_display, inv.number || 'BORRADOR', inv.display_id),
                                     icon: Receipt,
                                     id: inv.id,
                                     docType: 'invoice',
@@ -559,7 +576,8 @@ export function OrderCommandCenter({
                                 }
                                 documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
                                     type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
-                                    number: pay.display_id || `${pay.payment_type === 'INBOUND' ? 'ING' : 'EGR'}-${pay.id}`,
+                                    type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
+                                    number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
                                     icon: Banknote,
                                     id: pay.id,
                                     docType: 'payment',
