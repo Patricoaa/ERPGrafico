@@ -241,8 +241,20 @@ def get_financial_analysis_data(request):
     
     start_date = request.query_params.get('start_date')
 
+    def to_date(d):
+        if not d: return None
+        if isinstance(d, date): return d
+        from datetime import datetime
+        try:
+            return datetime.strptime(d, '%Y-%m-%d').date()
+        except:
+            return None
+
+    end_date_obj = to_date(end_date)
+    start_date_obj = to_date(start_date)
+
     # We reuse basic finances logic to get totals
-    bs = FinanceService.get_balance_sheet(end_date, start_date)
+    bs = FinanceService.get_balance_sheet(end_date_obj, start_date_obj)
     
     total_assets = bs['total_assets']
     total_liabilities = bs['total_liabilities']
@@ -271,8 +283,8 @@ def get_financial_analysis_data(request):
                 total += float(FinanceService._get_account_balance(acc, end_date=e_date))
         return total
 
-    current_assets = get_category_total(BSCategory.CURRENT_ASSET, end_date)
-    current_liabilities = get_category_total(BSCategory.CURRENT_LIABILITY, end_date)
+    current_assets = get_category_total(BSCategory.CURRENT_ASSET, end_date_obj)
+    current_liabilities = get_category_total(BSCategory.CURRENT_LIABILITY, end_date_obj)
     
     current_ratio = (current_assets / current_liabilities) if current_liabilities else 0
     

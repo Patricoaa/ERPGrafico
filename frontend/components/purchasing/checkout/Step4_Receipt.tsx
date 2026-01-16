@@ -98,6 +98,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
     // Detect if order contains services
     const hasServices = orderLines.some(line => line.product_type === 'SERVICE')
     const allServices = orderLines.every(line => line.product_type === 'SERVICE')
+    const hasSubscriptions = orderLines.some(line => line.product_type === 'SUBSCRIPTION')
     const receiptLabel = allServices ? 'Confirmación' : (hasServices ? 'Recepción/Confirmación' : 'Recepción')
     const itemLabel = allServices ? 'servicios' : (hasServices ? 'productos/servicios' : 'mercancía')
 
@@ -141,6 +142,32 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             })
         }
     }, [receiptData.type, receiptData.partialQuantities?.length, orderLines, setReceiptData, receiptData])
+
+    // Initialize subscription dates if not set
+    useEffect(() => {
+        if (hasSubscriptions && (!receiptData.subscriptionDates || Object.keys(receiptData.subscriptionDates).length === 0)) {
+            const defaultDates: Record<string, string> = {}
+            orderLines.forEach(line => {
+                if (line.product_type === 'SUBSCRIPTION') {
+                    const productId = line.product || line.id
+                    if (productId) {
+                        defaultDates[productId] = new Date().toISOString().split('T')[0]
+                    }
+                }
+            })
+            setReceiptData({ ...receiptData, subscriptionDates: defaultDates })
+        }
+    }, [hasSubscriptions, orderLines, receiptData, setReceiptData])
+
+    const updateSubscriptionDate = (productId: string, date: string) => {
+        setReceiptData((prev: any) => ({
+            ...prev,
+            subscriptionDates: {
+                ...(prev.subscriptionDates || {}),
+                [productId]: date
+            }
+        }))
+    }
 
     const updatePartialQty = (lineId: any, productId: any, value: string) => {
         const qty = parseFloat(value) || 0;
@@ -276,6 +303,42 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                             </TableCell>
                                         </TableRow>
                                     );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
+
+            {hasSubscriptions && receiptData.type !== 'DEFERRED' && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <Label className="text-sm font-semibold">Fechas de Inicio de Suscripciones</Label>
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[60%]">Suscripción</TableHead>
+                                    <TableHead className="w-[40%]">Fecha de Inicio</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {orderLines.filter(line => line.product_type === 'SUBSCRIPTION').map((line, idx) => {
+                                    const productId = line.product || line.id
+                                    const currentDate = receiptData.subscriptionDates?.[productId] || new Date().toISOString().split('T')[0]
+
+                                    return (
+                                        <TableRow key={productId || idx}>
+                                            <TableCell className="font-medium">{line.product_name || line.name || line.description}</TableCell>
+                                            <TableCell>
+                                                <Input
+                                                    type="date"
+                                                    value={currentDate}
+                                                    onChange={(e) => updateSubscriptionDate(productId, e.target.value)}
+                                                    className="w-full"
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    )
                                 })}
                             </TableBody>
                         </Table>

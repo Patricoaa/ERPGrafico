@@ -360,7 +360,7 @@ export function OrderCommandCenter({
                                     </div>
                                     <DialogDescription className="flex items-center gap-4">
                                         <span className="flex items-center gap-1.5 text-xs font-medium">
-                                            <span className="text-muted-foreground/30 ml-2">{type === 'purchase' ? 'OC' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>
+                                            <span className="text-muted-foreground/30 ml-2">{type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>
                                             <span className="text-muted-foreground/30">|</span>
                                             {new Date(order.created_at || order.date).toLocaleDateString()}
                                             <span className="text-muted-foreground/30 ml-2">|</span>
@@ -385,8 +385,8 @@ export function OrderCommandCenter({
                                 variant={order.status !== 'DRAFT' ? 'success' : 'neutral'}
                                 documents={[
                                     {
-                                        type: isSale ? 'Nota de Venta' : 'Orden de Compra',
-                                        number: formatDocumentId(isSale ? 'NV' : 'OC', order.number || order.id, order.display_id),
+                                        type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
+                                        number: formatDocumentId(isSale ? 'NV' : 'OCS', order.number || order.id, order.display_id),
                                         icon: FileText,
                                         id: order.id,
                                         docType: type === 'sale' ? 'sale_order' : 'purchase_order',

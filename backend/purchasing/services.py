@@ -12,10 +12,13 @@ from decimal import Decimal
 class PurchasingService:
     @staticmethod
     @transaction.atomic
-    def receive_order(order: PurchaseOrder, warehouse: Warehouse, receipt_date=None, delivery_reference='', notes=''):
+    def receive_order(order: PurchaseOrder, warehouse: Warehouse, receipt_date=None, delivery_reference='', notes='', subscription_dates=None):
         """
         Receives a complete purchase order.
         Creates receipt, increases stock, updates costs, and generates accounting entries.
+        
+        Args:
+            subscription_dates: dict mapping product_id to start_date string (YYYY-MM-DD)
         """
         if order.receiving_status == PurchaseOrder.ReceivingStatus.RECEIVED:
              raise ValidationError("La orden ya está completamente recibida.")
@@ -45,7 +48,7 @@ class PurchasingService:
                 )
         
         # Confirm receipt
-        PurchasingService.confirm_receipt(receipt)
+        PurchasingService.confirm_receipt(receipt, subscription_dates=subscription_dates)
         
         # Update Order Status
         order.receiving_status = PurchaseOrder.ReceivingStatus.RECEIVED
@@ -56,10 +59,13 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def partial_receive(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None, delivery_reference='', notes=''):
+    def partial_receive(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None, delivery_reference='', notes='', subscription_dates=None):
         """
         Receives specific quantities and potentially adjusted costs.
         line_data = [{ 'line_id': 1, 'quantity': 5, 'unit_cost': 1000 }, ...]
+        
+        Args:
+            subscription_dates: dict mapping product_id to start_date string (YYYY-MM-DD)
         """
         if not receipt_date:
             receipt_date = timezone.now().date()
@@ -118,7 +124,7 @@ class PurchasingService:
             )
             
         # Confirm receipt
-        PurchasingService.confirm_receipt(receipt)
+        PurchasingService.confirm_receipt(receipt, subscription_dates=subscription_dates)
         
         # Update Order Receiving Status
         PurchasingService._update_order_receiving_status(order)
@@ -192,7 +198,7 @@ class PurchasingService:
         # Create Accounting Entry
         entry = JournalEntry.objects.create(
             date=receipt.receipt_date,
-            description=f"Devolución OC-{receipt.purchase_order.number} (Ret-{receipt.number})",
+            description=f"Devolución OCS-{receipt.purchase_order.number} (Ret-{receipt.number})",
             reference=f"Ret-{receipt.number}",
             state=JournalEntry.State.DRAFT
         )
@@ -220,7 +226,7 @@ class PurchasingService:
                 uom=line.product.uom,
                 quantity=base_qty, # base_qty is already negative for returns
                 move_type=StockMove.Type.OUT,
-                description=f"Devolución OC-{receipt.purchase_order.number}",
+                description=f"Devolución OCS-{receipt.purchase_order.number}",
                 journal_entry=entry,
                 source_uom=line.uom or line.purchase_line.uom,
                 source_quantity=line.quantity_received
@@ -259,7 +265,7 @@ class PurchasingService:
                     account=credit_account, 
                     debit=total_amount,
                     credit=0,
-                    label=f"Contrapartida Devolución OC-{receipt.purchase_order.number}"
+                    label=f"Contrapartida Devolución OCS-{receipt.purchase_order.number}"
                 )
 
         JournalEntryService.post_entry(entry)
@@ -280,13 +286,17 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def confirm_receipt(receipt: PurchaseReceipt):
+    def confirm_receipt(receipt: PurchaseReceipt, subscription_dates=None):
         """
         Confirms receipt:
         1. Creates Stock Moves (IN)
         2. Updates Product Cost Price (Weighted Average)
         3. Creates Accounting Entry (via Mapper)
         4. Updates Purchase Line received qty
+        
+        Args:
+            receipt: PurchaseReceipt instance
+            subscription_dates: dict mapping product_id to start_date string (YYYY-MM-DD)
         """
         if receipt.status != PurchaseReceipt.Status.DRAFT:
             raise ValidationError("Solo se pueden confirmar recepciones en borrador.")
@@ -295,6 +305,7 @@ class PurchasingService:
         from inventory.services import StockService
         from inventory.models import StockMove
         from accounting.services import JournalEntryService, AccountingMapper
+        from datetime import datetime
 
         settings = AccountingSettings.objects.first()
         if not settings:
@@ -314,19 +325,27 @@ class PurchasingService:
                 if line.product.product_type == 'SUBSCRIPTION':
                     from inventory.models import Subscription
                     
+                    # Determine start date
+                    start_date = receipt.receipt_date
+                    if subscription_dates and str(line.product.id) in subscription_dates:
+                        try:
+                            start_date = datetime.strptime(subscription_dates[str(line.product.id)], '%Y-%m-%d').date()
+                        except (ValueError, TypeError):
+                            pass  # Fall back to receipt_date if parsing fails
+                    
                     # Ensure we don't create multiple subscriptions for the same line if re-run 
                     # (though confirm_receipt checks status)
                     Subscription.objects.get_or_create(
                         product=line.product,
                         supplier=receipt.purchase_order.supplier,
                         defaults={
-                            'start_date': receipt.receipt_date,
-                            'next_payment_date': receipt.receipt_date + timezone.timedelta(days=30), # Default 30 days
+                            'start_date': start_date,
+                            'next_payment_date': start_date + timezone.timedelta(days=30), # Default 30 days
                             'amount': line.total_cost,
                             'currency': receipt.purchase_order.currency if hasattr(receipt.purchase_order, 'currency') else 'CLP',
                             'status': Subscription.Status.ACTIVE,
                             'recurrence_period': line.product.recurrence_period or 'MONTHLY',
-                            'notes': f"Creado automáticamente desde OC-{receipt.purchase_order.number}"
+                            'notes': f"Creado automáticamente desde OCS-{receipt.purchase_order.number}"
                         }
                     )
                 continue
@@ -359,7 +378,7 @@ class PurchasingService:
                 warehouse=receipt.warehouse,
                 quantity=base_qty,
                 move_type=StockMove.Type.IN,
-                description=f"Recepción OC-{receipt.purchase_order.number}",
+                description=f"Recepción OCS-{receipt.purchase_order.number}",
                 source_uom=line.uom or line.purchase_line.uom,
                 source_quantity=line.quantity_received
             )
@@ -724,7 +743,7 @@ class PurchasingService:
                     warehouse=warehouse,
                     quantity=move_qty,
                     move_type=move_type,
-                    description=f"{invoice.get_dte_type_display()} {document_number} (OC-{order.number})",
+                    description=f"{invoice.get_dte_type_display()} {document_number} (OCS-{order.number})",
                     journal_entry=entry
                 )
                 
@@ -955,7 +974,7 @@ class PurchasingService:
                 amount=payment_amount,
                 payment_type='OUTBOUND',
                 payment_method=payment_method,
-                reference=f"OC-{order.number}",
+                reference=f"OCS-{order.number}",
                 partner=order.supplier,
                 invoice=invoice,
                 purchase_order=order,
@@ -968,13 +987,19 @@ class PurchasingService:
         receipt = None
         warehouse = order.warehouse or Warehouse.objects.first()
         
+        # Extract subscription dates from receipt_data if present
+        subscription_dates = None
+        if receipt_data and 'subscriptionDates' in receipt_data:
+            subscription_dates = receipt_data.get('subscriptionDates')
+        
         if receipt_type == 'IMMEDIATE':
             receipt = PurchasingService.receive_order(
                 order=order,
                 warehouse=warehouse,
                 receipt_date=timezone.now().date(),
                 delivery_reference=receipt_data.get('delivery_reference', '') if receipt_data else '',
-                notes=receipt_data.get('notes', '') if receipt_data else ''
+                notes=receipt_data.get('notes', '') if receipt_data else '',
+                subscription_dates=subscription_dates
             )
         elif receipt_type == 'PARTIAL' and receipt_data:
             receipt = PurchasingService.partial_receive(
@@ -983,7 +1008,8 @@ class PurchasingService:
                 line_data=receipt_data.get('line_data', []),
                 receipt_date=receipt_data.get('receipt_date') or timezone.now().date(),
                 delivery_reference=receipt_data.get('delivery_reference', ''),
-                notes=receipt_data.get('notes', '')
+                notes=receipt_data.get('notes', ''),
+                subscription_dates=subscription_dates
             )
         # DEFERRED: No receipt created
         

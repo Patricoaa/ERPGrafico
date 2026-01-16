@@ -71,15 +71,15 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = _("Orden de Compra")
-        verbose_name_plural = _("Ordenes de Compra")
+        verbose_name = _("Orden de compras y servicios")
+        verbose_name_plural = _("Ordenes de compras y servicios")
 
     def __str__(self):
         return f"{self.display_id} {self.supplier.name}"
     
     @property
     def display_id(self):
-        return f"OC-{self.number}"
+        return f"OCS-{self.number}"
     
     @property
     def effective_total(self):
@@ -196,7 +196,7 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
         ordering = ['-receipt_date', '-created_at']
     
     def __str__(self):
-        return f"{self.display_id} (OC-{self.purchase_order.number})"
+        return f"{self.display_id} (OCS-{self.purchase_order.number})"
     
     @property
     def display_id(self):
