@@ -1,5 +1,14 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.exceptions import InvalidToken
 from .models import User, CompanySettings
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        try:
+            return super().validate(attrs)
+        except User.DoesNotExist:
+            raise InvalidToken("User does not exist")
 
 class UserSerializer(serializers.ModelSerializer):
     permissions = serializers.SerializerMethodField()

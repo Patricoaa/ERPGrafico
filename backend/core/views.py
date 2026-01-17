@@ -3,8 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenRefreshView
 from .models import User, CompanySettings
-from .serializers import UserSerializer, CompanySettingsSerializer
+from .serializers import UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer
+
+class CustomTokenRefreshView(TokenRefreshView):
+    serializer_class = CustomTokenRefreshSerializer
 
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
