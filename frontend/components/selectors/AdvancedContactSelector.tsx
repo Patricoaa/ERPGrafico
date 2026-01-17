@@ -29,6 +29,7 @@ interface AdvancedContactSelectorProps {
     placeholder?: string
     contactType?: 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'NONE'
     onSelectContact?: (contact: Contact) => void
+    disabled?: boolean
 }
 
 export function AdvancedContactSelector({
@@ -36,7 +37,8 @@ export function AdvancedContactSelector({
     onChange,
     placeholder = "Seleccionar contacto...",
     contactType,
-    onSelectContact
+    onSelectContact,
+    disabled
 }: AdvancedContactSelectorProps) {
     const [open, setOpen] = useState(false)
 
@@ -108,6 +110,7 @@ export function AdvancedContactSelector({
                     role="combobox"
                     aria-expanded={open}
                     className="w-full justify-between h-auto py-2"
+                    disabled={disabled}
                 >
                     {selectedContact ? (
                         <div className="flex flex-col items-start text-left overflow-hidden">

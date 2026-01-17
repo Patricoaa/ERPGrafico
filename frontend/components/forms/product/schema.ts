@@ -140,6 +140,81 @@ export const productSchema = z.object({
 }, {
     message: "Debe seleccionar un proveedor para el producto de suscripción",
     path: ["subscription_supplier"]
+}).refine((data) => {
+    // SUBSCRIPTION: Amount is mandatory (even if variable, it serves as reference)
+    if (data.product_type === 'SUBSCRIPTION' && (data.subscription_amount === undefined || data.subscription_amount === null)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "El monto de suscripción es obligatorio",
+    path: ["subscription_amount"]
+}).refine((data) => {
+    // SUBSCRIPTION: Recurrence period is mandatory
+    if (data.product_type === 'SUBSCRIPTION' && !data.recurrence_period) {
+        return false;
+    }
+    return true;
+}, {
+    message: "La periodicidad es obligatoria",
+    path: ["recurrence_period"]
+}).refine((data) => {
+    // SUBSCRIPTION: Start date is mandatory
+    if (data.product_type === 'SUBSCRIPTION' && (!data.subscription_start_date || data.subscription_start_date === "")) {
+        return false;
+    }
+    return true;
+}, {
+    message: "La fecha de inicio es obligatoria",
+    path: ["subscription_start_date"]
+}).refine((data) => {
+    // SUBSCRIPTION: Payment timing config
+    if (data.product_type === 'SUBSCRIPTION') {
+        if (!data.payment_day_type) return false;
+        if (data.payment_day_type === 'FIXED_DAY' && (data.payment_day === undefined || data.payment_day === null)) return false;
+        if (data.payment_day_type === 'INTERVAL' && (data.payment_interval_days === undefined || data.payment_interval_days === null)) return false;
+    }
+    return true;
+}, {
+    message: "Debe seleccionar un tipo de fecha de pago",
+    path: ["payment_day_type"]
+}).refine((data) => {
+    // SUBSCRIPTION: Payment day mandatory if FIXED_DAY
+    if (data.product_type === 'SUBSCRIPTION' && data.payment_day_type === 'FIXED_DAY' && (data.payment_day === undefined || data.payment_day === null)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "El día del mes es obligatorio para fechas fijas",
+    path: ["payment_day"]
+}).refine((data) => {
+    // SUBSCRIPTION: Interval days mandatory if INTERVAL
+    if (data.product_type === 'SUBSCRIPTION' && data.payment_day_type === 'INTERVAL' && (data.payment_interval_days === undefined || data.payment_interval_days === null)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "El intervalo de días es obligatorio",
+    path: ["payment_interval_days"]
+}).refine((data) => {
+    // SUBSCRIPTION: Default invoice type
+    if (data.product_type === 'SUBSCRIPTION' && !data.default_invoice_type) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Debe seleccionar un tipo de documento por defecto",
+    path: ["default_invoice_type"]
+}).refine((data) => {
+    // SUBSCRIPTION: Accounting mapping
+    if (data.product_type === 'SUBSCRIPTION') {
+        if (!data.income_account || data.income_account === "") return false;
+        if (!data.expense_account || data.expense_account === "") return false;
+    }
+    return true;
+}, {
+    message: "El mapeo contable es obligatorio para suscripciones",
+    path: ["income_account"]
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>

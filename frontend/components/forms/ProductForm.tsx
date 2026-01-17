@@ -564,7 +564,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                 />
 
                                 <TabsContent value="subscription" className="mt-0">
-                                    <ProductSubscriptionTab form={form} />
+                                    <ProductSubscriptionTab form={form} isEditing={!!initialData} />
                                 </TabsContent>
 
                                 <ProductPricingTab
