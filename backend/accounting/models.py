@@ -490,13 +490,14 @@ class Budget(models.Model):
 class BudgetItem(models.Model):
     budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name='items')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='budget_items')
+    year = models.IntegerField(_("Año"), default=2024)
     month = models.IntegerField(_("Mes"), default=1, help_text="Mes del presupuesto (1-12)")
     amount = models.DecimalField(_("Monto Presupuestado"), max_digits=20, decimal_places=0)
     
     class Meta:
-        unique_together = ['budget', 'account', 'month']
+        unique_together = ['budget', 'account', 'year', 'month']
         verbose_name = _("Item de Presupuesto")
         verbose_name_plural = _("Items de Presupuesto")
 
     def __str__(self):
-        return f"{self.budget.name} - {self.account.name}: {self.amount}"
+        return f"{self.budget.name} - {self.account.name} ({self.year}/{self.month}): {self.amount}"

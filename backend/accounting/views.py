@@ -1,10 +1,11 @@
 from rest_framework import viewsets, status
+from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, Q
 from .models import Account, JournalEntry, AccountingSettings, Budget, BudgetItem, AccountType, JournalItem
 from .serializers import AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer, BudgetSerializer, BudgetItemSerializer
-from .services import JournalEntryService, AccountingService
+from .services import JournalEntryService, AccountingService, BudgetService
 from django.core.exceptions import ValidationError
 from core.mixins import BulkImportMixin
 
@@ -97,16 +98,23 @@ class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def budgetable(self, request):
         """
-        Returns only accounts that are suitable for budgeting:
-        - Income and Expense accounts
-        - Assets mapped to Investing Activities (CAPEX)
-        - Only leaf accounts (those without children)
+        Returns only accounts that are suitable for budgeting.
+        Optional filter: account_type (comma separated)
         """
         from .models import CFCategory
-        accounts = Account.objects.filter(
-            Q(account_type__in=[AccountType.INCOME, AccountType.EXPENSE]) |
-            Q(cf_category=CFCategory.INVESTING)
-        ).filter(children__isnull=True).order_by('code')
+        
+        account_types = request.query_params.get('account_types')
+        if account_types:
+            types = account_types.split(',')
+            accounts = Account.objects.filter(account_type__in=types)
+        else:
+            # Default logic
+            accounts = Account.objects.filter(
+                Q(account_type__in=[AccountType.INCOME, AccountType.EXPENSE]) |
+                Q(cf_category=CFCategory.INVESTING)
+            )
+            
+        accounts = accounts.filter(children__isnull=True).order_by('code')
         
         serializer = self.get_serializer(accounts, many=True)
         return Response(serializer.data)
@@ -182,96 +190,55 @@ class BudgetViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def set_items(self, request, pk=None):
         """
-        Bulk update or replace budget items.
-        Expected payload: { items: [ { account: 1, month: 1, amount: 1000 }, ... ] }
+        Bulk update or replace budget items using BudgetService.
         """
         budget = self.get_object()
         items_data = request.data.get('items', [])
         
         try:
-            from django.db import transaction
-            with transaction.atomic():
-                # For monthly editor, we might want to replace only specific account-month pairs 
-                # or replace everything for the budget. 
-                # Given we are building a "grid", a full save of provided ones is easier.
-                budget.items.all().delete()
-                
-                new_items = []
-                for item in items_data:
-                    amount = float(item.get('amount', 0))
-                    if amount != 0:
-                        new_items.append(BudgetItem(
-                            budget=budget,
-                            account_id=item['account'],
-                            month=item.get('month', 1),
-                            amount=amount
-                        ))
-                
-                BudgetItem.objects.bulk_create(new_items)
-            
-            return Response({'status': 'updated', 'count': len(new_items)})
+            count = BudgetService.set_budget_items(budget, items_data)
+            return Response({'status': 'updated', 'count': count})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'])
     def execution(self, request, pk=None):
         """
-        Calculates the execution status of the budget.
-        Groups by account to show total execution vs total budgeted for the period.
+        Calculates the execution status of the budget using BudgetService.
         """
         budget = self.get_object()
-        # Aggregate budgeted amounts by account
-        budgeted_qs = budget.items.values('account').annotate(total_budgeted=Sum('amount'))
-        
-        report = []
-        total_budgeted = 0
-        total_actual = 0
-        
-        for b_item in budgeted_qs:
-            account = Account.objects.get(id=b_item['account'])
-            budgeted_amount = float(b_item['total_budgeted'])
-            
-            # Filter actual items for the entire budget period
-            filters = Q(entry__state='POSTED', 
-                        entry__date__gte=budget.start_date, 
-                        entry__date__lte=budget.end_date,
-                        account=account)
-            
-            result = JournalItem.objects.filter(filters).aggregate(
-                debit=Sum('debit'),
-                credit=Sum('credit')
-            )
-            
-            debit = result['debit'] or 0
-            credit = result['credit'] or 0
-            
-            if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
-                actual = float(debit - credit)
-            else:
-                actual = float(credit - debit)
-                
-            report.append({
-                'account_id': account.id,
-                'account_code': account.code,
-                'account_name': account.name,
-                'budgeted': budgeted_amount,
-                'actual': actual,
-                'variance': actual - budgeted_amount,
-                'percentage': (actual / budgeted_amount * 100) if budgeted_amount != 0 else 0
-            })
-            
-            total_budgeted += budgeted_amount
-            total_actual += actual
-            
-        return Response({
-            'budget': BudgetSerializer(budget).data,
-            'items': report,
-            'summary': {
-                'total_budgeted': total_budgeted,
-                'total_actual': total_actual,
-                'total_variance': total_actual - total_budgeted
-            }
-        })
+        try:
+            report_data = BudgetService.get_execution_report(budget)
+            report_data['budget'] = BudgetSerializer(budget).data
+            return Response(report_data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def previous_year_actuals(self, request, pk=None):
+        """
+        Returns execution data from the previous year to pre-populate the budget.
+        """
+        budget = self.get_object()
+        try:
+            data = BudgetService.get_previous_year_actuals(budget)
+            return Response(data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def export_csv(self, request, pk=None):
+        """
+        Exports the execution report as a CSV file.
+        """
+        budget = self.get_object()
+        try:
+            csv_content = BudgetService.generate_execution_csv(budget)
+            response = HttpResponse(csv_content, content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="ejecucion_{budget.id}.csv"'
+            return response
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class BudgetItemViewSet(viewsets.ModelViewSet):
     queryset = BudgetItem.objects.all()

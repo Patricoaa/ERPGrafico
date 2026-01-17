@@ -1,6 +1,6 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from .models import JournalEntry, JournalItem, Account, AccountType, AccountingSettings
+from .models import JournalEntry, JournalItem, Account, AccountType, AccountingSettings, Budget, BudgetItem
 
 class JournalEntryService:
     @staticmethod
@@ -535,3 +535,175 @@ class AccountingMapper:
             })
             
         return f"Recepción OC-{order.number}", f"REC-{receipt.id}", items
+
+class BudgetService:
+    @staticmethod
+    def get_execution_report(budget: Budget):
+        """
+        Calculates the execution status of the budget.
+        Groups by account to show total execution vs total budgeted for the period.
+        """
+        from django.db.models import Sum, Q
+
+        # Aggregate budgeted amounts by account (considering all years in the budget period)
+        budgeted_qs = budget.items.values('account').annotate(total_budgeted=Sum('amount'))
+        
+        report = []
+        total_budgeted = 0
+        total_actual = 0
+        
+        for b_item in budgeted_qs:
+            account = Account.objects.get(id=b_item['account'])
+            budgeted_amount = float(b_item['total_budgeted'])
+            
+            # Filter actual items for the entire budget period
+            filters = Q(entry__state='POSTED', 
+                        entry__date__gte=budget.start_date, 
+                        entry__date__lte=budget.end_date,
+                        account=account)
+            
+            result = JournalItem.objects.filter(filters).aggregate(
+                debit=Sum('debit'),
+                credit=Sum('credit')
+            )
+            
+            debit = result['debit'] or 0
+            credit = result['credit'] or 0
+            
+            if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                actual = float(debit - credit)
+            else:
+                actual = float(credit - debit)
+                
+            report.append({
+                'account_id': account.id,
+                'account_code': account.code,
+                'account_name': account.name,
+                'budgeted': budgeted_amount,
+                'actual': actual,
+                'variance': actual - budgeted_amount,
+                'percentage': (actual / budgeted_amount * 100) if budgeted_amount != 0 else 0
+            })
+            
+            total_budgeted += budgeted_amount
+            total_actual += actual
+            
+        return {
+            'items': report,
+            'summary': {
+                'total_budgeted': total_budgeted,
+                'total_actual': total_actual,
+                'total_variance': total_actual - total_budgeted
+            }
+        }
+
+    @staticmethod
+    @transaction.atomic
+    def set_budget_items(budget: Budget, items_data: list):
+        """
+        Bulk update or replace budget items.
+        Expected item: { account: 1, year: 2024, month: 1, amount: 1000 }
+        """
+        # For simple management, we replace all items. 
+        # In the future, we could do partial updates.
+        budget.items.all().delete()
+        
+        new_items = []
+        for item in items_data:
+            amount = float(item.get('amount', 0))
+            if amount != 0:
+                new_items.append(BudgetItem(
+                    budget=budget,
+                    account_id=item['account'],
+                    year=item.get('year', budget.start_date.year),
+                    month=item.get('month', 1),
+                    amount=amount
+                ))
+        
+        BudgetItem.objects.bulk_create(new_items)
+        return len(new_items)
+
+    @staticmethod
+    def get_previous_year_actuals(budget: Budget):
+        """
+        Fetches actual execution data from the previous year relative to the budget's start date.
+        Returns a list of dicts: [ { account: id, month: 1..12, amount: val }, ... ]
+        """
+        from django.db.models import Sum, ExtractMonth
+        from datetime import date
+        
+        prev_year = budget.start_date.year - 1
+        start_prev = date(prev_year, 1, 1)
+        end_prev = date(prev_year, 12, 31)
+        
+        # Get all posted items for that year
+        items_qs = JournalItem.objects.filter(
+            entry__state='POSTED',
+            entry__date__gte=start_prev,
+            entry__date__lte=end_prev
+        ).annotate(month=ExtractMonth('entry__date'))
+        
+        # Group by account and month
+        grouped = items_qs.values('account', 'month').annotate(
+            debit_sub=Sum('debit'),
+            credit_sub=Sum('credit')
+        )
+        
+        results = []
+        # We need account types to calculate balance correctly
+        accounts_map = {a.id: a for a in Account.objects.filter(id__in=[g['account'] for g in grouped])}
+        
+        for g in grouped:
+            acc = accounts_map.get(g['account'])
+            if not acc: continue
+            
+            debit = g['debit_sub'] or 0
+            credit = g['credit_sub'] or 0
+            
+            if acc.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                amount = debit - credit
+            else:
+                amount = credit - debit
+                
+            if amount != 0:
+                results.append({
+                    'account': acc.id,
+                    'year': budget.start_date.year, # We return it mapped to the current budget year
+                    'month': g['month'],
+                    'amount': float(amount)
+                })
+        
+        return results
+
+    @staticmethod
+    def generate_execution_csv(budget: Budget):
+        """
+        Generates a CSV string with the execution report data.
+        """
+        import csv
+        import io
+        
+        report_data = BudgetService.get_execution_report(budget)
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Header
+        writer.writerow(['Codigo Cuenta', 'Nombre Cuenta', 'Presupuestado', 'Ejecutado', 'Desviacion', '% Ejecucion'])
+        
+        for item in report_data['items']:
+            writer.writerow([
+                item['account_code'],
+                item['account_name'],
+                item['budgeted'],
+                item['actual'],
+                item['variance'],
+                f"{item['percentage']:.2f}%"
+            ])
+            
+        # Summary Row
+        summary = report_data['summary']
+        writer.writerow([])
+        writer.writerow(['TOTALES', '', summary['total_budgeted'], summary['total_actual'], summary['total_variance'], ''])
+        
+        return output.getvalue()

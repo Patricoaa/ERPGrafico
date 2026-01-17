@@ -10,7 +10,7 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, BarChart2 } from "lucide-react";
+import { Plus, Eye, BarChart2, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import api from '@/lib/api';
@@ -72,6 +72,24 @@ export const BudgetManager = () => {
             setIsCreateOpen(false);
             loadBudgets();
             setNewBudget({ name: '', start_date: '', end_date: '', description: '' });
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleExport = async () => {
+        if (!selectedBudget) return;
+        try {
+            const res = await api.get(`/accounting/budgets/${selectedBudget.id}/export_csv/`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `ejecucion_${selectedBudget.name}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
         } catch (err) {
             console.error(err);
         }
@@ -164,8 +182,14 @@ export const BudgetManager = () => {
 
                 <Card className="md:col-span-2">
                     <CardHeader>
-                        <CardTitle>
-                            {selectedBudget ? `Ejecución: ${selectedBudget.name}` : 'Detalle de Ejecución'}
+                        <CardTitle className="flex items-center justify-between">
+                            <span>{selectedBudget ? `Ejecución: ${selectedBudget.name}` : 'Detalle de Ejecución'}</span>
+                            {selectedBudget && executionData && (
+                                <Button variant="outline" size="sm" onClick={handleExport}>
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Exportar CSV
+                                </Button>
+                            )}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
