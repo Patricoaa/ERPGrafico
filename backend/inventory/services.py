@@ -634,3 +634,109 @@ class ProcurementService:
             
         return created_pos
 
+
+class ProductService:
+    @staticmethod
+    def check_archiving_restrictions(product: Product):
+        """
+        Checks for dependencies that prevent archiving a product.
+        Returns a list of dicts with {type, label, description, count, link} for feedback.
+        """
+        restrictions = []
+        
+        # 1. Stock
+        on_hand = product.qty_on_hand
+        if on_hand > 0:
+            restrictions.append({
+                'type': 'stock',
+                'label': 'Stock Activo',
+                'description': f'El producto tiene {on_hand} {product.uom.name if product.uom else ""} en inventario.',
+                'count': float(on_hand),
+                'link': '/inventory/stock'
+            })
+            
+        # 2. BOM as component
+        from production.models import BillOfMaterialsLine
+        bom_lines = BillOfMaterialsLine.objects.filter(component=product, bom__active=True)
+        if bom_lines.exists():
+            restrictions.append({
+                'type': 'bom_component',
+                'label': 'Componente de BOM',
+                'description': f'Este producto es parte de {bom_lines.count()} Lista(s) de Materiales activa(s).',
+                'count': bom_lines.count(),
+                'link': '/production/boms'
+            })
+            
+        # 3. BOM as finished product
+        from production.models import BillOfMaterials
+        boms = BillOfMaterials.objects.filter(product=product, active=True)
+        if boms.exists():
+            restrictions.append({
+                'type': 'bom_parent',
+                'label': 'Producto con BOM',
+                'description': 'Este producto tiene una Lista de Materiales activa.',
+                'count': boms.count(),
+                'link': '/production/boms'
+            })
+            
+        # 4. Pending Work Orders
+        from production.models import WorkOrder
+        pending_ots = WorkOrder.objects.filter(
+            models.Q(product=product) | models.Q(sale_line__product=product) | models.Q(materials__component=product),
+            status__in=[WorkOrder.Status.DRAFT, WorkOrder.Status.PLANNED, WorkOrder.Status.IN_PROGRESS]
+        ).distinct()
+        if pending_ots.exists():
+            restrictions.append({
+                'type': 'work_order',
+                'label': 'Órdenes de Trabajo Pendientes',
+                'description': f'Hay {pending_ots.count()} OT(s) en proceso que requieren o fabrican este producto.',
+                'count': pending_ots.count(),
+                'link': '/production/orders'
+            })
+            
+        # 5. Pending Sale Orders
+        from sales.models import SaleLine, SaleOrder
+        pending_sales = SaleLine.objects.filter(
+            product=product,
+            order__status__in=[SaleOrder.Status.DRAFT, SaleOrder.Status.CONFIRMED]
+        ).exclude(order__delivery_status=SaleOrder.DeliveryStatus.DELIVERED).distinct()
+        if pending_sales.exists():
+            restrictions.append({
+                'type': 'sale_order',
+                'label': 'Notas de Venta Pendientes',
+                'description': f'Hay {pending_sales.count()} Nota(s) de Venta con despachos pendientes.',
+                'count': pending_sales.count(),
+                'link': '/billing/sales'
+            })
+            
+        # 6. Pending Purchase Orders
+        from purchasing.models import PurchaseLine, PurchaseOrder
+        pending_purchases = PurchaseLine.objects.filter(
+            product=product,
+            order__status__in=[PurchaseOrder.Status.DRAFT, PurchaseOrder.Status.CONFIRMED]
+        ).exclude(order__receiving_status=PurchaseOrder.ReceivingStatus.RECEIVED).distinct()
+        if pending_purchases.exists():
+            restrictions.append({
+                'type': 'purchase_order',
+                'label': 'Órdenes de Compra en Proceso',
+                'description': f'Hay {pending_purchases.count()} Orden(es) de Compra pendientes de recepción.',
+                'count': pending_purchases.count(),
+                'link': '/billing/purchases'
+            })
+
+        # 7. Active Subscriptions
+        from .models import Subscription
+        active_subs = Subscription.objects.filter(
+            product=product, 
+            status__in=[Subscription.Status.ACTIVE, Subscription.Status.PAUSED]
+        )
+        if active_subs.exists():
+            restrictions.append({
+                'type': 'subscription',
+                'label': 'Suscripciones Activas',
+                'description': f'Este producto tiene {active_subs.count()} suscripción(es) activa(s) o pausada(s).',
+                'count': active_subs.count(),
+                'link': '/subscriptions'
+            })
+            
+        return restrictions

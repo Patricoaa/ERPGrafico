@@ -47,6 +47,22 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save()
 
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        active_val = request.data.get('active')
+        
+        # If we are archiving (active: True -> False)
+        if active_val is False and instance.active is True:
+            from .services import ProductService
+            restrictions = ProductService.check_archiving_restrictions(instance)
+            if restrictions:
+                return Response({
+                    'error': 'No se puede archivar el producto debido a dependencias activas.',
+                    'restrictions': restrictions
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        return super().partial_update(request, *args, **kwargs)
+
     @action(detail=False, methods=['get'])
     def stock_report(self, request):
         """

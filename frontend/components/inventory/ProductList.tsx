@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import { cn, translateProductType } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
+import { ArchivingRestrictionsDialog, type Restriction } from "./ArchivingRestrictionsDialog"
 
 interface Product {
     id: number
@@ -48,6 +49,11 @@ export function ProductList() {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [showArchived, setShowArchived] = useState(false)
+
+    // Restrictions state
+    const [restrictions, setRestrictions] = useState<Restriction[]>([])
+    const [isRestrictionsDialogOpen, setIsRestrictionsDialogOpen] = useState(false)
+    const [targetProductName, setTargetProductName] = useState("")
 
     const fetchProducts = async () => {
         setLoading(true)
@@ -89,9 +95,16 @@ export function ProductList() {
                     : undefined
             })
             fetchProducts()
-        } catch (error) {
+        } catch (error: any) {
             console.error(`Error ${action} product:`, error)
-            toast.error(`Error al ${action} el producto.`)
+
+            if (error.response?.status === 400 && error.response?.data?.restrictions) {
+                setTargetProductName(product.name)
+                setRestrictions(error.response.data.restrictions)
+                setIsRestrictionsDialogOpen(true)
+            } else {
+                toast.error(`Error al ${action} el producto.`)
+            }
         }
     }
 
@@ -255,6 +268,13 @@ export function ProductList() {
                 }}
                 initialData={editingProduct}
                 onSuccess={fetchProducts}
+            />
+
+            <ArchivingRestrictionsDialog
+                open={isRestrictionsDialogOpen}
+                onOpenChange={setIsRestrictionsDialogOpen}
+                productName={targetProductName}
+                restrictions={restrictions}
             />
         </div >
     )
