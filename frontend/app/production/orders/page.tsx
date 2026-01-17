@@ -13,6 +13,8 @@ import { WorkOrderWizard } from "@/components/production/WorkOrderWizard"
 import { WorkOrderKanban } from "@/components/production/WorkOrderKanban"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
+import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 
 interface WorkOrder {
     id: number
@@ -42,6 +44,18 @@ export default function WorkOrdersPage() {
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
     const [viewMode, setViewMode] = useState<string>("kanban")
     const [requestedStage, setRequestedStage] = useState<string | undefined>(undefined)
+    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+
+    const filteredOrders = orders.filter(order => {
+        if (!dateRange || !dateRange.from) return true
+        if (!order.due_date) return false // Cannot filter if no due date
+
+        const orderDate = parseISO(order.due_date)
+        const start = startOfDay(dateRange.from)
+        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
+
+        return isWithinInterval(orderDate, { start, end })
+    })
 
     const fetchOrders = async () => {
         setLoading(true)
@@ -205,6 +219,7 @@ export default function WorkOrdersPage() {
                 </div>
 
                 <div className="flex items-center space-x-4">
+                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
                     <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
                         <TabsList>
                             <TabsTrigger value="kanban" className="flex items-center gap-2">
@@ -265,7 +280,7 @@ export default function WorkOrdersPage() {
                             </div>
                         ) : null}
                         <WorkOrderKanban
-                            orders={orders}
+                            orders={filteredOrders}
                             onTransition={handleKanbanTransition}
                             onManage={(id) => setActiveWizardId(id)}
                         />
@@ -274,7 +289,7 @@ export default function WorkOrdersPage() {
                     <div className="">
                         <DataTable
                             columns={columns}
-                            data={orders}
+                            data={filteredOrders}
                             filterColumn="description"
                             searchPlaceholder="Buscar por descripción..."
                             facetedFilters={[

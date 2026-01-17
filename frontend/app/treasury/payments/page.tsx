@@ -7,7 +7,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { ArrowDownLeft, ArrowUpRight, Eye, Banknote, CreditCard, Landmark, Receipt, Hash, X } from "lucide-react"
 import api from "@/lib/api"
-import { PaymentForm } from "@/components/forms/PaymentForm"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { toast } from "sonner"
 import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
@@ -43,7 +42,6 @@ export default function PaymentsPage() {
         id: null,
         initialValue: ""
     })
-    const [editingPayment, setEditingPayment] = useState<any>(null)
 
     const fetchPayments = async () => {
         try {
@@ -272,9 +270,6 @@ export default function PaymentsPage() {
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ingresos y Egresos</h2>
-                <div className="flex items-center space-x-2">
-                    <PaymentForm onSuccess={fetchPayments} />
-                </div>
             </div>
 
             {loading ? (
@@ -319,18 +314,6 @@ export default function PaymentsPage() {
                     onOpenChange={(open) => !open && setViewingTransaction(null)}
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
-                />
-            )}
-
-            {editingPayment && (
-                <PaymentForm
-                    open={!!editingPayment}
-                    onOpenChange={(open) => !open && setEditingPayment(null)}
-                    initialData={editingPayment}
-                    onSuccess={() => {
-                        setEditingPayment(null)
-                        fetchPayments()
-                    }}
                 />
             )}
 

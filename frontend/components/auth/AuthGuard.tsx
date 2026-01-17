@@ -6,6 +6,7 @@ import { MiniSidebar } from "@/components/layout/MiniSidebar"
 import { TopBar } from "@/components/layout/TopBar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Toaster } from "@/components/ui/sonner"
+import { QuickActionsMenu } from "@/components/layout/QuickActionsMenu"
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
@@ -104,11 +105,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 relative">
                 <TopBar />
-                <main className="flex-1 overflow-y-auto">
+                <main className="flex-1 overflow-y-auto pb-24">
                     <div className="p-6 w-full">
                         {children}
                     </div>
                 </main>
+                <QuickActionsMenu />
             </div>
 
             <Toaster />

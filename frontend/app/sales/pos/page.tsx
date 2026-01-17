@@ -4,9 +4,14 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { ColumnDef } from "@tanstack/react-table"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Info } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -288,115 +293,6 @@ export default function POSPage() {
         }
     }
 
-    const columns: ColumnDef<CartItem>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
-            cell: ({ row }) => {
-                const item = row.original
-                return (
-                    <div className="flex flex-col gap-1 max-w-[120px]">
-                        <span className="truncate font-medium">
-                            <span className="font-mono text-[10px] text-muted-foreground mr-1">{item.internal_code || item.code}</span>
-                            {item.name}
-                        </span>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "qty",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cant" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-1">
-                    <Input
-                        type="number"
-                        className="h-8 w-16 text-center text-xs font-mono"
-                        value={row.original.qty}
-                        onChange={(e) => updateQty(row.original.cartItemId, e.target.value)}
-                        min="1"
-                    />
-                </div>
-            ),
-        },
-        {
-            id: "uom",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Unidad" className="justify-center" />,
-            cell: ({ row }) => {
-                const item = row.original
-                const originalProduct = products.find(p => p.id === item.id)
-                const itemUom = uoms.find(u => u.id === item.uom)
-
-                let allowedUoMs: any[] = []
-                if (originalProduct && (originalProduct as any).allowed_sale_uoms?.length > 0) {
-                    const allowedIds = (originalProduct as any).allowed_sale_uoms
-                    const saleUoMId = (originalProduct as any).sale_uom
-                    allowedUoMs = uoms.filter(u => allowedIds.includes(u.id) || u.id === saleUoMId)
-                } else if (itemUom) {
-                    allowedUoMs = uoms.filter(u => u.category === itemUom.category)
-                }
-
-                if (allowedUoMs.length > 1) {
-                    return (
-                        <div className="flex justify-center">
-                            <Select
-                                value={item.uom?.toString()}
-                                onValueChange={(val) => {
-                                    const newUom = uoms.find(u => u.id.toString() === val)
-                                    setItems(items.map(i => i.cartItemId === item.cartItemId ? { ...i, uom: parseInt(val), uom_name: newUom?.name } : i))
-                                }}
-                            >
-                                <SelectTrigger className="h-6 text-[10px] w-full border-none bg-muted/50 py-0 px-2 min-h-0">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {allowedUoMs.map(u => (
-                                        <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
-                                            {u.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )
-                } else {
-                    return (
-                        <div className="flex justify-center">
-                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                {item.uom_name}
-                            </span>
-                        </div>
-                    )
-                }
-            },
-        },
-        {
-            accessorKey: "total_net",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Neto" className="justify-end" />,
-            cell: ({ row }) => <div className="text-right text-xs text-muted-foreground">{formatCurrency(row.getValue("total_net"))}</div>,
-        },
-        {
-            accessorKey: "total_tax",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="IVA" className="justify-end" />,
-            cell: ({ row }) => <div className="text-right text-xs text-muted-foreground">{formatCurrency(row.getValue("total_tax"))}</div>,
-        },
-        {
-            accessorKey: "total_gross",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-end" />,
-            cell: ({ row }) => <div className="text-right font-bold text-sm">{formatCurrency(row.getValue("total_gross"))}</div>,
-        },
-        {
-            id: "actions",
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(row.original.cartItemId)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            ),
-        }
-    ]
-
     const total_gross_sum = items.reduce((acc, i) => acc + i.total_gross, 0)
     const total_net_sum = items.reduce((acc, i) => acc + i.total_net, 0)
     const total_tax_sum = items.reduce((acc, i) => acc + i.total_tax, 0)
@@ -525,7 +421,113 @@ export default function POSPage() {
                                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{items.length} items</span>
                             </div>
                             <div className="flex-1 overflow-auto">
-                                <DataTable columns={columns} data={items} />
+                                <Table>
+                                    <TableHeader className="bg-muted/30 sticky top-0 z-10">
+                                        <TableRow className="hover:bg-transparent border-b">
+                                            <TableHead className="w-[40%] text-xs py-2">Producto</TableHead>
+                                            <TableHead className="w-[15%] text-xs py-2 text-center">Cant.</TableHead>
+                                            <TableHead className="w-[15%] text-xs py-2 text-center">Unidad</TableHead>
+                                            <TableHead className="w-[20%] text-xs py-2 text-right">Total</TableHead>
+                                            <TableHead className="w-[10%] py-2"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {items.map((item) => {
+                                            const originalProduct = products.find(p => p.id === item.id)
+                                            const itemUom = uoms.find(u => u.id === item.uom)
+
+                                            let allowedUoMs: any[] = []
+                                            if (originalProduct && (originalProduct as any).allowed_sale_uoms?.length > 0) {
+                                                const allowedIds = (originalProduct as any).allowed_sale_uoms
+                                                const saleUoMId = (originalProduct as any).sale_uom
+                                                allowedUoMs = uoms.filter(u => allowedIds.includes(u.id) || u.id === saleUoMId)
+                                            } else if (itemUom) {
+                                                allowedUoMs = uoms.filter(u => u.category === itemUom.category)
+                                            }
+
+                                            return (
+                                                <TableRow key={item.cartItemId} className="group border-b hover:bg-muted/30 transition-colors">
+                                                    <TableCell className="py-2 align-top">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="font-bold text-xs truncate max-w-[150px]" title={item.name}>
+                                                                {item.name}
+                                                            </span>
+                                                            <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-tighter">
+                                                                {item.internal_code || item.code}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2">
+                                                        <div className="flex justify-center">
+                                                            <Input
+                                                                type="number"
+                                                                className="h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0"
+                                                                value={item.qty}
+                                                                onChange={(e) => updateQty(item.cartItemId, e.target.value)}
+                                                                min="1"
+                                                            />
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2">
+                                                        <div className="flex justify-center">
+                                                            {allowedUoMs.length > 1 ? (
+                                                                <Select
+                                                                    value={item.uom?.toString()}
+                                                                    onValueChange={(val) => {
+                                                                        const newUom = uoms.find(u => u.id.toString() === val)
+                                                                        setItems(items.map(i => i.cartItemId === item.cartItemId ? { ...i, uom: parseInt(val), uom_name: newUom?.name } : i))
+                                                                    }}
+                                                                >
+                                                                    <SelectTrigger className="h-6 text-[10px] w-auto border-none bg-muted/50 py-0 px-2 min-h-0 focus:ring-0">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {allowedUoMs.map(u => (
+                                                                            <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
+                                                                                {u.name}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            ) : (
+                                                                <span className="text-[10px] font-medium text-muted-foreground/80 bg-muted/30 px-1.5 py-0.5 rounded leading-none">
+                                                                    {item.uom_name}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-black text-xs">
+                                                                {formatCurrency(item.total_gross)}
+                                                            </span>
+                                                            <span className="text-[9px] text-muted-foreground leading-none">
+                                                                Neto: {formatCurrency(item.total_net)}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2 text-center">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            onClick={() => removeItem(item.cartItemId)}
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                        {items.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground text-xs italic">
+                                                    Carrito vacío
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
                             </div>
                             <div className="p-4 bg-muted/50 border-t space-y-4">
                                 <div className="space-y-1">

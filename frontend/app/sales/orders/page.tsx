@@ -17,6 +17,8 @@ import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionM
 import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
 import { Progress } from "@/components/ui/progress"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
+import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 
 
 interface SaleOrder {
@@ -61,6 +63,17 @@ export default function SalesOrdersPage() {
     const [addingNote, setAddingNote] = useState<SaleOrder | null>(null)
     const [checkoutData, setCheckoutData] = useState<any | null>(null)
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+
+    const filteredOrders = orders.filter(order => {
+        if (!dateRange || !dateRange.from) return true
+
+        const orderDate = parseISO(order.date)
+        const start = startOfDay(dateRange.from)
+        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
+
+        return isWithinInterval(orderDate, { start, end })
+    })
 
     const fetchOrders = async () => {
         try {
@@ -303,6 +316,7 @@ export default function SalesOrdersPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Notas de Venta</h2>
                 <div className="flex items-center space-x-2">
+                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Venta" />
                     <SaleOrderForm
                         onConfirmCheckout={(data) => {
                             setCheckoutData(data)
@@ -337,7 +351,7 @@ export default function SalesOrdersPage() {
                 <div className="">
                     <DataTable
                         columns={columns}
-                        data={orders}
+                        data={filteredOrders}
                         filterColumn="customer_name"
                         searchPlaceholder="Buscar por cliente..."
                         facetedFilters={[

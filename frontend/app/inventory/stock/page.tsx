@@ -10,7 +10,7 @@ import { ReplenishmentRuleList } from "@/components/inventory/ReplenishmentRuleL
 import { Warehouse, History, FileBarChart, ArrowRightLeft, RefreshCw } from "lucide-react"
 
 export default function UnifiedStockPage() {
-    const [activeTab, setActiveTab] = useState("warehouses")
+    const [activeTab, setActiveTab] = useState("report")
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -21,42 +21,40 @@ export default function UnifiedStockPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="warehouses" className="space-y-4" onValueChange={setActiveTab}>
+            <Tabs defaultValue="report" className="space-y-4" onValueChange={setActiveTab}>
                 <div className="flex justify-center">
                     <TabsList className="grid w-full h-auto flex-wrap grid-cols-2 md:grid-cols-4 bg-muted/50 rounded-lg p-1 border">
-                        <TabsTrigger value="warehouses" className="rounded-md gap-2">
-                            <Warehouse className="h-4 w-4" />
-                            <span className="max-sm:hidden">Almacenes</span>
+                        <TabsTrigger value="report" className="rounded-md gap-2">
+                            <FileBarChart className="h-4 w-4" />
+                            <span className="max-sm:hidden">Stock</span>
                         </TabsTrigger>
                         <TabsTrigger value="movements" className="rounded-md gap-2">
                             <History className="h-4 w-4" />
                             <span className="max-sm:hidden">Movimientos</span>
                         </TabsTrigger>
-
                         <TabsTrigger value="replenishment" className="rounded-md gap-2">
                             <RefreshCw className="h-4 w-4" />
                             <span className="max-sm:hidden">Reabastecimiento</span>
                         </TabsTrigger>
-                        <TabsTrigger value="report" className="rounded-md gap-2">
-                            <FileBarChart className="h-4 w-4" />
-                            <span className="max-sm:hidden">Reporte Stock</span>
+                        <TabsTrigger value="warehouses" className="rounded-md gap-2">
+                            <Warehouse className="h-4 w-4" />
+                            <span className="max-sm:hidden">Almacenes</span>
                         </TabsTrigger>
                     </TabsList>
                 </div>
 
                 <div className="pt-4">
-                    <TabsContent value="warehouses" className="mt-0 outline-none">
-                        <WarehouseList />
+                    <TabsContent value="report" className="mt-0 outline-none">
+                        <StockReport />
                     </TabsContent>
                     <TabsContent value="movements" className="mt-0 outline-none">
                         <MovementList />
                     </TabsContent>
-
                     <TabsContent value="replenishment" className="mt-0 outline-none">
                         <ReplenishmentRuleList />
                     </TabsContent>
-                    <TabsContent value="report" className="mt-0 outline-none">
-                        <StockReport />
+                    <TabsContent value="warehouses" className="mt-0 outline-none">
+                        <WarehouseList />
                     </TabsContent>
                 </div>
             </Tabs>

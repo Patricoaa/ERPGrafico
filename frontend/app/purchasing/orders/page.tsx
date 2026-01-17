@@ -15,6 +15,8 @@ import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegis
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckoutWizard"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
+import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 
 interface PurchaseOrder {
     id: number
@@ -58,6 +60,17 @@ export default function PurchaseOrdersPage() {
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
+    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+
+    const filteredOrders = orders.filter(order => {
+        if (!dateRange || !dateRange.from) return true
+
+        const orderDate = parseISO(order.date)
+        const start = startOfDay(dateRange.from)
+        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
+
+        return isWithinInterval(orderDate, { start, end })
+    })
 
 
     const fetchOrders = async () => {
@@ -231,6 +244,7 @@ export default function PurchaseOrdersPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
                 <div className="flex items-center space-x-2">
+                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Orden" />
                     <Button onClick={() => setCheckoutOpen(true)}>
                         Nueva Orden de Compra
                     </Button>
@@ -251,7 +265,7 @@ export default function PurchaseOrdersPage() {
                     <div className="text-muted-foreground">Cargando órdenes de compra...</div>
                 </div>
             ) : (
-                <DataTable columns={columns} data={orders} />
+                <DataTable columns={columns} data={filteredOrders} />
             )}
 
             {viewingTransaction && (
