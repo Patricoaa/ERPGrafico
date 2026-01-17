@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react"
 import api from "@/lib/api"
@@ -35,56 +34,52 @@ export default function StockReportPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Reporte de Stock</h1>
             </div>
 
-            <Card>
-                <CardContent>
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Código</TableHead>
-                                    <TableHead>Producto</TableHead>
-                                    <TableHead>Categoría</TableHead>
-                                    <TableHead className="text-right">Stock Actual</TableHead>
-                                    <TableHead>Unidad</TableHead>
-                                    <TableHead className="text-right">Costo Unit.</TableHead>
-                                    <TableHead className="text-right">Valorización</TableHead>
-                                    <TableHead className="text-right text-green-600">Entradas</TableHead>
-                                    <TableHead className="text-right text-red-600">Salidas</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow><TableCell colSpan={9} className="text-center py-10">Cargando...</TableCell></TableRow>
-                                ) : report.length === 0 ? (
-                                    <TableRow><TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
-                                ) : report.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="font-mono">{item.code}</TableCell>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell>{item.category_name}</TableCell>
-                                        <TableCell className="text-right font-bold">
-                                            {Math.round(item.stock_qty).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground text-xs">{item.uom_name}</TableCell>
-                                        <TableCell className="text-right">
-                                            ${Math.round(item.unit_cost).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="text-right font-medium">
-                                            ${Math.round(item.total_value).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="text-right text-green-600">
-                                            {item.moves_in > 0 ? `+${Math.round(item.moves_in).toLocaleString()}` : '0'}
-                                        </TableCell>
-                                        <TableCell className="text-right text-red-600">
-                                            {item.moves_out > 0 ? `-${Math.round(item.moves_out).toLocaleString()}` : '0'}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
+                <Table>
+                    <TableHeader className="bg-muted/30">
+                        <TableRow>
+                            <TableHead>Código</TableHead>
+                            <TableHead>Producto</TableHead>
+                            <TableHead>Categoría</TableHead>
+                            <TableHead className="text-right">Stock Actual</TableHead>
+                            <TableHead>Unidad</TableHead>
+                            <TableHead className="text-right">Costo Unit.</TableHead>
+                            <TableHead className="text-right">Valorización</TableHead>
+                            <TableHead className="text-right text-green-600">Entradas</TableHead>
+                            <TableHead className="text-right text-red-600">Salidas</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow><TableCell colSpan={9} className="text-center py-10">Cargando...</TableCell></TableRow>
+                        ) : report.length === 0 ? (
+                            <TableRow><TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
+                        ) : report.map((item) => (
+                            <TableRow key={item.id} className="group hover:bg-muted/20 transition-colors">
+                                <TableCell className="font-mono">{item.code}</TableCell>
+                                <TableCell className="font-medium">{item.name}</TableCell>
+                                <TableCell>{item.category_name}</TableCell>
+                                <TableCell className="text-right font-bold">
+                                    {Math.round(item.stock_qty).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-xs">{item.uom_name}</TableCell>
+                                <TableCell className="text-right">
+                                    ${Math.round(item.unit_cost).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                    ${Math.round(item.total_value).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-right text-green-600">
+                                    {item.moves_in > 0 ? `+${Math.round(item.moves_in).toLocaleString()}` : '0'}
+                                </TableCell>
+                                <TableCell className="text-right text-red-600">
+                                    {item.moves_out > 0 ? `-${Math.round(item.moves_out).toLocaleString()}` : '0'}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
         </div>
     )
 }

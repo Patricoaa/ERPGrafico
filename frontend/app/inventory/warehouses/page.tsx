@@ -82,9 +82,9 @@ export default function WarehousesPage() {
                     )}
                 </div>
             </div>
-            <div className="rounded-md border">
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                         <TableRow>
                             <TableHead>Nombre</TableHead>
                             <TableHead>Código</TableHead>
@@ -94,7 +94,7 @@ export default function WarehousesPage() {
                     </TableHeader>
                     <TableBody>
                         {warehouses.map((warehouse) => (
-                            <TableRow key={warehouse.id}>
+                            <TableRow key={warehouse.id} className="group hover:bg-muted/20 transition-colors">
                                 <TableCell className="font-medium">{warehouse.name}</TableCell>
                                 <TableCell>{warehouse.code}</TableCell>
                                 <TableCell>{warehouse.address || "-"}</TableCell>

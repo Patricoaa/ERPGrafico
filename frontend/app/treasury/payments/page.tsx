@@ -101,9 +101,9 @@ export default function PaymentsPage() {
                     <PaymentForm onSuccess={fetchPayments} />
                 </div>
             </div>
-            <div className="rounded-md border">
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                         <TableRow>
                             <TableHead>Número</TableHead>
                             <TableHead>Fecha</TableHead>
@@ -117,7 +117,7 @@ export default function PaymentsPage() {
                     </TableHeader>
                     <TableBody>
                         {payments.map((payment) => (
-                            <TableRow key={payment.id}>
+                            <TableRow key={payment.id} className="group hover:bg-muted/20 transition-colors">
                                 <TableCell className="font-mono text-xs font-bold">{payment.code}</TableCell>
                                 <TableCell className="text-muted-foreground">{new Date(payment.date).toLocaleDateString()}</TableCell>
                                 <TableCell>

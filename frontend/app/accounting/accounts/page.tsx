@@ -90,9 +90,9 @@ export default function AccountsPage() {
                     <AccountForm accounts={accounts} onSuccess={fetchAccounts} />
                 </div>
             </div>
-            <div className="rounded-md border overflow-hidden">
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
-                    <TableHeader className="bg-muted/50">
+                    <TableHeader className="bg-muted/30">
                         <TableRow>
                             <TableHead className="w-[120px]">Código</TableHead>
                             <TableHead>Nombre</TableHead>
@@ -119,7 +119,7 @@ export default function AccountsPage() {
                                     </TableCell>
                                 </TableRow>
                                 {group.items.map((account) => (
-                                    <TableRow key={account.id}>
+                                    <TableRow key={account.id} className="group hover:bg-muted/20 transition-colors">
                                         <TableCell className="font-mono text-xs">{account.code}</TableCell>
                                         <TableCell className="font-medium">{account.name}</TableCell>
                                         <TableCell className="text-right text-muted-foreground">

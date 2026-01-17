@@ -193,14 +193,11 @@ export default function SubscriptionsPage() {
             )}
 
 
-            {/* Subscriptions Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Suscripciones</CardTitle>
-                </CardHeader>
-                <CardContent>
+            <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Suscripciones</h3>
+                <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                     <Table>
-                        <TableHeader>
+                        <TableHeader className="bg-muted/30">
                             <TableRow>
                                 <TableHead>Producto</TableHead>
                                 <TableHead>Proveedor</TableHead>
@@ -226,7 +223,7 @@ export default function SubscriptionsPage() {
                                 </TableRow>
                             ) : (
                                 subscriptions.map((sub) => (
-                                    <TableRow key={sub.id}>
+                                    <TableRow key={sub.id} className="group hover:bg-muted/20 transition-colors">
                                         <TableCell>
                                             <div>
                                                 <div className="font-medium">{sub.product_name}</div>
@@ -276,8 +273,8 @@ export default function SubscriptionsPage() {
                             )}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     )
 }

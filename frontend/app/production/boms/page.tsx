@@ -86,9 +86,9 @@ export default function BOMsPage() {
 
 
 
-            <div className="rounded-md border">
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                         <TableRow>
                             <TableHead>Producto</TableHead>
                             <TableHead>Nombre / Versión</TableHead>
@@ -100,7 +100,7 @@ export default function BOMsPage() {
                     </TableHeader>
                     <TableBody>
                         {boms.map((bom) => (
-                            <TableRow key={bom.id}>
+                            <TableRow key={bom.id} className="group hover:bg-muted/20 transition-colors">
                                 <TableCell className="font-medium">{bom.product_name}</TableCell>
                                 <TableCell>{bom.name}</TableCell>
                                 <TableCell className="text-center">

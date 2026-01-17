@@ -91,9 +91,9 @@ export default function ContactsPage() {
 
 
 
-            <div className="rounded-md border">
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                         <TableRow>
                             <TableHead>Nombre</TableHead>
                             <TableHead>RUT / Identificación</TableHead>
@@ -117,7 +117,7 @@ export default function ContactsPage() {
                             </TableRow>
                         ) : (
                             contacts.map((contact) => (
-                                <TableRow key={contact.id}>
+                                <TableRow key={contact.id} className="group hover:bg-muted/20 transition-colors">
                                     <TableCell className="font-medium">{contact.name}</TableCell>
                                     <TableCell>{contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}</TableCell>
                                     <TableCell>{getContactTypeBadge(contact.contact_type)}</TableCell>

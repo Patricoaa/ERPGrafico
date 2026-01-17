@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X, MoreVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -165,288 +164,286 @@ export default function PurchaseInvoicesPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Documentos Recibidos</h1>
             </div>
 
-            <Card>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>N° Documento</TableHead>
-                                <TableHead>Fecha</TableHead>
-                                <TableHead>Tipo</TableHead>
-                                <TableHead>Proveedor</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
-                                <TableHead>Pagado/Devuelto</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead>Documentos</TableHead>
-                                <TableHead className="text-center">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow><TableCell colSpan={8} className="text-center py-10">Cargando...</TableCell></TableRow>
-                            ) : documents.length === 0 ? (
-                                <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No se encontraron documentos.</TableCell></TableRow>
-                            ) : documents.map((doc) => {
-                                const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type)
-                                const badgeStyle = statusMap[doc.status] || { label: doc.status, variant: 'secondary' }
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
+                <Table>
+                    <TableHeader className="bg-muted/30">
+                        <TableRow>
+                            <TableHead>N° Documento</TableHead>
+                            <TableHead>Fecha</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead>Proveedor</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead>Pagado/Devuelto</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead>Documentos</TableHead>
+                            <TableHead className="text-center">Acciones</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow><TableCell colSpan={8} className="text-center py-10">Cargando...</TableCell></TableRow>
+                        ) : documents.length === 0 ? (
+                            <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No se encontraron documentos.</TableCell></TableRow>
+                        ) : documents.map((doc) => {
+                            const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type)
+                            const badgeStyle = statusMap[doc.status] || { label: doc.status, variant: 'secondary' }
 
-                                return (
-                                    <TableRow key={doc.id}>
-                                        <TableCell>
-                                            <span className="font-mono font-medium">{doc.number}</span>
-                                        </TableCell>
-                                        <TableCell>{new Date(doc.date).toLocaleDateString()}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2" title={doc.dte_type_display}>
-                                                <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-blue-500' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-slate-600'}`} />
-                                                <span className="text-xs font-bold uppercase hidden md:inline-block">
-                                                    {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
-                                                        doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                                                            doc.dte_type === 'BOLETA' ? 'BOL' : 'FACT'}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{doc.partner_name}</TableCell>
-                                        <TableCell className="text-right font-medium">
-                                            ${Number(doc.total).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="space-y-1 w-32">
-                                                {(() => {
-                                                    const total = parseFloat(doc.total)
-                                                    const pending = doc.pending_amount ?? total
-                                                    const paid = total - pending
-                                                    const percentage = total > 0 ? Math.round((paid / total) * 100) : 0
-                                                    return (
-                                                        <>
-                                                            <div className="flex justify-between text-[10px] font-bold">
-                                                                <span>{percentage}%</span>
-                                                                <span>${paid.toLocaleString()}</span>
-                                                            </div>
-                                                            <Progress value={percentage} className="h-1" />
-                                                        </>
-                                                    )
-                                                })()}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                {doc.status !== 'POSTED' && (
-                                                    <Badge variant={badgeStyle.variant as any} className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">
-                                                        {badgeStyle.label}
+                            return (
+                                <TableRow key={doc.id} className="group hover:bg-muted/20 transition-colors">
+                                    <TableCell>
+                                        <span className="font-mono font-medium">{doc.number}</span>
+                                    </TableCell>
+                                    <TableCell>{new Date(doc.date).toLocaleDateString()}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2" title={doc.dte_type_display}>
+                                            <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-blue-500' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-slate-600'}`} />
+                                            <span className="text-xs font-bold uppercase hidden md:inline-block">
+                                                {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
+                                                    doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
+                                                        doc.dte_type === 'BOLETA' ? 'BOL' : 'FACT'}
+                                            </span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{doc.partner_name}</TableCell>
+                                    <TableCell className="text-right font-medium">
+                                        ${Number(doc.total).toLocaleString()}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="space-y-1 w-32">
+                                            {(() => {
+                                                const total = parseFloat(doc.total)
+                                                const pending = doc.pending_amount ?? total
+                                                const paid = total - pending
+                                                const percentage = total > 0 ? Math.round((paid / total) * 100) : 0
+                                                return (
+                                                    <>
+                                                        <div className="flex justify-between text-[10px] font-bold">
+                                                            <span>{percentage}%</span>
+                                                            <span>${paid.toLocaleString()}</span>
+                                                        </div>
+                                                        <Progress value={percentage} className="h-1" />
+                                                    </>
+                                                )
+                                            })()}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col gap-1">
+                                            {doc.status !== 'POSTED' && (
+                                                <Badge variant={badgeStyle.variant as any} className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">
+                                                    {badgeStyle.label}
+                                                </Badge>
+                                            )}
+                                            {/* Additional Status Badges */}
+                                            <div className="flex flex-wrap gap-1">
+                                                {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && doc.status !== 'PAID' && (
+                                                    <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
+                                                )}
+                                                {doc.po_receiving_status === 'RECEIVED' && (
+                                                    <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-orange-600 font-bold whitespace-nowrap">
+                                                        {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
                                                     </Badge>
                                                 )}
-                                                {/* Additional Status Badges */}
-                                                <div className="flex flex-wrap gap-1">
-                                                    {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && doc.status !== 'PAID' && (
-                                                        <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
-                                                    )}
-                                                    {doc.po_receiving_status === 'RECEIVED' && (
-                                                        <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-orange-600 font-bold whitespace-nowrap">
-                                                            {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
-                                                        </Badge>
-                                                    )}
-                                                </div>
                                             </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                {/* Purchase Order Link (Only for non-Notes or if Note has no originating inv) */}
-                                                {doc.purchase_order && !isNote && (
-                                                    <button
-                                                        onClick={() => setViewingTransaction({ type: 'purchase_order', id: doc.purchase_order!, view: 'details' })}
-                                                        className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                                    >
-                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Orden de Compra</span>
-                                                        OC-{doc.purchase_order_number || doc.purchase_order}
-                                                    </button>
-                                                )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col gap-1">
+                                            {/* Purchase Order Link (Only for non-Notes or if Note has no originating inv) */}
+                                            {doc.purchase_order && !isNote && (
+                                                <button
+                                                    onClick={() => setViewingTransaction({ type: 'purchase_order', id: doc.purchase_order!, view: 'details' })}
+                                                    className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                >
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">Orden de Compra</span>
+                                                    OC-{doc.purchase_order_number || doc.purchase_order}
+                                                </button>
+                                            )}
 
-                                                {doc.service_obligation && (
-                                                    <button
-                                                        onClick={() => setViewingTransaction({ type: 'service_obligation', id: doc.service_obligation!, view: 'details' })}
-                                                        className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                                    >
-                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Servicio Recurrente</span>
-                                                        OB-{doc.service_obligation}
-                                                    </button>
-                                                )}
+                                            {doc.service_obligation && (
+                                                <button
+                                                    onClick={() => setViewingTransaction({ type: 'service_obligation', id: doc.service_obligation!, view: 'details' })}
+                                                    className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                >
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">Servicio Recurrente</span>
+                                                    OB-{doc.service_obligation}
+                                                </button>
+                                            )}
 
-                                                {/* Show Originating Invoice if this is a Note */}
-                                                {isNote && doc.related_documents?.invoices?.filter((inv: any) => inv.id !== doc.id && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)).map((inv: any) => (
-                                                    <button
-                                                        key={inv.id}
-                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                                        className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                                    >
-                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Origen: {inv.dte_type === 'FACTURA' ? 'Factura' : 'Boleta'}</span>
-                                                        {inv.dte_type === 'FACTURA' ? `FACT-${inv.number}` : `BOL-${inv.number}`}
-                                                    </button>
-                                                ))}
+                                            {/* Show Originating Invoice if this is a Note */}
+                                            {isNote && doc.related_documents?.invoices?.filter((inv: any) => inv.id !== doc.id && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)).map((inv: any) => (
+                                                <button
+                                                    key={inv.id}
+                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                                    className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                >
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">Origen: {inv.dte_type === 'FACTURA' ? 'Factura' : 'Boleta'}</span>
+                                                    {inv.dte_type === 'FACTURA' ? `FACT-${inv.number}` : `BOL-${inv.number}`}
+                                                </button>
+                                            ))}
 
-                                                {/* Stock Moves: For NC/ND show specific moves, for others show order receipts */}
-                                                {isNote ? (
-                                                    doc.related_stock_moves?.map((move: any) => (
-                                                        <button
-                                                            key={move.id}
-                                                            onClick={() => setViewingTransaction({ type: 'inventory', id: move.id, view: 'details' })}
-                                                            className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                                        >
-                                                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
-                                                            MOV-{move.id}
-                                                        </button>
-                                                    ))
-                                                ) : (
-                                                    doc.related_documents?.receipts?.map((rec: any) => (
-                                                        <button
-                                                            key={rec.id}
-                                                            onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
-                                                            className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                                        >
-                                                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
-                                                            {rec.number}
-                                                        </button>
-                                                    ))
-                                                )}
-
-                                                {/* Payments specific to this Document */}
-                                                {doc.related_documents?.payments?.filter((p: any) => p.invoice_id === doc.id).map((pay: any) => (
+                                            {/* Stock Moves: For NC/ND show specific moves, for others show order receipts */}
+                                            {isNote ? (
+                                                doc.related_stock_moves?.map((move: any) => (
                                                     <button
-                                                        key={pay.id}
-                                                        onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
-                                                        className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                        key={move.id}
+                                                        onClick={() => setViewingTransaction({ type: 'inventory', id: move.id, view: 'details' })}
+                                                        className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                                     >
-                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
-                                                        {pay.code}
+                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
+                                                        MOV-{move.id}
                                                     </button>
-                                                ))}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex justify-center space-x-1">
-                                                {/* Open Action Panel */}
-                                                {doc.purchase_order ? (
+                                                ))
+                                            ) : (
+                                                doc.related_documents?.receipts?.map((rec: any) => (
+                                                    <button
+                                                        key={rec.id}
+                                                        onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
+                                                        className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                    >
+                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
+                                                        {rec.number}
+                                                    </button>
+                                                ))
+                                            )}
+
+                                            {/* Payments specific to this Document */}
+                                            {doc.related_documents?.payments?.filter((p: any) => p.invoice_id === doc.id).map((pay: any) => (
+                                                <button
+                                                    key={pay.id}
+                                                    onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
+                                                    className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                                >
+                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
+                                                    {pay.code}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-center space-x-1">
+                                            {/* Open Action Panel */}
+                                            {doc.purchase_order ? (
+                                                <Button
+                                                    variant="default"
+                                                    size="sm"
+                                                    onClick={() => setSelectedOrderId(doc.purchase_order!)}
+                                                    title="Gestionar Orden"
+                                                    className="h-8 px-3"
+                                                >
+                                                    <MoreVertical className="h-4 w-4 mr-1" />
+                                                    Gestionar
+                                                </Button>
+                                            ) : (
+                                                <>
+
+                                                    {/* View Details */}
                                                     <Button
-                                                        variant="default"
-                                                        size="sm"
-                                                        onClick={() => setSelectedOrderId(doc.purchase_order!)}
-                                                        title="Gestionar Orden"
-                                                        className="h-8 px-3"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'details' })}
+                                                        title="Ver Detalle"
                                                     >
-                                                        <MoreVertical className="h-4 w-4 mr-1" />
-                                                        Gestionar
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
-                                                ) : (
-                                                    <>
 
-                                                        {/* View Details */}
+                                                    {/* Finalize Folio (Draft only) */}
+                                                    {doc.status === 'DRAFT' && (
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'details' })}
-                                                            title="Ver Detalle"
+                                                            className="text-amber-600"
+                                                            onClick={() => setCompletingDoc(doc)}
+                                                            title="Completar Folio"
                                                         >
-                                                            <Eye className="h-4 w-4" />
+                                                            <FileEdit className="h-4 w-4" />
                                                         </Button>
+                                                    )}
 
-                                                        {/* Finalize Folio (Draft only) */}
-                                                        {doc.status === 'DRAFT' && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-amber-600"
-                                                                onClick={() => setCompletingDoc(doc)}
-                                                                title="Completar Folio"
-                                                            >
-                                                                <FileEdit className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-
-                                                        {/* Receive/Send Merchandise */}
-                                                        {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-orange-600"
-                                                                onClick={() => setReceivingDoc(doc)}
-                                                                title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
-                                                            >
-                                                                <Package className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
+                                                    {/* Receive/Send Merchandise */}
+                                                    {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-orange-600"
+                                                            onClick={() => setReceivingDoc(doc)}
+                                                            title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
+                                                        >
+                                                            <Package className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
 
 
-                                                        {/* Credit/Debit Note (Only for primary documents with folio) */}
-                                                        {doc.purchase_order && !isNote && doc.number && doc.status !== 'DRAFT' && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-amber-600"
-                                                                onClick={() => setNotingDoc(doc)}
-                                                                title="Registrar Nota Crédito/Débito"
-                                                            >
-                                                                <FileBadge className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
+                                                    {/* Credit/Debit Note (Only for primary documents with folio) */}
+                                                    {doc.purchase_order && !isNote && doc.number && doc.status !== 'DRAFT' && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-amber-600"
+                                                            onClick={() => setNotingDoc(doc)}
+                                                            title="Registrar Nota Crédito/Débito"
+                                                        >
+                                                            <FileBadge className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
 
-                                                        {/* Register Payment / Refund */}
-                                                        {(doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status) && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-emerald-600"
-                                                                onClick={() => setPayingDoc(doc)}
-                                                                title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
-                                                            >
-                                                                <Banknote className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
+                                                    {/* Register Payment / Refund */}
+                                                    {(doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status) && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-emerald-600"
+                                                            onClick={() => setPayingDoc(doc)}
+                                                            title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
+                                                        >
+                                                            <Banknote className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
 
-                                                        {/* Payment History */}
-                                                        {((doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0) && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-emerald-600"
-                                                                onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
-                                                                title="Historial de Pagos"
-                                                            >
-                                                                <History className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
+                                                    {/* Payment History */}
+                                                    {((doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0) && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-emerald-600"
+                                                            onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
+                                                            title="Historial de Pagos"
+                                                        >
+                                                            <History className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
 
-                                                        {doc.status === 'DRAFT' ? (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-destructive"
-                                                                onClick={() => handleDelete(doc.id)}
-                                                                title="Eliminar"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        ) : doc.status !== 'CANCELLED' ? (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-destructive hover:text-destructive"
-                                                                onClick={() => handleAnnul(doc.id)}
-                                                                title="Anular Documento"
-                                                            >
-                                                                <X className="h-4 w-4" />
-                                                            </Button>
-                                                        ) : null}
-                                                    </>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                )
-                            })}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                                    {doc.status === 'DRAFT' ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-destructive"
+                                                            onClick={() => handleDelete(doc.id)}
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    ) : doc.status !== 'CANCELLED' ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-destructive hover:text-destructive"
+                                                            onClick={() => handleAnnul(doc.id)}
+                                                            title="Anular Documento"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    ) : null}
+                                                </>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
+            </div>
 
             {
                 viewingTransaction && (

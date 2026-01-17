@@ -110,9 +110,9 @@ export function PricingRuleList() {
                 />
             )}
 
-            <div className="rounded-md border">
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                         <TableRow>
                             <TableHead>Nombre</TableHead>
                             <TableHead>Aplica a</TableHead>
@@ -128,7 +128,7 @@ export function PricingRuleList() {
                     </TableHeader>
                     <TableBody>
                         {rules.map((rule) => (
-                            <TableRow key={rule.id}>
+                            <TableRow key={rule.id} className="group hover:bg-muted/20 transition-colors">
                                 <TableCell className="font-medium">{rule.name}</TableCell>
                                 <TableCell>
                                     {rule.product_name ? (

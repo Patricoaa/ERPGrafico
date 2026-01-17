@@ -328,9 +328,9 @@ export function ReplenishmentRuleList() {
                 </div>
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                         <TableRow>
                             <TableHead>Producto</TableHead>
                             <TableHead>Almacén</TableHead>
@@ -353,7 +353,7 @@ export function ReplenishmentRuleList() {
                             </TableRow>
                         ) : (
                             rules.map((rule) => (
-                                <TableRow key={rule.id}>
+                                <TableRow key={rule.id} className="group hover:bg-muted/20 transition-colors">
                                     <TableCell>
                                         <div className="font-medium">{rule.product_code}</div>
                                         <div className="text-xs text-muted-foreground">{rule.product_name}</div>

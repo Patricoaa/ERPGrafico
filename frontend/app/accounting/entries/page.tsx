@@ -96,9 +96,9 @@ export default function EntriesPage() {
                     <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} />
                 </div>
             </div>
-            <div className="rounded-md border">
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                         <TableRow>
                             <TableHead>Número</TableHead>
                             <TableHead>Fecha</TableHead>
@@ -110,7 +110,7 @@ export default function EntriesPage() {
                     </TableHeader>
                     <TableBody>
                         {entries.map((entry) => (
-                            <TableRow key={entry.id}>
+                            <TableRow key={entry.id} className="group hover:bg-muted/20 transition-colors">
                                 <TableCell className="font-medium">AS-{entry.number}</TableCell>
                                 <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
                                 <TableCell>{entry.description}</TableCell>
