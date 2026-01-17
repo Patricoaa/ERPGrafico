@@ -26,7 +26,13 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
     filterset_class = ProductFilter
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Product.objects.all()
+        
+        # If it's a detail request (requesting a single object by ID), 
+        # we MUST return the full queryset to avoid 404s on archived products.
+        if self.kwargs.get('pk') or self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+            return queryset
+
         active_param = self.request.query_params.get('active')
         
         # Default behavior: Show only active products
