@@ -13,11 +13,13 @@ import { Button } from "@/components/ui/button"
 import { AlertCircle, ExternalLink, Package } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { Loader2, RefreshCcw } from "lucide-react"
 
 export interface Restriction {
     type: string
     label: string
     description: string
+    action_hint?: string
     count: number
     link: string
 }
@@ -27,13 +29,17 @@ interface ArchivingRestrictionsDialogProps {
     onOpenChange: (open: boolean) => void
     productName: string
     restrictions: Restriction[]
+    onRetry?: () => void
+    isRetrying?: boolean
 }
 
 export function ArchivingRestrictionsDialog({
     open,
     onOpenChange,
     productName,
-    restrictions
+    restrictions,
+    onRetry,
+    isRetrying = false
 }: ArchivingRestrictionsDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -63,6 +69,11 @@ export function ArchivingRestrictionsDialog({
                                 <p className="text-sm text-muted-foreground">
                                     {restriction.description}
                                 </p>
+                                {restriction.action_hint && (
+                                    <p className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block">
+                                        💡 {restriction.action_hint}
+                                    </p>
+                                )}
                             </div>
                             <Link href={restriction.link} target="_blank">
                                 <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary hover:text-primary hover:bg-primary/10">
@@ -74,10 +85,24 @@ export function ArchivingRestrictionsDialog({
                     ))}
                 </div>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-                        Entendido
+                <DialogFooter className="gap-2 sm:gap-0">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
+                        Cerrar
                     </Button>
+                    {onRetry && (
+                        <Button
+                            onClick={onRetry}
+                            disabled={isRetrying}
+                            className="flex-1 sm:flex-none"
+                        >
+                            {isRetrying ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                                <RefreshCcw className="h-4 w-4 mr-2" />
+                            )}
+                            Reintentar Archivado
+                        </Button>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>

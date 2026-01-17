@@ -651,6 +651,7 @@ class ProductService:
                 'type': 'stock',
                 'label': 'Stock Activo',
                 'description': f'El producto tiene {on_hand} {product.uom.name if product.uom else ""} en inventario.',
+                'action_hint': 'Ajuste el stock a cero para proceder.',
                 'count': float(on_hand),
                 'link': '/inventory/stock'
             })
@@ -663,6 +664,7 @@ class ProductService:
                 'type': 'bom_component',
                 'label': 'Componente de BOM',
                 'description': f'Este producto es parte de {bom_lines.count()} Lista(s) de Materiales activa(s).',
+                'action_hint': 'Elimine el producto de los BOMs o desactive los BOMs para proceder.',
                 'count': bom_lines.count(),
                 'link': '/production/boms'
             })
@@ -675,6 +677,7 @@ class ProductService:
                 'type': 'bom_parent',
                 'label': 'Producto con BOM',
                 'description': 'Este producto tiene una Lista de Materiales activa.',
+                'action_hint': 'Desactive el BOM del producto para proceder.',
                 'count': boms.count(),
                 'link': '/production/boms'
             })
@@ -690,6 +693,7 @@ class ProductService:
                 'type': 'work_order',
                 'label': 'Órdenes de Trabajo Pendientes',
                 'description': f'Hay {pending_ots.count()} OT(s) en proceso que requieren o fabrican este producto.',
+                'action_hint': 'Finalice, cierre o anule las OTs pendientes para proceder.',
                 'count': pending_ots.count(),
                 'link': '/production/orders'
             })
@@ -705,6 +709,7 @@ class ProductService:
                 'type': 'sale_order',
                 'label': 'Notas de Venta Pendientes',
                 'description': f'Hay {pending_sales.count()} Nota(s) de Venta con despachos pendientes.',
+                'action_hint': 'Complete los despachos o anule las Notas de Venta para proceder.',
                 'count': pending_sales.count(),
                 'link': '/billing/sales'
             })
@@ -720,6 +725,7 @@ class ProductService:
                 'type': 'purchase_order',
                 'label': 'Órdenes de Compra en Proceso',
                 'description': f'Hay {pending_purchases.count()} Orden(es) de Compra pendientes de recepción.',
+                'action_hint': 'Finalice las recepciones o anule las órdenes para proceder.',
                 'count': pending_purchases.count(),
                 'link': '/billing/purchases'
             })
@@ -728,13 +734,14 @@ class ProductService:
         from .models import Subscription
         active_subs = Subscription.objects.filter(
             product=product, 
-            status__in=[Subscription.Status.ACTIVE, Subscription.Status.PAUSED]
+            status=Subscription.Status.ACTIVE
         )
         if active_subs.exists():
             restrictions.append({
                 'type': 'subscription',
                 'label': 'Suscripciones Activas',
-                'description': f'Este producto tiene {active_subs.count()} suscripción(es) activa(s) o pausada(s).',
+                'description': f'Este producto tiene {active_subs.count()} suscripción(es) activa(s).',
+                'action_hint': 'Pause o cancele las suscripciones para proceder.',
                 'count': active_subs.count(),
                 'link': '/subscriptions'
             })

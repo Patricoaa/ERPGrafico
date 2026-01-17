@@ -54,6 +54,8 @@ export function ProductList() {
     const [restrictions, setRestrictions] = useState<Restriction[]>([])
     const [isRestrictionsDialogOpen, setIsRestrictionsDialogOpen] = useState(false)
     const [targetProductName, setTargetProductName] = useState("")
+    const [isRetrying, setIsRetrying] = useState(false)
+    const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
 
     const fetchProducts = async () => {
         setLoading(true)
@@ -74,18 +76,23 @@ export function ProductList() {
         }
     }
 
-    const handleArchive = async (product: Product) => {
+    const handleArchive = async (product: Product, isRetry = false) => {
         const isArchiving = product.active
         const action = isArchiving ? "archivar" : "restaurar"
 
-        let message = `¿Está seguro de que desea ${action} este producto?`
-        if (isArchiving && product.product_type === 'SUBSCRIPTION') {
-            message += "\n\nIMPORTANTE: Al archivar este producto, sus suscripciones activas/pausadas se ocultarán del gestor de suscripciones hasta que el producto sea restaurado."
-        } else if (!isArchiving && product.product_type === 'SUBSCRIPTION') {
-            message += "\n\nAl restaurar el producto, sus suscripciones volverán a aparecer en el gestor central."
+        if (!isRetry) {
+            let message = `¿Está seguro de que desea ${action} este producto?`
+            if (isArchiving && product.product_type === 'SUBSCRIPTION') {
+                message += "\n\nIMPORTANTE: Al archivar este producto, sus suscripciones activas/pausadas se ocultarán del gestor de suscripciones hasta que el producto sea restaurado."
+            } else if (!isArchiving && product.product_type === 'SUBSCRIPTION') {
+                message += "\n\nAl restaurar el producto, sus suscripciones volverán a aparecer en el gestor central."
+            }
+
+            if (!confirm(message)) return
         }
 
-        if (!confirm(message)) return
+        if (isRetry) setIsRetrying(true)
+        setCurrentArchivingProduct(product)
 
         try {
             await api.patch(`/inventory/products/${product.id}/`, { active: !product.active })
@@ -94,6 +101,7 @@ export function ProductList() {
                     ? `Las suscripciones asociadas han sido ${isArchiving ? 'ocultas' : 'restauradas en la lista'}.`
                     : undefined
             })
+            setIsRestrictionsDialogOpen(false)
             fetchProducts()
         } catch (error: any) {
             console.error(`Error ${action} product:`, error)
@@ -102,9 +110,12 @@ export function ProductList() {
                 setTargetProductName(product.name)
                 setRestrictions(error.response.data.restrictions)
                 setIsRestrictionsDialogOpen(true)
+                if (isRetry) toast.error("Aún existen dependencias por resolver.")
             } else {
                 toast.error(`Error al ${action} el producto.`)
             }
+        } finally {
+            if (isRetry) setIsRetrying(false)
         }
     }
 
@@ -275,6 +286,8 @@ export function ProductList() {
                 onOpenChange={setIsRestrictionsDialogOpen}
                 productName={targetProductName}
                 restrictions={restrictions}
+                onRetry={currentArchivingProduct ? () => handleArchive(currentArchivingProduct, true) : undefined}
+                isRetrying={isRetrying}
             />
         </div >
     )
