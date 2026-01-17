@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator
 from core.models import User
 from accounting.models import Account, AccountType
 from inventory.models import Product, Warehouse
@@ -114,7 +115,7 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
 class PurchaseLine(models.Model):
     order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='lines')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='purchase_lines')
-    quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2)
+    quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     uom = models.ForeignKey(
         'inventory.UoM', 
         on_delete=models.PROTECT, 
@@ -122,8 +123,8 @@ class PurchaseLine(models.Model):
         related_name='purchase_lines',
         verbose_name=_("Unidad")
     )
-    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=0)
-    tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00)
+    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=0, validators=[MinValueValidator(0)])
+    tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00, validators=[MinValueValidator(0)])
     
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False)
     
@@ -133,6 +134,7 @@ class PurchaseLine(models.Model):
         max_digits=10, 
         decimal_places=2, 
         default=0,
+        validators=[MinValueValidator(0)],
         help_text="Cantidad total recibida de esta línea"
     )
 
@@ -220,6 +222,7 @@ class PurchaseReceiptLine(models.Model):
         _("Cantidad Recibida"), 
         max_digits=10, 
         decimal_places=2,
+        validators=[MinValueValidator(0)],
         help_text="Cantidad recibida en esta recepción"
     )
 
@@ -244,6 +247,7 @@ class PurchaseReceiptLine(models.Model):
         _("Costo Unitario Real"), 
         max_digits=12, 
         decimal_places=0,
+        validators=[MinValueValidator(0)],
         help_text="Costo unitario real al momento de la recepción"
     )
     total_cost = models.DecimalField(

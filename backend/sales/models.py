@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator
 from core.models import User
 from accounting.models import Account
 from core.mixins import TotalsCalculationMixin
@@ -84,7 +85,7 @@ class SaleLine(models.Model):
     first_name = models.CharField(_("Nombre"), max_length=100, blank=True) # Not relevant for context but matching context lines
     product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT, related_name='sale_lines', null=True, blank=True)
     description = models.CharField(_("Descripción"), max_length=255)
-    quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2, default=1)
+    quantity = models.DecimalField(_("Cantidad"), max_digits=10, decimal_places=2, default=1, validators=[MinValueValidator(0)])
     uom = models.ForeignKey(
         'inventory.UoM', 
         on_delete=models.PROTECT, 
@@ -92,8 +93,8 @@ class SaleLine(models.Model):
         related_name='sale_lines',
         verbose_name=_("Unidad")
     )
-    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0)
-    tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00) # Chile default
+    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0, validators=[MinValueValidator(0)])
+    tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00, validators=[MinValueValidator(0)]) # Chile default
     
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False)
     
@@ -103,6 +104,7 @@ class SaleLine(models.Model):
         max_digits=10, 
         decimal_places=2, 
         default=0,
+        validators=[MinValueValidator(0)],
         help_text="Cantidad total despachada de esta línea"
     )
 
@@ -222,10 +224,11 @@ class SaleDeliveryLine(models.Model):
         max_digits=10, 
         decimal_places=2,
         default=0,
+        validators=[MinValueValidator(0)],
         help_text="Cantidad despachada en este despacho"
     )
-    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0, default=0)
-    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=0, default=0)
+    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
+    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False, default=0)
     total_cost = models.DecimalField(_("Costo Total"), max_digits=12, decimal_places=0, editable=False, default=0)
     

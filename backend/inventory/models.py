@@ -1,6 +1,7 @@
 from django.utils import timezone
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator
 from accounting.models import Account, AccountType
 
 class ProductCategory(models.Model):
@@ -245,6 +246,7 @@ class Product(models.Model):
         max_digits=12,
         decimal_places=0,
         null=True, blank=True,
+        validators=[MinValueValidator(0)],
         help_text=_("Monto mensual/periódico de la suscripción")
     )
     subscription_start_date = models.DateField(
@@ -326,7 +328,7 @@ class Product(models.Model):
         help_text=_("Bodega sugerida automáticamente al recibir este producto.")
     )
 
-    sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0)
+    sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
     
     # Accounting Overrides
@@ -718,12 +720,12 @@ class PricingRule(models.Model):
     
     uom = models.ForeignKey(UoM, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Unidad de Medida"))
     operator = models.CharField(_("Operador"), max_length=5, choices=Operator.choices, default=Operator.GE)
-    min_quantity = models.DecimalField(_("Cantidad Mínima / Desde"), max_digits=12, decimal_places=4, default=1.0)
-    max_quantity = models.DecimalField(_("Cantidad Máxima / Hasta"), max_digits=12, decimal_places=4, null=True, blank=True, help_text=_("Solo usado para el operador 'Entre'"))
+    min_quantity = models.DecimalField(_("Cantidad Mínima / Desde"), max_digits=12, decimal_places=4, default=1.0, validators=[MinValueValidator(0)])
+    max_quantity = models.DecimalField(_("Cantidad Máxima / Hasta"), max_digits=12, decimal_places=4, null=True, blank=True, validators=[MinValueValidator(0)], help_text=_("Solo usado para el operador 'Entre'"))
     
     rule_type = models.CharField(_("Tipo de Regla"), max_length=20, choices=RuleType.choices, default=RuleType.FIXED)
-    fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=12, decimal_places=0, null=True, blank=True)
-    discount_percentage = models.DecimalField(_("Descuento %"), max_digits=5, decimal_places=2, null=True, blank=True)
+    fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
+    discount_percentage = models.DecimalField(_("Descuento %"), max_digits=5, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
     
     start_date = models.DateField(_("Fecha Inicio"), null=True, blank=True)
     end_date = models.DateField(_("Fecha Fin"), null=True, blank=True)
@@ -791,8 +793,8 @@ class ProductCustomField(models.Model):
 class ReorderingRule(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reordering_rules')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='reordering_rules')
-    min_quantity = models.DecimalField(_("Cantidad Mínima"), max_digits=12, decimal_places=4, default=0)
-    max_quantity = models.DecimalField(_("Cantidad Máxima"), max_digits=12, decimal_places=4, default=0)
+    min_quantity = models.DecimalField(_("Cantidad Mínima"), max_digits=12, decimal_places=4, default=0, validators=[MinValueValidator(0)])
+    max_quantity = models.DecimalField(_("Cantidad Máxima"), max_digits=12, decimal_places=4, default=0, validators=[MinValueValidator(0)])
     
     active = models.BooleanField(_("Activo"), default=True)
 

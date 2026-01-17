@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator
 from sales.models import SaleOrder
 from inventory.models import Product, Warehouse, UoM
 
@@ -135,7 +136,7 @@ class ProductionConsumption(models.Model):
     work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='consumptions')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='production_usages')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='production_usages')
-    quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
+    quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4, validators=[MinValueValidator(0)])
     
     date = models.DateField(_("Fecha"), auto_now_add=True)
     
@@ -161,8 +162,8 @@ class WorkOrderMaterial(models.Model):
     """
     work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='materials')
     component = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='ot_material_usages')
-    quantity_planned = models.DecimalField(_("Cantidad Planificada"), max_digits=12, decimal_places=4)
-    quantity_consumed = models.DecimalField(_("Cantidad Consumida"), max_digits=12, decimal_places=4, default=0)
+    quantity_planned = models.DecimalField(_("Cantidad Planificada"), max_digits=12, decimal_places=4, validators=[MinValueValidator(0)])
+    quantity_consumed = models.DecimalField(_("Cantidad Consumida"), max_digits=12, decimal_places=4, default=0, validators=[MinValueValidator(0)])
     uom = models.ForeignKey(UoM, on_delete=models.PROTECT, related_name='ot_materials')
     
     # Field to track if this came from a BOM or was added manually
@@ -181,7 +182,7 @@ class WorkOrderMaterial(models.Model):
         related_name='work_order_materials',
         verbose_name=_("Proveedor")
     )
-    unit_price = models.DecimalField(_("Precio Unitario OC"), max_digits=12, decimal_places=0, default=0)
+    unit_price = models.DecimalField(_("Precio Unitario OC"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
     purchase_line = models.ForeignKey(
         'purchasing.PurchaseLine', 
         on_delete=models.SET_NULL, 
@@ -279,6 +280,7 @@ class BillOfMaterialsLine(models.Model):
         _("Cantidad"), 
         max_digits=12, 
         decimal_places=4,
+        validators=[MinValueValidator(0)],
         help_text="Cantidad necesaria por unidad producida"
     )
     uom = models.ForeignKey(

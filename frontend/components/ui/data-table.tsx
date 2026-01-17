@@ -11,6 +11,8 @@ import {
     getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
+    getFacetedUniqueValues,
+    getFacetedRowModel,
     useReactTable,
 } from "@tanstack/react-table"
 
@@ -24,12 +26,24 @@ import {
 } from "@/components/ui/table"
 
 import { DataTablePagination } from "./data-table-pagination"
+import { DataTableToolbar } from "./data-table-toolbar"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     defaultPageSize?: number
     pageSizeOptions?: number[]
+    filterColumn?: string
+    searchPlaceholder?: string
+    facetedFilters?: {
+        column: string
+        title: string
+        options?: {
+            label: string
+            value: string
+            icon?: React.ComponentType<{ className?: string }>
+        }[]
+    }[]
 }
 
 export function DataTable<TData, TValue>({
@@ -37,6 +51,9 @@ export function DataTable<TData, TValue>({
     data,
     defaultPageSize = 20,
     pageSizeOptions = [10, 20, 50, 100],
+    filterColumn,
+    searchPlaceholder,
+    facetedFilters,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -50,6 +67,8 @@ export function DataTable<TData, TValue>({
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
+        getFacetedRowModel: getFacetedRowModel(),
+        getFacetedUniqueValues: getFacetedUniqueValues(),
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onColumnVisibilityChange: setColumnVisibility,
@@ -69,6 +88,14 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="space-y-4">
+            {(filterColumn || (facetedFilters && facetedFilters.length > 0)) && (
+                <DataTableToolbar
+                    table={table}
+                    filterColumn={filterColumn}
+                    searchPlaceholder={searchPlaceholder}
+                    facetedFilters={facetedFilters}
+                />
+            )}
             <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
                 <Table>
                     <TableHeader className="bg-muted/30">

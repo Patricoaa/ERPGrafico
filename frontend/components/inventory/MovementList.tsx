@@ -185,7 +185,23 @@ export function MovementList() {
             </div>
 
             <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <DataTable columns={columns} data={moves} />
+                <DataTable
+                    columns={columns}
+                    data={moves}
+                    filterColumn="product_name"
+                    searchPlaceholder="Buscar por producto..."
+                    facetedFilters={[
+                        {
+                            column: "move_type",
+                            title: "Tipo",
+                            options: [
+                                { label: "Entrada", value: "IN" },
+                                { label: "Salida", value: "OUT" },
+                                { label: "Ajuste", value: "ADJ" },
+                            ],
+                        },
+                    ]}
+                />
             </div>
 
             {

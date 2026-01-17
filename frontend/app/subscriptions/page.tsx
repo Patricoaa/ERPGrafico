@@ -287,7 +287,24 @@ export default function SubscriptionsPage() {
                         Cargando...
                     </div>
                 ) : (
-                    <DataTable columns={columns} data={subscriptions} defaultPageSize={20} />
+                    <DataTable
+                        columns={columns}
+                        data={subscriptions}
+                        filterColumn="product"
+                        searchPlaceholder="Buscar por producto..."
+                        facetedFilters={[
+                            {
+                                column: "status",
+                                title: "Estado",
+                                options: [
+                                    { label: "Activo", value: "ACTIVE" },
+                                    { label: "Pausado", value: "PAUSED" },
+                                    { label: "Cancelado", value: "CANCELLED" },
+                                ],
+                            },
+                        ]}
+                        defaultPageSize={20}
+                    />
                 )}
             </div>
         </div>

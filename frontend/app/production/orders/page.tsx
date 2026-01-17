@@ -114,6 +114,14 @@ export default function WorkOrdersPage() {
             ),
         },
         {
+            accessorKey: "status",
+            header: "Estado",
+            // We can keep it or hide it, but we need it for faceted filter to work easily
+            // Actually, if we use it in facetedFilters, DataTable needs this column.
+            cell: ({ row }) => null,
+            enableHiding: true,
+        },
+        {
             id: "status_stage",
             header: "Estado / Etapa",
             cell: ({ row }) => (
@@ -264,7 +272,25 @@ export default function WorkOrdersPage() {
                     </div>
                 ) : (
                     <div className="rounded-md border bg-white">
-                        <DataTable columns={columns} data={orders} />
+                        <DataTable
+                            columns={columns}
+                            data={orders}
+                            filterColumn="description"
+                            searchPlaceholder="Buscar por descripción..."
+                            facetedFilters={[
+                                {
+                                    column: "status",
+                                    title: "Estado",
+                                    options: [
+                                        { label: "Borrador", value: "DRAFT" },
+                                        { label: "Planificada", value: "PLANNED" },
+                                        { label: "En Proceso", value: "IN_PROGRESS" },
+                                        { label: "Terminada", value: "FINISHED" },
+                                        { label: "Anulada", value: "CANCELLED" },
+                                    ],
+                                },
+                            ]}
+                        />
                     </div>
                 )}
             </div>

@@ -282,8 +282,33 @@ export default function PaymentsPage() {
                     Cargando movimientos...
                 </div>
             ) : (
-                <DataTable columns={columns} data={payments} defaultPageSize={20} />
-            )}
+                <DataTable
+                    columns={columns}
+                    data={payments}
+                    filterColumn="code"
+                    searchPlaceholder="Buscar por número..."
+                    facetedFilters={[
+                        {
+                            column: "payment_type",
+                            title: "Tipo",
+                            options: [
+                                { label: "Ingreso", value: "INBOUND" },
+                                { label: "Egreso", value: "OUTBOUND" },
+                            ],
+                        },
+                        {
+                            column: "payment_method",
+                            title: "Método",
+                            options: [
+                                { label: "Efectivo", value: "CASH" },
+                                { label: "Tarjeta", value: "CARD" },
+                                { label: "Transferencia", value: "TRANSFER" },
+                                { label: "Crédito", value: "CREDIT" },
+                            ],
+                        },
+                    ]}
+                    defaultPageSize={20}
+                />)}
 
             {viewingTransaction && (
                 <TransactionViewModal

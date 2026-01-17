@@ -415,7 +415,18 @@ export default function ReplenishmentPage() {
 
             <Card>
                 <CardContent>
-                    <DataTable columns={columns} data={rules} />
+                    <DataTable
+                        columns={columns}
+                        data={rules}
+                        filterColumn="product_name"
+                        searchPlaceholder="Buscar por producto..."
+                        facetedFilters={[
+                            {
+                                column: "warehouse_name",
+                                title: "Almacén",
+                            },
+                        ]}
+                    />
                 </CardContent>
             </Card>
         </div>

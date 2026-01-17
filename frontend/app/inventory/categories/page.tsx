@@ -132,7 +132,18 @@ export default function CategoriesPage() {
                 )}
             </div>
             <div className="rounded-md border">
-                <DataTable columns={columns} data={categories} />
+                <DataTable
+                    columns={columns}
+                    data={categories}
+                    filterColumn="name"
+                    searchPlaceholder="Buscar por nombre..."
+                    facetedFilters={[
+                        {
+                            column: "parent_name",
+                            title: "Categoría Padre",
+                        },
+                    ]}
+                />
             </div>
         </div>
     )

@@ -483,7 +483,25 @@ export default function PurchaseInvoicesPage() {
                     Cargando documentos...
                 </div>
             ) : (
-                <DataTable columns={columns} data={documents} defaultPageSize={20} />
+                <DataTable
+                    columns={columns}
+                    data={documents}
+                    defaultPageSize={20}
+                    filterColumn="partner_name"
+                    searchPlaceholder="Buscar por proveedor..."
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Folio Pendiente", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                                { label: "Pagado", value: "PAID" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ],
+                        },
+                    ]}
+                />
             )}
 
             {

@@ -313,8 +313,25 @@ export function ProductList() {
                         <div className="text-muted-foreground">Cargando productos...</div>
                     </div>
                 ) : (
-                    <DataTable columns={columns} data={products} />
-                )}
+                    <DataTable
+                        columns={columns}
+                        data={products}
+                        filterColumn="name"
+                        searchPlaceholder="Buscar productos..."
+                        facetedFilters={[
+                            {
+                                column: "product_type",
+                                title: "Tipo",
+                                options: [
+                                    { label: "Almacenable", value: "STORABLE" },
+                                    { label: "Consumible", value: "CONSUMABLE" },
+                                    { label: "Servicio", value: "SERVICE" },
+                                    { label: "Fabricable", value: "MANUFACTURABLE" },
+                                    { label: "Suscripción", value: "SUBSCRIPTION" },
+                                ],
+                            },
+                        ]}
+                    />)}
             </div>
 
             <ProductForm
