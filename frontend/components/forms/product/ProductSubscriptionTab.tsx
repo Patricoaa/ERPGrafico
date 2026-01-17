@@ -27,7 +27,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
                             name="subscription_supplier"
@@ -45,40 +45,6 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                     </FormControl>
                                     <FormDescription>
                                         {isEditing ? "El proveedor no puede cambiarse una vez activa." : "Proveedor de la suscripción."}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="subscription_amount"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {form.watch("is_variable_amount") ? "Monto de Referencia" : "Monto Fijo"} <span className="text-destructive">*</span>
-                                    </FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                            <Input
-                                                type="number"
-                                                min={0}
-                                                className="pl-7"
-                                                placeholder={form.watch("is_variable_amount") ? "Ej: 0" : "50000"}
-                                                onChange={field.onChange}
-                                                onBlur={field.onBlur}
-                                                name={field.name}
-                                                ref={field.ref}
-                                                value={field.value ?? ""}
-                                            />
-                                        </div>
-                                    </FormControl>
-                                    <FormDescription>
-                                        {form.watch("is_variable_amount")
-                                            ? "Monto base estimado. Requerido como base."
-                                            : "Monto periódico de la suscripción."}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -106,15 +72,6 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 </FormItem>
                             )}
                         />
-                    </div>
-
-                    <div className="flex flex-row items-center justify-between rounded-lg border p-4 bg-primary/5">
-                        <div className="space-y-0.5">
-                            <FormLabel className="text-base text-primary">Activación Automática</FormLabel>
-                            <FormDescription>
-                                La suscripción se activará y comenzará a generar renovaciones automáticamente al guardar.
-                            </FormDescription>
-                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -299,6 +256,40 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                             onCheckedChange={field.onChange}
                                         />
                                     </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="subscription_amount"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        {form.watch("is_variable_amount") ? "Monto de Referencia (Opcional)" : "Monto Fijo"} {!form.watch("is_variable_amount") && <span className="text-destructive">*</span>}
+                                    </FormLabel>
+                                    <FormControl>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                className="pl-7"
+                                                placeholder={form.watch("is_variable_amount") ? "Ej: 0" : "50000"}
+                                                onChange={field.onChange}
+                                                onBlur={field.onBlur}
+                                                name={field.name}
+                                                ref={field.ref}
+                                                value={field.value ?? ""}
+                                            />
+                                        </div>
+                                    </FormControl>
+                                    <FormDescription>
+                                        {form.watch("is_variable_amount")
+                                            ? "Monto base estimado. Opcional para suscripciones variables."
+                                            : "Monto periódico de la suscripción."}
+                                    </FormDescription>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />

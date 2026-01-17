@@ -92,7 +92,8 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                 // Removed: id: product.id, which was overwriting line.id
                 unit_cost: parseFloat(product.last_purchase_price) || 0,
                 uom: (product.purchase_uom || product.uom)?.toString() || "",
-                uom_name: uoms.find(u => u.id.toString() === ((product.purchase_uom || product.uom)?.toString()))?.name
+                uom_name: uoms.find(u => u.id.toString() === ((product.purchase_uom || product.uom)?.toString()))?.name,
+                product_type: product.product_type
             })
         } else {
             updateLine(index, 'product', productId)

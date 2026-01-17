@@ -74,7 +74,8 @@ export function PurchaseCheckoutWizard({
                         unit_cost: l.unit_cost,
                         uom: l.uom,
                         uom_name: l.uom_name,
-                        tax_rate: l.tax_rate || 19
+                        tax_rate: l.tax_rate || 19,
+                        product_type: l.product_type
                     }))
                     setCurrentOrderLines(mappedLines)
                     setCurrentTotal(parseFloat(data.total))
