@@ -214,11 +214,13 @@ export function PurchaseCheckoutWizard({
             const formData = new FormData()
 
             // Order data
-            const payloadOrder = order ? { id: order.id } : {
+            const payloadOrder = {
+                id: order?.id, // Present if editing existing draft
                 supplier: selectedSupplierId ? parseInt(selectedSupplierId) : 0,
-                warehouse: parseInt(selectedWarehouseId),
+                warehouse: selectedWarehouseId ? parseInt(selectedWarehouseId) : null,
                 work_order: selectedWorkOrderId ? parseInt(selectedWorkOrderId) : null,
                 lines: currentOrderLines.map(l => ({
+                    id: l.id, // Important for matching existing lines in backend
                     product: l.id || l.product,
                     quantity: l.qty || l.quantity,
                     unit_cost: l.unit_cost || 0,

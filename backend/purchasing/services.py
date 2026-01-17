@@ -958,6 +958,12 @@ class PurchasingService:
         
         if 'id' in order_data:
             order = PurchaseOrder.objects.get(id=order_data['id'])
+            # If more than just ID is provided, update the order
+            if len(order_data) > 1:
+                order_serializer = WritePurchaseOrderSerializer(order, data=order_data, partial=True)
+                if not order_serializer.is_valid():
+                    raise ValidationError(order_serializer.errors)
+                order = order_serializer.save()
         else:
             order_serializer = WritePurchaseOrderSerializer(data=order_data)
             if not order_serializer.is_valid():
