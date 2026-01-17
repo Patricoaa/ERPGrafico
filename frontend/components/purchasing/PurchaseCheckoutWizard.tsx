@@ -270,7 +270,7 @@ export function PurchaseCheckoutWizard({
                 work_order: selectedWorkOrderId ? parseInt(selectedWorkOrderId) : null,
                 lines: currentOrderLines.map(l => ({
                     id: l.id, // Important for matching existing lines in backend
-                    product: l.id || l.product,
+                    product: l.product,
                     quantity: l.qty || l.quantity,
                     unit_cost: l.unit_cost || 0,
                     uom: l.uom,
