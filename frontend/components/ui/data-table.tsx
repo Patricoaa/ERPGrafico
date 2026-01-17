@@ -35,6 +35,7 @@ interface DataTableProps<TData, TValue> {
     pageSizeOptions?: number[]
     filterColumn?: string
     searchPlaceholder?: string
+    globalFilterFields?: string[] // Fields to include in global search
     facetedFilters?: {
         column: string
         title: string
@@ -53,10 +54,12 @@ export function DataTable<TData, TValue>({
     pageSizeOptions = [10, 20, 50, 100],
     filterColumn,
     searchPlaceholder,
+    globalFilterFields,
     facetedFilters,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = React.useState("")
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
 
@@ -71,11 +74,13 @@ export function DataTable<TData, TValue>({
         getFacetedUniqueValues: getFacetedUniqueValues(),
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
         state: {
             sorting,
             columnFilters,
+            globalFilter,
             columnVisibility,
             rowSelection,
         },
@@ -88,10 +93,11 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="space-y-4">
-            {(filterColumn || (facetedFilters && facetedFilters.length > 0)) && (
+            {(filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0)) && (
                 <DataTableToolbar
                     table={table}
                     filterColumn={filterColumn}
+                    globalFilterFields={globalFilterFields}
                     searchPlaceholder={searchPlaceholder}
                     facetedFilters={facetedFilters}
                 />

@@ -145,7 +145,7 @@ export default function UoMCategoriesPage() {
                 </Button>
             </div>
 
-            <div className="rounded-md border">
+            <div className="">
                 <DataTable columns={columns} data={categories} />
             </div>
 

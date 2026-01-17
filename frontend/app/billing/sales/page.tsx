@@ -273,24 +273,27 @@ export default function SalesInvoicesPage() {
                     Cargando facturas...
                 </div>
             ) : (
-                <DataTable
-                    columns={columns}
-                    data={invoices}
-                    defaultPageSize={20}
-                    filterColumn="partner_name"
-                    searchPlaceholder="Buscar por cliente..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Publicado", value: "POSTED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ],
-                        },
-                    ]}
-                />
+                <div className="">
+                    <DataTable
+                        columns={columns}
+                        data={invoices}
+                        filterColumn="customer_name"
+                        searchPlaceholder="Buscar por cliente..."
+                        facetedFilters={[
+                            {
+                                column: "status",
+                                title: "Estado",
+                                options: [
+                                    { label: "Borrador", value: "DRAFT" },
+                                    { label: "Publicado", value: "POSTED" },
+                                    { label: "Pagado", value: "PAID" },
+                                    { label: "Anulado", value: "CANCELLED" },
+                                ],
+                            },
+                        ]}
+                        defaultPageSize={20}
+                    />
+                </div>
             )}
 
             {viewingTransaction && (

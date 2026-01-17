@@ -232,8 +232,13 @@ export default function PricingRulesPage() {
                 </div>
             </div>
 
-            <div className="rounded-md border">
-                <DataTable columns={columns} data={rules} />
+            <div className="">
+                <DataTable
+                    columns={columns}
+                    data={rules}
+                    globalFilterFields={["name", "product_name"]}
+                    searchPlaceholder="Buscar por nombre o producto..."
+                />
             </div>
         </div>
     )

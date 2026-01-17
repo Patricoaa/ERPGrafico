@@ -271,7 +271,7 @@ export default function WorkOrdersPage() {
                         />
                     </div>
                 ) : (
-                    <div className="rounded-md border bg-white">
+                    <div className="">
                         <DataTable
                             columns={columns}
                             data={orders}
@@ -290,6 +290,7 @@ export default function WorkOrdersPage() {
                                     ],
                                 },
                             ]}
+                            defaultPageSize={20}
                         />
                     </div>
                 )}

@@ -177,9 +177,6 @@ export function PricingRuleList() {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                    <p className="text-muted-foreground text-sm">
-                        Administra reglas automáticas de precios y descuentos.
-                    </p>
                 </div>
                 <div className="flex items-center space-x-2">
                     <Button onClick={() => setIsFormOpen(true)} size="sm">

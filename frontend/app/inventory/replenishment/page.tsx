@@ -413,22 +413,18 @@ export default function ReplenishmentPage() {
                 {/* Summary Cards could go here */}
             </div>
 
-            <Card>
-                <CardContent>
-                    <DataTable
-                        columns={columns}
-                        data={rules}
-                        filterColumn="product_name"
-                        searchPlaceholder="Buscar por producto..."
-                        facetedFilters={[
-                            {
-                                column: "warehouse_name",
-                                title: "Almacén",
-                            },
-                        ]}
-                    />
-                </CardContent>
-            </Card>
+            <DataTable
+                columns={columns}
+                data={rules}
+                filterColumn="product_name"
+                searchPlaceholder="Buscar por producto..."
+                facetedFilters={[
+                    {
+                        column: "warehouse_name",
+                        title: "Almacén",
+                    },
+                ]}
+            />
         </div>
     )
 }

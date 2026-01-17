@@ -136,13 +136,20 @@ export default function SuppliersPage() {
                     )}
                 </div>
             </div>
-            {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-muted-foreground">Cargando proveedores...</div>
-                </div>
-            ) : (
-                <DataTable columns={columns} data={suppliers} />
-            )}
+            <div className="">
+                {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <div className="text-muted-foreground">Cargando proveedores...</div>
+                    </div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={suppliers}
+                        globalFilterFields={["name", "tax_id"]}
+                        searchPlaceholder="Buscar por nombre o RUT..."
+                    />
+                )}
+            </div>
         </div>
     )
 }

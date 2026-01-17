@@ -278,37 +278,40 @@ export default function PaymentsPage() {
             </div>
 
             {loading ? (
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
-                    Cargando movimientos...
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-muted-foreground">Cargando pagos...</div>
                 </div>
             ) : (
-                <DataTable
-                    columns={columns}
-                    data={payments}
-                    filterColumn="code"
-                    searchPlaceholder="Buscar por número..."
-                    facetedFilters={[
-                        {
-                            column: "payment_type",
-                            title: "Tipo",
-                            options: [
-                                { label: "Ingreso", value: "INBOUND" },
-                                { label: "Egreso", value: "OUTBOUND" },
-                            ],
-                        },
-                        {
-                            column: "payment_method",
-                            title: "Método",
-                            options: [
-                                { label: "Efectivo", value: "CASH" },
-                                { label: "Tarjeta", value: "CARD" },
-                                { label: "Transferencia", value: "TRANSFER" },
-                                { label: "Crédito", value: "CREDIT" },
-                            ],
-                        },
-                    ]}
-                    defaultPageSize={20}
-                />)}
+                <div className="">
+                    <DataTable
+                        columns={columns}
+                        data={payments}
+                        filterColumn="code"
+                        searchPlaceholder="Buscar por número..."
+                        facetedFilters={[
+                            {
+                                column: "payment_type",
+                                title: "Tipo",
+                                options: [
+                                    { label: "Ingreso", value: "INBOUND" },
+                                    { label: "Egreso", value: "OUTBOUND" },
+                                ],
+                            },
+                            {
+                                column: "payment_method",
+                                title: "Método",
+                                options: [
+                                    { label: "Efectivo", value: "CASH" },
+                                    { label: "Tarjeta", value: "CARD" },
+                                    { label: "Transferencia", value: "TRANSFER" },
+                                    { label: "Crédito", value: "CREDIT" },
+                                ],
+                            },
+                        ]}
+                        defaultPageSize={20}
+                    />
+                </div>
+            )}
 
             {viewingTransaction && (
                 <TransactionViewModal

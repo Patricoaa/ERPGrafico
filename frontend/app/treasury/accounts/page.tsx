@@ -178,7 +178,24 @@ export default function TreasuryAccountsPage() {
                 </Button>
             </div>
 
-            <DataTable columns={columns} data={accounts} defaultPageSize={20} />
+            <div className="">
+                <DataTable
+                    columns={columns}
+                    data={accounts}
+                    filterColumn="name"
+                    searchPlaceholder="Buscar por nombre..."
+                    facetedFilters={[
+                        {
+                            column: "account_type",
+                            title: "Tipo",
+                            options: [
+                                { label: "Bancos", value: "BANK" },
+                                { label: "Caja", value: "CASH" },
+                            ],
+                        },
+                    ]}
+                />
+            </div>
 
             <AccountDialog
                 open={dialogOpen}

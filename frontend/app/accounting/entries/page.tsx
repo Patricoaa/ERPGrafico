@@ -219,23 +219,25 @@ export default function EntriesPage() {
                     Cargando asientos...
                 </div>
             ) : (
-                <DataTable
-                    columns={columns}
-                    data={entries}
-                    filterColumn="description"
-                    searchPlaceholder="Buscar por descripción..."
-                    facetedFilters={[
-                        {
-                            column: "state",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                            ],
-                        },
-                    ]}
-                    defaultPageSize={20}
-                />
+                <div className="">
+                    <DataTable
+                        columns={columns}
+                        data={entries}
+                        filterColumn="description"
+                        searchPlaceholder="Buscar por descripción..."
+                        facetedFilters={[
+                            {
+                                column: "status",
+                                title: "Estado",
+                                options: [
+                                    { label: "Borrador", value: "DRAFT" },
+                                    { label: "Publicado", value: "POSTED" },
+                                ],
+                            },
+                        ]}
+                        defaultPageSize={20}
+                    />
+                </div>
             )}
 
             {viewingTransaction && (

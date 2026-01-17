@@ -45,7 +45,6 @@ export function ProductList() {
     const [loading, setLoading] = useState(true)
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [showArchived, setShowArchived] = useState(false)
 
     // Restrictions state
     const [restrictions, setRestrictions] = useState<Restriction[]>([])
@@ -58,11 +57,8 @@ export function ProductList() {
     const fetchProducts = async () => {
         setLoading(true)
         try {
-            // If showing archived, we want ALL products (active and archived) to see context,
-            // or just active=false? User usually wants to see everything or toggle between modes.
-            // Let's use 'all' if showArchived is true, so they see mixed list?
-            // Or maybe separate view. Let's send 'all' for now.
-            const params = { active: showArchived ? 'all' : undefined }
+            // Fetch all products so the faceted filter can handle actives vs archived
+            const params = { active: 'all' }
             const response = await api.get('/inventory/products/', { params })
             const data = response.data.results || response.data
             setProducts(data)
@@ -121,7 +117,7 @@ export function ProductList() {
 
     useEffect(() => {
         fetchProducts()
-    }, [showArchived])
+    }, [])
 
     const columns: ColumnDef<Product>[] = [
         {
@@ -293,21 +289,13 @@ export function ProductList() {
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Catálogo de Productos</h3>
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowArchived(!showArchived)}
-                        className={showArchived ? "bg-amber-50 border-amber-200 text-amber-700" : ""}
-                    >
-                        {showArchived ? "Ocultar Archivados" : "Mostrar Archivados"}
-                    </Button>
                     <Button onClick={() => setIsFormOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
                     </Button>
                 </div>
             </div>
 
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
+            <div className="">
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
                         <div className="text-muted-foreground">Cargando productos...</div>
@@ -316,9 +304,13 @@ export function ProductList() {
                     <DataTable
                         columns={columns}
                         data={products}
-                        filterColumn="name"
-                        searchPlaceholder="Buscar productos..."
+                        globalFilterFields={["name", "code", "internal_code"]}
+                        searchPlaceholder="Buscar por nombre, SKU o código..."
                         facetedFilters={[
+                            {
+                                column: "category_name",
+                                title: "Categoría",
+                            },
                             {
                                 column: "product_type",
                                 title: "Tipo",
@@ -330,6 +322,14 @@ export function ProductList() {
                                     { label: "Suscripción", value: "SUBSCRIPTION" },
                                 ],
                             },
+                            {
+                                column: "active",
+                                title: "Estado",
+                                options: [
+                                    { label: "Activos", value: "true" },
+                                    { label: "Archivados", value: "false" },
+                                ],
+                            }
                         ]}
                     />)}
             </div>

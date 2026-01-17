@@ -334,25 +334,28 @@ export default function SalesOrdersPage() {
                     <div className="text-muted-foreground">Cargando notas de venta...</div>
                 </div>
             ) : (
-                <DataTable
-                    columns={columns}
-                    data={orders}
-                    filterColumn="customer_name"
-                    searchPlaceholder="Buscar por cliente..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Confirmado", value: "CONFIRMED" },
-                                { label: "Facturado", value: "INVOICED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ],
-                        },
-                    ]}
-                />
+                <div className="">
+                    <DataTable
+                        columns={columns}
+                        data={orders}
+                        filterColumn="customer_name"
+                        searchPlaceholder="Buscar por cliente..."
+                        facetedFilters={[
+                            {
+                                column: "status",
+                                title: "Estado",
+                                options: [
+                                    { label: "Borrador", value: "DRAFT" },
+                                    { label: "Confirmado", value: "CONFIRMED" },
+                                    { label: "Facturado", value: "INVOICED" },
+                                    { label: "Pagado", value: "PAID" },
+                                    { label: "Anulado", value: "CANCELLED" },
+                                ],
+                            },
+                        ]}
+                        defaultPageSize={20}
+                    />
+                </div>
             )}
 
 

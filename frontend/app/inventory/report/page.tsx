@@ -138,20 +138,22 @@ export default function StockReportPage() {
                     Cargando reporte...
                 </div>
             ) : (
-                <DataTable
-                    columns={columns}
-                    data={report}
-                    defaultPageSize={50}
-                    filterColumn="name"
-                    searchPlaceholder="Buscar producto..."
-                    facetedFilters={[
-                        {
-                            column: "category_name",
-                            title: "Categoría",
-                            // No options provided, will be extracted from data
-                        },
-                    ]}
-                />
+                <div className="">
+                    <DataTable
+                        columns={columns}
+                        data={report}
+                        defaultPageSize={50}
+                        filterColumn="name"
+                        searchPlaceholder="Buscar producto..."
+                        facetedFilters={[
+                            {
+                                column: "category_name",
+                                title: "Categoría",
+                                // No options provided, will be extracted from data
+                            },
+                        ]}
+                    />
+                </div>
             )}
         </div>
     )

@@ -172,7 +172,15 @@ export default function BOMsPage() {
 
 
 
-            <DataTable columns={columns} data={boms} defaultPageSize={20} />
+            <div className="">
+                <DataTable
+                    columns={columns}
+                    data={boms}
+                    defaultPageSize={20}
+                    filterColumn="product_name"
+                    searchPlaceholder="Buscar por producto..."
+                />
+            </div>
 
             <BOMFormDialog
                 open={isFormOpen}

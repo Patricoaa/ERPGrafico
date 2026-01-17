@@ -133,7 +133,15 @@ export default function WarehousesPage() {
                     )}
                 </div>
             </div>
-            <DataTable columns={columns} data={warehouses} defaultPageSize={20} />
+            <div className="">
+                <DataTable
+                    columns={columns}
+                    data={warehouses}
+                    defaultPageSize={20}
+                    filterColumn="name"
+                    searchPlaceholder="Buscar por nombre..."
+                />
+            </div>
         </div>
     )
 }
