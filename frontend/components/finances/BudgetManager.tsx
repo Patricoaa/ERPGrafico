@@ -85,7 +85,7 @@ export const BudgetManager = () => {
                     <DialogTrigger asChild>
                         <Button><Plus className="mr-2 h-4 w-4" /> Nuevo Presupuesto</Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-[800px]">
                         <DialogHeader>
                             <DialogTitle>Crear Nuevo Presupuesto</DialogTitle>
                         </DialogHeader>
