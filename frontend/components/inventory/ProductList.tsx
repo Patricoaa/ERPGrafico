@@ -1,14 +1,9 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { ProductForm } from "@/components/forms/ProductForm"
@@ -128,6 +123,171 @@ export function ProductList() {
         fetchProducts()
     }, [showArchived])
 
+    const columns: ColumnDef<Product>[] = [
+        {
+            accessorKey: "internal_code",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Código Int." />
+            ),
+            cell: ({ row }) => (
+                <div className="font-mono text-[10px] font-bold text-primary">
+                    {row.getValue("internal_code")}
+                    {!row.original.active && (
+                        <Badge variant="destructive" className="ml-1 text-[8px] h-3 px-1">ARCHIVADO</Badge>
+                    )}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "code",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="SKU/Código" />
+            ),
+            cell: ({ row }) => <div className="font-mono text-xs">{row.getValue("code") || '-'}</div>,
+        },
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => (
+                <div className={cn("font-medium", !row.original.active && "text-muted-foreground line-through")}>
+                    {row.getValue("name")}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "category_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Categoría" />
+            ),
+            cell: ({ row }) => <div className="text-sm">{row.getValue("category_name")}</div>,
+        },
+        {
+            accessorKey: "product_type",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Tipo" />
+            ),
+            cell: ({ row }) => (
+                <Badge variant="secondary" className="text-[10px]">{translateProductType(row.getValue("product_type"))}</Badge>
+            ),
+        },
+        {
+            id: "stock",
+            header: ({ column }) => (
+                <div className="text-right">Stock</div>
+            ),
+            cell: ({ row }) => {
+                const product = row.original
+                return (
+                    <div className="text-right font-bold tabular-nums flex justify-end">
+                        {product.track_inventory ? (
+                            <div className="flex flex-col items-end gap-0.5 text-[10px]">
+                                <div className="flex gap-2 justify-between w-full min-w-[80px]">
+                                    <span className="text-muted-foreground font-normal">Físico:</span>
+                                    <span>{product.current_stock || 0}</span>
+                                </div>
+                                {(product.qty_reserved || 0) > 0 && (
+                                    <div className="flex gap-2 justify-between w-full min-w-[80px] text-amber-600">
+                                        <span className="font-normal">Reserv:</span>
+                                        <span>{product.qty_reserved}</span>
+                                    </div>
+                                )}
+                                <div className="flex gap-2 justify-between w-full min-w-[80px] border-t border-dashed pt-0.5 mt-0.5">
+                                    <span className="text-emerald-600 font-bold">Disp:</span>
+                                    <span className="text-emerald-600 font-bold">{product.qty_available || 0}</span>
+                                </div>
+                                <span className="text-[9px] text-muted-foreground font-normal mt-0.5">{product.uom_name}</span>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-end">
+                                {product.product_type === 'MANUFACTURABLE' ? (
+                                    <div className="flex flex-col items-end gap-0.5">
+                                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 h-4">Fabricable</Badge>
+                                        <span className="text-[10px] text-blue-600 font-medium">
+                                            {product.manufacturable_quantity !== null && product.manufacturable_quantity !== undefined
+                                                ? `${product.manufacturable_quantity} disp.`
+                                                : 'Disponible'}
+                                        </span>
+                                    </div>
+                                ) : product.product_type === 'SERVICE' ? (
+                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-200 bg-emerald-50 text-emerald-700 h-4">Disponible</Badge>
+                                ) : (
+                                    <span className="text-[10px] text-muted-foreground font-normal">No controlado</span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "sale_price",
+            header: ({ column }) => (
+                <div className="text-right">Neto</div>
+            ),
+            cell: ({ row }) => <div className="text-right font-bold text-muted-foreground">{formatCurrency(row.getValue("sale_price"))}</div>,
+        },
+        {
+            id: "tax",
+            header: ({ column }) => (
+                <div className="text-right">IVA (19%)</div>
+            ),
+            cell: ({ row }) => <div className="text-right text-muted-foreground text-xs">{formatCurrency(PricingUtils.calculateTax(Number(row.getValue("sale_price"))))}</div>,
+        },
+        {
+            id: "total",
+            header: ({ column }) => (
+                <div className="text-right">Total</div>
+            ),
+            cell: ({ row }) => <div className="text-right font-bold text-primary">{formatCurrency(PricingUtils.netToGross(Number(row.getValue("sale_price"))))}</div>,
+        },
+        {
+            id: "attributes",
+            header: ({ column }) => (
+                <div className="text-center">Atributos</div>
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center gap-1">
+                    {row.original.can_be_sold && (
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-200 bg-emerald-50 text-emerald-700 h-4">Venta</Badge>
+                    )}
+                    {row.original.can_be_purchased && (
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 h-4">Compra</Badge>
+                    )}
+                    {!row.original.can_be_sold && !row.original.can_be_purchased && (
+                        <span className="text-[10px] text-muted-foreground italic">Ninguno</span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-center gap-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => { setEditingProduct(row.original); setIsFormOpen(true); }}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", row.original.active ? "text-destructive" : "text-emerald-600")}
+                        onClick={() => handleArchive(row.original)}
+                        title={row.original.active ? "Archivar" : "Restaurar"}
+                    >
+                        {row.original.active ? <Archive className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -148,132 +308,13 @@ export function ProductList() {
             </div>
 
             <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead>Código Int.</TableHead>
-                            <TableHead>SKU/Código</TableHead>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Categoría</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead className="text-right">Stock</TableHead>
-                            <TableHead className="text-right">Neto</TableHead>
-                            <TableHead className="text-right">IVA (19%)</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                            <TableHead className="text-center">Atributos</TableHead>
-                            <TableHead className="w-[100px] text-center">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {products.map((product) => (
-                            <TableRow key={product.id} className="group hover:bg-muted/20 transition-colors">
-                                <TableCell className="font-mono text-[10px] font-bold text-primary">
-                                    {product.internal_code}
-                                    {!product.active && (
-                                        <Badge variant="destructive" className="ml-1 text-[8px] h-3 px-1">ARCHIVADO</Badge>
-                                    )}
-                                </TableCell>
-                                <TableCell className="font-mono text-xs">{product.code || '-'}</TableCell>
-                                <TableCell className="font-medium">
-                                    <span className={!product.active ? "text-muted-foreground line-through" : ""}>
-                                        {product.name}
-                                    </span>
-                                </TableCell>
-                                <TableCell className="text-sm">{product.category_name}</TableCell>
-                                <TableCell>
-                                    <Badge variant="secondary" className="text-[10px]">{translateProductType(product.product_type)}</Badge>
-                                </TableCell>
-                                <TableCell className="text-right font-bold tabular-nums">
-                                    {product.track_inventory ? (
-                                        <div className="flex flex-col items-end gap-0.5 text-[10px]">
-                                            <div className="flex gap-2 justify-between w-full min-w-[80px]">
-                                                <span className="text-muted-foreground font-normal">Físico:</span>
-                                                <span>{product.current_stock || 0}</span>
-                                            </div>
-                                            {(product.qty_reserved || 0) > 0 && (
-                                                <div className="flex gap-2 justify-between w-full min-w-[80px] text-amber-600">
-                                                    <span className="font-normal">Reserv:</span>
-                                                    <span>{product.qty_reserved}</span>
-                                                </div>
-                                            )}
-                                            <div className="flex gap-2 justify-between w-full min-w-[80px] border-t border-dashed pt-0.5 mt-0.5">
-                                                <span className="text-emerald-600 font-bold">Disp:</span>
-                                                <span className="text-emerald-600 font-bold">{product.qty_available || 0}</span>
-                                            </div>
-                                            <span className="text-[9px] text-muted-foreground font-normal mt-0.5">{product.uom_name}</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-end">
-                                            {product.product_type === 'MANUFACTURABLE' ? (
-                                                <div className="flex flex-col items-end gap-0.5">
-                                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 h-4">Fabricable</Badge>
-                                                    <span className="text-[10px] text-blue-600 font-medium">
-                                                        {product.manufacturable_quantity !== null && product.manufacturable_quantity !== undefined
-                                                            ? `${product.manufacturable_quantity} disp.`
-                                                            : 'Disponible'}
-                                                    </span>
-                                                </div>
-                                            ) : product.product_type === 'SERVICE' ? (
-                                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-200 bg-emerald-50 text-emerald-700 h-4">Disponible</Badge>
-                                            ) : (
-                                                <span className="text-[10px] text-muted-foreground font-normal">No controlado</span>
-                                            )}
-                                        </div>
-                                    )}
-                                </TableCell>
-                                <TableCell className="text-right font-bold text-muted-foreground">
-                                    {formatCurrency(product.sale_price)}
-                                </TableCell>
-                                <TableCell className="text-right text-muted-foreground text-xs">
-                                    {formatCurrency(PricingUtils.calculateTax(Number(product.sale_price)))}
-                                </TableCell>
-                                <TableCell className="text-right font-bold text-primary">
-                                    {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex justify-center gap-1">
-                                        {product.can_be_sold && (
-                                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-200 bg-emerald-50 text-emerald-700 h-4">Venta</Badge>
-                                        )}
-                                        {product.can_be_purchased && (
-                                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 h-4">Compra</Badge>
-                                        )}
-                                        {!product.can_be_sold && !product.can_be_purchased && (
-                                            <span className="text-[10px] text-muted-foreground italic">Ninguno</span>
-                                        )}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex justify-center gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8"
-                                            onClick={() => { setEditingProduct(product); setIsFormOpen(true); }}
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className={cn("h-8 w-8", product.active ? "text-destructive" : "text-emerald-600")}
-                                            onClick={() => handleArchive(product)}
-                                            title={product.active ? "Archivar" : "Restaurar"}
-                                        >
-                                            {product.active ? <Archive className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {loading && (
-                            <TableRow><TableCell colSpan={7} className="text-center py-10">Cargando productos...</TableCell></TableRow>
-                        )}
-                        {!loading && products.length === 0 && (
-                            <TableRow><TableCell colSpan={7} className="text-center py-10 italic text-muted-foreground">No hay productos registrados.</TableCell></TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <div className="text-muted-foreground">Cargando productos...</div>
+                    </div>
+                ) : (
+                    <DataTable columns={columns} data={products} />
+                )}
             </div>
 
             <ProductForm

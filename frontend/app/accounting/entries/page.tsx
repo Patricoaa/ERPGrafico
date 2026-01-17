@@ -2,13 +2,8 @@
 
 import { useEffect, useState } from "react"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+    ColumnDef,
+} from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +11,8 @@ import { JournalEntryForm } from "@/components/forms/JournalEntryForm"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye } from "lucide-react"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 
 interface JournalEntry {
     id: number
@@ -88,6 +85,126 @@ export default function EntriesPage() {
         }
     }
 
+    const columns: ColumnDef<JournalEntry>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Número" />
+            ),
+            cell: ({ row }) => (
+                <span className="font-medium">AS-{row.getValue("number")}</span>
+            ),
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+            cell: ({ row }) => {
+                return new Date(row.getValue("date")).toLocaleDateString()
+            },
+        },
+        {
+            accessorKey: "description",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Descripción" />
+            ),
+        },
+        {
+            id: "documents",
+            header: "Documentos",
+            cell: ({ row }) => {
+                const entry = row.original
+                return (
+                    <div className="flex flex-col gap-1">
+                        {entry.source_documents && entry.source_documents.length > 0 ? (
+                            entry.source_documents.map((doc, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
+                                    className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                >
+                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
+                                        {doc.type === 'invoice' ? (doc.name.includes('BOL') ? 'Boleta' :
+                                            doc.name.includes('NC') ? 'Nota de Crédito' :
+                                                doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
+                                            doc.type === 'payment' ? (doc.name.includes('ING') ? 'Comprobante Ingreso' : 'Comprobante Egreso') :
+                                                doc.type === 'purchase_order' ? 'Orden de Compra' :
+                                                    doc.type === 'sale_order' ? 'Nota de Venta' :
+                                                        doc.type === 'inventory' ? 'Movimiento' : doc.type}
+                                    </span>
+                                    {doc.name}
+                                </button>
+                            ))
+                        ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "state",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estado" />
+            ),
+            cell: ({ row }) => {
+                const state = row.getValue("state") as string
+                return (
+                    <Badge variant={state === 'POSTED' ? 'default' : 'secondary'}>
+                        {state === 'POSTED' ? 'Publicado' : 'Borrador'}
+                    </Badge>
+                )
+            },
+        },
+        {
+            id: "actions",
+            header: "Acciones",
+            cell: ({ row }) => {
+                const entry = row.original
+                return (
+                    <div className="flex items-center justify-end gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
+                            title="Ver Detalle"
+                        >
+                            <Eye className="h-4 w-4 text-blue-600" />
+                        </Button>
+                        {entry.state === 'DRAFT' && (
+                            <>
+                                <JournalEntryForm
+                                    accounts={accounts}
+                                    initialData={entry}
+                                    onSuccess={fetchEntries}
+                                />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-emerald-600"
+                                    onClick={() => handlePost(entry.id)}
+                                    title="Publicar"
+                                >
+                                    <CheckCircle className="h-4 w-4" />
+                                </Button>
+                            </>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500"
+                            onClick={() => handleDelete(entry.id)}
+                            title="Eliminar"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            },
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -96,109 +213,14 @@ export default function EntriesPage() {
                     <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} />
                 </div>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead>Número</TableHead>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Descripción</TableHead>
-                            <TableHead>Documentos</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {entries.map((entry) => (
-                            <TableRow key={entry.id} className="group hover:bg-muted/20 transition-colors">
-                                <TableCell className="font-medium">AS-{entry.number}</TableCell>
-                                <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
-                                <TableCell>{entry.description}</TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                        {entry.source_documents && entry.source_documents.length > 0 ? (
-                                            entry.source_documents.map((doc, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
-                                                    className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                                >
-                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
-                                                        {doc.type === 'invoice' ? (doc.name.includes('BOL') ? 'Boleta' :
-                                                            doc.name.includes('NC') ? 'Nota de Crédito' :
-                                                                doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
-                                                            doc.type === 'payment' ? (doc.name.includes('ING') ? 'Comprobante Ingreso' : 'Comprobante Egreso') :
-                                                                doc.type === 'purchase_order' ? 'Orden de Compra' :
-                                                                    doc.type === 'sale_order' ? 'Nota de Venta' :
-                                                                        doc.type === 'inventory' ? 'Movimiento' : doc.type}
-                                                    </span>
-                                                    {doc.name}
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <span className="text-muted-foreground text-xs">-</span>
-                                        )}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={entry.state === 'POSTED' ? 'default' : 'secondary'}>
-                                        {entry.state === 'POSTED' ? 'Publicado' : 'Borrador'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <div className="flex items-center justify-end gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
-                                            title="Ver Detalle"
-                                        >
-                                            <Eye className="h-4 w-4 text-blue-600" />
-                                        </Button>
-                                        {entry.state === 'DRAFT' && (
-                                            <>
-                                                <JournalEntryForm
-                                                    accounts={accounts}
-                                                    initialData={entry}
-                                                    onSuccess={fetchEntries}
-                                                />
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-emerald-600"
-                                                    onClick={() => handlePost(entry.id)}
-                                                    title="Publicar"
-                                                >
-                                                    <CheckCircle className="h-4 w-4" />
-                                                </Button>
-                                            </>
-                                        )}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-red-500"
-                                            onClick={() => handleDelete(entry.id)}
-                                            title="Eliminar"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {loading && (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center">Cargando asientos...</TableCell>
-                            </TableRow>
-                        )}
-                        {!loading && entries.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center">No hay asientos registrados.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+
+            {loading ? (
+                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
+                    Cargando asientos...
+                </div>
+            ) : (
+                <DataTable columns={columns} data={entries} defaultPageSize={20} />
+            )}
 
             {viewingTransaction && (
                 <TransactionViewModal

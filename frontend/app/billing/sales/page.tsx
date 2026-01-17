@@ -1,7 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
+
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
@@ -99,7 +103,164 @@ export default function SalesInvoicesPage() {
         }
     }
 
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Número" />
+            ),
+            cell: ({ row }) => (
+                <span className="font-mono font-medium">{row.getValue("number") || '---'}</span>
+            ),
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+        },
+        {
+            accessorKey: "dte_type_display",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Tipo" />
+            ),
+        },
+        {
+            accessorKey: "partner_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Cliente" />
+            ),
+        },
+        {
+            accessorKey: "origin",
+            header: "Origen",
+            cell: ({ row }) => {
+                const inv = row.original
+                return (
+                    <div className="flex flex-col gap-1">
+                        <button
+                            onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order })}
+                            className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                        >
+                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota de Venta</span>
+                            NV-{inv.sale_order_number}
+                        </button>
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "total",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Total" />
+            ),
+            cell: ({ row }) => (
+                <div className="text-right font-medium">
+                    ${Number(row.getValue("total")).toLocaleString()}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "status",
+            header: "Estado",
+            cell: ({ row }) => {
+                const inv = row.original
+                return (
+                    <Badge variant={inv.status === 'PAID' ? 'success' : inv.status === 'POSTED' ? 'info' : inv.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
+                        {inv.status === 'CANCELLED' ? 'Anulado' : inv.status_display}
+                    </Badge>
+                )
+            },
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const inv = row.original
+                return (
+                    <div className="flex space-x-1">
+                        {/* Open Action Panel */}
+                        {inv.sale_order ? (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => setSelectedOrderId(inv.sale_order)}
+                                title="Gestionar Orden"
+                                className="h-8 px-3 w-full"
+                            >
+                                <MoreVertical className="h-4 w-4 mr-1" />
+                                Gestionar
+                            </Button>
+                        ) : (
+                            <>
 
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                                    title="Ver Detalle"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                </Button>
+
+                                {/* Historial de Pagos */}
+                                {((inv.related_documents?.payments?.length ?? 0) > 0 || inv.status === 'PAID') && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-emerald-600"
+                                        onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'history' })}
+                                        title="Historial de Pagos"
+                                    >
+                                        <History className="h-4 w-4" />
+                                    </Button>
+                                )}
+
+                                {inv.status !== 'CANCELLED' && (
+                                    <>
+                                        {/* Registrar Pago / Reembolso */}
+                                        {(inv.pending_amount ?? (inv.status === 'PAID' ? 0 : inv.total)) > 0 && inv.status === 'POSTED' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-emerald-600"
+                                                onClick={() => setPayingInv(inv)}
+                                                title={inv.dte_type === 'NOTA_CREDITO' ? "Registrar Reembolso" : "Registrar Pago"}
+                                            >
+                                                <Banknote className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        {/* Registrar Nota (Solo para Facturas/Boletas, no sobre Notas) */}
+                                        {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-purple-600"
+                                                onClick={() => setNotingInvoice(inv)}
+                                                title="Registrar Nota Crédito/Débito"
+                                            >
+                                                <FileBadge className="h-4 w-4" />
+                                            </Button>
+                                        )}
+
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-destructive hover:text-destructive"
+                                            onClick={() => handleAnnul(inv.id)}
+                                            title="Anular Documento"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )
+            },
+        },
+    ]
 
     return (
         <div className="p-6 space-y-6">
@@ -107,139 +268,13 @@ export default function SalesInvoicesPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Documentos Emitidos</h1>
             </div>
 
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead>Número</TableHead>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Origen</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="w-[100px]"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow><TableCell colSpan={8} className="text-center py-10">Cargando...</TableCell></TableRow>
-                        ) : invoices.length === 0 ? (
-                            <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No se encontraron documentos.</TableCell></TableRow>
-                        ) : invoices.map((inv) => (
-                            <TableRow key={inv.id} className="group hover:bg-muted/20 transition-colors">
-                                <TableCell>
-                                    <span className="font-mono font-medium">{inv.number || '---'}</span>
-                                </TableCell>
-                                <TableCell>{inv.date}</TableCell>
-                                <TableCell>{inv.dte_type_display}</TableCell>
-                                <TableCell>{inv.partner_name}</TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                        <button
-                                            onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order })}
-                                            className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                        >
-                                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota de Venta</span>
-                                            NV-{inv.sale_order_number}
-                                        </button>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right font-medium">
-                                    ${Number(inv.total).toLocaleString()}
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={inv.status === 'PAID' ? 'success' : inv.status === 'POSTED' ? 'info' : inv.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
-                                        {inv.status === 'CANCELLED' ? 'Anulado' : inv.status_display}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex space-x-1">
-                                        {/* Open Action Panel */}
-                                        {inv.sale_order ? (
-                                            <Button
-                                                variant="default"
-                                                size="sm"
-                                                onClick={() => setSelectedOrderId(inv.sale_order)}
-                                                title="Gestionar Orden"
-                                                className="h-8 px-3 w-full"
-                                            >
-                                                <MoreVertical className="h-4 w-4 mr-1" />
-                                                Gestionar
-                                            </Button>
-                                        ) : (
-                                            <>
-
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                                    title="Ver Detalle"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-
-                                                {/* Historial de Pagos */}
-                                                {((inv.related_documents?.payments?.length ?? 0) > 0 || inv.status === 'PAID') && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-emerald-600"
-                                                        onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'history' })}
-                                                        title="Historial de Pagos"
-                                                    >
-                                                        <History className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-
-                                                {inv.status !== 'CANCELLED' && (
-                                                    <>
-                                                        {/* Registrar Pago / Reembolso */}
-                                                        {(inv.pending_amount ?? (inv.status === 'PAID' ? 0 : inv.total)) > 0 && inv.status === 'POSTED' && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-emerald-600"
-                                                                onClick={() => setPayingInv(inv)}
-                                                                title={inv.dte_type === 'NOTA_CREDITO' ? "Registrar Reembolso" : "Registrar Pago"}
-                                                            >
-                                                                <Banknote className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-
-                                                        {/* Registrar Nota (Solo para Facturas/Boletas, no sobre Notas) */}
-                                                        {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-purple-600"
-                                                                onClick={() => setNotingInvoice(inv)}
-                                                                title="Registrar Nota Crédito/Débito"
-                                                            >
-                                                                <FileBadge className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="text-destructive hover:text-destructive"
-                                                            onClick={() => handleAnnul(inv.id)}
-                                                            title="Anular Documento"
-                                                        >
-                                                            <X className="h-4 w-4" />
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+            {loading ? (
+                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
+                    Cargando facturas...
+                </div>
+            ) : (
+                <DataTable columns={columns} data={invoices} defaultPageSize={20} />
+            )}
 
             {viewingTransaction && (
                 <TransactionViewModal

@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from "react"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+    ColumnDef
+} from "@tanstack/react-table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import api from "@/lib/api"
 import { WarehouseForm } from "@/components/forms/WarehouseForm"
 import { Pencil, Trash2 } from "lucide-react"
@@ -56,6 +53,60 @@ export default function WarehousesPage() {
         fetchWarehouses()
     }, [])
 
+
+    const columns: ColumnDef<Warehouse>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "code",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Código" />
+            ),
+        },
+        {
+            accessorKey: "address",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Dirección" />
+            ),
+            cell: ({ row }) => <div>{row.getValue("address") || "-"}</div>,
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const warehouse = row.original
+                return (
+                    <div className="flex justify-center space-x-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                                setEditingWarehouse(warehouse)
+                                setIsFormOpen(true)
+                            }}
+                            title="Editar"
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(warehouse.id)}
+                            title="Eliminar"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            },
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -82,59 +133,7 @@ export default function WarehousesPage() {
                     )}
                 </div>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Código</TableHead>
-                            <TableHead>Dirección</TableHead>
-                            <TableHead className="w-[100px] text-center">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {warehouses.map((warehouse) => (
-                            <TableRow key={warehouse.id} className="group hover:bg-muted/20 transition-colors">
-                                <TableCell className="font-medium">{warehouse.name}</TableCell>
-                                <TableCell>{warehouse.code}</TableCell>
-                                <TableCell>{warehouse.address || "-"}</TableCell>
-                                <TableCell>
-                                    <div className="flex justify-center space-x-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => {
-                                                setEditingWarehouse(warehouse)
-                                                setIsFormOpen(true)
-                                            }}
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-destructive hover:text-destructive"
-                                            onClick={() => handleDelete(warehouse.id)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {loading && (
-                            <TableRow>
-                                <TableCell colSpan={4} className="text-center">Cargando almacenes...</TableCell>
-                            </TableRow>
-                        )}
-                        {!loading && warehouses.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={4} className="text-center">No hay almacenes registrados.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable columns={columns} data={warehouses} defaultPageSize={20} />
         </div>
     )
 }

@@ -2,14 +2,9 @@
 
 import React, { useEffect, useState } from "react"
 import api from "@/lib/api"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -109,6 +104,52 @@ export function UoMList() {
         }
     }
 
+    const columns: ColumnDef<UoM>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "category_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" />,
+            cell: ({ row }) => <div className="text-sm">{row.getValue("category_name")}</div>,
+        },
+        {
+            accessorKey: "uom_type",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
+            cell: ({ row }) => {
+                const type = row.getValue("uom_type")
+                return (
+                    <div>
+                        {type === 'REFERENCE' && <Badge variant="default" className="text-[10px]">Referencia</Badge>}
+                        {type === 'BIGGER' && <Badge variant="secondary" className="text-[10px]">Mayor</Badge>}
+                        {type === 'SMALLER' && <Badge variant="outline" className="text-[10px]">Menor</Badge>}
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "ratio",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Ratio" className="justify-end" />,
+            cell: ({ row }) => <div className="text-right font-mono text-xs tabular-nums text-muted-foreground">{parseFloat(row.getValue("ratio")).toString()}</div>,
+        },
+        {
+            id: "actions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="text-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setCurrentUoM(row.original); setIsUoMModalOpen(true) }}>
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(row.original.id)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -119,47 +160,7 @@ export function UoMList() {
             </div>
 
             <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Categoría</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead className="text-right">Ratio</TableHead>
-                            <TableHead className="w-[100px] text-center">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {uoms.map(u => (
-                            <TableRow key={u.id} className="group hover:bg-muted/20 transition-colors">
-                                <TableCell className="font-medium">{u.name}</TableCell>
-                                <TableCell className="text-sm">{u.category_name}</TableCell>
-                                <TableCell>
-                                    {u.uom_type === 'REFERENCE' && <Badge variant="default" className="text-[10px]">Referencia</Badge>}
-                                    {u.uom_type === 'BIGGER' && <Badge variant="secondary" className="text-[10px]">Mayor</Badge>}
-                                    {u.uom_type === 'SMALLER' && <Badge variant="outline" className="text-[10px]">Menor</Badge>}
-                                </TableCell>
-                                <TableCell className="text-right font-mono text-xs tabular-nums text-muted-foreground">{parseFloat(u.ratio).toString()}</TableCell>
-                                <TableCell>
-                                    <div className="flex justify-center gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setCurrentUoM(u); setIsUoMModalOpen(true) }}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(u.id)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {loading && (
-                            <TableRow><TableCell colSpan={5} className="text-center py-10">Cargando unidades...</TableCell></TableRow>
-                        )}
-                        {!loading && uoms.length === 0 && (
-                            <TableRow><TableCell colSpan={5} className="text-center py-10 italic text-muted-foreground">No hay unidades registradas.</TableCell></TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                <DataTable columns={columns} data={uoms} />
             </div>
 
             <Dialog open={isUoMModalOpen} onOpenChange={setIsUoMModalOpen}>

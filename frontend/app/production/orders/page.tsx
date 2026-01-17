@@ -1,14 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -97,6 +92,102 @@ export default function WorkOrdersPage() {
         fetchOrders()
     }, [])
 
+    const columns: ColumnDef<WorkOrder>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Número" />
+            ),
+            cell: ({ row }) => <div className="font-medium">OT-{row.getValue("number")}</div>,
+        },
+        {
+            accessorKey: "start_date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha Inicio" />
+            ),
+            cell: ({ row }) => <div>{row.getValue("start_date") || '-'}</div>,
+        },
+        {
+            accessorKey: "description",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Descripción" />
+            ),
+        },
+        {
+            id: "status_stage",
+            header: "Estado / Etapa",
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <Badge variant={statusMap[row.original.status as string]?.variant || ("default" as any)}>
+                        {statusMap[row.original.status as string]?.label || row.original.status}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] uppercase">
+                        {row.original.current_stage?.replace('_', ' ')}
+                    </Badge>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "due_date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha Entrega" />
+            ),
+            cell: ({ row }) => <div>{row.getValue("due_date") || '-'}</div>,
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-center space-x-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary"
+                        onClick={() => setActiveWizardId(row.original.id)}
+                        title="Gestionar Workflow"
+                    >
+                        <Settings className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                            setEditingOrder(row.original)
+                            setIsFormOpen(true)
+                        }}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+
+                    {row.original.status === 'DRAFT' && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(row.original.id)}
+                            title="Eliminar"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {!['DRAFT', 'FINISHED', 'CANCELLED'].includes(row.original.status) && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-orange-500 hover:text-orange-600"
+                            onClick={() => handleCancel(row.original.id)}
+                            title="Anular"
+                        >
+                            <Ban className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0 border-b pb-6">
@@ -173,96 +264,7 @@ export default function WorkOrdersPage() {
                     </div>
                 ) : (
                     <div className="rounded-md border bg-white">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Número</TableHead>
-                                    <TableHead>Fecha Inicio</TableHead>
-                                    <TableHead>Descripción</TableHead>
-                                    <TableHead>Estado / Etapa</TableHead>
-                                    <TableHead>Fecha Entrega</TableHead>
-                                    <TableHead className="w-[150px] text-center">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {orders.map((order) => (
-                                    <TableRow key={order.id}>
-                                        <TableCell className="font-medium">OT-{order.number}</TableCell>
-                                        <TableCell>{order.start_date || '-'}</TableCell>
-                                        <TableCell>{order.description}</TableCell>
-                                        <TableCell className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant={statusMap[order.status]?.variant || ("default" as any)}>
-                                                    {statusMap[order.status]?.label || order.status}
-                                                </Badge>
-                                                <Badge variant="outline" className="text-[10px] uppercase">
-                                                    {order.current_stage?.replace('_', ' ')}
-                                                </Badge>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{order.due_date || '-'}</TableCell>
-                                        <TableCell>
-                                            <div className="flex justify-center space-x-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-primary"
-                                                    onClick={() => setActiveWizardId(order.id)}
-                                                    title="Gestionar Workflow"
-                                                >
-                                                    <Settings className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8"
-                                                    onClick={() => {
-                                                        setEditingOrder(order)
-                                                        setIsFormOpen(true)
-                                                    }}
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-
-                                                {order.status === 'DRAFT' && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-destructive hover:text-destructive"
-                                                        onClick={() => handleDelete(order.id)}
-                                                        title="Eliminar"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-
-                                                {!['DRAFT', 'FINISHED', 'CANCELLED'].includes(order.status) && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-orange-500 hover:text-orange-600"
-                                                        onClick={() => handleCancel(order.id)}
-                                                        title="Anular"
-                                                    >
-                                                        <Ban className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {loading && (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center">Cargando OTs...</TableCell>
-                                    </TableRow>
-                                )}
-                                {!loading && orders.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center">No hay OTs registradas.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                        <DataTable columns={columns} data={orders} />
                     </div>
                 )}
             </div>

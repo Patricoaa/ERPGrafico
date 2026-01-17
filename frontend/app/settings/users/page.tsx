@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ChevronLeft, Edit, Trash2, Loader2, UserPlus } from "lucide-react"
@@ -42,13 +44,71 @@ export default function UsersSettingsPage() {
         }
     }
 
-    const getRoleBadge = (role: string) => {
-        switch (role) {
-            case 'ADMIN': return <Badge variant="default">Admin</Badge>
-            case 'ACCOUNTANT': return <Badge variant="secondary">Contador</Badge>
-            default: return <Badge variant="outline">Operador</Badge>
-        }
-    }
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "username",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Usuario" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("username")}</div>,
+        },
+        {
+            accessorKey: "email",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Email" />
+            ),
+        },
+        {
+            id: "fullName",
+            header: "Nombre Completo",
+            cell: ({ row }) => (
+                <div>{`${row.original.first_name || ''} ${row.original.last_name || ''}`}</div>
+            ),
+        },
+        {
+            accessorKey: "role",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Rol" />
+            ),
+            cell: ({ row }) => {
+                const role = row.getValue("role") as string
+                switch (role) {
+                    case 'ADMIN': return <Badge variant="default">Admin</Badge>
+                    case 'ACCOUNTANT': return <Badge variant="secondary">Contador</Badge>
+                    default: return <Badge variant="outline">Operador</Badge>
+                }
+            },
+        },
+        {
+            accessorKey: "is_active",
+            header: "Estado",
+            cell: ({ row }) => (
+                <Badge variant={row.original.is_active ? "success" : "destructive" as any}>
+                    {row.original.is_active ? "Activo" : "Inactivo"}
+                </Badge>
+            ),
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-right">Acciones</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-end gap-2">
+                    <UserForm
+                        initialData={row.original}
+                        onSuccess={fetchUsers}
+                        trigger={
+                            <Button variant="ghost" size="icon">
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                        }
+                    />
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(row.original.id)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ]
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -73,56 +133,7 @@ export default function UsersSettingsPage() {
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Usuario</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Nombre Completo</TableHead>
-                                    <TableHead>Rol</TableHead>
-                                    <TableHead>Estado</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {users.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell className="font-medium">{user.username}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>{`${user.first_name || ''} ${user.last_name || ''}`}</TableCell>
-                                        <TableCell>{getRoleBadge(user.role)}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={user.is_active ? "success" : "destructive" as any}>
-                                                {user.is_active ? "Activo" : "Inactivo"}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <UserForm
-                                                    initialData={user}
-                                                    onSuccess={fetchUsers}
-                                                    trigger={
-                                                        <Button variant="ghost" size="icon">
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                    }
-                                                />
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(user.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {users.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                                            No se encontraron usuarios.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                        <DataTable columns={columns} data={users} />
                     )}
                 </CardContent>
             </Card>

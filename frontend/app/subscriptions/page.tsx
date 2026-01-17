@@ -5,13 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
-} from "@/components/ui/table"
+    ColumnDef,
+} from "@tanstack/react-table"
 import {
     Calendar,
     DollarSign,
@@ -24,6 +19,8 @@ import {
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 
 interface Subscription {
     id: number
@@ -131,6 +128,96 @@ export default function SubscriptionsPage() {
         return sub.recurrence_display
     }
 
+    const columns: ColumnDef<Subscription>[] = [
+        {
+            id: "product",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Producto" />
+            ),
+            accessorFn: (row) => row.product_name,
+            cell: ({ row }) => (
+                <div>
+                    <div className="font-medium">{row.original.product_name}</div>
+                    <div className="text-sm text-muted-foreground">{row.original.product_code}</div>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "supplier_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Proveedor" />
+            ),
+        },
+        {
+            accessorKey: "amount",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Monto" />
+            ),
+            cell: ({ row }) => (
+                <span>{formatCurrency(parseFloat(row.getValue("amount")))}</span>
+            ),
+        },
+        {
+            id: "frequency",
+            header: "Frecuencia",
+            cell: ({ row }) => (
+                <div className="text-sm">{getPaymentScheduleText(row.original)}</div>
+            ),
+        },
+        {
+            accessorKey: "next_payment_date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Próximo Pago" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    {new Date(row.getValue("next_payment_date")).toLocaleDateString()}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "status",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estado" />
+            ),
+            cell: ({ row }) => (
+                <Badge className={getStatusColor(row.getValue("status"))}>
+                    {row.original.status_display}
+                </Badge>
+            ),
+        },
+        {
+            id: "actions",
+            header: "Acciones",
+            cell: ({ row }) => {
+                const sub = row.original
+                return (
+                    <div className="flex gap-2 justify-end">
+                        {sub.status === "ACTIVE" && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handlePause(sub.id)}
+                            >
+                                <Pause className="h-4 w-4" />
+                            </Button>
+                        )}
+                        {sub.status === "PAUSED" && (
+                            <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleResume(sub.id)}
+                            >
+                                <Play className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                )
+            },
+        },
+    ]
+
     return (
         <div className="container mx-auto p-6 space-y-6">
             <div className="flex justify-between items-center">
@@ -195,85 +282,13 @@ export default function SubscriptionsPage() {
 
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Suscripciones</h3>
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                    <Table>
-                        <TableHeader className="bg-muted/30">
-                            <TableRow>
-                                <TableHead>Producto</TableHead>
-                                <TableHead>Proveedor</TableHead>
-                                <TableHead>Monto</TableHead>
-                                <TableHead>Frecuencia</TableHead>
-                                <TableHead>Próximo Pago</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center">
-                                        Cargando...
-                                    </TableCell>
-                                </TableRow>
-                            ) : subscriptions.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center">
-                                        No hay suscripciones
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                subscriptions.map((sub) => (
-                                    <TableRow key={sub.id} className="group hover:bg-muted/20 transition-colors">
-                                        <TableCell>
-                                            <div>
-                                                <div className="font-medium">{sub.product_name}</div>
-                                                <div className="text-sm text-muted-foreground">{sub.product_code}</div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{sub.supplier_name}</TableCell>
-                                        <TableCell>{formatCurrency(parseFloat(sub.amount))}</TableCell>
-                                        <TableCell>
-                                            <div className="text-sm">{getPaymentScheduleText(sub)}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                {new Date(sub.next_payment_date).toLocaleDateString()}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge className={getStatusColor(sub.status)}>
-                                                {sub.status_display}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex gap-2 justify-end">
-                                                {sub.status === "ACTIVE" && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handlePause(sub.id)}
-                                                    >
-                                                        <Pause className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {sub.status === "PAUSED" && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="default"
-                                                        onClick={() => handleResume(sub.id)}
-                                                    >
-                                                        <Play className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                {loading ? (
+                    <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
+                        Cargando...
+                    </div>
+                ) : (
+                    <DataTable columns={columns} data={subscriptions} defaultPageSize={20} />
+                )}
             </div>
         </div>
     )

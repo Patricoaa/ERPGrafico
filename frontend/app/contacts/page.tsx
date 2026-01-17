@@ -1,26 +1,30 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
-} from "@/components/ui/table"
+import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Phone, Mail, Plus } from "lucide-react"
+import { Edit, Trash2, Plus } from "lucide-react"
 import api from "@/lib/api"
 import { ContactModal } from "@/components/contacts/ContactModal"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { Input } from "@/components/ui/input"
 import { formatRUT } from "@/lib/utils/format"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+
+interface Contact {
+    id: number
+    name: string
+    tax_id: string | null
+    contact_type: string
+    email: string | null
+    phone: string | null
+    address: string | null
+}
 
 export default function ContactsPage() {
-    const [contacts, setContacts] = useState<any[]>([])
+    const [contacts, setContacts] = useState<Contact[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedContact, setSelectedContact] = useState<any>(null)
     const [modalOpen, setModalOpen] = useState(false)
@@ -63,8 +67,6 @@ export default function ContactsPage() {
         }
     }
 
-
-
     const getContactTypeBadge = (type: string) => {
         switch (type) {
             case 'CUSTOMER':
@@ -78,6 +80,79 @@ export default function ContactsPage() {
         }
     }
 
+    // Definición de columnas para DataTable
+    const columns: ColumnDef<Contact>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "tax_id",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="RUT / Identificación" />
+            ),
+            cell: ({ row }) => {
+                const taxId = row.getValue("tax_id") as string | null
+                return taxId ? formatRUT(taxId) : 'S/Rut'
+            },
+        },
+        {
+            accessorKey: "contact_type",
+            header: "Tipo",
+            cell: ({ row }) => getContactTypeBadge(row.getValue("contact_type")),
+        },
+        {
+            accessorKey: "email",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Email" />
+            ),
+            cell: ({ row }) => {
+                const email = row.getValue("email") as string | null
+                return email || "-"
+            },
+        },
+        {
+            accessorKey: "phone",
+            header: "Teléfono",
+            cell: ({ row }) => {
+                const phone = row.getValue("phone") as string | null
+                return phone || "-"
+            },
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
+            cell: ({ row }) => {
+                const contact = row.original
+                return (
+                    <div className="flex justify-center space-x-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                                setSelectedContact(contact)
+                                setModalOpen(true)
+                            }}
+                        >
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(contact)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            },
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -89,81 +164,23 @@ export default function ContactsPage() {
                 </div>
             </div>
 
-
-
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>RUT / Identificación</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Contacto</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8">
-                                    Cargando...
-                                </TableCell>
-                            </TableRow>
-                        ) : contacts.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                    No se encontraron contactos
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            contacts.map((contact) => (
-                                <TableRow key={contact.id} className="group hover:bg-muted/20 transition-colors">
-                                    <TableCell className="font-medium">{contact.name}</TableCell>
-                                    <TableCell>{contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}</TableCell>
-                                    <TableCell>{getContactTypeBadge(contact.contact_type)}</TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                                            {contact.phone && (
-                                                <div className="flex items-center gap-1">
-                                                    <Phone className="h-3 w-3" /> {contact.phone}
-                                                </div>
-                                            )}
-                                            {contact.email && (
-                                                <div className="flex items-center gap-1">
-                                                    <Mail className="h-3 w-3" /> {contact.email}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right space-x-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => { setSelectedContact(contact); setModalOpen(true); }}
-                                        >
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-destructive hover:text-destructive/90"
-                                            onClick={() => handleDelete(contact)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            {loading ? (
+                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
+                    Cargando contactos...
+                </div>
+            ) : (
+                <DataTable columns={columns} data={contacts} defaultPageSize={20} />
+            )}
 
             <ContactModal
                 open={modalOpen}
                 onOpenChange={setModalOpen}
                 contact={selectedContact}
-                onSuccess={fetchContacts}
+                onSuccess={() => {
+                    setModalOpen(false)
+                    setSelectedContact(null)
+                    fetchContacts()
+                }}
             />
 
             <ActionConfirmModal
@@ -172,14 +189,12 @@ export default function ContactsPage() {
                 title="Eliminar Contacto"
                 variant="destructive"
                 onConfirm={() => { if (contactToDelete) return handleDelete(contactToDelete, true) }}
-                confirmText="Eliminar Contacto"
+                confirmText="Eliminar"
                 description={
-                    <div className="space-y-3">
-                        <p>¿Está seguro de que desea eliminar al contacto <strong>{contactToDelete?.name}</strong>?</p>
-                        <p className="text-xs text-muted-foreground border-l-2 pl-3 border-amber-400">
-                            <strong>Nota:</strong> Solo podrá eliminar este contacto si no tiene facturas, órdenes o movimientos contables asociados. De lo contrario, la acción fallará por integridad de datos.
-                        </p>
-                    </div>
+                    <p>
+                        ¿Está seguro de que desea eliminar el contacto <strong>{contactToDelete?.name}</strong>?
+                        Esta acción no se puede deshacer y puede afectar documentos asociados.
+                    </p>
                 }
             />
         </div>

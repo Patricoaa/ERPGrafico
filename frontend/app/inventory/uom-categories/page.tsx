@@ -2,14 +2,9 @@
 
 import React, { useEffect, useState } from "react"
 import api from "@/lib/api"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react"
 import {
@@ -91,6 +86,51 @@ export default function UoMCategoriesPage() {
         }
     }
 
+    const columns: ColumnDef<UoMCategory>[] = [
+        {
+            accessorKey: "id",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="ID" />
+            ),
+            cell: ({ row }) => <div className="text-muted-foreground">{row.getValue("id")}</div>,
+        },
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            id: "actions",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="text-right" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex gap-2 justify-end">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                            setCurrentCategory(row.original)
+                            setIsModalOpen(true)
+                        }}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive"
+                        onClick={() => handleDelete(row.original.id)}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="p-8 space-y-4">
             <div className="flex items-center justify-between">
@@ -106,43 +146,7 @@ export default function UoMCategoriesPage() {
             </div>
 
             <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic">Cargando...</TableCell>
-                            </TableRow>
-                        ) : categories.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic">No hay categorías configuradas.</TableCell>
-                            </TableRow>
-                        ) : (
-                            categories.map(cat => (
-                                <TableRow key={cat.id}>
-                                    <TableCell className="text-muted-foreground">{cat.id}</TableCell>
-                                    <TableCell className="font-medium">{cat.name}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex gap-2 justify-end">
-                                            <Button variant="ghost" size="icon" onClick={() => { setCurrentCategory(cat); setIsModalOpen(true) }}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(cat.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                <DataTable columns={columns} data={categories} />
             </div>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

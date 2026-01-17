@@ -1,14 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit, X, MoreVertical, LayoutDashboard } from "lucide-react"
 import api from "@/lib/api"
@@ -184,6 +179,125 @@ export default function SalesOrdersPage() {
         fetchOrders()
     }, [])
 
+    const columns: ColumnDef<SaleOrder>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Número" />
+            ),
+            cell: ({ row }) => <div className="font-medium">NV-{row.getValue("number")}</div>,
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+            cell: ({ row }) => <div>{new Date(row.getValue("date")).toLocaleDateString()}</div>,
+        },
+        {
+            accessorKey: "customer_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Cliente" />
+            ),
+        },
+        {
+            accessorKey: "total",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Total" />
+            ),
+            cell: ({ row }) => <div>{parseFloat(row.getValue("total")).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</div>,
+        },
+        {
+            id: "paid",
+            header: "Pagado",
+            cell: ({ row }) => {
+                const total = parseFloat(row.original.total)
+                const paid = row.original.total_paid
+                const percentage = total > 0 ? (paid / total) * 100 : 0
+                return (
+                    <div className="space-y-1 w-32">
+                        <div className="flex justify-between text-[10px] font-bold">
+                            <span>{Math.round(percentage)}%</span>
+                            <span>${paid.toLocaleString()}</span>
+                        </div>
+                        <Progress value={percentage} className="h-1" />
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "status",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estado" />
+            ),
+            cell: ({ row }) => {
+                const status = row.getValue("status") as string
+                return (
+                    <Badge variant={statusMap[status]?.variant || "default"}>
+                        {statusMap[status]?.label || status}
+                    </Badge>
+                )
+            },
+        },
+        {
+            accessorKey: "channel_display",
+            header: "Canal",
+            cell: ({ row }) => (
+                <Badge variant="outline" className="text-[10px] uppercase">
+                    {row.getValue("channel_display")}
+                </Badge>
+            ),
+        },
+        {
+            id: "documents",
+            header: "Documentos",
+            cell: ({ row }) => (
+                <div className="flex flex-col gap-1">
+                    {row.original.related_documents?.invoices.map((inv: any) => (
+                        <button
+                            key={inv.id}
+                            onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
+                            className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                        >
+                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
+                            {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
+                        </button>
+                    ))}
+                    {row.original.related_documents?.payments?.map((pay: any) => (
+                        <button
+                            key={pay.id}
+                            onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
+                            className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                        >
+                            <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
+                            <span className="text-[10px] font-mono">{pay.code}</span>
+                        </button>
+                    ))}
+                    {!row.original.related_documents?.invoices.length && !row.original.related_documents?.payments.length && (
+                        <span className="text-muted-foreground text-xs">-</span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
+            cell: ({ row }) => (
+                <div className="flex flex-col gap-1">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setSelectedOrderId(row.original.id)}
+                        className="h-8 px-3 w-full"
+                    >
+                        <LayoutDashboard className="h-4 w-4 mr-1" />
+                        Gestionar
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -215,112 +329,25 @@ export default function SalesOrdersPage() {
                     )}
                 </div>
             </div>
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Número</TableHead>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Total</TableHead>
-                            <TableHead>Pagado</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead>Canal</TableHead>
-                            <TableHead>Documentos</TableHead>
-                            <TableHead className="w-[150px] text-center">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {orders.map((order) => (
-                            <TableRow key={order.id}>
-                                <TableCell className="font-medium">NV-{order.number}</TableCell>
-                                <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                                <TableCell>{order.customer_name}</TableCell>
-                                <TableCell>{parseFloat(order.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</TableCell>
-                                <TableCell>
-                                    <div className="space-y-1 w-32">
-                                        <div className="flex justify-between text-[10px] font-bold">
-                                            <span>{Math.round((order.total_paid / parseFloat(order.total)) * 100)}%</span>
-                                            <span>${order.total_paid.toLocaleString()}</span>
-                                        </div>
-                                        <Progress value={(order.total_paid / parseFloat(order.total)) * 100} className="h-1" />
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={statusMap[order.status]?.variant || "default"}>
-                                        {statusMap[order.status]?.label || order.status}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className="text-[10px] uppercase">
-                                        {order.channel_display}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                        {order.related_documents?.invoices.map((inv: any) => (
-                                            <button
-                                                key={inv.id}
-                                                onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
-                                                {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
-                                            </button>
-                                        ))}
-                                        {order.related_documents?.payments?.map((pay: any) => (
-                                            <button
-                                                key={pay.id}
-                                                onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
-                                                className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                            >
-                                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
-                                                <span className="text-[10px] font-mono">{pay.code}</span>
-                                            </button>
-                                        ))}
-                                        {!order.related_documents?.invoices.length && !order.related_documents?.payments.length && (
-                                            <span className="text-muted-foreground text-xs">-</span>
-                                        )}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                        <Button
-                                            variant="default"
-                                            size="sm"
-                                            onClick={() => setSelectedOrderId(order.id)}
-                                            className="h-8 px-3 w-full"
-                                        >
-                                            <LayoutDashboard className="h-4 w-4 mr-1" />
-                                            Gestionar
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {loading && (
-                            <TableRow>
-                                <TableCell colSpan={8} className="text-center">Cargando notas de venta...</TableCell>
-                            </TableRow>
-                        )}
-                        {!loading && orders.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={8} className="text-center">No hay notas de venta registradas.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div >
+            {loading ? (
+                <div className="flex items-center justify-between h-64 justify-center">
+                    <div className="text-muted-foreground">Cargando notas de venta...</div>
+                </div>
+            ) : (
+                <DataTable columns={columns} data={orders} />
+            )}
 
-            {viewingTransaction && (
-                <TransactionViewModal
-                    open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type}
-                    id={viewingTransaction.id}
-                    view={viewingTransaction.view}
-                />
-            )
+
+            {
+                viewingTransaction && (
+                    <TransactionViewModal
+                        open={!!viewingTransaction}
+                        onOpenChange={(open) => !open && setViewingTransaction(null)}
+                        type={viewingTransaction.type}
+                        id={viewingTransaction.id}
+                        view={viewingTransaction.view}
+                    />
+                )
             }
 
             {

@@ -50,7 +50,7 @@ interface AccountFormProps {
     onSuccess?: () => void
     accounts?: any[]
     initialData?: any // Use any for initialData to avoid strict prop widening issues
-    triggerText?: string
+    triggerText?: React.ReactNode
 }
 
 export function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nueva Cuenta" }: AccountFormProps) {

@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from "react"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+    ColumnDef
+} from "@tanstack/react-table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Pencil, Trash2, Layers, CheckCircle2, XCircle } from "lucide-react"
@@ -73,6 +70,95 @@ export default function BOMsPage() {
 
 
 
+
+    const columns: ColumnDef<BOM>[] = [
+        {
+            accessorKey: "product_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Producto" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("product_name")}</div>,
+        },
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre / Versión" />
+            ),
+        },
+        {
+            accessorKey: "lines_count",
+            header: ({ column }) => (
+                <div className="text-center"><DataTableColumnHeader column={column} title="Componentes" /></div>
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <Badge variant="secondary" className="gap-1">
+                        <Layers className="h-3 w-3" />
+                        {row.getValue("lines_count") || 0}
+                    </Badge>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "total_cost",
+            header: ({ column }) => (
+                <div className="text-right"><DataTableColumnHeader column={column} title="Costo Total" /></div>
+            ),
+            cell: ({ row }) => {
+                const amount = parseFloat(row.getValue("total_cost")) || 0
+                return <div className="text-right font-mono">
+                    ${amount.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+            },
+        },
+        {
+            accessorKey: "active",
+            header: ({ column }) => (
+                <div className="text-center"><DataTableColumnHeader column={column} title="Estado" /></div>
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    {row.getValue("active") ? (
+                        <Badge className="bg-green-600 hover:bg-green-700">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Activa
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-muted-foreground">
+                            <XCircle className="h-3 w-3 mr-1" /> Inactiva
+                        </Badge>
+                    )}
+                </div>
+            ),
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const bom = row.original
+                return (
+                    <div className="text-right">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(bom.id)}
+                            title="Editar"
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(bom.id)}
+                            title="Eliminar"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            },
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -86,81 +172,7 @@ export default function BOMsPage() {
 
 
 
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead>Producto</TableHead>
-                            <TableHead>Nombre / Versión</TableHead>
-                            <TableHead className="text-center">Componentes</TableHead>
-                            <TableHead className="text-right">Costo Total</TableHead>
-                            <TableHead className="text-center">Estado</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {boms.map((bom) => (
-                            <TableRow key={bom.id} className="group hover:bg-muted/20 transition-colors">
-                                <TableCell className="font-medium">{bom.product_name}</TableCell>
-                                <TableCell>{bom.name}</TableCell>
-                                <TableCell className="text-center">
-                                    <Badge variant="secondary" className="gap-1">
-                                        <Layers className="h-3 w-3" />
-                                        {bom.lines_count || 0}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right font-mono">
-                                    ${(bom.total_cost || 0).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                    {bom.active ? (
-                                        <Badge className="bg-green-600 hover:bg-green-700">
-                                            <CheckCircle2 className="h-3 w-3 mr-1" /> Activa
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="outline" className="text-muted-foreground">
-                                            <XCircle className="h-3 w-3 mr-1" /> Inactiva
-                                        </Badge>
-                                    )}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleEdit(bom.id)}
-                                        title="Editar"
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive hover:text-destructive"
-                                        onClick={() => handleDelete(bom.id)}
-                                        title="Eliminar"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {loading && (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8">
-                                    Cargando...
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {!loading && boms.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                    No se encontraron listas de materiales.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable columns={columns} data={boms} defaultPageSize={20} />
 
             <BOMFormDialog
                 open={isFormOpen}

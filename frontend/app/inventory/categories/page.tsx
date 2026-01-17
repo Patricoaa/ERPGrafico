@@ -1,14 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { CategoryForm } from "@/components/forms/CategoryForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
@@ -60,6 +55,51 @@ export default function CategoriesPage() {
         fetchCategories()
     }, [])
 
+    const columns: ColumnDef<Category>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "parent_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Categoría Padre" />
+            ),
+            cell: ({ row }) => <div>{row.getValue("parent_name") || "-"}</div>,
+        },
+        {
+            id: "actions",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="text-center" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center space-x-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                            setEditingCategory(row.original)
+                            setIsFormOpen(true)
+                        }}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(row.original.id)}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -92,55 +132,7 @@ export default function CategoriesPage() {
                 )}
             </div>
             <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Categoría Padre</TableHead>
-                            <TableHead>Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {categories.map((category) => (
-                            <TableRow key={category.id}>
-                                <TableCell className="font-medium">{category.name}</TableCell>
-                                <TableCell>{category.parent_name || "-"}</TableCell>
-                                <TableCell>
-                                    <div className="flex justify-center space-x-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => {
-                                                setEditingCategory(category)
-                                                setIsFormOpen(true)
-                                            }}
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-destructive hover:text-destructive"
-                                            onClick={() => handleDelete(category.id)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {loading && (
-                            <TableRow>
-                                <TableCell colSpan={3} className="text-center">Cargando categorías...</TableCell>
-                            </TableRow>
-                        )}
-                        {!loading && categories.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={3} className="text-center">No hay categorías registradas.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                <DataTable columns={columns} data={categories} />
             </div>
         </div>
     )

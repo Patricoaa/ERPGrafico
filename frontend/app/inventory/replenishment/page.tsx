@@ -8,14 +8,9 @@ import { Plus, Pencil, Trash2, RefreshCw, PlayCircle, Settings2 } from "lucide-r
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import {
     Dialog,
     DialogContent,
@@ -191,6 +186,84 @@ export default function ReplenishmentPage() {
         }
     }
 
+    const columns: ColumnDef<ReorderingRule>[] = [
+        {
+            accessorKey: "product_code",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Producto" />
+            ),
+            cell: ({ row }) => (
+                <div>
+                    <div className="font-medium">{row.original.product_code}</div>
+                    <div className="text-xs text-muted-foreground">{row.original.product_name}</div>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "warehouse_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Almacén" />
+            ),
+        },
+        {
+            accessorKey: "min_quantity",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Mínimo" className="justify-end" />
+            ),
+            cell: ({ row }) => <div className="text-right font-medium text-amber-600">{Number(row.getValue("min_quantity"))}</div>,
+        },
+        {
+            accessorKey: "max_quantity",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Máximo" className="justify-end" />
+            ),
+            cell: ({ row }) => <div className="text-right font-medium text-blue-600">{Number(row.getValue("max_quantity"))}</div>,
+        },
+        {
+            accessorKey: "active",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    {row.getValue("active") ? (
+                        <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-emerald-200">Activo</Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-muted-foreground">Pausado</Badge>
+                    )}
+                </div>
+            ),
+        },
+        {
+            id: "actions",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="text-right" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-end gap-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                            setEditingRule(row.original)
+                            setIsDialogOpen(true)
+                        }}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(row.original.id)}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between">
@@ -342,76 +415,7 @@ export default function ReplenishmentPage() {
 
             <Card>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Producto</TableHead>
-                                <TableHead>Almacén</TableHead>
-                                <TableHead className="text-right">Mínimo</TableHead>
-                                <TableHead className="text-right">Máximo</TableHead>
-                                <TableHead className="text-center">Estado</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-8">Cargando...</TableCell>
-                                </TableRow>
-                            ) : rules.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                        No hay reglas de reabastecimiento definidas.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                rules.map((rule) => (
-                                    <TableRow key={rule.id}>
-                                        <TableCell>
-                                            <div className="font-medium">{rule.product_code}</div>
-                                            <div className="text-xs text-muted-foreground">{rule.product_name}</div>
-                                        </TableCell>
-                                        <TableCell>{rule.warehouse_name}</TableCell>
-                                        <TableCell className="text-right font-medium text-amber-600">
-                                            {Number(rule.min_quantity)}
-                                        </TableCell>
-                                        <TableCell className="text-right font-medium text-blue-600">
-                                            {Number(rule.max_quantity)}
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            {rule.active ? (
-                                                <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-emerald-200">Activo</Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="text-muted-foreground">Pausado</Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => {
-                                                        setEditingRule(rule)
-                                                        setIsDialogOpen(true)
-                                                    }}
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() => handleDelete(rule.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                    <DataTable columns={columns} data={rules} />
                 </CardContent>
             </Card>
         </div>

@@ -1,14 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard } from "lucide-react"
 import api from "@/lib/api"
@@ -149,6 +144,88 @@ export default function PurchaseOrdersPage() {
         fetchOrders()
     }, [])
 
+    const columns: ColumnDef<PurchaseOrder>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Número" />
+            ),
+            cell: ({ row }) => <div className="font-medium">OC-{row.getValue("number")}</div>,
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+            cell: ({ row }) => <div>{new Date(row.getValue("date")).toLocaleDateString()}</div>,
+        },
+        {
+            accessorKey: "supplier_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Proveedor" />
+            ),
+        },
+        {
+            accessorKey: "warehouse_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Almacén" />
+            ),
+        },
+        {
+            accessorKey: "total",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Total" />
+            ),
+            cell: ({ row }) => <div>{parseFloat(row.getValue("total")).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</div>,
+        },
+        {
+            accessorKey: "status",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estado" />
+            ),
+            cell: ({ row }) => {
+                const status = row.getValue("status") as string
+                return (
+                    <Badge variant={statusMap[status]?.variant || "default"}>
+                        {statusMap[status]?.label || status}
+                    </Badge>
+                )
+            },
+        },
+        {
+            id: "documents",
+            header: "Documentos",
+            cell: ({ row }) => (
+                <div className="flex flex-col gap-1">
+                    {row.original.related_documents?.invoices.map((inv: any) => (
+                        <div key={inv.id} className="flex items-center space-x-1">
+                            <Badge variant={inv.status === 'PAID' ? 'success' : 'outline'} className="text-[10px]">
+                                {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
+                            </Badge>
+                        </div>
+                    ))}
+                </div>
+            ),
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
+            cell: ({ row }) => (
+                <div className="flex flex-col gap-1">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setSelectedOrderId(row.original.id)}
+                        className="h-8 px-3 w-full"
+                    >
+                        <LayoutDashboard className="h-4 w-4 mr-1" />
+                        Gestionar
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -169,96 +246,13 @@ export default function PurchaseOrdersPage() {
                     )}
                 </div>
             </div>
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Número</TableHead>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Proveedor</TableHead>
-                            <TableHead>Almacén</TableHead>
-                            <TableHead>Total</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead>Documentos</TableHead>
-                            <TableHead className="w-[150px] text-center">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {orders.map((order) => (
-                            <TableRow key={order.id}>
-                                <TableCell className="font-medium">OC-{order.number}</TableCell>
-                                <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                                <TableCell>{order.supplier_name}</TableCell>
-                                <TableCell>{order.warehouse_name}</TableCell>
-                                <TableCell>{parseFloat(order.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</TableCell>
-                                <TableCell>
-                                    <Badge variant={order.status === 'DRAFT' ? 'outline' : 'info'}>
-                                        {order.status === 'DRAFT' ? 'Borrador' : 'Confirmado'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                        {/* Only show Invoices/Boletas as requested */}
-                                        {order.related_documents?.invoices?.map((inv: any) => (
-                                            <div key={inv.id} className="flex items-center gap-2 group">
-                                                <button
-                                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                                    className={`text-[10px] flex flex-col text-left items-start leading-tight ${inv.status === 'DRAFT' ? 'text-amber-600' : 'text-blue-600 hover:underline'}`}
-                                                >
-                                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">
-                                                        {inv.type === 'BOLETA' ? 'Boleta' : 'Factura'}
-                                                    </span>
-                                                    {inv.status === 'DRAFT' ? '(Pendiente)' : `${inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-${inv.number}`}
-                                                </button>
-                                                {inv.status === 'DRAFT' && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => {
-                                                            setSelectedInvoice({ id: inv.id, type: inv.type })
-                                                            setFolioModalOpen(true)
-                                                        }}
-                                                        title="Registrar Folio"
-                                                    >
-                                                        <FileEdit className="h-3 w-3 text-amber-600" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        ))}
-                                        {!order.related_documents?.invoices?.length && (
-                                            <span className="text-muted-foreground text-xs">-</span>
-                                        )}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                        <Button
-                                            variant="default"
-                                            size="sm"
-                                            onClick={() => setSelectedOrderId(order.id)}
-                                            className="h-8 px-3 w-full"
-                                        >
-                                            <LayoutDashboard className="h-4 w-4 mr-1" />
-                                            Gestionar
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {loading && (
-                            <TableRow>
-                                <TableCell colSpan={8} className="text-center">Cargando órdenes de compra...</TableCell>
-                            </TableRow>
-                        )}
-                        {!loading && orders.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={8} className="text-center">No hay órdenes de compra registradas.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div >
+            {loading ? (
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-muted-foreground">Cargando órdenes de compra...</div>
+                </div>
+            ) : (
+                <DataTable columns={columns} data={orders} />
+            )}
 
             {viewingTransaction && (
                 <TransactionViewModal
@@ -335,6 +329,6 @@ export default function PurchaseOrdersPage() {
                     setCheckoutOrderId(id)
                 }}
             />
-        </div >
+        </div>
     )
 }

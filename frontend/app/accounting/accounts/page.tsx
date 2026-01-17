@@ -2,14 +2,11 @@
 
 import React, { useEffect, useState } from "react"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Search, Plus, Book, Trash2 } from "lucide-react"
+    ColumnDef
+} from "@tanstack/react-table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { Search, Plus, Book, Trash2, Pencil } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
@@ -74,6 +71,90 @@ export default function AccountsPage() {
         items: accounts.filter(a => a.account_type === type)
     })).filter(g => g.items.length > 0)
 
+    const columns: ColumnDef<Account>[] = [
+        {
+            accessorKey: "code",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Código" />
+            ),
+            cell: ({ row }) => <span className="font-mono text-xs">{row.getValue("code")}</span>,
+        },
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "account_type_display",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Tipo" />
+            ),
+            cell: ({ row }) => <span className="text-xs text-muted-foreground uppercase font-semibold">{row.getValue("account_type_display")}</span>,
+        },
+        {
+            accessorKey: "debit_total",
+            header: ({ column }) => (
+                <div className="text-right"><DataTableColumnHeader column={column} title="Debe" /></div>
+            ),
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("debit_total"))
+                return <div className="text-right text-muted-foreground">{val !== 0 ? val.toLocaleString() : '-'}</div>
+            },
+        },
+        {
+            accessorKey: "credit_total",
+            header: ({ column }) => (
+                <div className="text-right"><DataTableColumnHeader column={column} title="Haber" /></div>
+            ),
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("credit_total"))
+                return <div className="text-right text-muted-foreground">{val !== 0 ? val.toLocaleString() : '-'}</div>
+            },
+        },
+        {
+            accessorKey: "balance",
+            header: ({ column }) => (
+                <div className="text-right"><DataTableColumnHeader column={column} title="Saldo" /></div>
+            ),
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("balance"))
+                return <div className="text-right font-bold">${val.toLocaleString()}</div>
+            },
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const account = row.original
+                return (
+                    <div className="flex justify-end items-center gap-1">
+                        <Link href={`/accounting/accounts/${account.id}/ledger`}>
+                            <Button variant="ghost" size="sm" title="Libro Mayor">
+                                <Book className="h-4 w-4 mr-1" />
+                            </Button>
+                        </Link>
+                        <AccountForm
+                            accounts={accounts}
+                            initialData={account as any}
+                            onSuccess={fetchAccounts}
+                            triggerText={<Pencil className="h-4 w-4" />}
+                        />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Eliminar"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(account.id)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            },
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -90,75 +171,7 @@ export default function AccountsPage() {
                     <AccountForm accounts={accounts} onSuccess={fetchAccounts} />
                 </div>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead className="w-[120px]">Código</TableHead>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead className="text-right w-[150px]">Debe</TableHead>
-                            <TableHead className="text-right">Haber</TableHead>
-                            <TableHead className="text-right">Saldo</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center py-10">Cargando cuentas...</TableCell>
-                            </TableRow>
-                        ) : groupedAccounts.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center py-10">No hay cuentas registradas.</TableCell>
-                            </TableRow>
-                        ) : groupedAccounts.map((group) => (
-                            <React.Fragment key={group.type}>
-                                <TableRow className="bg-muted/30 hover:bg-muted/30">
-                                    <TableCell colSpan={6} className="font-bold text-primary py-2 px-4 uppercase text-xs tracking-wider">
-                                        {group.label}
-                                    </TableCell>
-                                </TableRow>
-                                {group.items.map((account) => (
-                                    <TableRow key={account.id} className="group hover:bg-muted/20 transition-colors">
-                                        <TableCell className="font-mono text-xs">{account.code}</TableCell>
-                                        <TableCell className="font-medium">{account.name}</TableCell>
-                                        <TableCell className="text-right text-muted-foreground">
-                                            {parseFloat(account.debit_total) !== 0 ? Number(account.debit_total).toLocaleString() : '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right text-muted-foreground">
-                                            {parseFloat(account.credit_total) !== 0 ? Number(account.credit_total).toLocaleString() : '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right font-bold">
-                                            ${Number(account.balance).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="text-right space-x-1">
-                                            <Link href={`/accounting/accounts/${account.id}/ledger`}>
-                                                <Button variant="ghost" size="sm">
-                                                    <Book className="h-4 w-4 mr-1" />
-                                                    Libro Mayor
-                                                </Button>
-                                            </Link>
-                                            <AccountForm
-                                                accounts={accounts}
-                                                initialData={account as any}
-                                                onSuccess={fetchAccounts}
-                                                triggerText="Editar"
-                                            />
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDelete(account.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </React.Fragment>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable columns={columns} data={accounts} defaultPageSize={50} />
         </div>
     )
 }

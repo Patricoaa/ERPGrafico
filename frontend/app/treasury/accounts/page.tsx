@@ -5,13 +5,10 @@ import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+    ColumnDef
+} from "@tanstack/react-table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
 import {
     Dialog,
@@ -93,6 +90,82 @@ export default function TreasuryAccountsPage() {
         setDialogOpen(true)
     }
 
+
+    const columns: ColumnDef<TreasuryAccount>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "account_type",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Tipo" />
+            ),
+            cell: ({ row }) => {
+                const type = row.getValue("account_type") as string
+                return (
+                    <div className="flex items-center gap-2">
+                        {type === 'BANK' ? <Building2 className="h-4 w-4 text-blue-500" /> : <Banknote className="h-4 w-4 text-green-500" />}
+                        {type === 'BANK' ? 'Banco' : 'Caja (Efectivo)'}
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "currency",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Moneda" />
+            ),
+        },
+        {
+            id: "methods",
+            header: "Método de Pago",
+            cell: ({ row }) => {
+                const acc = row.original
+                return (
+                    <div className="flex flex-wrap gap-1">
+                        {acc.allows_cash && <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 border-emerald-200 bg-emerald-50">Efectivo</Badge>}
+                        {acc.allows_card && <Badge variant="outline" className="text-[10px] uppercase font-bold text-blue-600 border-blue-200 bg-blue-50">Tarjeta</Badge>}
+                        {acc.allows_transfer && <Badge variant="outline" className="text-[10px] uppercase font-bold text-purple-600 border-purple-200 bg-purple-50">Transf.</Badge>}
+                        {!acc.allows_cash && !acc.allows_card && !acc.allows_transfer && <span className="text-[10px] text-muted-foreground italic">Ninguno</span>}
+                    </div>
+                )
+            },
+        },
+        {
+            id: "accounting",
+            header: "Cuenta Contable",
+            cell: ({ row }) => {
+                const acc = row.original
+                return acc.account ? (
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium">{acc.account_name || 'Cuenta Contable'}</span>
+                        <span className="text-[10px] text-muted-foreground">ID: {acc.account}</span>
+                    </div>
+                ) : <span className="text-muted-foreground text-xs">Sin asignar</span>
+            },
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const acc = row.original
+                return (
+                    <div className="flex items-center gap-2 justify-end">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(acc)} title="Editar">
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(acc.id)} title="Eliminar">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            },
+        },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between">
@@ -105,74 +178,7 @@ export default function TreasuryAccountsPage() {
                 </Button>
             </div>
 
-            <div className="border rounded-md">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Moneda</TableHead>
-                            <TableHead>Método de Pago</TableHead>
-                            <TableHead>Cuenta Contable Asociada</TableHead>
-                            <TableHead className="w-[100px]"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
-                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                                </TableCell>
-                            </TableRow>
-                        ) : accounts.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                    No hay cuentas registradas.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            accounts.map((acc) => (
-                                <TableRow key={acc.id}>
-                                    <TableCell className="font-medium">{acc.name}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {acc.account_type === 'BANK' ? <Building2 className="h-4 w-4 text-blue-500" /> : <Banknote className="h-4 w-4 text-green-500" />}
-                                            {acc.account_type === 'BANK' ? 'Banco' : 'Caja (Efectivo)'}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{acc.currency}</TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {acc.allows_cash && <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 border-emerald-200 bg-emerald-50">Efectivo</Badge>}
-                                            {acc.allows_card && <Badge variant="outline" className="text-[10px] uppercase font-bold text-blue-600 border-blue-200 bg-blue-50">Tarjeta</Badge>}
-                                            {acc.allows_transfer && <Badge variant="outline" className="text-[10px] uppercase font-bold text-purple-600 border-purple-200 bg-purple-50">Transf.</Badge>}
-                                            {!acc.allows_cash && !acc.allows_card && !acc.allows_transfer && <span className="text-[10px] text-muted-foreground italic">Ninguno</span>}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {acc.account ? (
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">{acc.account_name || 'Cuenta Contable'}</span>
-                                                <span className="text-[10px] text-muted-foreground">ID: {acc.account}</span>
-                                            </div>
-                                        ) : <span className="text-muted-foreground text-xs">Sin asignar</span>}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => openEdit(acc)}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(acc.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable columns={columns} data={accounts} defaultPageSize={20} />
 
             <AccountDialog
                 open={dialogOpen}

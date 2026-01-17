@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -36,6 +38,75 @@ export default function AccountLedgerPage() {
         }
     }
 
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+        },
+        {
+            id: "reference",
+            header: "Referencia",
+            cell: ({ row }) => {
+                const mov = row.original
+                return (
+                    <div className="flex flex-col">
+                        <a href={`/accounting/entries`} className="text-blue-600 hover:underline text-sm font-medium">
+                            {mov.reference || `Asiento ${mov.entry_id}`}
+                        </a>
+                        {mov.source_document && (
+                            <a href={mov.source_document.url} className="text-[10px] text-muted-foreground hover:text-blue-500 underline uppercase font-bold">
+                                {mov.source_document.type}: {mov.source_document.name}
+                            </a>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "description",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Descripción" />
+            ),
+            cell: ({ row }) => <div className="max-w-md truncate">{row.getValue("description")}</div>,
+        },
+        {
+            accessorKey: "partner",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Tercero" />
+            ),
+            cell: ({ row }) => <div className="text-sm text-muted-foreground">{row.getValue("partner")}</div>,
+        },
+        {
+            accessorKey: "debit",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Debe" />
+            ),
+            cell: ({ row }) => {
+                const debit = parseFloat(row.getValue("debit"));
+                return <div className="text-right font-mono">{debit > 0 ? `$${debit.toLocaleString()}` : '-'}</div>
+            },
+        },
+        {
+            accessorKey: "credit",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Haber" />
+            ),
+            cell: ({ row }) => {
+                const credit = parseFloat(row.getValue("credit"));
+                return <div className="text-right font-mono">{credit > 0 ? `$${credit.toLocaleString()}` : '-'}</div>
+            },
+        },
+        {
+            accessorKey: "balance",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Saldo" />
+            ),
+            cell: ({ row }) => <div className="text-right font-mono font-bold">${parseFloat(row.getValue("balance")).toLocaleString()}</div>,
+        },
+    ]
+
     if (loading) {
         return <div className="p-6">Cargando...</div>
     }
@@ -64,61 +135,7 @@ export default function AccountLedgerPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Fecha</TableHead>
-                                    <TableHead>Referencia</TableHead>
-                                    <TableHead>Descripción</TableHead>
-                                    <TableHead>Tercero</TableHead>
-                                    <TableHead className="text-right">Debe</TableHead>
-                                    <TableHead className="text-right">Haber</TableHead>
-                                    <TableHead className="text-right">Saldo</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {movements.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
-                                            No hay movimientos registrados
-                                        </TableCell>
-                                    </TableRow>
-                                ) : movements.map((mov) => (
-                                    <TableRow key={mov.id}>
-                                        <TableCell>{mov.date}</TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <a
-                                                    href={`/accounting/entries`}
-                                                    className="text-blue-600 hover:underline text-sm font-medium"
-                                                >
-                                                    {mov.reference || `Asiento ${mov.entry_id}`}
-                                                </a>
-                                                {mov.source_document && (
-                                                    <a
-                                                        href={mov.source_document.url}
-                                                        className="text-[10px] text-muted-foreground hover:text-blue-500 underline uppercase font-bold"
-                                                    >
-                                                        {mov.source_document.type}: {mov.source_document.name}
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="max-w-md truncate">{mov.description}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">{mov.partner}</TableCell>
-                                        <TableCell className="text-right font-mono">
-                                            {mov.debit > 0 ? `$${mov.debit.toLocaleString()}` : '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono">
-                                            {mov.credit > 0 ? `$${mov.credit.toLocaleString()}` : '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono font-bold">
-                                            ${mov.balance.toLocaleString()}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <DataTable columns={columns} data={movements} />
                     </div>
                 </CardContent>
             </Card>

@@ -1,14 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,6 +44,119 @@ export default function MovementsPage() {
         }
     }
 
+    const columns: ColumnDef<StockMove>[] = [
+        {
+            accessorKey: "id",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Número" />
+            ),
+            cell: ({ row }) => <div className="font-mono text-xs">MOV-{row.original.id.toString().padStart(6, '0')}</div>,
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+            cell: ({ row }) => <div>{new Date(row.getValue("date")).toLocaleDateString()}</div>,
+        },
+        {
+            accessorKey: "product_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Producto" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("product_name")}</div>,
+        },
+        {
+            accessorKey: "warehouse_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Almacén" />
+            ),
+        },
+        {
+            accessorKey: "quantity",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Cant." />
+            ),
+            cell: ({ row }) => {
+                const qty = parseFloat(row.getValue("quantity"))
+                return (
+                    <div className={qty > 0 ? "text-green-600 font-medium" : "text-red-600 font-bold"}>
+                        {Math.round(Math.abs(qty))}
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "uom_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Unidad" />
+            ),
+            cell: ({ row }) => <div className="text-muted-foreground text-xs">{row.getValue("uom_name")}</div>,
+        },
+        {
+            accessorKey: "move_type",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Tipo" />
+            ),
+            cell: ({ row }) => {
+                const type = row.getValue("move_type") as string
+                return (
+                    <Badge variant={type === 'IN' ? 'default' : type === 'OUT' ? 'destructive' : 'outline'}>
+                        {type === 'IN' ? 'Entrada' : type === 'OUT' ? 'Salida' : 'Ajuste'}
+                    </Badge>
+                )
+            },
+        },
+        {
+            id: "related_documents",
+            header: "Documentos",
+            cell: ({ row }) => {
+                const move = row.original
+                const docs = move.related_documents?.filter(d => d.type !== 'inventory') || []
+
+                if (docs.length === 0) return <span className="text-muted-foreground text-xs">-</span>
+
+                return (
+                    <div className="flex flex-col gap-1">
+                        {docs.map((doc, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
+                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                            >
+                                <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
+                                    {doc.type === 'invoice' ? (doc.name.includes('BOL') ? 'Boleta' :
+                                        doc.name.includes('NC') ? 'Nota de Crédito' :
+                                            doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
+                                        doc.type === 'purchase_order' ? 'Orden de Compra' :
+                                            doc.type === 'sale_order' ? 'Nota de Venta' : doc.type}
+                                </span>
+                                {doc.name}
+                            </button>
+                        ))}
+                    </div>
+                )
+            },
+        },
+        {
+            id: "actions",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="text-right" />
+            ),
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setViewingTransaction({ type: 'inventory', id: row.original.id })}
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     useEffect(() => {
         fetchMoves()
     }, [])
@@ -59,84 +167,8 @@ export default function MovementsPage() {
                 <h2 className="text-3xl font-bold tracking-tight">Movimientos de Inventario</h2>
             </div>
 
-            <div className="rounded-md border bg-white dark:bg-slate-950">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Número</TableHead>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Producto</TableHead>
-                            <TableHead>Almacén</TableHead>
-                            <TableHead>Cant.</TableHead>
-                            <TableHead>Unidad</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Documentos</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={9} className="text-center py-10">Cargando movimientos...</TableCell>
-                            </TableRow>
-                        ) : moves.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No hay movimientos registrados.</TableCell>
-                            </TableRow>
-                        ) : moves.map((move) => (
-                            <TableRow key={move.id}>
-                                <TableCell className="font-mono text-xs">MOV-{move.id.toString().padStart(6, '0')}</TableCell>
-                                <TableCell>{new Date(move.date).toLocaleDateString()}</TableCell>
-                                <TableCell className="font-medium">{move.product_name}</TableCell>
-                                <TableCell>{move.warehouse_name}</TableCell>
-                                <TableCell className={parseFloat(move.quantity) > 0 ? "text-green-600 font-medium" : "text-red-600 font-bold"}>
-                                    {Math.round(Math.abs(parseFloat(move.quantity)))}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground text-xs">{move.uom_name}</TableCell>
-                                <TableCell>
-                                    <Badge variant={move.move_type === 'IN' ? 'default' : move.move_type === 'OUT' ? 'destructive' : 'outline'}>
-                                        {move.move_type === 'IN' ? 'Entrada' : move.move_type === 'OUT' ? 'Salida' : 'Ajuste'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                        {move.related_documents && move.related_documents.filter(d => d.type !== 'inventory').length > 0 ? (
-                                            move.related_documents
-                                                .filter(d => d.type !== 'inventory')
-                                                .map((doc, idx) => (
-                                                    <button
-                                                        key={idx}
-                                                        onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
-                                                        className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                                    >
-                                                        <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
-                                                            {doc.type === 'invoice' ? (doc.name.includes('BOL') ? 'Boleta' :
-                                                                doc.name.includes('NC') ? 'Nota de Crédito' :
-                                                                    doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
-                                                                doc.type === 'purchase_order' ? 'Orden de Compra' :
-                                                                    doc.type === 'sale_order' ? 'Nota de Venta' : doc.type}
-                                                        </span>
-                                                        {doc.name}
-                                                    </button>
-                                                ))
-                                        ) : (
-                                            <span className="text-muted-foreground text-xs">-</span>
-                                        )}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setViewingTransaction({ type: 'inventory', id: move.id })}
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+            <div className="rounded-md border bg-white dark:bg-slate-950 px-1">
+                <DataTable columns={columns} data={moves} />
             </div>
 
             {viewingTransaction && (
