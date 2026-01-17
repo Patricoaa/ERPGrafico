@@ -10,7 +10,7 @@ export default function AccountingPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/accounting/accounts">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Plan de Cuentas</CardTitle>
                             <List className="h-4 w-4 text-muted-foreground" />
@@ -22,7 +22,7 @@ export default function AccountingPage() {
                     </Card>
                 </Link>
                 <Link href="/accounting/entries">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Asiento Contable</CardTitle>
                             <FileText className="h-4 w-4 text-muted-foreground" />

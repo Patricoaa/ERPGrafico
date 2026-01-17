@@ -140,7 +140,7 @@ export const BudgetManager = () => {
                         {budgets.map(b => (
                             <div
                                 key={b.id}
-                                className={`p-3 border rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 ${selectedBudget?.id === b.id ? 'bg-slate-100 dark:bg-slate-800 ring-2 ring-primary' : ''}`}
+                                className={`p-3 border rounded cursor-pointer hover:bg-accent transition-colors ${selectedBudget?.id === b.id ? 'bg-accent ring-2 ring-primary' : ''}`}
                                 onClick={() => viewExecution(b)}
                             >
                                 <div className="font-semibold">{b.name}</div>

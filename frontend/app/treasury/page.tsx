@@ -10,7 +10,7 @@ export default function TreasuryPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/treasury/accounts">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-l-4 border-l-blue-600">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-l-blue-600">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Cajas y Bancos</CardTitle>
                             <Banknote className="h-4 w-4 text-muted-foreground" />
@@ -23,7 +23,7 @@ export default function TreasuryPage() {
                 </Link>
 
                 <Link href="/treasury/payments">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-l-4 border-l-green-600">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-l-green-600">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Pagos y Cobros</CardTitle>
                             <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />

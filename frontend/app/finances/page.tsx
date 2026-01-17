@@ -10,7 +10,7 @@ export default function FinancesPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/finances/statements">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-l-4 border-indigo-500">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-indigo-500">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Estados Financieros</CardTitle>
                             <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -22,7 +22,7 @@ export default function FinancesPage() {
                     </Card>
                 </Link>
                 <Link href="/finances/analysis">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-l-4 border-violet-500">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-violet-500">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Análisis</CardTitle>
                             <PieChart className="h-4 w-4 text-muted-foreground" />
@@ -34,7 +34,7 @@ export default function FinancesPage() {
                     </Card>
                 </Link>
                 <Link href="/finances/budgets">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-l-4 border-purple-500">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-purple-500">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Presupuestos</CardTitle>
                             <Landmark className="h-4 w-4 text-muted-foreground" />

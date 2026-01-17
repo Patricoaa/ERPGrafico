@@ -10,7 +10,7 @@ export default function ProductionPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/production/orders">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-l-4 border-l-orange-500">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-l-orange-500">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Ordenes de Trabajo</CardTitle>
                             <ClipboardList className="h-4 w-4 text-muted-foreground" />
@@ -23,7 +23,7 @@ export default function ProductionPage() {
                 </Link>
                 {/* Placeholder for future features */}
                 <Link href="/production/orders">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer opacity-50">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer opacity-50">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Planificación</CardTitle>
                             <Printer className="h-4 w-4 text-muted-foreground" />

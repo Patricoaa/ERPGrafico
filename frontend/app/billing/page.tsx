@@ -10,7 +10,7 @@ export default function BillingPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/billing/sales">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-l-4 border-emerald-500">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-emerald-500">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Ventas (Emitidos)</CardTitle>
                             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -22,7 +22,7 @@ export default function BillingPage() {
                     </Card>
                 </Link>
                 <Link href="/billing/purchases">
-                    <Card className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-l-4 border-blue-500">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-blue-500">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Compras (Recibidos)</CardTitle>
                             <Receipt className="h-4 w-4 text-muted-foreground" />
