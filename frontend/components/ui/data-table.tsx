@@ -45,6 +45,7 @@ interface DataTableProps<TData, TValue> {
             icon?: React.ComponentType<{ className?: string }>
         }[]
     }[]
+    toolbarAction?: React.ReactNode
 }
 
 export function DataTable<TData, TValue>({
@@ -56,6 +57,7 @@ export function DataTable<TData, TValue>({
     searchPlaceholder,
     globalFilterFields,
     facetedFilters,
+    toolbarAction,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -93,13 +95,14 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="space-y-4">
-            {(filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0)) && (
+            {(filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction) && (
                 <DataTableToolbar
                     table={table}
                     filterColumn={filterColumn}
                     globalFilterFields={globalFilterFields}
                     searchPlaceholder={searchPlaceholder}
                     facetedFilters={facetedFilters}
+                    toolbarAction={toolbarAction}
                 />
             )}
             <div className="rounded-md border">

@@ -21,6 +21,7 @@ interface DataTableToolbarProps<TData> {
             icon?: React.ComponentType<{ className?: string }>
         }[]
     }[]
+    toolbarAction?: React.ReactNode
 }
 
 export function DataTableToolbar<TData>({
@@ -80,6 +81,7 @@ export function DataTableToolbar<TData>({
                         />
                     )
                 })}
+                {toolbarAction}
                 {isFiltered && (
                     <Button
                         variant="ghost"

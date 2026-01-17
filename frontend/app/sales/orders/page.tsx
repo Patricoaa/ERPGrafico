@@ -316,7 +316,6 @@ export default function SalesOrdersPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Notas de Venta</h2>
                 <div className="flex items-center space-x-2">
-                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Venta" />
                     <SaleOrderForm
                         onConfirmCheckout={(data) => {
                             setCheckoutData(data)
@@ -367,6 +366,9 @@ export default function SalesOrdersPage() {
                                 ],
                             },
                         ]}
+                        toolbarAction={
+                            <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Venta" />
+                        }
                         defaultPageSize={20}
                     />
                 </div>

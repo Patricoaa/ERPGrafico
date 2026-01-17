@@ -219,7 +219,6 @@ export default function WorkOrdersPage() {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
                     <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
                         <TabsList>
                             <TabsTrigger value="kanban" className="flex items-center gap-2">
@@ -274,6 +273,9 @@ export default function WorkOrdersPage() {
             <div className="mt-4">
                 {viewMode === "kanban" ? (
                     <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
+                        <div className="absolute top-4 right-4 z-10">
+                            <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
+                        </div>
                         {loading ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl">
                                 <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
@@ -305,6 +307,9 @@ export default function WorkOrdersPage() {
                                     ],
                                 },
                             ]}
+                            toolbarAction={
+                                <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
+                            }
                             defaultPageSize={20}
                         />
                     </div>

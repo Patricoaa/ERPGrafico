@@ -44,7 +44,7 @@ export function QuickActionsMenu() {
 
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-            <div className="flex items-center gap-2 p-2 bg-sidebar/80 backdrop-blur-xl border border-sidebar-border/50 rounded-2xl shadow-2xl pointer-events-auto ring-1 ring-black/5">
+            <div className="flex items-center gap-2 p-2 bg-sidebar border border-sidebar-border rounded-2xl shadow-2xl pointer-events-auto">
                 <TooltipProvider delayDuration={0}>
                     {actions.map((action) => {
                         const isActive = pathname === action.url
@@ -59,7 +59,7 @@ export function QuickActionsMenu() {
                                             "relative flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 group hover:scale-110 active:scale-95",
                                             isActive
                                                 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                                : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                                                : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                         )}
                                     >
                                         <Icon className={cn("h-5 w-5 transition-colors", !isActive && "group-hover:" + action.color)} />

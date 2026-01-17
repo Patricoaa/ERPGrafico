@@ -91,7 +91,7 @@ export function AppSidebar({ activeCategory, isVisible, onMouseEnter, onMouseLea
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             className={cn(
-                "w-64 bg-sidebar/80 backdrop-blur-xl border-r border-sidebar-border/50 h-screen absolute top-0 left-[70px] flex flex-col pt-8 transition-all duration-300 ease-in-out z-40 shadow-2xl overflow-hidden",
+                "w-64 bg-sidebar border-r border-sidebar-border h-screen absolute top-0 left-[70px] flex flex-col pt-8 transition-all duration-300 ease-in-out z-40 shadow-2xl overflow-hidden",
                 isVisible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"
             )}
         >
@@ -105,7 +105,7 @@ export function AppSidebar({ activeCategory, isVisible, onMouseEnter, onMouseLea
                     <Link
                         key={item.url}
                         href={item.url}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-all group"
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all group"
                     >
                         <div className="h-1 w-1 rounded-full bg-sidebar-foreground/20 group-hover:bg-primary group-hover:scale-150 transition-all" />
                         {item.title}

@@ -244,7 +244,6 @@ export default function PurchaseOrdersPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
                 <div className="flex items-center space-x-2">
-                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Orden" />
                     <Button onClick={() => setCheckoutOpen(true)}>
                         Nueva Orden de Compra
                     </Button>
@@ -265,7 +264,25 @@ export default function PurchaseOrdersPage() {
                     <div className="text-muted-foreground">Cargando órdenes de compra...</div>
                 </div>
             ) : (
-                <DataTable columns={columns} data={filteredOrders} />
+                <DataTable
+                    columns={columns}
+                    data={filteredOrders}
+                    filterColumn="supplier_name"
+                    searchPlaceholder="Buscar por proveedor o RUT..."
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Confirmado", value: "CONFIRMED" },
+                            ],
+                        },
+                    ]}
+                    toolbarAction={
+                        <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Orden" />
+                    }
+                />
             )}
 
             {viewingTransaction && (
