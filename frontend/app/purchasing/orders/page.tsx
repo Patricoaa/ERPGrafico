@@ -62,6 +62,7 @@ export default function PurchaseOrdersPage() {
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+    const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
 
 
     const fetchOrders = async () => {
@@ -295,14 +296,19 @@ export default function PurchaseOrdersPage() {
             }
 
             <PurchaseCheckoutWizard
-                open={checkoutOpen}
-                onOpenChange={setCheckoutOpen}
+                open={checkoutOpen || !!checkoutOrderId}
+                onOpenChange={(open) => {
+                    setCheckoutOpen(open)
+                    if (!open) setCheckoutOrderId(null)
+                }}
                 order={null}
+                orderId={checkoutOrderId}
                 orderLines={[{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }]}
                 total={0}
                 onComplete={() => {
                     fetchOrders()
                     setCheckoutOpen(false)
+                    setCheckoutOrderId(null)
                 }}
             />
 
@@ -324,6 +330,10 @@ export default function PurchaseOrdersPage() {
                 open={selectedOrderId !== null}
                 onOpenChange={(open) => !open && setSelectedOrderId(null)}
                 onActionSuccess={fetchOrders}
+                onEdit={(id) => {
+                    setSelectedOrderId(null)
+                    setCheckoutOrderId(id)
+                }}
             />
         </div >
     )

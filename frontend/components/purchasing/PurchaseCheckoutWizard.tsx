@@ -30,6 +30,7 @@ interface PurchaseCheckoutWizardProps {
     onComplete: () => void
     initialSupplierId?: string | null
     initialWarehouseId?: string
+    orderId?: number | null
 }
 
 export function PurchaseCheckoutWizard({
@@ -40,12 +41,55 @@ export function PurchaseCheckoutWizard({
     total,
     onComplete,
     initialSupplierId = null,
-    initialWarehouseId = ""
+    initialWarehouseId = "",
+    orderId = null
 }: PurchaseCheckoutWizardProps) {
+    const [internalOrder, setInternalOrder] = useState<any>(order)
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState<any[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
+
+    // Sync internal order if prop changes
+    useEffect(() => {
+        if (order) setInternalOrder(order)
+    }, [order])
+
+    // Fetch order if orderId is provided and no order prop
+    useEffect(() => {
+        if (open && orderId && !order) {
+            const fetchOrder = async () => {
+                setLoading(true)
+                try {
+                    const response = await api.get(`/purchasing/orders/${orderId}/`)
+                    const data = response.data
+                    setInternalOrder(data)
+
+                    const mappedLines = (data.lines || []).map((l: any) => ({
+                        id: l.id,
+                        product: l.product,
+                        product_name: l.product_name,
+                        qty: l.quantity,
+                        quantity: l.quantity,
+                        unit_cost: l.unit_cost,
+                        uom: l.uom,
+                        uom_name: l.uom_name,
+                        tax_rate: l.tax_rate || 19
+                    }))
+                    setCurrentOrderLines(mappedLines)
+                    setCurrentTotal(parseFloat(data.total))
+                    setSelectedSupplierId(data.supplier?.toString() || null)
+                    setSelectedWarehouseId(data.warehouse?.toString() || "")
+                } catch (error) {
+                    console.error("Error fetching order in wizard:", error)
+                    toast.error("Error al cargar la orden")
+                } finally {
+                    setLoading(false)
+                }
+            }
+            fetchOrder()
+        }
+    }, [open, orderId, order])
 
     useEffect(() => {
         if (open) {
@@ -96,6 +140,10 @@ export function PurchaseCheckoutWizard({
         notes: '',
         partialQuantities: []
     })
+
+    // Determine if the order is exclusively for subscriptions
+    const isOnlySubscriptions = currentOrderLines.length > 0 && currentOrderLines.every(l => l.product_type === 'SUBSCRIPTION')
+    const totalSteps = isOnlySubscriptions ? 4 : 5
 
     // Update payment amount when total changes
     useEffect(() => {
@@ -215,7 +263,7 @@ export function PurchaseCheckoutWizard({
 
             // Order data
             const payloadOrder = {
-                id: order?.id, // Present if editing existing draft
+                id: internalOrder?.id, // Present if editing existing draft
                 supplier: selectedSupplierId ? parseInt(selectedSupplierId) : 0,
                 warehouse: selectedWarehouseId ? parseInt(selectedWarehouseId) : null,
                 work_order: selectedWorkOrderId ? parseInt(selectedWorkOrderId) : null,
@@ -252,23 +300,31 @@ export function PurchaseCheckoutWizard({
             }
 
             // Receipt data
-            formData.append('receipt_type', receiptData.type)
-            const receiptPayload: any = {
-                delivery_reference: receiptData.deliveryReference,
-                notes: receiptData.notes
-            }
-
-            // Add partial quantities if applicable
-            if (receiptData.type === 'PARTIAL' && receiptData.partialQuantities) {
-                receiptPayload.line_data = receiptData.partialQuantities.map((pq: any) => ({
-                    line_id: pq.lineId,
-                    product_id: pq.productId,
-                    quantity: pq.receivedQty,
-                    uom: pq.uom
+            if (isOnlySubscriptions) {
+                formData.append('receipt_type', 'IMMEDIATE')
+                formData.append('receipt_data', JSON.stringify({
+                    delivery_reference: 'Auto-compleción suscripción',
+                    notes: 'Procesado automáticamente para suscripción'
                 }))
-            }
+            } else {
+                formData.append('receipt_type', receiptData.type)
+                const receiptPayload: any = {
+                    delivery_reference: receiptData.deliveryReference,
+                    notes: receiptData.notes
+                }
 
-            formData.append('receipt_data', JSON.stringify(receiptPayload))
+                // Add partial quantities if applicable
+                if (receiptData.type === 'PARTIAL' && receiptData.partialQuantities) {
+                    receiptPayload.line_data = receiptData.partialQuantities.map((pq: any) => ({
+                        line_id: pq.lineId,
+                        product_id: pq.productId,
+                        quantity: pq.receivedQty,
+                        uom: pq.uom
+                    }))
+                }
+
+                formData.append('receipt_data', JSON.stringify(receiptPayload))
+            }
 
             await api.post('/purchasing/orders/purchase_checkout/', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -285,7 +341,7 @@ export function PurchaseCheckoutWizard({
         }
     }
 
-    const totalSteps = 5
+    // const totalSteps = 5 -- calculated dynamically now
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

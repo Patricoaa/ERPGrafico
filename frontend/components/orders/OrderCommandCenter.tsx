@@ -53,6 +53,7 @@ interface OrderCommandCenterProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onActionSuccess?: () => void
+    onEdit?: (orderId: number) => void
 }
 
 const pulseGlow = `
@@ -89,7 +90,8 @@ export function OrderCommandCenter({
     type,
     open,
     onOpenChange,
-    onActionSuccess
+    onActionSuccess,
+    onEdit
 }: OrderCommandCenterProps) {
     const [order, setOrder] = useState<any>(null)
     const [loading, setLoading] = useState(false)
@@ -324,7 +326,7 @@ export function OrderCommandCenter({
 
     // Calculate visible columns for dynamic width
     const showProduction = isSale && (order.work_orders?.length > 0 || (order.lines || order.items || []).some((l: any) => l.is_manufacturable))
-    const showLogistics = (order.lines || order.items || []).length > 0
+    const showLogistics = (order.lines || order.items || []).length > 0 && !(order.lines || order.items || []).every((l: any) => l.product_type === 'SUBSCRIPTION')
 
     let visibleCols = 3 // Origen, Facturación, Tesorería
     if (showProduction) visibleCols++
@@ -414,7 +416,11 @@ export function OrderCommandCenter({
                                                 color: 'text-blue-500 hover:bg-blue-500/10',
                                                 onClick: () => {
                                                     if (type === 'purchase') {
-                                                        router.push(`/purchasing/checkout?orderId=${order.id}`)
+                                                        if (onEdit) {
+                                                            onEdit(order.id)
+                                                        } else {
+                                                            router.push(`/purchasing/checkout?orderId=${order.id}`)
+                                                        }
                                                     } else {
                                                         toast.info("Edición de ventas no implementada desde aquí")
                                                     }
