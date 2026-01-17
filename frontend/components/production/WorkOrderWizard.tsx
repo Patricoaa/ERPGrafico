@@ -193,6 +193,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         const isMovingForward = nextIndex > currentIndex
 
         if (order.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
+            // Validation: Check for insufficient stock items (that are not outsourced)
+            const missingStock = order.materials?.filter((m: any) => !m.is_available && !m.is_outsourced) || []
+            if (missingStock.length > 0) {
+                toast.error(`Stock insuficiente para ${missingStock.length} componentes. Reponga stock para continuar.`)
+                return
+            }
+
             const pending = order.materials?.filter((m: any) => m.is_outsourced && !m.purchase_order_number) || []
             if (pending.length > 0 && !showPOPreview) {
                 setOutsourcedPending(pending)

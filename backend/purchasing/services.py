@@ -219,6 +219,14 @@ class PurchasingService:
                 to_uom=line.product.uom
             )
 
+            # VALIDATION: Prevent negative stock during purchase return
+            if line.product.track_inventory and line.product.qty_on_hand < abs(base_qty):
+                raise ValidationError(
+                    f"Stock insuficiente para devolver '{line.product.name}'. "
+                    f"Disponible: {line.product.qty_on_hand} {line.product.uom.name}, "
+                    f"Requerido: {abs(base_qty)} {line.product.uom.name}"
+                )
+
             stock_move = StockMove.objects.create(
                 date=receipt.receipt_date,
                 product=line.product,

@@ -288,6 +288,14 @@ class WorkOrderService:
             material_cost = base_comp_qty * mat.component.cost_price
             total_material_cost += material_cost
 
+            # VALIDATION: Prevent negative stock during production consumption
+            if mat.component.track_inventory and mat.component.qty_on_hand < base_comp_qty:
+                raise ValidationError(
+                    f"Stock insuficiente para '{mat.component_name}'. "
+                    f"Disponible: {mat.component.qty_on_hand} {mat.component.uom.name}, "
+                    f"Requerido: {base_comp_qty} {mat.component.uom.name}"
+                )
+
             move = StockMove.objects.create(
                 product=mat.component,
                 warehouse=work_order.warehouse,
