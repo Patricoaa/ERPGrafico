@@ -14,6 +14,7 @@ import { CategoryForm } from "@/components/forms/CategoryForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface Category {
     id: number
@@ -33,6 +34,8 @@ export function CategoryList() {
     const [loading, setLoading] = useState(true)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
 
     const fetchCategories = async () => {
         try {
@@ -46,11 +49,19 @@ export function CategoryList() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar esta categoría?")) return
+    const handleDelete = async (category: Category | null, isConfirmed = false) => {
+        if (!category) return
+
+        if (!isConfirmed) {
+            setCategoryToDelete(category)
+            setIsDeleteModalOpen(true)
+            return
+        }
+
         try {
-            await api.delete(`/inventory/categories/${id}/`)
+            await api.delete(`/inventory/categories/${category.id}/`)
             toast.success("Categoría eliminada correctamente.")
+            setIsDeleteModalOpen(false)
             fetchCategories()
         } catch (error) {
             console.error("Error deleting category:", error)
@@ -113,7 +124,7 @@ export function CategoryList() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8 text-destructive"
-                                            onClick={() => handleDelete(category.id)}
+                                            onClick={() => handleDelete(category)}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -139,6 +150,21 @@ export function CategoryList() {
                     if (!open) setEditingCategory(null)
                 }}
                 initialData={editingCategory}
+            />
+
+            <ActionConfirmModal
+                open={isDeleteModalOpen}
+                onOpenChange={setIsDeleteModalOpen}
+                title="Eliminar Categoría"
+                variant="destructive"
+                onConfirm={() => { if (categoryToDelete) return handleDelete(categoryToDelete, true) }}
+                confirmText="Eliminar"
+                description={
+                    <p>
+                        ¿Está seguro de que desea eliminar la categoría <strong>{categoryToDelete?.name}</strong>?
+                        Esta acción no se puede deshacer y puede afectar a los productos asociados.
+                    </p>
+                }
             />
         </div>
     )

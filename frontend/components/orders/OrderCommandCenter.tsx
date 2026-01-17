@@ -46,6 +46,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface OrderCommandCenterProps {
     orderId: number | null
@@ -102,6 +103,19 @@ export function OrderCommandCenter({
         open: false,
         id: null,
         initialValue: ""
+    })
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean,
+        title: string,
+        description: React.ReactNode,
+        onConfirm: () => Promise<void> | void,
+        variant?: 'destructive' | 'warning',
+        confirmText?: string
+    }>({
+        open: false,
+        title: "",
+        description: null,
+        onConfirm: () => { }
     })
     const actionEngineRef = useRef<any>(null)
 
@@ -167,25 +181,43 @@ export function OrderCommandCenter({
         try {
             await api.post(`/billing/invoices/${id}/annul/`, { force })
             toast.success("Documento anulado correctamente")
+            setConfirmModal(prev => ({ ...prev, open: false }))
             fetchOrderDetails()
             onActionSuccess?.()
         } catch (error: any) {
             const errorMessage = error.response?.data?.error || "Error al anular documento"
             if (errorMessage.includes("pagos asociados") && !force) {
-                if (confirm("El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos?")) {
-                    handleAnnulDocument(id, true)
-                }
+                setConfirmModal({
+                    open: true,
+                    title: "Anular Documento con Pagos",
+                    variant: "warning",
+                    confirmText: "Anular Todo",
+                    onConfirm: () => handleAnnulDocument(id, true),
+                    description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos vinculados? Esta acción es irreversible."
+                })
             } else {
                 toast.error(errorMessage)
             }
         }
     }
 
-    const handleDeletePayment = async (id: number) => {
-        if (!confirm("¿Está seguro de anular este pago?")) return
+    const handleDeletePayment = async (id: number, isConfirmed = false) => {
+        if (!isConfirmed) {
+            setConfirmModal({
+                open: true,
+                title: "Anular Pago",
+                variant: "destructive",
+                confirmText: "Anular Pago",
+                onConfirm: () => handleDeletePayment(id, true),
+                description: "¿Está seguro de que desea anular este pago? El saldo pendiente de la orden aumentará automáticamente."
+            })
+            return
+        }
+
         try {
             await api.delete(`/treasury/payments/${id}/`)
             toast.success("Pago anulado correctamente")
+            setConfirmModal(prev => ({ ...prev, open: false }))
             fetchOrderDetails()
             onActionSuccess?.()
         } catch (error: any) {
@@ -193,11 +225,23 @@ export function OrderCommandCenter({
         }
     }
 
-    const handleDeleteDraft = async (id: number) => {
-        if (!confirm("¿Estás seguro de que deseas eliminar este borrador?")) return
+    const handleDeleteDraft = async (id: number, isConfirmed = false) => {
+        if (!isConfirmed) {
+            setConfirmModal({
+                open: true,
+                title: "Eliminar Borrador",
+                variant: "destructive",
+                confirmText: "Eliminar Borrador",
+                onConfirm: () => handleDeleteDraft(id, true),
+                description: "¿Estás seguro de que deseas eliminar este borrador de factura? Esta acción no se puede deshacer."
+            })
+            return
+        }
+
         try {
             await api.delete(`/billing/invoices/${id}/`)
             toast.success("Borrador eliminado correctamente")
+            setConfirmModal(prev => ({ ...prev, open: false }))
             fetchOrderDetails()
             onActionSuccess?.()
         } catch (error: any) {
@@ -700,6 +744,16 @@ export function OrderCommandCenter({
                 paymentId={trForm.id}
                 initialValue={trForm.initialValue}
                 onSuccess={fetchOrderDetails}
+            />
+
+            <ActionConfirmModal
+                open={confirmModal.open}
+                onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
+                title={confirmModal.title}
+                description={confirmModal.description}
+                onConfirm={confirmModal.onConfirm}
+                variant={confirmModal.variant as any}
+                confirmText={confirmModal.confirmText}
             />
 
         </>

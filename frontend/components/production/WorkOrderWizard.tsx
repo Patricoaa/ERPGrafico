@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import {
     Package,
     ArrowLeft,
@@ -98,6 +99,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [isAnnuling, setIsAnnuling] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
     const [outsourcedPending, setOutsourcedPending] = useState<any[]>([])
+    const [isAnnulModalOpen, setIsAnnulModalOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const { openCommandCenter } = useGlobalModals()
 
     const getFilteredStages = (orderData: any) => {
@@ -331,13 +334,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         }
     }
 
-    const handleAnnulOrder = async () => {
-        if (!window.confirm("¿Está seguro de que desea ANULAR esta Orden de Trabajo? Esta acción revertirá movimientos de stock y anulará documentos asociados.")) return
+    const handleAnnulOrder = async (isConfirmed = false) => {
+        if (!isConfirmed) {
+            setIsAnnulModalOpen(true)
+            return
+        }
 
         setIsAnnuling(true)
         try {
             await api.post(`/production/orders/${orderId}/annul/`)
             toast.success("Orden de Trabajo anulada exitosamente")
+            setIsAnnulModalOpen(false)
             fetchOrder()
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al anular la orden")
@@ -346,13 +353,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         }
     }
 
-    const handleDeleteOrder = async () => {
-        if (!window.confirm("¿Está seguro de que desea ELIMINAR permanentemente esta Orden de Trabajo?")) return
+    const handleDeleteOrder = async (isConfirmed = false) => {
+        if (!isConfirmed) {
+            setIsDeleteModalOpen(true)
+            return
+        }
 
         setIsDeleting(true)
         try {
             await api.delete(`/production/orders/${orderId}/`)
             toast.success("Orden de Trabajo eliminada")
+            setIsDeleteModalOpen(false)
             onOpenChange(false) // Close wizard
             if (onSuccess) onSuccess()
         } catch (error: any) {
@@ -1069,7 +1080,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     variant="outline"
                                     size="sm"
                                     className="flex-1 gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                                    onClick={handleAnnulOrder}
+                                    onClick={() => handleAnnulOrder()}
                                     disabled={isAnnuling || order?.status === 'CANCELLED'}
                                     title="Anular OT"
                                 >
@@ -1080,7 +1091,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         variant="outline"
                                         size="sm"
                                         className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10"
-                                        onClick={handleDeleteOrder}
+                                        onClick={() => handleDeleteOrder()}
                                         disabled={isDeleting}
                                         title="Eliminar OT"
                                     >
@@ -1227,6 +1238,52 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <ActionConfirmModal
+                open={isAnnulModalOpen}
+                onOpenChange={setIsAnnulModalOpen}
+                title="Anular Orden de Trabajo"
+                variant="warning"
+                onConfirm={() => handleAnnulOrder(true)}
+                confirmText="Anular OT"
+                description={
+                    <div className="space-y-3">
+                        <p>
+                            ¿Está seguro de que desea <strong>ANULAR</strong> la Orden de Trabajo OT-{order?.number}?
+                        </p>
+                        <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs flex gap-3">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <div className="space-y-1">
+                                <p className="font-bold">Acción con impacto financiero:</p>
+                                <ul className="list-disc pl-4 space-y-1">
+                                    <li>Se revertirán los movimientos de stock realizados.</li>
+                                    <li>Se anularán los documentos internos vinculados.</li>
+                                    <li>La OT quedará en estado ANULADA y no podrá procesarse más.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                }
+            />
+
+            <ActionConfirmModal
+                open={isDeleteModalOpen}
+                onOpenChange={setIsDeleteModalOpen}
+                title="Borrar Orden de Trabajo"
+                variant="destructive"
+                onConfirm={() => handleDeleteOrder(true)}
+                confirmText="Eliminar permanentemente"
+                description={
+                    <div className="space-y-3">
+                        <p>
+                            ¿Está seguro de que desea <strong>ELIMINAR</strong> permanentemente la Orden de Trabajo OT-{order?.number}?
+                        </p>
+                        <p className="text-destructive font-semibold bg-destructive/10 p-2 rounded text-xs">
+                            Esta acción es irreversible y borrará todos los registros históricos de esta orden.
+                        </p>
+                    </div>
+                }
+            />
         </Dialog>
     )
 }

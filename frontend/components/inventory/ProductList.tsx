@@ -20,6 +20,8 @@ import { cn, translateProductType } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 import { ArchivingRestrictionsDialog, type Restriction } from "./ArchivingRestrictionsDialog"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { AlertTriangle } from "lucide-react"
 
 interface Product {
     id: number
@@ -56,6 +58,7 @@ export function ProductList() {
     const [targetProductName, setTargetProductName] = useState("")
     const [isRetrying, setIsRetrying] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
     const fetchProducts = async () => {
         setLoading(true)
@@ -76,46 +79,48 @@ export function ProductList() {
         }
     }
 
-    const handleArchive = async (product: Product, isRetry = false) => {
+    const handleArchive = async (product: Product, isConfirmed = false) => {
         const isArchiving = product.active
         const action = isArchiving ? "archivar" : "restaurar"
 
-        if (!isRetry) {
-            let message = `¿Está seguro de que desea ${action} este producto?`
-            if (isArchiving && product.product_type === 'SUBSCRIPTION') {
-                message += "\n\nIMPORTANTE: Al archivar este producto, sus suscripciones activas/pausadas se ocultarán del gestor de suscripciones hasta que el producto sea restaurado."
-            } else if (!isArchiving && product.product_type === 'SUBSCRIPTION') {
-                message += "\n\nAl restaurar el producto, sus suscripciones volverán a aparecer en el gestor central."
-            }
-
-            if (!confirm(message)) return
+        if (!isConfirmed) {
+            setCurrentArchivingProduct(product)
+            setIsConfirmModalOpen(true)
+            return
         }
 
-        if (isRetry) setIsRetrying(true)
-        setCurrentArchivingProduct(product)
+        // If it's a retry from restrictions dialog, we already have currentArchivingProduct
+        const targetProduct = product || currentArchivingProduct
+        if (!targetProduct) return
+
+        if (currentArchivingProduct?.id === targetProduct.id && isRestrictionsDialogOpen) {
+            setIsRetrying(true)
+        }
 
         try {
-            await api.patch(`/inventory/products/${product.id}/`, { active: !product.active })
-            toast.success(`Producto ${isArchiving ? 'archivado' : 'restaurado'} correctamente.`, {
-                description: product.product_type === 'SUBSCRIPTION'
+            await api.patch(`/inventory/products/${targetProduct.id}/`, { active: !targetProduct.active })
+            toast.success(`Producto ${isArchiving ? 'archivado' : 'restaurar'} correctamente.`, {
+                description: targetProduct.product_type === 'SUBSCRIPTION'
                     ? `Las suscripciones asociadas han sido ${isArchiving ? 'ocultas' : 'restauradas en la lista'}.`
                     : undefined
             })
             setIsRestrictionsDialogOpen(false)
+            setIsConfirmModalOpen(false)
             fetchProducts()
         } catch (error: any) {
             console.error(`Error ${action} product:`, error)
 
             if (error.response?.status === 400 && error.response?.data?.restrictions) {
-                setTargetProductName(product.name)
+                setTargetProductName(targetProduct.name)
                 setRestrictions(error.response.data.restrictions)
                 setIsRestrictionsDialogOpen(true)
-                if (isRetry) toast.error("Aún existen dependencias por resolver.")
+                setIsConfirmModalOpen(false) // Close the confirmation modal if we show restrictions instead
+                if (isConfirmed && isRestrictionsDialogOpen) toast.error("Aún existen dependencias por resolver.")
             } else {
                 toast.error(`Error al ${action} el producto.`)
             }
         } finally {
-            if (isRetry) setIsRetrying(false)
+            setIsRetrying(false)
         }
     }
 
@@ -288,6 +293,39 @@ export function ProductList() {
                 restrictions={restrictions}
                 onRetry={currentArchivingProduct ? () => handleArchive(currentArchivingProduct, true) : undefined}
                 isRetrying={isRetrying}
+            />
+
+            <ActionConfirmModal
+                open={isConfirmModalOpen}
+                onOpenChange={setIsConfirmModalOpen}
+                title={currentArchivingProduct?.active ? "Archivar Producto" : "Restaurar Producto"}
+                variant={currentArchivingProduct?.active ? "warning" : "default"}
+                onConfirm={() => { if (currentArchivingProduct) return handleArchive(currentArchivingProduct, true) }}
+                confirmText={currentArchivingProduct?.active ? "Archivar" : "Restaurar"}
+                description={
+                    <div className="space-y-3">
+                        <p>
+                            ¿Está seguro de que desea {currentArchivingProduct?.active ? "archivar" : "restaurar"} el producto{" "}
+                            <strong>{currentArchivingProduct?.name}</strong>?
+                        </p>
+
+                        {currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
+                            <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg flex gap-3 text-amber-800">
+                                <AlertTriangle className="h-5 w-5 shrink-0" />
+                                <div className="text-xs">
+                                    <p className="font-bold mb-1">Impacto en Suscripciones</p>
+                                    <p>Al archivar este producto, sus suscripciones activas/pausadas se ocultarán del gestor hasta que el producto sea restaurado.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {!currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
+                            <p className="text-xs bg-blue-50 text-blue-700 p-2 rounded-md">
+                                Al restaurar el producto, sus suscripciones volverán a aparecer en el gestor central.
+                            </p>
+                        )}
+                    </div>
+                }
             />
         </div >
     )

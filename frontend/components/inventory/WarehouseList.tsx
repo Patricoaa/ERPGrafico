@@ -14,6 +14,7 @@ import { WarehouseForm } from "@/components/forms/WarehouseForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface Warehouse {
     id: number
@@ -27,6 +28,8 @@ export function WarehouseList() {
     const [loading, setLoading] = useState(true)
     const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
 
     const fetchWarehouses = async () => {
         try {
@@ -40,11 +43,19 @@ export function WarehouseList() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar este almacén?")) return
+    const handleDelete = async (warehouse: Warehouse | null, isConfirmed = false) => {
+        if (!warehouse) return
+
+        if (!isConfirmed) {
+            setWarehouseToDelete(warehouse)
+            setIsDeleteModalOpen(true)
+            return
+        }
+
         try {
-            await api.delete(`/inventory/warehouses/${id}/`)
+            await api.delete(`/inventory/warehouses/${warehouse.id}/`)
             toast.success("Almacén eliminado correctamente.")
+            setIsDeleteModalOpen(false)
             fetchWarehouses()
         } catch (error) {
             console.error("Error deleting warehouse:", error)
@@ -98,7 +109,7 @@ export function WarehouseList() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8 text-destructive"
-                                            onClick={() => handleDelete(warehouse.id)}
+                                            onClick={() => handleDelete(warehouse)}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -124,6 +135,21 @@ export function WarehouseList() {
                     if (!open) setEditingWarehouse(null)
                 }}
                 initialData={editingWarehouse}
+            />
+
+            <ActionConfirmModal
+                open={isDeleteModalOpen}
+                onOpenChange={setIsDeleteModalOpen}
+                title="Eliminar Almacén"
+                variant="destructive"
+                onConfirm={() => { if (warehouseToDelete) return handleDelete(warehouseToDelete, true) }}
+                confirmText="Eliminar"
+                description={
+                    <p>
+                        ¿Está seguro de que desea eliminar el almacén <strong>{warehouseToDelete?.name}</strong>?
+                        Esta acción podría afectar los stocks registrados en esta ubicación.
+                    </p>
+                }
             />
         </div>
     )

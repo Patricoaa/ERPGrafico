@@ -15,6 +15,7 @@ import { Edit, Trash2, Phone, Mail, Plus } from "lucide-react"
 import api from "@/lib/api"
 import { ContactModal } from "@/components/contacts/ContactModal"
 import { toast } from "sonner"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Input } from "@/components/ui/input"
 import { formatRUT } from "@/lib/utils/format"
 
@@ -23,6 +24,8 @@ export default function ContactsPage() {
     const [loading, setLoading] = useState(true)
     const [selectedContact, setSelectedContact] = useState<any>(null)
     const [modalOpen, setModalOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [contactToDelete, setContactToDelete] = useState<any>(null)
 
     const fetchContacts = async () => {
         setLoading(true)
@@ -41,12 +44,19 @@ export default function ContactsPage() {
         fetchContacts()
     }, [])
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este contacto?")) return
+    const handleDelete = async (contact: any, isConfirmed = false) => {
+        if (!contact) return
+
+        if (!isConfirmed) {
+            setContactToDelete(contact)
+            setIsDeleteModalOpen(true)
+            return
+        }
 
         try {
-            await api.delete(`/contacts/${id}/`)
+            await api.delete(`/contacts/${contact.id}/`)
             toast.success("El contacto ha sido eliminado exitosamente")
+            setIsDeleteModalOpen(false)
             fetchContacts()
         } catch (error) {
             toast.error("No se pudo eliminar el contacto. Puede que tenga documentos asociados.")
@@ -137,7 +147,7 @@ export default function ContactsPage() {
                                             variant="ghost"
                                             size="icon"
                                             className="text-destructive hover:text-destructive/90"
-                                            onClick={() => handleDelete(contact.id)}
+                                            onClick={() => handleDelete(contact)}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -154,6 +164,23 @@ export default function ContactsPage() {
                 onOpenChange={setModalOpen}
                 contact={selectedContact}
                 onSuccess={fetchContacts}
+            />
+
+            <ActionConfirmModal
+                open={isDeleteModalOpen}
+                onOpenChange={setIsDeleteModalOpen}
+                title="Eliminar Contacto"
+                variant="destructive"
+                onConfirm={() => { if (contactToDelete) return handleDelete(contactToDelete, true) }}
+                confirmText="Eliminar Contacto"
+                description={
+                    <div className="space-y-3">
+                        <p>¿Está seguro de que desea eliminar al contacto <strong>{contactToDelete?.name}</strong>?</p>
+                        <p className="text-xs text-muted-foreground border-l-2 pl-3 border-amber-400">
+                            <strong>Nota:</strong> Solo podrá eliminar este contacto si no tiene facturas, órdenes o movimientos contables asociados. De lo contrario, la acción fallará por integridad de datos.
+                        </p>
+                    </div>
+                }
             />
         </div>
     )

@@ -15,6 +15,7 @@ import {
 import { BOMFormDialog } from "./BOMFormDialog"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -27,6 +28,8 @@ export function BOMManager({ product }: BOMManagerProps) {
     const [loading, setLoading] = useState(false)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingBom, setEditingBom] = useState<any>(null)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [bomToDelete, setBomToDelete] = useState<any>(null)
 
     const fetchBoms = async () => {
         if (!product?.id) return
@@ -56,11 +59,19 @@ export function BOMManager({ product }: BOMManagerProps) {
         setDialogOpen(true)
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar esta lista de materiales?")) return;
+    const handleDelete = async (bom: any, isConfirmed = false) => {
+        if (!bom) return
+
+        if (!isConfirmed) {
+            setBomToDelete(bom)
+            setIsDeleteModalOpen(true)
+            return
+        }
+
         try {
-            await api.delete(`/production/boms/${id}/`)
+            await api.delete(`/production/boms/${bom.id}/`)
             toast.success("BOM eliminada")
+            setIsDeleteModalOpen(false)
             fetchBoms()
         } catch (error) {
             console.error("Error deleting BOM:", error)
@@ -189,7 +200,7 @@ export function BOMManager({ product }: BOMManagerProps) {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 hover:text-red-600"
-                                                    onClick={() => handleDelete(bom.id)}
+                                                    onClick={() => handleDelete(bom)}
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
@@ -209,6 +220,21 @@ export function BOMManager({ product }: BOMManagerProps) {
                 product={product}
                 bomToEdit={editingBom}
                 onSuccess={fetchBoms}
+            />
+
+            <ActionConfirmModal
+                open={isDeleteModalOpen}
+                onOpenChange={setIsDeleteModalOpen}
+                title="Eliminar Lista de Materiales"
+                variant="destructive"
+                onConfirm={() => { if (bomToDelete) return handleDelete(bomToDelete, true) }}
+                confirmText="Eliminar BOM"
+                description={
+                    <p>
+                        ¿Está seguro de que desea eliminar la lista de materiales <strong>{bomToDelete?.name}</strong>?
+                        Esta acción no se puede deshacer y el producto dejará de tener esta receta de fabricación definida.
+                    </p>
+                }
             />
         </Card>
     )
