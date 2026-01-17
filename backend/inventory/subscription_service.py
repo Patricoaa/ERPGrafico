@@ -73,7 +73,44 @@ class SubscriptionService:
                 Product.RecurrencePeriod.SEMIANNUAL: relativedelta(months=6),
             }
             delta = recurrence_map.get(product.recurrence_period, relativedelta(months=1))
+            delta = recurrence_map.get(product.recurrence_period, relativedelta(months=1))
             return from_date + delta
+
+    @staticmethod
+    def align_next_payment_date(subscription: Subscription):
+        """
+        Adjusts the next_payment_date to align with new configuration rules
+        without necessarily shifting it to the next period if the current
+        one is still valid and in the future.
+        """
+        product = subscription.product
+        if not subscription.next_payment_date:
+            subscription.next_payment_date = SubscriptionService.calculate_next_payment_date(subscription)
+            return subscription.next_payment_date
+
+        current_next = subscription.next_payment_date
+        
+        # If it's fixed day, adjust the day of the current next_payment_date
+        if product.payment_day_type == Product.PaymentDayType.FIXED_DAY:
+            target_day = product.payment_day or 1
+            try:
+                new_date = current_next.replace(day=target_day)
+            except ValueError:
+                last_day = monthrange(current_next.year, current_next.month)[1]
+                new_date = current_next.replace(day=last_day)
+            
+            # If the adjusted date is in the past, move it to the next valid period
+            if new_date < timezone.now().date():
+                 subscription.next_payment_date = SubscriptionService.calculate_next_payment_date(subscription, from_date=current_next)
+            else:
+                subscription.next_payment_date = new_date
+        
+        # For interval, we just keep the current next_payment_date unless it's past
+        elif product.payment_day_type == Product.PaymentDayType.INTERVAL:
+            if current_next < timezone.now().date():
+                subscription.next_payment_date = SubscriptionService.calculate_next_payment_date(subscription)
+        
+        return subscription.next_payment_date
     
     @staticmethod
     def is_renewal_due(subscription: Subscription, days_before: int = 7) -> bool:

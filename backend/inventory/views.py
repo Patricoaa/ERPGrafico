@@ -284,3 +284,23 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['status', 'product', 'supplier']
+
+    def get_queryset(self):
+        """
+        Only show subscriptions for products that are currently active (not archived).
+        """
+        return super().get_queryset().filter(product__active=True)
+
+    @action(detail=True, methods=['post'])
+    def pause(self, request, pk=None):
+        sub = self.get_object()
+        sub.status = Subscription.Status.PAUSED
+        sub.save()
+        return Response({'status': 'paused'})
+
+    @action(detail=True, methods=['post'])
+    def resume(self, request, pk=None):
+        sub = self.get_object()
+        sub.status = Subscription.Status.ACTIVE
+        sub.save()
+        return Response({'status': 'active'})

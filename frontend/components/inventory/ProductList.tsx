@@ -69,12 +69,25 @@ export function ProductList() {
     }
 
     const handleArchive = async (product: Product) => {
-        const action = product.active ? "archivar" : "restaurar"
-        if (!confirm(`¿Está seguro de que desea ${action} este producto?`)) return
+        const isArchiving = product.active
+        const action = isArchiving ? "archivar" : "restaurar"
+
+        let message = `¿Está seguro de que desea ${action} este producto?`
+        if (isArchiving && product.product_type === 'SUBSCRIPTION') {
+            message += "\n\nIMPORTANTE: Al archivar este producto, sus suscripciones activas/pausadas se ocultarán del gestor de suscripciones hasta que el producto sea restaurado."
+        } else if (!isArchiving && product.product_type === 'SUBSCRIPTION') {
+            message += "\n\nAl restaurar el producto, sus suscripciones volverán a aparecer en el gestor central."
+        }
+
+        if (!confirm(message)) return
 
         try {
             await api.patch(`/inventory/products/${product.id}/`, { active: !product.active })
-            toast.success(`Producto ${product.active ? 'archivado' : 'restaurado'} correctamente.`)
+            toast.success(`Producto ${isArchiving ? 'archivado' : 'restaurado'} correctamente.`, {
+                description: product.product_type === 'SUBSCRIPTION'
+                    ? `Las suscripciones asociadas han sido ${isArchiving ? 'ocultas' : 'restauradas en la lista'}.`
+                    : undefined
+            })
             fetchProducts()
         } catch (error) {
             console.error(`Error ${action} product:`, error)

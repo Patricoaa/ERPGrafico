@@ -58,13 +58,11 @@ export default function SubscriptionsPage() {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
-    const [statusFilter, setStatusFilter] = useState<string>("ACTIVE")
 
     const fetchSubscriptions = async () => {
         try {
             setLoading(true)
-            const params = statusFilter ? { status: statusFilter } : {}
-            const response = await api.get('/inventory/subscriptions/', { params })
+            const response = await api.get('/inventory/subscriptions/')
             setSubscriptions(response.data.results || response.data)
         } catch (error) {
             console.error("Error fetching subscriptions:", error)
@@ -86,7 +84,7 @@ export default function SubscriptionsPage() {
     useEffect(() => {
         fetchSubscriptions()
         fetchStats()
-    }, [statusFilter])
+    }, [])
 
     const handlePause = async (id: number) => {
         try {
@@ -110,20 +108,6 @@ export default function SubscriptionsPage() {
         }
     }
 
-    const handleCancel = async (id: number) => {
-        if (!confirm("¿Está seguro de cancelar esta suscripción? Esta acción no se puede deshacer.")) {
-            return
-        }
-
-        try {
-            await api.post(`/inventory/subscriptions/${id}/cancel/`)
-            toast.success("Suscripción cancelada")
-            fetchSubscriptions()
-            fetchStats()
-        } catch (error) {
-            toast.error("Error al cancelar suscripción")
-        }
-    }
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -208,38 +192,6 @@ export default function SubscriptionsPage() {
                 </div>
             )}
 
-            {/* Filters */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Filtros</CardTitle>
-                </CardHeader>
-                <CardContent className="flex gap-2">
-                    <Button
-                        variant={statusFilter === "ACTIVE" ? "default" : "outline"}
-                        onClick={() => setStatusFilter("ACTIVE")}
-                    >
-                        Activas
-                    </Button>
-                    <Button
-                        variant={statusFilter === "PAUSED" ? "default" : "outline"}
-                        onClick={() => setStatusFilter("PAUSED")}
-                    >
-                        Pausadas
-                    </Button>
-                    <Button
-                        variant={statusFilter === "CANCELLED" ? "default" : "outline"}
-                        onClick={() => setStatusFilter("CANCELLED")}
-                    >
-                        Canceladas
-                    </Button>
-                    <Button
-                        variant={statusFilter === "" ? "default" : "outline"}
-                        onClick={() => setStatusFilter("")}
-                    >
-                        Todas
-                    </Button>
-                </CardContent>
-            </Card>
 
             {/* Subscriptions Table */}
             <Card>
@@ -300,40 +252,22 @@ export default function SubscriptionsPage() {
                                         <TableCell className="text-right">
                                             <div className="flex gap-2 justify-end">
                                                 {sub.status === "ACTIVE" && (
-                                                    <>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handlePause(sub.id)}
-                                                        >
-                                                            <Pause className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="destructive"
-                                                            onClick={() => handleCancel(sub.id)}
-                                                        >
-                                                            <X className="h-4 w-4" />
-                                                        </Button>
-                                                    </>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handlePause(sub.id)}
+                                                    >
+                                                        <Pause className="h-4 w-4" />
+                                                    </Button>
                                                 )}
                                                 {sub.status === "PAUSED" && (
-                                                    <>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="default"
-                                                            onClick={() => handleResume(sub.id)}
-                                                        >
-                                                            <Play className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="destructive"
-                                                            onClick={() => handleCancel(sub.id)}
-                                                        >
-                                                            <X className="h-4 w-4" />
-                                                        </Button>
-                                                    </>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="default"
+                                                        onClick={() => handleResume(sub.id)}
+                                                    >
+                                                        <Play className="h-4 w-4" />
+                                                    </Button>
                                                 )}
                                             </div>
                                         </TableCell>

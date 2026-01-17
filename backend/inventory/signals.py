@@ -70,9 +70,8 @@ def product_subscription_sync(sender, instance, created, **kwargs):
                 sub.recurrence_period = instance.recurrence_period or Product.RecurrencePeriod.MONTHLY
                 sub.end_date = instance.contract_end_date if not instance.is_indefinite else None
                 
-                # If payment configuration changed, we might need to recalculate next_payment_date
-                # but only if it's in the future. For now, we always trust the one already set 
-                # UNLESS it's very inconsistent. Safer to just sync recurrence and amount.
+                # Align next payment date with new configuration
+                SubscriptionService.align_next_payment_date(sub)
                 sub.save()
             
             logger.info(f"Synchronized {active_subs.count()} active subscriptions for product {instance.id}")
