@@ -169,7 +169,13 @@ export default function ContactsPage() {
                     Cargando contactos...
                 </div>
             ) : (
-                <DataTable columns={columns} data={contacts} defaultPageSize={20} />
+                <DataTable
+                    columns={columns}
+                    data={contacts}
+                    globalFilterFields={["name", "tax_id"]}
+                    searchPlaceholder="Buscar por nombre o RUT..."
+                    defaultPageSize={20}
+                />
             )}
 
             <ContactModal

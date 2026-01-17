@@ -122,21 +122,20 @@ export default function UsersSettingsPage() {
                 <UserForm onSuccess={fetchUsers} />
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Gestión de Usuarios</CardTitle>
-                    <CardDescription>Administre el acceso de los empleados al sistema y sus niveles de permiso.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="flex h-[200px] items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <DataTable columns={columns} data={users} />
-                    )}
-                </CardContent>
-            </Card>
+            <div className="">
+                {loading ? (
+                    <div className="flex h-[200px] items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={users}
+                        globalFilterFields={["username", "email", "first_name", "last_name"]}
+                        searchPlaceholder="Buscar usuario por nombre, email o username..."
+                    />
+                )}
+            </div>
         </div>
     )
 }

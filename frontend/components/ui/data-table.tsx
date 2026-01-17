@@ -102,7 +102,7 @@ export function DataTable<TData, TValue>({
                     facetedFilters={facetedFilters}
                 />
             )}
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
+            <div className="rounded-md border">
                 <Table>
                     <TableHeader className="bg-muted/30">
                         {table.getHeaderGroups().map((headerGroup) => (

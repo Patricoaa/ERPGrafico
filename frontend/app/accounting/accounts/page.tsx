@@ -171,7 +171,13 @@ export default function AccountsPage() {
                     <AccountForm accounts={accounts} onSuccess={fetchAccounts} />
                 </div>
             </div>
-            <DataTable columns={columns} data={accounts} defaultPageSize={50} />
+            <DataTable
+                columns={columns}
+                data={accounts}
+                globalFilterFields={["code", "name"]}
+                searchPlaceholder="Buscar por código o nombre..."
+                defaultPageSize={50}
+            />
         </div>
     )
 }

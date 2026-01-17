@@ -120,8 +120,13 @@ export function CategoryList() {
                 </Button>
             </div>
 
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <DataTable columns={columns} data={categories} />
+            <div className="">
+                <DataTable
+                    columns={columns}
+                    data={categories}
+                    filterColumn="name"
+                    searchPlaceholder="Buscar categoría..."
+                />
             </div>
 
             <CategoryForm

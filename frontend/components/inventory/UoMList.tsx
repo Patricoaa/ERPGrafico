@@ -159,8 +159,13 @@ export function UoMList() {
                 </Button>
             </div>
 
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <DataTable columns={columns} data={uoms} />
+            <div className="">
+                <DataTable
+                    columns={columns}
+                    data={uoms}
+                    filterColumn="name"
+                    searchPlaceholder="Buscar unidad..."
+                />
             </div>
 
             <Dialog open={isUoMModalOpen} onOpenChange={setIsUoMModalOpen}>

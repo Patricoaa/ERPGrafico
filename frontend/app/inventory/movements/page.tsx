@@ -167,8 +167,13 @@ export default function MovementsPage() {
                 <h2 className="text-3xl font-bold tracking-tight">Movimientos de Inventario</h2>
             </div>
 
-            <div className="rounded-md border bg-white dark:bg-slate-950 px-1">
-                <DataTable columns={columns} data={moves} />
+            <div className="">
+                <DataTable
+                    columns={columns}
+                    data={moves}
+                    globalFilterFields={["id", "product_name", "warehouse_name", "description"]}
+                    searchPlaceholder="Buscar por producto, almacén o descripción..."
+                />
             </div>
 
             {viewingTransaction && (

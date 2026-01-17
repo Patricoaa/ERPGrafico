@@ -206,8 +206,13 @@ export function PricingRuleList() {
                 />
             )}
 
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <DataTable columns={columns} data={rules} />
+            <div className="">
+                <DataTable
+                    columns={columns}
+                    data={rules}
+                    globalFilterFields={["name", "product_name"]}
+                    searchPlaceholder="Buscar por nombre o producto..."
+                />
             </div>
         </div>
     )
