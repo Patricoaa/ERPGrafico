@@ -24,7 +24,7 @@ import {
     TooltipProvider,
     TooltipTrigger
 } from "@/components/ui/tooltip";
-import { Info, History, Share2 } from "lucide-react";
+import { Info, History, Share2, BarChart2 } from "lucide-react";
 import api from '@/lib/api';
 
 interface BudgetEditorProps {
@@ -74,13 +74,13 @@ const BudgetAccountRow = React.memo(({
                 </DropdownMenu>
             </div>
             {months.map(m => (
-                <div key={m} className="flex-1 border-r p-1">
+                <div key={m} className="flex-1 border-r p-1 bg-white dark:bg-slate-900/50">
                     <Input
                         type="number"
-                        className="h-8 text-[11px] text-right px-1 border-none bg-transparent focus-visible:bg-white dark:focus-visible:bg-slate-950"
+                        className="h-8 text-[11px] text-right px-1 border-none bg-transparent focus-visible:bg-white dark:focus-visible:bg-slate-950 font-medium"
                         placeholder="0"
-                        defaultValue={monthlyData?.[m] || ''}
-                        onBlur={e => onAmountChange(account.id, m, e.target.value)}
+                        value={monthlyData?.[m] || ''}
+                        onChange={e => onAmountChange(account.id, m, e.target.value)}
                     />
                 </div>
             ))}
@@ -232,12 +232,15 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] lg:max-w-7xl h-[90vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>Editar Presupuesto: {budget?.name}</DialogTitle>
+            <DialogContent className="max-w-[98vw] h-[95vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-4 bg-muted/10 border-b">
+                    <DialogTitle className="flex items-center gap-2">
+                        <BarChart2 className="h-5 w-5 text-primary" />
+                        Editar Presupuesto: {budget?.name}
+                    </DialogTitle>
                 </DialogHeader>
 
-                <div className="px-4 py-2 border-b flex items-center justify-between bg-muted/30">
+                <div className="px-4 py-2 border-b flex items-center justify-between bg-accent/30">
                     <div className="flex items-center gap-4 flex-1 max-w-xl">
                         <Input
                             placeholder="Buscar cuenta por nombre o código..."
@@ -302,9 +305,9 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                     </div>
                 </ScrollArea>
 
-                <DialogFooter>
+                <DialogFooter className="p-4 border-t bg-muted/10">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSave}>Guardar Cambios</Button>
+                    <Button onClick={handleSave} className="px-8">Guardar Presupuesto</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

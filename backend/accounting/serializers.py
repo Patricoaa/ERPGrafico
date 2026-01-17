@@ -49,7 +49,7 @@ class BudgetItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BudgetItem
-        fields = ['id', 'budget', 'account', 'account_code', 'account_name', 'amount']
+        fields = ['id', 'budget', 'account', 'account_code', 'account_name', 'month', 'year', 'amount']
 
 class BudgetSerializer(serializers.ModelSerializer):
     items = BudgetItemSerializer(many=True, read_only=True) # or separate endpoint for items management
