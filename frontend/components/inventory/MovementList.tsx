@@ -184,7 +184,7 @@ export function MovementList() {
                 </Button>
             </div>
 
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
+            <div className="">
                 <DataTable
                     columns={columns}
                     data={moves}

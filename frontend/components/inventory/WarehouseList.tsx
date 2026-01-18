@@ -103,7 +103,7 @@ export function WarehouseList() {
                 </Button>
             </div>
 
-            <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
+            <div className="">
                 <DataTable columns={columns} data={warehouses} />
             </div>
 
