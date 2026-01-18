@@ -7,13 +7,15 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, Ban, Settings, LayoutGrid, List } from "lucide-react"
+import { Pencil, Trash2, Ban, Settings, LayoutGrid, List, X } from "lucide-react"
 import { WorkOrderForm } from "@/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/components/production/WorkOrderWizard"
 import { WorkOrderKanban } from "@/components/production/WorkOrderKanban"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
+import { FacetedFilter } from "@/components/shared/FacetedFilter"
+import { Input } from "@/components/ui/input"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 
 interface WorkOrder {
@@ -42,11 +44,24 @@ export default function WorkOrdersPage() {
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
-    const [viewMode, setViewMode] = useState<string>("kanban")
-    const [requestedStage, setRequestedStage] = useState<string | undefined>(undefined)
+    const [searchTerm, setSearchTerm] = useState("")
+    const [statusFilters, setStatusFilters] = useState<string[]>([])
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
     const filteredOrders = orders.filter(order => {
+        // Search filter
+        const matchesSearch = searchTerm === "" ||
+            order.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (order.sale_customer_name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+
+        if (!matchesSearch) return false
+
+        // Status filter
+        const matchesStatus = statusFilters.length === 0 || statusFilters.includes(order.status)
+        if (!matchesStatus) return false
+
+        // Date range filter
         if (!dateRange || !dateRange.from) return true
         if (!order.due_date) return false // Cannot filter if no due date
 
@@ -212,7 +227,7 @@ export default function WorkOrdersPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0 border-b pb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Ordenes de Trabajo (OT)</h2>
                     <p className="text-muted-foreground mt-1">Gestión de flujo de producción</p>
@@ -270,12 +285,48 @@ export default function WorkOrdersPage() {
                 </div>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-2 space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-1 items-center space-x-2">
+                        <Input
+                            placeholder="Buscar por número, descripción o cliente..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="h-9 w-[250px] lg:w-[350px] rounded-xl bg-background/50"
+                        />
+                        <FacetedFilter
+                            title="Estado"
+                            options={[
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Planificada", value: "PLANNED" },
+                                { label: "En Proceso", value: "IN_PROGRESS" },
+                                { label: "Terminada", value: "FINISHED" },
+                                { label: "Anulada", value: "CANCELLED" },
+                            ]}
+                            selectedValues={statusFilters}
+                            onSelect={setStatusFilters}
+                        />
+                        <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
+
+                        {(searchTerm || statusFilters.length > 0 || dateRange) && (
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    setSearchTerm("")
+                                    setStatusFilters([])
+                                    setDateRange(undefined)
+                                }}
+                                className="h-9 px-2 lg:px-3 rounded-xl"
+                            >
+                                Resetear
+                                <X className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
                 {viewMode === "kanban" ? (
                     <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
-                        <div className="absolute top-4 right-4 z-10">
-                            <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
-                        </div>
                         {loading ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl">
                                 <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
@@ -292,24 +343,6 @@ export default function WorkOrdersPage() {
                         <DataTable
                             columns={columns}
                             data={filteredOrders}
-                            filterColumn="description"
-                            searchPlaceholder="Buscar por descripción..."
-                            facetedFilters={[
-                                {
-                                    column: "status",
-                                    title: "Estado",
-                                    options: [
-                                        { label: "Borrador", value: "DRAFT" },
-                                        { label: "Planificada", value: "PLANNED" },
-                                        { label: "En Proceso", value: "IN_PROGRESS" },
-                                        { label: "Terminada", value: "FINISHED" },
-                                        { label: "Anulada", value: "CANCELLED" },
-                                    ],
-                                },
-                            ]}
-                            toolbarAction={
-                                <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
-                            }
                             defaultPageSize={20}
                         />
                     </div>
