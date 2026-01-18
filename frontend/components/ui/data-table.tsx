@@ -50,6 +50,8 @@ interface DataTableProps<TData, TValue> {
     initialColumnVisibility?: VisibilityState
 }
 
+const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
+
 export function DataTable<TData, TValue>({
     columns,
     data,
@@ -61,7 +63,7 @@ export function DataTable<TData, TValue>({
     facetedFilters,
     toolbarAction,
     onRowSelectionChange,
-    initialColumnVisibility = {},
+    initialColumnVisibility = DEFAULT_COLUMN_VISIBILITY,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -71,12 +73,18 @@ export function DataTable<TData, TValue>({
 
     // Sync visibility with props
     React.useEffect(() => {
-        setColumnVisibility(initialColumnVisibility)
+        if (JSON.stringify(columnVisibility) !== JSON.stringify(initialColumnVisibility)) {
+            setColumnVisibility(initialColumnVisibility)
+        }
     }, [initialColumnVisibility])
 
     // Trigger callback when rowSelection changes
+    const prevRowSelection = React.useRef(rowSelection)
     React.useEffect(() => {
-        onRowSelectionChange?.(rowSelection)
+        if (JSON.stringify(prevRowSelection.current) !== JSON.stringify(rowSelection)) {
+            onRowSelectionChange?.(rowSelection)
+            prevRowSelection.current = rowSelection
+        }
     }, [rowSelection, onRowSelectionChange])
 
     const table = useReactTable({
