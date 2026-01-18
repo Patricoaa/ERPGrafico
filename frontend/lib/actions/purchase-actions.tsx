@@ -101,10 +101,9 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['treasury.add_payment'],
                 // Removed specific requiredStatus to rely on financial state
                 checkAvailability: (order) => {
-                    // Show if there's a posted invoice with pending amount
-                    const hasPostedInvoice = order.related_documents?.invoices?.some((inv: any) => inv.status === 'POSTED')
+                    // Show if there's a pending amount or order is not paid
                     const hasPendingAmount = (order.pending_amount ?? 0) > 0
-                    return hasPostedInvoice && (hasPendingAmount || order.status !== 'PAID')
+                    return hasPendingAmount || (order.status !== 'PAID' && order.status !== 'CANCELLED')
                 },
                 badge: { type: 'pending' }
             },
