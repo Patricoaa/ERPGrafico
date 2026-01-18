@@ -160,6 +160,14 @@ export function ProductList() {
             cell: ({ row }) => <div className="text-sm">{row.getValue("category_name")}</div>,
         },
         {
+            accessorKey: "active",
+            id: "active",
+            header: "Estado",
+            enableHiding: true,
+            // Keep it logically present but visually hidden if needed. 
+            // In this UI, we already show "ARCHIVADO" in internal_code, so we don't display this column.
+        },
+        {
             accessorKey: "product_type",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Tipo" />
