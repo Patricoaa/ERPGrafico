@@ -230,7 +230,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 // 3. Must NOT have an existing OT
                 const filtered = lines.filter((l: any) =>
                     l.product_type === 'MANUFACTURABLE' &&
-                    l.requires_advanced_manufacturing === true &&
                     (!l.work_order_summary)
                 )
                 setSaleLines(filtered)
@@ -534,7 +533,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                                         onChange={field.onChange}
                                                                         onSelect={handleManualProductSelect}
                                                                         productType="MANUFACTURABLE"
-                                                                        customFilter={(p) => p.requires_advanced_manufacturing === true}
                                                                         disabled={!!initialData} // Lock in Edit Mode
                                                                     />
                                                                 </FormControl>
