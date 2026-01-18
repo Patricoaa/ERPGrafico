@@ -164,8 +164,11 @@ export function ProductList() {
             id: "active",
             header: "Estado",
             enableHiding: true,
-            // Keep it logically present but visually hidden if needed. 
-            // In this UI, we already show "ARCHIVADO" in internal_code, so we don't display this column.
+            filterFn: (row, id, value: string[]) => {
+                if (!value || value.length === 0) return true
+                const rowValue = !!row.getValue(id)
+                return value.includes(String(rowValue))
+            },
         },
         {
             accessorKey: "product_type",
@@ -314,6 +317,7 @@ export function ProductList() {
                         data={products}
                         globalFilterFields={["name", "code", "internal_code"]}
                         searchPlaceholder="Buscar por nombre, SKU o código..."
+                        initialColumnVisibility={{ active: false }}
                         facetedFilters={[
                             {
                                 column: "category_name",

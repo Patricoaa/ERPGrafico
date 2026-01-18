@@ -210,7 +210,7 @@ export function PricingRuleList() {
                 <DataTable
                     columns={columns}
                     data={rules}
-                    globalFilterFields={["name", "product_name"]}
+                    globalFilterFields={["name"]}
                     searchPlaceholder="Buscar por nombre o producto..."
                 />
             </div>

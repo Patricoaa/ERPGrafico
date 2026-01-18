@@ -237,9 +237,15 @@ export default function ReplenishmentPage() {
         },
         {
             accessorKey: "active",
+            id: "active",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
+            filterFn: (row, id, value: string[]) => {
+                if (!value || value.length === 0) return true
+                const rowValue = !!row.getValue(id)
+                return value.includes(String(rowValue))
+            },
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     {row.getValue("active") ? (
@@ -448,6 +454,7 @@ export default function ReplenishmentPage() {
                         data={rules}
                         filterColumn="product_code"
                         searchPlaceholder="Buscar por producto..."
+                        initialColumnVisibility={{ active: false }}
                         facetedFilters={[
                             {
                                 column: "warehouse_name",

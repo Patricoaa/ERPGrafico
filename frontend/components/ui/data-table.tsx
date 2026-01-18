@@ -47,6 +47,7 @@ interface DataTableProps<TData, TValue> {
     }[]
     toolbarAction?: React.ReactNode
     onRowSelectionChange?: (selection: any) => void
+    initialColumnVisibility?: VisibilityState
 }
 
 export function DataTable<TData, TValue>({
@@ -60,12 +61,18 @@ export function DataTable<TData, TValue>({
     facetedFilters,
     toolbarAction,
     onRowSelectionChange,
+    initialColumnVisibility = {},
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialColumnVisibility)
     const [rowSelection, setRowSelection] = React.useState({})
+
+    // Sync visibility with props
+    React.useEffect(() => {
+        setColumnVisibility(initialColumnVisibility)
+    }, [initialColumnVisibility])
 
     // Trigger callback when rowSelection changes
     React.useEffect(() => {
@@ -97,6 +104,7 @@ export function DataTable<TData, TValue>({
             pagination: {
                 pageSize: defaultPageSize,
             },
+            columnVisibility: initialColumnVisibility,
         },
     })
 

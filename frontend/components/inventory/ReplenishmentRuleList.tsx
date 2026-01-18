@@ -211,7 +211,13 @@ export function ReplenishmentRuleList() {
         },
         {
             accessorKey: "active",
+            id: "active",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
+            filterFn: (row, id, value: string[]) => {
+                if (!value || value.length === 0) return true
+                const rowValue = !!row.getValue(id)
+                return value.includes(String(rowValue))
+            },
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     {row.getValue("active") ? <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-emerald-200">Activo</Badge> : <Badge variant="outline" className="text-muted-foreground">Pausado</Badge>}
@@ -377,7 +383,13 @@ export function ReplenishmentRuleList() {
             </div>
 
             <div className="rounded-xl border shadow-sm overflow-hidden bg-card">
-                <DataTable columns={columns} data={rules} />
+                <DataTable
+                    columns={columns}
+                    data={rules}
+                    filterColumn="product"
+                    searchPlaceholder="Buscar por producto..."
+                    initialColumnVisibility={{ active: false }}
+                />
             </div>
         </div>
     )
