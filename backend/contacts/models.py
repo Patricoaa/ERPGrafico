@@ -14,6 +14,7 @@ class Contact(models.Model):
     email = models.EmailField(_("Email"), blank=True)
     phone = models.CharField(_("Teléfono"), max_length=20, blank=True)
     address = models.TextField(_("Dirección"), blank=True)
+    code = models.CharField(_("Código"), max_length=20, unique=True, editable=False, null=True)
     
     # Accounting links
     account_receivable = models.ForeignKey(
@@ -47,6 +48,10 @@ class Contact(models.Model):
         pass
 
     def save(self, *args, **kwargs):
+        from core.services import SequenceService
+        if not self.code:
+            self.code = SequenceService.get_next_number(Contact, field_name='code')
+
         # We handle the 'one default' rule here to act as a switch instead of a blocker
         if self.is_default_customer:
             Contact.objects.filter(is_default_customer=True).exclude(pk=self.pk).update(is_default_customer=False)
@@ -63,7 +68,13 @@ class Contact(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return f"{self.name} ({self.tax_id})"
+        return f"{self.display_id} - {self.name} ({self.tax_id})"
+    
+    @property
+    def display_id(self):
+        if not self.code:
+            return ""
+        return f"C-{self.code}"
     
     @property
     def is_customer(self):

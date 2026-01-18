@@ -178,6 +178,13 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
 
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            {contact?.display_id && (
+                                <div className="bg-muted/50 p-2 rounded-md mb-2 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ID de Contacto</span>
+                                    <span className="font-mono font-bold text-primary">{contact.display_id}</span>
+                                </div>
+                            )}
+
                             <FormField
                                 control={form.control}
                                 name="name"

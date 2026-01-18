@@ -16,6 +16,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 interface Contact {
     id: number
+    code: string | null
+    display_id: string
     name: string
     tax_id: string | null
     contact_type: string
@@ -85,6 +87,13 @@ export default function ContactsPage() {
 
     // Definición de columnas para DataTable
     const columns: ColumnDef<Contact>[] = [
+        {
+            accessorKey: "display_id",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Código" />
+            ),
+            cell: ({ row }) => <span className="font-mono text-xs font-semibold">{row.getValue("display_id") || "-"}</span>,
+        },
         {
             accessorKey: "name",
             header: ({ column }) => (
@@ -208,8 +217,8 @@ export default function ContactsPage() {
                 <DataTable
                     columns={columns}
                     data={contacts}
-                    globalFilterFields={["name", "tax_id"]}
-                    searchPlaceholder="Buscar por nombre o RUT..."
+                    globalFilterFields={["name", "tax_id", "code"]}
+                    searchPlaceholder="Buscar por nombre, RUT o código..."
                     defaultPageSize={20}
                 />
             )}
