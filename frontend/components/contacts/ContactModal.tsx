@@ -72,6 +72,8 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
     })
 
     useEffect(() => {
+        if (!open) return
+
         if (contact) {
             form.reset({
                 name: contact.name,
@@ -97,7 +99,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                 is_default_vendor: false
             })
         }
-    }, [contact, open, form])
+    }, [contact, open, form.reset])
 
     const onSubmit = async (values: z.infer<typeof contactSchema>) => {
         try {
