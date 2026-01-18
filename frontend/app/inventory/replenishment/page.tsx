@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Pencil, Trash2, RefreshCw, PlayCircle, Settings2 } from "lucide-react"
+import { Plus, Pencil, Trash2, RefreshCw, PlayCircle, Settings2, ShoppingCart } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,12 +36,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { ProposalsList } from "@/components/inventory/ProposalsList"
 
 // Interfaces
 interface ReorderingRule {
@@ -56,7 +57,20 @@ interface ReorderingRule {
     active: boolean
 }
 
-
+interface ReplenishmentProposal {
+    id: number
+    product: number
+    product_name: string
+    product_code: string
+    warehouse: number
+    warehouse_name: string
+    qty_to_order: string
+    status: string
+    status_display: string
+    supplier: number | null
+    supplier_name: string | null
+    created_at: string
+}
 
 interface Warehouse {
     id: number
@@ -79,24 +93,26 @@ type FormValues = z.infer<typeof ruleSchema>
 
 export default function ReplenishmentPage() {
     const [rules, setRules] = useState<ReorderingRule[]>([])
-    // const [products, setProducts] = useState<Product[]>([]) // Removed in favor of ProductSelector
+    const [proposals, setProposals] = useState<ReplenishmentProposal[]>([])
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingRule, setEditingRule] = useState<ReorderingRule | null>(null)
     const [isSaving, setIsSaving] = useState(false)
+    const [activeTab, setActiveTab] = useState("rules")
 
-    // ... (fetchData)
     // Fetch Data
     const fetchData = async () => {
         setIsLoading(true)
         try {
-            const [rulesRes, warehousesRes] = await Promise.all([
+            const [rulesRes, proposalsRes, warehousesRes] = await Promise.all([
                 api.get('/inventory/reordering-rules/'),
+                api.get('/inventory/replenishment-proposals/'),
                 api.get('/inventory/warehouses/')
             ])
 
             setRules(rulesRes.data.results || rulesRes.data)
+            setProposals(proposalsRes.data.results || proposalsRes.data)
             setWarehouses(warehousesRes.data.results || warehousesRes.data)
         } catch (error) {
             console.error("Failed to fetch data", error)
@@ -175,14 +191,14 @@ export default function ReplenishmentPage() {
     }
 
     const handleRunScheduler = async () => {
-        toast.info("Iniciando planificador...")
+        const toastId = toast.loading("Ejecutando planificador...")
         try {
-            // Placeholder for future endpoint
-            // await api.post('/inventory/procurement/run/') 
-            await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate delay
-            toast.success("Planificación completada (Simulada)")
+            const response = await api.post('/inventory/replenishment-proposals/run_planifier/')
+            toast.success(`Planificación completada: ${response.data.proposals_created_or_updated} propuestas creadas/actualizadas`, { id: toastId })
+            fetchData()
+            setActiveTab("proposals")
         } catch (error) {
-            toast.error("Error en planificación")
+            toast.error("Error en planificación", { id: toastId })
         }
     }
 
@@ -270,11 +286,11 @@ export default function ReplenishmentPage() {
                 <div className="space-y-1">
                     <h2 className="text-3xl font-bold tracking-tight">Reabastecimiento</h2>
                     <p className="text-muted-foreground">
-                        Define reglas de stock mínimo/máximo para sugerir compras automáticamente.
+                        Define reglas de stock mínimo/máximo y gestiona propuestas de compra automáticas.
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={handleRunScheduler}>
+                    <Button variant="outline" size="sm" onClick={handleRunScheduler} disabled={isLoading}>
                         <PlayCircle className="mr-2 h-4 w-4" />
                         Ejecutar Planificador
                     </Button>
@@ -409,22 +425,45 @@ export default function ReplenishmentPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                {/* Summary Cards could go here */}
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                <TabsList>
+                    <TabsTrigger value="rules" className="gap-2">
+                        <Settings2 className="h-4 w-4" />
+                        Reglas de Stock
+                    </TabsTrigger>
+                    <TabsTrigger value="proposals" className="gap-2 relative">
+                        <ShoppingCart className="h-4 w-4" />
+                        Propuestas Pendientes
+                        {proposals.filter(p => p.status === 'PENDING').length > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                                {proposals.filter(p => p.status === 'PENDING').length}
+                            </span>
+                        )}
+                    </TabsTrigger>
+                </TabsList>
 
-            <DataTable
-                columns={columns}
-                data={rules}
-                filterColumn="product_name"
-                searchPlaceholder="Buscar por producto..."
-                facetedFilters={[
-                    {
-                        column: "warehouse_name",
-                        title: "Almacén",
-                    },
-                ]}
-            />
+                <TabsContent value="rules" className="space-y-4">
+                    <DataTable
+                        columns={columns}
+                        data={rules}
+                        filterColumn="product_name"
+                        searchPlaceholder="Buscar por producto..."
+                        facetedFilters={[
+                            {
+                                column: "warehouse_name",
+                                title: "Almacén",
+                            },
+                        ]}
+                    />
+                </TabsContent>
+
+                <TabsContent value="proposals" className="space-y-4">
+                    <ProposalsList
+                        data={proposals}
+                        onRefresh={fetchData}
+                    />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

@@ -328,6 +328,15 @@ class Product(models.Model):
         help_text=_("Bodega sugerida automáticamente al recibir este producto.")
     )
 
+    preferred_supplier = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='preferred_products',
+        verbose_name=_("Proveedor Preferido"),
+        help_text=_("Proveedor sugerido para reabastecimiento y órdenes de compra.")
+    )
+
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
     
@@ -818,6 +827,12 @@ class ReplenishmentProposal(models.Model):
     qty_to_order = models.DecimalField(_("Cantidad a Pedir"), max_digits=12, decimal_places=4)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.PENDING)
     rule = models.ForeignKey(ReorderingRule, on_delete=models.SET_NULL, null=True, blank=True, related_name='proposals')
+    supplier = models.ForeignKey(
+        'contacts.Contact', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='replenishment_proposals'
+    )
     
     purchase_order = models.ForeignKey(
         'purchasing.PurchaseOrder', 

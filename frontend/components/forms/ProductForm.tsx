@@ -260,6 +260,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     contract_end_date: initialData.contract_end_date || "",
                     income_account: initialData.income_account?.id?.toString() || initialData.income_account?.toString() || "",
                     expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "",
+                    preferred_supplier: initialData.preferred_supplier?.id?.toString() || initialData.preferred_supplier?.toString() || "",
                 })
                 setImagePreview(initialData.image || null)
                 fetchPricingRules()
@@ -299,6 +300,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     product_custom_fields: [],
                     income_account: "",
                     expense_account: "",
+                    preferred_supplier: "",
                 })
                 setImagePreview(null)
                 setPricingRules([])
@@ -337,6 +339,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             if (data.receiving_warehouse) formData.append('receiving_warehouse', data.receiving_warehouse)
             if (data.income_account) formData.append('income_account', data.income_account)
             if (data.expense_account) formData.append('expense_account', data.expense_account)
+            if (data.preferred_supplier) formData.append('preferred_supplier', data.preferred_supplier)
 
             if (data.allowed_sale_uoms && data.allowed_sale_uoms.length > 0) {
                 data.allowed_sale_uoms.forEach(id => formData.append('allowed_sale_uoms', id))

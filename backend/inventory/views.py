@@ -292,6 +292,28 @@ class ReplenishmentProposalViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
+    def run_planifier(self, request):
+        """
+        Runs the replenishment planifier for all active storable products.
+        """
+        from .models import Product, Warehouse
+        products = Product.objects.filter(
+            active=True, 
+            product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE],
+            track_inventory=True
+        )
+        warehouses = Warehouse.objects.all()
+        
+        count = 0
+        for warehouse in warehouses:
+            for product in products:
+                proposal = ProcurementService.check_replenishment(product, warehouse)
+                if proposal:
+                    count += 1
+                    
+        return Response({'status': 'ok', 'proposals_created_or_updated': count})
+
+    @action(detail=False, methods=['post'])
     def ignore(self, request):
         """
         Marks proposals as ignored.

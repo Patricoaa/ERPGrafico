@@ -525,14 +525,8 @@ class ProcurementService:
         # Calculate On Order (confirmed POs not yet received)
         from purchasing.models import PurchaseLine, PurchaseOrder
         from django.db.models import Sum
-        on_order = PurchaseLine.objects.filter(
-            product=product,
-            order__warehouse=warehouse,
-            order__status=PurchaseOrder.Status.CONFIRMED
-        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
         
         # Adjust on_order if partial receipts exist (actually qty_pending might be better)
-        # For simplicity in this iteration:
         pending_reception = Decimal('0')
         pending_lines = PurchaseLine.objects.filter(
             product=product,
@@ -546,19 +540,36 @@ class ProcurementService:
 
         # 3. Check threshold
         if virtual_stock < rule.min_quantity:
-            qty_to_order = rule.max_quantity - virtual_stock
+            qty_to_order_base = rule.max_quantity - virtual_stock
+            qty_to_order = qty_to_order_base
             
+            # UoM Conversion for ordering
+            target_uom = product.purchase_uom or product.uom
+            if target_uom != product.uom:
+                from .services import UoMService
+                qty_to_order = UoMService.convert_quantity(qty_to_order_base, product.uom, target_uom)
+            
+            # Supplier selection: Preferred > Subscription > Generic (none)
+            supplier = product.preferred_supplier
+            if not supplier and product.product_type == Product.Type.SUBSCRIPTION:
+                supplier = product.subscription_supplier
+
             # Create or Update Proposal
             proposal, created = ReplenishmentProposal.objects.get_or_create(
                 product=product,
                 warehouse=warehouse,
                 status=ReplenishmentProposal.Status.PENDING,
-                defaults={'qty_to_order': qty_to_order, 'rule': rule}
+                defaults={
+                    'qty_to_order': qty_to_order, 
+                    'rule': rule,
+                    'supplier': supplier
+                }
             )
             
             if not created:
                 proposal.qty_to_order = qty_to_order
                 proposal.rule = rule
+                proposal.supplier = supplier
                 proposal.save()
             
             return proposal
@@ -577,50 +588,58 @@ class ProcurementService:
     @transaction.atomic
     def create_purchase_order_from_proposals(proposal_ids: list, user=None):
         """
-        Groups proposals by supplier (if known) and creates Draft POs.
+        Groups proposals by supplier and warehouse and creates Draft POs.
         """
         from .models import ReplenishmentProposal
         from purchasing.models import PurchaseOrder, PurchaseLine
-        from contacts.models import Contact # Dummy for now
         
         proposals = ReplenishmentProposal.objects.filter(id__in=proposal_ids, status=ReplenishmentProposal.Status.PENDING)
         if not proposals.exists():
             return []
 
-        # In a real scenario, we'd find the default supplier for each product.
-        # For now, we might need to ask or use a placeholder if not defined.
-        # Assuming we just create one PO per warehouse for now, or group by "Main Supplier".
-        
-        # Let's group by warehouse
-        by_warehouse = {}
+        # Group by (warehouse_id, supplier_id)
+        grouped_proposals = {}
         for p in proposals:
-            if p.warehouse_id not in by_warehouse:
-                by_warehouse[p.warehouse_id] = []
-            by_warehouse[p.warehouse_id].append(p)
+            # Use proposal's supplier or fall back to product's preferred supplier
+            supplier_id = p.supplier_id or (p.product.preferred_supplier_id if hasattr(p.product, 'preferred_supplier') else None)
+            
+            # If still no supplier, we might need a placeholder or to fail. 
+            # For now, let's skip or flag it. We'll use None as a key for "To Assign".
+            key = (p.warehouse_id, supplier_id)
+            if key not in grouped_proposals:
+                grouped_proposals[key] = []
+            grouped_proposals[key].append(p)
 
         created_pos = []
-        for warehouse_id, props in by_warehouse.items():
-            # For this MVP, we pick the first supplier we find in the system or a default
-            from contacts.models import Contact
-            supplier = Contact.objects.filter(contact_type='SUPPLIER').first()
-            if not supplier:
-                raise ValidationError("No hay proveedores registrados en el sistema.")
-
+        for (warehouse_id, supplier_id), props in grouped_proposals.items():
+            if not supplier_id:
+                # Optional: We could create a PO with a placeholder supplier if one exists
+                # or just raise an error asking the user to assign a supplier.
+                from contacts.models import Contact
+                supplier = Contact.objects.filter(contact_type='SUPPLIER').first()
+                if not supplier:
+                    raise ValidationError(f"Propuesta para {props[0].product.name} no tiene proveedor asignado y no hay proveedores en el sistema.")
+                supplier_id = supplier.id
+            
             warehouse = props[0].warehouse
             
             po = PurchaseOrder.objects.create(
-                supplier=supplier,
+                supplier_id=supplier_id,
                 warehouse=warehouse,
                 status=PurchaseOrder.Status.DRAFT,
                 notes="Generado automáticamente por el Planificador de Reabastecimiento."
             )
             
             for p in props:
+                # Use the UoM from the product's purchase_uom if it matches the proposal's qty logic
+                # Actually p.product.purchase_uom is probably what we want if we converted it in check_replenishment
+                uom = p.product.purchase_uom or p.product.uom
+                
                 PurchaseLine.objects.create(
                     order=po,
                     product=p.product,
                     quantity=p.qty_to_order,
-                    uom=p.product.uom,
+                    uom=uom,
                     unit_cost=p.product.cost_price or Decimal('0')
                 )
                 p.status = ReplenishmentProposal.Status.CONVERTED

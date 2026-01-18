@@ -85,6 +85,7 @@ class ProductSerializer(serializers.ModelSerializer):
     purchase_uom_name = serializers.CharField(source='purchase_uom.name', read_only=True)
     receiving_warehouse_name = serializers.CharField(source='receiving_warehouse.name', read_only=True)
     subscription_supplier_name = serializers.CharField(source='subscription_supplier.name', read_only=True)
+    preferred_supplier_name = serializers.CharField(source='preferred_supplier.name', read_only=True)
     
     current_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
@@ -114,6 +115,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'is_variable_amount', 'track_inventory', 'can_be_sold', 'can_be_purchased',
             'uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse',
             'sale_price', 'cost_price', 'active', 'income_account', 'expense_account',
+            'preferred_supplier', 'preferred_supplier_name',
             'category_name', 'uom_name', 'uom_category', 'sale_uom_name', 'purchase_uom_name',
             'receiving_warehouse_name', 'current_stock', 'effective_price', 'last_purchase_price',
             'manufacturable_quantity', 'bom_cost', 'qty_reserved', 'qty_available',
@@ -479,6 +481,7 @@ class ReplenishmentProposalSerializer(serializers.ModelSerializer):
     product_code = serializers.CharField(source='product.code', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
 
     class Meta:

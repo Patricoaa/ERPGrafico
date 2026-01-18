@@ -46,6 +46,7 @@ interface DataTableProps<TData, TValue> {
         }[]
     }[]
     toolbarAction?: React.ReactNode
+    onRowSelectionChange?: (selection: any) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -58,12 +59,18 @@ export function DataTable<TData, TValue>({
     globalFilterFields,
     facetedFilters,
     toolbarAction,
+    onRowSelectionChange,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
+
+    // Trigger callback when rowSelection changes
+    React.useEffect(() => {
+        onRowSelectionChange?.(rowSelection)
+    }, [rowSelection, onRowSelectionChange])
 
     const table = useReactTable({
         data,

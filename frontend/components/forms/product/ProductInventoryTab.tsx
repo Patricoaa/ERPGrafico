@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ReplenishmentRuleForm } from "../ReplenishmentRuleForm"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 
@@ -137,6 +138,31 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                                         </FormControl>
                                                         <FormDescription className="text-[10px]">
                                                             Bodega sugerida automáticamente al registrar recepciones de este producto.
+                                                        </FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField<ProductFormValues>
+                                                control={form.control}
+                                                name="preferred_supplier"
+                                                render={({ field: supplierField }) => (
+                                                    <FormItem className="space-y-1 mt-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <Package className="h-3.5 w-3.5 text-primary" />
+                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Proveedor Preferido</FormLabel>
+                                                        </div>
+                                                        <FormControl>
+                                                            <AdvancedContactSelector
+                                                                value={supplierField.value || ""}
+                                                                onChange={supplierField.onChange}
+                                                                contactType="SUPPLIER"
+                                                                placeholder="Seleccionar proveedor preferido..."
+                                                            />
+                                                        </FormControl>
+                                                        <FormDescription className="text-[10px]">
+                                                            Proveedor sugerido automáticamente para propuestas de reabastecimiento.
                                                         </FormDescription>
                                                         <FormMessage />
                                                     </FormItem>
