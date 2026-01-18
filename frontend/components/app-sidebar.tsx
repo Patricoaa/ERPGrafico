@@ -36,9 +36,7 @@ const categoryItems: Record<string, any> = {
     "inventory": [
         { title: "Productos", url: "/inventory/products" },
         { title: "Stock", url: "/inventory/stock" },
-        { title: "Reabastecimiento", url: "/inventory/replenishment" },
         { title: "Suscripciones", url: "/subscriptions" },
-        { title: "Almacenes", url: "/inventory/warehouses" },
         { title: "Unidades de Medida", url: "/inventory/uoms" },
     ],
     "production": [
