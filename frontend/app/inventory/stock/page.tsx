@@ -5,8 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { WarehouseList } from "@/components/inventory/WarehouseList"
 import { MovementList } from "@/components/inventory/MovementList"
 import { StockReport } from "@/components/inventory/StockReport"
-
-import { ReplenishmentRuleList } from "@/components/inventory/ReplenishmentRuleList"
+import { ReplenishmentDashboard } from "@/components/inventory/ReplenishmentDashboard"
 import { Warehouse, History, FileBarChart, ArrowRightLeft, RefreshCw } from "lucide-react"
 
 export default function UnifiedStockPage() {
@@ -51,7 +50,7 @@ export default function UnifiedStockPage() {
                         <MovementList />
                     </TabsContent>
                     <TabsContent value="replenishment" className="mt-0 outline-none">
-                        <ReplenishmentRuleList />
+                        <ReplenishmentDashboard />
                     </TabsContent>
                     <TabsContent value="warehouses" className="mt-0 outline-none">
                         <WarehouseList />
