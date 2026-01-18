@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { DataManagement } from "@/components/shared/DataManagement"
 import { formatRUT } from "@/lib/utils/format"
+import { Building2 } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Supplier {
     id: number
@@ -19,6 +21,7 @@ interface Supplier {
     contact_name: string
     email: string
     phone: string
+    is_default_vendor: boolean
 }
 
 export default function SuppliersPage() {
@@ -61,7 +64,23 @@ export default function SuppliersPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Razón Social" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2 font-medium">
+                    {row.getValue("name")}
+                    {row.original.is_default_vendor && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <div className="p-1 bg-purple-100 rounded-full">
+                                        <Building2 className="h-3 w-3 text-purple-600" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Proveedor por defecto</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
+            ),
         },
         {
             accessorKey: "tax_id",

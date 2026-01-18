@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { DataManagement } from "@/components/shared/DataManagement"
 import { formatRUT } from "@/lib/utils/format"
+import { User } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Customer {
     id: number
@@ -18,6 +20,7 @@ interface Customer {
     tax_id: string
     email: string
     phone: string
+    is_default_customer: boolean
 }
 
 export default function CustomersPage() {
@@ -60,7 +63,23 @@ export default function CustomersPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Razón Social" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2 font-medium">
+                    {row.getValue("name")}
+                    {row.original.is_default_customer && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <div className="p-1 bg-blue-100 rounded-full">
+                                        <User className="h-3 w-3 text-blue-600" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Cliente por defecto</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
+            ),
         },
         {
             accessorKey: "tax_id",

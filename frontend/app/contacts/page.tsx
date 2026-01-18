@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Plus } from "lucide-react"
+import { Edit, Trash2, Plus, Building2, User as UserIcon } from "lucide-react"
 import api from "@/lib/api"
 import { ContactModal } from "@/components/contacts/ContactModal"
 import { toast } from "sonner"
@@ -12,6 +12,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Contact {
     id: number
@@ -21,6 +22,8 @@ interface Contact {
     email: string | null
     phone: string | null
     address: string | null
+    is_default_customer: boolean
+    is_default_vendor: boolean
 }
 
 export default function ContactsPage() {
@@ -87,7 +90,40 @@ export default function ContactsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Nombre" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            cell: ({ row }) => {
+                const contact = row.original
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium">{contact.name}</span>
+                        <div className="flex gap-1">
+                            {contact.is_default_customer && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <div className="p-1 bg-blue-100 rounded-full">
+                                                <UserIcon className="h-3 w-3 text-blue-600" />
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Cliente por defecto</TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                            {contact.is_default_vendor && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <div className="p-1 bg-purple-100 rounded-full">
+                                                <Building2 className="h-3 w-3 text-purple-600" />
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Proveedor por defecto</TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                        </div>
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "tax_id",

@@ -43,24 +43,17 @@ class Contact(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        from django.core.exceptions import ValidationError
-        if self.is_default_customer:
-            # Ensure only one default customer
-            clashing = Contact.objects.filter(is_default_customer=True)
-            if self.pk:
-                clashing = clashing.exclude(pk=self.pk)
-            if clashing.exists():
-                raise ValidationError(_("Ya existe un cliente por defecto."))
-        
-        if self.is_default_vendor:
-            # Ensure only one default vendor
-            clashing = Contact.objects.filter(is_default_vendor=True)
-            if self.pk:
-                clashing = clashing.exclude(pk=self.pk)
-            if clashing.exists():
-                raise ValidationError(_("Ya existe un proveedor por defecto."))
+        # Validation for uniqueness is now handled automatically in save()
+        pass
 
     def save(self, *args, **kwargs):
+        # We handle the 'one default' rule here to act as a switch instead of a blocker
+        if self.is_default_customer:
+            Contact.objects.filter(is_default_customer=True).exclude(pk=self.pk).update(is_default_customer=False)
+        
+        if self.is_default_vendor:
+            Contact.objects.filter(is_default_vendor=True).exclude(pk=self.pk).update(is_default_vendor=False)
+
         self.full_clean()
         super().save(*args, **kwargs)
 
