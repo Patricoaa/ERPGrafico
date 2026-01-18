@@ -446,7 +446,7 @@ export default function ReplenishmentPage() {
                     <DataTable
                         columns={columns}
                         data={rules}
-                        filterColumn="product_name"
+                        filterColumn="product_code"
                         searchPlaceholder="Buscar por producto..."
                         facetedFilters={[
                             {

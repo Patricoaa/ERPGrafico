@@ -200,7 +200,7 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
             <DataTable
                 columns={columns}
                 data={data.filter(p => p.status === 'PENDING')}
-                filterColumn="product_name"
+                filterColumn="product_code"
                 searchPlaceholder="Filtrar por producto..."
                 onRowSelectionChange={(selection: Record<string, boolean>) => {
                     // selection is an object { index: boolean }

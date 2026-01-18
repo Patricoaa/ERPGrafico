@@ -24,13 +24,15 @@ interface DataTableToolbarProps<TData> {
     toolbarAction?: React.ReactNode
 }
 
-export function DataTableToolbar<TData>({
-    table,
-    filterColumn,
-    globalFilterFields,
-    searchPlaceholder = "Filtrar...",
-    facetedFilters = [],
-}: DataTableToolbarProps<TData>) {
+export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
+    const {
+        table,
+        filterColumn,
+        globalFilterFields,
+        searchPlaceholder = "Filtrar...",
+        facetedFilters = [],
+    } = props
+
     const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0
 
     return (
@@ -81,7 +83,7 @@ export function DataTableToolbar<TData>({
                         />
                     )
                 })}
-                {toolbarAction}
+                {props.toolbarAction}
                 {isFiltered && (
                     <Button
                         variant="ghost"
