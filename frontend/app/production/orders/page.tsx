@@ -47,6 +47,8 @@ export default function WorkOrdersPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [statusFilters, setStatusFilters] = useState<string[]>([])
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+    const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban")
+    const [requestedStage, setRequestedStage] = useState<string | undefined>()
 
     const filteredOrders = orders.filter(order => {
         // Search filter

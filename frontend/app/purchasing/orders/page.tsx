@@ -17,6 +17,8 @@ import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckout
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
+import { PurchaseOrderHubStatus } from "./components/PurchaseOrderHubStatus"
+import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 
 interface PurchaseOrder {
     id: number
@@ -194,15 +196,36 @@ export default function PurchaseOrdersPage() {
         {
             accessorKey: "status",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" />
+                <DataTableColumnHeader column={column} title="Estado Hub" />
             ),
-            cell: ({ row }) => {
-                const status = row.getValue("status") as string
-                return (
-                    <Badge variant={statusMap[status]?.variant || "default"}>
-                        {statusMap[status]?.label || status}
-                    </Badge>
-                )
+            cell: ({ row }) => <PurchaseOrderHubStatus order={row.original} />,
+        },
+        // Hidden accessor columns for filtering (not displayed as columns, only used for filters)
+        {
+            id: "reception_status",
+            accessorFn: (row) => getPurchaseHubStatuses(row).reception,
+            enableHiding: true,
+            header: "Recepción",
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
+        },
+        {
+            id: "billing_status",
+            accessorFn: (row) => getPurchaseHubStatuses(row).billing,
+            enableHiding: true,
+            header: "Facturación",
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
+        },
+        {
+            id: "treasury_status",
+            accessorFn: (row) => getPurchaseHubStatuses(row).treasury,
+            enableHiding: true,
+            header: "Tesorería",
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
             },
         },
         {
@@ -272,13 +295,41 @@ export default function PurchaseOrdersPage() {
                     facetedFilters={[
                         {
                             column: "status",
-                            title: "Estado",
+                            title: "Origen",
                             options: [
                                 { label: "Borrador", value: "DRAFT" },
                                 { label: "Confirmado", value: "CONFIRMED" },
                             ],
                         },
+                        {
+                            column: "reception_status",
+                            title: "Recepción",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        },
+                        {
+                            column: "billing_status",
+                            title: "Facturación",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        },
+                        {
+                            column: "treasury_status",
+                            title: "Tesorería",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        }
                     ]}
+                    hiddenColumns={["reception_status", "billing_status", "treasury_status"]}
                     toolbarAction={
                         <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Orden" />
                     }

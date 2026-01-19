@@ -238,7 +238,7 @@ export default function SalesOrdersPage() {
             ),
             cell: ({ row }) => <OrderHubStatus order={row.original} />,
         },
-        // Hidden accessor columns for filtering
+        // Hidden accessor columns for filtering (not displayed as columns, only used for filters)
         {
             id: "production_status",
             accessorFn: (row) => getHubStatuses(row).production,
