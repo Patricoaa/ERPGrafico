@@ -200,44 +200,44 @@ export default function PurchaseOrdersPage() {
             ),
             cell: ({ row }) => <PurchaseOrderHubStatus order={row.original} />,
         },
-        },
-// Hidden columns for filtering only - these provide data for faceted filters
-{
-    id: "reception_status",
-        accessorFn: (row) => getPurchaseHubStatuses(row).reception,
+
+        // Hidden columns for filtering only - these provide data for faceted filters
+        {
+            id: "reception_status",
+            accessorFn: (row) => getPurchaseHubStatuses(row).reception,
             header: () => null,
-                cell: () => null,
-                    enableSorting: false,
-                        enableHiding: false,
-                            filterFn: (row, id, value) => {
-                                return value.includes(row.getValue(id))
-                            },
+            cell: () => null,
+            enableSorting: false,
+            enableHiding: false,
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
         },
-{
-    id: "billing_status",
-        accessorFn: (row) => getPurchaseHubStatuses(row).billing,
+        {
+            id: "billing_status",
+            accessorFn: (row) => getPurchaseHubStatuses(row).billing,
             header: () => null,
-                cell: () => null,
-                    enableSorting: false,
-                        enableHiding: false,
-                            filterFn: (row, id, value) => {
-                                return value.includes(row.getValue(id))
-                            },
+            cell: () => null,
+            enableSorting: false,
+            enableHiding: false,
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
         },
-{
-    id: "treasury_status",
-        accessorFn: (row) => getPurchaseHubStatuses(row).treasury,
+        {
+            id: "treasury_status",
+            accessorFn: (row) => getPurchaseHubStatuses(row).treasury,
             header: () => null,
-                cell: () => null,
-                    enableSorting: false,
-                        enableHiding: false,
-                            filterFn: (row, id, value) => {
-                                return value.includes(row.getValue(id))
-                            },
+            cell: () => null,
+            enableSorting: false,
+            enableHiding: false,
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
         },
-{
-    id: "documents",
-        header: "Documentos",
+        {
+            id: "documents",
+            header: "Documentos",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-1">
                     {row.original.related_documents?.invoices.map((inv: any) => (
@@ -250,9 +250,9 @@ export default function PurchaseOrdersPage() {
                 </div>
             ),
         },
-{
-    id: "actions",
-        header: () => <div className="text-center">Acciones</div>,
+        {
+            id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => (
                 <div className="flex flex-col gap-1">
                     <Button
@@ -269,154 +269,154 @@ export default function PurchaseOrdersPage() {
         },
     ]
 
-return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
-            <div className="flex items-center space-x-2">
-                <Button onClick={() => setCheckoutOpen(true)}>
-                    Nueva Orden de Compra
-                </Button>
-                {editingOrder && (
-                    <PurchaseOrderForm
-                        initialData={editingOrder}
-                        open={!!editingOrder}
-                        onOpenChange={(open) => {
-                            if (!open) setEditingOrder(null)
-                        }}
+    return (
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2">
+                <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
+                <div className="flex items-center space-x-2">
+                    <Button onClick={() => setCheckoutOpen(true)}>
+                        Nueva Orden de Compra
+                    </Button>
+                    {editingOrder && (
+                        <PurchaseOrderForm
+                            initialData={editingOrder}
+                            open={!!editingOrder}
+                            onOpenChange={(open) => {
+                                if (!open) setEditingOrder(null)
+                            }}
+                            onSuccess={fetchOrders}
+                        />
+                    )}
+                </div>
+            </div>
+            {loading ? (
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-muted-foreground">Cargando órdenes de compra...</div>
+                </div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={filteredOrders}
+                    filterColumn="supplier_name"
+                    searchPlaceholder="Buscar por proveedor o RUT..."
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Origen",
+                            options: [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Confirmado", value: "CONFIRMED" },
+                            ],
+                        },
+                        {
+                            column: "reception_status",
+                            title: "Recepción",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        },
+                        {
+                            column: "billing_status",
+                            title: "Facturación",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        },
+                        {
+                            column: "treasury_status",
+                            title: "Tesorería",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        }
+                    ]}
+                    toolbarAction={
+                        <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Orden" />
+                    }
+                />
+            )}
+
+            {viewingTransaction && (
+                <TransactionViewModal
+                    open={!!viewingTransaction}
+                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    type={viewingTransaction.type}
+                    id={viewingTransaction.id}
+                    view={viewingTransaction.view}
+                />
+            )
+            }
+
+            {
+                invoicingOrder && (
+                    <DocumentRegistrationModal
+                        open={!!invoicingOrder}
+                        onOpenChange={(open) => !open && setInvoicingOrder(null)}
+                        orderId={invoicingOrder.id}
+                        orderNumber={invoicingOrder.number}
                         onSuccess={fetchOrders}
                     />
-                )}
-            </div>
+                )
+            }
+
+            {
+                completingInvoice && (
+                    <DocumentCompletionModal
+                        open={!!completingInvoice}
+                        onOpenChange={(open) => !open && setCompletingInvoice(null)}
+                        invoiceId={completingInvoice.id}
+                        invoiceType={completingInvoice.type}
+                        onSuccess={fetchOrders}
+                    />
+                )
+            }
+
+            <PurchaseCheckoutWizard
+                open={checkoutOpen || !!checkoutOrderId}
+                onOpenChange={(open) => {
+                    setCheckoutOpen(open)
+                    if (!open) setCheckoutOrderId(null)
+                }}
+                order={null}
+                orderId={checkoutOrderId}
+                orderLines={[{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }]}
+                total={0}
+                onComplete={() => {
+                    fetchOrders()
+                    setCheckoutOpen(false)
+                    setCheckoutOrderId(null)
+                }}
+            />
+
+            {
+                selectedInvoice && (
+                    <DocumentCompletionModal
+                        open={folioModalOpen}
+                        onOpenChange={setFolioModalOpen}
+                        invoiceId={selectedInvoice.id}
+                        invoiceType={selectedInvoice.type}
+                        onSuccess={fetchOrders}
+                    />
+                )
+            }
+
+            <OrderCommandCenter
+                orderId={selectedOrderId}
+                type="purchase"
+                open={selectedOrderId !== null}
+                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                onActionSuccess={fetchOrders}
+                onEdit={(id) => {
+                    setSelectedOrderId(null)
+                    setCheckoutOrderId(id)
+                }}
+            />
         </div>
-        {loading ? (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-muted-foreground">Cargando órdenes de compra...</div>
-            </div>
-        ) : (
-            <DataTable
-                columns={columns}
-                data={filteredOrders}
-                filterColumn="supplier_name"
-                searchPlaceholder="Buscar por proveedor o RUT..."
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Origen",
-                        options: [
-                            { label: "Borrador", value: "DRAFT" },
-                            { label: "Confirmado", value: "CONFIRMED" },
-                        ],
-                    },
-                    {
-                        column: "reception_status",
-                        title: "Recepción",
-                        options: [
-                            { label: "En Proceso", value: "active" },
-                            { label: "Completado", value: "success" },
-                            { label: "Pendiente", value: "neutral" },
-                        ]
-                    },
-                    {
-                        column: "billing_status",
-                        title: "Facturación",
-                        options: [
-                            { label: "En Proceso", value: "active" },
-                            { label: "Completado", value: "success" },
-                            { label: "Pendiente", value: "neutral" },
-                        ]
-                    },
-                    {
-                        column: "treasury_status",
-                        title: "Tesorería",
-                        options: [
-                            { label: "En Proceso", value: "active" },
-                            { label: "Completado", value: "success" },
-                            { label: "Pendiente", value: "neutral" },
-                        ]
-                    }
-                ]}
-                toolbarAction={
-                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Orden" />
-                }
-            />
-        )}
-
-        {viewingTransaction && (
-            <TransactionViewModal
-                open={!!viewingTransaction}
-                onOpenChange={(open) => !open && setViewingTransaction(null)}
-                type={viewingTransaction.type}
-                id={viewingTransaction.id}
-                view={viewingTransaction.view}
-            />
-        )
-        }
-
-        {
-            invoicingOrder && (
-                <DocumentRegistrationModal
-                    open={!!invoicingOrder}
-                    onOpenChange={(open) => !open && setInvoicingOrder(null)}
-                    orderId={invoicingOrder.id}
-                    orderNumber={invoicingOrder.number}
-                    onSuccess={fetchOrders}
-                />
-            )
-        }
-
-        {
-            completingInvoice && (
-                <DocumentCompletionModal
-                    open={!!completingInvoice}
-                    onOpenChange={(open) => !open && setCompletingInvoice(null)}
-                    invoiceId={completingInvoice.id}
-                    invoiceType={completingInvoice.type}
-                    onSuccess={fetchOrders}
-                />
-            )
-        }
-
-        <PurchaseCheckoutWizard
-            open={checkoutOpen || !!checkoutOrderId}
-            onOpenChange={(open) => {
-                setCheckoutOpen(open)
-                if (!open) setCheckoutOrderId(null)
-            }}
-            order={null}
-            orderId={checkoutOrderId}
-            orderLines={[{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }]}
-            total={0}
-            onComplete={() => {
-                fetchOrders()
-                setCheckoutOpen(false)
-                setCheckoutOrderId(null)
-            }}
-        />
-
-        {
-            selectedInvoice && (
-                <DocumentCompletionModal
-                    open={folioModalOpen}
-                    onOpenChange={setFolioModalOpen}
-                    invoiceId={selectedInvoice.id}
-                    invoiceType={selectedInvoice.type}
-                    onSuccess={fetchOrders}
-                />
-            )
-        }
-
-        <OrderCommandCenter
-            orderId={selectedOrderId}
-            type="purchase"
-            open={selectedOrderId !== null}
-            onOpenChange={(open) => !open && setSelectedOrderId(null)}
-            onActionSuccess={fetchOrders}
-            onEdit={(id) => {
-                setSelectedOrderId(null)
-                setCheckoutOrderId(id)
-            }}
-        />
-    </div>
-)
+    )
 }
