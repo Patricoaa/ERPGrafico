@@ -31,7 +31,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
             'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
             'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 
             'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',
-            'is_production_finished', 'work_order_summary'
+            'is_production_finished', 'work_order_summary', 'mfg_auto_finalize'
         ]
 
     def get_product_type(self, obj):
@@ -50,6 +50,11 @@ class SaleLineSerializer(serializers.ModelSerializer):
     
     def get_requires_advanced_manufacturing(self, obj):
         return obj.product.requires_advanced_manufacturing if obj.product else False
+
+    mfg_auto_finalize = serializers.SerializerMethodField()
+
+    def get_mfg_auto_finalize(self, obj):
+        return obj.product.mfg_auto_finalize if obj.product else False
 
     is_production_finished = serializers.SerializerMethodField()
     work_order_summary = serializers.SerializerMethodField()

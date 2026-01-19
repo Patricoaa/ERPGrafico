@@ -108,16 +108,17 @@ class SalesService:
 
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
-                    # Check if all associated OTs are finished
-                    if not sale_line.work_orders.exists() or not all(ot.status == 'FINISHED' for ot in sale_line.work_orders.all()):
-                         raise ValidationError(
-                            f"No se puede despachar '{product.name}' porque requiere fabricación avanzada "
-                            "y su Orden de Trabajo aún no está finalizada."
-                        )
+                    # Check if all associated OTs are finished (unless auto-finalize/express)
+                    if not product.mfg_auto_finalize:
+                        if not sale_line.work_orders.exists() or not all(ot.status == 'FINISHED' for ot in sale_line.work_orders.all()):
+                             raise ValidationError(
+                                f"No se puede despachar '{product.name}' porque requiere fabricación avanzada "
+                                "y su Orden de Trabajo aún no está finalizada."
+                            )
 
                 # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
                 elif product.product_type == 'MANUFACTURABLE' and not product.requires_advanced_manufacturing:
-                    if product.has_bom:
+                    if product.has_bom and not product.mfg_auto_finalize:
                         manufacturable_qty = product.get_manufacturable_quantity()
                         # get_manufacturable_quantity returns None if no BOM or no constraints
                         if manufacturable_qty is not None and manufacturable_qty < requested_qty:
@@ -197,15 +198,16 @@ class SalesService:
             if product:
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
-                    if not sale_line.work_orders.exists() or not all(ot.status == 'FINISHED' for ot in sale_line.work_orders.all()):
-                         raise ValidationError(
-                            f"No se puede despachar '{product.name}' porque requiere fabricación avanzada "
-                            "y su Orden de Trabajo aún no está finalizada."
-                        )
+                    if not product.mfg_auto_finalize:
+                        if not sale_line.work_orders.exists() or not all(ot.status == 'FINISHED' for ot in sale_line.work_orders.all()):
+                             raise ValidationError(
+                                f"No se puede despachar '{product.name}' porque requiere fabricación avanzada "
+                                "y su Orden de Trabajo aún no está finalizada."
+                            )
 
                 # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
                 elif product.product_type == 'MANUFACTURABLE' and not product.requires_advanced_manufacturing:
-                    if product.has_bom:
+                    if product.has_bom and not product.mfg_auto_finalize:
                         manufacturable_qty = product.get_manufacturable_quantity()
                         if manufacturable_qty is not None and manufacturable_qty < quantity:
                             raise ValidationError(
