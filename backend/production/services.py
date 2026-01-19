@@ -60,11 +60,24 @@ class WorkOrderService:
 
         # Express Flow: Auto-finalize if product is configured for it
         if product.mfg_auto_finalize:
-            WorkOrderService.transition_to(
-                work_order, 
-                WorkOrder.Stage.FINISHED, 
-                notes="Finalización automática (Flujo Express)"
-            )
+            try:
+                # Use a savepoint to rollback only the transition if it fails
+                with transaction.atomic():
+                    WorkOrderService.transition_to(
+                        work_order, 
+                        WorkOrder.Stage.FINISHED, 
+                        notes="Finalización automática (Flujo Express)"
+                    )
+            except Exception as e:
+                # Log error but keep OT created
+                print(f"Warning: Auto-finalize failed for OT-{work_order.number}: {str(e)}")
+                WorkOrderHistory.objects.create(
+                    work_order=work_order,
+                    stage=work_order.current_stage,
+                    status=work_order.status,
+                    notes=f"Fallo en finalización automática: {str(e)}",
+                    user=None # System action
+                )
 
         return work_order
 

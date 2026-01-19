@@ -333,58 +333,57 @@ class SalesService:
                         print(f"DEBUG: Skipping BOM explosion for {product.internal_code} - OT already exists.")
                         line.unit_cost = product.get_bom_cost()
                         line.save()
-                        continue
-
-                    active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
-                    
-                    if active_bom:
-                        # BOM Explosion: Consume components instead of the product
-                        line_total_cost = Decimal('0.00')
-                        for bom_line in active_bom.lines.all():
-                            # 1. First, calculate total requirement in the BOM line's UoM
-                            # Requirement = (Sale Qty in Sale UoM) * (BOM Qty per Unit)
-                            # NOTE: This assumes BOM quantity is per "Base Unit" of the product.
-                            # If sold in a different UoM, we must convert Sale Qty to Base UoM first.
-                            base_sale_qty = UoMService.convert_quantity(
-                                line.quantity,
-                                from_uom=line.sale_line.uom,
-                                to_uom=product.uom
-                            )
-                            
-                            comp_qty_in_bom_uom = base_sale_qty * bom_line.quantity
-                            
-                            # 2. Convert to component's base UoM for Kardex
-                            base_comp_qty = UoMService.convert_quantity(
-                                comp_qty_in_bom_uom,
-                                from_uom=bom_line.uom,
-                                to_uom=bom_line.component.uom
-                            )
-                            
-                            # Create stock move (OUT) for the COMPONENT
-                            comp_move = StockMove.objects.create(
-                                date=delivery.delivery_date,
-                                product=bom_line.component,
-                                warehouse=delivery.warehouse,
-                                uom=bom_line.component.uom,
-                                quantity=-base_comp_qty,
-                                move_type=StockMove.Type.OUT,
-                                description=f"Consumo BOM p/Despacho {delivery.number} ({product.name})"
-                            )
-                            created_moves.append(comp_move)
-                            
-                            # Calculate component cost contribution
-                            line_total_cost += base_comp_qty * bom_line.component.cost_price
-                        
-                        # Set unit_cost for accounting based on component consumption
-                        if line.quantity > 0:
-                            line.unit_cost = (line_total_cost / line.quantity).quantize(Decimal('0.01'))
-                        else:
-                            line.unit_cost = 0
-                        line.save()
+                        # NOTE: removed continue so we fall through to quantity update
                     else:
-                        # No BOM and no tracking: usually 0 cost (Service/Consumable)
-                        line.unit_cost = 0
-                        line.save()
+                        active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
+                        if active_bom:
+                            # BOM Explosion: Consume components instead of the product
+                            line_total_cost = Decimal('0.00')
+                            for bom_line in active_bom.lines.all():
+                                # 1. First, calculate total requirement in the BOM line's UoM
+                                # Requirement = (Sale Qty in Sale UoM) * (BOM Qty per Unit)
+                                # NOTE: This assumes BOM quantity is per "Base Unit" of the product.
+                                # If sold in a different UoM, we must convert Sale Qty to Base UoM first.
+                                base_sale_qty = UoMService.convert_quantity(
+                                    line.quantity,
+                                    from_uom=line.sale_line.uom,
+                                    to_uom=product.uom
+                                )
+                                
+                                comp_qty_in_bom_uom = base_sale_qty * bom_line.quantity
+                                
+                                # 2. Convert to component's base UoM for Kardex
+                                base_comp_qty = UoMService.convert_quantity(
+                                    comp_qty_in_bom_uom,
+                                    from_uom=bom_line.uom,
+                                    to_uom=bom_line.component.uom
+                                )
+                                
+                                # Create stock move (OUT) for the COMPONENT
+                                comp_move = StockMove.objects.create(
+                                    date=delivery.delivery_date,
+                                    product=bom_line.component,
+                                    warehouse=delivery.warehouse,
+                                    uom=bom_line.component.uom,
+                                    quantity=-base_comp_qty,
+                                    move_type=StockMove.Type.OUT,
+                                    description=f"Consumo BOM p/Despacho {delivery.number} ({product.name})"
+                                )
+                                created_moves.append(comp_move)
+                                
+                                # Calculate component cost contribution
+                                line_total_cost += base_comp_qty * bom_line.component.cost_price
+                            
+                            # Set unit_cost for accounting based on component consumption
+                            if line.quantity > 0:
+                                line.unit_cost = (line_total_cost / line.quantity).quantize(Decimal('0.01'))
+                            else:
+                                line.unit_cost = 0
+                            line.save()
+                        else:
+                            # No BOM and no tracking: usually 0 cost (Service/Consumable)
+                            line.unit_cost = 0
+                            line.save()
                 else:
                     # Service or other non-tracked product
                     line.unit_cost = 0
