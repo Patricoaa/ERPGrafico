@@ -424,6 +424,12 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                         Fab: {prod.manufacturable_quantity ?? 'N/A'}
                                                                                     </Badge>
                                                                                 )}
+
+                                                                                {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
+                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-emerald-500 text-emerald-600">
+                                                                                        Disponible
+                                                                                    </Badge>
+                                                                                )}
                                                                             </div>
 
                                                                             {prod.product_type === 'MANUFACTURABLE_CUSTOM' && prod.custom_fields_schema && (
@@ -502,19 +508,8 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell>
-                                                    <FormField<SaleOrderFormValues>
-                                                        control={form.control}
-                                                        name={`lines.${index}.unit_price`}
-                                                        render={({ field }) => (
-                                                            <Input
-                                                                type="number"
-                                                                step="1"
-                                                                {...field}
-                                                                onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
-                                                            />
-                                                        )}
-                                                    />
+                                                <TableCell className="text-right text-muted-foreground text-xs">
+                                                    {(Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                 </TableCell>
                                                 <TableCell className="text-right text-muted-foreground text-xs">
                                                     {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
@@ -549,25 +544,10 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <FormField<SaleOrderFormValues>
-                                control={form.control}
-                                name="notes"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Notas / Observaciones</FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                placeholder="Condiciones de pago, entrega, etc."
-                                                className="resize-none h-24"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <OrderTotals control={form.control} />
+                        <div className="flex justify-end pt-4">
+                            <div className="w-full md:w-1/2">
+                                <OrderTotals control={form.control} />
+                            </div>
                         </div>
 
                         <div className="flex justify-end space-x-2">
