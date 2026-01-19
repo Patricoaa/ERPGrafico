@@ -73,6 +73,7 @@ class Payment(models.Model):
     class Meta:
         verbose_name = _("Pago")
         verbose_name_plural = _("Pagos")
+        ordering = ['-id']
 
     def __str__(self):
         return self.display_id
@@ -115,6 +116,7 @@ class TreasuryAccount(models.Model):
     class Meta:
         verbose_name = _("Cuenta de Tesorería")
         verbose_name_plural = _("Cuentas de Tesorería")
+        ordering = ['-id']
 
     def __str__(self):
         return f"{self.name} ({self.currency})"

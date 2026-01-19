@@ -57,6 +57,7 @@ class Invoice(models.Model):
     class Meta:
         verbose_name = _("Factura/Boleta")
         verbose_name_plural = _("Facturas y Boletas")
+        ordering = ['-id']
 
     def __str__(self):
         return self.display_id

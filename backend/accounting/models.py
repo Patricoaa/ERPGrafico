@@ -147,7 +147,7 @@ class JournalEntry(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-date', '-id']
+        ordering = ['-id']
         verbose_name = _("Asiento Contable")
         verbose_name_plural = _("Libro Diario")
 
@@ -481,7 +481,7 @@ class Budget(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-start_date']
+        ordering = ['-id']
         verbose_name = _("Presupuesto")
         verbose_name_plural = _("Presupuestos")
 

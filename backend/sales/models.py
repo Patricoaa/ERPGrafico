@@ -67,6 +67,7 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     class Meta:
         verbose_name = _("Nota de Venta")
         verbose_name_plural = _("Notas de Venta")
+        ordering = ['-id']
 
     def __str__(self):
         return f"{self.display_id} {self.customer.name}"
@@ -195,7 +196,7 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
     class Meta:
         verbose_name = _("Despacho de Venta")
         verbose_name_plural = _("Despachos de Venta")
-        ordering = ['-delivery_date', '-created_at']
+        ordering = ['-id']
     
     def __str__(self):
         return f"{self.display_id} (NV-{self.sale_order.number})"

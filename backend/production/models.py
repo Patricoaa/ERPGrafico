@@ -87,6 +87,7 @@ class WorkOrder(models.Model):
     class Meta:
         verbose_name = _("Orden de Trabajo")
         verbose_name_plural = _("Ordenes de Trabajo")
+        ordering = ['-id']
 
     def __str__(self):
         return f"{self.display_id} {self.description}"
@@ -151,6 +152,7 @@ class ProductionConsumption(models.Model):
     class Meta:
         verbose_name = _("Consumo Material")
         verbose_name_plural = _("Consumos Materiales")
+        ordering = ['-id']
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity} (OT-{self.work_order.number})"
@@ -246,7 +248,7 @@ class BillOfMaterials(models.Model):
     class Meta:
         verbose_name = _("Lista de Materiales (BOM)")
         verbose_name_plural = _("Listas de Materiales (BOMs)")
-        ordering = ['-active', '-created_at']
+        ordering = ['-id']
 
     def __str__(self):
         status = "✓" if self.active else "✗"

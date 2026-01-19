@@ -27,6 +27,7 @@ class ProductCategory(models.Model):
     class Meta:
         verbose_name = _("Categoría de Producto")
         verbose_name_plural = _("Categorías de Producto")
+        ordering = ['-id']
 
     def __str__(self):
         return self.name
@@ -37,6 +38,7 @@ class UoMCategory(models.Model):
     class Meta:
         verbose_name = _("Categoría de Medida")
         verbose_name_plural = _("Categorías de Medida")
+        ordering = ['-id']
 
     def __str__(self):
         return self.name
@@ -57,6 +59,7 @@ class UoM(models.Model):
     class Meta:
         verbose_name = _("Unidad de Medida")
         verbose_name_plural = _("Unidades de Medida")
+        ordering = ['-id']
 
     def __str__(self):
         return self.name
@@ -366,6 +369,7 @@ class Product(models.Model):
     class Meta:
         verbose_name = _("Producto")
         verbose_name_plural = _("Productos")
+        ordering = ['-id']
 
     def __str__(self):
         return f"{self.internal_code} - {self.name}"
@@ -656,6 +660,7 @@ class Warehouse(models.Model):
     class Meta:
         verbose_name = _("Almacén/Bodega")
         verbose_name_plural = _("Almacenes")
+        ordering = ['-id']
 
     def __str__(self):
         return self.name
@@ -705,7 +710,7 @@ class StockMove(models.Model):
     class Meta:
         verbose_name = _("Movimiento de Stock")
         verbose_name_plural = _("Kardex")
-        ordering = ['-date', '-created_at']
+        ordering = ['-id']
 
     def __str__(self):
         return self.display_id
@@ -750,7 +755,7 @@ class PricingRule(models.Model):
     class Meta:
         verbose_name = _("Regla de Precio")
         verbose_name_plural = _("Reglas de Precio")
-        ordering = ['-priority', 'min_quantity']
+        ordering = ['-id']
 
     def __str__(self):
         return self.name

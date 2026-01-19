@@ -74,6 +74,7 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
     class Meta:
         verbose_name = _("Orden de compras y servicios")
         verbose_name_plural = _("Ordenes de compras y servicios")
+        ordering = ['-id']
 
     def __str__(self):
         return f"{self.display_id} {self.supplier.name}"
@@ -195,7 +196,7 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
     class Meta:
         verbose_name = _("Recepción de Compra")
         verbose_name_plural = _("Recepciones de Compra")
-        ordering = ['-receipt_date', '-created_at']
+        ordering = ['-id']
     
     def __str__(self):
         return f"{self.display_id} (OCS-{self.purchase_order.number})"

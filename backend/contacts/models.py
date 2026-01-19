@@ -65,7 +65,7 @@ class Contact(models.Model):
     class Meta:
         verbose_name = _("Contacto")
         verbose_name_plural = _("Contactos")
-        ordering = ['name']
+        ordering = ['-id']
 
     def __str__(self):
         return f"{self.display_id} - {self.name} ({self.tax_id})"
