@@ -167,7 +167,6 @@ class SaleOrderSerializer(serializers.ModelSerializer):
                 'method': pay.get_payment_method_display(), # Legacy support
                 'transaction_number': pay.transaction_number,
                 'reference': pay.reference,
-                'created_by_name': pay.created_by.get_full_name() if pay.created_by else None,
                 'invoice_id': pay.invoice_id,
                 'code': code
             })
