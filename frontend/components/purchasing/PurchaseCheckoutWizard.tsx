@@ -128,7 +128,7 @@ export function PurchaseCheckoutWizard({
     })
 
     const [paymentData, setPaymentData] = useState({
-        method: 'CASH',
+        method: '',
         amount: total,
         transactionNumber: '',
         treasuryAccountId: null,
@@ -214,6 +214,12 @@ export function PurchaseCheckoutWizard({
             return false
         }
         if (targetStep === 4 && paymentData.amount > 0) {
+            // Check if payment method is selected
+            if (!paymentData.method) {
+                toast.error("Debe seleccionar un método de pago para continuar.")
+                return false
+            }
+
             // Validate at least one account exists for the selected method
             const hasAccountsForMethod = (method: string) => {
                 if (method === 'CASH') return accounts.some(a => a.allows_cash)

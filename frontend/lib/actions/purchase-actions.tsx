@@ -94,7 +94,8 @@ export const purchaseOrderActions: ActionRegistry = {
                     )
 
                     // Only if has received stockable products
-                    const hasStockableReceived = order.lines?.some((line: any) =>
+                    const lines = order.lines || order.items || []
+                    const hasStockableReceived = lines.some((line: any) =>
                         (line.quantity_received || 0) > 0 && line.product?.track_inventory
                     )
 
@@ -145,7 +146,8 @@ export const purchaseOrderActions: ActionRegistry = {
                     )
 
                     // Only if has posted payments
-                    const hasPostedPayments = order.related_documents?.payments?.some(
+                    const payments = order.related_documents?.payments || []
+                    const hasPostedPayments = payments.some(
                         (pay: any) => pay.journal_entry?.state === 'POSTED'
                     )
 

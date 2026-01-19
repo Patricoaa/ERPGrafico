@@ -69,7 +69,7 @@ export function SalesCheckoutWizard({
     })
 
     const [paymentData, setPaymentData] = useState({
-        method: 'CASH',
+        method: '',
         amount: initialTotal,
         transactionNumber: '',
         treasuryAccountId: null,
@@ -232,8 +232,15 @@ export function SalesCheckoutWizard({
         }
         currentStepNum++;
 
+
         // Payment validation
         if (step === currentStepNum) {
+            // Check if payment method is selected
+            if (!paymentData.method) {
+                toast.error("Debe seleccionar un método de pago para continuar.")
+                return false
+            }
+
             const hasAccountsForMethod = (method: string) => {
                 if (method === 'CASH') return accounts.some(a => a.allows_cash)
                 if (method === 'CARD') return accounts.some(a => a.allows_card)
@@ -261,6 +268,7 @@ export function SalesCheckoutWizard({
             }
             return true
         }
+
 
         return true
     }
