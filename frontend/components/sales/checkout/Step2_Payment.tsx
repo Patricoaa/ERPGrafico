@@ -10,6 +10,15 @@ import api from "@/lib/api"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Settings } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog"
 
 interface Step2_PaymentProps {
     paymentData: any
@@ -32,6 +41,26 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
         }
         fetchAccounts()
     }, [])
+
+    const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
+    const [tempAmount, setTempAmount] = useState("")
+
+    const handleMethodChange = (val: string) => {
+        setPaymentData({ ...paymentData, method: val })
+        setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
+        setIsAmountModalOpen(true)
+    }
+
+    const handleAmountConfirm = () => {
+        const parsed = parseFloat(tempAmount)
+        setPaymentData({ ...paymentData, amount: parsed || 0 })
+        setIsAmountModalOpen(false)
+    }
+
+    const openAmountModal = () => {
+        setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
+        setIsAmountModalOpen(true)
+    }
 
     const filteredAccounts = useMemo(() => {
         return accounts.filter(acc => {
@@ -103,7 +132,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                 <Label className="text-sm font-semibold">Método de Pago</Label>
                 <RadioGroup
                     value={paymentData.method}
-                    onValueChange={(val) => setPaymentData({ ...paymentData, method: val })}
+                    onValueChange={handleMethodChange}
                     className="grid grid-cols-3 gap-4"
                 >
                     {methods.map((m) => (
@@ -142,7 +171,9 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                             id="pay-amount"
                             type="number"
                             value={paymentData.amount}
-                            onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
+                            readOnly
+                            onClick={openAmountModal}
+                            className="cursor-pointer hover:bg-muted/50"
                         />
                     </div>
                     {paymentData.amount > total && paymentData.method === 'CASH' ? (
@@ -213,6 +244,43 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                     </div>
                 )}
             </div>
-        </div>
+
+            <Dialog open={isAmountModalOpen} onOpenChange={setIsAmountModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Monto Recibido</DialogTitle>
+                        <DialogDescription>
+                            Ingrese el monto recibido para este pago.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex items-center space-x-2 py-4">
+                        <div className="grid flex-1 gap-2">
+                            <Label htmlFor="modal-amount" className="sr-only">
+                                Monto
+                            </Label>
+                            <Input
+                                id="modal-amount"
+                                type="number"
+                                value={tempAmount}
+                                onChange={(e) => setTempAmount(e.target.value)}
+                                placeholder="0"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleAmountConfirm()
+                                }}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="sm:justify-end">
+                        <Button type="button" variant="secondary" onClick={() => setIsAmountModalOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button type="button" onClick={handleAmountConfirm}>
+                            Confirmar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div >
     )
 }
