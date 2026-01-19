@@ -234,6 +234,17 @@ export default function POSPage() {
             toast.error("El carrito está vacío")
             return
         }
+
+        const invalidItems = items.filter(i => {
+           const original = products.find(p => p.id === i.id)
+           return original?.is_dynamic_pricing && (i.unit_price_net <= 0)
+        })
+
+        if (invalidItems.length > 0) {
+            toast.error("Hay productos con precio dinámico sin asignar (precio 0). Por favor asigne un precio unitario antes de continuar.")
+            return
+        }
+
         setCheckoutOpen(true)
     }
 
@@ -475,27 +486,42 @@ export default function POSPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-2 text-right">
-                                                        <div className="flex justify-end">
+                                                        <div className="flex flex-col items-end gap-1">
                                                             {originalProduct?.is_dynamic_pricing ? (
-                                                                <Input
-                                                                    type="number"
-                                                                    className="h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1"
-                                                                    value={item.unit_price_net || ""}
-                                                                    onChange={async (e) => {
-                                                                        const newPrice = parseFloat(e.target.value) || 0
-                                                                        setItems(prevItems => prevItems.map(i => i.cartItemId === item.cartItemId ? {
-                                                                            ...i,
-                                                                            unit_price_net: newPrice,
-                                                                            total_net: PricingUtils.calculateLineNet(i.qty, newPrice),
-                                                                            total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(i.qty, newPrice)),
-                                                                            total_gross: PricingUtils.calculateLineTotal(i.qty, newPrice)
-                                                                        } : i))
-                                                                    }}
-                                                                />
+                                                                <>
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1"
+                                                                        // Show Gross in input
+                                                                        value={item.unit_price_net ? PricingUtils.netToGross(item.unit_price_net) : ""}
+                                                                        placeholder="0"
+                                                                        onChange={async (e) => {
+                                                                            const newGross = parseFloat(e.target.value) || 0
+                                                                            // Convert Gross Input to Net for storage
+                                                                            const newNet = PricingUtils.grossToNet(newGross)
+                                                                            
+                                                                            setItems(prevItems => prevItems.map(i => i.cartItemId === item.cartItemId ? {
+                                                                                ...i,
+                                                                                unit_price_net: newNet,
+                                                                                total_net: PricingUtils.calculateLineNet(i.qty, newNet),
+                                                                                total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(i.qty, newNet)),
+                                                                                total_gross: PricingUtils.calculateLineTotal(i.qty, newNet)
+                                                                            } : i))
+                                                                        }}
+                                                                    />
+                                                                    <span className="text-[9px] text-muted-foreground leading-none">
+                                                                        Neto: {formatCurrency(item.unit_price_net)}
+                                                                    </span>
+                                                                </>
                                                             ) : (
-                                                                <span className="text-xs font-medium">
-                                                                    {formatCurrency(PricingUtils.netToGross(item.unit_price_net))}
-                                                                </span>
+                                                                <>
+                                                                    <span className="text-xs font-medium">
+                                                                        {formatCurrency(PricingUtils.netToGross(item.unit_price_net))}
+                                                                    </span>
+                                                                    <span className="text-[9px] text-muted-foreground leading-none">
+                                                                        Neto: {formatCurrency(item.unit_price_net)}
+                                                                    </span>
+                                                                </>
                                                             )}
                                                         </div>
                                                     </TableCell>

@@ -228,6 +228,16 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     }, [open, initialData, form])
 
     async function onSubmit(data: SaleOrderFormValues) {
+        // Validation for dynamic pricing
+        const invalidLines = data.lines.filter(line => {
+            const product = products.find(p => p.id.toString() === line.product);
+            return product?.is_dynamic_pricing && (line.unit_price <= 0);
+        });
+
+        if (invalidLines.length > 0) {
+            toast.error("Hay líneas con precio dinámico sin asignar (precio 0). Por favor asigne un precio unitario.");
+            return;
+        }
         if (!initialData && onConfirmCheckout) {
             // Enrich data with names for the checkout summary
             const enrichedLines = data.lines.map(line => {
@@ -317,10 +327,8 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                             <TableHead className="w-[25%]">Producto</TableHead>
                                             <TableHead className="w-[10%]">Cantidad</TableHead>
                                             <TableHead className="w-[10%]">Unidad</TableHead>
-                                            <TableHead className="w-[10%]">P. Unit. (Neto)</TableHead>
-                                            <TableHead className="w-[10%]">Neto</TableHead>
-                                            <TableHead className="w-[10%]">IVA</TableHead>
-                                            <TableHead className="w-[10%]">Total</TableHead>
+                                            <TableHead className="w-[15%]">P. Unit.</TableHead>
+                                            <TableHead className="w-[15%]">Total</TableHead>
                                             <TableHead className="w-[5%]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -490,37 +498,54 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                             const productId = form.watch(`lines.${index}.product`)
                                                             const product = products.find(p => p.id.toString() === productId)
                                                             const isDynamic = product?.is_dynamic_pricing
+                                                            const netPrice = Number(field.value) || 0
 
                                                             if (isDynamic) {
                                                                 return (
-                                                                    <Input
-                                                                        type="number"
-                                                                        className="h-8 w-24 text-right"
-                                                                        {...field}
-                                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                                    />
+                                                                    <div className="flex flex-col items-end gap-1">
+                                                                        <Input
+                                                                            type="number"
+                                                                            className="h-8 w-24 text-right"
+                                                                            value={netPrice > 0 ? PricingUtils.netToGross(netPrice) : ""}
+                                                                            placeholder="0"
+                                                                            onChange={(e) => {
+                                                                                const gross = parseFloat(e.target.value) || 0;
+                                                                                const net = PricingUtils.grossToNet(gross);
+                                                                                field.onChange(net);
+                                                                            }}
+                                                                        />
+                                                                        <span className="text-[9px] text-muted-foreground leading-none">
+                                                                            Neto: {netPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                        </span>
+                                                                    </div>
                                                                 )
                                                             }
 
                                                             return (
-                                                                <div className="text-muted-foreground pt-2 pr-3">
-                                                                    {(Number(field.value) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                <div className="flex flex-col items-end gap-1 pt-2 pr-3">
+                                                                    <span>
+                                                                        {PricingUtils.netToGross(netPrice).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    </span>
+                                                                    <span className="text-[9px] text-muted-foreground leading-none">
+                                                                        Neto: {netPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    </span>
                                                                 </div>
                                                             )
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell className="text-right text-muted-foreground text-xs">
-                                                    {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                </TableCell>
-                                                <TableCell className="text-right text-muted-foreground text-xs">
-                                                    {PricingUtils.calculateTax(Math.round((Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0))).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                </TableCell>
                                                 <TableCell className="text-right font-bold text-sm">
-                                                    {PricingUtils.calculateLineTotal(
-                                                        Number(form.watch(`lines.${index}.quantity`)),
-                                                        Number(form.watch(`lines.${index}.unit_price`))
-                                                    ).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span>
+                                                            {PricingUtils.calculateLineTotal(
+                                                                Number(form.watch(`lines.${index}.quantity`)),
+                                                                Number(form.watch(`lines.${index}.unit_price`))
+                                                            ).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                        </span>
+                                                        <span className="text-[9px] text-muted-foreground font-normal leading-none opacity-80">
+                                                            Neto: {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                        </span>
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-1">
