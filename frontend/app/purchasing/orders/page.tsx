@@ -17,7 +17,6 @@ import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckout
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
-import { cn } from "@/lib/utils"
 
 interface PurchaseOrder {
     id: number
@@ -41,10 +40,6 @@ interface PurchaseOrder {
         notes: any[]
         receipts: any[]
         payments: any[]
-    }
-    command_center_status?: {
-        label: string
-        variant: string
     }
 }
 
@@ -231,21 +226,13 @@ export default function PurchaseOrdersPage() {
             cell: ({ row }) => (
                 <div className="flex flex-col gap-1">
                     <Button
-                        variant={row.original.command_center_status?.variant === 'success' ? 'default' :
-                            row.original.command_center_status?.variant === 'destructive' ? 'destructive' :
-                                row.original.command_center_status?.variant === 'active' ? 'secondary' : 'outline'
-                        }
+                        variant="default"
                         size="sm"
                         onClick={() => setSelectedOrderId(row.original.id)}
-                        className={cn(
-                            "h-8 px-3 w-full border font-semibold",
-                            row.original.command_center_status?.variant === 'success' && "bg-green-600 hover:bg-green-700 text-white border-green-700",
-                            row.original.command_center_status?.variant === 'active' && "bg-blue-600 hover:bg-blue-700 text-white border-blue-700",
-                            row.original.command_center_status?.variant === 'destructive' && "bg-red-600 hover:bg-red-700 text-white border-red-700",
-                        )}
+                        className="h-8 px-3 w-full"
                     >
-                        <LayoutDashboard className="h-4 w-4 mr-1.5" />
-                        {row.original.command_center_status?.label || 'Gestionar'}
+                        <LayoutDashboard className="h-4 w-4 mr-1" />
+                        Gestionar
                     </Button>
                 </div>
             ),

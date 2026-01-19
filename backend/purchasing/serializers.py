@@ -61,57 +61,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def get_pending_amount(self, obj):
         return obj.effective_total - self.get_total_paid(obj)
 
-    def get_command_center_status(self, obj):
-        # 1. Cancelled check
-        if obj.status == 'CANCELLED':
-            return {'label': 'Anulado', 'variant': 'destructive'}
-            
-        stages = []
-        
-        # Logistics (Reception) Stage
-        # Check if received >= ordered
-        lines = obj.lines.all()
-        if lines.exists():
-            total_ordered = sum(l.quantity for l in lines)
-            total_received = sum(l.quantity_received for l in lines)
-            reception_complete = total_ordered > 0 and total_received >= total_ordered
-            stages.append(reception_complete)
-            
-        # Billing Stage
-        # Check if invoiced (uses existing get_is_invoiced logic conceptually but stricter)
-        # Frontend says: billingIsComplete = invoices.length > 0 && !drafts
-        invoices = obj.invoices.all()
-        billing_complete = invoices.exists() and not any(
-            inv.status == 'DRAFT' or inv.number == 'Draft' or not inv.number 
-            for inv in invoices
-        )
-        stages.append(billing_complete)
-        
-        # Treasury Stage
-        payments = obj.payments.all()
-        has_pending_transactions = any(
-            (
-                (p.payment_type == 'OUTBOUND' and p.payment_method in ['CARD', 'TRANSFER']) or
-                (p.payment_type == 'INBOUND' and p.payment_method == 'TRANSFER')
-            ) and not p.transaction_number
-            for p in payments
-        )
-        
-        total_paid = sum(p.amount for p in payments)
-        # Note: PurchaseOrder uses effective_total usually
-        is_paid = (obj.status == 'PAID' or total_paid >= obj.effective_total) and not has_pending_transactions
-        stages.append(is_paid)
-        
-        # Final Status Determination
-        if all(stages):
-            return {'label': 'Completado', 'variant': 'success'}
-        if any(stages):
-            return {'label': 'En Progreso', 'variant': 'active'}
-        
-        return {'label': 'Pendiente', 'variant': 'neutral'}
-
-    command_center_status = serializers.SerializerMethodField()
-
     def get_is_invoiced(self, obj):
         from billing.models import Invoice
         return obj.invoices.filter(dte_type__in=[
