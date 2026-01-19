@@ -43,21 +43,42 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
 
     const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
     const [tempAmount, setTempAmount] = useState("")
+    const [tempTx, setTempTx] = useState("")
+    const [tempAccount, setTempAccount] = useState("")
+    const [tempIsPending, setTempIsPending] = useState(false)
 
     const handleMethodChange = (val: string) => {
         setPaymentData({ ...paymentData, method: val })
         setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
+        setTempTx(paymentData.transactionNumber || "")
+        setTempAccount(paymentData.treasuryAccountId || "")
+        setTempIsPending(paymentData.isPending || false)
         setIsAmountModalOpen(true)
     }
 
     const handleAmountConfirm = () => {
+        // Validation Logic
+        if ((paymentData.method === 'TRANSFER' || paymentData.method === 'CARD') && !tempIsPending && !tempTx) {
+            alert("Debe ingresar el N° de Transacción o marcar como pendiente.")
+            return
+        }
+
         const parsed = parseFloat(tempAmount)
-        setPaymentData({ ...paymentData, amount: parsed || 0 })
+        setPaymentData({
+            ...paymentData,
+            amount: parsed || 0,
+            transactionNumber: tempTx,
+            treasuryAccountId: tempAccount,
+            isPending: tempIsPending
+        })
         setIsAmountModalOpen(false)
     }
 
     const openAmountModal = () => {
         setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
+        setTempTx(paymentData.transactionNumber || "")
+        setTempAccount(paymentData.treasuryAccountId || "")
+        setTempIsPending(paymentData.isPending || false)
         setIsAmountModalOpen(true)
     }
 
@@ -170,54 +191,22 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                     ))}
                 </RadioGroup>
 
-                {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
-                    <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="tx-number" className="text-xs font-bold uppercase flex items-center justify-between">
-                                    N° Transacción
-                                    {paymentData.isPending && <span className="text-[8px] text-amber-600 font-bold uppercase">Ingresar luego</span>}
-                                </Label>
-                                <Input
-                                    id="tx-number"
-                                    placeholder="Ej: 123456"
-                                    value={paymentData.transactionNumber}
-                                    onChange={(e) => setPaymentData({ ...paymentData, transactionNumber: e.target.value })}
-                                    disabled={paymentData.isPending}
-                                    required={!paymentData.isPending && paymentData.method === 'TRANSFER'}
-                                />
-                            </div>
-
-                            {filteredAccounts.length > 1 && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="account" className="text-xs font-bold uppercase">Cuenta Origen</Label>
-                                    <select
-                                        id="account"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        value={paymentData.treasuryAccountId || ""}
-                                        onChange={(e) => setPaymentData({ ...paymentData, treasuryAccountId: e.target.value })}
-                                    >
-                                        <option value="">Seleccionar cuenta...</option>
-                                        {filteredAccounts.map((acc) => (
-                                            <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                        </div>
-
-                        {paymentData.method === 'TRANSFER' && (
-                            <div className="flex items-center space-x-2 pt-2">
-                                <Checkbox
-                                    id="pending-tx"
-                                    checked={paymentData.isPending}
-                                    onCheckedChange={(checked) => setPaymentData({ ...paymentData, isPending: !!checked, transactionNumber: !!checked ? "" : paymentData.transactionNumber })}
-                                />
-                                <Label htmlFor="pending-tx" className="text-xs font-medium cursor-pointer">
-                                    Informar N° de transferencia luego (Pendiente de Validación)
-                                </Label>
-                            </div>
+                {(paymentData.amount > 0 && (paymentData.method === 'CARD' || paymentData.method === 'TRANSFER')) && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground border border-dashed">
+                        <span className="font-semibold uppercase">{paymentData.method === 'CARD' ? 'Tarjeta' : 'Transferencia'}:</span>
+                        {paymentData.isPending ? (
+                            <span className="text-amber-600 font-bold">Pendiente de registro</span>
+                        ) : (
+                            <>
+                                <span>Tx: {paymentData.transactionNumber || "---"}</span>
+                                {paymentData.treasuryAccountId && (
+                                    <span>• Cuenta: {filteredAccounts.find(a => a.id.toString() === paymentData.treasuryAccountId)?.name}</span>
+                                )}
+                            </>
                         )}
+                        <Button variant="ghost" size="sm" className="h-auto p-1 ml-auto text-primary" onClick={openAmountModal}>
+                            Editar
+                        </Button>
                     </div>
                 )}
             </div>
@@ -257,11 +246,9 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                             Ingrese el monto que desea pagar ahora.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="flex items-center space-x-2 py-4">
-                        <div className="grid flex-1 gap-2">
-                            <Label htmlFor="modal-amount" className="sr-only">
-                                Monto
-                            </Label>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="modal-amount">Monto</Label>
                             <Input
                                 id="modal-amount"
                                 type="number"
@@ -274,6 +261,56 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                                 }}
                             />
                         </div>
+
+                        {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
+                            <>
+                                <div className="space-y-2">
+                                    <Label htmlFor="modal-tx" className="flex items-center justify-between">
+                                        <span>N° Transacción</span>
+                                        {!tempIsPending && <span className="text-[10px] text-destructive font-bold">* Requerido</span>}
+                                    </Label>
+                                    <Input
+                                        id="modal-tx"
+                                        value={tempTx}
+                                        onChange={(e) => setTempTx(e.target.value)}
+                                        placeholder="Ingrese N° de operación..."
+                                        disabled={tempIsPending}
+                                    />
+                                </div>
+
+                                {filteredAccounts.length > 1 && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="modal-account">Cuenta Origen</Label>
+                                        <select
+                                            id="modal-account"
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={tempAccount}
+                                            onChange={(e) => setTempAccount(e.target.value)}
+                                        >
+                                            <option value="">Seleccionar cuenta...</option>
+                                            {filteredAccounts.map((acc) => (
+                                                <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center space-x-2 pt-2">
+                                    <Checkbox
+                                        id="modal-pending"
+                                        checked={tempIsPending}
+                                        onCheckedChange={(checked) => {
+                                            const isChecked = !!checked;
+                                            setTempIsPending(isChecked);
+                                            if (isChecked) setTempTx("");
+                                        }}
+                                    />
+                                    <Label htmlFor="modal-pending" className="text-sm cursor-pointer">
+                                        Informar N° de transacción luego
+                                    </Label>
+                                </div>
+                            </>
+                        )}
                     </div>
                     <DialogFooter className="sm:justify-end">
                         <Button type="button" variant="secondary" onClick={() => setIsAmountModalOpen(false)}>
