@@ -187,19 +187,22 @@ export default function WorkOrdersPage() {
                     >
                         <Settings className="h-4 w-4" />
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => {
-                            setEditingOrder(row.original)
-                            setIsFormOpen(true)
-                        }}
-                    >
-                        <Pencil className="h-4 w-4" />
-                    </Button>
+                    {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(row.original.current_stage) && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                                setEditingOrder(row.original)
+                                setIsFormOpen(true)
+                            }}
+                            title="Editar"
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    )}
 
-                    {row.original.status === 'DRAFT' && (
+                    {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(row.original.current_stage) && (
                         <Button
                             variant="ghost"
                             size="icon"

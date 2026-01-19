@@ -1065,15 +1065,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <div className="space-y-2">
                             <h4 className="text-xs font-bold uppercase text-muted-foreground">Acciones</h4>
                             <div className="flex items-center gap-2 p-1">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex-1 gap-2 h-9"
-                                    onClick={() => setIsEditOpen(true)}
-                                >
-                                    <Pencil className="h-4 w-4" />
-
-                                </Button>
+                                {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage) && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 gap-2 h-9"
+                                        onClick={() => setIsEditOpen(true)}
+                                        title="Editar OT"
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
+                                )}
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -1093,7 +1095,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 >
                                     <Ban className="h-4 w-4" />
                                 </Button>
-                                {order?.current_stage === 'MATERIAL_ASSIGNMENT' && (
+                                {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage) && (
                                     <Button
                                         variant="outline"
                                         size="sm"

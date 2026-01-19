@@ -610,13 +610,15 @@ export function OrderCommandCenter({
                                         status: ot.status,
                                         progressValue: ot.production_progress || 0,
                                         actions: [
-                                            // Only show OT annulment if invoice is DRAFT
-                                            ...((ot.status !== 'CANCELLED' && invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
-                                                icon: Ban,
-                                                title: 'Anular OT',
-                                                color: 'text-orange-500 hover:bg-orange-500/10',
-                                                onClick: () => handleAnnulWorkOrder(ot.id)
-                                            }] : [])
+                                            // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
+                                            ...((ot.status !== 'CANCELLED' &&
+                                                invoices.some((inv: any) => inv.status === 'DRAFT') &&
+                                                ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage)) ? [{
+                                                    icon: Ban,
+                                                    title: 'Anular OT',
+                                                    color: 'text-orange-500 hover:bg-orange-500/10',
+                                                    onClick: () => handleAnnulWorkOrder(ot.id)
+                                                }] : [])
                                         ]
                                     })) || []}
                                     onViewDetail={openDetails}
