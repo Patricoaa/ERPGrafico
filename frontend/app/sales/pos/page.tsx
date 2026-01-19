@@ -372,7 +372,7 @@ export default function POSPage() {
                                                 <div className="font-bold text-sm line-clamp-2">{product.name}</div>
                                                 <div className="text-primary font-semibold text-base mt-1">
                                                     {product.is_dynamic_pricing ? (
-                                                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Dinámico</Badge>
+                                                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Precio Dinámico</Badge>
                                                     ) : (
                                                         <>
                                                             {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}

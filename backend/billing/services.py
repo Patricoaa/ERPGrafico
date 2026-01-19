@@ -11,6 +11,37 @@ from decimal import Decimal
 
 class BillingService:
     @staticmethod
+    def _validate_document_uniqueness(number, dte_type, supplier_id=None, exclude_id=None):
+        """
+        Validates that the document number is unique.
+        - For Sales: Global uniqueness per DTE type.
+        - For Purchases: Uniqueness per supplier and DTE type.
+        """
+        if not number or number == 'Draft' or number == '':
+            return
+
+        from .models import Invoice
+        
+        # Base query
+        query = Invoice.objects.filter(number=number, dte_type=dte_type)
+        
+        if exclude_id:
+            query = query.exclude(id=exclude_id)
+
+        if supplier_id:
+            # Purchase validation: unique per supplier
+            query = query.filter(purchase_order__supplier_id=supplier_id)
+        else:
+            # Sale validation: global per DTE type (excluding purchases)
+            query = query.filter(sale_order__isnull=False)
+
+        if query.exists():
+            if supplier_id:
+                raise ValidationError(f"El folio {number} ya ha sido registrado para este proveedor en otro documento.")
+            else:
+                raise ValidationError(f"El folio {number} ya ha sido utilizado en otro documento de venta.")
+
+    @staticmethod
     def _capitalize_tax_to_product_cost(product, tax_amount, unit_cost, quantity):
         """
         Capitalizes tax amount into product cost using weighted average.
@@ -59,6 +90,10 @@ class BillingService:
                 Invoice, 
                 filter_kwargs={'dte_type': Invoice.DTEType.BOLETA}
             )
+
+        # Validate Uniqueness
+        if number:
+            BillingService._validate_document_uniqueness(number, dte_type)
 
         # 1. Create Invoice Record
         invoice = Invoice.objects.create(
@@ -151,6 +186,14 @@ class BillingService:
         """
         if status == Invoice.Status.POSTED and not supplier_invoice_number:
             raise ValidationError("El número de folio es obligatorio para publicar la factura.")
+
+        # 0. Validate Uniqueness
+        if supplier_invoice_number:
+            BillingService._validate_document_uniqueness(
+                supplier_invoice_number, 
+                dte_type, 
+                supplier_id=order.supplier_id
+            )
 
         invoice = Invoice.objects.create(
             dte_type=dte_type,
@@ -353,6 +396,11 @@ class BillingService:
         invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
         if not invoice:
             status = Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED
+            
+            # Validate uniqueness if number provided
+            if document_number:
+                BillingService._validate_document_uniqueness(document_number, dte_type)
+                
             invoice = BillingService.create_sale_invoice(order, dte_type, payment_method, status=status, number=document_number)
             if document_date:
                 invoice.date = document_date
@@ -395,6 +443,18 @@ class BillingService:
         
         if not number:
             raise ValidationError("El número de folio es obligatorio para confirmar la factura.")
+
+        # Validate Uniqueness
+        supplier_id = None
+        if invoice.purchase_order:
+            supplier_id = invoice.purchase_order.supplier_id
+            
+        BillingService._validate_document_uniqueness(
+            number, 
+            invoice.dte_type, 
+            supplier_id=supplier_id, 
+            exclude_id=invoice.id
+        )
 
         invoice.number = number
         if document_attachment:

@@ -189,7 +189,7 @@ export function ProductList() {
             cell: ({ row }) => (
                 <div className="text-right">
                     {row.original.is_dynamic_pricing ? (
-                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Dinámico</Badge>
+                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Precio Dinámico</Badge>
                     ) : (
                         <span className="font-bold text-muted-foreground">{formatCurrency(row.getValue("sale_price"))}</span>
                     )}
@@ -211,7 +211,7 @@ export function ProductList() {
             cell: ({ row }) => (
                 <div className="text-right">
                     {row.original.is_dynamic_pricing ? (
-                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Dinámico</Badge>
+                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Precio Dinámico</Badge>
                     ) : (
                         <span className="font-bold text-primary">{formatCurrency(PricingUtils.netToGross(Number(row.getValue("sale_price"))))}</span>
                     )}
