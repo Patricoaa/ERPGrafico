@@ -135,12 +135,40 @@ class WorkOrderService:
     @transaction.atomic
     def annul_work_order(work_order, user=None, notes=""):
         """
-        Annuls a Work Order:
-        1. Checks if it can be annulled (optional: business rules).
-        2. Cancels linked Purchase Orders (if status permits).
-        3. Reverses stock movements (consumptions and finished products).
-        4. Updates status to CANCELLED and stage to CANCELLED.
+        Annuls a Work Order with strict business rule validations.
+        Only allowed if materials have not been physically consumed yet.
+        1. Validates stage and consumption status
+        2. Cancels linked Purchase Orders (if status permits)
+        3. Reverses stock movements (consumptions and finished products)
+        4. Updates status to CANCELLED and stage to CANCELLED
         """
+        # VALIDATION 1: Etapa de producción (materials consumption check)
+        # Materials are physically consumed starting from PRESS stage onwards
+        CONSUMPTION_STAGES = [
+            WorkOrder.Stage.PRESS,
+            WorkOrder.Stage.POSTPRESS,
+            WorkOrder.Stage.FINISHED
+        ]
+        
+        if work_order.current_stage in CONSUMPTION_STAGES:
+            raise ValidationError(
+                f"❌ No se puede anular: la OT ya superó la etapa de asignación de materiales.\n"
+                f"📍 Etapa actual: {work_order.get_current_stage_display()}\n"
+                f"⚠️ Los materiales ya fueron consumidos físicamente en el proceso de producción.\n"
+                f"💡 Opciones:\n"
+                f"   1. Aceptar la pérdida de materiales como costo operativo\n"
+                f"   2. Evaluar proceso de desarme del producto (si aplica)\n"
+                f"   3. Registrar ajuste de inventario manual"
+            )
+        
+        # VALIDATION 2: Consumos ya registrados en sistema
+        if ProductionConsumption.objects.filter(work_order=work_order).exists():
+            raise ValidationError(
+                "❌ No se puede anular: ya existen consumos de materiales registrados en el sistema.\n"
+                "⚠️ Debe revertir los consumos manualmente antes de anular la OT.\n"
+                "💡 Contacte al administrador del sistema para asistencia."
+            )
+        
         # 1. Revert Stock Movements (if any)
         # We find consumptions linked to this OT
         consumptions = ProductionConsumption.objects.filter(work_order=work_order)

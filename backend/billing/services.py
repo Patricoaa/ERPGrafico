@@ -454,28 +454,74 @@ class BillingService:
     @transaction.atomic
     def annul_invoice(invoice: Invoice, force: bool = False):
         """
-        Annuls a POSTED invoice.
+        Annuls a POSTED invoice with strict business rule validations.
         Reverses the accounting entry and marks as CANCELLED.
         If force is True, also annuls associated payments.
         """
         if invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
              raise ValidationError("Solo se pueden anular facturas publicadas o pagadas.")
 
-        # 1. Reverse Accounting Entry
-        if invoice.journal_entry:
-            JournalEntryService.reverse_entry(invoice.journal_entry, description=f"Anulación Factura {invoice.number}")
+        # VALIDATION 1: Folio registrado (fiscal requirement)
+        if invoice.number and invoice.number != 'Draft':
+            raise ValidationError(
+                "❌ No se puede anular una factura con folio asignado.\n"
+                "📋 Razón: Obligación fiscal de mantener trazabilidad de documentos emitidos.\n"
+                "💡 Use una Nota de Crédito para ajustar esta factura."
+            )
         
-        # 2. Handle associated payments
-        from treasury.services import TreasuryService
+        # VALIDATION 2: Despachos confirmados (para ventas)
+        if invoice.sale_order:
+            confirmed_deliveries = invoice.sale_order.deliveries.filter(
+                status='CONFIRMED'
+            ).exists()
+            
+            if confirmed_deliveries:
+                raise ValidationError(
+                    "❌ No se puede anular: existen despachos confirmados asociados.\n"
+                    "📦 Los productos ya fueron despachados físicamente.\n"
+                    "💡 Opciones:\n"
+                    "   1. Registrar una devolución de mercadería (solo productos stockeables)\n"
+                    "   2. Usar una Nota de Crédito para ajustar la factura"
+                )
         
+        # VALIDATION 3: Recepciones confirmadas (para compras)
+        if invoice.purchase_order:
+            confirmed_receipts = invoice.purchase_order.receipts.filter(
+                status='CONFIRMED'
+            ).exists()
+            
+            if confirmed_receipts:
+                raise ValidationError(
+                    "❌ No se puede anular: existen recepciones confirmadas asociadas.\n"
+                    "📦 Los productos ya fueron recibidos físicamente.\n"
+                    "💡 Opciones:\n"
+                    "   1. Registrar una devolución de mercadería al proveedor\n"
+                    "   2. Usar una Nota de Crédito para ajustar la factura"
+                )
+        
+        # VALIDATION 4: Pagos registrados
         posted_payments = invoice.payments.filter(journal_entry__state='POSTED')
         if posted_payments.exists():
              if not force:
-                 raise ValidationError("Debe anular los pagos asociados antes de anular la factura.")
+                 raise ValidationError(
+                     "❌ No se puede anular: existen pagos registrados asociados.\n"
+                     "💰 Los pagos ya fueron contabilizados.\n"
+                     "💡 Opciones:\n"
+                     "   1. Anular los pagos primero (use force=True para anulación en cascada)\n"
+                     "   2. Registrar una devolución de pago\n"
+                     "   3. Usar una Nota de Crédito para ajustar la factura"
+                 )
              
              # Annul payments in cascade
              for payment in posted_payments:
                  TreasuryService.annul_payment(payment)
+
+        # 1. Reverse Accounting Entry
+        if invoice.journal_entry:
+            JournalEntryService.reverse_entry(invoice.journal_entry, description=f"Anulación Factura {invoice.number}")
+        
+        # 2. Handle associated payments (already handled in validation)
+        from treasury.services import TreasuryService
 
         # 3. Update Status
         invoice.status = Invoice.Status.CANCELLED

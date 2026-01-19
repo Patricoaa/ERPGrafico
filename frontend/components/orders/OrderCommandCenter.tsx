@@ -370,6 +370,13 @@ export function OrderCommandCenter({
     const totalOTs = order.work_orders?.length || 0
     const totalOTProgress = order.production_progress || 0
 
+    // Calculate if there are issues with invoices (drafts or missing folio)
+    // MUST be declared before logisticsDocs since it's used there
+    const invoices = order.related_documents?.invoices || []
+    const billingIsComplete = invoices.length > 0 && !invoices.some((inv: any) =>
+        inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
+    )
+
     // Resolve Logistics Documents with Nomenclature and individual progress if applicable
     const logisticsDocs = (() => {
         if (order.related_stock_moves?.length > 0) return order.related_stock_moves.map((m: any) => ({
@@ -391,7 +398,8 @@ export function OrderCommandCenter({
             docType: doc.docType || (isSale ? 'sale_delivery' : 'inventory'),
             status: doc.status,
             actions: [
-                ...((doc.status !== 'CANCELLED') ? [{
+                // Only show annulment if there's a DRAFT invoice
+                ...((doc.status !== 'CANCELLED' && invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
                     icon: Ban,
                     title: isSale ? 'Anular Despacho' : 'Anular Recepción',
                     color: 'text-orange-500 hover:bg-orange-500/10',
@@ -428,12 +436,6 @@ export function OrderCommandCenter({
         )
         return requiresTR && !pay.transaction_number
     })
-
-    // Calculate if there are issues with invoices (drafts or missing folio)
-    const invoices = order.related_documents?.invoices || []
-    const billingIsComplete = invoices.length > 0 && !invoices.some((inv: any) =>
-        inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
-    )
 
     const getGlobalStatus = () => {
         if (order.status === 'CANCELLED') return { label: 'Anulado', variant: 'destructive', icon: XCircle }
@@ -608,7 +610,8 @@ export function OrderCommandCenter({
                                         status: ot.status,
                                         progressValue: ot.production_progress || 0,
                                         actions: [
-                                            ...((ot.status !== 'CANCELLED') ? [{
+                                            // Only show OT annulment if invoice is DRAFT
+                                            ...((ot.status !== 'CANCELLED' && invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
                                                 icon: Ban,
                                                 title: 'Anular OT',
                                                 color: 'text-orange-500 hover:bg-orange-500/10',
@@ -717,12 +720,8 @@ export function OrderCommandCenter({
                                             color: 'text-red-500 hover:bg-red-500/10',
                                             onClick: () => handleDeleteDraft(inv.id)
                                         }] : []),
-                                        ...(inv.status !== 'CANCELLED' && inv.status !== 'DRAFT' && inv.number !== 'Draft' ? [{
-                                            icon: Ban,
-                                            title: 'Anular Documento',
-                                            color: 'text-red-600 hover:bg-red-600/10',
-                                            onClick: () => handleAnnulDocument(inv.id)
-                                        }] : [])
+                                        // Removed annul-document action - only DRAFT invoices can be annulled
+                                        // and they should be deleted instead
                                     ]
                                 }))}
                                 onViewDetail={openDetails}
@@ -768,12 +767,13 @@ export function OrderCommandCenter({
                                                 initialValue: pay.transaction_number || ""
                                             })
                                         }] : []),
-                                        {
+                                        // Only show payment annulment if invoice is DRAFT
+                                        ...((invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
                                             icon: Ban,
                                             title: 'Anular Pago',
                                             color: 'text-red-600 hover:bg-red-600/10',
                                             onClick: () => handleDeletePayment(pay.id)
-                                        }
+                                        }] : [])
                                     ]
                                 }))}
                                 onViewDetail={openDetails}

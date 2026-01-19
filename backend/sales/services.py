@@ -446,11 +446,52 @@ class SalesService:
     @transaction.atomic
     def delete_sale_order(order: SaleOrder):
         """
-        Deletes a sale order, its invoices, and associated journal entries.
-        Only allowed for DRAFT orders.
+        Deletes a sale order with strict business rule validations.
+        Only allowed for DRAFT orders without physical or financial impact.
         """
         if order.status != SaleOrder.Status.DRAFT:
             raise ValidationError("Solo se pueden eliminar notas de venta en estado Borrador.")
+
+        # VALIDATION 1: Despachos confirmados
+        confirmed_deliveries = order.deliveries.filter(status='CONFIRMED').exists()
+        if confirmed_deliveries:
+            raise ValidationError(
+                "❌ No se puede eliminar: existen despachos confirmados.\n"
+                "📦 Los productos ya fueron despachados físicamente.\n"
+                "💡 Opciones:\n"
+                "   1. Anular los despachos primero (solo si son productos stockeables)\n"
+                "   2. Registrar devolución de mercadería\n"
+                "   3. Confirmar la orden y usar Nota de Crédito"
+            )
+        
+        # VALIDATION 2: Pagos registrados
+        posted_payments = order.payments.filter(
+            journal_entry__state='POSTED'
+        ).exists()
+        
+        if posted_payments:
+            raise ValidationError(
+                "❌ No se puede eliminar: existen pagos registrados.\n"
+                "💰 Los pagos ya fueron contabilizados.\n"
+                "💡 Opciones:\n"
+                "   1. Registrar devolución de pago\n"
+                "   2. Confirmar la orden y usar Nota de Crédito"
+            )
+        
+        # VALIDATION 3: Productos no stockeables despachados
+        has_non_stockable_delivered = False
+        for line in order.lines.all():
+            if line.quantity_delivered > 0 and line.product:
+                if not line.product.track_inventory:
+                    has_non_stockable_delivered = True
+                    break
+        
+        if has_non_stockable_delivered:
+            raise ValidationError(
+                "❌ No se puede eliminar: se despacharon productos no stockeables (servicios/consumibles).\n"
+                "⚠️ No es posible revertir estos despachos ya que no afectan inventario.\n"
+                "💡 Debe confirmar la orden y usar Nota de Crédito para ajustar."
+            )
 
         from billing.services import BillingService
         from treasury.services import TreasuryService

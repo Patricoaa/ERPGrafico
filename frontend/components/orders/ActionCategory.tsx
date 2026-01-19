@@ -117,6 +117,12 @@ export const ActionCategory = forwardRef(({
             case 'delete-draft':
                 handleDeleteDraft()
                 break
+            case 'register-merchandise-return':
+                setActiveModal(actionId)
+                break
+            case 'register-payment-return':
+                setActiveModal(actionId)
+                break
             default:
                 console.warn(`No handler for action: ${actionId}`)
         }

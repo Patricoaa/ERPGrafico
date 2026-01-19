@@ -11,7 +11,10 @@ import {
     Package,
     Trash2,
     FileEdit,
-    Hash
+    Hash,
+    RotateCcw,
+    PackageMinus,
+    DollarSign
 } from 'lucide-react'
 
 /**
@@ -100,6 +103,27 @@ export const saleOrderActions: ActionRegistry = {
                 badge: { type: 'pending' }
             },
             {
+                id: 'register-merchandise-return',
+                label: 'Devolver Mercadería',
+                icon: PackageMinus,
+                requiredPermissions: ['inventory.add_stockmove'],
+                checkAvailability: (order) => {
+                    // Only if invoice is DRAFT
+                    const hasDraftInvoice = order.related_documents?.invoices?.some(
+                        (inv: any) => inv.status === 'DRAFT'
+                    )
+
+                    // Only if has delivered stockable products
+                    const lines = order.lines || order.items || []
+                    const hasStockableDelivered = lines.some((line: any) =>
+                        (line.quantity_delivered || 0) > 0 && line.product?.track_inventory
+                    )
+
+                    return hasDraftInvoice && hasStockableDelivered
+                },
+                badge: { type: 'info', label: 'Solo DRAFT' }
+            },
+            {
                 id: 'view-deliveries',
                 label: 'Ver Despachos',
                 icon: Eye,
@@ -130,6 +154,27 @@ export const saleOrderActions: ActionRegistry = {
                 excludedStatus: ['CANCELLED']
             },
             {
+                id: 'register-payment-return',
+                label: 'Devolver Pago',
+                icon: DollarSign,
+                requiredPermissions: ['treasury.add_payment'],
+                checkAvailability: (order) => {
+                    // Only if invoice is DRAFT
+                    const hasDraftInvoice = order.related_documents?.invoices?.some(
+                        (inv: any) => inv.status === 'DRAFT'
+                    )
+
+                    // Only if has posted payments
+                    const payments = order.related_documents?.payments || []
+                    const hasPostedPayments = payments.some(
+                        (pay: any) => pay.journal_entry?.state === 'POSTED'
+                    )
+
+                    return hasDraftInvoice && hasPostedPayments
+                },
+                badge: { type: 'info', label: 'Solo DRAFT' }
+            },
+            {
                 id: 'payment-history',
                 label: 'Historial de Pagos',
                 icon: History,
@@ -139,7 +184,7 @@ export const saleOrderActions: ActionRegistry = {
                         order.serialized_payments?.length || 0
                     return paymentsCount > 0
                 }
-            },
+            }
         ]
     },
 
@@ -166,6 +211,54 @@ export const saleOrderActions: ActionRegistry = {
         ]
     },
 
+    returns: {
+        id: 'returns',
+        label: 'Devoluciones',
+        icon: RotateCcw,
+        actions: [
+            {
+                id: 'register-merchandise-return',
+                label: 'Devolver Mercadería',
+                icon: PackageMinus,
+                requiredPermissions: ['inventory.add_stockmove'],
+                checkAvailability: (order) => {
+                    // Only if invoice is DRAFT
+                    const hasDraftInvoice = order.related_documents?.invoices?.some(
+                        (inv: any) => inv.status === 'DRAFT'
+                    )
+
+                    // Only if has delivered stockable products
+                    const hasStockableDelivered = order.lines?.some((line: any) =>
+                        (line.quantity_delivered || 0) > 0 && line.product?.track_inventory
+                    )
+
+                    return hasDraftInvoice && hasStockableDelivered
+                },
+                badge: { type: 'info', label: 'Solo DRAFT' }
+            },
+            {
+                id: 'register-payment-return',
+                label: 'Devolver Pago',
+                icon: DollarSign,
+                requiredPermissions: ['treasury.add_payment'],
+                checkAvailability: (order) => {
+                    // Only if invoice is DRAFT
+                    const hasDraftInvoice = order.related_documents?.invoices?.some(
+                        (inv: any) => inv.status === 'DRAFT'
+                    )
+
+                    // Only if has posted payments
+                    const hasPostedPayments = order.related_documents?.payments?.some(
+                        (pay: any) => pay.journal_entry?.state === 'POSTED'
+                    )
+
+                    return hasDraftInvoice && hasPostedPayments
+                },
+                badge: { type: 'info', label: 'Solo DRAFT' }
+            }
+        ]
+    },
+
     management: {
         id: 'management',
         label: 'Gestión',
@@ -184,12 +277,15 @@ export const saleOrderActions: ActionRegistry = {
                 icon: Ban,
                 requiredPermissions: ['billing.delete_invoice'],
                 checkAvailability: (order) => {
-                    // Show if there's a posted invoice that's not cancelled
-                    return order.related_documents?.invoices?.some((inv: any) =>
-                        inv.status === 'POSTED' || inv.status === 'PAID'
+                    // Only show for DRAFT invoices without folio
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    return invoices.some((inv: any) =>
+                        inv.status === 'DRAFT' &&
+                        (inv.number === 'Draft' || !inv.number)
                     )
                 },
-                variant: 'destructive'
+                variant: 'destructive',
+                badge: { type: 'warning', label: 'Solo DRAFT' }
             },
             {
                 id: 'delete-draft',
@@ -197,9 +293,21 @@ export const saleOrderActions: ActionRegistry = {
                 icon: Trash2,
                 requiredPermissions: ['billing.delete_invoice'],
                 checkAvailability: (order) => {
-                    // Show only if there's a draft invoice (unpaid)
-                    const invoices = order.related_documents?.invoices || order.invoices || []
-                    return invoices.some((inv: any) => inv.status === 'DRAFT')
+                    // Show only if order is DRAFT and has no physical/financial impact
+                    if (order.status !== 'DRAFT') return false
+
+                    // Check for confirmed deliveries (backend will block)
+                    const hasConfirmedDeliveries = order.related_documents?.deliveries?.some(
+                        (del: any) => del.status === 'CONFIRMED'
+                    ) || false
+
+                    // Check for posted payments (backend will block)
+                    const hasPostedPayments = order.related_documents?.payments?.some(
+                        (pay: any) => pay.journal_entry?.state === 'POSTED'
+                    ) || false
+
+                    // Only show if no deliveries or payments
+                    return !hasConfirmedDeliveries && !hasPostedPayments
                 },
                 variant: 'destructive'
             }

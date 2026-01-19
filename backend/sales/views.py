@@ -177,6 +177,50 @@ class SaleOrderViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
+    def register_merchandise_return(self, request, pk=None):
+        """
+        Register merchandise return for a sale order.
+        Only available for DRAFT invoices.
+        """
+        order = self.get_object()
+        
+        return_items = request.data.get('return_items', [])
+        warehouse_id = request.data.get('warehouse_id')
+        notes = request.data.get('notes', '')
+        
+        if not warehouse_id:
+            return Response(
+                {'error': 'Se requiere especificar la bodega.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not return_items:
+            return Response(
+                {'error': 'Debe especificar al menos un producto a devolver.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            from sales.return_services import SalesReturnService
+            warehouse = Warehouse.objects.get(id=warehouse_id)
+            
+            return_delivery = SalesReturnService.register_merchandise_return(
+                order, return_items, warehouse, notes
+            )
+            
+            return Response({
+                'message': 'Devolución registrada exitosamente',
+                'return_delivery_id': return_delivery.id,
+                'return_delivery': SaleDeliverySerializer(return_delivery).data
+            }, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         order = self.get_object()
         force = request.data.get('force', False)

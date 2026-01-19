@@ -157,3 +157,42 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def register_return(self, request, pk=None):
+        """
+        Register payment return.
+        Only available for payments linked to DRAFT invoices.
+        """
+        payment = self.get_object()
+        
+        amount = request.data.get('amount')
+        reason = request.data.get('reason', '')
+        treasury_account_id = request.data.get('treasury_account_id')
+        
+        if not amount:
+            return Response(
+                {'error': 'Debe especificar el monto a devolver.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            from treasury.return_services import TreasuryReturnService
+            amount_decimal = Decimal(str(amount))
+            
+            return_payment = TreasuryReturnService.register_payment_return(
+                payment, amount_decimal, reason=reason, treasury_account_id=treasury_account_id
+            )
+            
+            return Response({
+                'message': 'Devolución de pago registrada exitosamente',
+                'return_payment_id': return_payment.id,
+                'return_payment': PaymentSerializer(return_payment).data
+            }, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
