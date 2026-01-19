@@ -238,12 +238,14 @@ export default function SalesOrdersPage() {
             ),
             cell: ({ row }) => <OrderHubStatus order={row.original} />,
         },
-        // Hidden accessor columns for filtering (not displayed as columns, only used for filters)
+        // Hidden columns for filtering only - these provide data for faceted filters
         {
             id: "production_status",
             accessorFn: (row) => getHubStatuses(row).production,
-            enableHiding: true,
-            header: "Producción",
+            header: () => null, // Don't render header
+            cell: () => null, // Don't render cell
+            enableSorting: false,
+            enableHiding: false,
             filterFn: (row, id, value) => {
                 return value.includes(row.getValue(id))
             },
@@ -251,8 +253,10 @@ export default function SalesOrdersPage() {
         {
             id: "logistics_status",
             accessorFn: (row) => getHubStatuses(row).logistics,
-            enableHiding: true,
-            header: "Logística",
+            header: () => null,
+            cell: () => null,
+            enableSorting: false,
+            enableHiding: false,
             filterFn: (row, id, value) => {
                 return value.includes(row.getValue(id))
             },
@@ -260,8 +264,10 @@ export default function SalesOrdersPage() {
         {
             id: "billing_status",
             accessorFn: (row) => getHubStatuses(row).billing,
-            enableHiding: true,
-            header: "Facturación",
+            header: () => null,
+            cell: () => null,
+            enableSorting: false,
+            enableHiding: false,
             filterFn: (row, id, value) => {
                 return value.includes(row.getValue(id))
             },
@@ -269,8 +275,10 @@ export default function SalesOrdersPage() {
         {
             id: "treasury_status",
             accessorFn: (row) => getHubStatuses(row).treasury,
-            enableHiding: true,
-            header: "Tesorería",
+            header: () => null,
+            cell: () => null,
+            enableSorting: false,
+            enableHiding: false,
             filterFn: (row, id, value) => {
                 return value.includes(row.getValue(id))
             },
@@ -420,7 +428,6 @@ export default function SalesOrdersPage() {
                             <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Venta" />
                         }
                         defaultPageSize={20}
-                        hiddenColumns={["production_status", "logistics_status", "billing_status", "treasury_status"]}
                     />
                 </div>
             )}
