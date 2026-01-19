@@ -145,6 +145,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
             if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
         }
+
+        // Reset dynamic pricing if not manufacturable
+        const isManufacturable = productType === 'MANUFACTURABLE' || form.getValues("requires_advanced_manufacturing");
+        if (!isManufacturable && form.getValues("is_dynamic_pricing")) {
+            form.setValue("is_dynamic_pricing", false);
+        }
     }, [productType, form])
 
     const fetchCategories = async () => {

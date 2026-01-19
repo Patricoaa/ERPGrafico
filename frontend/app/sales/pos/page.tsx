@@ -43,6 +43,7 @@ interface Product {
     variants_count?: number
     image?: string | null
     requires_advanced_manufacturing?: boolean
+    is_dynamic_pricing?: boolean
     has_bom?: boolean
     category?: {
         id: number
@@ -474,9 +475,29 @@ export default function POSPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-2 text-right">
-                                                        <span className="text-xs font-medium">
-                                                            {formatCurrency(PricingUtils.netToGross(item.unit_price_net))}
-                                                        </span>
+                                                        <div className="flex justify-end">
+                                                            {originalProduct?.is_dynamic_pricing ? (
+                                                                <Input
+                                                                    type="number"
+                                                                    className="h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1"
+                                                                    value={item.unit_price_net || ""}
+                                                                    onChange={async (e) => {
+                                                                        const newPrice = parseFloat(e.target.value) || 0
+                                                                        setItems(prevItems => prevItems.map(i => i.cartItemId === item.cartItemId ? {
+                                                                            ...i,
+                                                                            unit_price_net: newPrice,
+                                                                            total_net: PricingUtils.calculateLineNet(i.qty, newPrice),
+                                                                            total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(i.qty, newPrice)),
+                                                                            total_gross: PricingUtils.calculateLineTotal(i.qty, newPrice)
+                                                                        } : i))
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <span className="text-xs font-medium">
+                                                                    {formatCurrency(PricingUtils.netToGross(item.unit_price_net))}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell className="py-2 text-right">
                                                         <div className="flex flex-col items-end">

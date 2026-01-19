@@ -38,35 +38,38 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 rounded-2xl bg-primary/5 border border-primary/10">
-            <div className="md:col-span-4 flex items-center space-x-2 border-b border-primary/10 pb-4 mb-2">
-                <FormField
-                    control={form.control}
-                    name="is_dynamic_pricing"
-                    render={({ field }) => (
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="is_dynamic_pricing"
-                                checked={field.value}
-                                onCheckedChange={(checked) => {
-                                    field.onChange(checked);
-                                    if (checked) {
-                                        form.setValue("sale_price", 0);
-                                    }
-                                }}
-                            />
-                            <Label
-                                htmlFor="is_dynamic_pricing"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                                Precio Gestionable (Dinámico)
-                            </Label>
-                        </div>
-                    )}
-                />
-                <span className="text-xs text-muted-foreground ml-2">
-                    (El precio se asignará manualmente al momento de la venta)
-                </span>
-            </div>
+            {/* Only for Manufacturable (Simple or Advanced) */}
+            {(productType === 'MANUFACTURABLE' || form.watch("requires_advanced_manufacturing")) && (
+                <div className="md:col-span-4 flex items-center space-x-2 border-b border-primary/10 pb-4 mb-2">
+                    <FormField
+                        control={form.control}
+                        name="is_dynamic_pricing"
+                        render={({ field }) => (
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="is_dynamic_pricing"
+                                    checked={field.value}
+                                    onCheckedChange={(checked) => {
+                                        field.onChange(checked);
+                                        if (checked) {
+                                            form.setValue("sale_price", 0);
+                                        }
+                                    }}
+                                />
+                                <Label
+                                    htmlFor="is_dynamic_pricing"
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
+                                    Precio Gestionable (Dinámico)
+                                </Label>
+                            </div>
+                        )}
+                    />
+                    <span className="text-xs text-muted-foreground ml-2">
+                        (El precio se asignará manualmente al momento de la venta)
+                    </span>
+                </div>
+            )}
 
             <FormField<ProductFormValues>
                 control={form.control}

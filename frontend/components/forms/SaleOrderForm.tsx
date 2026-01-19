@@ -482,8 +482,33 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell className="text-right text-muted-foreground text-xs">
-                                                    {(Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                <TableCell className="text-right text-xs">
+                                                    <FormField<SaleOrderFormValues>
+                                                        control={form.control}
+                                                        name={`lines.${index}.unit_price`}
+                                                        render={({ field }) => {
+                                                            const productId = form.watch(`lines.${index}.product`)
+                                                            const product = products.find(p => p.id.toString() === productId)
+                                                            const isDynamic = product?.is_dynamic_pricing
+
+                                                            if (isDynamic) {
+                                                                return (
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="h-8 w-24 text-right"
+                                                                        {...field}
+                                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                                    />
+                                                                )
+                                                            }
+
+                                                            return (
+                                                                <div className="text-muted-foreground pt-2 pr-3">
+                                                                    {(Number(field.value) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                </div>
+                                                            )
+                                                        }}
+                                                    />
                                                 </TableCell>
                                                 <TableCell className="text-right text-muted-foreground text-xs">
                                                     {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
