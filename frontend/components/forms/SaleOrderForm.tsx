@@ -143,7 +143,6 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     const [loading, setLoading] = useState(false)
     const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoMs] = useState<any[]>([])
-    const [pricingRules, setPricingRules] = useState<any[]>([])
 
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema) as any,
@@ -175,58 +174,29 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
     const fetchData = async () => {
         try {
-            const [productsRes, uomsRes, rulesRes] = await Promise.all([
+            const [productsRes, uomsRes] = await Promise.all([
                 api.get('/inventory/products/?can_be_sold=true'),
-                api.get('/inventory/uoms/'),
-                api.get('/inventory/pricing-rules/?active=true')
+                api.get('/inventory/uoms/')
             ])
             setProducts(productsRes.data.results || productsRes.data)
             setUoMs(uomsRes.data.results || uomsRes.data)
-            setPricingRules(rulesRes.data.results || rulesRes.data)
         } catch (error) {
             console.error("Error fetching data:", error)
         }
     }
 
-    const getEffectivePrice = (product: any, qty: number, selectedUomId?: number) => {
-        const basePrice = parseFloat(product.sale_price)
-        const date = new Date().toISOString().split('T')[0]
-        const categoryId = typeof product.category === 'object' ? product.category?.id : product.category
+    const fetchEffectivePrice = async (product: any, qty: number, selectedUomId?: number) => {
+        if (!product || !product.id) return 0
+        try {
+            const params: any = { quantity: qty }
+            if (selectedUomId) params.uom_id = selectedUomId
 
-        const applicableRules = pricingRules.filter(rule => {
-            const matchesProduct = rule.product === product.id
-            const matchesCategory = rule.category === categoryId
-            const matchesQty = qty >= parseFloat(rule.min_quantity)
-            const matchesUom = !rule.uom || rule.uom === selectedUomId
-            const matchesDate = (!rule.start_date || rule.start_date <= date) &&
-                (!rule.end_date || rule.end_date >= date)
-            return (matchesProduct || matchesCategory) && matchesQty && matchesDate && matchesUom
-        }).sort((a, b) => b.priority - a.priority || parseFloat(b.min_quantity) - parseFloat(a.min_quantity))
-
-        if (applicableRules.length > 0) {
-            const rule = applicableRules[0]
-            if (rule.rule_type === "FIXED") {
-                return parseFloat(rule.fixed_price || "0")
-            } else {
-                return PricingUtils.applyDiscount(basePrice, parseFloat(rule.discount_percentage || "0"))
-            }
+            const response = await api.get(`/inventory/products/${product.id}/effective_price/`, { params })
+            return parseFloat(response.data.price || "0")
+        } catch (error) {
+            console.error("Error fetching price:", error)
+            return parseFloat(product.sale_price || "0")
         }
-
-        // 2. Proportional pricing based on UoM if no rule
-        if (selectedUomId && selectedUomId !== product.uom) {
-            const baseUom = uoms.find(u => u.id === product.uom)
-            const targetUom = uoms.find(u => u.id === selectedUomId)
-
-            if (baseUom && targetUom) {
-                return PricingUtils.calculateUoMPrice(
-                    basePrice,
-                    parseFloat(baseUom.ratio),
-                    parseFloat(targetUom.ratio)
-                )
-            }
-        }
-
-        return basePrice
     }
 
     useEffect(() => {
@@ -369,7 +339,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                             value={field.value}
                                                                             restrictStock={true}
                                                                             context="sale"
-                                                                            onChange={(value: string | null) => {
+                                                                            onChange={async (value: string | null) => {
                                                                                 const selectedProduct = products.find(p => p.id.toString() === value)
 
                                                                                 if (selectedProduct?.product_type === 'CONSUMABLE') {
@@ -384,7 +354,10 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 if (selectedProduct) {
                                                                                     const qty = form.getValues(`lines.${index}.quantity`) || 1
                                                                                     const uomId = selectedProduct.uom
-                                                                                    const price = getEffectivePrice(selectedProduct, qty, uomId)
+
+                                                                                    // Call API for price
+                                                                                    const price = await fetchEffectivePrice(selectedProduct, qty, uomId)
+
                                                                                     form.setValue(`lines.${index}.unit_price`, price)
                                                                                     form.setValue(`lines.${index}.description`, selectedProduct.name)
                                                                                     form.setValue(`lines.${index}.uom`, uomId?.toString() || "")
@@ -462,7 +435,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                 type="number"
                                                                 step="0.01"
                                                                 {...field}
-                                                                onChange={(e) => {
+                                                                onChange={async (e) => {
                                                                     const val = parseFloat(e.target.value) || 0
                                                                     field.onChange(val)
 
@@ -471,7 +444,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     const product = products.find(p => p.id.toString() === productId)
                                                                     if (product) {
                                                                         const uomId = parseInt(form.getValues(`lines.${index}.uom`))
-                                                                        const price = getEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
+                                                                        const price = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
                                                                         form.setValue(`lines.${index}.unit_price`, price)
                                                                     }
                                                                 }}
@@ -493,11 +466,11 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     product={selectedProduct || null}
                                                                     context="sale"
                                                                     value={field.value || ""}
-                                                                    onChange={(val) => {
+                                                                    onChange={async (val) => {
                                                                         field.onChange(val)
                                                                         const qty = Number(form.getValues(`lines.${index}.quantity`)) || 1
                                                                         const uomId = parseInt(val)
-                                                                        const price = getEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
+                                                                        const price = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
                                                                         form.setValue(`lines.${index}.unit_price`, price)
                                                                     }}
                                                                     uoms={uoms}
