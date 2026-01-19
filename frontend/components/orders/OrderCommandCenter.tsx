@@ -36,7 +36,8 @@ import {
     AlertCircle,
     XCircle,
     Edit,
-    Check
+    Check,
+    Ban
 } from "lucide-react"
 import { ActionCategory } from "./ActionCategory"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
@@ -205,23 +206,52 @@ export function OrderCommandCenter({
         if (!isConfirmed) {
             setConfirmModal({
                 open: true,
-                title: "Anular Pago",
+                title: "Eliminar/Anular Pago",
                 variant: "destructive",
-                confirmText: "Anular Pago",
+                confirmText: "Eliminar",
                 onConfirm: () => handleDeletePayment(id, true),
-                description: "¿Está seguro de que desea anular este pago? El saldo pendiente de la orden aumentará automáticamente."
+                description: "¿Está seguro de que desea eliminar este pago?"
             })
             return
         }
 
         try {
             await api.delete(`/treasury/payments/${id}/`)
-            toast.success("Pago anulado correctamente")
+            toast.success("Pago eliminado correctamente")
             setConfirmModal(prev => ({ ...prev, open: false }))
             fetchOrderDetails()
             onActionSuccess?.()
         } catch (error: any) {
-            toast.error("Error al anular el pago")
+            const errorMessage = error.response?.data?.error || ""
+            // Identify if error is due to POSTED status (standardize backend to return this specific code/msg)
+            if (errorMessage.includes("publicado") || error.response?.status === 400) {
+                // Close previous modal
+                setConfirmModal(prev => ({ ...prev, open: false }))
+
+                // Open new modal for Annulment
+                setTimeout(() => {
+                    setConfirmModal({
+                        open: true,
+                        title: "Anular Pago Confirmado",
+                        variant: "warning",
+                        confirmText: "Anular Pago",
+                        onConfirm: async () => {
+                            try {
+                                await api.post(`/treasury/payments/${id}/annul/`)
+                                toast.success("Pago anulado correctamente")
+                                setConfirmModal(prev => ({ ...prev, open: false }))
+                                fetchOrderDetails()
+                                onActionSuccess?.()
+                            } catch (err: any) {
+                                toast.error(err.response?.data?.error || "Error al anular pago")
+                            }
+                        },
+                        description: "No se puede eliminar un pago ya contabilizado. ¿Desea ANULARLO en su lugar? Esto creará un contra-asiento contable."
+                    })
+                }, 100)
+            } else {
+                toast.error(errorMessage || "Error al eliminar el pago")
+            }
         }
     }
 
@@ -259,6 +289,53 @@ export function OrderCommandCenter({
             const errorMessage = error.response?.data?.error || "Error al anular orden"
             toast.error(errorMessage)
         }
+    }
+
+    const handleAnnulWorkOrder = async (id: number) => {
+        setConfirmModal({
+            open: true,
+            title: "Anular Orden de Trabajo",
+            variant: "destructive",
+            confirmText: "Anular OT",
+            onConfirm: async () => {
+                try {
+                    await api.post(`/production/orders/${id}/annul/`)
+                    toast.success("OT anulada correctamente")
+                    setConfirmModal(prev => ({ ...prev, open: false }))
+                    fetchOrderDetails()
+                } catch (error: any) {
+                    toast.error(error.response?.data?.error || "Error al anular OT")
+                }
+            },
+            description: "Esta acción reverterá los consumos de materiales y liberará las reservas. ¿Está seguro?"
+        })
+    }
+
+    const handleAnnulLogistics = async (id: number, docType: string) => {
+        const isDelivery = docType === 'sale_delivery'
+        const label = isDelivery ? 'Despacho' : 'Recepción'
+
+        setConfirmModal({
+            open: true,
+            title: `Anular ${label}`,
+            variant: "destructive",
+            confirmText: `Anular ${label}`,
+            onConfirm: async () => {
+                try {
+                    const endpoint = isDelivery
+                        ? `/sales/deliveries/${id}/annul/`
+                        : `/purchasing/receipts/${id}/annul/`
+
+                    await api.post(endpoint)
+                    toast.success(`${label} anulado correctamente`)
+                    setConfirmModal(prev => ({ ...prev, open: false }))
+                    fetchOrderDetails()
+                } catch (error: any) {
+                    toast.error(error.response?.data?.error || `Error al anular ${label}`)
+                }
+            },
+            description: `Esta acción reverterá los movimientos de inventario asociados. ¿Está seguro de anular este ${label.toLowerCase()}?`
+        })
     }
 
     if (!order) return null
@@ -301,7 +378,8 @@ export function OrderCommandCenter({
             icon: Package,
             id: m.id,
             docType: 'inventory',
-            status: m.state || 'Realizado'
+            status: m.state || 'Realizado',
+            actions: [] // Stock moves usually don't have direct annulment here yet
         }))
 
         const specificDocs = isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions)
@@ -311,7 +389,15 @@ export function OrderCommandCenter({
             icon: Package,
             id: doc.id,
             docType: doc.docType || (isSale ? 'sale_delivery' : 'inventory'),
-            status: doc.status
+            status: doc.status,
+            actions: [
+                ...((doc.status !== 'CANCELLED') ? [{
+                    icon: Ban,
+                    title: isSale ? 'Anular Despacho' : 'Anular Recepción',
+                    color: 'text-orange-500 hover:bg-orange-500/10',
+                    onClick: () => handleAnnulLogistics(doc.id, isSale ? 'sale_delivery' : 'purchase_receipt')
+                }] : [])
+            ]
         }))
     })()
 
@@ -520,7 +606,15 @@ export function OrderCommandCenter({
                                         id: ot.id,
                                         docType: 'work_order',
                                         status: ot.status,
-                                        progressValue: ot.production_progress || 0
+                                        progressValue: ot.production_progress || 0,
+                                        actions: [
+                                            ...((ot.status !== 'CANCELLED' && ot.status !== 'FINISHED') ? [{
+                                                icon: Ban,
+                                                title: 'Anular OT',
+                                                color: 'text-orange-500 hover:bg-orange-500/10',
+                                                onClick: () => handleAnnulWorkOrder(ot.id)
+                                            }] : [])
+                                        ]
                                     })) || []}
                                     onViewDetail={openDetails}
                                     actions={(registry.production?.actions || []).filter((a: any) => !a.id.includes('view-'))}
@@ -800,6 +894,9 @@ function PhaseCard({
     const categorizedActions = (() => {
         const filtered = actions?.filter((action: any) => {
             if (action.requiredPermissions && !action.requiredPermissions.some((p: string) => userPermissions.includes(p))) {
+                return false
+            }
+            if (action.excludedStatus && action.excludedStatus.includes(order.status)) {
                 return false
             }
             if (action.checkAvailability && !action.checkAvailability(order)) {

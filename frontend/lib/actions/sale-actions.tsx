@@ -33,7 +33,8 @@ export const saleOrderActions: ActionRegistry = {
                     const invoices = order.related_documents?.invoices || order.invoices || []
                     return invoices.some((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
                 },
-                badge: { type: 'warning', label: 'Pendiente' }
+                badge: { type: 'warning', label: 'Pendiente' },
+                excludedStatus: ['CANCELLED']
             },
             {
                 id: 'view-documents',
@@ -89,7 +90,8 @@ export const saleOrderActions: ActionRegistry = {
                     const hasPendingAmount = (order.pending_amount ?? 0) > 0
                     return hasPendingAmount || (order.status !== 'PAID' && order.status !== 'CANCELLED')
                 },
-                badge: { type: 'pending' }
+                badge: { type: 'pending' },
+                excludedStatus: ['CANCELLED']
             },
             {
                 id: 'payment-history',
