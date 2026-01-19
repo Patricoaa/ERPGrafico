@@ -47,6 +47,7 @@ import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { PricingUtils } from "@/lib/pricing"
+import { Badge } from "@/components/ui/badge"
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
@@ -401,7 +402,30 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     if (!prod) return null
 
                                                                     return (
-                                                                        <div className="space-y-2">
+                                                                        <div className="space-y-2 mt-1">
+                                                                            <div className="flex gap-1 flex-wrap">
+                                                                                {prod.product_type === 'STORABLE' && (
+                                                                                    <>
+                                                                                        <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
+                                                                                            (prod.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-red-400"
+                                                                                        )}>
+                                                                                            Stock: {prod.current_stock || 0}
+                                                                                        </Badge>
+                                                                                        <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
+                                                                                            (prod.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-amber-500 text-amber-600"
+                                                                                        )}>
+                                                                                            Disp: {prod.qty_available || 0}
+                                                                                        </Badge>
+                                                                                    </>
+                                                                                )}
+
+                                                                                {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
+                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-blue-400 text-blue-600">
+                                                                                        Fab: {prod.manufacturable_quantity ?? 'N/A'}
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </div>
+
                                                                             {prod.product_type === 'MANUFACTURABLE_CUSTOM' && prod.custom_fields_schema && (
                                                                                 <FormField<SaleOrderFormValues>
                                                                                     control={form.control}

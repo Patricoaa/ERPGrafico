@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { ShoppingCart, Ban, RefreshCw, Layers } from "lucide-react"
+import { ShoppingCart, Ban, RefreshCw, Layers, Pencil, MousePointerClick } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { toast } from "sonner"
+import { EditProposalDialog } from "./EditProposalDialog"
 
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
@@ -27,6 +28,7 @@ interface ReplenishmentProposal {
     supplier: number | null
     supplier_name: string | null
     created_at: string
+    uom_name: string
 }
 
 interface ProposalsListProps {
@@ -37,18 +39,21 @@ interface ProposalsListProps {
 export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({})
     const [isProcessing, setIsProcessing] = useState(false)
+    const [editingProposal, setEditingProposal] = useState<ReplenishmentProposal | null>(null)
 
     const selectedIds = Object.keys(selectedRows).filter(id => selectedRows[id]).map(Number)
 
-    const handleCreatePO = async () => {
-        if (selectedIds.length === 0) return
+    const handleCreatePO = async (proposalId?: number) => {
+        const ids = proposalId ? [proposalId] : selectedIds
+        if (ids.length === 0) return
 
         setIsProcessing(true)
         try {
             const response = await api.post('/inventory/replenishment-proposals/create_po/', {
-                proposal_ids: selectedIds
+                proposal_ids: ids
             })
-            toast.success(`${response.data.length} Órdenes de Compra creadas con éxito`)
+            const count = Array.isArray(response.data) ? response.data.length : 1
+            toast.success(`${count} Órdenes de Compra creadas con éxito`)
             onRefresh()
             setSelectedRows({})
         } catch (error: any) {
@@ -59,13 +64,14 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
         }
     }
 
-    const handleIgnore = async () => {
-        if (selectedIds.length === 0) return
+    const handleIgnore = async (proposalId?: number) => {
+        const ids = proposalId ? [proposalId] : selectedIds
+        if (ids.length === 0) return
 
         setIsProcessing(true)
         try {
             await api.post('/inventory/replenishment-proposals/ignore/', {
-                proposal_ids: selectedIds
+                proposal_ids: ids
             })
             toast.success("Propuestas ignoradas")
             onRefresh()
@@ -133,7 +139,7 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
             ),
             cell: ({ row }) => (
                 <div className="text-right font-bold text-blue-600">
-                    {Number(row.getValue("qty_to_order")).toLocaleString()}
+                    {Number(row.getValue("qty_to_order")).toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">{row.original.uom_name || ''}</span>
                 </div>
             ),
         },
@@ -164,6 +170,41 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
                 )
             },
         },
+        {
+            id: "actions",
+            header: () => <div className="text-right">Acciones</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-end gap-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:text-blue-600"
+                        title="Editar Propuesta"
+                        onClick={() => setEditingProposal(row.original)}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:text-destructive"
+                        title="Ignorar"
+                        onClick={() => handleIgnore(row.original.id)}
+                    >
+                        <Ban className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:text-emerald-600"
+                        title="Generar OC"
+                        onClick={() => handleCreatePO(row.original.id)}
+                    >
+                        <ShoppingCart className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
     ]
 
     return (
@@ -179,7 +220,7 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={handleIgnore}
+                        onClick={() => handleIgnore()}
                         disabled={selectedIds.length === 0 || isProcessing}
                         className="text-muted-foreground"
                     >
@@ -188,7 +229,7 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
                     </Button>
                     <Button
                         size="sm"
-                        onClick={handleCreatePO}
+                        onClick={() => handleCreatePO()}
                         disabled={selectedIds.length === 0 || isProcessing}
                     >
                         {isProcessing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
@@ -214,6 +255,13 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
                     })
                     setSelectedRows(newSelection)
                 }}
+            />
+
+            <EditProposalDialog
+                open={!!editingProposal}
+                onOpenChange={(open) => !open && setEditingProposal(null)}
+                proposal={editingProposal}
+                onSuccess={onRefresh}
             />
         </div>
     )

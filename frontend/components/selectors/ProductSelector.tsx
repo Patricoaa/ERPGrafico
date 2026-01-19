@@ -235,16 +235,38 @@ export function ProductSelector({
                                                         {product.code} - {product.name}
                                                     </span>
                                                 </div>
-                                                <div className="flex justify-between mt-0.5">
-                                                    <span className="text-[10px] text-muted-foreground">
-                                                        {product.product_type === 'STORABLE' && `Stock: ${(product.current_stock || 0)}`}
-                                                        {product.product_type === 'MANUFACTURABLE' && product.has_bom && (
-                                                            (product.manufacturable_quantity === null || product.manufacturable_quantity === undefined)
-                                                                ? 'Fab: Disponible'
-                                                                : `Fab: ${(product.manufacturable_quantity || 0)}`
+                                                <div className="flex justify-between mt-1 items-center">
+                                                    <div className="flex gap-1 flex-wrap">
+                                                        {/* Stock Badge */}
+                                                        {product.product_type === 'STORABLE' && (
+                                                            <>
+                                                                <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
+                                                                    (product.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-red-400"
+                                                                )}>
+                                                                    Stock: {product.current_stock || 0}
+                                                                </Badge>
+                                                                <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
+                                                                    (product.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-amber-500 text-amber-600"
+                                                                )}>
+                                                                    Disp: {product.qty_available || 0}
+                                                                </Badge>
+                                                            </>
                                                         )}
-                                                    </span>
-                                                    <span className="text-[10px] font-bold">
+
+                                                        {/* Manufacturable Badge */}
+                                                        {product.product_type === 'MANUFACTURABLE' && product.has_bom && (
+                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-blue-400 text-blue-600">
+                                                                Fab: {product.manufacturable_quantity ?? 'N/A'}
+                                                            </Badge>
+                                                        )}
+                                                        {product.product_type === 'MANUFACTURABLE' && !product.has_bom && (
+                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-blue-400 text-blue-600">
+                                                                Fab: Express
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+
+                                                    <span className="text-[10px] font-bold whitespace-nowrap ml-2">
                                                         ${PricingUtils.netToGross(Number(product.sale_price)).toLocaleString()}
                                                         <span className="text-[8px] text-muted-foreground ml-0.5">c/IVA</span>
                                                     </span>

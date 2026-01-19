@@ -483,6 +483,12 @@ class ReplenishmentProposalSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
+    uom_name = serializers.SerializerMethodField()
+
+    def get_uom_name(self, obj):
+        if obj.product.purchase_uom:
+            return obj.product.purchase_uom.name
+        return obj.product.uom.name if obj.product.uom else ''
 
     class Meta:
         model = ReplenishmentProposal
