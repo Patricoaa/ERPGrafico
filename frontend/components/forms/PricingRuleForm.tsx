@@ -33,6 +33,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Plus } from "lucide-react"
 import { PricingUtils } from "@/lib/pricing"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -63,7 +64,6 @@ interface PricingRuleFormProps {
 }
 
 export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
-    const [products, setProducts] = useState<any[]>([])
     // const [categories, setCategories] = useState<any[]>([]) // Removed
     const [uoms, setUoms] = useState<any[]>([])
 
@@ -131,23 +131,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [prodRes, uomRes] = await Promise.all([
-                    api.get('/inventory/products/'),
-                    // api.get('/inventory/categories/'),
-                    api.get('/inventory/uoms/')
-                ])
-                let fetchedProducts = prodRes.data.results || prodRes.data
-
-                // If we have a productId/Name provided (context from ProductForm), ensure it's in the list
-                if (productId && productName) {
-                    const exists = fetchedProducts.find((p: any) => p.id === productId)
-                    if (!exists) {
-                        fetchedProducts = [{ id: productId, name: productName }, ...fetchedProducts]
-                    }
-                }
-
-                setProducts(fetchedProducts)
-                // setCategories(catRes.data.results || catRes.data)
+                const uomRes = await api.get('/inventory/uoms/')
                 setUoms(uomRes.data.results || uomRes.data)
             } catch (error) {
                 console.error("Error fetching data", error)
@@ -156,7 +140,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
         if (open) {
             fetchData()
         }
-    }, [open, productId, productName])
+    }, [open])
 
     async function onSubmit(values: FormValues) {
         try {
@@ -211,23 +195,14 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Producto</FormLabel>
-                                        <Select
-                                            onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
-                                            value={field.value?.toString() || "none"}
-                                            disabled={!!productId}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione un producto" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="none">Todos los productos</SelectItem>
-                                                {products.map((p) => (
-                                                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <ProductSelector
+                                                value={field.value?.toString() || null}
+                                                onChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                                                disabled={!!productId}
+                                                placeholder="Seleccione un producto (opcional)"
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

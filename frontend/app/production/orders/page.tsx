@@ -236,7 +236,7 @@ export default function WorkOrdersPage() {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                    <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
+                    <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "kanban" | "list")} className="w-auto">
                         <TabsList>
                             <TabsTrigger value="kanban" className="flex items-center gap-2">
                                 <LayoutGrid className="h-4 w-4" />
