@@ -6,6 +6,7 @@ import {
     History,
     FileBadge,
     X,
+    Ban,
     Eye,
     FileEdit,
     Trash2,
@@ -154,7 +155,7 @@ export const purchaseOrderActions: ActionRegistry = {
             {
                 id: 'annul-document',
                 label: 'Anular Documento',
-                icon: X,
+                icon: Ban,
                 requiredPermissions: ['billing.delete_invoice'],
                 checkAvailability: (order) => {
                     // Show if there's a posted invoice that's not cancelled

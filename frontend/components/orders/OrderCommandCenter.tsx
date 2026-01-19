@@ -608,7 +608,7 @@ export function OrderCommandCenter({
                                         status: ot.status,
                                         progressValue: ot.production_progress || 0,
                                         actions: [
-                                            ...((ot.status !== 'CANCELLED' && ot.status !== 'FINISHED') ? [{
+                                            ...((ot.status !== 'CANCELLED') ? [{
                                                 icon: Ban,
                                                 title: 'Anular OT',
                                                 color: 'text-orange-500 hover:bg-orange-500/10',
@@ -718,7 +718,7 @@ export function OrderCommandCenter({
                                             onClick: () => handleDeleteDraft(inv.id)
                                         }] : []),
                                         ...(inv.status !== 'CANCELLED' && inv.status !== 'DRAFT' && inv.number !== 'Draft' ? [{
-                                            icon: X,
+                                            icon: Ban,
                                             title: 'Anular Documento',
                                             color: 'text-red-600 hover:bg-red-600/10',
                                             onClick: () => handleAnnulDocument(inv.id)
@@ -769,7 +769,7 @@ export function OrderCommandCenter({
                                             })
                                         }] : []),
                                         {
-                                            icon: X,
+                                            icon: Ban,
                                             title: 'Anular Pago',
                                             color: 'text-red-600 hover:bg-red-600/10',
                                             onClick: () => handleDeletePayment(pay.id)
