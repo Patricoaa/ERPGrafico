@@ -217,7 +217,11 @@ class TreasuryService:
             raise ValidationError("No se puede eliminar un pago cuyo asiento contable ya ha sido publicado.")
 
         if payment.journal_entry:
-            payment.journal_entry.delete()
+            # We must break the link first because on_delete=PROTECT
+            entry = payment.journal_entry
+            payment.journal_entry = None
+            payment.save()
+            entry.delete()
         payment.delete()
 
     @staticmethod
