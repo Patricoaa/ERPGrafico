@@ -67,9 +67,11 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
         }
 
         const parsed = parseFloat(tempAmount)
+        const cappedAmount = Math.min(parsed || 0, total)
+
         setPaymentData({
             ...paymentData,
-            amount: parsed || 0,
+            amount: cappedAmount,
             transactionNumber: tempTx,
             treasuryAccountId: tempAccount,
             isPending: tempIsPending
@@ -252,6 +254,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
                                 type="number"
                                 value={tempAmount}
                                 onChange={(e) => setTempAmount(e.target.value)}
+                                max={total}
                                 placeholder="0"
                                 autoFocus
                                 onKeyDown={(e) => {
