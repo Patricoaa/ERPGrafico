@@ -19,6 +19,8 @@ import { DocumentListModal } from './DocumentListModal'
 import { TransactionViewModal } from "../shared/TransactionViewModal"
 import api from "@/lib/api"
 
+import { useRouter } from "next/navigation"
+
 interface ActionCategoryProps {
     category: CategoryType
     order: any
@@ -40,8 +42,10 @@ export const ActionCategory = forwardRef(({
     ghost = false,
     showBadge = true
 }: ActionCategoryProps, ref) => {
+    const router = useRouter()
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)
 
     useImperativeHandle(ref, () => ({
         handleActionClick
@@ -97,6 +101,12 @@ export const ActionCategory = forwardRef(({
                 setViewConfig({ type: viewType, id: viewId })
                 setActiveModal('transaction-view')
                 break
+            case 'regenerate-document':
+                handleRegenerateDocument()
+                break
+            case 'create-work-order':
+                router.push(`/production/work-orders/new?sale_order_id=${order.id}`)
+                break
             case 'view-work-orders':
                 // For Work Orders we'll keep it as a list for now or open specific one
                 setActiveModal(actionId)
@@ -139,6 +149,35 @@ export const ActionCategory = forwardRef(({
             } else {
                 toast.error(errorMessage)
             }
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+
+    const handleRegenerateDocument = async () => {
+        setIsProcessing(true)
+        try {
+            // We need a dummy DTE_TYPE and PAYMENT_METHOD to init the draft, later the user can change it in the completion modal?
+            // Actually, create_from_order requires dte_type and payment_method. 
+            // We'll infer defaults or ask backend to handle a 'DRAFT' init.
+            // Since we want to open the "Complete Folio" modal which ASKS for dte_type, 
+            // maybe we should just create a placeholder draft.
+            // However, our backend create_from_order expects data.
+            // Let's try sending defaults, the user will confirm in the next step.
+
+            const response = await api.post('/billing/invoices/create_from_order/', {
+                order_id: order.id,
+                order_type: isSale ? 'sale' : 'purchase',
+                dte_type: 'FACTURA_ELECTRONICA', // Default, will change in completion
+                payment_method: 'CREDIT'
+            })
+
+            setTempInvoiceId(response.data.id)
+            setActiveModal('complete-folio')
+            onActionSuccess?.()
+        } catch (error: any) {
+            console.error("Error regenerating document:", error)
+            toast.error(error.response?.data?.error || "Error al re-emitir documento")
         } finally {
             setIsProcessing(false)
         }
@@ -245,7 +284,7 @@ export const ActionCategory = forwardRef(({
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.id}
+                    invoiceId={tempInvoiceId || (order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.id}
                     invoiceType={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.dte_type}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />

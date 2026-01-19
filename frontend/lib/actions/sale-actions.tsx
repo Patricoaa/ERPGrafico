@@ -43,6 +43,41 @@ export const saleOrderActions: ActionRegistry = {
                 icon: Eye,
                 requiredPermissions: ['billing.view_invoice'],
                 checkAvailability: (order) => (order.related_documents?.invoices?.length || 0) > 0
+            },
+            {
+                id: 'regenerate-document',
+                label: 'Re-emitir Documento',
+                icon: FileEdit,
+                requiredPermissions: ['billing.add_invoice'],
+                checkAvailability: (order) => {
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    return invoices.length > 0 && invoices.every((inv: any) =>
+                        inv.status === 'CANCELLED'
+                    )
+                },
+                badge: { type: 'warning', label: 'Acción Requerida' }
+            }
+        ]
+    },
+
+    production: {
+        id: 'production',
+        label: 'Producción',
+        icon: Package,
+        actions: [
+            {
+                id: 'create-work-order',
+                label: 'Crear OT Manual',
+                icon: FileEdit,
+                requiredPermissions: ['manufacturing.add_workorder'],
+                checkAvailability: (order) => {
+                    const lines = order.lines || order.items || []
+                    const hasManufacturable = lines.some((l: any) => l.is_manufacturable)
+                    const ots = order.work_orders || []
+                    const noActiveOts = ots.length === 0 || ots.every((ot: any) => ot.status === 'CANCELLED')
+
+                    return hasManufacturable && noActiveOts
+                }
             }
         ]
     },
