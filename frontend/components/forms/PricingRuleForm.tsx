@@ -200,7 +200,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                                 value={field.value?.toString() || null}
                                                 onChange={(val) => field.onChange(val ? parseInt(val) : null)}
                                                 disabled={!!productId}
-                                                placeholder="Seleccione un producto (opcional)"
+                                                placeholder="Seleccione un producto (Si no selecciona, se aplicaran a todos"
                                             />
                                         </FormControl>
                                         <FormMessage />

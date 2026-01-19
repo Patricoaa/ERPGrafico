@@ -6,6 +6,7 @@ export const productSchema = z.object({
     name: z.string().min(2, "Nombre requerido"),
     category: z.string().min(1, "Categoría requerida"),
     product_type: z.string().min(1, "Tipo requerido"),
+    is_dynamic_pricing: z.boolean().default(false),
     sale_price: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
     uom: z.string().min(1, "Unidad base requerida"),
     sale_uom: z.string().optional().or(z.literal("")),
@@ -73,23 +74,9 @@ export const productSchema = z.object({
         order: z.number().default(0)
     })).default([]),
 }).refine((data) => {
-    // Consumables cannot be sold
-    if (data.product_type === 'CONSUMABLE' && data.can_be_sold) {
-        return false;
-    }
-    return true;
-}, {
-    message: "Los productos consumibles no pueden ser marcados para la venta",
-    path: ["can_be_sold"]
-}).refine((data) => {
-    // At least one purpose must be enabled
-    return data.can_be_sold || data.can_be_purchased;
-}, {
-    message: "El producto debe poder ser vendido o comprado (al menos uno)",
-    path: ["can_be_sold"]
-}).refine((data) => {
-    // If can_be_sold is true, sale_price must be > 0
-    if (data.can_be_sold && (!data.sale_price || data.sale_price <= 0)) {
+    // If can_be_sold is true AND NOT dynamic pricing, sale_price must be > 0
+    // Dynamic pricing allows sale_price to be 0 (set at POS)
+    if (data.can_be_sold && !data.is_dynamic_pricing && (!data.sale_price || data.sale_price <= 0)) {
         return false;
     }
     return true;

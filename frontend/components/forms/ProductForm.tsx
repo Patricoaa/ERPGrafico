@@ -66,7 +66,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             category: "",
             product_type: "STORABLE",
             sale_price: 0,
+            is_dynamic_pricing: false,
             uom: "",
+            // ...
+            // ... (rest of default values)
             sale_uom: "",
             purchase_uom: "",
             allowed_sale_uoms: [],
@@ -204,6 +207,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     category: initialData.category?.id?.toString() || initialData.category?.toString() || "",
                     product_type: initialData.product_type || "STORABLE",
                     sale_price: Number(initialData.sale_price) || 0,
+                    is_dynamic_pricing: initialData.is_dynamic_pricing ?? false,
                     uom: initialData.uom?.id?.toString() || initialData.uom?.toString() || "",
                     sale_uom: initialData.sale_uom?.id?.toString() || initialData.sale_uom?.toString() || "",
                     purchase_uom: initialData.purchase_uom?.id?.toString() || initialData.purchase_uom?.toString() || "",
@@ -333,6 +337,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             formData.append('category', data.category)
             formData.append('product_type', data.product_type)
             formData.append('sale_price', data.sale_price.toString())
+            formData.append('is_dynamic_pricing', data.is_dynamic_pricing ? 'true' : 'false')
             formData.append('uom', data.uom || '')
             formData.append('sale_uom', data.sale_uom || '')
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)

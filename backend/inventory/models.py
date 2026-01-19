@@ -337,6 +337,11 @@ class Product(models.Model):
         help_text=_("Proveedor sugerido para reabastecimiento y órdenes de compra.")
     )
 
+    is_dynamic_pricing = models.BooleanField(
+        _("Precio Gestionable"),
+        default=False,
+        help_text=_("Permite asignar el precio manualmente al vender (ignora precio de lista).")
+    )
     sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
     

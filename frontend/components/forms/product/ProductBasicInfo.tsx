@@ -39,7 +39,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                         <FormItem>
                             <FormLabel>Código / SKU</FormLabel>
                             <FormControl>
-                                <Input placeholder="AUTO-GEN" {...field} />
+                                <Input placeholder="Ej: 1000000001" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

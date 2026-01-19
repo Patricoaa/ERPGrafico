@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 
+import { Checkbox } from "@/components/ui/checkbox"
+
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>
     initialData?: any
@@ -21,6 +23,7 @@ interface ProductPricingSectionProps {
 export function ProductPricingSection({ form, initialData, canBeSold, uoms }: ProductPricingSectionProps) {
     const salePrice = form.watch("sale_price") || 0
     const productType = form.watch("product_type")
+    const isDynamicPricing = form.watch("is_dynamic_pricing")
     const ivaCalculated = PricingUtils.calculateTax(Number(salePrice))
     const totalCalculated = PricingUtils.netToGross(Number(salePrice))
 
@@ -35,16 +38,46 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+            <div className="md:col-span-4 flex items-center space-x-2 border-b border-primary/10 pb-4 mb-2">
+                <FormField
+                    control={form.control}
+                    name="is_dynamic_pricing"
+                    render={({ field }) => (
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="is_dynamic_pricing"
+                                checked={field.value}
+                                onCheckedChange={(checked) => {
+                                    field.onChange(checked);
+                                    if (checked) {
+                                        form.setValue("sale_price", 0);
+                                    }
+                                }}
+                            />
+                            <Label
+                                htmlFor="is_dynamic_pricing"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                Precio Gestionable (Dinámico)
+                            </Label>
+                        </div>
+                    )}
+                />
+                <span className="text-xs text-muted-foreground ml-2">
+                    (El precio se asignará manualmente al momento de la venta)
+                </span>
+            </div>
+
             <FormField<ProductFormValues>
                 control={form.control}
                 name="sale_price"
                 render={({ field }) => (
-                    <FormItem>
+                    <FormItem className={isDynamicPricing ? "opacity-50 pointer-events-none" : ""}>
                         <FormLabel>Precio Venta Neto</FormLabel>
                         <FormControl>
                             <div className="relative">
                                 <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                <Input type="number" step="1" className="pl-7 font-bold text-lg" {...field} />
+                                <Input type="number" step="1" className="pl-7 font-bold text-lg" {...field} disabled={isDynamicPricing} />
                             </div>
                         </FormControl>
                         <FormMessage />
@@ -52,14 +85,14 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                 )}
             />
 
-            <div className="space-y-2">
+            <div className={cn("space-y-2", isDynamicPricing && "opacity-50")}>
                 <Label className="text-muted-foreground">IVA (19%)</Label>
                 <div className="h-10 flex items-center px-3 rounded-md bg-muted/50 font-medium text-muted-foreground">
                     {formatCurrency(ivaCalculated)}
                 </div>
             </div>
 
-            <div className="space-y-2">
+            <div className={cn("space-y-2", isDynamicPricing && "opacity-50 pointer-events-none")}>
                 <Label className="text-primary font-bold">Total con IVA (Bruto)</Label>
                 <div className="relative">
                     <span className="absolute left-3 top-2.5 text-primary/50">$</span>
@@ -68,6 +101,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                         step="1"
                         className="pl-7 bg-primary/10 border-primary/30 font-extrabold text-primary text-lg"
                         value={totalCalculated || ""}
+                        disabled={isDynamicPricing}
                         onChange={(e) => {
                             const gross = Number(e.target.value);
                             const net = PricingUtils.grossToNet(gross);
