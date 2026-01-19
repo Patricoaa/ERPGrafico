@@ -278,6 +278,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     mfg_press_offset: product?.mfg_press_offset,
                     mfg_press_digital: product?.mfg_press_digital,
                     mfg_press_special: product?.mfg_press_special,
+                    mfg_auto_finalize: product?.mfg_auto_finalize,
                 };
             });
             onConfirmCheckout({ ...data, lines: enrichedLines });

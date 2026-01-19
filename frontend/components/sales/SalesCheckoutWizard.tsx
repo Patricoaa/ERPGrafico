@@ -94,7 +94,9 @@ export function SalesCheckoutWizard({
 
     // Auto-suggest delivery date if fabricable (includes any mfg or BOM)
     useEffect(() => {
-        const hasFabricable = currentOrderLines.some((line: any) => line.product_type === 'MANUFACTURABLE' || line.has_bom);
+        const hasFabricable = currentOrderLines.some((line: any) =>
+            ((line.product_type === 'MANUFACTURABLE' || line.has_bom) && !line.mfg_auto_finalize)
+        );
         if (hasFabricable) {
             setDeliveryData((prev: any) => ({ ...prev, type: 'SCHEDULED' }));
             // Suggest +5 days

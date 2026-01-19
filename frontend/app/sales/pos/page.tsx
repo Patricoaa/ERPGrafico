@@ -424,9 +424,10 @@ export default function POSPage() {
                                 <Table>
                                     <TableHeader className="bg-muted/30 sticky top-0 z-10">
                                         <TableRow className="hover:bg-transparent border-b">
-                                            <TableHead className="w-[40%] text-xs py-2">Producto</TableHead>
+                                            <TableHead className="w-[25%] text-xs py-2">Producto</TableHead>
                                             <TableHead className="w-[15%] text-xs py-2 text-center">Cant.</TableHead>
                                             <TableHead className="w-[15%] text-xs py-2 text-center">Unidad</TableHead>
+                                            <TableHead className="w-[15%] text-xs py-2 text-right">Precio Unit.</TableHead>
                                             <TableHead className="w-[20%] text-xs py-2 text-right">Total</TableHead>
                                             <TableHead className="w-[10%] py-2"></TableHead>
                                         </TableRow>
@@ -495,6 +496,11 @@ export default function POSPage() {
                                                                 </span>
                                                             )}
                                                         </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2 text-right">
+                                                        <span className="text-xs font-medium">
+                                                            {formatCurrency(PricingUtils.netToGross(item.unit_price_net))}
+                                                        </span>
                                                     </TableCell>
                                                     <TableCell className="py-2 text-right">
                                                         <div className="flex flex-col items-end">
