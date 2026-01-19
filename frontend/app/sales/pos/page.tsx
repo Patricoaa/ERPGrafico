@@ -236,8 +236,8 @@ export default function POSPage() {
         }
 
         const invalidItems = items.filter(i => {
-           const original = products.find(p => p.id === i.id)
-           return original?.is_dynamic_pricing && (i.unit_price_net <= 0)
+            const original = products.find(p => p.id === i.id)
+            return original?.is_dynamic_pricing && (i.unit_price_net <= 0)
         })
 
         if (invalidItems.length > 0) {
@@ -371,8 +371,14 @@ export default function POSPage() {
                                             <CardContent className="p-3 text-center flex-1 flex flex-col justify-center">
                                                 <div className="font-bold text-sm line-clamp-2">{product.name}</div>
                                                 <div className="text-primary font-semibold text-base mt-1">
-                                                    {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}
-                                                    <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
+                                                    {product.is_dynamic_pricing ? (
+                                                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Dinámico</Badge>
+                                                    ) : (
+                                                        <>
+                                                            {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}
+                                                            <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{product.internal_code || product.code}</div>
                                             </CardContent>
@@ -499,7 +505,7 @@ export default function POSPage() {
                                                                             const newGross = parseFloat(e.target.value) || 0
                                                                             // Convert Gross Input to Net for storage
                                                                             const newNet = PricingUtils.grossToNet(newGross)
-                                                                            
+
                                                                             setItems(prevItems => prevItems.map(i => i.cartItemId === item.cartItemId ? {
                                                                                 ...i,
                                                                                 unit_price_net: newNet,

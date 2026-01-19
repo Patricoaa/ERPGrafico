@@ -38,6 +38,7 @@ interface Product {
     can_be_sold: boolean
     can_be_purchased: boolean
     active: boolean
+    is_dynamic_pricing?: boolean
 }
 
 export function ProductList() {
@@ -185,7 +186,15 @@ export function ProductList() {
             header: ({ column }) => (
                 <div className="text-right">Neto</div>
             ),
-            cell: ({ row }) => <div className="text-right font-bold text-muted-foreground">{formatCurrency(row.getValue("sale_price"))}</div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    {row.original.is_dynamic_pricing ? (
+                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Dinámico</Badge>
+                    ) : (
+                        <span className="font-bold text-muted-foreground">{formatCurrency(row.getValue("sale_price"))}</span>
+                    )}
+                </div>
+            ),
         },
         {
             id: "tax",
@@ -199,7 +208,15 @@ export function ProductList() {
             header: ({ column }) => (
                 <div className="text-right">Total</div>
             ),
-            cell: ({ row }) => <div className="text-right font-bold text-primary">{formatCurrency(PricingUtils.netToGross(Number(row.getValue("sale_price"))))}</div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    {row.original.is_dynamic_pricing ? (
+                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Dinámico</Badge>
+                    ) : (
+                        <span className="font-bold text-primary">{formatCurrency(PricingUtils.netToGross(Number(row.getValue("sale_price"))))}</span>
+                    )}
+                </div>
+            ),
         },
         {
             id: "attributes",

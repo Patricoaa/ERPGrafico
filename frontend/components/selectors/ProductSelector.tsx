@@ -267,8 +267,14 @@ export function ProductSelector({
                                                     </div>
 
                                                     <span className="text-[10px] font-bold whitespace-nowrap ml-2">
-                                                        ${PricingUtils.netToGross(Number(product.sale_price)).toLocaleString()}
-                                                        <span className="text-[8px] text-muted-foreground ml-0.5">c/IVA</span>
+                                                        {product.is_dynamic_pricing ? (
+                                                            <Badge variant="outline" className="text-[9px] border-amber-500 text-amber-600 bg-amber-50 px-1 py-0 h-4">Dinámico</Badge>
+                                                        ) : (
+                                                            <>
+                                                                ${PricingUtils.netToGross(Number(product.sale_price)).toLocaleString()}
+                                                                <span className="text-[8px] text-muted-foreground ml-0.5">c/IVA</span>
+                                                            </>
+                                                        )}
                                                     </span>
                                                 </div>
                                             </div>
