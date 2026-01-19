@@ -148,8 +148,11 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         for deliv in obj.deliveries.all():
             docs['deliveries'].append({
                 'id': deliv.id,
-                'number': deliv.id, # Deliveries might not have a public number yet
-                'date': deliv.delivery_date
+                'number': deliv.number,
+                'display_id': deliv.display_id,
+                'status': deliv.status,
+                'date': deliv.delivery_date,
+                'docType': 'sale_delivery'
             })
 
         for pay in obj.payments.all():
