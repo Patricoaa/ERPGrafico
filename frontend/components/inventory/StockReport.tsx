@@ -76,19 +76,21 @@ export function StockReport() {
                             <TableHead className="w-[100px]">Cod. Int.</TableHead>
                             <TableHead>SKU/Code</TableHead>
                             <TableHead>Producto</TableHead>
-                            <TableHead className="text-right">Stock Actual</TableHead>
+                            <TableHead className="text-right">Físico</TableHead>
+                            <TableHead className="text-right text-amber-600">Reservado</TableHead>
+                            <TableHead className="text-right text-emerald-600">Disponible</TableHead>
                             <TableHead className="text-right">Costo Unit.</TableHead>
                             <TableHead className="text-right">Valorización</TableHead>
-                            <TableHead className="text-right text-emerald-600">Entradas</TableHead>
-                            <TableHead className="text-right text-rose-600">Salidas</TableHead>
+                            <TableHead className="text-right text-emerald-600">Ent.</TableHead>
+                            <TableHead className="text-right text-rose-600">Sal.</TableHead>
                             <TableHead className="text-center w-[100px]">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={9} className="text-center py-10">Cargando reporte...</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={11} className="text-center py-10">Cargando reporte...</TableCell></TableRow>
                         ) : filtered.length === 0 ? (
-                            <TableRow><TableCell colSpan={9} className="text-center py-10 italic text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={11} className="text-center py-10 italic text-muted-foreground">No se encontraron productos.</TableCell></TableRow>
                         ) : filtered.map((item) => (
                             <TableRow key={item.id} className="group hover:bg-muted/20 transition-colors">
                                 <TableCell className="font-mono text-[10px] font-bold text-primary">
@@ -101,8 +103,14 @@ export function StockReport() {
                                         <span className="text-[10px] text-muted-foreground uppercase">{item.category_name}</span>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-right font-bold tabular-nums">
+                                <TableCell className="text-right font-medium tabular-nums">
                                     {Math.round(item.stock_qty * 100) / 100} <span className="text-[10px] text-muted-foreground font-normal lowercase">{item.uom_name}</span>
+                                </TableCell>
+                                <TableCell className="text-right font-medium tabular-nums text-amber-600">
+                                    {Math.round((item.qty_reserved || 0) * 100) / 100}
+                                </TableCell>
+                                <TableCell className="text-right font-bold tabular-nums text-emerald-600">
+                                    {Math.round((item.qty_available || 0) * 100) / 100}
                                 </TableCell>
                                 <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
                                     ${Math.round(item.unit_cost).toLocaleString()}

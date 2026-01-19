@@ -103,7 +103,9 @@ class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
                 'unit_cost': float(p.cost_price),
                 'total_value': float(stock_qty * p.cost_price),
                 'moves_in': float(moves_in),
-                'moves_out': float(moves_out)
+                'moves_out': float(moves_out),
+                'qty_reserved': float(p.qty_reserved),
+                'qty_available': float(p.qty_available)
             })
             
         return Response(report)

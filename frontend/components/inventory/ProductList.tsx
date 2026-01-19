@@ -179,55 +179,7 @@ export function ProductList() {
                 <Badge variant="secondary" className="text-[10px]">{translateProductType(row.getValue("product_type"))}</Badge>
             ),
         },
-        {
-            id: "stock",
-            header: ({ column }) => (
-                <div className="text-right">Stock</div>
-            ),
-            cell: ({ row }) => {
-                const product = row.original
-                return (
-                    <div className="text-right font-bold tabular-nums flex justify-end">
-                        {product.track_inventory ? (
-                            <div className="flex flex-col items-end gap-0.5 text-[10px]">
-                                <div className="flex gap-2 justify-between w-full min-w-[80px]">
-                                    <span className="text-muted-foreground font-normal">Físico:</span>
-                                    <span>{product.current_stock || 0}</span>
-                                </div>
-                                {(product.qty_reserved || 0) > 0 && (
-                                    <div className="flex gap-2 justify-between w-full min-w-[80px] text-amber-600">
-                                        <span className="font-normal">Reserv:</span>
-                                        <span>{product.qty_reserved}</span>
-                                    </div>
-                                )}
-                                <div className="flex gap-2 justify-between w-full min-w-[80px] border-t border-dashed pt-0.5 mt-0.5">
-                                    <span className="text-emerald-600 font-bold">Disp:</span>
-                                    <span className="text-emerald-600 font-bold">{product.qty_available || 0}</span>
-                                </div>
-                                <span className="text-[9px] text-muted-foreground font-normal mt-0.5">{product.uom_name}</span>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-end">
-                                {product.product_type === 'MANUFACTURABLE' ? (
-                                    <div className="flex flex-col items-end gap-0.5">
-                                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 h-4">Fabricable</Badge>
-                                        <span className="text-[10px] text-blue-600 font-medium">
-                                            {product.manufacturable_quantity !== null && product.manufacturable_quantity !== undefined
-                                                ? `${product.manufacturable_quantity} disp.`
-                                                : 'Disponible'}
-                                        </span>
-                                    </div>
-                                ) : product.product_type === 'SERVICE' ? (
-                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-200 bg-emerald-50 text-emerald-700 h-4">Disponible</Badge>
-                                ) : (
-                                    <span className="text-[10px] text-muted-foreground font-normal">No controlado</span>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )
-            },
-        },
+
         {
             accessorKey: "sale_price",
             header: ({ column }) => (
