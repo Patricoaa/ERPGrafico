@@ -19,6 +19,8 @@ import { Progress } from "@/components/ui/progress"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
+import { OrderHubStatus } from "./components/OrderHubStatus"
+import { getHubStatuses } from "@/lib/order-status-utils"
 
 
 interface SaleOrder {
@@ -201,6 +203,15 @@ export default function SalesOrdersPage() {
             cell: ({ row }) => <div className="font-medium">NV-{row.getValue("number")}</div>,
         },
         {
+            accessorKey: "channel_display",
+            header: "Canal",
+            cell: ({ row }) => (
+                <Badge variant="outline" className="text-[10px] uppercase">
+                    {row.getValue("channel_display")}
+                </Badge>
+            ),
+        },
+        {
             accessorKey: "date",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha" />
@@ -221,45 +232,48 @@ export default function SalesOrdersPage() {
             cell: ({ row }) => <div>{parseFloat(row.getValue("total")).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</div>,
         },
         {
-            id: "paid",
-            header: "Pagado",
-            cell: ({ row }) => {
-                const total = parseFloat(row.original.total)
-                const paid = row.original.total_paid
-                const percentage = total > 0 ? (paid / total) * 100 : 0
-                return (
-                    <div className="space-y-1 w-32">
-                        <div className="flex justify-between text-[10px] font-bold">
-                            <span>{Math.round(percentage)}%</span>
-                            <span>${paid.toLocaleString()}</span>
-                        </div>
-                        <Progress value={percentage} className="h-1" />
-                    </div>
-                )
-            },
-        },
-        {
             accessorKey: "status",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" />
+                <DataTableColumnHeader column={column} title="Estado Hub" />
             ),
-            cell: ({ row }) => {
-                const status = row.getValue("status") as string
-                return (
-                    <Badge variant={statusMap[status]?.variant || "default"}>
-                        {statusMap[status]?.label || status}
-                    </Badge>
-                )
+            cell: ({ row }) => <OrderHubStatus order={row.original} />,
+        },
+        // Hidden accessor columns for filtering
+        {
+            id: "production_status",
+            accessorFn: (row) => getHubStatuses(row).production,
+            enableHiding: true,
+            header: "Producción",
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
             },
         },
         {
-            accessorKey: "channel_display",
-            header: "Canal",
-            cell: ({ row }) => (
-                <Badge variant="outline" className="text-[10px] uppercase">
-                    {row.getValue("channel_display")}
-                </Badge>
-            ),
+            id: "logistics_status",
+            accessorFn: (row) => getHubStatuses(row).logistics,
+            enableHiding: true,
+            header: "Logística",
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
+        },
+        {
+            id: "billing_status",
+            accessorFn: (row) => getHubStatuses(row).billing,
+            enableHiding: true,
+            header: "Facturación",
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
+        },
+        {
+            id: "treasury_status",
+            accessorFn: (row) => getHubStatuses(row).treasury,
+            enableHiding: true,
+            header: "Tesorería",
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
         },
         {
             id: "documents",
@@ -356,7 +370,7 @@ export default function SalesOrdersPage() {
                         facetedFilters={[
                             {
                                 column: "status",
-                                title: "Estado",
+                                title: "Origen",
                                 options: [
                                     { label: "Borrador", value: "DRAFT" },
                                     { label: "Confirmado", value: "CONFIRMED" },
@@ -365,11 +379,48 @@ export default function SalesOrdersPage() {
                                     { label: "Anulado", value: "CANCELLED" },
                                 ],
                             },
+                            {
+                                column: "production_status",
+                                title: "Producción",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
+                            },
+                            {
+                                column: "logistics_status",
+                                title: "Logística",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
+                            },
+                            {
+                                column: "billing_status",
+                                title: "Facturación",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
+                            },
+                            {
+                                column: "treasury_status",
+                                title: "Tesorería",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
+                            }
                         ]}
                         toolbarAction={
                             <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Venta" />
                         }
                         defaultPageSize={20}
+                        hiddenColumns={["production_status", "logistics_status", "billing_status", "treasury_status"]}
                     />
                 </div>
             )}

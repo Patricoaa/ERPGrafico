@@ -48,6 +48,7 @@ interface DataTableProps<TData, TValue> {
     toolbarAction?: React.ReactNode
     onRowSelectionChange?: (selection: any) => void
     initialColumnVisibility?: VisibilityState
+    hiddenColumns?: string[]
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -64,11 +65,22 @@ export function DataTable<TData, TValue>({
     toolbarAction,
     onRowSelectionChange,
     initialColumnVisibility = DEFAULT_COLUMN_VISIBILITY,
+    hiddenColumns = [],
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialColumnVisibility)
+
+    // Merge initial visibility with hidden columns
+    const visibilityState = React.useMemo(() => {
+        const visibility = { ...initialColumnVisibility }
+        hiddenColumns.forEach(col => {
+            visibility[col] = false
+        })
+        return visibility
+    }, [initialColumnVisibility, hiddenColumns])
+
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(visibilityState)
     const [rowSelection, setRowSelection] = React.useState({})
 
     // Sync visibility with props
