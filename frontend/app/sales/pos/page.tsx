@@ -93,8 +93,6 @@ export default function POSPage() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([])
 
-    const [pricingRules, setPricingRules] = useState<any[]>([])
-
     useEffect(() => {
         // ... (fetchData implementation unchanged)
         const fetchData = async () => {
@@ -128,14 +126,7 @@ export default function POSPage() {
                 setUoMs([])
             }
 
-            // Fetch Pricing Rules
-            try {
-                const res = await api.get('/inventory/pricing-rules/?active=true')
-                setPricingRules(res.data.results || res.data)
-            } catch (error) {
-                console.error("Failed to fetch pricing rules", error)
-                setPricingRules([])
-            }
+
 
             setLoading(false)
         }
@@ -153,63 +144,33 @@ export default function POSPage() {
         return matchesSearch && matchesCategory
     })
 
-    const getEffectivePrice = (product: Product, qty: number, selectedUomId?: number) => {
-        const basePrice = parseFloat(product.sale_price)
-        const date = new Date().toISOString().split('T')[0]
+    const fetchEffectivePrice = async (product: any, qty: number, selectedUomId?: number) => {
+        if (!product || !product.id) return 0
+        try {
+            const params: any = { quantity: qty }
+            if (selectedUomId) params.uom_id = selectedUomId
 
-        const categoryId = typeof product.category === 'object' ? product.category?.id : product.category
-
-        // 1. Check for specific pricing rules
-        const applicableRules = pricingRules.filter(rule => {
-            const matchesProduct = rule.product === product.id
-            const matchesCategory = rule.category === categoryId
-            const matchesQty = qty >= parseFloat(rule.min_quantity)
-            const matchesUom = !rule.uom || rule.uom === selectedUomId
-            const matchesDate = (!rule.start_date || rule.start_date <= date) &&
-                (!rule.end_date || rule.end_date >= date)
-
-            return (matchesProduct || matchesCategory) && matchesQty && matchesDate && matchesUom
-        }).sort((a, b) => b.priority - a.priority || parseFloat(b.min_quantity) - parseFloat(a.min_quantity))
-
-        if (applicableRules.length > 0) {
-            const rule = applicableRules[0]
-            if (rule.rule_type === "FIXED") {
-                return parseFloat(rule.fixed_price || "0")
-            } else {
-                return PricingUtils.applyDiscount(basePrice, parseFloat(rule.discount_percentage || "0"))
-            }
+            const response = await api.get(`/inventory/products/${product.id}/effective_price/`, { params })
+            return parseFloat(response.data.price || "0")
+        } catch (error) {
+            console.error("Error fetching price:", error)
+            return parseFloat(product.sale_price || "0")
         }
-
-        // 2. Proportional pricing based on UoM if no rule
-        if (selectedUomId && selectedUomId !== product.uom) {
-            const baseUom = uoms.find(u => u.id === product.uom)
-            const targetUom = uoms.find(u => u.id === selectedUomId)
-
-            if (baseUom && targetUom) {
-                return PricingUtils.calculateUoMPrice(
-                    basePrice,
-                    parseFloat(baseUom.ratio),
-                    parseFloat(targetUom.ratio)
-                )
-            }
-        }
-
-        return basePrice
     }
 
-    const addToCart = (product: Product, mfgData?: any) => {
+    const addToCart = async (product: Product, mfgData?: any) => {
         const isManufacturable = product.product_type === 'MANUFACTURABLE' || product.requires_advanced_manufacturing;
         const existing = !isManufacturable ? items.find(i => i.id === product.id) : null;
 
         // Prioritize sale_uom if available
         const saleUoMId = (product as any).sale_uom
         const defaultUoM = saleUoMId || product.uom
-        const uomName = uoms?.find(u => u.id === defaultUoM)?.name || product.uom_name
+        const uomName = uoms?.find(u => u.id === defaultUoM)?.name || (product as any).uom_name
 
         if (existing) {
             const newQty = existing.qty + 1
-            const netPrice = getEffectivePrice(product, newQty, existing.uom)
-            setItems(items.map(i => i.cartItemId === existing.cartItemId
+            const netPrice = await fetchEffectivePrice(product, newQty, existing.uom)
+            setItems(prevItems => prevItems.map(i => i.cartItemId === existing.cartItemId
                 ? {
                     ...i,
                     qty: newQty,
@@ -222,8 +183,8 @@ export default function POSPage() {
                 : i
             ))
         } else {
-            const netPrice = getEffectivePrice(product, 1, defaultUoM)
-            setItems([...items, {
+            const netPrice = await fetchEffectivePrice(product, 1, defaultUoM)
+            setItems(prevItems => [...prevItems, {
                 ...product,
                 cartItemId: Math.random().toString(36).substring(2, 9),
                 qty: 1,
@@ -239,13 +200,17 @@ export default function POSPage() {
     }
 
 
-    const updateQty = (cartItemId: string, qty: number | string) => {
-        setItems(items.map(i => {
-            if (i.cartItemId === cartItemId) {
-                let newQty = typeof qty === 'string' ? parseInt(qty) : qty
-                if (isNaN(newQty) || newQty < 1) newQty = 1
+    const updateQty = async (cartItemId: string, qty: number | string) => {
+        const item = items.find(i => i.cartItemId === cartItemId)
+        if (!item) return
 
-                const netPrice = getEffectivePrice(i, newQty, i.uom)
+        let newQty = typeof qty === 'string' ? parseInt(qty) : qty
+        if (isNaN(newQty) || newQty < 0.01) newQty = 1
+
+        const netPrice = await fetchEffectivePrice(item, newQty, item.uom)
+
+        setItems(prevItems => prevItems.map(i => {
+            if (i.cartItemId === cartItemId) {
                 return {
                     ...i,
                     qty: newQty,
@@ -474,9 +439,20 @@ export default function POSPage() {
                                                             {allowedUoMs.length > 1 ? (
                                                                 <Select
                                                                     value={item.uom?.toString()}
-                                                                    onValueChange={(val) => {
+                                                                    onValueChange={async (val) => {
                                                                         const newUom = uoms.find(u => u.id.toString() === val)
-                                                                        setItems(items.map(i => i.cartItemId === item.cartItemId ? { ...i, uom: parseInt(val), uom_name: newUom?.name } : i))
+                                                                        const uomId = parseInt(val)
+                                                                        const price = await fetchEffectivePrice(item, item.qty, uomId)
+
+                                                                        setItems(prevItems => prevItems.map(i => i.cartItemId === item.cartItemId ? {
+                                                                            ...i,
+                                                                            uom: uomId,
+                                                                            uom_name: newUom?.name,
+                                                                            unit_price_net: price,
+                                                                            total_net: PricingUtils.calculateLineNet(i.qty, price),
+                                                                            total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(i.qty, price)),
+                                                                            total_gross: PricingUtils.calculateLineTotal(i.qty, price)
+                                                                        } : i))
                                                                     }}
                                                                 >
                                                                     <SelectTrigger className="h-6 text-[10px] w-auto border-none bg-muted/50 py-0 px-2 min-h-0 focus:ring-0">
