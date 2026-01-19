@@ -455,26 +455,6 @@ export function OrderCommandCenter({
                                         docType: type === 'sale' ? 'sale_order' : 'purchase_order',
                                         actions: [
                                             ...(order.status === 'DRAFT' ? [{
-                                                icon: Edit,
-                                                title: 'Editar Orden',
-                                                color: 'text-blue-500 hover:bg-blue-500/10',
-                                                onClick: () => {
-                                                    if (type === 'purchase') {
-                                                        if (onEdit) {
-                                                            onEdit(order.id)
-                                                        } else {
-                                                            router.push(`/purchasing/checkout?orderId=${order.id}`)
-                                                        }
-                                                    } else {
-                                                        toast.info("Edición de ventas no implementada desde aquí")
-                                                    }
-                                                }
-                                            }, {
-                                                icon: Check,
-                                                title: 'Confirmar Orden',
-                                                color: 'text-green-500 hover:bg-green-500/10',
-                                                onClick: () => handleConfirmOrder(order.id)
-                                            }, {
                                                 icon: Trash2,
                                                 title: 'Eliminar Borrador',
                                                 color: 'text-red-500 hover:bg-red-500/10',
@@ -490,7 +470,24 @@ export function OrderCommandCenter({
                                     }
                                 ]}
                                 onViewDetail={openDetails}
-                                actions={[]}
+                                actions={[
+                                    ...(order.status === 'DRAFT' ? [{
+                                        id: 'edit-order',
+                                        label: 'Editar Orden',
+                                        icon: Edit,
+                                        onClick: () => {
+                                            if (type === 'purchase') {
+                                                if (onEdit) {
+                                                    onEdit(order.id)
+                                                } else {
+                                                    router.push(`/purchasing/checkout?orderId=${order.id}`)
+                                                }
+                                            } else {
+                                                toast.info("Edición de ventas no implementada desde aquí")
+                                            }
+                                        }
+                                    }] : [])
+                                ]}
                                 order={order}
                                 userPermissions={userPermissions}
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}

@@ -54,6 +54,12 @@ export const ActionCategory = forwardRef(({
     const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
 
     const handleActionClick = (actionId: string) => {
+        const action = category.actions.find(a => a.id === actionId)
+        if (action?.onClick) {
+            action.onClick(order)
+            return
+        }
+
         switch (actionId) {
             case 'complete-folio':
             case 'register-delivery':
