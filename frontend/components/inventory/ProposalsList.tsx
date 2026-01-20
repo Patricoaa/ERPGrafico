@@ -243,6 +243,7 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
                 data={data.filter(p => p.status === 'PENDING')}
                 filterColumn="product_code"
                 searchPlaceholder="Filtrar por producto..."
+                useAdvancedFilter={true}
                 onRowSelectionChange={(selection: Record<string, boolean>) => {
                     // selection is an object { index: boolean }
                     // We need to map it to IDs

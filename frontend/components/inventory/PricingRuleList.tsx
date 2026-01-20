@@ -212,6 +212,17 @@ export function PricingRuleList() {
                     data={rules}
                     globalFilterFields={["name"]}
                     searchPlaceholder="Buscar por nombre o producto..."
+                    facetedFilters={[
+                        {
+                            column: "active",
+                            title: "Estado",
+                            options: [
+                                { label: "Activo", value: "true" },
+                                { label: "Inactivo", value: "false" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
                 />
             </div>
         </div>

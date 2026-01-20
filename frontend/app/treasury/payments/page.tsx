@@ -303,6 +303,7 @@ export default function PaymentsPage() {
                                 ],
                             },
                         ]}
+                        useAdvancedFilter={true}
                         defaultPageSize={20}
                     />
                 </div>

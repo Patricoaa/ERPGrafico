@@ -291,45 +291,6 @@ export default function WorkOrdersPage() {
             </div>
 
             <div className="mt-2 space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex flex-1 items-center space-x-2">
-                        <Input
-                            placeholder="Buscar por número, descripción o cliente..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="h-9 w-[250px] lg:w-[350px] rounded-xl bg-background/50"
-                        />
-                        <FacetedFilter
-                            title="Estado"
-                            options={[
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Planificada", value: "PLANNED" },
-                                { label: "En Proceso", value: "IN_PROGRESS" },
-                                { label: "Terminada", value: "FINISHED" },
-                                { label: "Anulada", value: "CANCELLED" },
-                            ]}
-                            selectedValues={statusFilters}
-                            onSelect={setStatusFilters}
-                        />
-                        <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
-
-                        {(searchTerm || statusFilters.length > 0 || dateRange) && (
-                            <Button
-                                variant="ghost"
-                                onClick={() => {
-                                    setSearchTerm("")
-                                    setStatusFilters([])
-                                    setDateRange(undefined)
-                                }}
-                                className="h-9 px-2 lg:px-3 rounded-xl"
-                            >
-                                Resetear
-                                <X className="ml-2 h-4 w-4" />
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
                 {viewMode === "kanban" ? (
                     <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
                         {loading ? (
@@ -349,6 +310,29 @@ export default function WorkOrdersPage() {
                             columns={columns}
                             data={filteredOrders}
                             defaultPageSize={20}
+                            globalFilterFields={["number", "description", "sale_customer_name"]}
+                            searchPlaceholder="Buscar por número, descripción o cliente..."
+                            facetedFilters={[
+                                {
+                                    column: "status",
+                                    title: "Estado",
+                                    options: [
+                                        { label: "Borrador", value: "DRAFT" },
+                                        { label: "Planificada", value: "PLANNED" },
+                                        { label: "En Proceso", value: "IN_PROGRESS" },
+                                        { label: "Terminada", value: "FINISHED" },
+                                        { label: "Anulada", value: "CANCELLED" },
+                                    ]
+                                }
+                            ]}
+                            useAdvancedFilter={true}
+                            onReset={() => {
+                                setStatusFilters([])
+                                setDateRange(undefined)
+                            }}
+                            toolbarAction={
+                                <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
+                            }
                         />
                     </div>
                 )}

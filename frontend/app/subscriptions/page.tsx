@@ -304,6 +304,7 @@ export default function SubscriptionsPage() {
                                     ],
                                 },
                             ]}
+                            useAdvancedFilter={true}
                             defaultPageSize={20}
                         />
                     </div>

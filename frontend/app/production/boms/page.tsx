@@ -179,6 +179,17 @@ export default function BOMsPage() {
                     defaultPageSize={20}
                     filterColumn="product_name"
                     searchPlaceholder="Buscar por producto..."
+                    facetedFilters={[
+                        {
+                            column: "active",
+                            title: "Estado",
+                            options: [
+                                { label: "Activa", value: "true" },
+                                { label: "Inactiva", value: "false" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
                 />
             </div>
 

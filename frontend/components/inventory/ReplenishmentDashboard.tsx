@@ -72,6 +72,7 @@ interface ReplenishmentProposal {
     supplier: number | null
     supplier_name: string | null
     created_at: string
+    uom_name: string
 }
 
 interface Warehouse {
@@ -455,6 +456,17 @@ export function ReplenishmentDashboard() {
                         data={rules}
                         filterColumn="product_code"
                         searchPlaceholder="Buscar por producto..."
+                        facetedFilters={[
+                            {
+                                column: "active",
+                                title: "Estado",
+                                options: [
+                                    { label: "Activo", value: "true" },
+                                    { label: "Pausado", value: "false" },
+                                ],
+                            },
+                        ]}
+                        useAdvancedFilter={true}
                         initialColumnVisibility={{ active: false }}
                     />
                 </TabsContent>

@@ -219,6 +219,18 @@ export default function ContactsPage() {
                     data={contacts}
                     globalFilterFields={["name", "tax_id", "code"]}
                     searchPlaceholder="Buscar por nombre, RUT o código..."
+                    facetedFilters={[
+                        {
+                            column: "contact_type",
+                            title: "Tipo",
+                            options: [
+                                { label: "Cliente", value: "CUSTOMER" },
+                                { label: "Proveedor", value: "SUPPLIER" },
+                                { label: "Ambos", value: "BOTH" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
                     defaultPageSize={20}
                 />
             )}

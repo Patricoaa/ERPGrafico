@@ -194,6 +194,7 @@ export default function TreasuryAccountsPage() {
                             ],
                         },
                     ]}
+                    useAdvancedFilter={true}
                 />
             </div>
 

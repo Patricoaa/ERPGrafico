@@ -165,6 +165,18 @@ export function UoMList() {
                     data={uoms}
                     filterColumn="name"
                     searchPlaceholder="Buscar unidad..."
+                    facetedFilters={[
+                        {
+                            column: "uom_type",
+                            title: "Tipo",
+                            options: [
+                                { label: "Referencia", value: "REFERENCE" },
+                                { label: "Mayor", value: "BIGGER" },
+                                { label: "Menor", value: "SMALLER" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
                 />
             </div>
 

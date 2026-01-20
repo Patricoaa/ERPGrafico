@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Check, ListFilter, X } from "lucide-react"
+import { Calendar, Check, ListFilter, Search, X } from "lucide-react"
 import { Table } from "@tanstack/react-table"
+import { Input } from "@/components/ui/input"
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -25,20 +26,32 @@ interface DataTableFiltersProps<TData> {
             icon?: React.ComponentType<{ className?: string }>
         }[]
     }[]
+    filterColumn?: string
+    globalFilterFields?: string[]
+    searchPlaceholder?: string
+    toolbarAction?: React.ReactNode
+    onReset?: () => void
 }
 
 export function DataTableFilters<TData>({
     table,
     facetedFilters = [],
+    filterColumn,
+    globalFilterFields,
+    searchPlaceholder = "Filtrar...",
+    toolbarAction,
+    onReset,
 }: DataTableFiltersProps<TData>) {
     const [open, setOpen] = React.useState(false)
 
+    const globalFilter = table.getState().globalFilter
     const totalActiveFilters = table.getState().columnFilters.reduce((acc, filter) => {
         if (Array.isArray(filter.value)) {
             return acc + filter.value.length
         }
         return acc + (filter.value ? 1 : 0)
-    }, 0)
+    }, 0) + (globalFilter ? 1 : 0)
+
     const isFiltered = totalActiveFilters > 0
 
     return (
@@ -59,7 +72,7 @@ export function DataTableFilters<TData>({
                         <span className="ml-1">Filtros</span>
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
+                <PopoverContent className="w-[320px] p-0" align="start">
                     <div className="flex items-center justify-between p-4 pb-2">
                         <h4 className="font-medium leading-none">Filtrar</h4>
                         <Button
@@ -71,7 +84,52 @@ export function DataTableFilters<TData>({
                             <X className="h-4 w-4" />
                         </Button>
                     </div>
-                    <div className="scroll-area h-full max-h-[400px] overflow-y-auto p-1">
+                    <div className="scroll-area h-full max-h-[500px] overflow-y-auto p-1">
+                        {/* Search Section */}
+                        {(filterColumn || globalFilterFields) && (
+                            <div className="px-3 py-2 mb-2">
+                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <Search className="h-3 w-3" />
+                                    Búsqueda
+                                </div>
+                                {filterColumn && (
+                                    <Input
+                                        placeholder={searchPlaceholder}
+                                        value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
+                                        onChange={(event) =>
+                                            table.getColumn(filterColumn)?.setFilterValue(event.target.value)
+                                        }
+                                        className="h-8 w-full bg-background"
+                                    />
+                                )}
+                                {!filterColumn && globalFilterFields && (
+                                    <Input
+                                        placeholder={searchPlaceholder}
+                                        value={(table.getState().globalFilter as string) ?? ""}
+                                        onChange={(event) =>
+                                            table.setGlobalFilter(event.target.value)
+                                        }
+                                        className="h-8 w-full bg-background"
+                                    />
+                                )}
+                            </div>
+                        )}
+
+                        {/* Custom Actions (Dates) Section */}
+                        {toolbarAction && (
+                            <div className="px-3 py-2 mb-2">
+                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <Calendar className="h-3 w-3" />
+                                    Fecha
+                                </div>
+                                {toolbarAction}
+                            </div>
+                        )}
+
+                        {(filterColumn || globalFilterFields || toolbarAction) && facetedFilters.length > 0 && (
+                            <Separator className="my-2" />
+                        )}
+
                         {facetedFilters.map((filter, index) => {
                             const column = table.getColumn(filter.column)
                             if (!column) return null
@@ -153,6 +211,7 @@ export function DataTableFilters<TData>({
                     onClick={() => {
                         table.resetColumnFilters()
                         table.setGlobalFilter("")
+                        onReset?.()
                     }}
                 >
                     Borrar todo

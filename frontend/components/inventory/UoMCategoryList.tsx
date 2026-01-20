@@ -121,6 +121,7 @@ export function UoMCategoryList() {
                     data={categories}
                     filterColumn="name"
                     searchPlaceholder="Buscar categoría..."
+                    useAdvancedFilter={true}
                 />
             </div>
 

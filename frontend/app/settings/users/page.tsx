@@ -133,6 +133,18 @@ export default function UsersSettingsPage() {
                         data={users}
                         globalFilterFields={["username", "email", "first_name", "last_name"]}
                         searchPlaceholder="Buscar usuario por nombre, email o username..."
+                        facetedFilters={[
+                            {
+                                column: "role",
+                                title: "Rol",
+                                options: [
+                                    { label: "Admin", value: "ADMIN" },
+                                    { label: "Contador", value: "ACCOUNTANT" },
+                                    { label: "Operador", value: "OPERATOR" },
+                                ],
+                            },
+                        ]}
+                        useAdvancedFilter={true}
                     />
                 )}
             </div>
