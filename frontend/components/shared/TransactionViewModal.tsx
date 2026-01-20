@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
 import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { translateStatus, translatePaymentMethod } from "@/lib/utils"
+import { translateStatus, translatePaymentMethod, translateReceivingStatus } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { PaymentForm } from "@/components/forms/PaymentForm"
@@ -249,7 +249,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <CardContent className="p-3">
                                                             <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Método de Pago</div>
                                                             <div className="font-bold text-xs truncate uppercase">
-                                                                {data.payment_method_display || data.payment_method || '-'}
+                                                                {translatePaymentMethod(data.payment_method_display || data.payment_method || '-')}
                                                             </div>
                                                         </CardContent>
                                                     </Card>
@@ -516,7 +516,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                     <div>
                                                         <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Estado Recepción</h4>
                                                         <Badge className="mt-1 font-black px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 border-none">
-                                                            {data.receiving_status}
+                                                            {translateReceivingStatus(data.receiving_status || (data.status === 'CONFIRMED' ? 'PENDING' : '-'))}
                                                         </Badge>
                                                     </div>
                                                     {data.work_order && (
@@ -747,7 +747,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                     <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
                                                                     <TableCell>
                                                                         <Badge variant="outline" className="uppercase text-[10px]">
-                                                                            {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({pay.payment_method || pay.journal_name})
+                                                                            {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({translatePaymentMethod(pay.payment_method || pay.journal_name)})
                                                                         </Badge>
                                                                     </TableCell>
                                                                     <TableCell className="text-sm font-mono">

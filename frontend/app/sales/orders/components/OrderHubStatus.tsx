@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ClipboardList, Package, Receipt, Banknote, XCircle, FileText } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, translateStatus } from "@/lib/utils"
 import { getHubStatuses } from "@/lib/order-status-utils"
 
 interface OrderHubStatusProps {
@@ -39,14 +39,7 @@ export function OrderHubStatus({ order }: OrderHubStatusProps) {
     const pendingAmount = parseFloat(order.pending_amount)
     const total = parseFloat(order.total)
     const paidPct = total > 0 ? ((1 - (pendingAmount / total)) * 100).toFixed(0) : "0"
-    const statusLabels: Record<string, string> = {
-        'DRAFT': 'Borrador',
-        'CONFIRMED': 'Confirmado',
-        'INVOICED': 'Facturado',
-        'PAID': 'Pagado',
-        'CANCELLED': 'Anulado',
-    }
-    const originLabel = statusLabels[order.status] || order.status
+    const originLabel = translateStatus(order.status)
 
     // Helper for rendering badges
     const StatusBadge = ({ icon: Icon, status, tooltip }: { icon: any, status: string, tooltip: string }) => {

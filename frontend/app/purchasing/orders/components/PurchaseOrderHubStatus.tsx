@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { FileText, Package, Receipt, Banknote } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, translateStatus } from "@/lib/utils"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 
 interface PurchaseOrderHubStatusProps {
@@ -11,14 +11,7 @@ interface PurchaseOrderHubStatusProps {
 export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
     const statuses = getPurchaseHubStatuses(order)
 
-    const statusLabels: Record<string, string> = {
-        'DRAFT': 'Borrador',
-        'CONFIRMED': 'Confirmado',
-        'INVOICED': 'Facturado',
-        'PAID': 'Pagado',
-        'CANCELLED': 'Anulado',
-    }
-    const originLabel = statusLabels[order.status] || order.status
+    const originLabel = translateStatus(order.status)
 
     // Calculate reception progress for tooltip
     const lines = order.lines || order.items || []
