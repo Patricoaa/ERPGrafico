@@ -112,125 +112,84 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         return Response(report)
 
     @action(detail=True, methods=['get'])
-    def price_history(self, request, pk=None):
+    def insights(self, request, pk=None):
         """
-        Returns history filtered only for sale_price and cost_price changes.
+        Returns a unified view of product performance:
+        1. Price/Cost History
+        2. Stock Movements (Kardex)
+        3. Sales Performance (Avg Price, Cost, Margin)
+        4. Production Usage (OTs)
         """
         instance = self.get_object()
-        history = instance.history.select_related('history_user').all().order_by('history_date')
         
-        results = []
+        # 1. Price History (Calculated from HistoricalRecords)
+        history = instance.history.select_related('history_user').all().order_by('history_date')
+        price_history = []
         last_sale = None
         last_cost = None
-        
         for h in history:
-            # Check if this record changed prices vs the previous one in the loop
             if h.sale_price != last_sale or h.cost_price != last_cost:
-                results.append({
-                    'history_date': h.history_date,
-                    'history_user': h.history_user.username if h.history_user else "System",
+                price_history.append({
+                    'date': h.history_date,
                     'sale_price': float(h.sale_price),
                     'cost_price': float(h.cost_price),
-                    'old_sale_price': float(last_sale) if last_sale is not None else None,
-                    'old_cost_price': float(last_cost) if last_cost is not None else None,
-                    'history_type': h.history_type
+                    'user': h.history_user.username if h.history_user else "System"
                 })
                 last_sale = h.sale_price
                 last_cost = h.cost_price
-        
-        results.reverse() # Most recent first
-        return Response(results)
+        price_history.reverse()
 
-    @action(detail=True, methods=['get'])
-    def timeline(self, request, pk=None):
-        """
-        Comprehensive timeline of stock moves, price changes and events.
-        """
-        from django.db.models import Sum
-        from collections import defaultdict
+        # 2. Kardex (Recent Stock Moves)
+        from inventory.models import StockMove
+        moves = StockMove.objects.filter(product=instance).select_related('warehouse', 'uom').all().order_by('-date', '-id')[:50]
+        kardex = [{
+            'date': m.date,
+            'type': m.move_type,
+            'quantity': float(m.quantity),
+            'warehouse': m.warehouse.name,
+            'description': m.description,
+            'uom': m.uom.name if m.uom else ""
+        } for m in moves]
+
+        # 3. Sales Analysis (from CONFIRMED deliveries)
+        from sales.models import SaleDeliveryLine
+        from django.db.models import Avg, Sum, F
+        sales_stats = SaleDeliveryLine.objects.filter(
+            product=instance, 
+            delivery__status='CONFIRMED'
+        ).aggregate(
+            avg_price=Avg('unit_price'),
+            avg_cost=Avg('unit_cost'),
+            total_qty=Sum('quantity'),
+            total_revenue=Sum(F('quantity') * F('unit_price')),
+            total_cost_basis=Sum(F('quantity') * F('unit_cost'))
+        )
         
-        product = self.get_object()
+        # 4. Production Analysis (Consumption in OTs)
+        from production.models import ProductionConsumption
+        consumptions = ProductionConsumption.objects.filter(
+            product=instance
+        ).select_related('work_order').all().order_by('-date')[:20]
         
-        # 1. Fetch Price History
-        history = product.history.select_related('history_user').all().order_by('history_date')
-        
-        # 2. Fetch Stock Moves
-        moves = product.stock_moves.select_related('journal_entry').all().order_by('date', 'created_at')
-        
-        # 3. Build Timeline Data Structure
-        # We'll use dates as keys
-        timeline_map = defaultdict(lambda: {
-            'sale_price': None, # Carry forward
-            'cost_price': None, # Carry forward
-            'stock_delta': 0,
-            'in_qty': 0,
-            'out_qty': 0,
-            'events': []
+        production_usage = [{
+            'date': c.date,
+            'ot_number': c.work_order.number,
+            'quantity': float(c.quantity),
+            'description': f"Consumo en OT-{c.work_order.number}"
+        } for c in consumptions]
+
+        return Response({
+            'price_history': price_history,
+            'kardex': kardex,
+            'sales_analysis': {
+                'avg_price': float(sales_stats['avg_price'] or 0),
+                'avg_cost': float(sales_stats['avg_cost'] or 0),
+                'total_sold': float(sales_stats['total_qty'] or 0),
+                'total_revenue': float(sales_stats['total_revenue'] or 0),
+                'total_cost_basis': float(sales_stats['total_cost_basis'] or 0),
+            },
+            'production_usage': production_usage
         })
-        
-        # Process Price Events
-        for h in history:
-            d = h.history_date.date()
-            timeline_map[d]['sale_price'] = float(h.sale_price)
-            timeline_map[d]['cost_price'] = float(h.cost_price)
-            timeline_map[d]['events'].append({
-                'type': 'price_change',
-                'user': h.history_user.username if h.history_user else "System",
-                'sale_price': float(h.sale_price),
-                'cost_price': float(h.cost_price),
-                'history_type': h.history_type
-            })
-            
-        # Process Stock Events
-        for m in moves:
-            d = m.date
-            qty = float(m.quantity)
-            timeline_map[d]['stock_delta'] += qty
-            if qty > 0:
-                timeline_map[d]['in_qty'] += qty
-            else:
-                timeline_map[d]['out_qty'] += abs(qty)
-                
-            timeline_map[d]['events'].append({
-                'type': 'stock_move',
-                'qty': qty,
-                'move_type': m.move_type,
-                'description': m.description,
-                'reference': m.journal_entry.reference if m.journal_entry else None
-            })
-            
-        # 4. Sort dates and fill gaps / calculate cumulative stock
-        sorted_dates = sorted(timeline_map.keys())
-        if not sorted_dates:
-            return Response([])
-            
-        result = []
-        cumulative_stock = 0.0
-        last_sale_price = 0.0
-        last_cost_price = 0.0
-        
-        for d in sorted_dates:
-            data = timeline_map[d]
-            
-            # Carry forward prices if not set on this date
-            if data['sale_price'] is not None:
-                last_sale_price = data['sale_price']
-            if data['cost_price'] is not None:
-                last_cost_price = data['cost_price']
-                
-            cumulative_stock += data['stock_delta']
-            
-            result.append({
-                'date': d.isoformat(),
-                'sale_price': last_sale_price,
-                'cost_price': last_cost_price,
-                'stock_level': cumulative_stock,
-                'in_qty': data['in_qty'],
-                'out_qty': data['out_qty'],
-                'events': data['events']
-            })
-            
-        return Response(result)
 
     @action(detail=True, methods=['get'])
     def effective_price(self, request, pk=None):

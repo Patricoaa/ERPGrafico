@@ -11,14 +11,14 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { AdjustmentForm } from "@/components/inventory/AdjustmentForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { PriceHistoryDialog } from "@/components/inventory/PriceHistoryDialog"
+import { ProductInsightsDialog } from "@/components/inventory/ProductInsightsDialog"
 
 export function StockReport() {
     const [report, setReport] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [isRotating, setIsRotating] = useState<number | null>(null)
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
-    const [historyProduct, setHistoryProduct] = useState<any | null>(null)
+    const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
 
     useEffect(() => {
         fetchReport()
@@ -153,8 +153,8 @@ export function StockReport() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-primary"
-                        onClick={() => setHistoryProduct(row.original)}
-                        title="Ver Historial de Precios"
+                        onClick={() => setInsightsProduct(row.original)}
+                        title="Ver Panel de Insights (Precios, Kardex, Margen)"
                     >
                         <History className="h-4 w-4" />
                     </Button>
@@ -211,11 +211,11 @@ export function StockReport() {
                     )}
                 </DialogContent>
             </Dialog>
-            <PriceHistoryDialog
-                open={!!historyProduct}
-                onOpenChange={(open) => !open && setHistoryProduct(null)}
-                productId={historyProduct?.id}
-                productName={historyProduct?.name}
+            <ProductInsightsDialog
+                open={!!insightsProduct}
+                onOpenChange={(open) => !open && setInsightsProduct(null)}
+                productId={insightsProduct?.id}
+                productName={insightsProduct?.name}
             />
         </div>
     )

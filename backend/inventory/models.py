@@ -684,7 +684,7 @@ class StockMove(models.Model):
 
     date = models.DateField(_("Fecha"), default=timezone.now)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='stock_moves')
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='stock_moves')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='warehouse_moves')
     uom = models.ForeignKey(UoM, on_delete=models.PROTECT, related_name='stock_moves_uom', null=True, blank=True)
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4) # Pos for Add, Neg for Remove
     move_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
