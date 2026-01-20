@@ -95,7 +95,7 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
 class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
     materials = WorkOrderMaterialSerializer(many=True, read_only=True)
-    stage_history = WorkOrderHistorySerializer(many=True, source='stage_history', read_only=True)
+    stage_history = WorkOrderHistorySerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
     sale_order_date = serializers.DateField(source='sale_order.date', read_only=True, allow_null=True)
     sale_order_delivery_date = serializers.DateField(source='sale_order.delivery_date', read_only=True, allow_null=True)
