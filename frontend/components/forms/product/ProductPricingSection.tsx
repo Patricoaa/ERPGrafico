@@ -80,7 +80,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                         <FormControl>
                             <div className="relative">
                                 <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                <Input type="number" step="1" className="pl-7 font-bold text-lg" {...field} disabled={isDynamicPricing} />
+                                <Input type="number" step="0.0001" className="pl-7 font-bold text-lg" {...field} disabled={isDynamicPricing} />
                             </div>
                         </FormControl>
                         <FormMessage />
@@ -101,14 +101,14 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                     <span className="absolute left-3 top-2.5 text-primary/50">$</span>
                     <Input
                         type="number"
-                        step="1"
+                        step="0.01"
                         className="pl-7 bg-primary/10 border-primary/30 font-extrabold text-primary text-lg"
-                        value={totalCalculated || ""}
+                        value={totalCalculated ? Number(totalCalculated.toFixed(2)) : ""}
                         disabled={isDynamicPricing}
                         onChange={(e) => {
                             const gross = Number(e.target.value);
                             const net = PricingUtils.grossToNet(gross);
-                            form.setValue("sale_price", net);
+                            form.setValue("sale_price", Number(net.toFixed(4)));
                         }}
                     />
                 </div>

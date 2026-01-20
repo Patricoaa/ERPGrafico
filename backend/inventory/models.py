@@ -358,8 +358,8 @@ class Product(models.Model):
         default=False,
         help_text=_("Permite asignar el precio manualmente al vender (ignora precio de lista).")
     )
-    sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
-    cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
+    sale_price = models.DecimalField(_("Precio Venta"), max_digits=16, decimal_places=4, default=0, validators=[MinValueValidator(0)])
+    cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=16, decimal_places=4, default=0, editable=False)
     
     # Accounting Overrides
     income_account = models.ForeignKey(
@@ -776,7 +776,7 @@ class PricingRule(models.Model):
     max_quantity = models.DecimalField(_("Cantidad Máxima / Hasta"), max_digits=12, decimal_places=4, null=True, blank=True, validators=[MinValueValidator(0)], help_text=_("Solo usado para el operador 'Entre'"))
     
     rule_type = models.CharField(_("Tipo de Regla"), max_length=20, choices=RuleType.choices, default=RuleType.FIXED)
-    fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
+    fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=16, decimal_places=4, null=True, blank=True, validators=[MinValueValidator(0)])
     discount_percentage = models.DecimalField(_("Descuento %"), max_digits=5, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
     
     start_date = models.DateField(_("Fecha Inicio"), null=True, blank=True)
@@ -914,7 +914,7 @@ class Subscription(models.Model):
     end_date = models.DateField(_("Fecha Fin"), null=True, blank=True)
     next_payment_date = models.DateField(_("Próximo Pago"), null=True, blank=True)
     
-    amount = models.DecimalField(_("Monto Recurrente"), max_digits=12, decimal_places=2)
+    amount = models.DecimalField(_("Monto Recurrente"), max_digits=16, decimal_places=4)
     currency = models.CharField(_("Moneda"), max_length=10, default="CLP")
     
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.ACTIVE)

@@ -189,7 +189,7 @@ class WorkOrderMaterial(models.Model):
         related_name='work_order_materials',
         verbose_name=_("Proveedor")
     )
-    unit_price = models.DecimalField(_("Precio Unitario OC"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
+    unit_price = models.DecimalField(_("Precio Unitario OC"), max_digits=16, decimal_places=4, default=0, validators=[MinValueValidator(0)])
     purchase_line = models.ForeignKey(
         'purchasing.PurchaseLine', 
         on_delete=models.SET_NULL, 

@@ -49,9 +49,9 @@ class Invoice(models.Model):
     attachments = GenericRelation('core.Attachment')
 
     # Totals
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
+    total_net = models.DecimalField(_("Neto"), max_digits=16, decimal_places=2, default=0)
+    total_tax = models.DecimalField(_("Impuesto"), max_digits=16, decimal_places=2, default=0)
+    total = models.DecimalField(_("Total"), max_digits=16, decimal_places=2, default=0)
 
     # Accounting
     journal_entry = models.OneToOneField(
