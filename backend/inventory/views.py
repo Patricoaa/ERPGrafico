@@ -112,6 +112,36 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         return Response(report)
 
     @action(detail=True, methods=['get'])
+    def price_history(self, request, pk=None):
+        """
+        Returns history filtered only for sale_price and cost_price changes.
+        """
+        instance = self.get_object()
+        history = instance.history.select_related('history_user').all().order_by('history_date')
+        
+        results = []
+        last_sale = None
+        last_cost = None
+        
+        for h in history:
+            # Check if this record changed prices vs the previous one in the loop
+            if h.sale_price != last_sale or h.cost_price != last_cost:
+                results.append({
+                    'history_date': h.history_date,
+                    'history_user': h.history_user.username if h.history_user else "System",
+                    'sale_price': float(h.sale_price),
+                    'cost_price': float(h.cost_price),
+                    'old_sale_price': float(last_sale) if last_sale is not None else None,
+                    'old_cost_price': float(last_cost) if last_cost is not None else None,
+                    'history_type': h.history_type
+                })
+                last_sale = h.sale_price
+                last_cost = h.cost_price
+        
+        results.reverse() # Most recent first
+        return Response(results)
+
+    @action(detail=True, methods=['get'])
     def effective_price(self, request, pk=None):
         product = self.get_object()
         quantity = Decimal(request.query_params.get('quantity', 1))
