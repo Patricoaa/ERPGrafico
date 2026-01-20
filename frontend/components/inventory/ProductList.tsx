@@ -12,11 +12,12 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { cn, translateProductType } from "@/lib/utils"
-import { formatCurrency } from "@/lib/currency"
+// import { formatCurrency } from "@/lib/currency" // Removing custom formatter in favor of DataCell
 import { PricingUtils } from "@/lib/pricing"
 import { ArchivingRestrictionsDialog, type Restriction } from "./ArchivingRestrictionsDialog"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { AlertTriangle } from "lucide-react"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 interface Product {
     id: number
@@ -127,11 +128,9 @@ export function ProductList() {
                 <DataTableColumnHeader column={column} title="Código Int." />
             ),
             cell: ({ row }) => (
-                <div className="font-mono text-[10px] font-bold text-primary">
-                    {row.getValue("internal_code")}
-                    {!row.original.active && (
-                        <Badge variant="destructive" className="ml-1 text-[8px] h-3 px-1">ARCHIVADO</Badge>
-                    )}
+                <div className="flex items-center gap-1">
+                    <DataCell.Code className="font-bold text-primary">{row.getValue("internal_code")}</DataCell.Code>
+                    {!row.original.active && <DataCell.Badge variant="destructive" className="text-[8px] h-3 px-1">ARCHIVADO</DataCell.Badge>}
                 </div>
             ),
         },
@@ -140,7 +139,7 @@ export function ProductList() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="SKU/Código" />
             ),
-            cell: ({ row }) => <div className="font-mono text-xs">{row.getValue("code") || '-'}</div>,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("code")}</DataCell.Code>,
         },
         {
             accessorKey: "name",
@@ -148,8 +147,10 @@ export function ProductList() {
                 <DataTableColumnHeader column={column} title="Nombre" />
             ),
             cell: ({ row }) => (
-                <div className={cn("font-medium", !row.original.active && "text-muted-foreground line-through")}>
-                    {row.getValue("name")}
+                <div className="max-w-[250px]">
+                    <DataCell.Text className={!row.original.active ? "line-through text-muted-foreground" : ""}>
+                        {row.getValue("name")}
+                    </DataCell.Text>
                 </div>
             ),
         },
@@ -158,7 +159,7 @@ export function ProductList() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Categoría" />
             ),
-            cell: ({ row }) => <div className="text-sm">{row.getValue("category_name")}</div>,
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("category_name")}</DataCell.Secondary>,
         },
         {
             accessorKey: "active",
@@ -177,7 +178,7 @@ export function ProductList() {
                 <DataTableColumnHeader column={column} title="Tipo" />
             ),
             cell: ({ row }) => (
-                <Badge variant="secondary" className="text-[10px]">{translateProductType(row.getValue("product_type"))}</Badge>
+                <DataCell.Badge variant="secondary" className="text-[10px]">{translateProductType(row.getValue("product_type"))}</DataCell.Badge>
             ),
         },
 
@@ -186,37 +187,35 @@ export function ProductList() {
             header: ({ column }) => (
                 <div className="text-right">Neto</div>
             ),
-            cell: ({ row }) => (
-                <div className="text-right">
-                    {row.original.is_dynamic_pricing ? (
-                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Precio Dinámico</Badge>
-                    ) : (
-                        <span className="font-bold text-muted-foreground">{formatCurrency(row.getValue("sale_price"))}</span>
-                    )}
-                </div>
-            ),
+            cell: ({ row }) => {
+                if (row.original.is_dynamic_pricing) {
+                    return <div className="text-right"><DataCell.Badge variant="warning" className="text-[9px]">Precio Dinámico</DataCell.Badge></div>
+                }
+                return <DataCell.Currency value={row.getValue("sale_price")} className="text-muted-foreground font-bold" />
+            },
         },
         {
             id: "tax",
             header: ({ column }) => (
                 <div className="text-right">IVA (19%)</div>
             ),
-            cell: ({ row }) => <div className="text-right text-muted-foreground text-xs">{formatCurrency(PricingUtils.calculateTax(Number(row.getValue("sale_price"))))}</div>,
+            cell: ({ row }) => {
+                const tax = PricingUtils.calculateTax(Number(row.getValue("sale_price")))
+                return <DataCell.Currency value={tax} className="text-xs text-muted-foreground font-normal" />
+            },
         },
         {
             id: "total",
             header: ({ column }) => (
                 <div className="text-right">Total</div>
             ),
-            cell: ({ row }) => (
-                <div className="text-right">
-                    {row.original.is_dynamic_pricing ? (
-                        <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">Precio Dinámico</Badge>
-                    ) : (
-                        <span className="font-bold text-primary">{formatCurrency(PricingUtils.netToGross(Number(row.getValue("sale_price"))))}</span>
-                    )}
-                </div>
-            ),
+            cell: ({ row }) => {
+                const total = PricingUtils.netToGross(Number(row.getValue("sale_price")))
+                if (row.original.is_dynamic_pricing) {
+                    return <div className="text-right"><DataCell.Badge variant="warning" className="text-[9px]">Precio Dinámico</DataCell.Badge></div>
+                }
+                return <DataCell.Currency value={total} className="text-primary font-bold" />
+            },
         },
         {
             id: "attributes",
@@ -226,10 +225,10 @@ export function ProductList() {
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
                     {row.original.can_be_sold && (
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-200 bg-emerald-50 text-emerald-700 h-4">Venta</Badge>
+                        <DataCell.Badge variant="success" className="text-[9px] px-1.5 py-0 h-4">Venta</DataCell.Badge>
                     )}
                     {row.original.can_be_purchased && (
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 h-4">Compra</Badge>
+                        <DataCell.Badge variant="info" className="text-[9px] px-1.5 py-0 h-4">Compra</DataCell.Badge>
                     )}
                     {!row.original.can_be_sold && !row.original.can_be_purchased && (
                         <span className="text-[10px] text-muted-foreground italic">Ninguno</span>

@@ -21,6 +21,7 @@ import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 interface Subscription {
     id: number
@@ -137,8 +138,8 @@ export default function SubscriptionsPage() {
             accessorFn: (row) => row.product_name,
             cell: ({ row }) => (
                 <div>
-                    <div className="font-medium">{row.original.product_name}</div>
-                    <div className="text-sm text-muted-foreground">{row.original.product_code}</div>
+                    <DataCell.Text>{row.original.product_name}</DataCell.Text>
+                    <DataCell.Secondary>{row.original.product_code}</DataCell.Secondary>
                 </div>
             ),
         },
@@ -147,21 +148,20 @@ export default function SubscriptionsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Proveedor" />
             ),
+            cell: ({ row }) => <DataCell.Text>{row.getValue("supplier_name")}</DataCell.Text>,
         },
         {
             accessorKey: "amount",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Monto" />
             ),
-            cell: ({ row }) => (
-                <span>{formatCurrency(parseFloat(row.getValue("amount")))}</span>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} />,
         },
         {
             id: "frequency",
             header: "Frecuencia",
             cell: ({ row }) => (
-                <div className="text-sm">{getPaymentScheduleText(row.original)}</div>
+                <DataCell.Secondary className="text-foreground">{getPaymentScheduleText(row.original)}</DataCell.Secondary>
             ),
         },
         {
@@ -169,12 +169,7 @@ export default function SubscriptionsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Próximo Pago" />
             ),
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    {new Date(row.getValue("next_payment_date")).toLocaleDateString()}
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Date value={row.getValue("next_payment_date")} />,
         },
         {
             accessorKey: "status",
@@ -182,9 +177,15 @@ export default function SubscriptionsPage() {
                 <DataTableColumnHeader column={column} title="Estado" />
             ),
             cell: ({ row }) => (
-                <Badge className={getStatusColor(row.getValue("status"))}>
-                    {row.original.status_display}
-                </Badge>
+                <DataCell.Status
+                    status={row.getValue("status")}
+                    map={{
+                        ACTIVE: "success",
+                        PAUSED: "warning",
+                        CANCELLED: "destructive",
+                        PENDING: "secondary"
+                    }}
+                />
             ),
         },
         {

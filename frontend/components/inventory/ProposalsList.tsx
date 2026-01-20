@@ -11,6 +11,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { DataCell } from "@/components/ui/data-table-cells"
 import api from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -112,8 +113,8 @@ export function ProposalsList({ data, onRefresh, toolbarAction, rightAction }: P
             ),
             cell: ({ row }) => (
                 <div>
-                    <div className="font-medium">{row.original.product_code}</div>
-                    <div className="text-xs text-muted-foreground">{row.original.product_name}</div>
+                    <DataCell.Text>{row.original.product_code}</DataCell.Text>
+                    <DataCell.Secondary>{row.original.product_name}</DataCell.Secondary>
                 </div>
             ),
         },
@@ -129,9 +130,9 @@ export function ProposalsList({ data, onRefresh, toolbarAction, rightAction }: P
                 <DataTableColumnHeader column={column} title="Proveedor Sugerido" />
             ),
             cell: ({ row }) => (
-                <div className="text-sm">
-                    {row.original.supplier_name || <span className="text-amber-500 font-medium">No asignado</span>}
-                </div>
+                <DataCell.Text>
+                    {row.original.supplier_name || <span className="text-amber-500 font-medium italic">No asignado</span>}
+                </DataCell.Text>
             ),
         },
         {
@@ -140,9 +141,11 @@ export function ProposalsList({ data, onRefresh, toolbarAction, rightAction }: P
                 <DataTableColumnHeader column={column} title="Cant. a Pedir" className="justify-end" />
             ),
             cell: ({ row }) => (
-                <div className="text-right font-bold text-blue-600">
-                    {Number(row.getValue("qty_to_order")).toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">{row.original.uom_name || ''}</span>
-                </div>
+                <DataCell.Number
+                    value={row.getValue("qty_to_order")}
+                    suffix={row.original.uom_name}
+                    className="text-blue-600 font-bold"
+                />
             ),
         },
         {
@@ -150,27 +153,23 @@ export function ProposalsList({ data, onRefresh, toolbarAction, rightAction }: P
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
-            cell: ({ row }) => (
-                <div className="text-xs text-muted-foreground">
-                    {format(new Date(row.original.created_at), "dd MMM yyyy", { locale: es })}
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Date value={row.original.created_at} />,
         },
         {
             accessorKey: "status",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" />
             ),
-            cell: ({ row }) => {
-                const status = row.original.status
-                return (
-                    <Badge variant={status === 'PENDING' ? 'default' : 'outline'} className={
-                        status === 'PENDING' ? 'bg-amber-100 text-amber-700 hover:bg-amber-100' : ''
-                    }>
-                        {row.original.status_display}
-                    </Badge>
-                )
-            },
+            cell: ({ row }) => (
+                <DataCell.Status
+                    status={row.getValue("status")}
+                    map={{
+                        PENDING: 'warning',
+                        ORDERED: 'success',
+                        IGNORED: 'secondary'
+                    }}
+                />
+            ),
         },
         {
             id: "actions",

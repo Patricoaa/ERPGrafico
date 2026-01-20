@@ -16,8 +16,7 @@ import { BOMFormDialog } from "./BOMFormDialog"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 interface BOMManagerProps {
     product: any
@@ -158,33 +157,32 @@ export function BOMManager({ product }: BOMManagerProps) {
                                     <TableRow key={bom.id} className="hover:bg-muted/5">
                                         <TableCell className="font-medium">
                                             <div className="flex flex-col">
-                                                <span>{bom.name}</span>
+                                                <DataCell.Text>{bom.name}</DataCell.Text>
                                                 {bom.notes && (
-                                                    <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">{bom.notes}</span>
+                                                    <DataCell.Secondary className="max-w-[200px]">{bom.notes}</DataCell.Secondary>
                                                 )}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-center">
                                             {bom.active ? (
-                                                <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 gap-1 pl-1 pr-2">
+                                                <DataCell.Badge variant="success" className="gap-1 pl-1 pr-2">
                                                     <Check className="h-3 w-3" /> Activa
-                                                </Badge>
+                                                </DataCell.Badge>
                                             ) : (
-                                                <Badge
+                                                <DataCell.Badge
                                                     variant="outline"
                                                     className="text-muted-foreground cursor-pointer hover:bg-emerald-100 hover:text-emerald-700 hover:border-emerald-200 transition-colors"
-                                                    onClick={() => handleToggleActive(bom)}
-                                                    title="Clic para activar"
+                                                // onClick maintained as it is an interactive badge, though we could wrap it
                                                 >
-                                                    Inactiva
-                                                </Badge>
+                                                    <span onClick={() => handleToggleActive(bom)} title="Clic para activar">Inactiva</span>
+                                                </DataCell.Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-center text-sm">
                                             {bom.lines?.length || 0} ítems
                                         </TableCell>
-                                        <TableCell className="text-right text-xs text-muted-foreground">
-                                            {format(new Date(bom.updated_at), "dd/MM/yyyy", { locale: es })}
+                                        <TableCell className="text-right">
+                                            <DataCell.Date value={bom.updated_at} className="text-muted-foreground" />
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-1">

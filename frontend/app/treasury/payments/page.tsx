@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 interface Payment {
     id: number
@@ -92,18 +93,14 @@ export default function PaymentsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Número" />
             ),
-            cell: ({ row }) => (
-                <span className="font-mono text-xs font-bold">{row.getValue("code")}</span>
-            ),
+            cell: ({ row }) => <DataCell.Code className="font-bold">{row.getValue("code")}</DataCell.Code>,
         },
         {
             accessorKey: "date",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
-            cell: ({ row }) => (
-                <span className="text-muted-foreground">{new Date(row.getValue("date")).toLocaleDateString()}</span>
-            ),
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
         },
         {
             accessorKey: "payment_type",
@@ -112,19 +109,13 @@ export default function PaymentsPage() {
             ),
             cell: ({ row }) => {
                 const type = row.getValue("payment_type") as string
+                const isInbound = type === 'INBOUND'
                 return (
                     <div className="flex justify-center">
-                        {type === 'INBOUND' ? (
-                            <div className="flex items-center gap-1 text-emerald-600 font-bold text-xs">
-                                <ArrowDownLeft className="h-4 w-4" />
-                                <span>INGRESO</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1 text-red-600 font-bold text-xs">
-                                <ArrowUpRight className="h-4 w-4" />
-                                <span>EGRESO</span>
-                            </div>
-                        )}
+                        <DataCell.Badge variant={isInbound ? "success" : "destructive"} className="gap-1 pl-1.5 pr-2.5">
+                            {isInbound ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+                            {isInbound ? "INGRESO" : "EGRESO"}
+                        </DataCell.Badge>
                     </div>
                 )
             },
@@ -137,13 +128,7 @@ export default function PaymentsPage() {
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("amount"))
                 const type = row.original.payment_type
-                return (
-                    <div className="text-right font-black font-mono">
-                        <span className={type === 'INBOUND' ? "text-emerald-700" : "text-red-700"}>
-                            ${amount.toLocaleString()}
-                        </span>
-                    </div>
-                )
+                return <DataCell.Currency value={amount} className={type === 'INBOUND' ? "text-emerald-700 font-bold" : "text-red-700 font-bold"} />
             },
         },
         {
@@ -154,13 +139,18 @@ export default function PaymentsPage() {
             cell: ({ row }) => {
                 const method = row.getValue("payment_method") as string
                 const display = row.original.payment_method_display
+
+                let icon = Banknote
+                let color = "text-emerald-600"
+
+                if (method === 'CARD') { icon = CreditCard; color = "text-blue-600" }
+                else if (method === 'TRANSFER') { icon = Landmark; color = "text-indigo-600" }
+                else if (method === 'CREDIT') { icon = Receipt; color = "text-amber-600" }
+
                 return (
                     <div className="flex items-center gap-2">
-                        {method === 'CASH' && <Banknote className="h-4 w-4 text-emerald-600" />}
-                        {method === 'CARD' && <CreditCard className="h-4 w-4 text-blue-600" />}
-                        {method === 'TRANSFER' && <Landmark className="h-4 w-4 text-indigo-600" />}
-                        {method === 'CREDIT' && <Receipt className="h-4 w-4 text-amber-600" />}
-                        <span className="text-[10px] font-medium uppercase">{display}</span>
+                        <DataCell.Icon icon={icon} color={color} className="bg-transparent p-0" />
+                        <span className="text-[10px] font-medium uppercase text-muted-foreground">{display}</span>
                     </div>
                 )
             },
@@ -170,46 +160,44 @@ export default function PaymentsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="N° Transacción" />
             ),
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]" title={row.getValue("transaction_number")}>
-                        {row.getValue("transaction_number") || '-'}
-                    </span>
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Code className="max-w-[80px] truncate" title={row.getValue("transaction_number") as string}>{row.getValue("transaction_number")}</DataCell.Code>,
         },
         {
             id: "document",
             header: "Documento",
             cell: ({ row }) => {
                 const payment = row.original
+                const doc = payment.document_info
+
+                if (!doc) {
+                    return (
+                        <div className="flex flex-col">
+                            <span className="font-medium text-xs text-muted-foreground italic">{payment.reference || 'Sin Documento'}</span>
+                            <DataCell.Secondary className="font-bold text-foreground">{payment.partner_name}</DataCell.Secondary>
+                        </div>
+                    )
+                }
+
+                const docName = doc.type === 'purchase_order' ? `OC-${doc.number}` :
+                    doc.type === 'sale_order' ? `NV-${doc.number}` :
+                        doc.label.includes('Crédito') ? `NC-${doc.number}` :
+                            doc.label.includes('Débito') ? `ND-${doc.number}` :
+                                doc.label.includes('Bol') ? `BOL-${doc.number}` :
+                                    `FACT-${doc.number}`
+
+                const docType = doc.type === 'invoice' ? (doc.label.includes('Bol') ? 'Boleta' : 'Factura') :
+                    doc.type === 'purchase_order' ? 'Orden de Compra' :
+                        doc.type === 'sale_order' ? 'Nota de Venta' : doc.type
+
                 return (
                     <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            {payment.document_info ? (
-                                <button
-                                    onClick={() => setViewingTransaction({ type: payment.document_info!.type, id: payment.document_info!.id })}
-                                    className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                >
-                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">
-                                        {payment.document_info.type === 'invoice' ? (payment.document_info.label.includes('Bol') ? 'Boleta' : 'Factura') :
-                                            payment.document_info.type === 'purchase_order' ? 'Orden de Compra' :
-                                                payment.document_info.type === 'sale_order' ? 'Nota de Venta' : payment.document_info.type}
-                                    </span>
-                                    <span className="text-[10px]">
-                                        {payment.document_info.type === 'purchase_order' ? `OC-${payment.document_info.number}` :
-                                            payment.document_info.type === 'sale_order' ? `NV-${payment.document_info.number}` :
-                                                payment.document_info.label.includes('Crédito') ? `NC-${payment.document_info.number}` :
-                                                    payment.document_info.label.includes('Débito') ? `ND-${payment.document_info.number}` :
-                                                        payment.document_info.label.includes('Bol') ? `BOL-${payment.document_info.number}` :
-                                                            `FACT-${payment.document_info.number}`}
-                                    </span>
-                                </button>
-                            ) : (
-                                <span className="font-medium text-xs text-muted-foreground italic">{payment.reference || 'Sin Documento'}</span>
-                            )}
-                        </div>
-                        <div className="text-[10px] text-foreground font-bold mt-0.5">{payment.partner_name}</div>
+                        <DataCell.Link onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}>
+                            <div className="flex flex-col items-start leading-tight">
+                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">{docType}</span>
+                                <span className="text-[10px]">{docName}</span>
+                            </div>
+                        </DataCell.Link>
+                        <DataCell.Secondary className="font-bold text-foreground mt-0.5">{payment.partner_name}</DataCell.Secondary>
                     </div>
                 )
             },

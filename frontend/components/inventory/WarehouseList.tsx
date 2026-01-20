@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
+import { DataCell } from "@/components/ui/data-table-cells"
 import api from "@/lib/api"
 import { WarehouseForm } from "@/components/forms/WarehouseForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
@@ -66,17 +67,17 @@ export function WarehouseList() {
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
         },
         {
             accessorKey: "code",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
-            cell: ({ row }) => <div className="font-mono text-xs">{row.getValue("code")}</div>,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("code")}</DataCell.Code>,
         },
         {
             accessorKey: "address",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" />,
-            cell: ({ row }) => <div className="text-sm">{row.original.address || "-"}</div>,
+            cell: ({ row }) => <DataCell.Secondary>{row.original.address || "-"}</DataCell.Secondary>,
         },
         {
             id: "actions",

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
 import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard } from "lucide-react"
 import api from "@/lib/api"
@@ -165,33 +166,35 @@ export default function PurchaseOrdersPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Número" />
             ),
-            cell: ({ row }) => <div className="font-medium">OC-{row.getValue("number")}</div>,
+            cell: ({ row }) => <DataCell.Code>OC-{row.getValue("number")}</DataCell.Code>,
         },
         {
             accessorKey: "date",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
-            cell: ({ row }) => <div>{new Date(row.getValue("date")).toLocaleDateString()}</div>,
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
         },
         {
             accessorKey: "supplier_name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Proveedor" />
             ),
+            cell: ({ row }) => <DataCell.Text>{row.getValue("supplier_name")}</DataCell.Text>,
         },
         {
             accessorKey: "warehouse_name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Almacén" />
             ),
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("warehouse_name")}</DataCell.Secondary>,
         },
         {
             accessorKey: "total",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Total" />
             ),
-            cell: ({ row }) => <div>{parseFloat(row.getValue("total")).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</div>,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
         },
         {
             accessorKey: "status",

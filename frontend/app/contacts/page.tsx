@@ -13,6 +13,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 interface Contact {
     id: number
@@ -75,13 +76,13 @@ export default function ContactsPage() {
     const getContactTypeBadge = (type: string) => {
         switch (type) {
             case 'CUSTOMER':
-                return <Badge className="bg-blue-500 hover:bg-blue-600">Cliente</Badge>
+                return <DataCell.Badge variant="info">Cliente</DataCell.Badge>
             case 'SUPPLIER':
-                return <Badge className="bg-purple-500 hover:bg-purple-600">Proveedor</Badge>
+                return <DataCell.Badge variant="indigo">Proveedor</DataCell.Badge>
             case 'BOTH':
-                return <Badge className="bg-green-500 hover:bg-green-600">Ambos</Badge>
+                return <DataCell.Badge variant="success">Ambos</DataCell.Badge>
             default:
-                return <Badge variant="outline">Sin Clasificar</Badge>
+                return <DataCell.Badge variant="outline">Sin Clasificar</DataCell.Badge>
         }
     }
 
@@ -92,7 +93,7 @@ export default function ContactsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Código" />
             ),
-            cell: ({ row }) => <span className="font-mono text-xs font-semibold">{row.getValue("display_id") || "-"}</span>,
+            cell: ({ row }) => <DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code>,
         },
         {
             accessorKey: "name",
@@ -103,15 +104,13 @@ export default function ContactsPage() {
                 const contact = row.original
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="font-medium">{contact.name}</span>
+                        <DataCell.Text>{contact.name}</DataCell.Text>
                         <div className="flex gap-1">
                             {contact.is_default_customer && (
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger>
-                                            <div className="p-1 bg-blue-100 rounded-full">
-                                                <UserIcon className="h-3 w-3 text-blue-600" />
-                                            </div>
+                                            <DataCell.Icon icon={UserIcon} className="bg-blue-100 text-blue-600 h-6 w-6" />
                                         </TooltipTrigger>
                                         <TooltipContent>Cliente por defecto</TooltipContent>
                                     </Tooltip>
@@ -121,9 +120,7 @@ export default function ContactsPage() {
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger>
-                                            <div className="p-1 bg-purple-100 rounded-full">
-                                                <Building2 className="h-3 w-3 text-purple-600" />
-                                            </div>
+                                            <DataCell.Icon icon={Building2} className="bg-purple-100 text-purple-600 h-6 w-6" />
                                         </TooltipTrigger>
                                         <TooltipContent>Proveedor por defecto</TooltipContent>
                                     </Tooltip>
@@ -141,7 +138,7 @@ export default function ContactsPage() {
             ),
             cell: ({ row }) => {
                 const taxId = row.getValue("tax_id") as string | null
-                return taxId ? formatRUT(taxId) : 'S/Rut'
+                return <DataCell.Code>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Code>
             },
         },
         {
@@ -154,17 +151,13 @@ export default function ContactsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Email" />
             ),
-            cell: ({ row }) => {
-                const email = row.getValue("email") as string | null
-                return email || "-"
-            },
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("email") || "-"}</DataCell.Secondary>,
         },
         {
             accessorKey: "phone",
             header: "Teléfono",
             cell: ({ row }) => {
-                const phone = row.getValue("phone") as string | null
-                return phone || "-"
+                return <DataCell.Secondary>{row.getValue("phone") || "-"}</DataCell.Secondary>
             },
         },
         {

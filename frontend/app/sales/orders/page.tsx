@@ -21,6 +21,7 @@ import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { OrderHubStatus } from "./components/OrderHubStatus"
 import { getHubStatuses } from "@/lib/order-status-utils"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 
 interface SaleOrder {
@@ -200,15 +201,15 @@ export default function SalesOrdersPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Número" />
             ),
-            cell: ({ row }) => <div className="font-medium">NV-{row.getValue("number")}</div>,
+            cell: ({ row }) => <DataCell.Code>NV-{row.getValue("number")}</DataCell.Code>,
         },
         {
             accessorKey: "channel_display",
             header: "Canal",
             cell: ({ row }) => (
-                <Badge variant="outline" className="text-[10px] uppercase">
+                <DataCell.Badge variant="outline" className="text-[10px] uppercase">
                     {row.getValue("channel_display")}
-                </Badge>
+                </DataCell.Badge>
             ),
         },
         {
@@ -216,20 +217,21 @@ export default function SalesOrdersPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
-            cell: ({ row }) => <div>{new Date(row.getValue("date")).toLocaleDateString()}</div>,
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
         },
         {
             accessorKey: "customer_name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Cliente" />
             ),
+            cell: ({ row }) => <DataCell.Text>{row.getValue("customer_name")}</DataCell.Text>,
         },
         {
             accessorKey: "total",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Total" />
             ),
-            cell: ({ row }) => <div>{parseFloat(row.getValue("total")).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</div>,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
         },
         {
             accessorKey: "status",

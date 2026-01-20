@@ -5,6 +5,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { RefreshCw, ArrowRightLeft } from "lucide-react"
+import { DataCell } from "@/components/ui/data-table-cells"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -50,20 +51,20 @@ export function StockReport() {
         {
             accessorKey: "internal_code",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cod. Int." />,
-            cell: ({ row }) => <span className="font-mono text-[10px] font-bold text-primary">{row.getValue("internal_code")}</span>,
+            cell: ({ row }) => <DataCell.Code className="font-bold text-primary">{row.getValue("internal_code")}</DataCell.Code>,
         },
         {
             accessorKey: "code",
             header: ({ column }) => <DataTableColumnHeader column={column} title="SKU/Code" />,
-            cell: ({ row }) => <span className="font-mono text-[10px] text-muted-foreground">{row.getValue("code")}</span>,
+            cell: ({ row }) => <DataCell.Code className="text-muted-foreground">{row.getValue("code")}</DataCell.Code>,
         },
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
             cell: ({ row }) => (
                 <div className="flex flex-col">
-                    <span className="font-medium">{row.getValue("name")}</span>
-                    <span className="text-[10px] text-muted-foreground uppercase">{row.original.category_name}</span>
+                    <DataCell.Text>{row.getValue("name")}</DataCell.Text>
+                    <DataCell.Secondary className="uppercase">{row.original.category_name}</DataCell.Secondary>
                 </div>
             ),
         },
@@ -71,63 +72,65 @@ export function StockReport() {
             accessorKey: "stock_qty",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Físico" className="justify-end" />,
             cell: ({ row }) => (
-                <div className="text-right font-medium tabular-nums">
-                    {Math.round(Number(row.getValue("stock_qty")) * 100) / 100} <span className="text-[10px] text-muted-foreground font-normal lowercase">{row.original.uom_name}</span>
-                </div>
+                <DataCell.Number
+                    value={row.getValue("stock_qty")}
+                    decimals={2}
+                    suffix={row.original.uom_name}
+                />
             ),
         },
         {
             accessorKey: "qty_reserved",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-end" />,
             cell: ({ row }) => (
-                <div className="text-right font-medium tabular-nums text-amber-600">
-                    {Math.round((Number(row.getValue("qty_reserved")) || 0) * 100) / 100}
-                </div>
+                <DataCell.Number
+                    value={row.getValue("qty_reserved")}
+                    decimals={2}
+                    className="text-amber-600"
+                />
             ),
         },
         {
             accessorKey: "qty_available",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-end" />,
             cell: ({ row }) => (
-                <div className="text-right font-bold tabular-nums text-emerald-600">
-                    {Math.round((Number(row.getValue("qty_available")) || 0) * 100) / 100}
-                </div>
+                <DataCell.Number
+                    value={row.getValue("qty_available")}
+                    decimals={2}
+                    className="text-emerald-600 font-bold"
+                />
             ),
         },
         {
             accessorKey: "unit_cost",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Costo Unit." className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="text-right text-sm tabular-nums text-muted-foreground">
-                    ${Math.round(Number(row.getValue("unit_cost"))).toLocaleString()}
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("unit_cost")} className="text-sm font-normal text-muted-foreground" />,
         },
         {
             accessorKey: "total_value",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="text-right font-black tabular-nums text-primary">
-                    ${Math.round(Number(row.getValue("total_value"))).toLocaleString()}
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_value")} className="font-black text-primary" />,
         },
         {
             accessorKey: "moves_in",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Ent." className="justify-end" />,
             cell: ({ row }) => (
-                <div className="text-right text-emerald-600 font-medium text-xs">
-                    {Number(row.getValue("moves_in")) > 0 ? `+${Math.round(Number(row.getValue("moves_in")) * 100) / 100}` : '0'}
-                </div>
+                <DataCell.Variance
+                    value={Number(row.getValue("moves_in"))}
+                    decimals={2}
+                    className="text-xs"
+                />
             ),
         },
         {
             accessorKey: "moves_out",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Sal." className="justify-end" />,
             cell: ({ row }) => (
-                <div className="text-right text-rose-600 font-medium text-xs">
-                    {Number(row.getValue("moves_out")) > 0 ? `-${Math.round(Number(row.getValue("moves_out")) * 100) / 100}` : '0'}
-                </div>
+                <DataCell.Variance
+                    value={-Number(row.getValue("moves_out"))}
+                    decimals={2}
+                    className="text-xs"
+                />
             ),
         },
         {
