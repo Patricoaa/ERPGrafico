@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.exceptions import InvalidToken
-from .models import User, CompanySettings, ActionLog
+from .models import User, CompanySettings, ActionLog, Attachment
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
     def validate(self, attrs):
@@ -20,6 +20,30 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_permissions(self, obj):
         return list(obj.get_all_permissions())
+
+class AttachmentSerializer(serializers.ModelSerializer):
+    uploaded_at = serializers.DateTimeField(read_only=True)
+    file_size_formatted = serializers.SerializerMethodField()
+    user_name = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = Attachment
+        fields = [
+            'id', 'file', 'original_filename', 'content_type', 
+            'object_id', 'uploaded_at', 'user', 'user_name',
+            'file_size', 'file_size_formatted', 'mime_type'
+        ]
+        read_only_fields = ['id', 'uploaded_at', 'file_size', 'mime_type']
+
+    def get_file_size_formatted(self, obj):
+        if not obj.file_size:
+            return "0 B"
+        size = float(obj.file_size)
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
 
 class CompanySettingsSerializer(serializers.ModelSerializer):
     class Meta:

@@ -5,6 +5,8 @@ from accounting.models import JournalEntry
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from simple_history.models import HistoricalRecords
+from core.validators import validate_file_size, validate_file_extension
+from core.utils import generic_upload_path
 
 class Invoice(models.Model):
     class DTEType(models.TextChoices):
@@ -28,7 +30,12 @@ class Invoice(models.Model):
 
     dte_type = models.CharField(_("Tipo DTE"), max_length=20, choices=DTEType.choices)
     number = models.CharField(_("Folio"), max_length=20, blank=True)
-    document_attachment = models.FileField(_("Adjunto de Documento"), upload_to='invoices/', null=True, blank=True)
+    document_attachment = models.FileField(
+        _("Adjunto de Documento"), 
+        upload_to=generic_upload_path('invoices/'), 
+        null=True, blank=True,
+        validators=[validate_file_size, validate_file_extension]
+    )
     date = models.DateField(_("Fecha"), default=timezone.now)
     
     # Links

@@ -1,7 +1,9 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from .models import WorkOrder, ProductionConsumption, BillOfMaterials, WorkOrderMaterial, WorkOrderHistory
+from core.models import Attachment
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from inventory.models import StockMove, Product, UoM, Warehouse
@@ -239,7 +241,7 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
-    def transition_to(work_order, next_stage, user=None, notes="", data=None):
+    def transition_to(work_order, next_stage, user=None, notes="", data=None, files=None):
         """
         Handles transition between stages and business logic for each.
         """
@@ -250,6 +252,18 @@ class WorkOrderService:
             if not work_order.stage_data:
                 work_order.stage_data = {}
             work_order.stage_data[next_stage.lower()] = data
+
+        # Handle file attachments
+        if files:
+            content_type = ContentType.objects.get_for_model(work_order)
+            for field_name, file_obj in files.items():
+                Attachment.objects.create(
+                    file=file_obj,
+                    original_filename=file_obj.name,
+                    content_type=content_type,
+                    object_id=work_order.id,
+                    user=user
+                )
 
         # Specific logic per stage transition
         if next_stage == WorkOrder.Stage.MATERIAL_APPROVAL:

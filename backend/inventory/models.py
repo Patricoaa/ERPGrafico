@@ -4,6 +4,8 @@ from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
 from simple_history.models import HistoricalRecords
 from accounting.models import Account, AccountType
+from core.validators import validate_file_size, validate_image_extension
+from core.utils import generic_upload_path
 
 
 class ProductCategory(models.Model):
@@ -79,7 +81,12 @@ class Product(models.Model):
     name = models.CharField(_("Nombre"), max_length=255)
     category = models.ForeignKey(ProductCategory, on_delete=models.PROTECT, related_name='products')
     product_type = models.CharField(_("Tipo"), max_length=30, choices=Type.choices, default=Type.STORABLE)
-    image = models.ImageField(_("Imagen"), upload_to='products/', null=True, blank=True)
+    image = models.ImageField(
+        _("Imagen"), 
+        upload_to=generic_upload_path('products/'), 
+        null=True, blank=True,
+        validators=[validate_file_size, validate_image_extension]
+    )
     
     history = HistoricalRecords()
     
@@ -416,6 +423,25 @@ class Product(models.Model):
             
             new_num = str(max_num + 1).zfill(4)
             self.internal_code = f"{prefix}-{new_num}"
+
+        # Compress image if added/changed
+        if self.image:
+            try:
+                is_new_image = False
+                if not self.pk:
+                    is_new_image = True
+                else:
+                    old_product = Product.objects.filter(pk=self.pk).first()
+                    if old_product and old_product.image != self.image:
+                        is_new_image = True
+                
+                if is_new_image:
+                    from core.utils import compress_image
+                    compressed = compress_image(self.image)
+                    if compressed:
+                        self.image = compressed
+            except Exception as e:
+                print(f"Image compression warning: {str(e)}")
             
         super().save(*args, **kwargs)
 

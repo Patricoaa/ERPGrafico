@@ -210,11 +210,47 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
         setTransitioning(true)
         try {
-            await api.post(`/production/orders/${orderId}/transition/`, {
-                next_stage: nextStageId,
-                data: data
+            // Prepare data and files for transition
+            const formData = new FormData()
+            formData.append('next_stage', nextStageId)
+
+            // If data is empty and we are moving forward, collect current stage state
+            let payloadData = data
+            if (Object.keys(data).length === 0 && isMovingForward) {
+                if (order.current_stage === 'PREPRESS') {
+                    payloadData = {
+                        design_url: designUrl,
+                        client_approved: clientApproved,
+                        supervisor_approved: supervisorApproved
+                    }
+                } else if (order.current_stage === 'PRESS') {
+                    payloadData = { supervisor_approved: pressSupervisorApproved }
+                } else if (order.current_stage === 'POSTPRESS') {
+                    payloadData = { supervisor_approved: postpressSupervisorApproved }
+                }
+            }
+            formData.append('data', JSON.stringify(payloadData))
+
+            // Append files if they exist
+            if (designFile) {
+                formData.append('design_attachment', designFile)
+            }
+            if (clientApprovalFile) {
+                formData.append('approval_attachment', clientApprovalFile)
+            }
+
+            await api.post(`/production/orders/${orderId}/transition/`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
             })
+
             toast.success("Etapa actualizada")
+
+            // Clear files after successful transition
+            setDesignFile(null)
+            setClientApprovalFile(null)
+
             fetchOrder()
             if (onSuccess) onSuccess()
         } catch (error: any) {

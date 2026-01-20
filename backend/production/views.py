@@ -104,6 +104,14 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             notes = request.data.get('notes', '')
             data = request.data.get('data', {})
             
+            # If data is a string (due to multipart/form-data), parse it as JSON
+            if isinstance(data, str):
+                import json
+                try:
+                    data = json.loads(data)
+                except:
+                    data = {}
+            
             # Find the stage choice
             stage_match = None
             for choice, label in WorkOrder.Stage.choices:
@@ -132,7 +140,8 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 next_stage=stage_match,
                 user=request.user,
                 notes=notes,
-                data=data
+                data=data,
+                files=request.FILES
             )
             
             return Response(WorkOrderSerializer(work_order).data)
