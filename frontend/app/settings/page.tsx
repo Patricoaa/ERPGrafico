@@ -48,17 +48,6 @@ export default function SettingsPage() {
                     </Card>
                 </Link>
 
-                <Link href="/settings/sales">
-                    <Card className="cursor-pointer hover:border-primary">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <ShoppingCart className="h-8 w-8 text-primary" />
-                            <div>
-                                <CardTitle>Ventas</CardTitle>
-                                <CardDescription>Políticas de stock y restricciones.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
 
                 <Link href="/settings/audit">
                     <Card className="cursor-pointer hover:border-primary">

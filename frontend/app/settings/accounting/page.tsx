@@ -396,8 +396,6 @@ export default function AccountingSettingsPage() {
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="AVERAGE">Promedio Ponderado</SelectItem>
-                                                        <SelectItem value="FIFO">FIFO (Primero en entrar, primero en salir)</SelectItem>
-                                                        <SelectItem value="LIFO">LIFO (Último en entrar, primero en salir)</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />

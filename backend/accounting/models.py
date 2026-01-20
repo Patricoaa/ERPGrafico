@@ -302,8 +302,6 @@ class JournalItem(models.Model):
 
 class InventoryValuationMethod(models.TextChoices):
     AVERAGE = 'AVERAGE', _('Promedio Ponderado')
-    FIFO = 'FIFO', _('FIFO (Primero en entrar, primero en salir)')
-    LIFO = 'LIFO', _('LIFO (Último en entrar, primero en salir)')
 
 class AccountingSettings(models.Model):
     # Default Accounts
