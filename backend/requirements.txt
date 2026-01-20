@@ -14,3 +14,4 @@ django-filter
 celery
 django-celery-beat
 Pillow
+django-simple-history

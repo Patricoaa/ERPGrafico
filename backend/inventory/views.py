@@ -16,10 +16,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin
+from core.views import AuditHistoryMixin
 
 from .filters import ProductFilter, StockMoveFilter
 
-class ProductViewSet(BulkImportMixin, viewsets.ModelViewSet):
+class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend]

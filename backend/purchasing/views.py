@@ -9,8 +9,9 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin
+from core.views import AuditHistoryMixin
 
-class PurchaseOrderViewSet(viewsets.ModelViewSet):
+class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PurchaseOrder.objects.all()
     
     def get_serializer_class(self):

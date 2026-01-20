@@ -29,6 +29,8 @@ import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { ProductUoMTab } from "./product/ProductUoMTab"
 import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
+import { AuditTimeline } from "@/components/audit/AuditTimeline"
+import { HistoricalRecord } from "@/types/audit"
 
 // Import dialogs
 import { PricingRuleForm } from "./PricingRuleForm"
@@ -56,6 +58,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
     // State for Replenishment Rules
     const [reorderingRules, setReorderingRules] = useState<any[]>([])
     const [activeTab, setActiveTab] = useState("general")
+    const [history, setHistory] = useState<HistoricalRecord[]>([])
+    const [loadingHistory, setLoadingHistory] = useState(false)
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -198,6 +202,25 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             console.error("Error fetching pricing rules", error)
         }
     }
+
+    const fetchHistory = async () => {
+        if (!initialData?.id) return
+        setLoadingHistory(true)
+        try {
+            const res = await api.get(`/inventory/products/${initialData.id}/history/`)
+            setHistory(res.data)
+        } catch (error) {
+            console.error("Error fetching product history", error)
+        } finally {
+            setLoadingHistory(false)
+        }
+    }
+
+    useEffect(() => {
+        if (open && activeTab === "history") {
+            fetchHistory()
+        }
+    }, [open, activeTab])
 
     useEffect(() => {
         if (open) {
@@ -519,6 +542,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             Reglas de Precios
                                         </TabsTrigger>
                                     )}
+                                    {initialData && (
+                                        <TabsTrigger value="history" className="px-8 flex gap-2">
+                                            Historial
+                                        </TabsTrigger>
+                                    )}
                                 </TabsList>
 
                                 <TabsContent value="general" className="mt-0 space-y-8">
@@ -590,6 +618,18 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                         setPricingRuleDialogOpen(true)
                                     }}
                                 />
+
+                                {initialData && (
+                                    <TabsContent value="history" className="mt-0">
+                                        {loadingHistory ? (
+                                            <div className="flex items-center justify-center h-64">
+                                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                            </div>
+                                        ) : (
+                                            <AuditTimeline history={history} />
+                                        )}
+                                    </TabsContent>
+                                )}
                             </Tabs>
                         </form>
                     </Form>

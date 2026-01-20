@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'treasury',
     'finances',
     'billing',
+    'simple_history',
 ]
 
 MIDDLEWARE = [
@@ -71,6 +72,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

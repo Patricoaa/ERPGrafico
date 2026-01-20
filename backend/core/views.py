@@ -4,8 +4,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenRefreshView
-from .models import User, CompanySettings
-from .serializers import UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer
+from .models import User, CompanySettings, ActionLog
+from .serializers import (
+    UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer,
+    ActionLogSerializer, HistoricalRecordSerializer
+)
 
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = CustomTokenRefreshSerializer
@@ -17,11 +20,23 @@ class CurrentUserView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
-class UserViewSet(viewsets.ModelViewSet):
+class AuditHistoryMixin:
+    """Mixin to add history action to ViewSets"""
+    @action(detail=True, methods=['get'])
+    def history(self, request, pk=None):
+        instance = self.get_object()
+        if not hasattr(instance, 'history'):
+            return Response({"detail": "History not tracked for this model."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        history = instance.history.all()
+        serializer = HistoricalRecordSerializer(history, many=True)
+        return Response(serializer.data)
+
+class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-class CompanySettingsViewSet(viewsets.ModelViewSet):
+class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = CompanySettings.objects.all()
     serializer_class = CompanySettingsSerializer
 
@@ -42,3 +57,9 @@ class CompanySettingsViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ActionLog.objects.all()
+    serializer_class = ActionLogSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['user', 'action_type']

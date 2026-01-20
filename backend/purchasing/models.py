@@ -7,6 +7,7 @@ from inventory.models import Product, Warehouse
 from core.mixins import TotalsCalculationMixin
 from core.services import SequenceService
 from decimal import Decimal
+from simple_history.models import HistoricalRecords
 
 class PurchaseOrder(models.Model, TotalsCalculationMixin):
     class Status(models.TextChoices):
@@ -35,6 +36,8 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
     date = models.DateField(_("Fecha"), auto_now_add=True)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
+    
+    history = HistoricalRecords()
     
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='purchases', help_text="Bodega de recepción", null=True, blank=True)
     notes = models.TextField(_("Notas"), blank=True)

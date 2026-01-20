@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from accounting.models import Account, AccountType
+from simple_history.models import HistoricalRecords
 
 
 class Contact(models.Model):
@@ -15,6 +16,8 @@ class Contact(models.Model):
     phone = models.CharField(_("Teléfono"), max_length=20, blank=True)
     address = models.TextField(_("Dirección"), blank=True)
     code = models.CharField(_("Código"), max_length=20, unique=True, editable=False, null=True)
+    
+    history = HistoricalRecords()
     
     # Accounting links
     account_receivable = models.ForeignKey(

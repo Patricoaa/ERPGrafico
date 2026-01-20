@@ -5,6 +5,7 @@ from core.models import User
 from accounting.models import Account
 from core.mixins import TotalsCalculationMixin
 from core.services import SequenceService
+from simple_history.models import HistoricalRecords
 
 class SaleOrder(models.Model, TotalsCalculationMixin):
     class Status(models.TextChoices):
@@ -35,6 +36,8 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     channel = models.CharField(_("Canal"), max_length=20, choices=Channel.choices, default=Channel.SYSTEM)
+    
+    history = HistoricalRecords()
     
     # Delivery fields
     delivery_status = models.CharField(

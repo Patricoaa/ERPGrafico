@@ -14,8 +14,9 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin
+from core.views import AuditHistoryMixin
 
-class SalesSettingsViewSet(viewsets.ModelViewSet):
+class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SalesSettings.objects.all()
     serializer_class = SalesSettingsSerializer
 
@@ -38,7 +39,7 @@ class SalesSettingsViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
-class SaleOrderViewSet(viewsets.ModelViewSet):
+class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SaleOrder.objects.all()
     
     def get_serializer_class(self):

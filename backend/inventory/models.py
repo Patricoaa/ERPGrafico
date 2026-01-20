@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
 from accounting.models import Account, AccountType
+from simple_history.models import HistoricalRecords
 
 class ProductCategory(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
@@ -78,6 +79,8 @@ class Product(models.Model):
     category = models.ForeignKey(ProductCategory, on_delete=models.PROTECT, related_name='products')
     product_type = models.CharField(_("Tipo"), max_length=30, choices=Type.choices, default=Type.STORABLE)
     image = models.ImageField(_("Imagen"), upload_to='products/', null=True, blank=True)
+    
+    history = HistoricalRecords()
     
     # Custom Fields Schema for MANUFACTURABLE_CUSTOM
     custom_fields_schema = models.JSONField(
