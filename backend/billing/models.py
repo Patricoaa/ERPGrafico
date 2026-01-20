@@ -4,6 +4,7 @@ from django.utils import timezone
 from accounting.models import JournalEntry
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
+from simple_history.models import HistoricalRecords
 
 class Invoice(models.Model):
     class DTEType(models.TextChoices):
@@ -53,6 +54,8 @@ class Invoice(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Factura/Boleta")

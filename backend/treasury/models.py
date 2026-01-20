@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from accounting.models import Account, AccountType
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
+from simple_history.models import HistoricalRecords
 
 
 class Payment(models.Model):
@@ -69,6 +70,8 @@ class Payment(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Pago")

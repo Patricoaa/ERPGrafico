@@ -7,12 +7,13 @@ from .services import TreasuryService
 from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
+from core.views import AuditHistoryMixin
 
 class TreasuryAccountViewSet(viewsets.ModelViewSet):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
     serializer_class = TreasuryAccountSerializer
 
-class PaymentViewSet(viewsets.ModelViewSet):
+class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Payment.objects.all().order_by('-date', '-created_at')
     serializer_class = PaymentSerializer
 

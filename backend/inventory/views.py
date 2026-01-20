@@ -214,7 +214,7 @@ class UoMCategoryViewSet(viewsets.ModelViewSet):
     queryset = UoMCategory.objects.all()
     serializer_class = UoMCategorySerializer
 
-class StockMoveViewSet(viewsets.ReadOnlyModelViewSet):
+class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistoryMixin):
     queryset = StockMove.objects.all()
     serializer_class = StockMoveSerializer
     filter_backends = [DjangoFilterBackend]

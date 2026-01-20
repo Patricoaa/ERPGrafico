@@ -2,8 +2,9 @@ from django.utils import timezone
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
-from accounting.models import Account, AccountType
 from simple_history.models import HistoricalRecords
+from accounting.models import Account, AccountType
+
 
 class ProductCategory(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
@@ -709,6 +710,7 @@ class StockMove(models.Model):
     source_quantity = models.DecimalField(_("Cantidad Original"), max_digits=12, decimal_places=4, null=True, blank=True, help_text=_("Cantidad original en la unidad de la transacción"))
     
     created_at = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Movimiento de Stock")

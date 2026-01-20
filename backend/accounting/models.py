@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from simple_history.models import HistoricalRecords
 from decimal import Decimal
 
 class AccountType(models.TextChoices):
@@ -145,6 +146,7 @@ class JournalEntry(models.Model):
     state = models.CharField(_("Estado"), max_length=20, choices=State.choices, default=State.DRAFT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['-id']

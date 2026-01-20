@@ -7,8 +7,9 @@ from .services import BillingService
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from django.core.exceptions import ValidationError
+from core.views import AuditHistoryMixin
 
-class InvoiceViewSet(viewsets.ModelViewSet):
+class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Invoice.objects.all().order_by('-date', '-id')
     serializer_class = InvoiceSerializer
 

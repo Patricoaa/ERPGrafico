@@ -13,7 +13,7 @@ import { PaymentForm } from "@/components/forms/PaymentForm"
 import { Progress } from "@/components/ui/progress"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 
-type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'user' | 'company_settings'
+type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move'
 
 interface TransactionViewModalProps {
     open: boolean
@@ -142,6 +142,13 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         switch (type) {
             case 'sale_order': return 'sale_order'
             case 'purchase_order': return 'purchase_order'
+            case 'invoice': return 'invoice'
+            case 'payment': return 'payment'
+            case 'sale_delivery': return 'sale_delivery'
+            case 'purchase_receipt': return 'purchase_receipt'
+            case 'work_order': return 'work_order'
+            case 'journal_entry': return 'journal_entry'
+            case 'inventory': return 'stock_move'
             case 'user': return 'user'
             default: return null
         }

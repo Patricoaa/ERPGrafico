@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
+from simple_history.models import HistoricalRecords
 from sales.models import SaleOrder
 from inventory.models import Product, Warehouse, UoM
 
@@ -80,6 +81,8 @@ class WorkOrder(models.Model):
 
     estimated_completion_date = models.DateField(_("Fecha Estimada de Finalización"), null=True, blank=True)
     start_date = models.DateField(_("Fecha de Inicio"), null=True, blank=True)
+
+    history = HistoricalRecords()
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

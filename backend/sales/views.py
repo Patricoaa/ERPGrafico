@@ -98,6 +98,8 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['post'])
     def partial_dispatch(self, request, pk=None):
         """Dispatch specific quantities of products"""
+
+
         order = self.get_object()
         try:
             warehouse_id = request.data.get('warehouse_id')
@@ -233,7 +235,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class SaleDeliveryViewSet(viewsets.ModelViewSet):
+class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SaleDelivery.objects.all()
     serializer_class = SaleDeliverySerializer
 

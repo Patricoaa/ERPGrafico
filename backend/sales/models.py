@@ -196,6 +196,8 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    history = HistoricalRecords()
+    
     class Meta:
         verbose_name = _("Despacho de Venta")
         verbose_name_plural = _("Despachos de Venta")

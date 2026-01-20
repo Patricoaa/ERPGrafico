@@ -14,8 +14,9 @@ from decimal import Decimal
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from io import BytesIO
+from core.views import AuditHistoryMixin
 
-class WorkOrderViewSet(viewsets.ModelViewSet):
+class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = WorkOrder.objects.all()
     serializer_class = WorkOrderSerializer
 

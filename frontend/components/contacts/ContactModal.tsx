@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { showWarningToast } from "@/lib/utils/toast-utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -168,152 +169,168 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-[1100px] max-h-[90vh] flex flex-col overflow-hidden">
+                    <DialogHeader className="flex-shrink-0">
                         <DialogTitle>{contact ? "Editar Contacto" : "Nuevo Contacto"}</DialogTitle>
                         <DialogDescription>
                             Complete la información del contacto
                         </DialogDescription>
                     </DialogHeader>
 
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                            {contact?.display_id && (
-                                <div className="bg-muted/50 p-2 rounded-md mb-2 flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ID de Contacto</span>
-                                    <span className="font-mono font-bold text-primary">{contact.display_id}</span>
+                    <div className="flex-1 flex overflow-hidden">
+                        <div className="flex-1 overflow-y-auto p-6">
+
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                    {contact?.display_id && (
+                                        <div className="bg-muted/50 p-2 rounded-md mb-2 flex items-center justify-between">
+                                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ID de Contacto</span>
+                                            <span className="font-mono font-bold text-primary">{contact.display_id}</span>
+                                        </div>
+                                    )}
+
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Nombre *</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Ej: Empresa Ltda" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="tax_id"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>RUT / Identificación *</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="Ej: 12.345.678-9"
+                                                        {...field}
+                                                        onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Email</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="contacto@empresa.com" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="phone"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Teléfono</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="+56 9 1234 5678" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    <FormField
+                                        control={form.control}
+                                        name="address"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Dirección</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Av. Principal 123" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <div className="flex gap-6 p-1">
+                                        <FormField
+                                            control={form.control}
+                                            name="is_default_customer"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                        />
+                                                    </FormControl>
+                                                    <div className="space-y-1 leading-none">
+                                                        <FormLabel>
+                                                            Cliente por defecto
+                                                        </FormLabel>
+                                                    </div>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="is_default_vendor"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                        />
+                                                    </FormControl>
+                                                    <div className="space-y-1 leading-none">
+                                                        <FormLabel>
+                                                            Proveedor por defecto
+                                                        </FormLabel>
+                                                    </div>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    <div className="flex justify-end pt-4 gap-2">
+                                        <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+                                            Cancelar
+                                        </Button>
+                                        <Button type="submit">
+                                            {contact ? "Guardar Cambios" : "Crear Contacto"}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </Form>
+                        </div>
+
+                        {contact && (
+                            <div className="w-80 border-l bg-muted/5">
+                                <div className="h-full p-6">
+                                    <ActivitySidebar
+                                        entityId={contact.id}
+                                        entityType="contact"
+                                    />
                                 </div>
-                            )}
-
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nombre *</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Ej: Empresa Ltda" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="tax_id"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>RUT / Identificación *</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Ej: 12.345.678-9"
-                                                {...field}
-                                                onChange={(e) => field.onChange(formatRUT(e.target.value))}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="email"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Email</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="contacto@empresa.com" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="phone"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Teléfono</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="+56 9 1234 5678" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
                             </div>
-
-                            <FormField
-                                control={form.control}
-                                name="address"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Dirección</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Av. Principal 123" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <div className="flex gap-6 p-1">
-                                <FormField
-                                    control={form.control}
-                                    name="is_default_customer"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </FormControl>
-                                            <div className="space-y-1 leading-none">
-                                                <FormLabel>
-                                                    Cliente por defecto
-                                                </FormLabel>
-                                            </div>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="is_default_vendor"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </FormControl>
-                                            <div className="space-y-1 leading-none">
-                                                <FormLabel>
-                                                    Proveedor por defecto
-                                                </FormLabel>
-                                            </div>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            <div className="flex justify-end pt-4 gap-2">
-                                <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                                    Cancelar
-                                </Button>
-                                <Button type="submit">
-                                    {contact ? "Guardar Cambios" : "Crear Contacto"}
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
+                        )}
+                    </div>
                 </DialogContent>
-            </Dialog>
+            </Dialog >
 
             <ActionConfirmModal
                 open={isConfirmModalOpen}

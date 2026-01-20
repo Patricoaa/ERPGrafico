@@ -130,7 +130,9 @@ class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class JournalEntryViewSet(viewsets.ModelViewSet):
+from core.views import AuditHistoryMixin
+
+class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = JournalEntry.objects.all()
     serializer_class = JournalEntrySerializer
     

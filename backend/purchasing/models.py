@@ -5,6 +5,7 @@ from core.models import User
 from accounting.models import Account, AccountType
 from inventory.models import Product, Warehouse
 from core.mixins import TotalsCalculationMixin
+from simple_history.models import HistoricalRecords
 from core.services import SequenceService
 from decimal import Decimal
 from simple_history.models import HistoricalRecords
@@ -194,7 +195,10 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    history = HistoricalRecords()
     
     class Meta:
         verbose_name = _("Recepción de Compra")
