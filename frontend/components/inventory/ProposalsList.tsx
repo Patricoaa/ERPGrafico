@@ -34,9 +34,11 @@ interface ReplenishmentProposal {
 interface ProposalsListProps {
     data: ReplenishmentProposal[]
     onRefresh: () => void
+    toolbarAction?: React.ReactNode
+    rightAction?: React.ReactNode
 }
 
-export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
+export function ProposalsList({ data, onRefresh, toolbarAction, rightAction }: ProposalsListProps) {
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({})
     const [isProcessing, setIsProcessing] = useState(false)
     const [editingProposal, setEditingProposal] = useState<ReplenishmentProposal | null>(null)
@@ -244,6 +246,8 @@ export function ProposalsList({ data, onRefresh }: ProposalsListProps) {
                 filterColumn="product_code"
                 searchPlaceholder="Filtrar por producto..."
                 useAdvancedFilter={true}
+                toolbarAction={toolbarAction}
+                rightAction={rightAction}
                 onRowSelectionChange={(selection: Record<string, boolean>) => {
                     // selection is an object { index: boolean }
                     // We need to map it to IDs

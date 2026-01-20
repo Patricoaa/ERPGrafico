@@ -44,28 +44,14 @@ export default function WorkOrdersPage() {
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
-    const [searchTerm, setSearchTerm] = useState("")
-    const [statusFilters, setStatusFilters] = useState<string[]>([])
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban")
     const [requestedStage, setRequestedStage] = useState<string | undefined>()
 
     const filteredOrders = orders.filter(order => {
-        // Search filter
-        const matchesSearch = searchTerm === "" ||
-            order.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (order.sale_customer_name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-
-        if (!matchesSearch) return false
-
-        // Status filter
-        const matchesStatus = statusFilters.length === 0 || statusFilters.includes(order.status)
-        if (!matchesStatus) return false
-
         // Date range filter
         if (!dateRange || !dateRange.from) return true
-        if (!order.due_date) return false // Cannot filter if no due date
+        if (!order.due_date) return false
 
         const orderDate = parseISO(order.due_date)
         const start = startOfDay(dateRange.from)
@@ -290,52 +276,46 @@ export default function WorkOrdersPage() {
                 </div>
             </div>
 
-            <div className="mt-2 space-y-4">
-                {viewMode === "kanban" ? (
-                    <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
-                        {loading ? (
-                            <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl">
-                                <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
-                            </div>
-                        ) : null}
-                        <WorkOrderKanban
-                            orders={filteredOrders}
-                            onTransition={handleKanbanTransition}
-                            onManage={(id) => setActiveWizardId(id)}
-                        />
-                    </div>
-                ) : (
-                    <div className="">
-                        <DataTable
-                            columns={columns}
-                            data={filteredOrders}
-                            defaultPageSize={20}
-                            globalFilterFields={["number", "description", "sale_customer_name"]}
-                            searchPlaceholder="Buscar por número, descripción o cliente..."
-                            facetedFilters={[
-                                {
-                                    column: "status",
-                                    title: "Estado",
-                                    options: [
-                                        { label: "Borrador", value: "DRAFT" },
-                                        { label: "Planificada", value: "PLANNED" },
-                                        { label: "En Proceso", value: "IN_PROGRESS" },
-                                        { label: "Terminada", value: "FINISHED" },
-                                        { label: "Anulada", value: "CANCELLED" },
-                                    ]
-                                }
-                            ]}
-                            useAdvancedFilter={true}
-                            onReset={() => {
-                                setStatusFilters([])
-                                setDateRange(undefined)
-                            }}
-                            toolbarAction={
-                                <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
-                            }
-                        />
-                    </div>
-                )}
+            <div className="mt-2">
+                <DataTable
+                    columns={columns}
+                    data={orders}
+                    defaultPageSize={50}
+                    globalFilterFields={["number", "description", "sale_customer_name"]}
+                    searchPlaceholder="Buscar por número, descripción o cliente..."
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Planificada", value: "PLANNED" },
+                                { label: "En Proceso", value: "IN_PROGRESS" },
+                                { label: "Terminada", value: "FINISHED" },
+                                { label: "Anulada", value: "CANCELLED" },
+                            ]
+                        }
+                    ]}
+                    useAdvancedFilter={true}
+                    toolbarAction={
+                        <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
+                    }
+                    onReset={() => setDateRange(undefined)}
+                    renderCustomView={viewMode === "kanban" ? (table) => (
+                        <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
+                            {loading ? (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl">
+                                    <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
+                                </div>
+                            ) : null}
+                            <WorkOrderKanban
+                                orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
+                                onTransition={handleKanbanTransition}
+                                onManage={(id) => setActiveWizardId(id)}
+                            />
+                        </div>
+                    ) : undefined}
+                />
             </div>
         </div>
     )

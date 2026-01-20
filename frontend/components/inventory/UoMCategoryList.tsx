@@ -108,22 +108,18 @@ export function UoMCategoryList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Categorías de Unidades de Medida</h3>
-                <Button onClick={() => { setCurrentCategory({}); setIsModalOpen(true) }}>
-                    <Plus className="mr-2 h-4 w-4" /> Nueva Categoría
-                </Button>
-            </div>
-
-            <div className="">
-                <DataTable
-                    columns={columns}
-                    data={categories}
-                    filterColumn="name"
-                    searchPlaceholder="Buscar categoría..."
-                    useAdvancedFilter={true}
-                />
-            </div>
+            <DataTable
+                columns={columns}
+                data={categories}
+                filterColumn="name"
+                searchPlaceholder="Buscar categoría..."
+                useAdvancedFilter={true}
+                toolbarAction={
+                    <Button onClick={() => { setCurrentCategory({}); setIsModalOpen(true) }} size="sm">
+                        <Plus className="mr-2 h-4 w-4" /> Nueva Categoría
+                    </Button>
+                }
+            />
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent>

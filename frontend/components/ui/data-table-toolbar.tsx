@@ -25,6 +25,7 @@ interface DataTableToolbarProps<TData> {
     toolbarAction?: React.ReactNode
     useAdvancedFilter?: boolean
     onReset?: () => void
+    rightAction?: React.ReactNode
 }
 
 export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
@@ -34,8 +35,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         globalFilterFields,
         searchPlaceholder = "Filtrar...",
         facetedFilters = [],
+        toolbarAction,
         useAdvancedFilter = false,
         onReset,
+        rightAction,
     } = props
 
     const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0
@@ -65,51 +68,58 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         filterColumn={filterColumn}
                         globalFilterFields={globalFilterFields}
                         searchPlaceholder={searchPlaceholder}
-                        toolbarAction={props.toolbarAction}
+                        toolbarAction={toolbarAction}
                         onReset={onReset}
                     />
                 ) : (
-                    facetedFilters.map((filter) => {
-                        const column = table.getColumn(filter.column)
-                        if (!column) return null
+                    <>
+                        {facetedFilters.map((filter) => {
+                            const column = table.getColumn(filter.column)
+                            if (!column) return null
 
-                        let options = filter.options
-                        if (!options || options.length === 0) {
-                            const uniqueValues = column.getFacetedUniqueValues()
-                            options = Array.from(uniqueValues.keys())
-                                .filter(val => val !== undefined && val !== null && val !== "")
-                                .map(val => ({
-                                    label: String(val),
-                                    value: String(val)
-                                }))
-                                .sort((a, b) => a.label.localeCompare(b.label))
-                        }
+                            let options = filter.options
+                            if (!options || options.length === 0) {
+                                const uniqueValues = column.getFacetedUniqueValues()
+                                options = Array.from(uniqueValues.keys())
+                                    .filter(val => val !== undefined && val !== null && val !== "")
+                                    .map(val => ({
+                                        label: String(val),
+                                        value: String(val)
+                                    }))
+                                    .sort((a, b) => a.label.localeCompare(b.label))
+                            }
 
-                        return (
-                            <DataTableFacetedFilter
-                                key={filter.column}
-                                column={column}
-                                title={filter.title}
-                                options={options}
-                            />
-                        )
-                    })
-                )}
-                {!useAdvancedFilter && props.toolbarAction}
-                {isFiltered && !useAdvancedFilter && (
-                    <Button
-                        variant="ghost"
-                        onClick={() => {
-                            table.resetColumnFilters()
-                            table.setGlobalFilter("")
-                        }}
-                        className="h-8 px-2 lg:px-3"
-                    >
-                        Resetear
-                        <X className="ml-2 h-4 w-4" />
-                    </Button>
+                            return (
+                                <DataTableFacetedFilter
+                                    key={filter.column}
+                                    column={column}
+                                    title={filter.title}
+                                    options={options}
+                                />
+                            )
+                        })}
+                        {toolbarAction}
+                        {isFiltered && (
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    table.resetColumnFilters()
+                                    table.setGlobalFilter("")
+                                }}
+                                className="h-8 px-2 lg:px-3"
+                            >
+                                Resetear
+                                <X className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                    </>
                 )}
             </div>
+            {rightAction && (
+                <div className="flex items-center space-x-2">
+                    {rightAction}
+                </div>
+            )}
         </div>
     )
 }

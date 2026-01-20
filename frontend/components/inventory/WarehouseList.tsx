@@ -96,16 +96,19 @@ export function WarehouseList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Gestión de Almacenes</h3>
-                <Button onClick={() => setIsFormOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Nuevo Almacén
-                </Button>
-            </div>
-
-            <div className="">
-                <DataTable columns={columns} data={warehouses} />
-            </div>
+            <DataTable
+                columns={columns}
+                data={warehouses}
+                useAdvancedFilter={true}
+                filterColumn="name"
+                searchPlaceholder="Buscar almacén..."
+                globalFilterFields={["name", "code", "address"]}
+                toolbarAction={
+                    <Button onClick={() => setIsFormOpen(true)} size="sm">
+                        <Plus className="mr-2 h-4 w-4" /> Nuevo Almacén
+                    </Button>
+                }
+            />
 
             <WarehouseForm
                 onSuccess={fetchWarehouses}

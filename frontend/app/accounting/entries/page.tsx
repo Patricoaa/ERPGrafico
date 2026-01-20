@@ -227,7 +227,7 @@ export default function EntriesPage() {
                         searchPlaceholder="Buscar por descripción..."
                         facetedFilters={[
                             {
-                                column: "status",
+                                column: "state",
                                 title: "Estado",
                                 options: [
                                     { label: "Borrador", value: "DRAFT" },
@@ -235,6 +235,7 @@ export default function EntriesPage() {
                                 ],
                             },
                         ]}
+                        useAdvancedFilter={true}
                         defaultPageSize={20}
                     />
                 </div>

@@ -289,168 +289,28 @@ export function ReplenishmentDashboard() {
         },
     ]
 
+    const tabs_ui = (
+        <TabsList className="bg-blue-50/50 p-1 border border-blue-100">
+            <TabsTrigger value="rules" className="gap-2 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
+                <Settings2 className="h-4 w-4" />
+                Reglas
+            </TabsTrigger>
+            <TabsTrigger value="proposals" className="gap-2 relative data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
+                <ShoppingCart className="h-4 w-4" />
+                Propuestas
+                {proposals.filter(p => p.status === 'PENDING').length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white">
+                        {proposals.filter(p => p.status === 'PENDING').length}
+                    </span>
+                )}
+            </TabsTrigger>
+        </TabsList>
+    )
+
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                    <p className="text-muted-foreground text-sm">
-                        Define reglas de stock mínimo/máximo y gestiona propuestas de compra automáticas.
-                    </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={handleRunScheduler} disabled={isLoading}>
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        Ejecutar Planificador
-                    </Button>
-                    <Dialog open={isDialogOpen} onOpenChange={(open) => {
-                        setIsDialogOpen(open)
-                        if (!open) setEditingRule(null)
-                    }}>
-                        <DialogTrigger asChild>
-                            <Button size="sm">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Nueva Regla
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px]">
-                            <DialogHeader>
-                                <DialogTitle>{editingRule ? 'Editar Regla' : 'Nueva Regla de Reabastecimiento'}</DialogTitle>
-                                <DialogDescription>
-                                    Configura los niveles de stock para activar alertas de compra.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="product"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Producto</FormLabel>
-                                                    <FormControl>
-                                                        <ProductSelector
-                                                            value={field.value}
-                                                            onChange={field.onChange}
-                                                            disabled={!!editingRule}
-                                                            placeholder="Seleccionar producto..."
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="warehouse"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Almacén</FormLabel>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl>
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Seleccionar almacén..." />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            {warehouses.map((w) => (
-                                                                <SelectItem key={w.id} value={w.id.toString()}>
-                                                                    {w.name}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="min_quantity"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Stock Mínimo</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" step="0.01" {...field} />
-                                                    </FormControl>
-                                                    <FormDescription className="text-[10px]">
-                                                        Punto de reorden.
-                                                    </FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="max_quantity"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Stock Máximo</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" step="0.01" {...field} />
-                                                    </FormControl>
-                                                    <FormDescription className="text-[10px]">
-                                                        Objetivo de stock.
-                                                    </FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-
-                                    <FormField
-                                        control={form.control}
-                                        name="active"
-                                        render={({ field }) => (
-                                            <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                                                <div className="space-y-0.5">
-                                                    <FormLabel className="text-sm">Regla Activa</FormLabel>
-                                                </div>
-                                                <FormControl>
-                                                    <Switch
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <DialogFooter>
-                                        <Button type="submit" disabled={isSaving}>
-                                            {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                                            Guardar
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </Form>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </div>
-
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="bg-muted/50 p-1">
-                    <TabsTrigger value="rules" className="gap-2">
-                        <Settings2 className="h-4 w-4" />
-                        Reglas de Stock
-                    </TabsTrigger>
-                    <TabsTrigger value="proposals" className="gap-2 relative">
-                        <ShoppingCart className="h-4 w-4" />
-                        Propuestas Pendientes
-                        {proposals.filter(p => p.status === 'PENDING').length > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                                {proposals.filter(p => p.status === 'PENDING').length}
-                            </span>
-                        )}
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="rules" className="space-y-4">
+                <TabsContent value="rules" className="m-0 border-none outline-none">
                     <DataTable
                         columns={columns}
                         data={rules}
@@ -468,13 +328,152 @@ export function ReplenishmentDashboard() {
                         ]}
                         useAdvancedFilter={true}
                         initialColumnVisibility={{ active: false }}
+                        rightAction={
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={handleRunScheduler} disabled={isLoading} className="h-8">
+                                    <PlayCircle className="mr-1 h-3.5 w-3.5" />
+                                    Planificar
+                                </Button>
+                                <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                                    setIsDialogOpen(open)
+                                    if (!open) setEditingRule(null)
+                                }}>
+                                    <DialogTrigger asChild>
+                                        <Button size="sm" className="h-8">
+                                            <Plus className="mr-1 h-3.5 w-3.5" />
+                                            Nueva Regla
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[500px]">
+                                        <DialogHeader>
+                                            <DialogTitle>{editingRule ? 'Editar Regla' : 'Nueva Regla de Reabastecimiento'}</DialogTitle>
+                                            <DialogDescription>
+                                                Configura los niveles de stock para activar alertas de compra.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <Form {...form}>
+                                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="product"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Producto</FormLabel>
+                                                                <FormControl>
+                                                                    <ProductSelector
+                                                                        value={field.value}
+                                                                        onChange={field.onChange}
+                                                                        disabled={!!editingRule}
+                                                                        placeholder="Seleccionar producto..."
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="warehouse"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Almacén</FormLabel>
+                                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Seleccionar almacén..." />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        {warehouses.map((w) => (
+                                                                            <SelectItem key={w.id} value={w.id.toString()}>
+                                                                                {w.name}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="min_quantity"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Stock Mínimo</FormLabel>
+                                                                <FormControl>
+                                                                    <Input type="number" step="0.01" {...field} />
+                                                                </FormControl>
+                                                                <FormDescription className="text-[10px]">
+                                                                    Punto de reorden.
+                                                                </FormDescription>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="max_quantity"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Stock Máximo</FormLabel>
+                                                                <FormControl>
+                                                                    <Input type="number" step="0.01" {...field} />
+                                                                </FormControl>
+                                                                <FormDescription className="text-[10px]">
+                                                                    Objetivo de stock.
+                                                                </FormDescription>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+
+                                                <FormField
+                                                    control={form.control}
+                                                    name="active"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                                                            <div className="space-y-0.5">
+                                                                <FormLabel className="text-sm">Regla Activa</FormLabel>
+                                                            </div>
+                                                            <FormControl>
+                                                                <Switch
+                                                                    checked={field.value}
+                                                                    onCheckedChange={field.onChange}
+                                                                />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <DialogFooter>
+                                                    <Button type="submit" disabled={isSaving}>
+                                                        {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                                                        Guardar
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </Form>
+                                    </DialogContent>
+                                </Dialog>
+                                <div className="h-6 w-[1px] bg-border mx-1" />
+                                {tabs_ui}
+                            </div>
+                        }
                     />
                 </TabsContent>
 
-                <TabsContent value="proposals" className="space-y-4">
+                <TabsContent value="proposals" className="m-0 border-none outline-none">
                     <ProposalsList
                         data={proposals}
                         onRefresh={fetchData}
+                        rightAction={tabs_ui}
                     />
                 </TabsContent>
             </Tabs>

@@ -51,6 +51,8 @@ interface DataTableProps<TData, TValue> {
     hiddenColumns?: string[]
     useAdvancedFilter?: boolean
     onReset?: () => void
+    renderCustomView?: (table: any) => React.ReactNode
+    rightAction?: React.ReactNode
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -70,6 +72,8 @@ export function DataTable<TData, TValue>({
     hiddenColumns = [],
     useAdvancedFilter = false,
     onReset,
+    renderCustomView,
+    rightAction,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -132,9 +136,11 @@ export function DataTable<TData, TValue>({
         },
     })
 
+    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction
+
     return (
         <div className="space-y-4">
-            {(filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction) && (
+            {showToolbar && (
                 <DataTableToolbar
                     table={table}
                     filterColumn={filterColumn}
@@ -144,60 +150,67 @@ export function DataTable<TData, TValue>({
                     toolbarAction={toolbarAction}
                     useAdvancedFilter={useAdvancedFilter}
                     onReset={onReset}
+                    rightAction={rightAction}
                 />
             )}
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
-                                    return (
-                                        <TableHead key={header.id}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
-                                        </TableHead>
-                                    )
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && "selected"}
-                                    className="group hover:bg-muted/20 transition-colors"
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
+            {renderCustomView ? (
+                renderCustomView(table)
+            ) : (
+                <>
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <TableRow key={headerGroup.id}>
+                                        {headerGroup.headers.map((header) => {
+                                            return (
+                                                <TableHead key={header.id}>
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                </TableHead>
+                                            )
+                                        })}
+                                    </TableRow>
+                                ))}
+                            </TableHeader>
+                            <TableBody>
+                                {table.getRowModel().rows?.length ? (
+                                    table.getRowModel().rows.map((row) => (
+                                        <TableRow
+                                            key={row.id}
+                                            data-state={row.getIsSelected() && "selected"}
+                                            className="group hover:bg-muted/20 transition-colors"
+                                        >
+                                            {row.getVisibleCells().map((cell) => (
+                                                <TableCell key={cell.id}>
+                                                    {flexRender(
+                                                        cell.column.columnDef.cell,
+                                                        cell.getContext()
+                                                    )}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={columns.length}
+                                            className="h-24 text-center"
+                                        >
+                                            No se encontraron resultados.
                                         </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={columns.length}
-                                    className="h-24 text-center"
-                                >
-                                    No se encontraron resultados.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
-            <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
+                </>
+            )}
         </div>
     )
 }

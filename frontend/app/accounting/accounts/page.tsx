@@ -87,11 +87,11 @@ export default function AccountsPage() {
             cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
         },
         {
-            accessorKey: "account_type_display",
+            accessorKey: "account_type",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Tipo" />
             ),
-            cell: ({ row }) => <span className="text-xs text-muted-foreground uppercase font-semibold">{row.getValue("account_type_display")}</span>,
+            cell: ({ row }) => <span className="text-xs text-muted-foreground uppercase font-semibold">{row.original.account_type_display}</span>,
         },
         {
             accessorKey: "debit_total",
@@ -176,6 +176,20 @@ export default function AccountsPage() {
                 data={accounts}
                 globalFilterFields={["code", "name"]}
                 searchPlaceholder="Buscar por código o nombre..."
+                facetedFilters={[
+                    {
+                        column: "account_type",
+                        title: "Tipo",
+                        options: [
+                            { label: "Activo", value: "ASSET" },
+                            { label: "Pasivo", value: "LIABILITY" },
+                            { label: "Patrimonio", value: "EQUITY" },
+                            { label: "Ingreso", value: "INCOME" },
+                            { label: "Gasto", value: "EXPENSE" },
+                        ],
+                    },
+                ]}
+                useAdvancedFilter={true}
                 defaultPageSize={50}
             />
         </div>

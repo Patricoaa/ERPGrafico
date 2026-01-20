@@ -113,21 +113,19 @@ export function CategoryList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Categorías de Productos</h3>
-                <Button onClick={() => setIsFormOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Nueva Categoría
-                </Button>
-            </div>
-
-            <div className="">
-                <DataTable
-                    columns={columns}
-                    data={categories}
-                    filterColumn="name"
-                    searchPlaceholder="Buscar categoría..."
-                />
-            </div>
+            <DataTable
+                columns={columns}
+                data={categories}
+                filterColumn="name"
+                searchPlaceholder="Buscar categoría..."
+                globalFilterFields={["name", "parent_name"]}
+                useAdvancedFilter={true}
+                toolbarAction={
+                    <Button onClick={() => setIsFormOpen(true)} size="sm">
+                        <Plus className="mr-2 h-4 w-4" /> Nueva Categoría
+                    </Button>
+                }
+            />
 
             <CategoryForm
                 onSuccess={fetchCategories}

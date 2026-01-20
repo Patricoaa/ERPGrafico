@@ -152,33 +152,30 @@ export function UoMList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Unidades de Medida</h3>
-                <Button onClick={() => { setCurrentUoM({ active: true, ratio: "1.00000", rounding: "0.01000", uom_type: "REFERENCE" }); setIsUoMModalOpen(true) }}>
-                    <Plus className="mr-2 h-4 w-4" /> Nueva Unidad
-                </Button>
-            </div>
-
-            <div className="">
-                <DataTable
-                    columns={columns}
-                    data={uoms}
-                    filterColumn="name"
-                    searchPlaceholder="Buscar unidad..."
-                    facetedFilters={[
-                        {
-                            column: "uom_type",
-                            title: "Tipo",
-                            options: [
-                                { label: "Referencia", value: "REFERENCE" },
-                                { label: "Mayor", value: "BIGGER" },
-                                { label: "Menor", value: "SMALLER" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                />
-            </div>
+            <DataTable
+                columns={columns}
+                data={uoms}
+                filterColumn="name"
+                searchPlaceholder="Buscar unidad..."
+                globalFilterFields={["name", "category_name"]}
+                facetedFilters={[
+                    {
+                        column: "uom_type",
+                        title: "Tipo",
+                        options: [
+                            { label: "Referencia", value: "REFERENCE" },
+                            { label: "Mayor", value: "BIGGER" },
+                            { label: "Menor", value: "SMALLER" },
+                        ],
+                    },
+                ]}
+                useAdvancedFilter={true}
+                toolbarAction={
+                    <Button onClick={() => { setCurrentUoM({ active: true, ratio: "1.00000", rounding: "0.01000", uom_type: "REFERENCE" }); setIsUoMModalOpen(true) }} size="sm">
+                        <Plus className="mr-2 h-4 w-4" /> Nueva Unidad
+                    </Button>
+                }
+            />
 
             <Dialog open={isUoMModalOpen} onOpenChange={setIsUoMModalOpen}>
                 <DialogContent>
