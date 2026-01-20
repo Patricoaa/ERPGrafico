@@ -1,0 +1,189 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Loader2, Plus, Edit, Trash2, User } from "lucide-react"
+import api from "@/lib/api"
+import { HistoricalRecord } from "@/types/audit"
+import { formatDistanceToNow } from "date-fns"
+import { es } from "date-fns/locale"
+import { Badge } from "@/components/ui/badge"
+
+interface ActivitySidebarProps {
+    entityId: number | string
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'user' | 'company_settings'
+    className?: string
+    title?: string
+}
+
+const ENDPOINT_MAP: Record<string, string> = {
+    'product': '/inventory/products',
+    'contact': '/contacts',
+    'sale_order': '/sales/orders',
+    'purchase_order': '/purchasing/orders',
+    'user': '/core/users',
+    'company_settings': '/core/company'
+}
+
+const IGNORED_FIELDS = ['id', 'created_at', 'updated_at', 'history_id', 'history_date', 'history_type', 'history_user_id', 'history_user_username', 'history_change_reason']
+
+export function ActivitySidebar({ entityId, entityType, className = "", title = "Actividad" }: ActivitySidebarProps) {
+    const [history, setHistory] = useState<HistoricalRecord[]>([])
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (entityId) {
+            fetchHistory()
+        }
+    }, [entityId, entityType])
+
+    const fetchHistory = async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const endpoint = ENDPOINT_MAP[entityType]
+            if (!endpoint) {
+                throw new Error(`Unknown entity type: ${entityType}`)
+            }
+            const res = await api.get(`${endpoint}/${entityId}/history/`)
+            setHistory(res.data)
+        } catch (err: any) {
+            console.error("Error fetching history:", err)
+            setError(err.response?.data?.detail || "Error al cargar el historial")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const getChangeIcon = (type: string) => {
+        switch (type) {
+            case '+': return <Plus className="h-3.5 w-3.5 text-green-600" />
+            case '~': return <Edit className="h-3.5 w-3.5 text-blue-600" />
+            case '-': return <Trash2 className="h-3.5 w-3.5 text-red-600" />
+            default: return <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+        }
+    }
+
+    const getChangeLabel = (type: string) => {
+        switch (type) {
+            case '+': return 'Creado'
+            case '~': return 'Editado'
+            case '-': return 'Eliminado'
+            default: return 'Modificado'
+        }
+    }
+
+    const getChangedFields = (current: HistoricalRecord, previous?: HistoricalRecord): string[] => {
+        if (!previous) return []
+
+        const changed: string[] = []
+        Object.keys(current).forEach(key => {
+            if (IGNORED_FIELDS.includes(key)) return
+            if (current[key] !== previous[key]) {
+                changed.push(key)
+            }
+        })
+        return changed
+    }
+
+    const formatFieldName = (field: string): string => {
+        return field
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase())
+    }
+
+    return (
+        <div className={`flex flex-col ${className}`}>
+            <div className="border-b pb-3 mb-4">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                    {title}
+                </h3>
+            </div>
+
+            <ScrollArea className="flex-1 pr-3">
+                {loading ? (
+                    <div className="flex items-center justify-center h-32">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-8">
+                        <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                ) : history.length === 0 ? (
+                    <div className="text-center py-12">
+                        <User className="h-12 w-12 text-muted-foreground/20 mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground italic">
+                            Sin actividad registrada
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {history.map((record, index) => {
+                            const changedFields = index < history.length - 1
+                                ? getChangedFields(record, history[index + 1])
+                                : []
+
+                            return (
+                                <div key={record.history_id} className="flex gap-3">
+                                    {/* Avatar */}
+                                    <div className="flex-shrink-0">
+                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-primary">
+                                                {record.history_user_username?.substring(0, 2).toUpperCase() || 'SY'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0 pb-4 border-b last:border-b-0">
+                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                            <div className="flex items-center gap-2">
+                                                {getChangeIcon(record.history_type)}
+                                                <span className="text-xs font-bold">
+                                                    {getChangeLabel(record.history_type)}
+                                                </span>
+                                            </div>
+                                            <time className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                {formatDistanceToNow(new Date(record.history_date), {
+                                                    addSuffix: true,
+                                                    locale: es
+                                                })}
+                                            </time>
+                                        </div>
+
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                            por <span className="font-semibold">{record.history_user_username || 'Sistema'}</span>
+                                        </p>
+
+                                        {changedFields.length > 0 && record.history_type === '~' && (
+                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                {changedFields.slice(0, 3).map(field => (
+                                                    <Badge
+                                                        key={field}
+                                                        variant="outline"
+                                                        className="text-[9px] px-1.5 py-0 h-5"
+                                                    >
+                                                        {formatFieldName(field)}
+                                                    </Badge>
+                                                ))}
+                                                {changedFields.length > 3 && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-[9px] px-1.5 py-0 h-5 text-muted-foreground"
+                                                    >
+                                                        +{changedFields.length - 3} más
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+            </ScrollArea>
+        </div>
+    )
+}

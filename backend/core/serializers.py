@@ -46,9 +46,17 @@ class HistoricalRecordSerializer(serializers.Serializer):
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         # Add the fields from the model
-        model_fields = [f.name for f in instance._meta.fields if not f.name.startswith('history_')]
-        for field in model_fields:
-            ret[field] = getattr(instance, field)
+        for field in instance._meta.fields:
+            name = field.name
+            if name.startswith('history_'):
+                continue
+            
+            value = getattr(instance, name)
+            # If it's a model instance (Foreign Key), get its primary key
+            if hasattr(value, 'pk') and hasattr(value, '_meta'):
+                ret[name] = value.pk
+            else:
+                ret[name] = value
         return ret
 
     def get_history_user_username(self, obj):
