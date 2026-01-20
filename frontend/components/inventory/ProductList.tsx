@@ -143,16 +143,30 @@ export function ProductList() {
         },
         {
             accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" />
-            ),
-            cell: ({ row }) => (
-                <div className="max-w-[250px]">
-                    <DataCell.Text className={!row.original.active ? "line-through text-muted-foreground" : ""}>
-                        {row.getValue("name")}
-                    </DataCell.Text>
-                </div>
-            ),
+            header: "Producto",
+            cell: ({ row }) => {
+                const product = row.original;
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        <span className={cn("font-medium text-sm leading-tight", !product.active ? "line-through text-muted-foreground" : "")}>
+                            {product.name}
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                            {product.internal_code && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {product.internal_code}
+                                </Badge>
+                            )}
+                            {product.code && product.code !== product.internal_code && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {product.code}
+                                </Badge>
+                            )}
+                            {!product.active && <Badge variant="destructive" className="text-[8px] h-3 px-1">ARCHIVADO</Badge>}
+                        </div>
+                    </div>
+                );
+            },
         },
         {
             accessorKey: "category_name",

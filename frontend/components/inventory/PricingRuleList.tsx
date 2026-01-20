@@ -20,6 +20,8 @@ interface PricingRule {
     category_name: string | null
     uom: number | null
     uom_name: string | null
+    product_code?: string | null
+    product_internal_code?: string | null
     operator: string
     operator_display: string
     min_quantity: string
@@ -81,13 +83,27 @@ export function PricingRuleList() {
             cell: ({ row }) => {
                 const rule = row.original
                 return (
-                    <div>
+                    <div className="flex flex-col gap-1 py-1">
                         {rule.product_name ? (
-                            <Badge variant="outline">Producto: {rule.product_name}</Badge>
+                            <>
+                                <span className="font-medium text-xs leading-tight">{rule.product_name}</span>
+                                <div className="flex flex-wrap gap-1">
+                                    {rule.product_internal_code && (
+                                        <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                            {rule.product_internal_code}
+                                        </Badge>
+                                    )}
+                                    {rule.product_code && rule.product_code !== rule.product_internal_code && (
+                                        <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                            {rule.product_code}
+                                        </Badge>
+                                    )}
+                                </div>
+                            </>
                         ) : rule.category_name ? (
-                            <Badge variant="outline">Categoría: {rule.category_name}</Badge>
+                            <Badge variant="outline" className="w-fit">Categoría: {rule.category_name}</Badge>
                         ) : (
-                            <Badge variant="secondary">Todos</Badge>
+                            <Badge variant="secondary" className="w-fit">Todos</Badge>
                         )}
                     </div>
                 )

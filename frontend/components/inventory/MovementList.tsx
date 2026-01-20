@@ -17,6 +17,8 @@ interface StockMove {
     id: number
     date: string
     product_name: string
+    product_internal_code?: string
+    product_code?: string
     warehouse_name: string
     quantity: string
     uom_name: string
@@ -71,7 +73,26 @@ export function MovementList() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Producto" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("product_name")}</div>,
+            cell: ({ row }) => {
+                const move = row.original;
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight">{move.product_name}</span>
+                        <div className="flex flex-wrap gap-1">
+                            {move.product_internal_code && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {move.product_internal_code}
+                                </Badge>
+                            )}
+                            {move.product_code && move.product_code !== move.product_internal_code && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {move.product_code}
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
         },
         {
             accessorKey: "warehouse_name",
