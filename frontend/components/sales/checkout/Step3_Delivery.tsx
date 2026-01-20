@@ -234,11 +234,23 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                         return (
                                             <TableRow key={line.id} className={!isEligible ? "bg-muted/30 opacity-70" : ""}>
                                                 <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">{line.product_name || line.description}</span>
-                                                        {!isEligible && (
-                                                            <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Requiere Producción</span>
-                                                        )}
+                                                    <div className="flex flex-col gap-1 py-1">
+                                                        <span className="font-medium text-xs leading-tight">{line.product_name || line.description}</span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {line.internal_code && (
+                                                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                                                    {line.internal_code}
+                                                                </Badge>
+                                                            )}
+                                                            {line.code && line.code !== line.internal_code && (
+                                                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                                                    {line.code}
+                                                                </Badge>
+                                                            )}
+                                                            {!isEligible && (
+                                                                <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Requiere Producción</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right font-semibold">

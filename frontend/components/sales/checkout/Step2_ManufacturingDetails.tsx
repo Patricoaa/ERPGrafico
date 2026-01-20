@@ -72,9 +72,20 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                             return (
                                 <TableRow key={item.originalIndex}>
                                     <TableCell className="font-medium">
-                                        <div className="flex flex-col">
-                                            <span>{item.name || item.product_name || item.description}</span>
-                                            <span className="text-xs text-muted-foreground">{item.code || item.product_code || item.internal_code}</span>
+                                        <div className="flex flex-col gap-1 py-1">
+                                            <span className="font-medium text-xs leading-tight">{item.name || item.product_name || item.description}</span>
+                                            <div className="flex flex-wrap gap-1">
+                                                {item.internal_code && (
+                                                    <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                                        {item.internal_code}
+                                                    </Badge>
+                                                )}
+                                                {item.code && item.code !== item.internal_code && (
+                                                    <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                                        {item.code}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>{item.qty || item.quantity}</TableCell>

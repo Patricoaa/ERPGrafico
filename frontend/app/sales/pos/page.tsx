@@ -380,7 +380,18 @@ export default function POSPage() {
                                                         </>
                                                     )}
                                                 </div>
-                                                <div className="text-[10px] text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{product.internal_code || product.code}</div>
+                                                <div className="flex flex-wrap justify-center gap-1 mt-1">
+                                                    {product.internal_code && (
+                                                        <Badge variant="outline" className="text-[9px] h-3.5 px-1 font-normal opacity-70 uppercase">
+                                                            {product.internal_code}
+                                                        </Badge>
+                                                    )}
+                                                    {product.code && product.code !== product.internal_code && (
+                                                        <Badge variant="secondary" className="text-[9px] h-3.5 px-1 font-normal opacity-70 uppercase">
+                                                            {product.code}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </CardContent>
                                         </Card>
                                     )
@@ -436,9 +447,18 @@ export default function POSPage() {
                                                             <span className="font-bold text-xs truncate max-w-[150px]" title={item.name}>
                                                                 {item.name}
                                                             </span>
-                                                            <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-tighter">
-                                                                {item.internal_code || item.code}
-                                                            </span>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {item.internal_code && (
+                                                                    <Badge variant="outline" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase">
+                                                                        {item.internal_code}
+                                                                    </Badge>
+                                                                )}
+                                                                {item.code && item.code !== item.internal_code && (
+                                                                    <Badge variant="secondary" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase">
+                                                                        {item.code}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-2">

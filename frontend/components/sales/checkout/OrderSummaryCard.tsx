@@ -32,7 +32,19 @@ export function OrderSummaryCard({
                                         <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={line.product_name || line.name || line.description}>
                                             {line.product_name || line.name || line.description}
                                         </p>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                            {line.internal_code && (
+                                                <Badge variant="outline" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase border-muted-foreground/20">
+                                                    {line.internal_code}
+                                                </Badge>
+                                            )}
+                                            {line.code && line.code !== line.internal_code && (
+                                                <Badge variant="secondary" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase">
+                                                    {line.code}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
                                             <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground font-bold">
                                                 {line.qty || line.quantity} {line.uom_name || 'un'}
                                             </Badge>
