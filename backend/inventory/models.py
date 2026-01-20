@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.db import models
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
 from simple_history.models import HistoricalRecords
@@ -88,6 +89,7 @@ class Product(models.Model):
         validators=[validate_file_size, validate_image_extension]
     )
     
+    attachments = GenericRelation('core.Attachment')
     history = HistoricalRecords()
     
     # Custom Fields Schema for MANUFACTURABLE_CUSTOM

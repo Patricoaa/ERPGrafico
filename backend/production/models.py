@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
 from simple_history.models import HistoricalRecords
@@ -82,6 +83,7 @@ class WorkOrder(models.Model):
     estimated_completion_date = models.DateField(_("Fecha Estimada de Finalización"), null=True, blank=True)
     start_date = models.DateField(_("Fecha de Inicio"), null=True, blank=True)
 
+    attachments = GenericRelation('core.Attachment')
     history = HistoricalRecords()
 
     created_at = models.DateTimeField(auto_now_add=True)

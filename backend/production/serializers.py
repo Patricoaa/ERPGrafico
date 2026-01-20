@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderHistory
+from core.serializers import AttachmentSerializer
 
 class ProductionConsumptionSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
@@ -106,6 +107,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     main_product_id = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
     outsourcing_status = serializers.SerializerMethodField()
+    attachments = AttachmentSerializer(many=True, read_only=True)
     
     # Metadata helpers
     requires_prepress = serializers.SerializerMethodField()

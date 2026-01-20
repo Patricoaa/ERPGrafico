@@ -6,6 +6,7 @@ from .models import (
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
 from production.serializers import BillOfMaterialsSerializer
+from core.serializers import AttachmentSerializer
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -110,6 +111,7 @@ class ProductSerializer(serializers.ModelSerializer):
     product_custom_fields = ProductCustomFieldSerializer(many=True, required=False)
     # Replenishment Rules
     reordering_rules = ReorderingRuleSerializer(many=True, required=False)
+    attachments = AttachmentSerializer(many=True, read_only=True)
     
     class Meta:
         model = Product
@@ -132,7 +134,8 @@ class ProductSerializer(serializers.ModelSerializer):
             # Subscription Fields
             'subscription_supplier', 'subscription_supplier_name', 'subscription_amount', 'subscription_start_date',
             'auto_activate_subscription', 'default_invoice_type', 'is_indefinite', 'contract_end_date',
-            'payment_day_type', 'payment_day', 'payment_interval_days'
+            'payment_day_type', 'payment_day', 'payment_interval_days',
+            'attachments'
         ]
 
     def get_uom_category(self, obj):

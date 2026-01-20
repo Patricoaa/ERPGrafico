@@ -3,8 +3,10 @@ from .models import Invoice
 from treasury.serializers import PaymentSerializer
 from sales.serializers import SaleOrderSerializer
 from purchasing.serializers import PurchaseOrderSerializer
+from core.serializers import AttachmentSerializer
 
 class InvoiceSerializer(serializers.ModelSerializer):
+    attachments = AttachmentSerializer(many=True, read_only=True)
     dte_type_display = serializers.CharField(source='get_dte_type_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)

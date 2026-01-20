@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils import timezone
 from accounting.models import JournalEntry
 from sales.models import SaleOrder
@@ -45,6 +46,7 @@ class Invoice(models.Model):
     
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
+    attachments = GenericRelation('core.Attachment')
 
     # Totals
     total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
