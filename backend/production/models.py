@@ -217,7 +217,7 @@ class WorkOrderHistory(models.Model):
     """
     Track history of stage changes and important actions.
     """
-    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='history')
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='stage_history')
     stage = models.CharField(max_length=30)
     status = models.CharField(max_length=20)
     notes = models.TextField(blank=True)
