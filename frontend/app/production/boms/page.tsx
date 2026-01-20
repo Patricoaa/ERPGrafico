@@ -19,6 +19,8 @@ interface BOM {
     name: string
     product: number
     product_name: string
+    product_code: string
+    product_internal_code?: string
     active: boolean
     lines_count: number
     total_cost: number
@@ -77,7 +79,26 @@ export default function BOMsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Producto" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("product_name")}</div>,
+            cell: ({ row }) => {
+                const bom = row.original;
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight">{bom.product_name}</span>
+                        <div className="flex flex-wrap gap-1">
+                            {bom.product_internal_code && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {bom.product_internal_code}
+                                </Badge>
+                            )}
+                            {bom.product_code && bom.product_code !== bom.product_internal_code && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {bom.product_code}
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
         },
         {
             accessorKey: "name",

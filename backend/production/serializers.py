@@ -239,7 +239,9 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
 class BillOfMaterialsSerializer(serializers.ModelSerializer):
     lines = BillOfMaterialsLineSerializer(many=True, required=False)
     product_code = serializers.CharField(source='product.code', read_only=True)
+    product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
+    category_name = serializers.CharField(source='product.category.name', read_only=True)
     lines_count = serializers.SerializerMethodField()
     total_cost = serializers.SerializerMethodField()
     

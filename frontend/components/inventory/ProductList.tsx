@@ -125,45 +125,38 @@ export function ProductList() {
         {
             accessorKey: "internal_code",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Código Int." />
+                <DataTableColumnHeader column={column} title="Cód. Interno" />
             ),
             cell: ({ row }) => (
-                <div className="flex items-center gap-1">
-                    <DataCell.Code className="font-bold text-primary">{row.getValue("internal_code")}</DataCell.Code>
-                    {!row.original.active && <DataCell.Badge variant="destructive" className="text-[8px] h-3 px-1">ARCHIVADO</DataCell.Badge>}
+                <div className="font-mono text-[10px] text-muted-foreground">
+                    {row.getValue("internal_code")}
                 </div>
             ),
         },
         {
             accessorKey: "code",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="SKU/Código" />
+                <DataTableColumnHeader column={column} title="SKU" />
             ),
-            cell: ({ row }) => <DataCell.Code>{row.getValue("code")}</DataCell.Code>,
+            cell: ({ row }) => (
+                <div className="font-mono text-[10px] text-muted-foreground">
+                    {row.getValue("code")}
+                </div>
+            ),
         },
         {
             accessorKey: "name",
-            header: "Producto",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
             cell: ({ row }) => {
                 const product = row.original;
                 return (
-                    <div className="flex flex-col gap-1 py-1">
-                        <span className={cn("font-medium text-sm leading-tight", !product.active ? "line-through text-muted-foreground" : "")}>
+                    <div className="max-w-[250px]">
+                        <DataCell.Text className={cn(!product.active ? "line-through text-muted-foreground" : "")}>
                             {product.name}
-                        </span>
-                        <div className="flex flex-wrap gap-1">
-                            {product.internal_code && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
-                                    {product.internal_code}
-                                </Badge>
-                            )}
-                            {product.code && product.code !== product.internal_code && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
-                                    {product.code}
-                                </Badge>
-                            )}
-                            {!product.active && <Badge variant="destructive" className="text-[8px] h-3 px-1">ARCHIVADO</Badge>}
-                        </div>
+                        </DataCell.Text>
+                        {!product.active && <Badge variant="destructive" className="text-[8px] h-3 px-1 ml-1">ARCHIVADO</Badge>}
                     </div>
                 );
             },

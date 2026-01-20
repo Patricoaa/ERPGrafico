@@ -53,6 +53,8 @@ interface ReorderingRule {
     product: number
     product_name: string
     product_code: string
+    product_internal_code?: string
+    category_name?: string
     warehouse: number
     warehouse_name: string
     min_quantity: string
@@ -208,16 +210,37 @@ export function ReplenishmentDashboard() {
 
     const columns: ColumnDef<ReorderingRule>[] = [
         {
-            accessorKey: "product_code",
+            accessorKey: "product_name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Producto" />
             ),
-            cell: ({ row }) => (
-                <div>
-                    <DataCell.Text>{row.original.product_code}</DataCell.Text>
-                    <DataCell.Secondary>{row.original.product_name}</DataCell.Secondary>
-                </div>
+            cell: ({ row }) => {
+                const rule = row.original;
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight">{rule.product_name}</span>
+                        <div className="flex flex-wrap gap-1">
+                            {rule.product_internal_code && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {rule.product_internal_code}
+                                </Badge>
+                            )}
+                            {rule.product_code && rule.product_code !== rule.product_internal_code && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {rule.product_code}
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: "category_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Categoría" />
             ),
+            cell: ({ row }) => <DataCell.Text className="text-xs">{row.getValue("category_name")}</DataCell.Text>,
         },
         {
             accessorKey: "warehouse_name",

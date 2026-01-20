@@ -53,6 +53,8 @@ class ProductCustomFieldSerializer(serializers.ModelSerializer):
 class ReorderingRuleSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_code = serializers.CharField(source='product.code', read_only=True)
+    product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
+    category_name = serializers.CharField(source='product.category.name', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     
     class Meta:
@@ -63,6 +65,8 @@ class ReorderingRuleSerializer(serializers.ModelSerializer):
 class ReplenishmentProposalSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_code = serializers.CharField(source='product.code', read_only=True)
+    product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
+    category_name = serializers.CharField(source='product.category.name', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     
     class Meta:
@@ -72,6 +76,9 @@ class ReplenishmentProposalSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_code = serializers.CharField(source='product.code', read_only=True)
+    product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
+    category_name = serializers.CharField(source='product.category.name', read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     
     class Meta:

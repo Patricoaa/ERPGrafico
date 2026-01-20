@@ -27,6 +27,8 @@ interface Subscription {
     id: number
     product_name: string
     product_code: string
+    product_internal_code?: string
+    category_name?: string
     supplier_name: string
     supplier_id: number
     start_date: string
@@ -136,12 +138,33 @@ export default function SubscriptionsPage() {
                 <DataTableColumnHeader column={column} title="Producto" />
             ),
             accessorFn: (row) => row.product_name,
-            cell: ({ row }) => (
-                <div>
-                    <DataCell.Text>{row.original.product_name}</DataCell.Text>
-                    <DataCell.Secondary>{row.original.product_code}</DataCell.Secondary>
-                </div>
+            cell: ({ row }) => {
+                const sub = row.original;
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight">{sub.product_name}</span>
+                        <div className="flex flex-wrap gap-1">
+                            {sub.product_internal_code && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {sub.product_internal_code}
+                                </Badge>
+                            )}
+                            {sub.product_code && sub.product_code !== sub.product_internal_code && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {sub.product_code}
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: "category_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Categoría" />
             ),
+            cell: ({ row }) => <DataCell.Text className="text-xs">{row.getValue("category_name")}</DataCell.Text>,
         },
         {
             accessorKey: "supplier_name",
