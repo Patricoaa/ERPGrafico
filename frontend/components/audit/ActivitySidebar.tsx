@@ -164,24 +164,33 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                         </p>
 
                                         {changedFields.length > 0 && record.history_type === '~' && (
-                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                {changedFields.slice(0, 3).map(field => (
-                                                    <Badge
-                                                        key={field}
-                                                        variant="outline"
-                                                        className="text-[9px] px-1.5 py-0 h-5"
-                                                    >
-                                                        {formatFieldName(field)}
-                                                    </Badge>
-                                                ))}
-                                                {changedFields.length > 3 && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="text-[9px] px-1.5 py-0 h-5 text-muted-foreground"
-                                                    >
-                                                        +{changedFields.length - 3} más
-                                                    </Badge>
-                                                )}
+                                            <div className="mt-2 space-y-1.5">
+                                                {changedFields.map(field => {
+                                                    const oldValue = history[index + 1][field];
+                                                    const newValue = record[field];
+
+                                                    const formatValue = (val: any) => {
+                                                        if (val === null || val === undefined) return <span className="italic opacity-50">vacio</span>;
+                                                        if (typeof val === 'boolean') return val ? 'Sí' : 'No';
+                                                        if (typeof val === 'string' && val.length > 30) return val.substring(0, 27) + '...';
+                                                        return String(val);
+                                                    };
+
+                                                    return (
+                                                        <div key={field} className="text-[10px] leading-tight">
+                                                            <span className="font-semibold text-muted-foreground mr-1">
+                                                                {formatFieldName(field)}:
+                                                            </span>
+                                                            <span className="text-red-600/70 line-through mr-1">
+                                                                {formatValue(oldValue)}
+                                                            </span>
+                                                            <span className="text-muted-foreground mr-1">→</span>
+                                                            <span className="text-green-600 font-medium">
+                                                                {formatValue(newValue)}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
