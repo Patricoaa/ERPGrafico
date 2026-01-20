@@ -142,6 +142,97 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         return Response(results)
 
     @action(detail=True, methods=['get'])
+    def timeline(self, request, pk=None):
+        """
+        Comprehensive timeline of stock moves, price changes and events.
+        """
+        from django.db.models import Sum
+        from collections import defaultdict
+        
+        product = self.get_object()
+        
+        # 1. Fetch Price History
+        history = product.history.select_related('history_user').all().order_by('history_date')
+        
+        # 2. Fetch Stock Moves
+        moves = product.stock_moves.select_related('journal_entry').all().order_by('date', 'created_at')
+        
+        # 3. Build Timeline Data Structure
+        # We'll use dates as keys
+        timeline_map = defaultdict(lambda: {
+            'sale_price': None, # Carry forward
+            'cost_price': None, # Carry forward
+            'stock_delta': 0,
+            'in_qty': 0,
+            'out_qty': 0,
+            'events': []
+        })
+        
+        # Process Price Events
+        for h in history:
+            d = h.history_date.date()
+            timeline_map[d]['sale_price'] = float(h.sale_price)
+            timeline_map[d]['cost_price'] = float(h.cost_price)
+            timeline_map[d]['events'].append({
+                'type': 'price_change',
+                'user': h.history_user.username if h.history_user else "System",
+                'sale_price': float(h.sale_price),
+                'cost_price': float(h.cost_price),
+                'history_type': h.history_type
+            })
+            
+        # Process Stock Events
+        for m in moves:
+            d = m.date
+            qty = float(m.quantity)
+            timeline_map[d]['stock_delta'] += qty
+            if qty > 0:
+                timeline_map[d]['in_qty'] += qty
+            else:
+                timeline_map[d]['out_qty'] += abs(qty)
+                
+            timeline_map[d]['events'].append({
+                'type': 'stock_move',
+                'qty': qty,
+                'move_type': m.move_type,
+                'description': m.description,
+                'reference': m.journal_entry.reference if m.journal_entry else None
+            })
+            
+        # 4. Sort dates and fill gaps / calculate cumulative stock
+        sorted_dates = sorted(timeline_map.keys())
+        if not sorted_dates:
+            return Response([])
+            
+        result = []
+        cumulative_stock = 0.0
+        last_sale_price = 0.0
+        last_cost_price = 0.0
+        
+        for d in sorted_dates:
+            data = timeline_map[d]
+            
+            # Carry forward prices if not set on this date
+            if data['sale_price'] is not None:
+                last_sale_price = data['sale_price']
+            if data['cost_price'] is not None:
+                last_cost_price = data['cost_price']
+                
+            cumulative_stock += data['stock_delta']
+            
+            result.append({
+                'date': d.isoformat(),
+                'sale_price': last_sale_price,
+                'cost_price': last_cost_price,
+                'stock_level': cumulative_stock,
+                'in_qty': data['in_qty'],
+                'out_qty': data['out_qty'],
+                'events': data['events']
+            })
+            
+        return Response(result)
+
+    @action(detail=True, methods=['get'])
     def effective_price(self, request, pk=None):
         product = self.get_object()
         quantity = Decimal(request.query_params.get('quantity', 1))
