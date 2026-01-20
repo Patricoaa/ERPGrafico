@@ -103,7 +103,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         const tabErrors: { [key: string]: number } = {}
 
         // General tab fields
-        const generalFields = ['name', 'category', 'product_type', 'sale_price', 'can_be_sold', 'can_be_purchased']
+        const generalFields = ['name', 'category', 'product_type', 'sale_price', 'can_be_sold', 'can_be_purchased', 'sale_uom', 'code']
         generalFields.forEach(field => {
             if (errors[field as keyof typeof errors]) {
                 tabErrors['general'] = (tabErrors['general'] || 0) + 1
@@ -119,10 +119,22 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
         })
 
         // UoM tab fields
-        const uomFields = ['uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms']
+        const uomFields = ['uom', 'purchase_uom', 'allowed_sale_uoms']
         uomFields.forEach(field => {
             if (errors[field as keyof typeof errors]) {
                 tabErrors['uoms'] = (tabErrors['uoms'] || 0) + 1
+            }
+        })
+
+        // Subscription tab fields
+        const subFields = [
+            'subscription_supplier', 'subscription_amount', 'recurrence_period',
+            'subscription_start_date', 'payment_day_type', 'payment_day',
+            'payment_interval_days', 'default_invoice_type', 'income_account'
+        ]
+        subFields.forEach(field => {
+            if (errors[field as keyof typeof errors]) {
+                tabErrors['subscription'] = (tabErrors['subscription'] || 0) + 1
             }
         })
 
@@ -515,8 +527,13 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                             )}
                                         </TabsTrigger>
                                         {form.watch("product_type") === 'SUBSCRIPTION' && (
-                                            <TabsTrigger value="subscription" className="px-8 flex gap-2">
+                                            <TabsTrigger value="subscription" className="px-8 flex gap-2 relative">
                                                 Suscripción
+                                                {tabErrors['subscription'] && (
+                                                    <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                                                        <AlertCircle className="h-3 w-3" />
+                                                    </span>
+                                                )}
                                             </TabsTrigger>
                                         )}
                                         {form.watch("can_be_sold") && (

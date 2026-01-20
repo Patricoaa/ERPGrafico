@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn, formatCurrency, translateStatus } from "@/lib/utils"
 import { ExternalLink, LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
@@ -132,8 +132,8 @@ export const DataCell = {
     Status: ({ status, map, variant = "outline", className }: { status: string, map?: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" | "indigo">, variant?: "default" | "outline" | "secondary", className?: string }) => {
         const intent = map ? map[status] || "secondary" : "secondary"
         return (
-            <Badge variant={intent as any} className={cn("capitalize", className)}>
-                {status?.toLowerCase().replace(/_/g, " ")}
+            <Badge variant={intent as any} className={cn("whitespace-nowrap", className)}>
+                {translateStatus(status)}
             </Badge>
         )
     },

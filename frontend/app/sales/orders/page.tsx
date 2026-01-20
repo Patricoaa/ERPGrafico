@@ -22,6 +22,7 @@ import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { OrderHubStatus } from "./components/OrderHubStatus"
 import { getHubStatuses } from "@/lib/order-status-utils"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { translateSalesChannel } from "@/lib/utils"
 
 
 interface SaleOrder {
@@ -207,8 +208,8 @@ export default function SalesOrdersPage() {
             accessorKey: "channel_display",
             header: "Canal",
             cell: ({ row }) => (
-                <DataCell.Badge variant="outline" className="text-[10px] uppercase">
-                    {row.getValue("channel_display")}
+                <DataCell.Badge variant="outline" className="text-[10px] whitespace-nowrap">
+                    {translateSalesChannel(row.original.channel_display)}
                 </DataCell.Badge>
             ),
         },

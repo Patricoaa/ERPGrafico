@@ -18,8 +18,81 @@ export function translateStatus(status: string | null | undefined): string {
     'OPEN': 'Abierto',
     'POSTED': 'Publicado',
     'CANCEL': 'Cancelado',
+    'ACTIVE': 'Activo',
+    'PAUSED': 'Pausado',
+    'PENDING': 'Pendiente',
+    'PLANNED': 'Planificada',
+    'IN_PROGRESS': 'En Proceso',
+    'FINISHED': 'Terminada',
+    'REJECTED': 'Rechazado',
+    'VOID': 'Anulado',
+    // Production Stages (some might be used as status)
+    'MATERIAL_ASSIGNMENT': 'Asignación de Materiales',
+    'MATERIAL_APPROVAL': 'Aprobación de Stock',
+    'PREPRESS': 'Pre-Impresión',
+    'PRESS': 'Impresión',
+    'POSTPRESS': 'Post-Impresión',
+    'PARTIAL': 'Parcial',
   }
   return map[status.toUpperCase()] || status
+}
+
+export function translateProductionStage(stage: string): string {
+  if (!stage) return ''
+  const map: Record<string, string> = {
+    'MATERIAL_ASSIGNMENT': 'Asignación de Materiales',
+    'MATERIAL_APPROVAL': 'Aprobación de Stock',
+    'PREPRESS': 'Pre-Impresión',
+    'PRESS': 'Impresión',
+    'POSTPRESS': 'Post-Impresión',
+    'FINISHED': 'Finalizada',
+  }
+  return map[stage.toUpperCase()] || stage.toLowerCase().replace(/_/g, ' ')
+}
+
+export function translateSalesChannel(channel: string): string {
+  if (!channel) return ''
+  const map: Record<string, string> = {
+    'POS': 'Punto de Venta',
+    'MANUAL': 'Manual',
+    'E-COMMERCE': 'E-Commerce',
+    'STORE_PICKUP': 'Retiro en Tienda',
+  }
+  return map[channel.toUpperCase()] || channel
+}
+
+export function translateReceivingStatus(status: string): string {
+  if (!status) return ''
+  const map: Record<string, string> = {
+    'RECEIVED': 'Recibido',
+    'PARTIAL': 'Parcial',
+    'PENDING': 'Pendiente',
+  }
+  return map[status.toUpperCase()] || status
+}
+
+export function translateFieldName(field: string): string {
+  const map: Record<string, string> = {
+    'customer_name': 'Nombre Cliente',
+    'supplier_name': 'Nombre Proveedor',
+    'status': 'Estado',
+    'price': 'Precio',
+    'quantity': 'Cantidad',
+    'date': 'Fecha',
+    'description': 'Descripción',
+    'notes': 'Notas',
+    'total': 'Total',
+    'payment_method': 'Método de Pago',
+    'delivery_date': 'Fecha de Entrega',
+    'warehouse': 'Bodega',
+    'product': 'Producto',
+    'uom': 'U. Medida',
+    'unit_price': 'Precio Unit.',
+    'subtotal': 'Subtotal',
+    'tax_amount': 'IVA',
+    'total_amount': 'Monto Total',
+  }
+  return map[field.toLowerCase()] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 }
 
 export function translateProductType(type: string): string {

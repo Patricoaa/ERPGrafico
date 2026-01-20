@@ -8,6 +8,7 @@ import { HistoricalRecord } from "@/types/audit"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
+import { translateFieldName } from "@/lib/utils"
 
 interface ActivitySidebarProps {
     entityId: number | string
@@ -95,9 +96,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
     }
 
     const formatFieldName = (field: string): string => {
-        return field
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase())
+        return translateFieldName(field)
     }
 
     return (

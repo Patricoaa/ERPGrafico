@@ -17,6 +17,7 @@ import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { FacetedFilter } from "@/components/shared/FacetedFilter"
 import { Input } from "@/components/ui/input"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
+import { translateProductionStage } from "@/lib/utils"
 
 interface WorkOrder {
     id: number
@@ -146,8 +147,8 @@ export default function WorkOrdersPage() {
                     <Badge variant={statusMap[row.original.status as string]?.variant || ("default" as any)}>
                         {statusMap[row.original.status as string]?.label || row.original.status}
                     </Badge>
-                    <Badge variant="outline" className="text-[10px] uppercase">
-                        {row.original.current_stage?.replace('_', ' ')}
+                    <Badge variant="outline" className="text-[10px] whitespace-nowrap">
+                        {translateProductionStage(row.original.current_stage)}
                     </Badge>
                 </div>
             ),

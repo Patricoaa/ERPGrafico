@@ -37,7 +37,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                     name="code"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Código / SKU</FormLabel>
+                            <FormLabel>Código / SKU <span className="text-muted-foreground font-normal">(Opcional)</span></FormLabel>
                             <FormControl>
                                 <Input placeholder="Ej: 1000000001" {...field} />
                             </FormControl>
