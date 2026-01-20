@@ -40,9 +40,9 @@ export const getPurchaseHubStatuses = (order: any) => {
     const hasPendingTransactions = payments.some((pay: any) => {
         const requiresTR = (
             (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
-            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
+            (pay.payment_type === 'INBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD'))
         )
-        return requiresTR && !pay.transaction_number
+        return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
     })
 
     // Check if fully paid
@@ -56,6 +56,7 @@ export const getPurchaseHubStatuses = (order: any) => {
         origin: originStatus,
         reception: receptionStatus,
         billing: billingStatus,
-        treasury: treasuryStatus
+        treasury: treasuryStatus,
+        hasPendingTransactions: hasPendingTransactions
     }
 }

@@ -103,7 +103,7 @@ export function OrderHubStatus({ order }: OrderHubStatusProps) {
                 <StatusBadge
                     icon={Banknote}
                     status={statuses.treasury}
-                    tooltip={`Tesorería: ${paidPct}% Pagado`}
+                    tooltip={`Tesorería: ${paidPct}% Pagado${statuses.hasPendingTransactions ? ' - falta N° de transacción' : ''}`}
                 />
             </TooltipProvider>
         </div>

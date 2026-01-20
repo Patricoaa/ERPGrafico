@@ -166,6 +166,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
                 'payment_method_display': pay.get_payment_method_display(),
                 'method': pay.get_payment_method_display(), # Legacy support
                 'transaction_number': pay.transaction_number,
+                'is_pending_registration': pay.is_pending_registration,
                 'reference': pay.reference,
                 'invoice_id': pay.invoice_id,
                 'code': code
