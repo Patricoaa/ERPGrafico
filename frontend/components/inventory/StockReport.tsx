@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge"
 export function StockReport() {
     const [report, setReport] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [isRotating, setIsRotating] = useState<number | null>(null)
+
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
 
@@ -37,18 +37,6 @@ export function StockReport() {
         }
     }
 
-    const handleRotateUom = async (product: any) => {
-        setIsRotating(product.id)
-        try {
-            const res = await api.post(`/inventory/products/${product.id}/rotate_uom/`)
-            toast.success(`Unidad de ${product.name} cambiada a ${res.data.new_uom}`)
-            fetchReport()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al cambiar unidad")
-        } finally {
-            setIsRotating(null)
-        }
-    }
 
     const columns: ColumnDef<any>[] = [
         {
@@ -168,16 +156,7 @@ export function StockReport() {
                     >
                         <History className="h-4 w-4" />
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
-                        onClick={() => handleRotateUom(row.original)}
-                        disabled={isRotating === row.original.id}
-                        title="Rotar Unidad de Medida (Convierte Cantidades)"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${isRotating === row.original.id ? 'animate-spin' : ''}`} />
-                    </Button>
+
                 </div>
             ),
         },
