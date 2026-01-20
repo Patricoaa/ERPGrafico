@@ -52,9 +52,9 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
     )
     receipt_date = models.DateField(_("Fecha de Recepción Planificada"), null=True, blank=True)
 
-    total_net = models.DecimalField(_("Neto"), max_digits=16, decimal_places=2, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=16, decimal_places=2, default=0)
-    total = models.DecimalField(_("Total"), max_digits=16, decimal_places=2, default=0)
+    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
+    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
+    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
 
     # Links
     work_order = models.ForeignKey(
@@ -128,10 +128,10 @@ class PurchaseLine(models.Model):
         related_name='purchase_lines',
         verbose_name=_("Unidad")
     )
-    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=16, decimal_places=4, validators=[MinValueValidator(0)])
+    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=0, validators=[MinValueValidator(0)])
     tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00, validators=[MinValueValidator(0)])
     
-    subtotal = models.DecimalField(_("Subtotal"), max_digits=16, decimal_places=2, editable=False)
+    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False)
     
     # Track received quantity
     quantity_received = models.DecimalField(
@@ -253,15 +253,15 @@ class PurchaseReceiptLine(models.Model):
     # Cost tracking (allows updating cost price upon receipt)
     unit_cost = models.DecimalField(
         _("Costo Unitario Real"), 
-        max_digits=16, 
-        decimal_places=4,
+        max_digits=12, 
+        decimal_places=0,
         validators=[MinValueValidator(0)],
         help_text="Costo unitario real al momento de la recepción"
     )
     total_cost = models.DecimalField(
         _("Costo Total"), 
-        max_digits=16, 
-        decimal_places=2,
+        max_digits=12, 
+        decimal_places=0,
         editable=False
     )
     

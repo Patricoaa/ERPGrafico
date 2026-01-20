@@ -286,8 +286,8 @@ class JournalItem(models.Model):
     account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='journal_items')
     partner = models.CharField(_("Socio/Empresa"), max_length=255, blank=True, help_text="Cliente o Proveedor asociado") # Placeholder for Partner model
     label = models.CharField(_("Etiqueta"), max_length=255, blank=True)
-    debit = models.DecimalField(_("Debe"), max_digits=20, decimal_places=2, default=Decimal('0'), validators=[MinValueValidator(0)])
-    credit = models.DecimalField(_("Haber"), max_digits=20, decimal_places=2, default=Decimal('0'), validators=[MinValueValidator(0)])
+    debit = models.DecimalField(_("Debe"), max_digits=20, decimal_places=0, default=Decimal('0'), validators=[MinValueValidator(0)])
+    credit = models.DecimalField(_("Haber"), max_digits=20, decimal_places=0, default=Decimal('0'), validators=[MinValueValidator(0)])
 
     class Meta:
         verbose_name = _("Apunte Contable")
@@ -493,7 +493,7 @@ class BudgetItem(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='budget_items')
     year = models.IntegerField(_("Año"), default=2024)
     month = models.IntegerField(_("Mes"), default=1, help_text="Mes del presupuesto (1-12)")
-    amount = models.DecimalField(_("Monto Presupuestado"), max_digits=20, decimal_places=2, validators=[MinValueValidator(0)])
+    amount = models.DecimalField(_("Monto Presupuestado"), max_digits=20, decimal_places=0, validators=[MinValueValidator(0)])
     
     class Meta:
         unique_together = ['budget', 'account', 'year', 'month']

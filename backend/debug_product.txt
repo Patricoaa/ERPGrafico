@@ -1,0 +1,83 @@
+Product all fields: ['sale_lines', 'delivery_lines', 'stock_moves', 'pricing_rules', 'product_custom_fields', 'reordering_rules', 'replenishment_proposals', 'subscriptions', 'purchase_lines', 'receipt_lines', 'manual_work_orders', 'production_usages', 'ot_material_usages', 'boms', 'used_in_boms', 'id', 'internal_code', 'code', 'name', 'category', 'product_type', 'image', 'custom_fields_schema', 'has_bom', 'requires_advanced_manufacturing', 'mfg_auto_finalize', 'mfg_enable_prepress', 'mfg_enable_press', 'mfg_enable_postpress', 'mfg_prepress_design', 'mfg_prepress_specs', 'mfg_prepress_folio', 'mfg_press_offset', 'mfg_press_digital', 'mfg_press_special', 'mfg_postpress_finishing', 'mfg_postpress_binding', 'mfg_default_delivery_days', 'recurrence_period', 'renewal_notice_days', 'is_variable_amount', 'payment_day_type', 'payment_day', 'payment_interval_days', 'default_invoice_type', 'subscription_supplier', 'subscription_amount', 'subscription_start_date', 'auto_activate_subscription', 'is_indefinite', 'contract_end_date', 'track_inventory', 'can_be_sold', 'can_be_purchased', 'uom', 'sale_uom', 'purchase_uom', 'receiving_warehouse', 'preferred_supplier', 'is_dynamic_pricing', 'sale_price', 'cost_price', 'income_account', 'expense_account', 'active', 'created_at', 'allowed_sale_uoms']
+Field: sale_lines, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: sale_lines
+Field: delivery_lines, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: delivery_lines
+Field: stock_moves, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: stock_moves
+Field: pricing_rules, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: pricing_rules
+Field: product_custom_fields, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: product_custom_fields
+Field: reordering_rules, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: reordering_rules
+Field: replenishment_proposals, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: replenishment_proposals
+Field: subscriptions, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: subscriptions
+Field: purchase_lines, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: purchase_lines
+Field: receipt_lines, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: receipt_lines
+Field: manual_work_orders, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: manual_work_orders
+Field: production_usages, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: production_usages
+Field: ot_material_usages, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: ot_material_usages
+Field: boms, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: boms
+Field: used_in_boms, Type: <class 'django.db.models.fields.reverse_related.ManyToOneRel'>
+  Related Name: used_in_boms
+Field: id, Type: <class 'django.db.models.fields.BigAutoField'>
+Field: internal_code, Type: <class 'django.db.models.fields.CharField'>
+Field: code, Type: <class 'django.db.models.fields.CharField'>
+Field: name, Type: <class 'django.db.models.fields.CharField'>
+Field: category, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: product_type, Type: <class 'django.db.models.fields.CharField'>
+Field: image, Type: <class 'django.db.models.fields.files.ImageField'>
+Field: custom_fields_schema, Type: <class 'django.db.models.fields.json.JSONField'>
+Field: has_bom, Type: <class 'django.db.models.fields.BooleanField'>
+Field: requires_advanced_manufacturing, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_auto_finalize, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_enable_prepress, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_enable_press, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_enable_postpress, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_prepress_design, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_prepress_specs, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_prepress_folio, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_press_offset, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_press_digital, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_press_special, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_postpress_finishing, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_postpress_binding, Type: <class 'django.db.models.fields.BooleanField'>
+Field: mfg_default_delivery_days, Type: <class 'django.db.models.fields.IntegerField'>
+Field: recurrence_period, Type: <class 'django.db.models.fields.CharField'>
+Field: renewal_notice_days, Type: <class 'django.db.models.fields.PositiveIntegerField'>
+Field: is_variable_amount, Type: <class 'django.db.models.fields.BooleanField'>
+Field: payment_day_type, Type: <class 'django.db.models.fields.CharField'>
+Field: payment_day, Type: <class 'django.db.models.fields.PositiveIntegerField'>
+Field: payment_interval_days, Type: <class 'django.db.models.fields.PositiveIntegerField'>
+Field: default_invoice_type, Type: <class 'django.db.models.fields.CharField'>
+Field: subscription_supplier, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: subscription_amount, Type: <class 'django.db.models.fields.DecimalField'>
+Field: subscription_start_date, Type: <class 'django.db.models.fields.DateField'>
+Field: auto_activate_subscription, Type: <class 'django.db.models.fields.BooleanField'>
+Field: is_indefinite, Type: <class 'django.db.models.fields.BooleanField'>
+Field: contract_end_date, Type: <class 'django.db.models.fields.DateField'>
+Field: track_inventory, Type: <class 'django.db.models.fields.BooleanField'>
+Field: can_be_sold, Type: <class 'django.db.models.fields.BooleanField'>
+Field: can_be_purchased, Type: <class 'django.db.models.fields.BooleanField'>
+Field: uom, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: sale_uom, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: purchase_uom, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: receiving_warehouse, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: preferred_supplier, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: is_dynamic_pricing, Type: <class 'django.db.models.fields.BooleanField'>
+Field: sale_price, Type: <class 'django.db.models.fields.DecimalField'>
+Field: cost_price, Type: <class 'django.db.models.fields.DecimalField'>
+Field: income_account, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: expense_account, Type: <class 'django.db.models.fields.related.ForeignKey'>
+Field: active, Type: <class 'django.db.models.fields.BooleanField'>
+Field: created_at, Type: <class 'django.db.models.fields.DateTimeField'>
+Field: allowed_sale_uoms, Type: <class 'django.db.models.fields.related.ManyToManyField'>

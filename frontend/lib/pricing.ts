@@ -12,22 +12,26 @@ export const PricingUtils = {
      * @returns Precio bruto con IVA (redondeado)
      */
     netToGross: (net: number): number => {
-        return net * (1 + TAX_RATE);
+        return Math.round(net * (1 + TAX_RATE));
     },
 
+    /**
+     * Convierte precio BRUTO a NETO (sin IVA)
+     * @param gross - Precio bruto con IVA
+     * @returns Precio neto sin IVA (redondeado)
+     */
     grossToNet: (gross: number): number => {
-        return gross / (1 + TAX_RATE);
+        return Math.round(gross / (1 + TAX_RATE));
     },
 
+    /**
+     * Calcula el IVA desde el precio NETO
+     * @param net - Precio neto sin IVA
+     * @returns Monto del IVA (redondeado)
+     */
     calculateTax: (net: number): number => {
-        return net * TAX_RATE;
+        return Math.round(net * TAX_RATE);
     },
-
-    roundFinal: (amount: number): number => {
-        return Math.round(amount);
-    },
-
-
 
     /**
      * Extrae el IVA desde el precio BRUTO
@@ -46,7 +50,7 @@ export const PricingUtils = {
      * @returns Total bruto de la línea (redondeado)
      */
     calculateLineTotal: (quantity: number, unitPriceNet: number): number => {
-        const net = quantity * unitPriceNet;
+        const net = Math.round(quantity * unitPriceNet);
         return PricingUtils.netToGross(net);
     },
 
@@ -57,7 +61,7 @@ export const PricingUtils = {
      * @returns Total neto de la línea (redondeado)
      */
     calculateLineNet: (quantity: number, unitPriceNet: number): number => {
-        return quantity * unitPriceNet;
+        return Math.round(quantity * unitPriceNet);
     },
 
     /**
@@ -67,7 +71,7 @@ export const PricingUtils = {
      * @returns Precio con descuento aplicado (redondeado)
      */
     applyDiscount: (price: number, discountPercent: number): number => {
-        return price * (1 - discountPercent / 100);
+        return Math.round(price * (1 - discountPercent / 100));
     },
 
     /**
@@ -78,7 +82,7 @@ export const PricingUtils = {
      */
     calculateDiscountPercent: (originalPrice: number, discountedPrice: number): number => {
         if (originalPrice === 0) return 0;
-        return ((originalPrice - discountedPrice) / originalPrice) * 100;
+        return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
     },
 
     /**
@@ -100,7 +104,7 @@ export const PricingUtils = {
      */
     calculatePriceFromMargin: (cost: number, marginPercent: number): number => {
         if (marginPercent >= 100) return 0;
-        return cost / (1 - marginPercent / 100);
+        return Math.round(cost / (1 - marginPercent / 100));
     },
 
     /**
@@ -150,6 +154,6 @@ export const PricingUtils = {
     calculateUoMPrice: (basePrice: number, baseRatio: number, targetRatio: number): number => {
         if (!baseRatio || baseRatio === 0) return basePrice;
         const ratio = targetRatio / baseRatio;
-        return basePrice * ratio;
+        return Math.round(basePrice * ratio);
     },
 };
