@@ -330,7 +330,7 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class PricingRuleViewSet(viewsets.ModelViewSet):
+class PricingRuleViewSet(AuditHistoryMixin, viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
     filter_backends = [DjangoFilterBackend]
@@ -345,7 +345,7 @@ class ProductCustomFieldViewSet(viewsets.ModelViewSet):
     serializer_class = ProductCustomFieldSerializer
     filterset_fields = ['product']
 
-class ReorderingRuleViewSet(viewsets.ModelViewSet):
+class ReorderingRuleViewSet(AuditHistoryMixin, viewsets.ModelViewSet):
     queryset = ReorderingRule.objects.all()
     serializer_class = ReorderingRuleSerializer
     filter_backends = [DjangoFilterBackend]

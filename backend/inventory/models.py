@@ -756,6 +756,8 @@ class PricingRule(models.Model):
     
     priority = models.IntegerField(_("Prioridad"), default=0, help_text=_("Prioridad más alta se aplica primero"))
     active = models.BooleanField(_("Activo"), default=True)
+    
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Regla de Precio")
@@ -821,6 +823,8 @@ class ReorderingRule(models.Model):
     max_quantity = models.DecimalField(_("Cantidad Máxima"), max_digits=12, decimal_places=4, default=0, validators=[MinValueValidator(0)])
     
     active = models.BooleanField(_("Activo"), default=True)
+    
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Regla de Reabastecimiento")

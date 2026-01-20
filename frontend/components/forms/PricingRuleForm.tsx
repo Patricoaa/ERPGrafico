@@ -10,6 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogFooter,
 } from "@/components/ui/dialog"
 import {
     Form,
@@ -34,6 +35,7 @@ import { toast } from "sonner"
 import { Plus } from "lucide-react"
 import { PricingUtils } from "@/lib/pricing"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -168,284 +170,302 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
+            <DialogContent className={`sm:max-w-[900px] flex flex-col p-0 overflow-hidden ${initialData ? 'h-[600px]' : ''}`}>
+                <DialogHeader className="px-6 py-4 border-b shrink-0 bg-muted/20">
                     <DialogTitle>{initialData ? "Editar Regla" : "Nueva Regla de Precio"}</DialogTitle>
                 </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nombre de la Regla</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ej: Descuento Mayorista" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
 
-                        <div className="grid grid-cols-1 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="product"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Producto</FormLabel>
-                                        <FormControl>
-                                            <ProductSelector
-                                                value={field.value?.toString() || null}
-                                                onChange={(val) => field.onChange(val ? parseInt(val) : null)}
-                                                disabled={!!productId}
-                                                placeholder="Seleccione un producto (Si no selecciona, se aplicaran a todos"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="operator"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Condición (Operador)</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="GE">Mayor o Igual ( {">"}= )</SelectItem>
-                                                <SelectItem value="GT">Mayor que ( {">"} )</SelectItem>
-                                                <SelectItem value="LE">Menor o Igual ( {"<"}= )</SelectItem>
-                                                <SelectItem value="LT">Menor que ( {"<"} )</SelectItem>
-                                                <SelectItem value="EQ">Igual a ( = )</SelectItem>
-                                                <SelectItem value="BT">Entre (Rango)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="priority"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Prioridad</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="min_quantity"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{operator === "BT" ? "Desde" : "Cantidad"}</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="uom"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Unidad de Medida (Opcional)</FormLabel>
-                                        <Select
-                                            onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
-                                            value={field.value?.toString() || "none"}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Base del producto" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="none">Base del producto</SelectItem>
-                                                {uoms.map((u) => (
-                                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        {operator === "BT" && (
-                            <div className="grid grid-cols-2 gap-4">
+                <div className="flex-1 flex overflow-hidden">
+                    <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+                        <Form {...form}>
+                            <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                                 <FormField
                                     control={form.control}
-                                    name="max_quantity"
+                                    name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Hasta</FormLabel>
+                                            <FormLabel>Nombre de la Regla</FormLabel>
                                             <FormControl>
-                                                <Input type="number" {...field} value={field.value || ""} />
+                                                <Input placeholder="Ej: Descuento Mayorista" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
+                                />
+
+                                <div className="grid grid-cols-1 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="product"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Producto</FormLabel>
+                                                <FormControl>
+                                                    <ProductSelector
+                                                        value={field.value?.toString() || null}
+                                                        onChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                                                        disabled={!!productId}
+                                                        placeholder="Seleccione un producto (Si no selecciona, se aplicaran a todos"
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="operator"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Condición (Operador)</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Seleccione" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="GE">Mayor o Igual ( {">"}= )</SelectItem>
+                                                        <SelectItem value="GT">Mayor que ( {">"} )</SelectItem>
+                                                        <SelectItem value="LE">Menor o Igual ( {"<"}= )</SelectItem>
+                                                        <SelectItem value="LT">Menor que ( {"<"} )</SelectItem>
+                                                        <SelectItem value="EQ">Igual a ( = )</SelectItem>
+                                                        <SelectItem value="BT">Entre (Rango)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="priority"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Prioridad</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="min_quantity"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{operator === "BT" ? "Desde" : "Cantidad"}</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="uom"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Unidad de Medida (Opcional)</FormLabel>
+                                                <Select
+                                                    onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
+                                                    value={field.value?.toString() || "none"}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Base del producto" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">Base del producto</SelectItem>
+                                                        {uoms.map((u) => (
+                                                            <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                {operator === "BT" && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="max_quantity"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Hasta</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" {...field} value={field.value || ""} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="rule_type"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Tipo de Regla</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Seleccione tipo" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="FIXED">Precio Fijo (Unitario)</SelectItem>
+                                                        <SelectItem value="PACKAGE_FIXED">Precio Paquete (Total Fijo)</SelectItem>
+                                                        <SelectItem value="DISCOUNT_PERCENTAGE">Porcentaje de Descuento</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    {ruleType === "FIXED" || ruleType === "PACKAGE_FIXED" ? (
+                                        <FormField
+                                            control={form.control}
+                                            name="fixed_price"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Precio Fijo (Neto)</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" {...field} value={field.value || ""} />
+                                                    </FormControl>
+                                                    {field.value && !isNaN(parseFloat(field.value.toString())) && (
+                                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border rounded p-2 bg-muted/50">
+                                                            {ruleType === "PACKAGE_FIXED" && (
+                                                                <div className="flex justify-between text-amber-600 font-medium pb-1 mb-1 border-b border-amber-200">
+                                                                    <span>Tipo:</span>
+                                                                    <span>Precio TOTAL por el rango</span>
+                                                                </div>
+                                                            )}
+                                                            <div className="flex justify-between">
+                                                                <span>Neto:</span>
+                                                                <span>{parseInt(field.value.toString()).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                                            </div>
+                                                            <div className="flex justify-between">
+                                                                <span>IVA (19%):</span>
+                                                                <span>{PricingUtils.calculateTax(parseInt(field.value.toString())).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                                            </div>
+                                                            <div className="flex justify-between font-bold border-t pt-1 mt-1">
+                                                                <span>Total (Bruto):</span>
+                                                                <span>{PricingUtils.netToGross(parseInt(field.value.toString())).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                                            </div>
+                                                            {ruleType === "PACKAGE_FIXED" && form.watch('min_quantity') && (
+                                                                <div className="pt-2 mt-1 border-t border-dashed text-xs text-slate-500">
+                                                                    <p>Precio Unitario (aprox) para {form.watch('min_quantity')} unidades:</p>
+                                                                    <p className="font-mono text-right">
+                                                                        {Math.round(parseInt(field.value.toString()) / parseFloat(form.watch('min_quantity') as string)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })} c/u
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    ) : (
+                                        <FormField
+                                            control={form.control}
+                                            name="discount_percentage"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Descuento (%)</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" {...field} value={field.value || ""} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="start_date"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Fecha Inicio</FormLabel>
+                                                <FormControl>
+                                                    <Input type="date" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="end_date"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Fecha Fin</FormLabel>
+                                                <FormControl>
+                                                    <Input type="date" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                <FormField
+                                    control={form.control}
+                                    name="active"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                            <div className="space-y-1 leading-none">
+                                                <FormLabel>Regla Activa</FormLabel>
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
+                            </form>
+                        </Form>
+                    </div>
+
+                    {initialData?.id && (
+                        <div className="w-80 border-l bg-muted/5">
+                            <div className="h-full p-6">
+                                <ActivitySidebar
+                                    entityId={initialData.id}
+                                    entityType="pricing_rule"
                                 />
                             </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="rule_type"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Tipo de Regla</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione tipo" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="FIXED">Precio Fijo (Unitario)</SelectItem>
-                                                <SelectItem value="PACKAGE_FIXED">Precio Paquete (Total Fijo)</SelectItem>
-                                                <SelectItem value="DISCOUNT_PERCENTAGE">Porcentaje de Descuento</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            {ruleType === "FIXED" || ruleType === "PACKAGE_FIXED" ? (
-                                <FormField
-                                    control={form.control}
-                                    name="fixed_price"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Precio Fijo (Neto)</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" {...field} value={field.value || ""} />
-                                            </FormControl>
-                                            {field.value && !isNaN(parseFloat(field.value.toString())) && (
-                                                <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border rounded p-2 bg-muted/50">
-                                                    {ruleType === "PACKAGE_FIXED" && (
-                                                        <div className="flex justify-between text-amber-600 font-medium pb-1 mb-1 border-b border-amber-200">
-                                                            <span>Tipo:</span>
-                                                            <span>Precio TOTAL por el rango</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex justify-between">
-                                                        <span>Neto:</span>
-                                                        <span>{parseInt(field.value.toString()).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span>IVA (19%):</span>
-                                                        <span>{PricingUtils.calculateTax(parseInt(field.value.toString())).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                                                    </div>
-                                                    <div className="flex justify-between font-bold border-t pt-1 mt-1">
-                                                        <span>Total (Bruto):</span>
-                                                        <span>{PricingUtils.netToGross(parseInt(field.value.toString())).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                                                    </div>
-                                                    {ruleType === "PACKAGE_FIXED" && form.watch('min_quantity') && (
-                                                        <div className="pt-2 mt-1 border-t border-dashed text-xs text-slate-500">
-                                                            <p>Precio Unitario (aprox) para {form.watch('min_quantity')} unidades:</p>
-                                                            <p className="font-mono text-right">
-                                                                {Math.round(parseInt(field.value.toString()) / parseFloat(form.watch('min_quantity') as string)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })} c/u
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            ) : (
-                                <FormField
-                                    control={form.control}
-                                    name="discount_percentage"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Descuento (%)</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" {...field} value={field.value || ""} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            )}
                         </div>
+                    )}
+                </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="start_date"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Fecha Inicio</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} value={field.value || ""} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="end_date"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Fecha Fin</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} value={field.value || ""} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <FormField
-                            control={form.control}
-                            name="active"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>Regla Activa</FormLabel>
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
-
-                        <Button type="submit" className="w-full">
-                            {initialData ? "Actualizar" : "Crear"} Regla
-                        </Button>
-                    </form>
-                </Form>
+                <DialogFooter className="px-6 py-4 border-t bg-muted/20 shrink-0">
+                    <Button type="submit" form="pricing-rule-form" className="w-full">
+                        {initialData ? "Actualizar" : "Crear"} Regla
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     )

@@ -12,7 +12,7 @@ import { translateFieldName } from "@/lib/utils"
 
 interface ActivitySidebarProps {
     entityId: number | string
-    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move'
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule'
     className?: string
     title?: string
 }
@@ -30,7 +30,9 @@ const ENDPOINT_MAP: Record<string, string> = {
     'company_settings': '/core/company',
     'work_order': '/production/orders',
     'journal_entry': '/accounting/entries',
-    'stock_move': '/inventory/moves'
+    'stock_move': '/inventory/moves',
+    'pricing_rule': '/inventory/pricing-rules',
+    'reordering_rule': '/inventory/reordering-rules'
 }
 
 const IGNORED_FIELDS = ['id', 'created_at', 'updated_at', 'history_id', 'history_date', 'history_type', 'history_user_id', 'history_user_username', 'history_change_reason']
