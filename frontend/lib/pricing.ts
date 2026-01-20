@@ -12,7 +12,9 @@ export const PricingUtils = {
      * @returns Precio bruto con IVA (redondeado)
      */
     netToGross: (net: number): number => {
-        return Math.round(net * (1 + TAX_RATE));
+        const roundedNet = Math.round(net);
+        const tax = Math.round(roundedNet * TAX_RATE);
+        return roundedNet + tax;
     },
 
     /**

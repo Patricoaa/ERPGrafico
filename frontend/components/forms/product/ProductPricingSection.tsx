@@ -102,14 +102,9 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                     <Input
                         type="number"
                         step="1"
-                        className="pl-7 bg-primary/10 border-primary/30 font-extrabold text-primary text-lg"
+                        className="pl-7 bg-primary/10 border-primary/30 font-extrabold text-primary text-lg opacity-80 cursor-not-allowed"
                         value={totalCalculated || ""}
-                        disabled={isDynamicPricing}
-                        onChange={(e) => {
-                            const gross = Number(e.target.value);
-                            const net = PricingUtils.grossToNet(gross);
-                            form.setValue("sale_price", net);
-                        }}
+                        readOnly
                     />
                 </div>
             </div>
