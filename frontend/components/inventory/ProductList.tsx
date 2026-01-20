@@ -312,6 +312,7 @@ export function ProductList() {
                                 ],
                             }
                         ]}
+                        useAdvancedFilter={true}
                     />)}
             </div>
 

@@ -6,6 +6,7 @@ import { Table } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
+import { DataTableFilters } from "./data-table-filters"
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
@@ -22,6 +23,7 @@ interface DataTableToolbarProps<TData> {
         }[]
     }[]
     toolbarAction?: React.ReactNode
+    useAdvancedFilter?: boolean
 }
 
 export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
@@ -31,6 +33,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         globalFilterFields,
         searchPlaceholder = "Filtrar...",
         facetedFilters = [],
+        useAdvancedFilter = false,
     } = props
 
     const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0
@@ -58,33 +61,40 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         className="h-8 w-[150px] lg:w-[250px]"
                     />
                 )}
-                {facetedFilters.map((filter) => {
-                    const column = table.getColumn(filter.column)
-                    if (!column) return null
+                {useAdvancedFilter ? (
+                    <DataTableFilters
+                        table={table}
+                        facetedFilters={facetedFilters}
+                    />
+                ) : (
+                    facetedFilters.map((filter) => {
+                        const column = table.getColumn(filter.column)
+                        if (!column) return null
 
-                    let options = filter.options
-                    if (!options || options.length === 0) {
-                        const uniqueValues = column.getFacetedUniqueValues()
-                        options = Array.from(uniqueValues.keys())
-                            .filter(val => val !== undefined && val !== null && val !== "")
-                            .map(val => ({
-                                label: String(val),
-                                value: String(val)
-                            }))
-                            .sort((a, b) => a.label.localeCompare(b.label))
-                    }
+                        let options = filter.options
+                        if (!options || options.length === 0) {
+                            const uniqueValues = column.getFacetedUniqueValues()
+                            options = Array.from(uniqueValues.keys())
+                                .filter(val => val !== undefined && val !== null && val !== "")
+                                .map(val => ({
+                                    label: String(val),
+                                    value: String(val)
+                                }))
+                                .sort((a, b) => a.label.localeCompare(b.label))
+                        }
 
-                    return (
-                        <DataTableFacetedFilter
-                            key={filter.column}
-                            column={column}
-                            title={filter.title}
-                            options={options}
-                        />
-                    )
-                })}
+                        return (
+                            <DataTableFacetedFilter
+                                key={filter.column}
+                                column={column}
+                                title={filter.title}
+                                options={options}
+                            />
+                        )
+                    })
+                )}
                 {props.toolbarAction}
-                {isFiltered && (
+                {isFiltered && !useAdvancedFilter && (
                     <Button
                         variant="ghost"
                         onClick={() => {

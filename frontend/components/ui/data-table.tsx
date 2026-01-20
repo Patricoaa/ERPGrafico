@@ -49,6 +49,7 @@ interface DataTableProps<TData, TValue> {
     onRowSelectionChange?: (selection: any) => void
     initialColumnVisibility?: VisibilityState
     hiddenColumns?: string[]
+    useAdvancedFilter?: boolean
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -66,6 +67,7 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange,
     initialColumnVisibility = DEFAULT_COLUMN_VISIBILITY,
     hiddenColumns = [],
+    useAdvancedFilter = false,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -138,6 +140,7 @@ export function DataTable<TData, TValue>({
                     searchPlaceholder={searchPlaceholder}
                     facetedFilters={facetedFilters}
                     toolbarAction={toolbarAction}
+                    useAdvancedFilter={useAdvancedFilter}
                 />
             )}
             <div className="rounded-md border">

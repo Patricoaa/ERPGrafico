@@ -322,6 +322,7 @@ export default function PurchaseOrdersPage() {
                             ]
                         }
                     ]}
+                    useAdvancedFilter={true}
                     toolbarAction={
                         <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Orden" />
                     }

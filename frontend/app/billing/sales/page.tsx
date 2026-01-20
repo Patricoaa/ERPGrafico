@@ -291,6 +291,7 @@ export default function SalesInvoicesPage() {
                                 ],
                             },
                         ]}
+                        useAdvancedFilter={true}
                         defaultPageSize={20}
                     />
                 </div>

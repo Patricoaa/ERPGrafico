@@ -394,6 +394,7 @@ export default function SalesOrdersPage() {
                                 ]
                             }
                         ]}
+                        useAdvancedFilter={true}
                         toolbarAction={
                             <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Venta" />
                         }

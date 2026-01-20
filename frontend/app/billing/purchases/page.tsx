@@ -501,6 +501,7 @@ export default function PurchaseInvoicesPage() {
                                 ],
                             },
                         ]}
+                        useAdvancedFilter={true}
                         defaultPageSize={20}
                     />
                 </div>
