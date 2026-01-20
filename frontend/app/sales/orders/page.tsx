@@ -283,37 +283,7 @@ export default function SalesOrdersPage() {
                 return value.includes(row.getValue(id))
             },
         },
-        {
-            id: "documents",
-            header: "Documentos",
-            cell: ({ row }) => (
-                <div className="flex flex-col gap-1">
-                    {row.original.related_documents?.invoices.map((inv: any) => (
-                        <button
-                            key={inv.id}
-                            onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                            className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                        >
-                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Factura</span>
-                            {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
-                        </button>
-                    ))}
-                    {row.original.related_documents?.payments?.map((pay: any) => (
-                        <button
-                            key={pay.id}
-                            onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
-                            className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                        >
-                            <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
-                            <span className="text-[10px] font-mono">{pay.code}</span>
-                        </button>
-                    ))}
-                    {!row.original.related_documents?.invoices.length && !row.original.related_documents?.payments.length && (
-                        <span className="text-muted-foreground text-xs">-</span>
-                    )}
-                </div>
-            ),
-        },
+
         {
             id: "actions",
             header: () => <div className="text-center">Acciones</div>,

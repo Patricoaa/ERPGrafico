@@ -235,21 +235,7 @@ export default function PurchaseOrdersPage() {
                 return value.includes(row.getValue(id))
             },
         },
-        {
-            id: "documents",
-            header: "Documentos",
-            cell: ({ row }) => (
-                <div className="flex flex-col gap-1">
-                    {row.original.related_documents?.invoices.map((inv: any) => (
-                        <div key={inv.id} className="flex items-center space-x-1">
-                            <Badge variant={inv.status === 'PAID' ? 'success' : 'outline'} className="text-[10px]">
-                                {inv.type === 'BOLETA' ? 'BOL' : 'FACT'}-{inv.number}
-                            </Badge>
-                        </div>
-                    ))}
-                </div>
-            ),
-        },
+
         {
             id: "actions",
             header: () => <div className="text-center">Acciones</div>,
