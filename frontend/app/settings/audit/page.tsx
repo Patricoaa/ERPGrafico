@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ActionLog } from "@/types/audit";
 import { DataTable } from "@/components/ui/data-table";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -16,189 +15,271 @@ import {
     FileDown,
     Printer,
     Activity,
-    Edit
+    Plus,
+    Minus,
+    RefreshCw
 } from "lucide-react";
 import api from "@/lib/api";
+import { DataCell } from "@/components/ui/data-table-cells";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 
 export default function AuditHubPage() {
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchLogs = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get("/core/audit/global/");
+            setLogs(response.data);
+        } catch (error) {
+            console.error("Error fetching audit logs:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchLogs = async () => {
-            try {
-                const response = await api.get("/core/audit/global/");
-                setLogs(response.data);
-            } catch (error) {
-                console.error("Error fetching audit logs:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchLogs();
     }, []);
 
     const getActionIcon = (type: string, source: string) => {
         if (source === 'action_log') {
             switch (type) {
-                case "LOGIN": return <LogIn className="h-4 w-4 text-green-500" />;
-                case "LOGOUT": return <LogOut className="h-4 w-4 text-slate-500" />;
-                case "SETTINGS_CHANGE": return <Settings className="h-4 w-4 text-blue-500" />;
-                case "SECURITY": return <ShieldAlert className="h-4 w-4 text-red-500" />;
-                case "EXPORT": return <FileDown className="h-4 w-4 text-orange-500" />;
-                case "PRINT": return <Printer className="h-4 w-4 text-indigo-500" />;
-                default: return <Activity className="h-4 w-4 text-slate-400" />;
+                case "LOGIN": return LogIn;
+                case "LOGOUT": return LogOut;
+                case "SETTINGS_CHANGE": return Settings;
+                case "SECURITY": return ShieldAlert;
+                case "EXPORT": return FileDown;
+                case "PRINT": return Printer;
+                default: return Activity;
             }
         } else {
-            // Source is history
             switch (type) {
-                case '+': return <Activity className="h-4 w-4 text-green-600" />;
-                case '~': return <Activity className="h-4 w-4 text-blue-600" />;
-                case '-': return <Activity className="h-4 w-4 text-red-600" />;
-                default: return <Activity className="h-4 w-4 text-slate-400" />;
+                case '+': return Plus;
+                case '~': return RefreshCw;
+                case '-': return Minus;
+                default: return Activity;
             }
         }
     };
 
-    const columns = [
+    const columns: any[] = [
         {
             accessorKey: "date",
-            header: "Fecha y Hora",
+            header: ({ column }: any) => (
+                <DataTableColumnHeader column={column} title="Fecha y Hora" />
+            ),
             cell: ({ row }: any) => {
                 const date = new Date(row.original.date);
                 return (
                     <div className="flex flex-col">
-                        <span className="font-medium text-xs">{format(date, "dd/MM/yyyy", { locale: es })}</span>
-                        <span className="text-[10px] text-muted-foreground">{format(date, "HH:mm:ss")}</span>
+                        <DataCell.Text className="text-xs font-semibold">
+                            {format(date, "dd/MM/yyyy", { locale: es })}
+                        </DataCell.Text>
+                        <DataCell.Secondary className="text-[10px]">
+                            {format(date, "HH:mm:ss")}
+                        </DataCell.Secondary>
                     </div>
                 );
             }
         },
         {
             accessorKey: "user_name",
-            header: "Usuario",
+            header: ({ column }: any) => (
+                <DataTableColumnHeader column={column} title="Usuario" />
+            ),
             cell: ({ row }: any) => (
-                <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-slate-50 font-normal text-[10px] h-5">
-                        {row.original.user_name || "Sistema"}
-                    </Badge>
-                </div>
+                <DataCell.Badge variant="outline" className="bg-slate-50 font-normal">
+                    {row.original.user_name || "Sistema"}
+                </DataCell.Badge>
             )
         },
         {
             accessorKey: "entity_label",
-            header: "Entidad",
+            header: ({ column }: any) => (
+                <DataTableColumnHeader column={column} title="Entidad" />
+            ),
             cell: ({ row }: any) => (
-                <Badge variant="secondary" className="font-normal text-[10px] h-5">
+                <DataCell.Badge variant="secondary" className="font-normal capitalize">
                     {row.original.entity_label || "Sistema"}
-                </Badge>
+                </DataCell.Badge>
             )
         },
         {
-            accessorKey: "action_type",
-            header: "Acción",
-            cell: ({ row }: any) => (
-                <div className="flex items-center gap-2">
-                    {getActionIcon(row.original.action_type || row.original.history_type, row.original.source)}
-                    <span className="text-xs font-semibold">
-                        {row.original.type_label || (
-                            row.original.history_type === '+' ? 'Creación' :
-                                row.original.history_type === '~' ? 'Edición' :
-                                    row.original.history_type === '-' ? 'Eliminación' : 'Cambio'
-                        )}
-                    </span>
-                </div>
-            )
+            accessorKey: "action_type_label", // Virtual key for filtering
+            id: "action_type_label",
+            header: ({ column }: any) => (
+                <DataTableColumnHeader column={column} title="Acción" />
+            ),
+            cell: ({ row }: any) => {
+                const hType = row.original.history_type;
+                const source = row.original.source;
+                const icon = getActionIcon(row.original.action_type || hType, source);
+                const label = row.original.type_label || (
+                    hType === '+' ? 'Creación' :
+                        hType === '~' ? 'Edición' :
+                            hType === '-' ? 'Eliminación' : 'Cambio'
+                );
+
+                let variant: any = "outline";
+                if (source === 'action_log') {
+                    if (row.original.action_type === 'LOGIN') variant = "success";
+                    if (row.original.action_type === 'SECURITY') variant = "destructive";
+                } else {
+                    if (hType === '+') variant = "info";
+                    if (hType === '~') variant = "warning";
+                    if (hType === '-') variant = "destructive";
+                }
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <DataCell.Icon icon={icon} className="h-6 w-6" />
+                        <DataCell.Badge variant={variant} className="font-semibold uppercase text-[9px]">
+                            {label}
+                        </DataCell.Badge>
+                    </div>
+                );
+            }
         },
         {
             accessorKey: "description",
-            header: "Descripción",
+            header: ({ column }: any) => (
+                <DataTableColumnHeader column={column} title="Descripción" />
+            ),
             cell: ({ row }: any) => (
-                <span className="text-xs text-slate-600 max-w-[400px] truncate block">
+                <DataCell.Text className="text-xs text-muted-foreground truncate max-w-[500px]">
                     {row.original.description}
-                </span>
+                </DataCell.Text>
             )
         },
+        {
+            accessorKey: "source",
+            header: "Origen",
+            id: "source",
+            cell: ({ row }: any) => null,
+        }
+    ];
+
+    const facetedFilters = [
+        {
+            column: "source",
+            title: "Origen",
+            options: [
+                { label: "Sistema", value: "action_log" },
+                { label: "Datos", value: "history" },
+            ],
+        },
+        {
+            column: "entity_label",
+            title: "Entidad",
+            options: Array.from(new Set(logs.map(l => l.entity_label))).filter(Boolean).map(label => ({
+                label,
+                value: label
+            }))
+        },
+        {
+            column: "action_type_label",
+            title: "Acción",
+            options: Array.from(new Set(logs.map(l => {
+                const hType = l.history_type;
+                if (l.source === 'action_log') return l.action_type;
+                if (l.source === 'history') {
+                    if (hType === '+') return 'Creación';
+                    if (hType === '~') return 'Edición';
+                    if (hType === '-') return 'Eliminación';
+                }
+                return 'Cambio';
+            }))).filter(Boolean).map(val => ({
+                label: val === 'LOGIN' ? 'Inicio de Sesión' :
+                    val === 'LOGOUT' ? 'Cierre de Sesión' :
+                        val === 'SETTINGS_CHANGE' ? 'Configuración' :
+                            val === 'SECURITY' ? 'Seguridad' :
+                                val === 'EXPORT' ? 'Exportación' :
+                                    val === 'PRINT' ? 'Impresión' : val,
+                value: val
+            }))
+        }
     ];
 
     return (
-        <div className="container mx-auto py-8 space-y-6">
+        <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Centro de Auditoría</h1>
+                    <h2 className="text-3xl font-bold tracking-tight">Centro de Auditoría</h2>
                     <p className="text-muted-foreground">
                         Registro unificado de acciones y cambios en el sistema.
                     </p>
                 </div>
-                <History className="h-10 w-10 text-slate-200" />
+                <div className="bg-slate-100 p-3 rounded-full">
+                    <History className="h-6 w-6 text-slate-500" />
+                </div>
             </div>
 
-            <Card className="border-none shadow-md">
-                <CardHeader className="bg-slate-50/50">
-                    <CardTitle>Bitácora de Actividades</CardTitle>
-                    <CardDescription>
-                        Visualice los cambios en documentos y eventos importantes.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-64">
-                            <Activity className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : (
-                        <DataTable
-                            columns={columns}
-                            data={logs}
-                            globalFilterFields={["description", "user_name", "entity_label"]}
-                        />
-                    )}
-                </CardContent>
-            </Card>
+            <div className="mt-4">
+                {loading ? (
+                    <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center flex flex-col items-center gap-4">
+                        <Activity className="h-8 w-8 animate-spin text-primary" />
+                        <span>Cargando bitácora de actividades...</span>
+                    </div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={logs}
+                        globalFilterFields={["description", "user_name", "entity_label"]}
+                        searchPlaceholder="Buscar en la bitácora..."
+                        useAdvancedFilter={true}
+                        facetedFilters={facetedFilters}
+                        hiddenColumns={["source"]}
+                        defaultPageSize={50}
+                    />
+                )}
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-green-50/50 border-green-100 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
+                <Card className="bg-green-50/30 border-green-100 shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-green-100 rounded-full">
+                        <div className="p-2 bg-green-100/50 rounded-full">
                             <LogIn className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                            <p className="text-xs text-green-600 font-semibold uppercase tracking-wider">Logins (24h)</p>
+                            <p className="text-[10px] text-green-600 font-bold uppercase tracking-tight">Logins (Sesión)</p>
                             <p className="text-2xl font-bold text-green-900">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-blue-50/50 border-blue-100 shadow-sm">
+                <Card className="bg-blue-50/30 border-blue-100 shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-blue-100 rounded-full">
-                            <Edit className="h-5 w-5 text-blue-600" />
+                        <div className="p-2 bg-blue-100/50 rounded-full">
+                            <Activity className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                            <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider">Cambios Datos</p>
+                            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-tight">Cambios Datos</p>
                             <p className="text-2xl font-bold text-blue-900">{logs.filter(l => l.source === 'history').length}</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-indigo-50/50 border-indigo-100 shadow-sm">
+                <Card className="bg-indigo-50/30 border-indigo-100 shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-indigo-100 rounded-full">
+                        <div className="p-2 bg-indigo-100/50 rounded-full">
                             <Settings className="h-5 w-5 text-indigo-600" />
                         </div>
                         <div>
-                            <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Configuración</p>
+                            <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-tight">Configuración</p>
                             <p className="text-2xl font-bold text-indigo-900">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-red-50/50 border-red-100 shadow-sm">
+                <Card className="bg-red-50/30 border-red-100 shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-red-100 rounded-full">
+                        <div className="p-2 bg-red-100/50 rounded-full">
                             <ShieldAlert className="h-5 w-5 text-red-600" />
                         </div>
                         <div>
-                            <p className="text-xs text-red-600 font-semibold uppercase tracking-wider">Seguridad</p>
+                            <p className="text-[10px] text-red-600 font-bold uppercase tracking-tight">Incidentes</p>
                             <p className="text-2xl font-bold text-red-900">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
                         </div>
                     </CardContent>
