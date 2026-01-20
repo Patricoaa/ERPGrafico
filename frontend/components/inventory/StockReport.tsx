@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { AdjustmentForm } from "@/components/inventory/AdjustmentForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ProductInsightsDialog } from "@/components/inventory/ProductInsightsDialog"
+import { Badge } from "@/components/ui/badge"
 
 export function StockReport() {
     const [report, setReport] = useState<any[]>([])
@@ -51,24 +52,33 @@ export function StockReport() {
 
     const columns: ColumnDef<any>[] = [
         {
-            accessorKey: "internal_code",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cod. Int." />,
-            cell: ({ row }) => <DataCell.Code className="font-bold text-primary">{row.getValue("internal_code")}</DataCell.Code>,
-        },
-        {
-            accessorKey: "code",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="SKU/Code" />,
-            cell: ({ row }) => <DataCell.Code className="text-muted-foreground">{row.getValue("code")}</DataCell.Code>,
-        },
-        {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col">
-                    <DataCell.Text>{row.getValue("name")}</DataCell.Text>
-                    <DataCell.Secondary className="uppercase">{row.original.category_name}</DataCell.Secondary>
-                </div>
-            ),
+            cell: ({ row }) => {
+                const item = row.original;
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight">{item.name}</span>
+                        <div className="flex flex-wrap gap-1">
+                            {item.internal_code && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {item.internal_code}
+                                </Badge>
+                            )}
+                            {item.code && item.code !== item.internal_code && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                    {item.code}
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: "category_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" />,
+            cell: ({ row }) => <DataCell.Text className="text-xs">{row.getValue("category_name")}</DataCell.Text>,
         },
         {
             accessorKey: "stock_qty",
