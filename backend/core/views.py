@@ -9,6 +9,14 @@ from .serializers import (
     UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer,
     ActionLogSerializer, HistoricalRecordSerializer
 )
+from inventory.models import Product, StockMove
+from sales.models import SaleOrder
+from purchasing.models import PurchaseOrder
+from contacts.models import Contact
+from billing.models import Invoice
+from treasury.models import Payment
+from production.models import WorkOrder
+from accounting.models import JournalEntry
 
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = CustomTokenRefreshSerializer
@@ -63,3 +71,65 @@ class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ActionLogSerializer
     permission_classes = [IsAuthenticated]
     filterset_fields = ['user', 'action_type']
+
+class GlobalAuditLogView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        limit = int(request.query_params.get('limit', 50))
+        
+        # 1. Action Logs
+        action_logs = ActionLog.objects.all()[:limit]
+        action_logs_data = ActionLogSerializer(action_logs, many=True).data
+        for log in action_logs_data:
+            log['source'] = 'action_log'
+            log['entity_type'] = 'system'
+            log['date'] = log['timestamp']
+            # Map action_type to history_type style (+, ~, -) or keep as is
+            log['type_label'] = log['action_type_display']
+
+        # 2. Historical Records from Models
+        models_to_track = [
+            (Product, 'product', 'Producto'),
+            (SaleOrder, 'sale_order', 'Nota de Venta'),
+            (PurchaseOrder, 'purchase_order', 'Orden de Compra'),
+            (Contact, 'contact', 'Contacto'),
+            (Invoice, 'invoice', 'Factura'),
+            (Payment, 'payment', 'Pago/Transacción'),
+            (WorkOrder, 'work_order', 'Orden de Trabajo'),
+            (StockMove, 'stock_move', 'Movimiento Stock'),
+            (JournalEntry, 'journal_entry', 'Asiento Contable'),
+        ]
+
+        all_history = []
+        for model, type_slug, type_label in models_to_track:
+            if hasattr(model, 'history'):
+                history_records = model.history.all()[:limit]
+                serialized = HistoricalRecordSerializer(history_records, many=True).data
+                for rec in serialized:
+                    rec['source'] = 'history'
+                    rec['entity_type'] = type_slug
+                    rec['entity_label'] = type_label
+                    rec['date'] = rec['history_date']
+                    
+                    # Create a description
+                    h_type = rec['history_type']
+                    action_verb = "creó" if h_type == '+' else "editó" if h_type == '~' else "eliminó"
+                    
+                    # Try to get a display name for the object
+                    # We need to find a field that represents the object name/number
+                    obj_name = ""
+                    for field in ['number', 'name', 'internal_code', 'display_id', 'id']:
+                        if rec.get(field):
+                            obj_name = str(rec.get(field))
+                            break
+                    
+                    rec['description'] = f"{action_verb.capitalize()} {type_label.lower()} {obj_name}".strip()
+                    rec['user_name'] = rec['history_user_username']
+                    all_history.append(rec)
+
+        # Combine and Sort
+        combined = action_logs_data + all_history
+        combined.sort(key=lambda x: x['date'], reverse=True)
+        
+        return Response(combined[:limit])
