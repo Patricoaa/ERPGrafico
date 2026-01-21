@@ -256,19 +256,33 @@ class AccountingMapper:
         if not receivable_account:
              raise ValidationError("Falta configuración de cuenta por cobrar.")
 
-        revenue_grouping = {} # Account -> Amount
+        revenue_gross_grouping = {} # Account -> Gross Amount
         for line in order.lines.all():
             rev_acc = line.product.get_income_account or settings.default_revenue_account
             if not rev_acc:
                 raise ValidationError(f"Falta configurar cuenta de ingresos para el producto {line.product.code}.")
-            revenue_grouping[rev_acc] = revenue_grouping.get(rev_acc, Decimal('0.00')) + line.subtotal
+            revenue_gross_grouping[rev_acc] = revenue_gross_grouping.get(rev_acc, Decimal('0.00')) + line.subtotal
 
         items = [
             {'account': receivable_account, 'debit': order.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
         ]
         
-        for acc, amount in revenue_grouping.items():
-            items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': amount, 'label': f"Venta {order.number}"})
+        # Distribute Total Net across accounts based on Gross grouping
+        # This ensures Sum(Revenue) == total_net, preventing rounding imbalances
+        total_net_remaining = order.total_net
+        accounts = list(revenue_gross_grouping.items())
+        
+        for i, (acc, gross_amount) in enumerate(accounts):
+            if i == len(accounts) - 1:
+                # Last account takes the remainder to ensure exact match
+                net_amount = total_net_remaining
+            else:
+                # Calculate Net for this bucket: Gross / 1.19
+                net_amount = (gross_amount / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+            
+            if net_amount != 0:
+                items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': net_amount, 'label': f"Venta {order.number}"})
+                total_net_remaining -= net_amount
         
         if order.total_tax > 0:
             tax_acc = settings.default_tax_payable_account
@@ -407,19 +421,31 @@ class AccountingMapper:
         if not receivable_account:
              raise ValidationError("Falta configuración de cuenta por cobrar.")
 
-        revenue_grouping = {} # Account -> Amount
+        revenue_gross_grouping = {} # Account -> Gross Amount
         for line in order.lines.all():
             rev_acc = line.product.get_income_account or settings.default_revenue_account
             if not rev_acc:
                 raise ValidationError(f"Falta configurar cuenta de ingresos para el producto {line.product.code}.")
-            revenue_grouping[rev_acc] = revenue_grouping.get(rev_acc, Decimal('0.00')) + line.subtotal
+            revenue_gross_grouping[rev_acc] = revenue_gross_grouping.get(rev_acc, Decimal('0.00')) + line.subtotal
 
         items = [
             {'account': receivable_account, 'debit': invoice.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
         ]
         
-        for acc, amount in revenue_grouping.items():
-            items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': amount, 'label': f"Factura {invoice.number or ''}"})
+        # Distribute Total Net across accounts based on Gross grouping
+        total_net_remaining = invoice.total_net
+        accounts = list(revenue_gross_grouping.items())
+        
+        for i, (acc, gross_amount) in enumerate(accounts):
+            if i == len(accounts) - 1:
+                 # Last account takes the remainder
+                 net_amount = total_net_remaining
+            else:
+                 net_amount = (gross_amount / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+            
+            if net_amount != 0:
+                items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': net_amount, 'label': f"Factura {invoice.number or ''}"})
+                total_net_remaining -= net_amount
         
         if invoice.total_tax > 0:
             tax_acc = settings.default_tax_payable_account
