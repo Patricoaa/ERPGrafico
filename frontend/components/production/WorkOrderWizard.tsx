@@ -828,7 +828,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
                                 <div className="space-y-6">
                                     {/* Specifications Section */}
-                                    {(stageData.prepress_specs || (stageData.folio_enabled && stageData.folio_start)) && (
+                                    {(stageData.prepress_specs || (order?.attachments && stageData.design_attachments && stageData.design_attachments.length > 0)) && (
                                         <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-3">
                                             {stageData.prepress_specs && (
                                                 <div className="space-y-1">
@@ -836,55 +836,54 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     <p className="text-sm border-l-2 border-primary/20 pl-3 py-1 italic">{stageData.prepress_specs}</p>
                                                 </div>
                                             )}
-                                            {stageData.folio_enabled && (
-                                                <div className="flex items-center gap-4 pt-2 border-t border-primary/10">
-                                                    <div className="flex-1">
-                                                        <Label className="text-[10px] font-bold uppercase text-primary">Folio Inicial</Label>
-                                                        <p className="text-sm font-semibold">{stageData.folio_start}</p>
+
+                                            {/* Design Files from Checkout */}
+                                            {order?.attachments && stageData.design_attachments && stageData.design_attachments.length > 0 && (
+                                                <div className="space-y-2 pt-2 border-t border-primary/10">
+                                                    <Label className="text-[10px] font-bold uppercase text-primary">Archivos del Checkout</Label>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        {order.attachments
+                                                            .filter((a: any) => stageData.design_attachments?.includes(a.original_filename))
+                                                            .map((att: any) => (
+                                                                <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs">
+                                                                    <div className="flex-1 truncate font-medium">{att.original_filename}</div>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-6 w-6 hover:bg-primary/10"
+                                                                        onClick={() => window.open(att.file, '_blank')}
+                                                                    >
+                                                                        <Download className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
+                                                            ))}
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
                                     )}
 
-                                    <div className="space-y-4">
-                                        {/* Design Files Section - Only show if design is needed */}
-                                        {stageData.design_needed && (
-                                            <div className="space-y-4">
-                                                {/* Design Files from Checkout */}
-                                                {order?.attachments && stageData.design_attachments && stageData.design_attachments.length > 0 && (
-                                                    <div className="space-y-2">
-                                                        <Label className="text-sm font-semibold flex items-center gap-2">
-                                                            <FileText className="h-4 w-4 text-primary" />
-                                                            Archivos del Checkout
-                                                        </Label>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                            {order.attachments
-                                                                .filter((a: any) => stageData.design_attachments?.includes(a.original_filename))
-                                                                .map((att: any) => (
-                                                                    <div key={att.id} className="flex items-center gap-2 p-2 bg-primary/5 rounded border border-primary/10 text-xs">
-                                                                        <div className="flex-1 truncate font-medium">{att.original_filename}</div>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-7 w-7 hover:bg-primary/10"
-                                                                            onClick={() => window.open(att.file, '_blank')}
-                                                                        >
-                                                                            <Download className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </div>
-                                                                ))}
-                                                        </div>
-                                                    </div>
-                                                )}
+                                    <div className="border-t pt-4">
+                                        <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
+                                        <div className="space-y-3">
+                                            <div className="p-4 border rounded-lg space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <Label className="text-sm">Diseño aprobado por el cliente</Label>
+                                                    <Button
+                                                        size="sm"
+                                                        variant={clientApproved ? "default" : "outline"}
+                                                        className={cn("transition-all duration-300", clientApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                        onClick={() => setClientApproved(!clientApproved)}
+                                                    >
+                                                        {clientApproved ? <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                        {clientApproved ? "Aprobado" : "Aprobar"}
+                                                    </Button>
+                                                </div>
 
-                                                {/* Design Approval Status and Evidence */}
-                                                {stageData.design_approved && (
-                                                    <div className="space-y-2">
-                                                        <Label className="text-sm font-semibold flex items-center gap-2">
-                                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                                            Evidencia de Aprobación
-                                                        </Label>
+                                                {/* Approval Evidence inside card */}
+                                                {stageData.design_needed && stageData.design_approved && (
+                                                    <div className="space-y-2 pt-3 border-t">
+                                                        <Label className="text-xs text-muted-foreground">Evidencia de Aprobación</Label>
                                                         {order?.attachments && stageData.approval_attachment && order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment) ? (
                                                             <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
                                                                 <div className="flex-1 truncate font-medium text-green-700">
@@ -893,10 +892,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-7 w-7 hover:bg-green-100 text-green-700"
+                                                                    className="h-6 w-6 hover:bg-green-100 text-green-700"
                                                                     onClick={() => window.open(order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).file, '_blank')}
                                                                 >
-                                                                    <Download className="h-4 w-4" />
+                                                                    <Download className="h-3 w-3" />
                                                                 </Button>
                                                             </div>
                                                         ) : (
@@ -904,41 +903,21 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         )}
                                                     </div>
                                                 )}
+
                                             </div>
-                                        )}
 
-                                        <div className="border-t pt-4">
-                                            <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
-                                            <div className="space-y-3">
-                                                <div className="p-4 border rounded-lg space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="text-sm">Diseño aprobado por el cliente</Label>
-                                                        <Button
-                                                            size="sm"
-                                                            variant={clientApproved ? "default" : "outline"}
-                                                            className={cn("transition-all duration-300", clientApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                            onClick={() => setClientApproved(!clientApproved)}
-                                                        >
-                                                            {clientApproved ? <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                            {clientApproved ? "Aprobado" : "Aprobar"}
-                                                        </Button>
-                                                    </div>
-
-                                                </div>
-
-                                                <div className="p-4 border rounded-lg">
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="text-sm">Aprobación del Supervisor</Label>
-                                                        <Button
-                                                            size="sm"
-                                                            variant={supervisorApproved ? "default" : "outline"}
-                                                            className={cn("transition-all duration-300", supervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                            onClick={() => setSupervisorApproved(!supervisorApproved)}
-                                                        >
-                                                            {supervisorApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                            {supervisorApproved ? "Aprobado" : "Aprobar"}
-                                                        </Button>
-                                                    </div>
+                                            <div className="p-4 border rounded-lg">
+                                                <div className="flex items-center justify-between">
+                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
+                                                    <Button
+                                                        size="sm"
+                                                        variant={supervisorApproved ? "default" : "outline"}
+                                                        className={cn("transition-all duration-300", supervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                        onClick={() => setSupervisorApproved(!supervisorApproved)}
+                                                    >
+                                                        {supervisorApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                        {supervisorApproved ? "Aprobado" : "Aprobar"}
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1219,6 +1198,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     </div>
                                 )}
 
+                                {/* Section 5: Folio */}
+                                {stageData.folio_enabled && stageData.folio_start && (
+                                    <div className="p-3 space-y-1">
+                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Folio Inicial</p>
+                                        <p className="text-sm font-semibold text-primary">{stageData.folio_start}</p>
+                                    </div>
+                                )}
+
                                 {stageData.product_description && stageData.product_description !== order?.product_description && (
                                     <div className="p-3 bg-muted/5">
                                         <p className="font-bold text-[10px] uppercase text-muted-foreground mb-1">Especificación de Etapa</p>
@@ -1240,17 +1227,19 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 </div>
             </DialogContent>
             {/* Modals for Edit and Command Center */}
-            {isEditOpen && order && (
-                <WorkOrderForm
-                    open={isEditOpen}
-                    onOpenChange={setIsEditOpen}
-                    initialData={order}
-                    onSuccess={() => {
-                        setIsEditOpen(false)
-                        fetchOrder()
-                    }}
-                />
-            )}
+            {
+                isEditOpen && order && (
+                    <WorkOrderForm
+                        open={isEditOpen}
+                        onOpenChange={setIsEditOpen}
+                        initialData={order}
+                        onSuccess={() => {
+                            setIsEditOpen(false)
+                            fetchOrder()
+                        }}
+                    />
+                )
+            }
 
             {/* PO Preview Modal */}
             <Dialog open={showPOPreview} onOpenChange={setShowPOPreview}>
@@ -1364,6 +1353,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     </div>
                 }
             />
-        </Dialog>
+        </Dialog >
     )
 }
