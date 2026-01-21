@@ -451,15 +451,19 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             )}
                         </DialogTitle>
                         <DialogDescription className="flex items-center gap-4 mt-1">
+                            <span className="text-muted-foreground truncate">
+                                {order?.description}
+                            </span>
+                            <span className="text-muted-foreground">|</span>
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                                Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
+                            </span>
+                            <span className="text-muted-foreground">|</span>
                             <span className="flex items-center gap-1.5 text-primary font-medium">
                                 <CalendarIcon className="h-3.5 w-3.5" />
                                 {order?.start_date ?
-                                    `Inicio: ${new Date(order.start_date + 'T12:00:00').toLocaleDateString()}` :
+                                    new Date(order.start_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) :
                                     "Sin fecha de inicio"}
-                            </span>
-                            <span className="text-muted-foreground">|</span>
-                            <span className="text-muted-foreground truncate">
-                                {order?.description} | Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
                             </span>
                         </DialogDescription>
                     </div>
@@ -844,54 +848,61 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     )}
 
                                     <div className="space-y-4">
-
-                                        <div>
-                                            <Label className="text-sm font-semibold">Diseño</Label>
-                                            <div className="mt-2 space-y-3">
-                                                {order?.attachments && order.attachments.filter((a: any) => stageData.design_attachments?.includes(a.original_filename)).length > 0 ? (
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                        {order.attachments
-                                                            .filter((a: any) => stageData.design_attachments?.includes(a.original_filename))
-                                                            .map((att: any) => (
-                                                                <div key={att.id} className="flex items-center gap-2 p-2 bg-primary/5 rounded border border-primary/10 text-xs">
-                                                                    <div className="flex-1 truncate font-medium">{att.original_filename}</div>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-7 w-7 hover:bg-primary/10"
-                                                                        onClick={() => window.open(att.file, '_blank')}
-                                                                    >
-                                                                        <Download className="h-4 w-4" />
-                                                                    </Button>
-                                                                </div>
-                                                            ))}
+                                        {order?.attachments && order.attachments.length > 0 && (
+                                            <div className="space-y-4 mb-6">
+                                                {/* Design Files Section */}
+                                                {order.attachments.filter((a: any) => stageData.design_attachments?.includes(a.original_filename)).length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-semibold flex items-center gap-2">
+                                                            <FileText className="h-4 w-4 text-primary" />
+                                                            Archivos de Diseño
+                                                        </Label>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            {order.attachments
+                                                                .filter((a: any) => stageData.design_attachments?.includes(a.original_filename))
+                                                                .map((att: any) => (
+                                                                    <div key={att.id} className="flex items-center gap-2 p-2 bg-primary/5 rounded border border-primary/10 text-xs">
+                                                                        <div className="flex-1 truncate font-medium">{att.original_filename}</div>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-7 w-7 hover:bg-primary/10"
+                                                                            onClick={() => window.open(att.file, '_blank')}
+                                                                        >
+                                                                            <Download className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                ))}
+                                                        </div>
                                                     </div>
-                                                ) : (
-                                                    <>
-                                                        <div className="space-y-2">
-                                                            <Label className="text-xs">URL del Diseño</Label>
-                                                            <Input
-                                                                placeholder="https://..."
-                                                                value={designUrl}
-                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDesignUrl(e.target.value)}
-                                                            />
+                                                )}
+
+                                                {/* Approval Evidence Section */}
+                                                {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment) && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-semibold flex items-center gap-2">
+                                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                                            Evidencia de Aprobación (desde Venta)
+                                                        </Label>
+                                                        <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
+                                                            <div className="flex-1 truncate font-medium text-green-700">
+                                                                {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).original_filename}
+                                                            </div>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 hover:bg-green-100 text-green-700"
+                                                                onClick={() => window.open(order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).file, '_blank')}
+                                                            >
+                                                                <Download className="h-4 w-4" />
+                                                            </Button>
                                                         </div>
-                                                        <div className="space-y-2">
-                                                            <Label className="text-xs">O cargar archivo</Label>
-                                                            <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
-                                                                <Upload className="h-4 w-4" />
-                                                                <span className="text-sm">{designFile ? designFile.name : "Seleccionar archivo"}</span>
-                                                                <input
-                                                                    type="file"
-                                                                    className="hidden"
-                                                                    onChange={(e) => setDesignFile(e.target.files?.[0] || null)}
-                                                                />
-                                                            </label>
-                                                        </div>
-                                                    </>
+                                                    </div>
                                                 )}
                                             </div>
-                                        </div>
+                                        )}
+
+
 
                                         <div className="border-t pt-4">
                                             <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
@@ -909,36 +920,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             {clientApproved ? "Aprobado" : "Aprobar"}
                                                         </Button>
                                                     </div>
-                                                    {clientApproved && (
-                                                        <div className="space-y-2 animate-in fade-in">
-                                                            <Label className="text-xs text-muted-foreground">Evidencia de Aprobación</Label>
-                                                            {order?.attachments && order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment) ? (
-                                                                <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
-                                                                    <div className="flex-1 truncate font-medium text-green-700">
-                                                                        {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).original_filename}
-                                                                    </div>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-7 w-7 hover:bg-green-100 text-green-700"
-                                                                        onClick={() => window.open(order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).file, '_blank')}
-                                                                    >
-                                                                        <Download className="h-4 w-4" />
-                                                                    </Button>
-                                                                </div>
-                                                            ) : (
-                                                                <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-muted/50">
-                                                                    <Upload className="h-3 w-3" />
-                                                                    <span className="text-xs">{clientApprovalFile ? clientApprovalFile.name : "Cargar evidencia (opcional)"}</span>
-                                                                    <input
-                                                                        type="file"
-                                                                        className="hidden"
-                                                                        onChange={(e) => setClientApprovalFile(e.target.files?.[0] || null)}
-                                                                    />
-                                                                </label>
-                                                            )}
-                                                        </div>
-                                                    )}
+
                                                 </div>
 
                                                 <div className="p-4 border rounded-lg">
@@ -1201,20 +1183,22 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     </div>
                                 )}
 
-                                {/* Section 3: Contact */}
+                                {/* Section 3: Contact / Reference */}
                                 {(stageData.contact_name || order?.sale_customer_name) && (
                                     <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Cliente Relacionado</p>
+                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">
+                                            {stageData.contact_name ? 'Contacto / Referencia' : 'Cliente Relacionado'}
+                                        </p>
                                         <div className="flex items-start gap-3 pt-0.5">
                                             <div className="bg-muted p-1.5 rounded-full mt-0.5">
                                                 <User className="h-3.5 w-3.5 text-muted-foreground" />
                                             </div>
                                             <div className="flex-1 overflow-hidden">
                                                 <p className="text-sm font-semibold truncate leading-tight">
-                                                    {stageData.contact_name || order?.sale_customer_name}
+                                                    {stageData.contact_name || order.sale_customer_name}
                                                 </p>
                                                 <p className="text-[11px] text-muted-foreground truncate">
-                                                    {stageData.contact_tax_id || order?.sale_customer_rut}
+                                                    {stageData.contact_tax_id || order.sale_customer_rut}
                                                 </p>
                                             </div>
                                         </div>
