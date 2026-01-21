@@ -306,19 +306,20 @@ export function AdvancedManufacturingDialog({
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center justify-between p-2 rounded-md bg-background border border-primary/10">
-                                                <div className="space-y-0.5">
-                                                    <Label className="text-xs font-semibold">Diseño Aprobado</Label>
-                                                    <p className="text-[10px] text-muted-foreground italic">Aprobación verbal o previa</p>
+                                            {designNeeded && (
+                                                <div className="flex items-center justify-between p-2 rounded-md bg-background border border-primary/10">
+                                                    <div className="space-y-0.5">
+                                                        <Label className="text-xs font-semibold">Diseño aprobado por el cliente</Label>
+                                                    </div>
+                                                    <Switch
+                                                        checked={designApproved}
+                                                        onCheckedChange={setDesignApproved}
+                                                        className="scale-75"
+                                                    />
                                                 </div>
-                                                <Switch
-                                                    checked={designApproved}
-                                                    onCheckedChange={setDesignApproved}
-                                                    className="scale-75"
-                                                />
-                                            </div>
+                                            )}
 
-                                            {designApproved && (
+                                            {designNeeded && designApproved && (
                                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200 p-2 rounded-md bg-green-50/30 border border-green-100">
                                                     <Label className="text-[10px] uppercase text-green-700 font-bold">Evidencia de Aprobación</Label>
                                                     <div className="space-y-2">

@@ -96,8 +96,13 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         delivery_type = request.data.get('delivery_type', 'IMMEDIATE')
         delivery_date = request.data.get('delivery_date')
         delivery_notes = request.data.get('delivery_notes', '')
-
-        # Extract line-indexed manufacturing files
+        immediate_lines = request.data.get('immediate_lines')
+        if isinstance(immediate_lines, str):
+            import json
+            try:
+                immediate_lines = json.loads(immediate_lines)
+            except:
+                pass
         line_files = {} # keyed by line_idx
         for key, file_obj in request.FILES.items():
             if key.startswith('line_'):
