@@ -51,7 +51,28 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-        # Return full data using read serializer
+        
+        # Parse files for lines if any
+        line_files = {}
+        if request.FILES:
+            for key, file_obj in request.FILES.items():
+                parts = key.split('_')
+                if len(parts) >= 3 and parts[0] == 'line':
+                    try:
+                        line_idx = int(parts[1])
+                        file_type = parts[2]
+                        if line_idx not in line_files:
+                            line_files[line_idx] = {'design': [], 'approval': None}
+                        if file_type == 'design':
+                            line_files[line_idx]['design'].append(file_obj)
+                        elif file_type == 'approval':
+                            line_files[line_idx]['approval'] = file_obj
+                    except ValueError:
+                        continue
+        
+        # Explicitly confirm sale (this creates OTs and attaches files)
+        SalesService.confirm_sale(order, line_files=line_files)
+        
         return Response(SaleOrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):

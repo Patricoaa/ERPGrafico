@@ -15,6 +15,8 @@ from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from core.views import AuditHistoryMixin
+from django.contrib.contenttypes.models import ContentType
+from core.models import Attachment
 
 class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = WorkOrder.objects.all()
@@ -74,6 +76,54 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             import traceback
             print(traceback.format_exc())
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Overridden update to handle file attachments.
+        """
+        response = super().update(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            try:
+                # Handle file attachments
+                if request.FILES:
+                    instance = self.get_object()
+                    content_type = ContentType.objects.get_for_model(instance)
+                    
+                    # 1. Design Files (design_file_0, design_file_1, etc.)
+                    # We look for keys starting with 'design_file_'
+                    for key, file_obj in request.FILES.items():
+                        if key.startswith('design_file_'):
+                            Attachment.objects.create(
+                                file=file_obj,
+                                original_filename=file_obj.name,
+                                content_type=content_type,
+                                object_id=instance.id,
+                                user=request.user
+                            )
+                    
+                    # 2. Approval File
+                    approval_file = request.FILES.get('approval_file')
+                    if approval_file:
+                        Attachment.objects.create(
+                            file=approval_file,
+                            original_filename=approval_file.name,
+                            content_type=content_type,
+                            object_id=instance.id,
+                            user=request.user
+                        )
+                        # Ensure stage_data is updated with the filename for legacy support
+                        # Although super().update() likely handled stage_data from body, 
+                        # ensure the filename matches what was uploaded.
+                        if not instance.stage_data: instance.stage_data = {}
+                        instance.stage_data['approval_attachment'] = approval_file.name
+                        instance.save()
+                        
+            except Exception as e:
+                print(f"Error attaching files in update: {e}")
+                # We don't fail the request if just attachment failed, but good to know
+                
+        return response
 
     def destroy(self, request, *args, **kwargs):
         """
