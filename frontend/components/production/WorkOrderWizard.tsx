@@ -901,41 +901,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     )}
 
                                     {/* Upload New Design */}
-                                    <div className="p-4 border rounded-lg bg-background space-y-3">
-                                        <Label className="text-sm font-semibold flex items-center gap-2">
-                                            <Upload className="h-4 w-4" />
-                                            Adjuntar Archivo de Diseño
-                                        </Label>
-                                        <div className="flex gap-2 items-center">
-                                            <Input
-                                                type="file"
-                                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
-                                                className="flex-1 cursor-pointer"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0]
-                                                    if (file) {
-                                                        const validation = validateFile(file)
-                                                        if (validation.valid) {
-                                                            setDesignFile(file)
-                                                        } else {
-                                                            toast.error(validation.error)
-                                                            e.target.value = ''
-                                                        }
-                                                    } else {
-                                                        setDesignFile(null)
-                                                    }
-                                                }}
-                                            />
-                                            {designFile && (
-                                                <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                                                    <Check className="h-3 w-3 mr-1" /> Listo
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground">
-                                            Formatos: PDF, Imágenes, Office, ZIP. Máx 10MB.
-                                        </p>
-                                    </div>
+
 
                                     <div className="border-t pt-4">
                                         <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
@@ -955,58 +921,54 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 </div>
 
                                                 <div className="pt-3 border-t">
-                                                    <Label className="text-xs text-muted-foreground mb-2 block">Adjuntar Evidencia (Opcional)</Label>
-                                                    <div className="flex gap-2 items-center">
-                                                        <Input
-                                                            type="file"
-                                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
-                                                            className="h-8 text-xs cursor-pointer"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files?.[0]
-                                                                if (file) {
-                                                                    const validation = validateFile(file)
-                                                                    if (validation.valid) {
-                                                                        setClientApprovalFile(file)
-                                                                    } else {
-                                                                        toast.error(validation.error)
-                                                                        e.target.value = ''
-                                                                    }
-                                                                } else {
-                                                                    setClientApprovalFile(null)
-                                                                }
-                                                            }}
-                                                        />
-                                                        {clientApprovalFile && (
-                                                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                                                                <Check className="h-3 w-3 mr-1" />
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                    <Label className="text-xs text-muted-foreground mb-2 block">Evidencia de Aprobación</Label>
 
-                                                {/* Approval Evidence inside card */}
-                                                {stageData.design_needed && stageData.design_approved && (
-                                                    <div className="space-y-2 pt-3 border-t">
-                                                        <Label className="text-xs text-muted-foreground">Evidencia de Aprobación</Label>
-                                                        {order?.attachments && stageData.approval_attachment && order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment) ? (
-                                                            <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
-                                                                <div className="flex-1 truncate font-medium text-green-700">
-                                                                    {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).original_filename}
-                                                                </div>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-6 w-6 hover:bg-green-100 text-green-700"
-                                                                    onClick={() => window.open(order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).file, '_blank')}
-                                                                >
-                                                                    <Download className="h-3 w-3" />
-                                                                </Button>
+                                                    {/* Show existing file if present */}
+                                                    {order?.attachments && stageData.approval_attachment && order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment) ? (
+                                                        <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
+                                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                                            <div className="flex-1 truncate font-medium text-green-700">
+                                                                {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).original_filename}
                                                             </div>
-                                                        ) : (
-                                                            <p className="text-xs text-muted-foreground italic p-2 bg-muted/30 rounded">Aprobación verbal o previa</p>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6 hover:bg-green-100 text-green-700"
+                                                                onClick={() => window.open(order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).file, '_blank')}
+                                                                title="Descargar"
+                                                            >
+                                                                <Download className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex gap-2 items-center">
+                                                            <Input
+                                                                type="file"
+                                                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
+                                                                className="h-8 text-xs cursor-pointer"
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files?.[0]
+                                                                    if (file) {
+                                                                        const validation = validateFile(file)
+                                                                        if (validation.valid) {
+                                                                            setClientApprovalFile(file)
+                                                                        } else {
+                                                                            toast.error(validation.error)
+                                                                            e.target.value = ''
+                                                                        }
+                                                                    } else {
+                                                                        setClientApprovalFile(null)
+                                                                    }
+                                                                }}
+                                                            />
+                                                            {clientApprovalFile && (
+                                                                <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                                                    <Check className="h-3 w-3 mr-1" />
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
 
                                             </div>
 
