@@ -38,8 +38,21 @@ class WorkOrderService:
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.filter(warehouse__isnull=False).exists() else Warehouse.objects.first(),
-            stage_data=WorkOrderService._map_manufacturing_data(sale_line.manufacturing_data) if sale_line.manufacturing_data else {}
+            stage_data={} 
         )
+        
+        # Map and structure stage data
+        if sale_line.manufacturing_data:
+            flat_data = WorkOrderService._map_manufacturing_data(sale_line.manufacturing_data)
+            work_order.stage_data = {
+                # Nest data for Wizard compatibility
+                'prepress': flat_data,
+                'press': flat_data,
+                'postpress': flat_data,
+                # Keep flat data for backward compatibility or direct access
+                **flat_data
+            }
+            work_order.save()
         
         # Attach files if provided
         if files:

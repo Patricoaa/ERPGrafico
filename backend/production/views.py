@@ -43,7 +43,22 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 # But here the user explicitly clicked "Create" (or Save), so we should allow it or return existing?
                 # Usually standard CRUD allows creation.
                 
-                work_order = WorkOrderService.create_from_sale_line(sale_line)
+                # Extract files from request
+                files = {}
+                if request.FILES:
+                    # Group files by key patterns if needed, or pass as is
+                    # The service expects 'design' (list) and 'approval' (single)
+                    # We assume frontend sends 'design_files[]' or 'design' and 'approval_file' or 'approval'
+                    
+                    design_files = request.FILES.getlist('design_files') or request.FILES.getlist('design')
+                    approval_file = request.FILES.get('approval_file') or request.FILES.get('approval')
+                    
+                    if design_files:
+                        files['design'] = design_files
+                    if approval_file:
+                        files['approval'] = approval_file
+                
+                work_order = WorkOrderService.create_from_sale_line(sale_line, files=files)
                 
                 if work_order:
                     # Apply updates from form (dates, description override, stage_data)
