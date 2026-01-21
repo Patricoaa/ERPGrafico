@@ -13,7 +13,7 @@ class TreasuryService:
                          date=None, reference='', partner=None, invoice=None, 
                          treasury_account_id=None, sale_order=None, purchase_order=None, 
                          transaction_number=None, is_pending_registration=False,
-                         dte_type=None, document_reference=None, document_attachment=None):
+                         dte_type=None, document_reference=None):
         """
         Registers a payment and creates the corresponding Accounting Entry.
         """
@@ -51,8 +51,7 @@ class TreasuryService:
                 invoice = BillingService.create_purchase_bill(
                     order=purchase_order,
                     supplier_invoice_number=document_reference,
-                    dte_type=dte_type,
-                    document_attachment=document_attachment
+                    dte_type=dte_type
                 )
             else:
                 invoice = existing_invoice

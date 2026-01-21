@@ -44,7 +44,6 @@ class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         # New Document Registration Fields
         dte_type = data.get('dte_type')
         document_reference = data.get('document_reference')
-        document_attachment = request.FILES.get('document_attachment')
 
         
         # Resolve objects
@@ -82,8 +81,7 @@ class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration,
                 dte_type=dte_type,
-                document_reference=document_reference,
-                document_attachment=document_attachment
+                document_reference=document_reference
             )
             if payment:
                 return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
@@ -109,7 +107,6 @@ class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             # New Document Registration Fields
             dte_type = request.data.get('dte_type')
             document_reference = request.data.get('document_reference')
-            document_attachment = request.FILES.get('document_attachment')
 
             
             # Contact (unified partner)
@@ -138,8 +135,7 @@ class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration,
                 dte_type=dte_type,
-                document_reference=document_reference,
-                document_attachment=document_attachment
+                document_reference=document_reference
             )
             
             if payment:

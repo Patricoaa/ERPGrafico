@@ -276,10 +276,20 @@ class WorkOrderService:
                 work_order.stage_data = {}
             work_order.stage_data[next_stage.lower()] = data
 
-        # Handle file attachments
+        # Handle file attachments with validation
         if files:
+            from core.validators import validate_file_size, validate_file_extension
             content_type = ContentType.objects.get_for_model(work_order)
+            
             for field_name, file_obj in files.items():
+                # Validate file before creating attachment
+                try:
+                    validate_file_size(file_obj)
+                    validate_file_extension(file_obj)
+                except ValidationError as e:
+                    raise ValidationError(f"Archivo '{file_obj.name}': {str(e)}")
+                
+                # Create attachment after validation
                 Attachment.objects.create(
                     file=file_obj,
                     original_filename=file_obj.name,

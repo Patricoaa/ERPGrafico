@@ -52,6 +52,31 @@ const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").t
     loading: () => <div className="p-4 text-center">Cargando Formulario...</div>
 })
 
+// File validation constants
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.zip', '.rar']
+
+// Validation function
+const validateFile = (file: File): { valid: boolean; error?: string } => {
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase()
+
+    if (file.size > MAX_FILE_SIZE) {
+        return {
+            valid: false,
+            error: `El archivo "${file.name}" es demasiado grande. Tamaño máximo: 10 MB.`
+        }
+    }
+
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+        return {
+            valid: false,
+            error: `Extensión "${extension}" no permitida. Use: ${ALLOWED_EXTENSIONS.join(', ')}`
+        }
+    }
+
+    return { valid: true }
+}
+
 interface WorkOrderWizardProps {
     orderId: number
     open: boolean
@@ -242,11 +267,23 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             }
             formData.append('data', JSON.stringify(payloadData))
 
-            // Append files if they exist
+            // Append files if they exist (with validation)
             if (designFile) {
+                const validation = validateFile(designFile)
+                if (!validation.valid) {
+                    toast.error(validation.error!)
+                    setTransitioning(false)
+                    return
+                }
                 formData.append('design_attachment', designFile)
             }
             if (clientApprovalFile) {
+                const validation = validateFile(clientApprovalFile)
+                if (!validation.valid) {
+                    toast.error(validation.error!)
+                    setTransitioning(false)
+                    return
+                }
                 formData.append('approval_attachment', clientApprovalFile)
             }
 
@@ -863,6 +900,43 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         </div>
                                     )}
 
+                                    {/* Upload New Design */}
+                                    <div className="p-4 border rounded-lg bg-background space-y-3">
+                                        <Label className="text-sm font-semibold flex items-center gap-2">
+                                            <Upload className="h-4 w-4" />
+                                            Adjuntar Archivo de Diseño
+                                        </Label>
+                                        <div className="flex gap-2 items-center">
+                                            <Input
+                                                type="file"
+                                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
+                                                className="flex-1 cursor-pointer"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0]
+                                                    if (file) {
+                                                        const validation = validateFile(file)
+                                                        if (validation.valid) {
+                                                            setDesignFile(file)
+                                                        } else {
+                                                            toast.error(validation.error)
+                                                            e.target.value = ''
+                                                        }
+                                                    } else {
+                                                        setDesignFile(null)
+                                                    }
+                                                }}
+                                            />
+                                            {designFile && (
+                                                <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                                    <Check className="h-3 w-3 mr-1" /> Listo
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Formatos: PDF, Imágenes, Office, ZIP. Máx 10MB.
+                                        </p>
+                                    </div>
+
                                     <div className="border-t pt-4">
                                         <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
                                         <div className="space-y-3">
@@ -878,6 +952,36 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         {clientApproved ? <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
                                                         {clientApproved ? "Aprobado" : "Aprobar"}
                                                     </Button>
+                                                </div>
+
+                                                <div className="pt-3 border-t">
+                                                    <Label className="text-xs text-muted-foreground mb-2 block">Adjuntar Evidencia (Opcional)</Label>
+                                                    <div className="flex gap-2 items-center">
+                                                        <Input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
+                                                            className="h-8 text-xs cursor-pointer"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0]
+                                                                if (file) {
+                                                                    const validation = validateFile(file)
+                                                                    if (validation.valid) {
+                                                                        setClientApprovalFile(file)
+                                                                    } else {
+                                                                        toast.error(validation.error)
+                                                                        e.target.value = ''
+                                                                    }
+                                                                } else {
+                                                                    setClientApprovalFile(null)
+                                                                }
+                                                            }}
+                                                        />
+                                                        {clientApprovalFile && (
+                                                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                                                <Check className="h-3 w-3 mr-1" />
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 </div>
 
                                                 {/* Approval Evidence inside card */}
