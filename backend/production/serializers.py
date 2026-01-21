@@ -113,6 +113,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     requires_prepress = serializers.SerializerMethodField()
     requires_press = serializers.SerializerMethodField()
     requires_postpress = serializers.SerializerMethodField()
+    checkout_files = serializers.SerializerMethodField()
 
     def get_product_description(self, obj):
         if obj.stage_data and obj.stage_data.get('product_description'):
@@ -200,6 +201,21 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         if outsourced.count() == mats.count():
             return 'full'
         return 'partial'
+
+    def get_checkout_files(self, obj):
+        if not obj.sale_order:
+            return []
+        
+        from core.models import Attachment
+        from django.contrib.contenttypes.models import ContentType
+        from sales.models import SaleOrder
+        
+        ct = ContentType.objects.get_for_model(SaleOrder)
+        attachments = Attachment.objects.filter(
+            content_type=ct,
+            object_id=obj.sale_order.id
+        )
+        return AttachmentSerializer(attachments, many=True).data
     
     class Meta:
         model = WorkOrder

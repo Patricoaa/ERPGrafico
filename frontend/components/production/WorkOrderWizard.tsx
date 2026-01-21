@@ -36,7 +36,7 @@ import {
     LayoutDashboard,
     CalendarIcon
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatBytes } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -874,35 +874,70 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 </div>
                                             )}
 
-                                            {/* Design Files from Checkout */}
-                                            {order?.attachments && order.attachments.length > 0 && (
-                                                <div className="space-y-2 pt-2 border-t border-primary/10">
-                                                    <Label className="text-[10px] font-bold uppercase text-primary">Archivos del Checkout</Label>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                        {order.attachments
-                                                            .filter((a: any) => a.original_filename !== stageData.approval_attachment)
-                                                            .map((att: any) => (
-                                                                <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs">
-                                                                    <div className="flex-1 truncate font-medium">{att.original_filename}</div>
+                                            {/* Design Files & Checkout Files */}
+                                            <div className="space-y-4 pt-2 border-t border-primary/10">
+                                                {/* 1. Checkout Files (from Sale Order) */}
+                                                {order?.checkout_files && order.checkout_files.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold uppercase text-primary flex items-center gap-1.5">
+                                                            <Package className="h-3 w-3" />
+                                                            Archivos del Checkout (Compra)
+                                                        </Label>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            {order.checkout_files.map((att: any) => (
+                                                                <div key={att.id} className="flex items-center gap-2 p-2 bg-blue-50/50 rounded border border-blue-100/50 text-xs hover:border-blue-200 transition-colors">
+                                                                    <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                                                                    <div className="flex-1 truncate font-medium text-blue-700" title={att.original_filename}>{att.original_filename}</div>
+                                                                    <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(att.file_size)}</div>
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
-                                                                        className="h-6 w-6 hover:bg-primary/10"
+                                                                        className="h-6 w-6 hover:bg-blue-100 text-blue-700"
                                                                         onClick={() => window.open(att.file, '_blank')}
+                                                                        title="Descargar"
                                                                     >
                                                                         <Download className="h-3 w-3" />
                                                                     </Button>
                                                                 </div>
                                                             ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
+
+                                                {/* 2. Work Order Attachments (Design/Reference created with OT) */}
+                                                {order?.attachments && order.attachments.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold uppercase text-primary flex items-center gap-1.5">
+                                                            <Layers className="h-3 w-3" />
+                                                            Archivos Adjuntos a la OT
+                                                        </Label>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            {order.attachments
+                                                                .filter((a: any) => a.original_filename !== stageData.approval_attachment)
+                                                                .map((att: any) => (
+                                                                    <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs hover:border-primary/40 transition-colors">
+                                                                        <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                                                                        <div className="flex-1 truncate font-medium" title={att.original_filename}>{att.original_filename}</div>
+                                                                        <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(att.file_size)}</div>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-6 w-6 hover:bg-primary/10"
+                                                                            onClick={() => window.open(att.file, '_blank')}
+                                                                            title="Descargar"
+                                                                        >
+                                                                            <Download className="h-3 w-3" />
+                                                                        </Button>
+                                                                    </div>
+                                                                ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
 
-                                    {/* Upload New Design */}
-
-
+                                    {/* Upload New Design & Approval */}
                                     <div className="border-t pt-4">
                                         <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
                                         <div className="space-y-3">
@@ -920,32 +955,45 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     </Button>
                                                 </div>
 
-                                                <div className="pt-3 border-t">
-                                                    <Label className="text-xs text-muted-foreground mb-2 block">Evidencia de Aprobación</Label>
+                                                <div className="pt-3 border-t space-y-3">
+                                                    <Label className="text-xs text-muted-foreground block">Evidencia de Aprobación</Label>
 
-                                                    {/* Show existing file if present */}
-                                                    {order?.attachments && stageData.approval_attachment && order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment) ? (
-                                                        <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
-                                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                                            <div className="flex-1 truncate font-medium text-green-700">
-                                                                {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).original_filename}
-                                                            </div>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-6 w-6 hover:bg-green-100 text-green-700"
-                                                                onClick={() => window.open(order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).file, '_blank')}
-                                                                title="Descargar"
-                                                            >
-                                                                <Download className="h-3 w-3" />
-                                                            </Button>
+                                                    {/* Historical Approvals */}
+                                                    {order?.attachments && order.attachments.some((a: any) => a.original_filename === stageData.approval_attachment) && (
+                                                        <div className="space-y-1">
+                                                            <p className="text-[10px] font-bold uppercase text-muted-foreground">Evidencia Actual:</p>
+                                                            {order.attachments
+                                                                .filter((a: any) => a.original_filename === stageData.approval_attachment)
+                                                                .map((att: any) => (
+                                                                    <div key={att.id} className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
+                                                                        <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                                                                        <div className="flex-1 truncate font-medium text-green-700">{att.original_filename}</div>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-6 w-6 hover:bg-green-100 text-green-700"
+                                                                            onClick={() => window.open(att.file, '_blank')}
+                                                                            title="Descargar"
+                                                                        >
+                                                                            <Download className="h-3 w-3" />
+                                                                        </Button>
+                                                                    </div>
+                                                                ))}
                                                         </div>
-                                                    ) : (
+                                                    )}
+
+                                                    {/* Upload Input */}
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                                                            {order?.attachments?.some((a: any) => a.original_filename === stageData.approval_attachment)
+                                                                ? "Subir Nueva Evidencia (Opcional):"
+                                                                : "Subir Evidencia:"}
+                                                        </p>
                                                         <div className="flex gap-2 items-center">
                                                             <Input
                                                                 type="file"
                                                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
-                                                                className="h-8 text-xs cursor-pointer"
+                                                                className="h-8 text-xs cursor-pointer file:text-xs file:font-semibold"
                                                                 onChange={(e) => {
                                                                     const file = e.target.files?.[0]
                                                                     if (file) {
@@ -962,12 +1010,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 }}
                                                             />
                                                             {clientApprovalFile && (
-                                                                <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                                                <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 animate-in fade-in zoom-in spin-in-3">
                                                                     <Check className="h-3 w-3 mr-1" />
+                                                                    Listo
                                                                 </Badge>
                                                             )}
                                                         </div>
-                                                    )}
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            Puede adjuntar correos, órdenes de compra del cliente o capturas de pantalla.
+                                                        </p>
+                                                    </div>
                                                 </div>
 
                                             </div>
