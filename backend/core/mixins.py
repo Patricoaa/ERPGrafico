@@ -52,32 +52,38 @@ class TotalsCalculationMixin:
     - fields: total_net, total_tax, total.
     """
     def recalculate_totals(self, commit=True):
-        from decimal import Decimal, ROUND_HALF_UP
+        from decimal import Decimal
+        import math
         
         total_net = Decimal('0.00')
-        total_tax = Decimal('0.00')
         
+        # First, sum all line subtotals to get the total net amount
         for line in self.lines.all():
+            # If line has it's own calculation logic, trigger it
             if hasattr(line, 'calculate_subtotal'):
                 line.calculate_subtotal()
             
             line_net = getattr(line, 'subtotal', Decimal('0.00'))
-            line_tax_rate = getattr(line, 'tax_rate', Decimal('0.00'))
-            
-            # Round line net to units (CLP standard)
-            line_net_rounded = line_net.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
-            
-            # Tax calculation per line (SII recommendation)
-            line_tax = (line_net_rounded * (line_tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
-            
-            total_net += line_net_rounded
-            total_tax += line_tax
-            
+            total_net += line_net
+        
+        # Get tax rate from first line (all lines should have same rate)
+        # Default to 19% for Chilean VAT if no lines exist
+        tax_rate = Decimal('19.00')
+        first_line = self.lines.first()
+        if first_line and hasattr(first_line, 'tax_rate'):
+            tax_rate = getattr(first_line, 'tax_rate', Decimal('19.00'))
+        
+        # Calculate VAT on total net amount (Chilean DTE requirement)
+        # This avoids rounding discrepancies from per-line calculation
+        total_tax = total_net * (tax_rate / Decimal('100.0'))
+        
+        # Round up to nearest peso (Chilean tax regulation)
         self.total_net = total_net
-        self.total_tax = total_tax
+        self.total_tax = Decimal(str(math.ceil(total_tax)))
         self.total = self.total_net + self.total_tax
         
         if commit:
+            # We only update total fields to avoid recursion or side effects
             self.save(update_fields=['total_net', 'total_tax', 'total'])
         
         return {

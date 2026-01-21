@@ -119,16 +119,13 @@ export const PricingUtils = {
         tax: number;
         gross: number;
     } => {
-        return lines.reduce((acc, line) => {
-            const lineNet = PricingUtils.calculateLineNet(line.quantity, line.unit_price_net);
-            const lineTax = PricingUtils.calculateTax(lineNet);
+        const net = lines.reduce((acc, line) =>
+            acc + PricingUtils.calculateLineNet(line.quantity, line.unit_price_net), 0
+        );
+        const tax = PricingUtils.calculateTax(net);
+        const gross = net + tax;
 
-            return {
-                net: acc.net + lineNet,
-                tax: acc.tax + lineTax,
-                gross: acc.gross + lineNet + lineTax
-            };
-        }, { net: 0, tax: 0, gross: 0 });
+        return { net, tax, gross };
     },
 
     /**
