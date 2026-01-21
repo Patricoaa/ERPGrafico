@@ -1245,8 +1245,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     size="sm"
                                     className="flex-1 gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                                     onClick={() => handleAnnulOrder()}
-                                    disabled={isAnnuling || order?.status === 'CANCELLED'}
-                                    title="Anular OT"
+                                    disabled={isAnnuling || order?.status === 'CANCELLED' || order?.is_cancellable === false}
+                                    title={order?.is_cancellable === false ? "Anulación no permitida en esta etapa" : "Anular OT"}
                                 >
                                     <Ban className="h-4 w-4" />
                                 </Button>

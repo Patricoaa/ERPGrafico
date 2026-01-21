@@ -125,6 +125,69 @@ class WorkOrder(models.Model):
             }
         return None
     
+    @property
+    def requires_prepress(self):
+        # 1. Try stage_data (specific for this order)
+        if isinstance(self.stage_data, dict) and 'phases' in self.stage_data:
+            return self.stage_data['phases'].get('prepress', False)
+        # 2. Fallback to product default
+        product = self.product or (self.sale_line.product if self.sale_line else None)
+        if product:
+            return product.mfg_enable_prepress
+        return False
+
+    @property
+    def requires_press(self):
+        if isinstance(self.stage_data, dict) and 'phases' in self.stage_data:
+            return self.stage_data['phases'].get('press', False)
+        product = self.product or (self.sale_line.product if self.sale_line else None)
+        if product:
+            return product.mfg_enable_press
+        return False
+
+    @property
+    def requires_postpress(self):
+        if isinstance(self.stage_data, dict) and 'phases' in self.stage_data:
+            return self.stage_data['phases'].get('postpress', False)
+        product = self.product or (self.sale_line.product if self.sale_line else None)
+        if product:
+            return product.mfg_enable_postpress
+        return False
+
+    @property
+    def cancellation_limit_stage(self):
+        """
+        Determines the limit stage for cancellation.
+        Default is PRESS if available, else the previous one (PREPRESS or MATERIAL_APPROVAL).
+        """
+        if self.requires_press:
+            return self.Stage.PRESS
+        if self.requires_prepress:
+            return self.Stage.PREPRESS
+        return self.Stage.MATERIAL_APPROVAL
+
+    @property
+    def is_cancellable(self):
+        """
+        Returns True if the Work Order can be cancelled based on its current stage.
+        """
+        STAGES_SEQUENCE = [
+            self.Stage.MATERIAL_ASSIGNMENT,
+            self.Stage.MATERIAL_APPROVAL,
+            self.Stage.PREPRESS,
+            self.Stage.PRESS,
+            self.Stage.POSTPRESS,
+            self.Stage.FINISHED
+        ]
+        
+        limit_stage = self.cancellation_limit_stage
+        try:
+            current_idx = STAGES_SEQUENCE.index(self.current_stage)
+            limit_idx = STAGES_SEQUENCE.index(limit_stage)
+            return current_idx <= limit_idx
+        except ValueError:
+            return False
+
     def save(self, *args, **kwargs):
         if not self.number:
             last_order = WorkOrder.objects.all().order_by('id').last()

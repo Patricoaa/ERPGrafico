@@ -182,31 +182,40 @@ class WorkOrderService:
         3. Reverses stock movements (consumptions and finished products)
         4. Updates status to CANCELLED and stage to CANCELLED
         """
-        # VALIDATION 1: Etapa de producción (materials consumption check)
-        # Materials are physically consumed starting from PRESS stage onwards
-        CONSUMPTION_STAGES = [
+        # VALIDATION 1: Dynamic Production Stage Limit (Printing/Prepress/Approval)
+        # Sequence of stages to determine if the limit has been surpassed
+        STAGES_SEQUENCE = [
+            WorkOrder.Stage.MATERIAL_ASSIGNMENT,
+            WorkOrder.Stage.MATERIAL_APPROVAL,
+            WorkOrder.Stage.PREPRESS,
             WorkOrder.Stage.PRESS,
             WorkOrder.Stage.POSTPRESS,
             WorkOrder.Stage.FINISHED
         ]
         
-        if work_order.current_stage in CONSUMPTION_STAGES:
+        limit_stage = work_order.cancellation_limit_stage
+        try:
+            current_idx = STAGES_SEQUENCE.index(work_order.current_stage)
+            limit_idx = STAGES_SEQUENCE.index(limit_stage)
+        except ValueError:
+            # Fallback for unexpected stages
+            current_idx = 0
+            limit_idx = 0
+
+        if current_idx > limit_idx:
+            limit_display = work_order.get_stage_display(limit_stage) if hasattr(work_order, 'get_stage_display') else limit_stage
             raise ValidationError(
-                f"❌ No se puede anular: la OT ya superó la etapa de asignación de materiales.\n"
+                f"❌ No se puede anular: la OT ya superó la etapa límite permitida ({limit_display}).\n"
                 f"📍 Etapa actual: {work_order.get_current_stage_display()}\n"
-                f"⚠️ Los materiales ya fueron consumidos físicamente en el proceso de producción.\n"
-                f"💡 Opciones:\n"
-                f"   1. Aceptar la pérdida de materiales como costo operativo\n"
-                f"   2. Evaluar proceso de desarme del producto (si aplica)\n"
-                f"   3. Registrar ajuste de inventario manual"
+                f"⚠️ El proceso de producción ya ha avanzado más allá de lo reversible.\n"
+                f"💡 Si necesita anular, considere revertir los consumos manualmente si aplica."
             )
         
-        # VALIDATION 2: Consumos ya registrados en sistema
+        # VALIDATION 2: Consumos ya registrados en sistema (Safety check)
         if ProductionConsumption.objects.filter(work_order=work_order).exists():
             raise ValidationError(
                 "❌ No se puede anular: ya existen consumos de materiales registrados en el sistema.\n"
                 "⚠️ Debe revertir los consumos manualmente antes de anular la OT.\n"
-                "💡 Contacte al administrador del sistema para asistencia."
             )
         
         # 1. Revert Stock Movements (if any)

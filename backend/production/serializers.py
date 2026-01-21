@@ -108,6 +108,8 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     production_progress = serializers.SerializerMethodField()
     outsourcing_status = serializers.SerializerMethodField()
     attachments = AttachmentSerializer(many=True, read_only=True)
+    is_cancellable = serializers.ReadOnlyField()
+    cancellation_limit_stage = serializers.ReadOnlyField()
     
     # Metadata helpers
     requires_prepress = serializers.SerializerMethodField()
