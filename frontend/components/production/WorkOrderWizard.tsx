@@ -875,12 +875,12 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             )}
 
                                             {/* Design Files from Checkout */}
-                                            {order?.attachments && stageData.design_attachments && stageData.design_attachments.length > 0 && (
+                                            {order?.attachments && order.attachments.length > 0 && (
                                                 <div className="space-y-2 pt-2 border-t border-primary/10">
                                                     <Label className="text-[10px] font-bold uppercase text-primary">Archivos del Checkout</Label>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                         {order.attachments
-                                                            .filter((a: any) => stageData.design_attachments?.includes(a.original_filename))
+                                                            .filter((a: any) => a.original_filename !== stageData.approval_attachment)
                                                             .map((att: any) => (
                                                                 <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs">
                                                                     <div className="flex-1 truncate font-medium">{att.original_filename}</div>
