@@ -848,14 +848,15 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     )}
 
                                     <div className="space-y-4">
-                                        {order?.attachments && order.attachments.length > 0 && (
-                                            <div className="space-y-4 mb-6">
-                                                {/* Design Files Section */}
-                                                {order.attachments.filter((a: any) => stageData.design_attachments?.includes(a.original_filename)).length > 0 && (
+                                        {/* Design Files Section - Only show if design is needed */}
+                                        {stageData.design_needed && (
+                                            <div className="space-y-4">
+                                                {/* Design Files from Checkout */}
+                                                {order?.attachments && stageData.design_attachments && stageData.design_attachments.length > 0 && (
                                                     <div className="space-y-2">
                                                         <Label className="text-sm font-semibold flex items-center gap-2">
                                                             <FileText className="h-4 w-4 text-primary" />
-                                                            Archivos de Diseño
+                                                            Archivos del Checkout
                                                         </Label>
                                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                             {order.attachments
@@ -877,32 +878,34 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     </div>
                                                 )}
 
-                                                {/* Approval Evidence Section */}
-                                                {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment) && (
+                                                {/* Design Approval Status and Evidence */}
+                                                {stageData.design_approved && (
                                                     <div className="space-y-2">
                                                         <Label className="text-sm font-semibold flex items-center gap-2">
                                                             <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                                            Evidencia de Aprobación (desde Venta)
+                                                            Evidencia de Aprobación
                                                         </Label>
-                                                        <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
-                                                            <div className="flex-1 truncate font-medium text-green-700">
-                                                                {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).original_filename}
+                                                        {order?.attachments && stageData.approval_attachment && order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment) ? (
+                                                            <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
+                                                                <div className="flex-1 truncate font-medium text-green-700">
+                                                                    {order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).original_filename}
+                                                                </div>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-7 w-7 hover:bg-green-100 text-green-700"
+                                                                    onClick={() => window.open(order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).file, '_blank')}
+                                                                >
+                                                                    <Download className="h-4 w-4" />
+                                                                </Button>
                                                             </div>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-7 w-7 hover:bg-green-100 text-green-700"
-                                                                onClick={() => window.open(order.attachments.find((a: any) => a.original_filename === stageData.approval_attachment).file, '_blank')}
-                                                            >
-                                                                <Download className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
+                                                        ) : (
+                                                            <p className="text-xs text-muted-foreground italic p-2 bg-muted/30 rounded">Aprobación verbal o previa</p>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
                                         )}
-
-
 
                                         <div className="border-t pt-4">
                                             <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
@@ -1172,7 +1175,18 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     )}
                                 </div>
 
-                                {/* Section 2: Delivery Date */}
+                                {/* Section 2: Start Date */}
+                                {order?.start_date && (
+                                    <div className="p-3 space-y-1">
+                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Inicio</p>
+                                        <div className="flex items-center gap-2">
+                                            <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                                            <p className="text-sm font-medium">{new Date(order.start_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Section 3: Delivery Date */}
                                 {order?.sale_order_delivery_date && (
                                     <div className="p-3 space-y-1">
                                         <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Entrega</p>
