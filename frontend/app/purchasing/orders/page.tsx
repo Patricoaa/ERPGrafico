@@ -199,22 +199,9 @@ export default function PurchaseOrdersPage() {
         {
             accessorKey: "status",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado / Gestión" />
+                <DataTableColumnHeader column={column} title="Estado Hub" />
             ),
-            cell: ({ row }) => (
-                <div className="flex items-center justify-between gap-4">
-                    <PurchaseOrderHubStatus order={row.original} />
-                    <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setSelectedOrderId(row.original.id)}
-                        className="h-8 px-3"
-                    >
-                        <LayoutDashboard className="h-4 w-4 mr-1" />
-                        Gestionar
-                    </Button>
-                </div>
-            ),
+            cell: ({ row }) => <PurchaseOrderHubStatus order={row.original} />,
         },
 
         // Hidden columns for filtering only - these provide data for faceted filters
@@ -250,6 +237,24 @@ export default function PurchaseOrdersPage() {
             filterFn: (row, id, value) => {
                 return value.includes(row.getValue(id))
             },
+        },
+
+        {
+            id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
+            cell: ({ row }) => (
+                <div className="flex flex-col gap-1">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setSelectedOrderId(row.original.id)}
+                        className="h-8 px-3 w-full"
+                    >
+                        <LayoutDashboard className="h-4 w-4 mr-1" />
+                        Gestionar
+                    </Button>
+                </div>
+            ),
         },
     ]
 
