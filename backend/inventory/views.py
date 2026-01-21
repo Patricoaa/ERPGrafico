@@ -204,8 +204,14 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
                 pass
         
         from .services import PricingService
-        price = PricingService.get_product_price(product, quantity, uom=uom)
-        return Response({'price': price})
+        price_gross = PricingService.get_product_price(product, quantity, uom=uom)
+        price_net = (price_gross / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        
+        return Response({
+            'price': float(price_gross),
+            'price_gross': float(price_gross),
+            'price_net': float(price_net)
+        })
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

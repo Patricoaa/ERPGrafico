@@ -197,9 +197,9 @@ class PricingService:
             
         if uom is None:
             # If still no UoM, we can't do advanced pricing rules that depend on it
-            return product.sale_price
+            return product.sale_price_gross or (product.sale_price * Decimal('1.19')).quantize(Decimal('1'))
             
-        base_price = product.sale_price
+        base_price = product.sale_price_gross or (product.sale_price * Decimal('1.19')).quantize(Decimal('1'))
         
         # Find active rules
         rules = PricingRule.objects.filter(
@@ -260,22 +260,19 @@ class PricingService:
                 # Calculate price
                 if rule.rule_type == PricingRule.RuleType.FIXED:
                     if rule.fixed_price is not None:
-                        # Fixed price per unit
+                        # Fixed price per unit (usually interpreted as Gross now)
                         best_price = rule.fixed_price
                 elif rule.rule_type == PricingRule.RuleType.PACKAGE_FIXED:
                     if rule.fixed_price is not None:
                          # Fixed price for the WHOLE package
                          # We need to return UNIT price, so we divide by quantity
-                         # Ensure quantity is not zero to avoid division by zero (should be covered by rules)
                          if quantity > 0:
-                             best_price = rule.fixed_price / quantity
+                             best_price = (rule.fixed_price / quantity).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                          else:
-                             # Edge case: quantity 0, just return fixed price or base?
-                             # Usually we don't price 0 items.
                              best_price = rule.fixed_price
                 else:
                     if rule.discount_percentage is not None:
-                        best_price = base_price * (1 - (rule.discount_percentage / 100))
+                        best_price = (base_price * (1 - (rule.discount_percentage / 100))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                 
                 # Rule applied, stop (rules are ordered by priority)
                 break

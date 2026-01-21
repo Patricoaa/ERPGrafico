@@ -110,22 +110,48 @@ export const PricingUtils = {
     },
 
     /**
-     * Calcula totales de múltiples líneas
-     * @param lines - Array de líneas con quantity y unit_price_net
+     * Calcula totales de línea desde precio BRUTO (para evitar discrepancias)
+     * @param quantity - Cantidad
+     * @param unitPriceGross - Precio unitario bruto (con IVA)
+     * @returns Objeto con gross, net y tax de la línea
+     */
+    calculateLineFromGross: (quantity: number, unitPriceGross: number): {
+        gross: number;
+        net: number;
+        tax: number;
+    } => {
+        const gross = Math.round(quantity * unitPriceGross);
+        const net = Math.round(gross / (1 + TAX_RATE));
+        const tax = gross - net;
+        return { gross, net, tax };
+    },
+
+    /**
+     * Calcula totales de múltiples líneas (ahora soporta base BRUTA)
+     * @param lines - Array de líneas con quantity y precio (neto o bruto)
+     * @param useGross - Si es true, usa unit_price_gross como base
      * @returns Objeto con net, tax y gross totales
      */
-    calculateMultiLineTotal: (lines: Array<{ quantity: number; unit_price_net: number }>): {
+    calculateMultiLineTotal: (lines: Array<{ quantity: number; unit_price_net?: number; unit_price_gross?: number }>, useGross = false): {
         net: number;
         tax: number;
         gross: number;
     } => {
-        const net = lines.reduce((acc, line) =>
-            acc + PricingUtils.calculateLineNet(line.quantity, line.unit_price_net), 0
-        );
-        const tax = PricingUtils.calculateTax(net);
-        const gross = net + tax;
-
-        return { net, tax, gross };
+        if (useGross) {
+            const gross = lines.reduce((acc, line) =>
+                acc + Math.round(line.quantity * (line.unit_price_gross || 0)), 0
+            );
+            const net = Math.round(gross / (1 + TAX_RATE));
+            const tax = gross - net;
+            return { net, tax, gross };
+        } else {
+            const net = lines.reduce((acc, line) =>
+                acc + PricingUtils.calculateLineNet(line.quantity, line.unit_price_net || 0), 0
+            );
+            const tax = Math.ceil(net * TAX_RATE);
+            const gross = net + tax;
+            return { net, tax, gross };
+        }
     },
 
     /**

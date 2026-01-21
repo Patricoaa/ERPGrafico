@@ -29,7 +29,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'product', 'product_name', 'product_code', 'product_type', 'track_inventory', 
             'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
-            'unit_price', 'tax_rate', 'subtotal', 'quantity_delivered', 
+            'unit_price', 'unit_price_gross', 'tax_rate', 'subtotal', 'quantity_delivered', 
             'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',
             'is_production_finished', 'work_order_summary', 'mfg_auto_finalize'
         ]

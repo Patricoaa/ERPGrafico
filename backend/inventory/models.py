@@ -358,7 +358,22 @@ class Product(models.Model):
         default=False,
         help_text=_("Permite asignar el precio manualmente al vender (ignora precio de lista).")
     )
-    sale_price = models.DecimalField(_("Precio Venta"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
+    sale_price = models.DecimalField(
+        _("Precio Venta NETO"), 
+        max_digits=12, 
+        decimal_places=0, 
+        default=0, 
+        validators=[MinValueValidator(0)],
+        help_text=_("Precio de venta sin IVA (referencia)")
+    )
+    sale_price_gross = models.DecimalField(
+        _("Precio Venta BRUTO (c/IVA)"),
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text=_("Precio con IVA incluido, usado para cálculos de venta")
+    )
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
     
     # Accounting Overrides
@@ -425,6 +440,25 @@ class Product(models.Model):
             
             new_num = str(max_num + 1).zfill(4)
             self.internal_code = f"{prefix}-{new_num}"
+
+        # Synchronize Net and Gross prices
+        from decimal import Decimal
+        vat_rate = Decimal('1.19')
+        
+        if self.pk:
+            old_instance = Product.objects.get(pk=self.pk)
+            # If Net changed, update Gross
+            if self.sale_price != old_instance.sale_price:
+                self.sale_price_gross = (self.sale_price * vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+            # If Gross changed, update Net
+            elif self.sale_price_gross != old_instance.sale_price_gross:
+                self.sale_price = (self.sale_price_gross / vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        else:
+            # New product: ensure Gross is set if only Net is provided, or vice versa
+            if self.sale_price and not self.sale_price_gross:
+                self.sale_price_gross = (self.sale_price * vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+            elif self.sale_price_gross and not self.sale_price:
+                self.sale_price = (self.sale_price_gross / vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
 
         # Compress image if added/changed
         if self.image:

@@ -56,7 +56,7 @@ export function OrderSummaryCard({
                                         </div>
                                     </div>
                                     <p className="font-mono text-xs font-black whitespace-nowrap pt-0.5">
-                                        {formatCurrency(PricingUtils.calculateLineTotal(line.qty || line.quantity, line.unit_price_net || line.unit_price))}
+                                        {formatCurrency(line.total_gross || PricingUtils.calculateLineTotal(line.qty || line.quantity, line.unit_price_net || line.unit_price))}
                                     </p>
                                 </div>
                             ))}

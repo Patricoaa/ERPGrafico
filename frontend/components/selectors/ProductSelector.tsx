@@ -271,7 +271,7 @@ export function ProductSelector({
                                                             <Badge variant="outline" className="text-[9px] border-amber-500 text-amber-600 bg-amber-50 px-1 py-0 h-4">Precio Dinámico</Badge>
                                                         ) : (
                                                             <>
-                                                                ${PricingUtils.netToGross(Number(product.sale_price)).toLocaleString()}
+                                                                ${(Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))).toLocaleString()}
                                                                 <span className="text-[8px] text-muted-foreground ml-0.5">c/IVA</span>
                                                             </>
                                                         )}

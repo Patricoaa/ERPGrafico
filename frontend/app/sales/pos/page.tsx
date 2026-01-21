@@ -36,10 +36,10 @@ interface Product {
     internal_code?: string
     name: string
     sale_price: string
+    sale_price_gross: string
     current_stock?: number
     manufacturable_quantity?: number | null
     product_type?: string
-    unit_price?: string
     variants_count?: number
     image?: string | null
     requires_advanced_manufacturing?: boolean
@@ -70,11 +70,11 @@ interface CartItem extends Product {
     cartItemId: string
     qty: number
     total_net: number
-    total_tax: number
     total_gross: number
     unit_price_net: number
+    unit_price_gross: number
     uom?: number
-    manufacturing_data?: any // Add this line
+    manufacturing_data?: any
     uom_name?: string
 }
 
@@ -146,16 +146,21 @@ export default function POSPage() {
     })
 
     const fetchEffectivePrice = async (product: any, qty: number, selectedUomId?: number) => {
-        if (!product || !product.id) return 0
+        if (!product || !product.id) return { net: 0, gross: 0 }
         try {
             const params: any = { quantity: qty }
             if (selectedUomId) params.uom_id = selectedUomId
 
             const response = await api.get(`/inventory/products/${product.id}/effective_price/`, { params })
-            return parseFloat(response.data.price || "0")
+            return {
+                net: parseFloat(response.data.price_net || "0"),
+                gross: parseFloat(response.data.price_gross || response.data.price || "0")
+            }
         } catch (error) {
             console.error("Error fetching price:", error)
-            return parseFloat(product.sale_price || "0")
+            const net = parseFloat(product.sale_price || "0")
+            const gross = parseFloat(product.sale_price_gross || "0") || PricingUtils.netToGross(net)
+            return { net, gross }
         }
     }
 
@@ -170,31 +175,31 @@ export default function POSPage() {
 
         if (existing) {
             const newQty = existing.qty + 1
-            const netPrice = await fetchEffectivePrice(product, newQty, existing.uom)
+            const prices = await fetchEffectivePrice(product, newQty, existing.uom)
             setItems(prevItems => prevItems.map(i => i.cartItemId === existing.cartItemId
                 ? {
                     ...i,
                     qty: newQty,
-                    unit_price_net: netPrice,
-                    total_net: PricingUtils.calculateLineNet(newQty, netPrice),
-                    total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(newQty, netPrice)),
-                    total_gross: PricingUtils.calculateLineTotal(newQty, netPrice),
+                    unit_price_net: prices.net,
+                    unit_price_gross: prices.gross,
+                    total_net: PricingUtils.calculateLineNet(newQty, prices.net),
+                    total_gross: Math.round(newQty * prices.gross),
                     manufacturing_data: mfgData || i.manufacturing_data
                 }
                 : i
             ))
         } else {
-            const netPrice = await fetchEffectivePrice(product, 1, defaultUoM)
+            const prices = await fetchEffectivePrice(product, 1, defaultUoM)
             setItems(prevItems => [...prevItems, {
                 ...product,
                 cartItemId: Math.random().toString(36).substring(2, 9),
                 qty: 1,
                 uom: defaultUoM,
                 uom_name: uomName,
-                unit_price_net: netPrice,
-                total_net: PricingUtils.calculateLineNet(1, netPrice),
-                total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(1, netPrice)),
-                total_gross: PricingUtils.calculateLineTotal(1, netPrice),
+                unit_price_net: prices.net,
+                unit_price_gross: prices.gross,
+                total_net: PricingUtils.calculateLineNet(1, prices.net),
+                total_gross: prices.gross,
                 manufacturing_data: mfgData
             }])
         }
@@ -205,20 +210,20 @@ export default function POSPage() {
         const item = items.find(i => i.cartItemId === cartItemId)
         if (!item) return
 
-        let newQty = typeof qty === 'string' ? parseInt(qty) : qty
+        let newQty = typeof qty === 'string' ? parseFloat(qty) : qty
         if (isNaN(newQty) || newQty < 0.01) newQty = 1
 
-        const netPrice = await fetchEffectivePrice(item, newQty, item.uom)
+        const prices = await fetchEffectivePrice(item, newQty, item.uom)
 
         setItems(prevItems => prevItems.map(i => {
             if (i.cartItemId === cartItemId) {
                 return {
                     ...i,
                     qty: newQty,
-                    unit_price_net: netPrice,
-                    total_net: PricingUtils.calculateLineNet(newQty, netPrice),
-                    total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(newQty, netPrice)),
-                    total_gross: PricingUtils.calculateLineTotal(newQty, netPrice)
+                    unit_price_net: prices.net,
+                    unit_price_gross: prices.gross,
+                    total_net: PricingUtils.calculateLineNet(newQty, prices.net),
+                    total_gross: Math.round(newQty * prices.gross)
                 }
             }
             return i
@@ -271,8 +276,8 @@ export default function POSPage() {
     }
 
     const total_gross_sum = items.reduce((acc, i) => acc + i.total_gross, 0)
-    const total_net_sum = items.reduce((acc, i) => acc + i.total_net, 0)
-    const total_tax_sum = items.reduce((acc, i) => acc + i.total_tax, 0)
+    const total_net_sum = Math.round(total_gross_sum / 1.19)
+    const total_tax_sum = total_gross_sum - total_net_sum
 
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)] p-4 space-y-4">
@@ -480,16 +485,16 @@ export default function POSPage() {
                                                                     onValueChange={async (val) => {
                                                                         const newUom = uoms.find(u => u.id.toString() === val)
                                                                         const uomId = parseInt(val)
-                                                                        const price = await fetchEffectivePrice(item, item.qty, uomId)
+                                                                        const prices = await fetchEffectivePrice(item, item.qty, uomId)
 
                                                                         setItems(prevItems => prevItems.map(i => i.cartItemId === item.cartItemId ? {
                                                                             ...i,
                                                                             uom: uomId,
                                                                             uom_name: newUom?.name,
-                                                                            unit_price_net: price,
-                                                                            total_net: PricingUtils.calculateLineNet(i.qty, price),
-                                                                            total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(i.qty, price)),
-                                                                            total_gross: PricingUtils.calculateLineTotal(i.qty, price)
+                                                                            unit_price_net: prices.net,
+                                                                            unit_price_gross: prices.gross,
+                                                                            total_net: PricingUtils.calculateLineNet(i.qty, prices.net),
+                                                                            total_gross: Math.round(i.qty * prices.gross)
                                                                         } : i))
                                                                     }}
                                                                 >
@@ -518,20 +523,18 @@ export default function POSPage() {
                                                                     <Input
                                                                         type="number"
                                                                         className="h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1"
-                                                                        // Show Gross in input
-                                                                        value={item.unit_price_net ? PricingUtils.netToGross(item.unit_price_net) : ""}
+                                                                        value={item.unit_price_gross || ""}
                                                                         placeholder="0"
                                                                         onChange={async (e) => {
                                                                             const newGross = parseFloat(e.target.value) || 0
-                                                                            // Convert Gross Input to Net for storage
                                                                             const newNet = PricingUtils.grossToNet(newGross)
 
                                                                             setItems(prevItems => prevItems.map(i => i.cartItemId === item.cartItemId ? {
                                                                                 ...i,
                                                                                 unit_price_net: newNet,
+                                                                                unit_price_gross: newGross,
                                                                                 total_net: PricingUtils.calculateLineNet(i.qty, newNet),
-                                                                                total_tax: PricingUtils.calculateTax(PricingUtils.calculateLineNet(i.qty, newNet)),
-                                                                                total_gross: PricingUtils.calculateLineTotal(i.qty, newNet)
+                                                                                total_gross: Math.round(i.qty * newGross)
                                                                             } : i))
                                                                         }}
                                                                     />
@@ -542,7 +545,7 @@ export default function POSPage() {
                                                             ) : (
                                                                 <>
                                                                     <span className="text-xs font-medium">
-                                                                        {formatCurrency(PricingUtils.netToGross(item.unit_price_net))}
+                                                                        {formatCurrency(item.unit_price_gross)}
                                                                     </span>
                                                                     <span className="text-[9px] text-muted-foreground leading-none">
                                                                         Neto: {formatCurrency(item.unit_price_net)}

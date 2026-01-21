@@ -8,6 +8,7 @@ export const productSchema = z.object({
     product_type: z.string().min(1, "Tipo requerido"),
     is_dynamic_pricing: z.boolean().default(false),
     sale_price: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
+    sale_price_gross: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
     uom: z.string().min(1, "Unidad base requerida"),
     sale_uom: z.string().optional().or(z.literal("")),
     purchase_uom: z.string().optional().or(z.literal("")),

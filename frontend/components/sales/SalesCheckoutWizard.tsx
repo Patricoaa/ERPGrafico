@@ -53,6 +53,7 @@ export function SalesCheckoutWizard({
 
     // Recalculate total if currentOrderLines changes (Gross total including 19% tax)
     const currentTotal = currentOrderLines.reduce((acc: number, line: any) => {
+        if (line.total_gross !== undefined) return acc + line.total_gross;
         const net = PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price);
         return acc + PricingUtils.netToGross(net);
     }, 0);
@@ -299,6 +300,7 @@ export function SalesCheckoutWizard({
                     description: l.name || l.product_name || l.description,
                     quantity: l.qty || l.quantity,
                     unit_price: l.unit_price_net || l.unit_price,
+                    unit_price_gross: l.unit_price_gross,
                     uom: l.uom || null,
                     tax_rate: 19,
                     manufacturing_data: l.manufacturing_data

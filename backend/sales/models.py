@@ -98,6 +98,7 @@ class SaleLine(models.Model):
         verbose_name=_("Unidad")
     )
     unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0, validators=[MinValueValidator(0)])
+    unit_price_gross = models.DecimalField(_("Precio Unitario Bruto"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
     tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00, validators=[MinValueValidator(0)]) # Chile default
     
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False)
@@ -120,7 +121,10 @@ class SaleLine(models.Model):
 
 
     def calculate_subtotal(self):
-        self.subtotal = self.quantity * self.unit_price
+        if self.unit_price_gross:
+            self.subtotal = self.quantity * self.unit_price_gross
+        else:
+            self.subtotal = self.quantity * self.unit_price
 
     def save(self, *args, **kwargs):
         self.calculate_subtotal()
@@ -234,6 +238,7 @@ class SaleDeliveryLine(models.Model):
         help_text="Cantidad despachada en este despacho"
     )
     unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
+    unit_price_gross = models.DecimalField(_("Precio Unitario Bruto"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
     unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=0, default=0, validators=[MinValueValidator(0)])
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False, default=0)
     total_cost = models.DecimalField(_("Costo Total"), max_digits=12, decimal_places=0, editable=False, default=0)
@@ -254,7 +259,10 @@ class SaleDeliveryLine(models.Model):
         return f"{self.product.code} x {self.quantity}"
     
     def calculate_subtotal(self):
-        self.subtotal = self.quantity * self.unit_price
+        if self.unit_price_gross:
+            self.subtotal = self.quantity * self.unit_price_gross
+        else:
+            self.subtotal = self.quantity * self.unit_price
         self.total_cost = self.quantity * self.unit_cost
 
     def save(self, *args, **kwargs):

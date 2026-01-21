@@ -28,6 +28,7 @@ interface Product {
     category_id: number
     category_name: string
     sale_price: string
+    sale_price_gross: string
     current_stock: number
     qty_reserved?: number
     qty_available?: number
@@ -214,10 +215,10 @@ export function ProductList() {
         {
             id: "total",
             header: ({ column }) => (
-                <div className="text-right">Total</div>
+                <div className="text-right">Total (c/IVA)</div>
             ),
             cell: ({ row }) => {
-                const total = PricingUtils.netToGross(Number(row.getValue("sale_price")))
+                const total = row.original.sale_price_gross || PricingUtils.netToGross(Number(row.getValue("sale_price")))
                 if (row.original.is_dynamic_pricing) {
                     return <div className="text-right"><DataCell.Badge variant="warning" className="text-[9px]">Precio Dinámico</DataCell.Badge></div>
                 }

@@ -55,32 +55,45 @@ class TotalsCalculationMixin:
         from decimal import Decimal
         import math
         
-        total_net = Decimal('0.00')
+        # Check if this document uses Gross-first logic (Sales)
+        is_sales = self.__class__.__name__ in ['SaleOrder', 'SaleDelivery']
         
-        # First, sum all line subtotals to get the total net amount
+        total_sum = Decimal('0.00')
+        
+        # Sum all line subtotals
         for line in self.lines.all():
-            # If line has it's own calculation logic, trigger it
+            # If line has its own calculation logic, trigger it
             if hasattr(line, 'calculate_subtotal'):
                 line.calculate_subtotal()
             
-            line_net = getattr(line, 'subtotal', Decimal('0.00'))
-            total_net += line_net
+            subtotal = getattr(line, 'subtotal', Decimal('0.00'))
+            total_sum += subtotal
         
         # Get tax rate from first line (all lines should have same rate)
-        # Default to 19% for Chilean VAT if no lines exist
         tax_rate = Decimal('19.00')
         first_line = self.lines.first()
         if first_line and hasattr(first_line, 'tax_rate'):
             tax_rate = getattr(first_line, 'tax_rate', Decimal('19.00'))
         
-        # Calculate VAT on total net amount (Chilean DTE requirement)
-        # This avoids rounding discrepancies from per-line calculation
-        total_tax = total_net * (tax_rate / Decimal('100.0'))
-        
-        # Round up to nearest peso (Chilean tax regulation)
-        self.total_net = total_net
-        self.total_tax = Decimal(str(math.ceil(total_tax)))
-        self.total = self.total_net + self.total_tax
+        if is_sales:
+            # GROSS-first calculation (Sales/POS)
+            # total_sum is already GROSS (Quantity * UnitPriceGross)
+            self.total = total_sum
+            # Extract Net: Net = Gross / 1.19
+            # Using str(round(...)) to ensure we get an integer-like decimal if needed
+            net_val = (self.total / (Decimal('1') + (tax_rate / Decimal('100.0'))))
+            self.total_net = net_val.quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+            # IVA is the difference
+            self.total_tax = self.total - self.total_net
+        else:
+            # NET-first calculation (Purchases)
+            # total_sum is NET (Quantity * UnitCostNet)
+            self.total_net = total_sum
+            # Calculate VAT on total net amount (Chilean DTE requirement)
+            total_tax_calc = self.total_net * (tax_rate / Decimal('100.0'))
+            # Round up to nearest peso (Chilean tax regulation for DTE)
+            self.total_tax = Decimal(str(math.ceil(total_tax_calc)))
+            self.total = self.total_net + self.total_tax
         
         if commit:
             # We only update total fields to avoid recursion or side effects
