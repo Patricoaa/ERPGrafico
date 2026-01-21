@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Printer, CalendarIcon, Paintbrush, Plus, FileText, Upload, X, FileIcon, User, ExternalLink } from "lucide-react"
+import { Printer, CalendarIcon, Paintbrush, Plus, FileText, Upload, X, FileIcon, User, ExternalLink, CheckCircle2 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
@@ -101,6 +101,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [folioEnabled, setFolioEnabled] = useState(false)
     const [folioStart, setFolioStart] = useState("")
     const [printType, setPrintType] = useState<string | null>(null)
+    const [designApproved, setDesignApproved] = useState(false)
+    const [approvalFile, setApprovalFile] = useState<File | null>(null)
+    const [existingApprovalFile, setExistingApprovalFile] = useState<string | null>(null)
 
     const [selectedContact, setSelectedContact] = useState<any>(null)
     const [selectedManualProduct, setSelectedManualProduct] = useState<any>(null)
@@ -207,6 +210,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 // Files
                 setExistingDesignFiles(mfgData.design_attachments || [])
                 setDesignFiles([])
+                setDesignApproved(mfgData.design_approved || false)
+                setExistingApprovalFile(mfgData.approval_attachment || null)
+                setApprovalFile(null)
 
             } else {
                 setExistingDesignFiles([])
@@ -303,36 +309,60 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             press_specs: pressSpecs,
             postpress_specs: postpressSpecs,
             design_needed: designNeeded,
+            design_approved: designApproved,
             folio_enabled: folioEnabled,
             folio_start: folioStart,
             print_type: printType,
-            design_attachments: [...existingDesignFiles, ...designFiles.map(f => f.name)]
+            design_attachments: [...existingDesignFiles, ...designFiles.map(f => f.name)],
+            approval_attachment: existingApprovalFile
         }
 
-        const formattedData = {
-            description: data.description,
-            sale_order: (data.sale_order === "" || data.sale_order === "__none__" || data.sale_order === "none") ? null : data.sale_order,
-            // status: data.status, // Not editing status directly
-            // qty_planned: data.qty_planned, // Not editing qty planned directly?
-            // qty_produced: data.qty_produced,
-            start_date: data.start_date ? format(data.start_date, 'yyyy-MM-dd') : null,
-            estimated_completion_date: data.due_date ? format(data.due_date, 'yyyy-MM-dd') : null,
-            sale_line: data.sale_line || null,
+        const formData = new FormData()
+        formData.append('description', data.description)
+        if (data.sale_order && data.sale_order !== "__none__" && data.sale_order !== "none") {
+            formData.append('sale_order', data.sale_order)
+        }
+        if (data.start_date) {
+            formData.append('start_date', format(data.start_date, 'yyyy-MM-dd'))
+        }
+        if (data.due_date) {
+            formData.append('estimated_completion_date', format(data.due_date, 'yyyy-MM-dd'))
+        }
+        if (data.sale_line) {
+            formData.append('sale_line', data.sale_line)
+        }
+        if (data.product_id) {
+            formData.append('product_id', data.product_id)
+        }
+        if (data.quantity) {
+            formData.append('quantity', data.quantity)
+        }
+        if (data.uom_id) {
+            formData.append('uom_id', data.uom_id)
+        }
 
-            // Manual creation fields
-            product_id: data.product_id || null,
-            quantity: data.quantity ? parseFloat(data.quantity) : null,
-            uom_id: data.uom_id || null,
+        formData.append('stage_data', JSON.stringify(stage_data))
 
-            stage_data: stage_data
+        // Append design files
+        designFiles.forEach((file, index) => {
+            formData.append(`design_file_${index}`, file)
+        })
+
+        // Append approval file
+        if (approvalFile) {
+            formData.append('approval_file', approvalFile)
         }
 
         try {
             if (initialData) {
-                await api.put(`/production/orders/${initialData.id}/`, formattedData)
+                await api.put(`/production/orders/${initialData.id}/`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 toast.success("Orden de Trabajo actualizada correctamente")
             } else {
-                await api.post('/production/orders/', formattedData)
+                await api.post('/production/orders/', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 toast.success("Orden de Trabajo creada correctamente")
             }
             form.reset()
@@ -905,6 +935,39 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                             <input type="file" multiple className="hidden" onChange={handleFileChange} />
                                                         </label>
                                                     </div>
+                                                </div>
+                                            )}
+
+                                            {designNeeded && (
+                                                <div className="flex items-center justify-between p-2 rounded bg-background border">
+                                                    <Label className="text-xs">Diseño aprobado por el cliente</Label>
+                                                    <Switch checked={designApproved} onCheckedChange={setDesignApproved} className="scale-75" />
+                                                </div>
+                                            )}
+
+                                            {designNeeded && designApproved && (
+                                                <div className="space-y-2 p-2 rounded bg-green-50/50 border border-green-100">
+                                                    <Label className="text-[10px] uppercase text-green-700 font-bold">Evidencia de Aprobación</Label>
+                                                    {existingApprovalFile && (
+                                                        <div className="flex items-center justify-between p-1.5 bg-white rounded text-xs border border-green-100 mb-2">
+                                                            <div className="flex items-center gap-2 truncate text-green-700">
+                                                                <CheckCircle2 className="h-3 w-3 shrink-0" />
+                                                                <span className="truncate font-medium">{existingApprovalFile}</span>
+                                                            </div>
+                                                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 hover:text-destructive" onClick={() => setExistingApprovalFile(null)}>
+                                                                <X className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                    <label className="flex items-center gap-2 p-2 border border-dashed border-green-200 rounded cursor-pointer hover:bg-green-50 transition-colors">
+                                                        <Upload className="h-3 w-3 text-green-600" />
+                                                        <span className="text-[10px] text-green-700">{approvalFile ? approvalFile.name : "Cargar evidencia"}</span>
+                                                        <input
+                                                            type="file"
+                                                            className="hidden"
+                                                            onChange={(e) => setApprovalFile(e.target.files?.[0] || null)}
+                                                        />
+                                                    </label>
                                                 </div>
                                             )}
                                             <div className="flex items-center justify-between p-2 rounded bg-background border">

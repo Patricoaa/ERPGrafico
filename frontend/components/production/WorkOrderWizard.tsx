@@ -929,14 +929,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             <div className="space-y-3">
                                                 <div className="p-4 border rounded-lg space-y-3">
                                                     <div className="flex items-center justify-between">
-                                                        <Label className="text-sm">Aprobación del Cliente</Label>
+                                                        <Label className="text-sm">Diseño aprobado por el cliente</Label>
                                                         <Button
                                                             size="sm"
                                                             variant={clientApproved ? "default" : "outline"}
                                                             className={cn("transition-all duration-300", clientApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
                                                             onClick={() => setClientApproved(!clientApproved)}
                                                         >
-                                                            {clientApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                            {clientApproved ? <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
                                                             {clientApproved ? "Aprobado" : "Aprobar"}
                                                         </Button>
                                                     </div>
