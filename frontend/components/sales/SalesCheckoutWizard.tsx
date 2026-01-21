@@ -295,18 +295,44 @@ export function SalesCheckoutWizard({
                 customer: parseInt(selectedCustomerId),
                 payment_method: paymentData.method,
                 channel: channel,
-                lines: currentOrderLines.map((l: any) => ({
-                    product: l.id || null,
-                    description: l.name || l.product_name || l.description,
-                    quantity: l.qty || l.quantity,
-                    unit_price: l.unit_price_net || l.unit_price,
-                    unit_price_gross: l.unit_price_gross,
-                    uom: l.uom || null,
-                    tax_rate: 19,
-                    manufacturing_data: l.manufacturing_data
-                }))
+                lines: currentOrderLines.map((l: any) => {
+                    // Clean up manufacturing_data for JSON (File objects can't be stringified)
+                    let cleanMfgData = null
+                    if (l.manufacturing_data) {
+                        const { design_files, approval_file, ...rest } = l.manufacturing_data
+                        cleanMfgData = {
+                            ...rest,
+                            design_filenames: (design_files || []).map((f: any) => f.name),
+                            approval_filename: approval_file ? approval_file.name : null
+                        }
+                    }
+                    return {
+                        product: l.id || null,
+                        description: l.name || l.product_name || l.description,
+                        quantity: l.qty || l.quantity,
+                        unit_price: l.unit_price_net || l.unit_price,
+                        unit_price_gross: l.unit_price_gross,
+                        uom: l.uom || null,
+                        tax_rate: 19,
+                        manufacturing_data: cleanMfgData
+                    }
+                })
             }
             formData.append('order_data', JSON.stringify(payloadOrder))
+
+            // Append manufacturing files per line
+            currentOrderLines.forEach((l: any, lineIdx: number) => {
+                if (l.manufacturing_data) {
+                    if (l.manufacturing_data.design_files) {
+                        l.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
+                            formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
+                        })
+                    }
+                    if (l.manufacturing_data.approval_file) {
+                        formData.append(`line_${lineIdx}_approval`, l.manufacturing_data.approval_file)
+                    }
+                }
+            })
 
             // DTE data
             formData.append('dte_type', dteData.type)

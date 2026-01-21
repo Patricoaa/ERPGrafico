@@ -14,7 +14,7 @@ from decimal import Decimal
 class WorkOrderService:
     @staticmethod
     @transaction.atomic
-    def create_from_sale_line(sale_line):
+    def create_from_sale_line(sale_line, files=None):
         """
         Creates a Work Order from a sale line.
         Automatically assigns materials if an active BOM exists.
@@ -40,6 +40,29 @@ class WorkOrderService:
             warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.filter(warehouse__isnull=False).exists() else Warehouse.objects.first(),
             stage_data=WorkOrderService._map_manufacturing_data(sale_line.manufacturing_data) if sale_line.manufacturing_data else {}
         )
+        
+        # Attach files if provided
+        if files:
+            content_type = ContentType.objects.get_for_model(work_order)
+            # Design files
+            for design_file in files.get('design', []):
+                Attachment.objects.create(
+                    file=design_file,
+                    original_filename=design_file.name,
+                    content_type=content_type,
+                    object_id=work_order.id
+                )
+            # Approval file
+            approval_file = files.get('approval')
+            if approval_file:
+                Attachment.objects.create(
+                    file=approval_file,
+                    original_filename=approval_file.name,
+                    content_type=content_type,
+                    object_id=work_order.id,
+                    # Mark this as an approval attachment in metadata if needed, 
+                    # for now we rely on the relation or filename
+                )
 
         # Auto-assign materials from BOM if active
         active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
@@ -536,11 +559,9 @@ class WorkOrderService:
             'contact_tax_id': mfg_data.get('contact', {}).get('tax_id') if mfg_data.get('contact') else '',
             'folio_enabled': mfg_data.get('folio_enabled', False),
             'folio_start': mfg_data.get('folio_start', ''),
-            'design_attachments': [
-                f.get('name') if isinstance(f, dict) else str(f) 
-                for f in mfg_data.get('design_files', []) 
-                if (isinstance(f, dict) and f.get('name')) or (not isinstance(f, dict) and str(f))
-            ],
+            'design_attachments': mfg_data.get('design_filenames', []),
+            'design_approved': mfg_data.get('design_approved', False),
+            'approval_attachment': mfg_data.get('approval_filename'),
             # Map specs
             'prepress_specs': mfg_data.get('specifications', {}).get('prepress', ''),
             'press_specs': mfg_data.get('specifications', {}).get('press', ''),

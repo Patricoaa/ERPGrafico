@@ -12,7 +12,7 @@ from decimal import Decimal
 class SalesService:
     @staticmethod
     @transaction.atomic
-    def confirm_sale(order: SaleOrder):
+    def confirm_sale(order: SaleOrder, line_files=None):
         """
         Confirms a sale order and creates the corresponding Journal Entry.
         Debit: Accounts Receivable (or Cash)
@@ -54,13 +54,15 @@ class SalesService:
         from production.services import WorkOrderService
         from inventory.models import Product
         
-        for line in order.lines.all():
+        for i, line in enumerate(order.lines.all()):
             if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
                 # Check if an OT already exists for this line to avoid duplicates
                 if not line.work_orders.exists():
                     print(f"DEBUG: Triggering auto-OT for product {line.product.internal_code} on SaleOrder {order.number}")
                     try:
-                        ot = WorkOrderService.create_from_sale_line(line)
+                        # Extract files for this specific line if provided
+                        current_line_files = line_files.get(i) if line_files else None
+                        ot = WorkOrderService.create_from_sale_line(line, files=current_line_files)
                         if ot:
                             print(f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}")
                         else:

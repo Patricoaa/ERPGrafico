@@ -289,7 +289,8 @@ class BillingService:
     def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, 
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
-                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND'):
+                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
+                     line_files=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         """
@@ -324,7 +325,7 @@ class BillingService:
         
         # 2. Confirm Order
         from sales.services import SalesService
-        SalesService.confirm_sale(order)
+        SalesService.confirm_sale(order, line_files=line_files)
         
         # 3. Handle Delivery Scheduling / Action
         if delivery_type == 'IMMEDIATE':

@@ -31,6 +31,8 @@ export function AdvancedManufacturingDialog({
     const [description, setDescription] = useState("")
     const [productDescription, setProductDescription] = useState("")
     const [designFiles, setDesignFiles] = useState<File[]>([])
+    const [designApproved, setDesignApproved] = useState(false)
+    const [approvalFile, setApprovalFile] = useState<File | null>(null)
     const [folioEnabled, setFolioEnabled] = useState(false)
     const [folioStart, setFolioStart] = useState("")
 
@@ -57,6 +59,8 @@ export function AdvancedManufacturingDialog({
                 setDescription(mfgData.description || "")
                 setProductDescription(mfgData.product_description || "")
                 setDesignFiles(mfgData.design_files || [])
+                setDesignApproved(mfgData.design_approved || false)
+                setApprovalFile(mfgData.approval_file || null)
                 setFolioEnabled(mfgData.folio_enabled || false)
                 setFolioStart(mfgData.folio_start || "")
                 setPrintType(mfgData.print_type || null)
@@ -86,6 +90,8 @@ export function AdvancedManufacturingDialog({
                 setDescription("")
                 setProductDescription("")
                 setDesignFiles([])
+                setDesignApproved(false)
+                setApprovalFile(null)
                 setFolioEnabled(!!product.mfg_prepress_folio)
                 setFolioStart("")
                 setPrepressSpecs("")
@@ -108,7 +114,7 @@ export function AdvancedManufacturingDialog({
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setDesignFiles(Array.from(e.target.files))
+            setDesignFiles(prev => [...prev, ...Array.from(e.target.files!)])
         }
     }
 
@@ -135,6 +141,8 @@ export function AdvancedManufacturingDialog({
             description, // Internal notes
             product_description: productDescription,
             design_files: designFiles,
+            design_approved: designApproved,
+            approval_file: approvalFile,
             folio_enabled: folioEnabled,
             folio_start: folioStart,
             // Include phase capability flags in the result
@@ -298,7 +306,55 @@ export function AdvancedManufacturingDialog({
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center justify-between p-2 rounded-md bg-background">
+                                            <div className="flex items-center justify-between p-2 rounded-md bg-background border border-primary/10">
+                                                <div className="space-y-0.5">
+                                                    <Label className="text-xs font-semibold">Diseño Aprobado</Label>
+                                                    <p className="text-[10px] text-muted-foreground italic">Aprobación verbal o previa</p>
+                                                </div>
+                                                <Switch
+                                                    checked={designApproved}
+                                                    onCheckedChange={setDesignApproved}
+                                                    className="scale-75"
+                                                />
+                                            </div>
+
+                                            {designApproved && (
+                                                <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200 p-2 rounded-md bg-green-50/30 border border-green-100">
+                                                    <Label className="text-[10px] uppercase text-green-700 font-bold">Evidencia de Aprobación</Label>
+                                                    <div className="space-y-2">
+                                                        <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-green-200 rounded-lg cursor-pointer hover:bg-green-50 transition-colors">
+                                                            <Upload className="h-4 w-4 text-green-600" />
+                                                            <span className="text-xs text-green-700 font-medium">
+                                                                {approvalFile ? approvalFile.name : "Cargar evidencia"}
+                                                            </span>
+                                                            <input
+                                                                type="file"
+                                                                className="hidden"
+                                                                onChange={(e) => setApprovalFile(e.target.files?.[0] || null)}
+                                                                accept="image/*,.pdf"
+                                                            />
+                                                        </label>
+                                                        {approvalFile && (
+                                                            <div className="flex items-center justify-between p-2 bg-white rounded border border-green-100 text-xs">
+                                                                <div className="flex items-center gap-2 overflow-hidden text-green-700">
+                                                                    <FileText className="h-3 w-3 shrink-0" />
+                                                                    <span className="truncate">{approvalFile.name}</span>
+                                                                </div>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-5 w-5 hover:bg-green-100 text-green-700"
+                                                                    onClick={() => setApprovalFile(null)}
+                                                                >
+                                                                    <X className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center justify-between p-2 rounded-md bg-background border border-primary/10">
                                                 <Label className="text-xs font-medium">Folio</Label>
                                                 <Switch
                                                     checked={folioEnabled}

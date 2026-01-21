@@ -97,14 +97,25 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         delivery_date = request.data.get('delivery_date')
         delivery_notes = request.data.get('delivery_notes', '')
 
-        # Extract immediate_lines for PARTIAL delivery
-        immediate_lines = request.data.get('immediate_lines')
-        if immediate_lines and isinstance(immediate_lines, str):
-            import json
-            try:
-                immediate_lines = json.loads(immediate_lines)
-            except json.JSONDecodeError:
-                immediate_lines = []
+        # Extract line-indexed manufacturing files
+        line_files = {} # keyed by line_idx
+        for key, file_obj in request.FILES.items():
+            if key.startswith('line_'):
+                parts = key.split('_')
+                if len(parts) >= 3: # line_0_design_0 or line_0_approval
+                    try:
+                        line_idx = int(parts[1])
+                        file_type = parts[2] # 'design' or 'approval'
+                        
+                        if line_idx not in line_files:
+                            line_files[line_idx] = {'design': [], 'approval': None}
+                        
+                        if file_type == 'design':
+                            line_files[line_idx]['design'].append(file_obj)
+                        elif file_type == 'approval':
+                            line_files[line_idx]['approval'] = file_obj
+                    except (ValueError, IndexError):
+                        continue
 
         if not all([order_data, dte_type, payment_method]):
             return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
@@ -124,7 +135,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 delivery_date=delivery_date,
                 delivery_notes=delivery_notes,
                 immediate_lines=immediate_lines,
-                payment_type=payment_type
+                payment_type=payment_type,
+                line_files=line_files # Pass line-specific files
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
