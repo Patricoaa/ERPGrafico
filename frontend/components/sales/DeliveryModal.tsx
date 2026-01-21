@@ -192,6 +192,20 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
             return
         }
 
+        // Validate production status
+        const pendingProduction = order?.lines.some(line => {
+            const requestedQty = deliveryQuantities[line.id] || 0
+            if (requestedQty <= 0) return false
+
+            const status = getStockStatus(line)
+            return status?.type === 'error' && status.message.includes('Producción Pendiente')
+        })
+
+        if (pendingProduction) {
+            toast.error("No se pueden despachar productos con producción pendiente")
+            return
+        }
+
         setSubmitting(true)
         try {
             // Determine if it's partial or full dispatch
@@ -462,7 +476,20 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
-                    <Button onClick={handleDispatch} disabled={loading || submitting || !selectedWarehouse}>
+                    <Button
+                        onClick={handleDispatch}
+                        disabled={
+                            loading ||
+                            submitting ||
+                            !selectedWarehouse ||
+                            order?.lines.some(line => {
+                                const qty = deliveryQuantities[line.id] || 0
+                                if (qty <= 0) return false
+                                const status = getStockStatus(line)
+                                return status?.type === 'error'
+                            })
+                        }
+                    >
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirmar Despacho
                     </Button>

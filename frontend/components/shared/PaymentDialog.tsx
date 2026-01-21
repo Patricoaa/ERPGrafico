@@ -137,14 +137,14 @@ export function PaymentDialog({
                         <div className="flex justify-between items-center relative z-10">
                             <div>
                                 <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/70 mb-1">Monto de la Orden</p>
-                                <p className="text-sm font-bold text-muted-foreground opacity-80">${total.toLocaleString()}</p>
+                                <p className="text-sm font-bold text-muted-foreground opacity-80">${Math.round(total).toLocaleString()}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/70 mb-1">
                                     {isRefund ? "Total a Reembolsar" : "Saldo Pendiente"}
                                 </p>
                                 <p className="text-4xl font-black text-primary tracking-tighter drop-shadow-sm">
-                                    ${pendingAmount.toLocaleString()}
+                                    ${Math.round(pendingAmount).toLocaleString()}
                                 </p>
                             </div>
                         </div>
@@ -330,13 +330,13 @@ export function PaymentDialog({
                                     {isRefund ? "Monto a Reembolsar" : "Monto Recibido"}
                                 </Label>
                                 <div className="relative group">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-2xl text-muted-foreground group-focus-within:text-primary transition-colors">$</span>
+                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-4xl text-muted-foreground group-focus-within:text-primary transition-colors">$</span>
                                     <Input
                                         type="number"
                                         step="1"
                                         value={amount}
                                         onChange={(e) => setAmount(Math.ceil(parseFloat(e.target.value) || 0).toString())}
-                                        className="pl-10 text-4xl font-black h-20 rounded-2xl border-2 focus-visible:ring-offset-0 transition-all bg-background/50 backdrop-blur-sm shadow-sm"
+                                        className="pl-14 text-4xl font-black h-20 rounded-2xl border-2 focus-visible:ring-offset-0 transition-all bg-background/50 backdrop-blur-sm shadow-sm"
                                         autoFocus
                                         onFocus={(e) => e.target.select()}
                                     />
@@ -354,7 +354,7 @@ export function PaymentDialog({
                                         </span>
                                     </div>
                                     <span className="font-black text-2xl text-emerald-600 dark:text-emerald-400 tracking-tighter">
-                                        ${change.toLocaleString()}
+                                        ${Math.round(change).toLocaleString()}
                                     </span>
                                 </div>
                             ) : parseFloat(amount) < pendingAmount ? (
@@ -389,7 +389,7 @@ export function PaymentDialog({
                             (parseFloat(amount) > 0 && !treasuryAccount) ||
                             ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference)) ||
                             ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
-                            ((paymentMethod === 'CARD' || paymentMethod === 'TRANSFER') && !isPending && !transactionNumber && parseFloat(amount) > 0)
+                            ((paymentMethod === 'TRANSFER') && !isPending && !transactionNumber && parseFloat(amount) > 0)
                         }
                     >
                         {isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago'}

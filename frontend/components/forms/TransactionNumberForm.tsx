@@ -25,7 +25,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 
 const schema = z.object({
-    transaction_number: z.string().min(1, "El número de transacción es requerido"),
+    transaction_number: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
