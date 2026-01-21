@@ -56,6 +56,7 @@ const saleLineSchema = z.object({
     quantity: z.number().min(0.01, "La cantidad debe ser mayor a 0"),
     uom: z.string().min(1, "Unidad requerida"),
     unit_price: z.number().min(0, "El precio no puede ser negativo"),
+    unit_price_gross: z.number().min(0, "El precio no puede ser negativo").optional(),
     tax_rate: z.number().default(19),
     custom_specs: z.record(z.string(), z.any()).optional(),
     manufacturing_data: z.any().optional(),
@@ -83,23 +84,25 @@ const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => 
         name: "lines",
     })
 
-    const subtotal = lines?.reduce((sum, line) => sum + (Number(line.quantity) * Number(line.unit_price) || 0), 0) || 0
-    const tax = lines?.reduce((sum, line) => {
-        const lineNet = Number(line.quantity) * Number(line.unit_price) || 0
-        return sum + (lineNet * (Number(line.tax_rate) / 100))
-    }, 0) || 0
-    const total = subtotal + tax
+    const totals = PricingUtils.calculateMultiLineTotal(
+        lines?.map(l => ({
+            quantity: Number(l.quantity),
+            unit_price_net: Number(l.unit_price),
+            unit_price_gross: l.unit_price_gross ? Number(l.unit_price_gross) : undefined
+        })) || [],
+        true // Use Gross as base if possible
+    )
 
     return (
         <div className="space-y-1 text-right pt-4 border-t">
             <div className="text-sm text-muted-foreground">
-                Subtotal: {subtotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                Subtotal: {totals.net.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
             </div>
             <div className="text-sm text-muted-foreground">
-                IVA (19%): {tax.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                IVA (19%): {totals.tax.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
             </div>
             <div className="text-lg font-bold">
-                Total: {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                Total: {totals.gross.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
             </div>
         </div>
     )
@@ -155,6 +158,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 quantity: parseFloat(l.quantity) || 0,
                 uom: l.uom?.toString() || "",
                 unit_price: parseFloat(l.unit_price) || 0,
+                unit_price_gross: parseFloat(l.unit_price_gross) || (l.unit_price ? PricingUtils.netToGross(parseFloat(l.unit_price)) : 0),
                 tax_rate: parseFloat(l.tax_rate) || 19,
                 custom_specs: l.custom_specs || {},
                 manufacturing_data: l.manufacturing_data || null,
@@ -186,16 +190,23 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     }
 
     const fetchEffectivePrice = async (product: any, qty: number, selectedUomId?: number) => {
-        if (!product || !product.id) return 0
+        if (!product || !product.id) return { net: 0, gross: 0 }
         try {
             const params: any = { quantity: qty }
             if (selectedUomId) params.uom_id = selectedUomId
 
             const response = await api.get(`/inventory/products/${product.id}/effective_price/`, { params })
-            return parseFloat(response.data.price || "0")
+            return {
+                net: response.data.price_net || response.data.price,
+                gross: response.data.price_gross
+            }
         } catch (error) {
             console.error("Error fetching price:", error)
-            return parseFloat(product.sale_price || "0")
+            const net = parseFloat(product.sale_price || "0")
+            return {
+                net,
+                gross: parseFloat(product.sale_price_gross || "0") || PricingUtils.netToGross(net)
+            }
         }
     }
 
@@ -212,6 +223,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                         quantity: parseFloat(l.quantity) || 0,
                         uom: l.uom?.toString() || "",
                         unit_price: parseFloat(l.unit_price) || 0,
+                        unit_price_gross: parseFloat(l.unit_price_gross || "0") || (l.unit_price ? PricingUtils.netToGross(parseFloat(l.unit_price)) : 0),
                         tax_rate: parseFloat(l.tax_rate) || 19,
                         custom_specs: l.custom_specs || {},
                         manufacturing_data: l.manufacturing_data || null,
@@ -221,7 +233,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 form.reset({
                     payment_method: "CREDIT",
                     notes: "",
-                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
+                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
                 })
             }
         }
@@ -298,7 +310,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Nota de Venta" : "Cerrar Venta"}</DialogTitle>
                     <DialogDescription>
-                        {initialData ? "Modifique los datos de la nota de venta." : "Ingrese los detalles para confirmar la venta e ir al checkout."}
+                        {initialData ? "Modifique los datos de la nota de venta." : "Ingrese los productos la venta e ir al checkout."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -313,7 +325,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null })}
+                                    onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null })}
                                 >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Agregar Línea
@@ -364,9 +376,10 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                     const uomId = selectedProduct.uom
 
                                                                                     // Call API for price
-                                                                                    const price = await fetchEffectivePrice(selectedProduct, qty, uomId)
+                                                                                    const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, uomId)
 
-                                                                                    form.setValue(`lines.${index}.unit_price`, price)
+                                                                                    form.setValue(`lines.${index}.unit_price`, net)
+                                                                                    form.setValue(`lines.${index}.unit_price_gross`, gross)
                                                                                     form.setValue(`lines.${index}.description`, selectedProduct.name)
                                                                                     form.setValue(`lines.${index}.uom`, uomId?.toString() || "")
 
@@ -452,8 +465,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     const product = products.find(p => p.id.toString() === productId)
                                                                     if (product) {
                                                                         const uomId = parseInt(form.getValues(`lines.${index}.uom`))
-                                                                        const price = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
-                                                                        form.setValue(`lines.${index}.unit_price`, price)
+                                                                        const { net, gross } = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
+                                                                        form.setValue(`lines.${index}.unit_price`, net)
+                                                                        form.setValue(`lines.${index}.unit_price_gross`, gross)
                                                                     }
                                                                 }}
                                                             />
@@ -478,8 +492,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                         field.onChange(val)
                                                                         const qty = Number(form.getValues(`lines.${index}.quantity`)) || 1
                                                                         const uomId = parseInt(val)
-                                                                        const price = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
-                                                                        form.setValue(`lines.${index}.unit_price`, price)
+                                                                        const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
+                                                                        form.setValue(`lines.${index}.unit_price`, net)
+                                                                        form.setValue(`lines.${index}.unit_price_gross`, gross)
                                                                     }}
                                                                     uoms={uoms}
                                                                     showConversionHint={true}
@@ -493,39 +508,33 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                 <TableCell className="text-right text-xs">
                                                     <FormField<SaleOrderFormValues>
                                                         control={form.control}
-                                                        name={`lines.${index}.unit_price`}
+                                                        name={`lines.${index}.unit_price_gross`}
                                                         render={({ field }) => {
                                                             const productId = form.watch(`lines.${index}.product`)
                                                             const product = products.find(p => p.id.toString() === productId)
                                                             const isDynamic = product?.is_dynamic_pricing
-                                                            const netPrice = Number(field.value) || 0
-
-                                                            if (isDynamic) {
-                                                                return (
-                                                                    <div className="flex flex-col items-end gap-1">
-                                                                        <Input
-                                                                            type="number"
-                                                                            className="h-8 w-24 text-right"
-                                                                            value={netPrice > 0 ? PricingUtils.netToGross(netPrice) : ""}
-                                                                            placeholder="0"
-                                                                            onChange={(e) => {
-                                                                                const gross = parseFloat(e.target.value) || 0;
-                                                                                const net = PricingUtils.grossToNet(gross);
-                                                                                field.onChange(net);
-                                                                            }}
-                                                                        />
-                                                                        <span className="text-[9px] text-muted-foreground leading-none">
-                                                                            Neto: {netPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                                        </span>
-                                                                    </div>
-                                                                )
-                                                            }
+                                                            const grossPrice = Number(field.value) || 0
+                                                            const netPrice = form.watch(`lines.${index}.unit_price`) || 0
 
                                                             return (
                                                                 <div className="flex flex-col items-end gap-1 pt-2 pr-3">
-                                                                    <span>
-                                                                        {PricingUtils.netToGross(netPrice).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                                    </span>
+                                                                    {isDynamic ? (
+                                                                        <Input
+                                                                            type="number"
+                                                                            className="h-8 w-24 text-right pr-2"
+                                                                            value={grossPrice || ""}
+                                                                            placeholder="0"
+                                                                            onChange={(e) => {
+                                                                                const val = parseFloat(e.target.value) || 0;
+                                                                                field.onChange(val);
+                                                                                form.setValue(`lines.${index}.unit_price`, PricingUtils.grossToNet(val));
+                                                                            }}
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="font-bold">
+                                                                            {grossPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                        </span>
+                                                                    )}
                                                                     <span className="text-[9px] text-muted-foreground leading-none">
                                                                         Neto: {netPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                                     </span>
@@ -535,17 +544,24 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                     />
                                                 </TableCell>
                                                 <TableCell className="text-right font-bold text-sm">
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <span>
-                                                            {PricingUtils.calculateLineTotal(
-                                                                Number(form.watch(`lines.${index}.quantity`)),
-                                                                Number(form.watch(`lines.${index}.unit_price`))
-                                                            ).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                        </span>
-                                                        <span className="text-[9px] text-muted-foreground font-normal leading-none opacity-80">
-                                                            Neto: {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_price`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                        </span>
-                                                    </div>
+                                                    {(() => {
+                                                        const qty = Number(form.watch(`lines.${index}.quantity`)) || 0
+                                                        const unitGross = Number(form.watch(`lines.${index}.unit_price_gross`)) || 0
+                                                        const unitNet = Number(form.watch(`lines.${index}.unit_price`)) || 0
+                                                        const lineTotal = Math.round(qty * unitGross)
+                                                        const lineNetTotal = Math.round(qty * unitNet)
+
+                                                        return (
+                                                            <div className="flex flex-col items-end gap-1">
+                                                                <span>
+                                                                    {lineTotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                </span>
+                                                                <span className="text-[9px] text-muted-foreground font-normal leading-none opacity-80">
+                                                                    Neto: {lineNetTotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                </span>
+                                                            </div>
+                                                        )
+                                                    })()}
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-1">

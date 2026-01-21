@@ -208,7 +208,7 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         price_net = (price_gross / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
         
         return Response({
-            'price': float(price_gross),
+            'price': float(price_net),
             'price_gross': float(price_gross),
             'price_net': float(price_net)
         })

@@ -810,7 +810,8 @@ class PricingRule(models.Model):
     max_quantity = models.DecimalField(_("Cantidad Máxima / Hasta"), max_digits=12, decimal_places=4, null=True, blank=True, validators=[MinValueValidator(0)], help_text=_("Solo usado para el operador 'Entre'"))
     
     rule_type = models.CharField(_("Tipo de Regla"), max_length=20, choices=RuleType.choices, default=RuleType.FIXED)
-    fixed_price = models.DecimalField(_("Precio Fijo"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
+    fixed_price = models.DecimalField(_("Precio Fijo (Neto)"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
+    fixed_price_gross = models.DecimalField(_("Precio Fijo (Bruto)"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
     discount_percentage = models.DecimalField(_("Descuento %"), max_digits=5, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
     
     start_date = models.DateField(_("Fecha Inicio"), null=True, blank=True)
@@ -828,6 +829,26 @@ class PricingRule(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        from decimal import Decimal
+        vat_rate = Decimal('1.19')
+        
+        if self.fixed_price and not self.fixed_price_gross:
+            self.fixed_price_gross = (self.fixed_price * vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        elif self.fixed_price_gross and not self.fixed_price:
+            self.fixed_price = (self.fixed_price_gross / vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        elif self.pk:
+            try:
+                old_instance = PricingRule.objects.get(pk=self.pk)
+                if self.fixed_price != old_instance.fixed_price and self.fixed_price_gross == old_instance.fixed_price_gross:
+                    self.fixed_price_gross = (self.fixed_price * vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                elif self.fixed_price_gross != old_instance.fixed_price_gross and self.fixed_price == old_instance.fixed_price:
+                    self.fixed_price = (self.fixed_price_gross / vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+            except Exception:
+                pass
+
+        super().save(*args, **kwargs)
 
 class CustomFieldTemplate(models.Model):
     """Reusable custom field definitions for advanced manufacturing products"""

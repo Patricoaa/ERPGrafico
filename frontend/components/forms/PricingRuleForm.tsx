@@ -47,6 +47,7 @@ const formSchema = z.object({
     max_quantity: z.string().or(z.number()).nullable().optional(),
     rule_type: z.enum(["FIXED", "DISCOUNT_PERCENTAGE", "PACKAGE_FIXED"]),
     fixed_price: z.string().or(z.number()).nullable().optional(),
+    fixed_price_gross: z.string().or(z.number()).nullable().optional(),
     discount_percentage: z.string().or(z.number()).nullable().optional(),
     start_date: z.string().nullable().optional(),
     end_date: z.string().nullable().optional(),
@@ -102,6 +103,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                     min_quantity: initialData.min_quantity !== undefined ? String(initialData.min_quantity) : "1",
                     max_quantity: initialData.max_quantity ? String(initialData.max_quantity) : null,
                     fixed_price: initialData.fixed_price ? String(initialData.fixed_price) : null,
+                    fixed_price_gross: initialData.fixed_price_gross ? String(initialData.fixed_price_gross) : null,
                     discount_percentage: initialData.discount_percentage ? String(initialData.discount_percentage) : null,
                     priority: initialData.priority ?? 0,
                     active: initialData.active ?? true,
@@ -122,6 +124,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                     operator: "GE",
                     max_quantity: null,
                     fixed_price: null,
+                    fixed_price_gross: null,
                     discount_percentage: null,
                     start_date: null,
                     end_date: null,
@@ -339,49 +342,65 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         )}
                                     />
                                     {ruleType === "FIXED" || ruleType === "PACKAGE_FIXED" ? (
-                                        <FormField
-                                            control={form.control}
-                                            name="fixed_price"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Precio Fijo (Neto)</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" {...field} value={field.value || ""} />
-                                                    </FormControl>
-                                                    {field.value && !isNaN(parseFloat(field.value.toString())) && (
-                                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border rounded p-2 bg-muted/50">
-                                                            {ruleType === "PACKAGE_FIXED" && (
-                                                                <div className="flex justify-between text-amber-600 font-medium pb-1 mb-1 border-b border-amber-200">
-                                                                    <span>Tipo:</span>
-                                                                    <span>Precio TOTAL por el rango</span>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex justify-between">
-                                                                <span>Neto:</span>
-                                                                <span>{parseInt(field.value.toString()).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <span>IVA (19%):</span>
-                                                                <span>{PricingUtils.calculateTax(parseInt(field.value.toString())).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                                                            </div>
-                                                            <div className="flex justify-between font-bold border-t pt-1 mt-1">
-                                                                <span>Total (Bruto):</span>
-                                                                <span>{PricingUtils.netToGross(parseInt(field.value.toString())).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                                                            </div>
-                                                            {ruleType === "PACKAGE_FIXED" && form.watch('min_quantity') && (
-                                                                <div className="pt-2 mt-1 border-t border-dashed text-xs text-slate-500">
-                                                                    <p>Precio Unitario (aprox) para {form.watch('min_quantity')} unidades:</p>
-                                                                    <p className="font-mono text-right">
-                                                                        {Math.round(parseInt(field.value.toString()) / parseFloat(form.watch('min_quantity') as string)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })} c/u
-                                                                    </p>
-                                                                </div>
-                                                            )}
+                                        <div className="space-y-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="fixed_price"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Precio Fijo (Neto)</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="number"
+                                                                {...field}
+                                                                value={field.value || ""}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    field.onChange(val);
+                                                                    if (val) {
+                                                                        const gross = PricingUtils.netToGross(parseFloat(val));
+                                                                        form.setValue("fixed_price_gross", String(gross));
+                                                                    } else {
+                                                                        form.setValue("fixed_price_gross", "");
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="fixed_price_gross"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Precio Fijo (Bruto)</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="number"
+                                                                {...field}
+                                                                value={field.value || ""}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    field.onChange(val);
+                                                                    if (val) {
+                                                                        const net = PricingUtils.grossToNet(parseFloat(val));
+                                                                        form.setValue("fixed_price", String(net));
+                                                                    } else {
+                                                                        form.setValue("fixed_price", "");
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <div className="text-[10px] text-muted-foreground mt-1">
+                                                            {ruleType === "PACKAGE_FIXED" ? "Precio TOTAL por el rango" : "Precio UNITARIO bruto"}
                                                         </div>
-                                                    )}
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
                                     ) : (
                                         <FormField
                                             control={form.control}

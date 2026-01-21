@@ -259,17 +259,19 @@ class PricingService:
             if matches:
                 # Calculate price
                 if rule.rule_type == PricingRule.RuleType.FIXED:
-                    if rule.fixed_price is not None:
-                        # Fixed price per unit (usually interpreted as Gross now)
-                        best_price = rule.fixed_price
+                    if rule.fixed_price_gross is not None:
+                        best_price = rule.fixed_price_gross
+                    elif rule.fixed_price is not None:
+                        best_price = (rule.fixed_price * Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                 elif rule.rule_type == PricingRule.RuleType.PACKAGE_FIXED:
-                    if rule.fixed_price is not None:
-                         # Fixed price for the WHOLE package
+                    # Package fixed price is also usually interpreted as Gross
+                    p_price = rule.fixed_price_gross if rule.fixed_price_gross is not None else (rule.fixed_price * Decimal('1.19') if rule.fixed_price else None)
+                    if p_price is not None:
                          # We need to return UNIT price, so we divide by quantity
                          if quantity > 0:
-                             best_price = (rule.fixed_price / quantity).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                             best_price = (p_price / quantity).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                          else:
-                             best_price = rule.fixed_price
+                             best_price = p_price
                 else:
                     if rule.discount_percentage is not None:
                         best_price = (base_price * (1 - (rule.discount_percentage / 100))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
