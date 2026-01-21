@@ -203,19 +203,31 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         return 'partial'
 
     def get_checkout_files(self, obj):
-        if not obj.sale_order:
-            return []
-        
+        files = []
+        if not obj.sale_order and not obj.sale_line:
+            return files
+
         from core.models import Attachment
         from django.contrib.contenttypes.models import ContentType
-        from sales.models import SaleOrder
+        from sales.models import SaleOrder, SaleLine
         
-        ct = ContentType.objects.get_for_model(SaleOrder)
-        attachments = Attachment.objects.filter(
-            content_type=ct,
-            object_id=obj.sale_order.id
-        )
-        return AttachmentSerializer(attachments, many=True).data
+        # 1. From Sale Order
+        if obj.sale_order:
+            ct = ContentType.objects.get_for_model(SaleOrder)
+            files.extend(list(Attachment.objects.filter(
+                content_type=ct,
+                object_id=obj.sale_order.id
+            )))
+            
+        # 2. From Sale Line (where manufacturing specs usually live)
+        if obj.sale_line:
+            ct_line = ContentType.objects.get_for_model(SaleLine)
+            files.extend(list(Attachment.objects.filter(
+                content_type=ct_line,
+                object_id=obj.sale_line.id
+            )))
+
+        return AttachmentSerializer(files, many=True).data
     
     class Meta:
         model = WorkOrder

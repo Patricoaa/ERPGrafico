@@ -73,9 +73,11 @@ class WorkOrderService:
                     original_filename=approval_file.name,
                     content_type=content_type,
                     object_id=work_order.id,
-                    # Mark this as an approval attachment in metadata if needed, 
-                    # for now we rely on the relation or filename
                 )
+                # Fix: Store filename in stage_data so frontend can link it as evidence
+                if not work_order.stage_data: work_order.stage_data = {}
+                work_order.stage_data['approval_attachment'] = approval_file.name
+                work_order.save()
 
         # Auto-assign materials from BOM if active
         active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
@@ -303,13 +305,22 @@ class WorkOrderService:
                     raise ValidationError(f"Archivo '{file_obj.name}': {str(e)}")
                 
                 # Create attachment after validation
-                Attachment.objects.create(
+                attachment = Attachment.objects.create(
                     file=file_obj,
                     original_filename=file_obj.name,
                     content_type=content_type,
                     object_id=work_order.id,
                     user=user
                 )
+
+                # Fix: Update stage_data if it's the approval file (or design)
+                # We assume 'approval_attachment' key from frontend form data maps here
+                # But files dict keys are field names.
+                # If we received 'approval_attachment', we should update stage_data['approval_attachment']
+                if field_name == 'approval_attachment':
+                    if not work_order.stage_data: work_order.stage_data = {}
+                    work_order.stage_data['approval_attachment'] = file_obj.name
+
 
         # Specific logic per stage transition
         if next_stage == WorkOrder.Stage.MATERIAL_APPROVAL:

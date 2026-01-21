@@ -958,408 +958,425 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 <div className="pt-3 border-t space-y-3">
                                                     <Label className="text-xs text-muted-foreground block">Evidencia de Aprobación</Label>
 
-                                                    {/* Historical Approvals */}
-                                                    {order?.attachments && order.attachments.some((a: any) => a.original_filename === stageData.approval_attachment) && (
-                                                        <div className="space-y-1">
-                                                            <p className="text-[10px] font-bold uppercase text-muted-foreground">Evidencia Actual:</p>
-                                                            {order.attachments
-                                                                .filter((a: any) => a.original_filename === stageData.approval_attachment)
-                                                                .map((att: any) => (
-                                                                    <div key={att.id} className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
+                                                    {/* Historical Approvals: Check both OT attachments AND Checkout files */}
+                                                    {(() => {
+                                                        const allFiles = [...(order?.attachments || []), ...(order?.checkout_files || [])]
+                                                        const approvalFile = allFiles.find((a: any) => a.original_filename === stageData.approval_attachment)
+
+                                                        if (approvalFile) {
+                                                            return (
+                                                                <div className="space-y-1">
+                                                                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Evidencia Actual:</p>
+                                                                    <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
                                                                         <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-                                                                        <div className="flex-1 truncate font-medium text-green-700">{att.original_filename}</div>
+                                                                        <div className="flex-1 truncate font-medium text-green-700">{approvalFile.original_filename}</div>
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="icon"
                                                                             className="h-6 w-6 hover:bg-green-100 text-green-700"
-                                                                            onClick={() => window.open(att.file, '_blank')}
+                                                                            onClick={() => window.open(approvalFile.file, '_blank')}
                                                                             title="Descargar"
                                                                         >
                                                                             <Download className="h-3 w-3" />
                                                                         </Button>
                                                                     </div>
-                                                                ))}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Upload Input */}
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] font-bold uppercase text-muted-foreground">
-                                                            {order?.attachments?.some((a: any) => a.original_filename === stageData.approval_attachment)
-                                                                ? "Subir Nueva Evidencia (Opcional):"
-                                                                : "Subir Evidencia:"}
-                                                        </p>
-                                                        <div className="flex gap-2 items-center">
-                                                            <Input
-                                                                type="file"
-                                                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
-                                                                className="h-8 text-xs cursor-pointer file:text-xs file:font-semibold"
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files?.[0]
-                                                                    if (file) {
-                                                                        const validation = validateFile(file)
-                                                                        if (validation.valid) {
-                                                                            setClientApprovalFile(file)
-                                                                        } else {
-                                                                            toast.error(validation.error)
-                                                                            e.target.value = ''
-                                                                        }
-                                                                    } else {
-                                                                        setClientApprovalFile(null)
-                                                                    }
-                                                                }}
-                                                            />
-                                                            {clientApprovalFile && (
-                                                                <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 animate-in fade-in zoom-in spin-in-3">
-                                                                    <Check className="h-3 w-3 mr-1" />
-                                                                    Listo
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-[10px] text-muted-foreground">
-                                                            Puede adjuntar correos, órdenes de compra del cliente o capturas de pantalla.
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                            </div>
-
-                                            <div className="p-4 border rounded-lg">
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        return null
+                                                    })()}
                                                     <Button
-                                                        size="sm"
-                                                        variant={supervisorApproved ? "default" : "outline"}
-                                                        className={cn("transition-all duration-300", supervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                        onClick={() => setSupervisorApproved(!supervisorApproved)}
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 hover:bg-green-100 text-green-700"
+                                                        onClick={() => window.open(att.file, '_blank')}
+                                                        title="Descargar"
                                                     >
-                                                        {supervisorApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                        {supervisorApproved ? "Aprobado" : "Aprobar"}
+                                                        <Download className="h-3 w-3" />
                                                     </Button>
                                                 </div>
+                                                                ))}
+                                            </div>
+                                                    )}
+
+                                            {/* Upload Input */}
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                                                    {order?.attachments?.some((a: any) => a.original_filename === stageData.approval_attachment)
+                                                        ? "Subir Nueva Evidencia (Opcional):"
+                                                        : "Subir Evidencia:"}
+                                                </p>
+                                                <div className="flex gap-2 items-center">
+                                                    <Input
+                                                        type="file"
+                                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
+                                                        className="h-8 text-xs cursor-pointer file:text-xs file:font-semibold"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0]
+                                                            if (file) {
+                                                                const validation = validateFile(file)
+                                                                if (validation.valid) {
+                                                                    setClientApprovalFile(file)
+                                                                } else {
+                                                                    toast.error(validation.error)
+                                                                    e.target.value = ''
+                                                                }
+                                                            } else {
+                                                                setClientApprovalFile(null)
+                                                            }
+                                                        }}
+                                                    />
+                                                    {clientApprovalFile && (
+                                                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 animate-in fade-in zoom-in spin-in-3">
+                                                            <Check className="h-3 w-3 mr-1" />
+                                                            Listo
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    Puede adjuntar correos, órdenes de compra del cliente o capturas de pantalla.
+                                                </p>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
 
-                            {STAGES[viewingStepIndex]?.id === 'PRESS' && (
-                                <div className="space-y-6">
-                                    {/* Specifications Section */}
-                                    {(stageData.press_specs || (stageData.folio_enabled && stageData.folio_start)) && (
-                                        <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-3">
-                                            {stageData.press_specs && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold uppercase text-primary">Especificaciones Técnicas</Label>
-                                                    <p className="text-sm border-l-2 border-primary/20 pl-3 py-1 italic">{stageData.press_specs}</p>
-                                                </div>
-                                            )}
-                                            {stageData.folio_enabled && (
-                                                <div className="flex items-center gap-4 pt-2 border-t border-primary/10">
-                                                    <div className="flex-1">
-                                                        <Label className="text-[10px] font-bold uppercase text-primary">Folio Inicial</Label>
-                                                        <p className="text-sm font-semibold">{stageData.folio_start}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-4 text-center py-6 border-b border-dashed">
-                                        <Printer className="h-12 w-12 mx-auto text-primary opacity-20" />
-                                        <div className="max-w-md mx-auto space-y-1">
-                                            <p className="font-semibold text-sm">Ejecución de Impresión</p>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                                Registre que el trabajo ha pasado satisfactoriamente por la prensa.
-                                            </p>
-                                        </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <Label className="text-sm font-semibold block">Aprobación de la Impresión</Label>
-                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-0.5">
-                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
-                                                    <p className="text-[10px] text-muted-foreground">Confirmación técnica de la calidad de impresión</p>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant={pressSupervisorApproved ? "default" : "outline"}
-                                                    className={cn("transition-all duration-300 min-w-[100px]", pressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                    onClick={() => setPressSupervisorApproved(!pressSupervisorApproved)}
-                                                >
-                                                    {pressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                    {pressSupervisorApproved ? "Aprobado" : "Aprobar"}
-                                                </Button>
-                                            </div>
+                                    <div className="p-4 border rounded-lg">
+                                        <div className="flex items-center justify-between">
+                                            <Label className="text-sm">Aprobación del Supervisor</Label>
+                                            <Button
+                                                size="sm"
+                                                variant={supervisorApproved ? "default" : "outline"}
+                                                className={cn("transition-all duration-300", supervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                                onClick={() => setSupervisorApproved(!supervisorApproved)}
+                                            >
+                                                {supervisorApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
+                                                {supervisorApproved ? "Aprobado" : "Aprobar"}
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
-                            )}
-
-                            {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
-                                <div className="space-y-6">
-                                    {/* Specifications Section */}
-                                    {stageData.postpress_specs && (
-                                        <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-1">
-                                            <Label className="text-[10px] font-bold uppercase text-primary">Especificaciones Técnicas</Label>
-                                            <p className="text-sm border-l-2 border-primary/20 pl-3 py-1 italic">{stageData.postpress_specs}</p>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-4 text-center py-6 border-b border-dashed">
-                                        <Layers className="h-12 w-12 mx-auto text-primary opacity-20" />
-                                        <div className="max-w-md mx-auto space-y-1">
-                                            <p className="font-semibold text-sm">Acabados y Post-Impresión</p>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                                Verificación final de acabados, cortes y empaque.
-                                            </p>
-                                        </div>
                                     </div>
-
-                                    <div className="space-y-4">
-                                        <Label className="text-sm font-semibold block">Aprobación de Post-Impresión</Label>
-                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-0.5">
-                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
-                                                    <p className="text-[10px] text-muted-foreground">Visto bueno final antes de entrega</p>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant={postpressSupervisorApproved ? "default" : "outline"}
-                                                    className={cn("transition-all duration-300 min-w-[100px]", postpressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                    onClick={() => setPostpressSupervisorApproved(!postpressSupervisorApproved)}
-                                                >
-                                                    {postpressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                    {postpressSupervisorApproved ? "Aprobado" : "Aprobar"}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {STAGES[viewingStepIndex]?.id === 'FINISHED' && (
-                                <div className="space-y-4 text-center py-10">
-                                    <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
-                                    <div className="max-w-md mx-auto space-y-2">
-                                        <p className="font-semibold">Producción Finalizada</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Se han registrado los consumos de material y se ha sumado el stock del producto terminado (si aplica).
-                                        </p>
-                                    </div>
-                                    <div className="pt-4">
-                                        <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar Gestión</Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Progress Buttons */}
-                        <div className="mt-8 pt-6 border-t flex justify-between">
-                            {!isViewingCurrentStage ? (
-                                <Button
-                                    variant="outline"
-                                    className="w-full gap-2 border-primary/20 hover:bg-primary/5"
-                                    onClick={() => setViewingStepIndex(actualStepIndex)}
-                                >
-                                    <LayoutDashboard className="h-4 w-4" />
-                                    Volver a la Etapa Actual
-                                </Button>
-                            ) : (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        disabled={viewingStepIndex === 0 || transitioning || order?.status === 'FINISHED'}
-                                        onClick={() => {
-                                            const prevStage = STAGES[viewingStepIndex - 1]
-                                            handleTransition(prevStage.id)
-                                        }}
-                                    >
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
-                                        Anterior
-                                    </Button>
-
-                                    {order?.status !== 'FINISHED' && (
-                                        <Button
-                                            disabled={
-                                                transitioning ||
-                                                (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available))
-                                            }
-                                            onClick={() => {
-                                                const nextStage = STAGES[viewingStepIndex + 1]
-                                                if (nextStage) {
-                                                    if (nextStage.id === 'FINISHED') {
-                                                        if (confirm("¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar y el producto se encuentra disponible para despacho de inmediato.")) {
-                                                            handleTransition(nextStage.id)
-                                                        }
-                                                    } else {
-                                                        handleTransition(nextStage.id)
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            {transitioning ? "Procesando..." : viewingStepIndex === STAGES.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </>
-                            )}
-                        </div>
                     </div>
+                            )}
 
-                    {/* Right Sidebar - Information */}
-                    <div className="w-80 border-l bg-muted/5 p-4 space-y-4 overflow-y-auto hidden lg:block">
-                        {/* Acciones Section */}
-                        <div className="space-y-2">
-                            <h4 className="text-xs font-bold uppercase text-muted-foreground">Acciones</h4>
-                            <div className="flex items-center gap-2 p-1">
-                                {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage) && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex-1 gap-2 h-9"
-                                        onClick={() => setIsEditOpen(true)}
-                                        title="Editar OT"
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex-1 gap-2 h-9"
-                                    onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
-                                >
-                                    <LayoutDashboard className="h-4 w-4" />
-
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex-1 gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                                    onClick={() => handleAnnulOrder()}
-                                    disabled={isAnnuling || order?.status === 'CANCELLED'}
-                                    title="Anular OT"
-                                >
-                                    <Ban className="h-4 w-4" />
-                                </Button>
-                                {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage) && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10"
-                                        onClick={() => handleDeleteOrder()}
-                                        disabled={isDeleting}
-                                        title="Eliminar OT"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
-                            <div className="bg-background rounded-lg border divide-y overflow-hidden">
-                                {/* Section 1: Product */}
-                                <div className="p-3 space-y-1">
-                                    <p className="text-sm font-medium leading-tight">{productName}</p>
-                                    {order?.product_description && (
-                                        <p className="text-xs text-muted-foreground italic line-clamp-2">{order.product_description}</p>
+                    {STAGES[viewingStepIndex]?.id === 'PRESS' && (
+                        <div className="space-y-6">
+                            {/* Specifications Section */}
+                            {(stageData.press_specs || (stageData.folio_enabled && stageData.folio_start)) && (
+                                <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-3">
+                                    {stageData.press_specs && (
+                                        <div className="space-y-1">
+                                            <Label className="text-[10px] font-bold uppercase text-primary">Especificaciones Técnicas</Label>
+                                            <p className="text-sm border-l-2 border-primary/20 pl-3 py-1 italic">{stageData.press_specs}</p>
+                                        </div>
+                                    )}
+                                    {stageData.folio_enabled && (
+                                        <div className="flex items-center gap-4 pt-2 border-t border-primary/10">
+                                            <div className="flex-1">
+                                                <Label className="text-[10px] font-bold uppercase text-primary">Folio Inicial</Label>
+                                                <p className="text-sm font-semibold">{stageData.folio_start}</p>
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
+                            )}
 
-                                {/* Section 2: Start Date */}
-                                {order?.start_date && (
-                                    <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Inicio</p>
-                                        <div className="flex items-center gap-2">
-                                            <CalendarIcon className="h-3.5 w-3.5 text-primary" />
-                                            <p className="text-sm font-medium">{new Date(order.start_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                            <div className="space-y-4 text-center py-6 border-b border-dashed">
+                                <Printer className="h-12 w-12 mx-auto text-primary opacity-20" />
+                                <div className="max-w-md mx-auto space-y-1">
+                                    <p className="font-semibold text-sm">Ejecución de Impresión</p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Registre que el trabajo ha pasado satisfactoriamente por la prensa.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="text-sm font-semibold block">Aprobación de la Impresión</Label>
+                                <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-sm">Aprobación del Supervisor</Label>
+                                            <p className="text-[10px] text-muted-foreground">Confirmación técnica de la calidad de impresión</p>
                                         </div>
+                                        <Button
+                                            size="sm"
+                                            variant={pressSupervisorApproved ? "default" : "outline"}
+                                            className={cn("transition-all duration-300 min-w-[100px]", pressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                            onClick={() => setPressSupervisorApproved(!pressSupervisorApproved)}
+                                        >
+                                            {pressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                            {pressSupervisorApproved ? "Aprobado" : "Aprobar"}
+                                        </Button>
                                     </div>
-                                )}
-
-                                {/* Section 3: Delivery Date */}
-                                {order?.sale_order_delivery_date && (
-                                    <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Entrega</p>
-                                        <div className="flex items-center gap-2">
-                                            <CalendarIcon className="h-3.5 w-3.5 text-primary" />
-                                            <p className="text-sm font-medium">{new Date(order.sale_order_delivery_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Section 3: Contact / Reference */}
-                                {(stageData.contact_name || order?.sale_customer_name) && (
-                                    <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">
-                                            {stageData.contact_name ? 'Contacto / Referencia' : 'Cliente Relacionado'}
-                                        </p>
-                                        <div className="flex items-start gap-3 pt-0.5">
-                                            <div className="bg-muted p-1.5 rounded-full mt-0.5">
-                                                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                            </div>
-                                            <div className="flex-1 overflow-hidden">
-                                                <p className="text-sm font-semibold truncate leading-tight">
-                                                    {stageData.contact_name || order.sale_customer_name}
-                                                </p>
-                                                <p className="text-[11px] text-muted-foreground truncate">
-                                                    {stageData.contact_tax_id || order.sale_customer_rut}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Section 5: Folio */}
-                                {stageData.folio_enabled && stageData.folio_start && (
-                                    <div className="p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground">Folio Inicial</p>
-                                        <p className="text-sm font-semibold text-primary">{stageData.folio_start}</p>
-                                    </div>
-                                )}
-
-                                {stageData.product_description && stageData.product_description !== order?.product_description && (
-                                    <div className="p-3 bg-muted/5">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground mb-1">Especificación de Etapa</p>
-                                        <p className="text-xs text-muted-foreground italic">{stageData.product_description}</p>
-                                    </div>
-                                )}
+                                </div>
                             </div>
                         </div>
+                    )}
 
-                        {stageData.internal_notes && (
-                            <div className="space-y-2">
-                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Observaciones Internas</h4>
-                                <div className="p-3 bg-background rounded-lg border">
-                                    <p className="text-xs whitespace-pre-wrap">{stageData.internal_notes}</p>
+                    {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
+                        <div className="space-y-6">
+                            {/* Specifications Section */}
+                            {stageData.postpress_specs && (
+                                <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-1">
+                                    <Label className="text-[10px] font-bold uppercase text-primary">Especificaciones Técnicas</Label>
+                                    <p className="text-sm border-l-2 border-primary/20 pl-3 py-1 italic">{stageData.postpress_specs}</p>
                                 </div>
+                            )}
+
+                            <div className="space-y-4 text-center py-6 border-b border-dashed">
+                                <Layers className="h-12 w-12 mx-auto text-primary opacity-20" />
+                                <div className="max-w-md mx-auto space-y-1">
+                                    <p className="font-semibold text-sm">Acabados y Post-Impresión</p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Verificación final de acabados, cortes y empaque.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="text-sm font-semibold block">Aprobación de Post-Impresión</Label>
+                                <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-sm">Aprobación del Supervisor</Label>
+                                            <p className="text-[10px] text-muted-foreground">Visto bueno final antes de entrega</p>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            variant={postpressSupervisorApproved ? "default" : "outline"}
+                                            className={cn("transition-all duration-300 min-w-[100px]", postpressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
+                                            onClick={() => setPostpressSupervisorApproved(!postpressSupervisorApproved)}
+                                        >
+                                            {postpressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
+                                            {postpressSupervisorApproved ? "Aprobado" : "Aprobar"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {STAGES[viewingStepIndex]?.id === 'FINISHED' && (
+                        <div className="space-y-4 text-center py-10">
+                            <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
+                            <div className="max-w-md mx-auto space-y-2">
+                                <p className="font-semibold">Producción Finalizada</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Se han registrado los consumos de material y se ha sumado el stock del producto terminado (si aplica).
+                                </p>
+                            </div>
+                            <div className="pt-4">
+                                <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar Gestión</Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Progress Buttons */}
+                <div className="mt-8 pt-6 border-t flex justify-between">
+                    {!isViewingCurrentStage ? (
+                        <Button
+                            variant="outline"
+                            className="w-full gap-2 border-primary/20 hover:bg-primary/5"
+                            onClick={() => setViewingStepIndex(actualStepIndex)}
+                        >
+                            <LayoutDashboard className="h-4 w-4" />
+                            Volver a la Etapa Actual
+                        </Button>
+                    ) : (
+                        <>
+                            <Button
+                                variant="ghost"
+                                disabled={viewingStepIndex === 0 || transitioning || order?.status === 'FINISHED'}
+                                onClick={() => {
+                                    const prevStage = STAGES[viewingStepIndex - 1]
+                                    handleTransition(prevStage.id)
+                                }}
+                            >
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Anterior
+                            </Button>
+
+                            {order?.status !== 'FINISHED' && (
+                                <Button
+                                    disabled={
+                                        transitioning ||
+                                        (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available))
+                                    }
+                                    onClick={() => {
+                                        const nextStage = STAGES[viewingStepIndex + 1]
+                                        if (nextStage) {
+                                            if (nextStage.id === 'FINISHED') {
+                                                if (confirm("¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar y el producto se encuentra disponible para despacho de inmediato.")) {
+                                                    handleTransition(nextStage.id)
+                                                }
+                                            } else {
+                                                handleTransition(nextStage.id)
+                                            }
+                                        }
+                                    }}
+                                >
+                                    {transitioning ? "Procesando..." : viewingStepIndex === STAGES.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Right Sidebar - Information */}
+            <div className="w-80 border-l bg-muted/5 p-4 space-y-4 overflow-y-auto hidden lg:block">
+                {/* Acciones Section */}
+                <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Acciones</h4>
+                    <div className="flex items-center gap-2 p-1">
+                        {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage) && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 gap-2 h-9"
+                                onClick={() => setIsEditOpen(true)}
+                                title="Editar OT"
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 h-9"
+                            onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')}
+                        >
+                            <LayoutDashboard className="h-4 w-4" />
+
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            onClick={() => handleAnnulOrder()}
+                            disabled={isAnnuling || order?.status === 'CANCELLED'}
+                            title="Anular OT"
+                        >
+                            <Ban className="h-4 w-4" />
+                        </Button>
+                        {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage) && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteOrder()}
+                                disabled={isDeleting}
+                                title="Eliminar OT"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Información del Trabajo</h4>
+                    <div className="bg-background rounded-lg border divide-y overflow-hidden">
+                        {/* Section 1: Product */}
+                        <div className="p-3 space-y-1">
+                            <p className="text-sm font-medium leading-tight">{productName}</p>
+                            {order?.product_description && (
+                                <p className="text-xs text-muted-foreground italic line-clamp-2">{order.product_description}</p>
+                            )}
+                        </div>
+
+                        {/* Section 2: Start Date */}
+                        {order?.start_date && (
+                            <div className="p-3 space-y-1">
+                                <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Inicio</p>
+                                <div className="flex items-center gap-2">
+                                    <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                                    <p className="text-sm font-medium">{new Date(order.start_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Section 3: Delivery Date */}
+                        {order?.sale_order_delivery_date && (
+                            <div className="p-3 space-y-1">
+                                <p className="font-bold text-[10px] uppercase text-muted-foreground">Fecha de Entrega</p>
+                                <div className="flex items-center gap-2">
+                                    <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                                    <p className="text-sm font-medium">{new Date(order.sale_order_delivery_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Section 3: Contact / Reference */}
+                        {(stageData.contact_name || order?.sale_customer_name) && (
+                            <div className="p-3 space-y-1">
+                                <p className="font-bold text-[10px] uppercase text-muted-foreground">
+                                    {stageData.contact_name ? 'Contacto / Referencia' : 'Cliente Relacionado'}
+                                </p>
+                                <div className="flex items-start gap-3 pt-0.5">
+                                    <div className="bg-muted p-1.5 rounded-full mt-0.5">
+                                        <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                    </div>
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="text-sm font-semibold truncate leading-tight">
+                                            {stageData.contact_name || order.sale_customer_name}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground truncate">
+                                            {stageData.contact_tax_id || order.sale_customer_rut}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Section 5: Folio */}
+                        {stageData.folio_enabled && stageData.folio_start && (
+                            <div className="p-3 space-y-1">
+                                <p className="font-bold text-[10px] uppercase text-muted-foreground">Folio Inicial</p>
+                                <p className="text-sm font-semibold text-primary">{stageData.folio_start}</p>
+                            </div>
+                        )}
+
+                        {stageData.product_description && stageData.product_description !== order?.product_description && (
+                            <div className="p-3 bg-muted/5">
+                                <p className="font-bold text-[10px] uppercase text-muted-foreground mb-1">Especificación de Etapa</p>
+                                <p className="text-xs text-muted-foreground italic">{stageData.product_description}</p>
                             </div>
                         )}
                     </div>
                 </div>
-            </DialogContent>
-            {/* Modals for Edit and Command Center */}
-            {
-                isEditOpen && order && (
-                    <WorkOrderForm
-                        open={isEditOpen}
-                        onOpenChange={setIsEditOpen}
-                        initialData={order}
-                        onSuccess={() => {
-                            setIsEditOpen(false)
-                            fetchOrder()
-                        }}
-                    />
-                )
-            }
 
-            {/* PO Preview Modal */}
+                {stageData.internal_notes && (
+                    <div className="space-y-2">
+                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Observaciones Internas</h4>
+                        <div className="p-3 bg-background rounded-lg border">
+                            <p className="text-xs whitespace-pre-wrap">{stageData.internal_notes}</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+            </DialogContent >
+        {/* Modals for Edit and Command Center */ }
+    {
+        isEditOpen && order && (
+            <WorkOrderForm
+                open={isEditOpen}
+                onOpenChange={setIsEditOpen}
+                initialData={order}
+                onSuccess={() => {
+                    setIsEditOpen(false)
+                    fetchOrder()
+                }}
+            />
+        )
+    }
+
+    {/* PO Preview Modal */ }
             <Dialog open={showPOPreview} onOpenChange={setShowPOPreview}>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
