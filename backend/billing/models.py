@@ -42,6 +42,14 @@ class Invoice(models.Model):
     # Links
     sale_order = models.ForeignKey(SaleOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    corrected_invoice = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='adjustments',
+        verbose_name=_("Factura Rectificada"),
+        help_text=_("Documento original que esta nota rectifica")
+    )
     contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices', verbose_name=_("Contacto"))
     
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)

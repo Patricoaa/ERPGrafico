@@ -536,6 +536,10 @@ class PurchasingService:
             document_attachment=document_attachment,
             partner_name=order.supplier.name
         )
+        
+        if original_invoice:
+            invoice.corrected_invoice = original_invoice
+            invoice.save()
 
         payable_account = order.supplier.account_payable or settings.default_payable_account
         if not payable_account:
