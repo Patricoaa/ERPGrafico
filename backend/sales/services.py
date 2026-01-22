@@ -598,6 +598,7 @@ class SalesService:
     @transaction.atomic
     def create_note(order: SaleOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
                     document_number: str, document_attachment=None, return_items=None, original_invoice_id=None):
+        print(f"DEBUG: create_note service started for order {order.number}")
         """
         Creation of a Credit or Debit Note linked to a Sale Order.
         - note_type: NOTA_CREDITO or NOTA_DEBITO
@@ -679,14 +680,27 @@ class SalesService:
 
         # Revenue and Tax side (per product if return_items exist, otherwise global)
         if return_items:
+            total_qty = sum(Decimal(str(i.get('quantity', 0))) for i in return_items)
             for item in return_items:
                 product = Product.objects.get(id=item['product_id'])
-                qty = Decimal(str(item['quantity']))
-                unit_price = amount_net / sum(Decimal(str(i['quantity'])) for i in return_items) # Approximation if mixed
-                # Real unit price should come from frontend/serializer ideally
+                qty = Decimal(str(item.get('quantity', 0)))
+                if qty <= 0: continue
+
+                # Try to use provided unit_price/tax if available (from frontend)
+                # otherwise fall back to proportional distribution
+                item_price = Decimal(str(item.get('unit_price', 0)))
+                item_tax = Decimal(str(item.get('tax_amount', 0)))
                 
-                line_net = (qty * (amount_net / sum(Decimal(str(i['quantity'])) for i in return_items))).quantize(Decimal('0.01'))
-                line_tax = (qty * (amount_tax / sum(Decimal(str(i['quantity'])) for i in return_items))).quantize(Decimal('0.01'))
+                if item_price > 0:
+                    line_net = (qty * item_price).quantize(Decimal('0.01'))
+                    line_tax = (qty * item_tax).quantize(Decimal('0.01')) if item_tax > 0 else \
+                               (line_net * Decimal('0.19')).quantize(Decimal('0.01')) # Fallback tax
+                elif total_qty > 0:
+                    line_net = (qty * (amount_net / total_qty)).quantize(Decimal('0.01'))
+                    line_tax = (qty * (amount_tax / total_qty)).quantize(Decimal('0.01'))
+                else:
+                    line_net = 0
+                    line_tax = 0
                 
                 prod_revenue_acc = product.get_income_account or settings.default_revenue_account
                 
@@ -696,7 +710,7 @@ class SalesService:
                     account=prod_revenue_acc,
                     debit=line_net if note_type == Invoice.DTEType.NOTA_CREDITO else 0,
                     credit=0 if note_type == Invoice.DTEType.NOTA_CREDITO else line_net,
-                    label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} Venta {product.code}"
+                    label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} Venta {product.code or product.id}"
                 )
                 
                 # Tax Reverse/Increase
@@ -706,7 +720,7 @@ class SalesService:
                         account=tax_account,
                         debit=line_tax if note_type == Invoice.DTEType.NOTA_CREDITO else 0,
                         credit=0 if note_type == Invoice.DTEType.NOTA_CREDITO else line_tax,
-                        label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} IVA - {product.code}"
+                        label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} IVA - {product.code or product.id}"
                     )
         else:
             # Global adjustment if no items specified

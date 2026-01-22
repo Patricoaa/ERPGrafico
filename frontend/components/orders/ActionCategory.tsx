@@ -58,6 +58,7 @@ export const ActionCategory = forwardRef(({
     const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
 
     const handleActionClick = (actionId: string) => {
+        console.log(`[ActionEngine] Handling action click: ${actionId}`, { orderId: order?.id });
         const action = category.actions.find(a => a.id === actionId)
         if (action?.onClick) {
             action.onClick(order)
@@ -243,20 +244,23 @@ export const ActionCategory = forwardRef(({
         return true
     }) || []
 
-    if (filteredActions.length === 0) return null
-
     const categoryBadgeCount = filteredActions.reduce((acc, action) => acc + (getActionBadgeCount(action, order) || 0), 0)
+
+    // Only return null if there are no actions AND no active modal to show
+    if (filteredActions.length === 0 && !activeModal) return null
 
     return (
         <div className={cn(
             layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-lg border bg-card/50")
         )}>
-            {layout === 'list' && (
+            {layout === 'list' && (category.icon || category.label) && (
                 <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                    <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                        <category.icon className="h-4 w-4" />
-                    </div>
-                    <h3 className="font-semibold text-sm">{category.label}</h3>
+                    {category.icon && (
+                        <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                            <category.icon className="h-4 w-4" />
+                        </div>
+                    )}
+                    {category.label && <h3 className="font-semibold text-sm">{category.label}</h3>}
                     {categoryBadgeCount > 0 && (
                         <Badge variant="secondary" className="ml-auto text-[10px] h-5">
                             {categoryBadgeCount}

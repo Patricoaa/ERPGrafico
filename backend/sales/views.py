@@ -159,6 +159,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def register_note(self, request, pk=None):
+        print(f"DEBUG: register_note reached for order {pk}")
         order = self.get_object()
         
         # Manually handle multipart/form-data requiring json parsing for complex fields

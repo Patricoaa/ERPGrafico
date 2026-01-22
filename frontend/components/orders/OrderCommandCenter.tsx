@@ -802,13 +802,20 @@ export function OrderCommandCenter({
                             </div>
                         </div>
 
-                        <div className="hidden">
+                        {/* Global Action Engine for header buttons */}
+                        <div className="sr-only pointer-events-none">
                             <ActionCategory
                                 ref={actionEngineRef}
-                                category={{ actions: [] } as any}
+                                category={{
+                                    actions: [
+                                        ...(registry.notes?.actions || []),
+                                        ...(registry.payments?.actions || [])
+                                    ]
+                                } as any}
                                 order={order}
                                 userPermissions={userPermissions}
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                layout="flex"
                             />
                         </div>
                     </TooltipProvider>
@@ -947,6 +954,10 @@ function PhaseCard({
                                     )}
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        console.log(`[PhaseCard] Header button clicked: ${action.id}`);
+                                        if (!actionEngineRef.current) {
+                                            console.error("[PhaseCard] ActionEngineRef is NULL!");
+                                        }
                                         actionEngineRef.current?.handleActionClick(action.id);
                                     }}
                                 >

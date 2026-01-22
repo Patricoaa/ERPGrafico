@@ -83,6 +83,8 @@ class BaseNoteService:
             state=JournalEntry.State.DRAFT
         )
         
+        return invoice, entry
+        
 class ActionLoggingService:
     @staticmethod
     def log_action(user, action_type, description, request=None, metadata=None):

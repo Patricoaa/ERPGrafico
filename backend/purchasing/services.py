@@ -558,17 +558,11 @@ class PurchasingService:
         if not stock_input_account:
             raise ValidationError("No se encontró cuenta de entrada de stock.")
 
-        # 2. Create Accounting Entry via Mapper
-        description, reference, items = AccountingMapper.get_entries_for_purchase_order(order, settings)
-        entry = JournalEntryService.create_entry(
-            {
-                'date': timezone.now().date(),
-                'description': description,
-                'reference': reference,
-                'state': JournalEntry.State.DRAFT
-            },
-            items
-        )
+        # No need to re-create the entry here, it was already created by BaseNoteService
+        # We just need to ensure description and reference matches if we want specific PO info
+        entry.description = description
+        entry.reference = reference
+        entry.save()
 
         # 3. Accounts Payable Entry (opposite for credit vs debit)
         if note_type == Invoice.DTEType.NOTA_CREDITO:
