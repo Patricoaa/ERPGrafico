@@ -343,7 +343,7 @@ class Command(BaseCommand):
         if cat_services.asset_account: cat_services.asset_account = None; cat_services.save()
 
         # RAW MATERIALS
-        p_papel, _ = Product.objects.get_or_create(code="INS-0001", defaults={'name': "Resma de papel", 'category': cat_supplies, 'product_type': Product.Type.STORABLE, 'uom': uoms['resma'], 'purchase_uom': uoms['hoja'], 'sale_price': 5000, 'receiving_warehouse': wh})
+        p_papel, _ = Product.objects.get_or_create(code="INS-0001", defaults={'name': "Resma de papel", 'category': cat_supplies, 'product_type': Product.Type.STORABLE, 'uom': uoms['resma'], 'purchase_uom': uoms['resma'], 'sale_price': 5000, 'receiving_warehouse': wh})
         p_tinta_c, _ = Product.objects.get_or_create(code="MP-TIN-CYA", defaults={'name': "Tinta Offset Cyan 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
         p_tinta_m, _ = Product.objects.get_or_create(code="MP-TIN-MAG", defaults={'name': "Tinta Offset Magenta 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
         p_tinta_y, _ = Product.objects.get_or_create(code="MP-TIN-YEL", defaults={'name': "Tinta Offset Yellow 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
@@ -359,7 +359,8 @@ class Command(BaseCommand):
             'sale_price': 150,
             'track_inventory': False,
             'mfg_enable_press': True,
-            'mfg_enable_postpress': True
+            'mfg_enable_postpress': True,
+            'mfg_auto_finalize': True
         })
         
         p_tarjetas, _ = Product.objects.get_or_create(code="PT-TAR-STAN", defaults={
@@ -370,7 +371,8 @@ class Command(BaseCommand):
             'sale_uom': uoms['un'], 
             'sale_price': 150,
             'track_inventory': True,
-            'receiving_warehouse': wh
+            'receiving_warehouse': wh,
+            'requires_advanced_manufacturing': True
         })
 
         # BOMs
@@ -403,47 +405,6 @@ class Command(BaseCommand):
             'allows_card': True,
             'allows_transfer': True
         })
-
-        # PRICING RULES
-        # 1. Fixed Price for specific quantity range (Price Break)
-        if not PricingRule.objects.filter(name="Descuento Volumen Tarjetas").exists():
-            PricingRule.objects.create(
-                name="Descuento Volumen Tarjetas",
-                product=p_tarjetas,
-                rule_type=PricingRule.RuleType.FIXED,
-                start_date=timezone.now().date(),
-                min_quantity=1000,
-                fixed_price=120, # Drop from 150 to 120
-                operator=PricingRule.Operator.GE
-            )
-
-        # 2. Package Price (New Type) - e.g. 500 cards for $60.000 fixed total
-        if not PricingRule.objects.filter(name="Pack Pyme 500 Tarjetas").exists():
-             PricingRule.objects.create(
-                name="Pack Pyme 500 Tarjetas",
-                product=p_tarjetas,
-                rule_type=PricingRule.RuleType.PACKAGE_FIXED,
-                start_date=timezone.now().date(),
-                min_quantity=1,
-                max_quantity=500, # Up to 500 units
-                operator=PricingRule.Operator.BT, # Between
-                fixed_price=60000, # Total price for the package
-                priority=10
-            )
-
-        # 3. Discount Percentage
-        if not PricingRule.objects.filter(name="Descuento Clientes Nuevos").exists():
-            # Apply to all products in Finished category
-            PricingRule.objects.create(
-                name="Descuento Clientes Nuevos",
-                category=cat_finished,
-                rule_type=PricingRule.RuleType.DISCOUNT_PERCENTAGE,
-                start_date=timezone.now().date(),
-                min_quantity=1,
-                discount_percentage=5.00, # 5% off
-                operator=PricingRule.Operator.GE,
-                priority=5
-            )
 
         return {
             'warehouse': wh,

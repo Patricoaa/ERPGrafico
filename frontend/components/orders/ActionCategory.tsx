@@ -12,8 +12,7 @@ import { ReceiptModal } from "../purchasing/ReceiptModal"
 import { PaymentHistoryModal } from "./PaymentHistoryModal"
 import { PaymentDialog as PaymentModal } from "../shared/PaymentDialog"
 import { PaymentReferenceModal } from "../shared/PaymentReferenceModal"
-import { SaleNoteModal } from "../sales/SaleNoteModal"
-import { PurchaseNoteModal } from "../purchasing/PurchaseNoteModal"
+import { NoteCheckoutWizard } from "../billing/NoteCheckoutWizard"
 import { toast } from "sonner"
 import { DocumentListModal } from './DocumentListModal'
 import { TransactionViewModal } from "../shared/TransactionViewModal"
@@ -348,27 +347,14 @@ export const ActionCategory = forwardRef(({
             )}
 
             {activeModal === 'create-note' && (
-                isSale ? (
-                    <SaleNoteModal
-                        open={true}
-                        onOpenChange={closeModal}
-                        orderId={order.id}
-                        orderNumber={order.number}
-                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
-                        initialType="NOTA_CREDITO"
-                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                    />
-                ) : (
-                    <PurchaseNoteModal
-                        open={true}
-                        onOpenChange={closeModal}
-                        orderId={order.id}
-                        orderNumber={order.number}
-                        invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
-                        initialType="NOTA_CREDITO"
-                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                    />
-                )
+                <NoteCheckoutWizard
+                    open={true}
+                    onOpenChange={closeModal}
+                    orderId={order.id}
+                    invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
+                    initialType="NOTA_CREDITO"
+                    onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                />
             )}
 
             {activeModal === 'transaction-view' && viewConfig && (

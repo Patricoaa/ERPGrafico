@@ -8,6 +8,7 @@ from purchasing.models import PurchaseOrder
 from simple_history.models import HistoricalRecords
 from core.validators import validate_file_size, validate_file_extension
 from core.utils import generic_upload_path
+from .note_workflow import NoteWorkflow  # Import workflow model
 
 class Invoice(models.Model):
     class DTEType(models.TextChoices):
