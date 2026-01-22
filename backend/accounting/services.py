@@ -160,8 +160,9 @@ class AccountingService:
 
             # 5.1 Cost of Sales
             ('5.1', 'Costo de Ventas', AccountType.EXPENSE, None, ISCategory.COST_OF_SALES, None, None),
-            ('5.1.01', 'Costo de Productos Vendidos', AccountType.EXPENSE, '5.1', None, None, None),
-            ('5.1.02', 'Costo de Servicios Prestados', AccountType.EXPENSE, '5.1', None, None, None),
+            ('5.1.01', 'Costo de Mercaderías Vendidas', AccountType.EXPENSE, '5.1', None, None, None),
+            ('5.1.02', 'Costo de Productos Fabricados', AccountType.EXPENSE, '5.1', None, None, None),
+            ('5.1.03', 'Costo de Servicios Prestados', AccountType.EXPENSE, '5.1', None, None, None),
             
             ('5.2', 'Gastos de Administración y Ventas', AccountType.EXPENSE, None, ISCategory.OPERATING_EXPENSE, None, None),
             ('5.2.01', 'Sueldos y Remuneraciones', AccountType.EXPENSE, '5.2', None, None, None),
@@ -219,12 +220,14 @@ class AccountingService:
             'storable_inventory_account': '1.1.03.01',  # NUEVO
             'manufacturable_inventory_account': '1.1.03.01',  # NUEVO
             'default_consumable_account': '5.2.05',
+            'merchandise_cogs_account': '5.1.01',
+            'manufactured_cogs_account': '5.1.02',
             
             'stock_input_account': '2.1.06.01',
             'stock_output_account': '1.1.06.01',
-            'default_service_expense_account': '5.1.02',
+            'default_service_expense_account': '5.1.03',
             'default_service_revenue_account': '4.1.02',
-            'default_subscription_expense_account': '5.1.02',
+            'default_subscription_expense_account': '5.1.03',
             'default_subscription_revenue_account': '4.1.02',
             'default_prepayment_account': '1.1.02.02',
             'default_advance_payment_account': '2.1.01.02',

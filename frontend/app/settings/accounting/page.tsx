@@ -23,6 +23,8 @@ const accountingSchema = z.object({
     default_payable_account: z.string().nullable(),
     default_revenue_account: z.string().nullable(),
     default_expense_account: z.string().nullable(),
+    merchandise_cogs_account: z.string().nullable(),
+    manufactured_cogs_account: z.string().nullable(),
     default_tax_receivable_account: z.string().nullable(),
     default_tax_payable_account: z.string().nullable(),
     default_inventory_account: z.string().nullable(),
@@ -65,6 +67,8 @@ export default function AccountingSettingsPage() {
             default_payable_account: null,
             default_revenue_account: null,
             default_expense_account: null,
+            merchandise_cogs_account: null,
+            manufactured_cogs_account: null,
             default_tax_receivable_account: null,
             default_tax_payable_account: null,
             default_inventory_account: null,
@@ -207,7 +211,13 @@ export default function AccountingSettingsPage() {
                                         <AccountField form={form} name="default_receivable_account" label="CxC Clientes (Activo)" accountType="ASSET" />
                                         <AccountField form={form} name="default_payable_account" label="CxP Proveedores (Pasivo)" accountType="LIABILITY" />
                                         <AccountField form={form} name="default_revenue_account" label="Ingresos por Ventas (Ingreso)" accountType="INCOME" />
-                                        <AccountField form={form} name="default_expense_account" label="Gastos Generales (Gasto)" accountType="EXPENSE" />
+
+                                        <Separator className="my-4" />
+                                        <p className="text-xs font-semibold uppercase text-muted-foreground">Costo de Ventas (COGS)</p>
+                                        <AccountField form={form} name="merchandise_cogs_account" label="Costo de Mercaderías (5.1.01)" accountType="EXPENSE" />
+                                        <AccountField form={form} name="manufactured_cogs_account" label="Costo de Productos Fabricados (5.1.02)" accountType="EXPENSE" />
+                                        <Separator className="my-2" />
+                                        <AccountField form={form} name="default_expense_account" label="Gastos Generales (Fallback)" accountType="EXPENSE" />
 
                                         <Separator className="my-4" />
                                         <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios (Ingreso)" accountType="INCOME" />

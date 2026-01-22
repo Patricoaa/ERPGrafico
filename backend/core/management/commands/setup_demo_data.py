@@ -162,26 +162,28 @@ class Command(BaseCommand):
                 settings.default_consumable_account = consumable_account
                 self.stdout.write("  ✓ Cuenta de consumibles configurada")
             
-            # Map service expense account (5.1.02 - Costo de Servicios Prestados)
-            service_expense_acc = Account.objects.filter(code='5.1.02').first()
+            # Map COGS for distinct product types
+            settings.merchandise_cogs_account = Account.objects.filter(code='5.1.01').first()
+            if settings.merchandise_cogs_account:
+                self.stdout.write("  ✓ Cuenta de costo de mercaderías configurada (5.1.01)")
+
+            settings.manufactured_cogs_account = Account.objects.filter(code='5.1.02').first()
+            if settings.manufactured_cogs_account:
+                self.stdout.write("  ✓ Cuenta de costo de productos fabricados configurada (5.1.02)")
+
+            # Map service expense account (5.1.03 - Costo de Servicios Prestados)
+            service_expense_acc = Account.objects.filter(code='5.1.03').first()
             if service_expense_acc:
                 settings.default_service_expense_account = service_expense_acc
+                settings.default_subscription_expense_account = service_expense_acc
+                self.stdout.write("  ✓ Cuenta de gastos por servicios/suscripción configurada (5.1.03)")
 
             # NUEVO: Mapeo de ingresos y suscripciones
             service_revenue_acc = Account.objects.filter(code='4.1.02').first()
             if service_revenue_acc:
                 settings.default_service_revenue_account = service_revenue_acc
-                self.stdout.write("  ✓ Cuenta de ingresos por servicios configurada")
-
-            subscription_expense_acc = Account.objects.filter(code='5.1.02').first()
-            if subscription_expense_acc:
-                settings.default_subscription_expense_account = subscription_expense_acc
-                self.stdout.write("  ✓ Cuenta de gastos por suscripción configurada")
-
-            subscription_revenue_acc = Account.objects.filter(code='4.1.02').first()
-            if subscription_revenue_acc:
-                settings.default_subscription_revenue_account = subscription_revenue_acc
-                self.stdout.write("  ✓ Cuenta de ingresos por suscripción configurada")
+                settings.default_subscription_revenue_account = service_revenue_acc
+                self.stdout.write("  ✓ Cuenta de ingresos por servicios/suscripción configurada")
             
             settings.save()
             self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")
@@ -281,7 +283,8 @@ class Command(BaseCommand):
             'sales_product': Account.objects.get(code='4.1.01'),
             'sales_service': Account.objects.get(code='4.1.02'),
             'cogs_product': Account.objects.get(code='5.1.01'),
-            'cogs_service': Account.objects.get(code='5.1.02'),
+            'cogs_manufactured': Account.objects.get(code='5.1.02'), # NEW
+            'cogs_service': Account.objects.get(code='5.1.03'), # Updated from 5.1.02
             'expense_general': Account.objects.get(code='5.2.06'),
             'expense_utilities': Account.objects.get(code='5.2.03'),
             'expense_rent': Account.objects.get(code='5.2.02'),
@@ -333,7 +336,7 @@ class Command(BaseCommand):
         cat_supplies, _ = ProductCategory.objects.get_or_create(name="Insumos", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'INS'})
         if cat_supplies.asset_account: cat_supplies.asset_account = None; cat_supplies.save()
         
-        cat_finished, _ = ProductCategory.objects.get_or_create(name="Productos Terminados", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'PT'})
+        cat_finished, _ = ProductCategory.objects.get_or_create(name="Productos Terminados", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_manufactured'], 'prefix': 'PT'})
         if cat_finished.asset_account: cat_finished.asset_account = None; cat_finished.save()
         
         cat_services, _ = ProductCategory.objects.get_or_create(name="Servicios Gráficos", defaults={'income_account': accounts['sales_service'], 'expense_account': accounts['cogs_service'], 'prefix': 'SRV'})

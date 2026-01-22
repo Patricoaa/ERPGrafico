@@ -571,6 +571,10 @@ class Product(models.Model):
             return settings.default_subscription_expense_account or settings.default_expense_account
         elif self.product_type == self.Type.CONSUMABLE:
             return settings.default_consumable_account or settings.default_expense_account
+        elif self.product_type == self.Type.MANUFACTURABLE:
+            return settings.manufactured_cogs_account or settings.default_expense_account
+        elif self.product_type == self.Type.STORABLE:
+            return settings.merchandise_cogs_account or settings.default_expense_account
             
         return settings.default_expense_account
     
