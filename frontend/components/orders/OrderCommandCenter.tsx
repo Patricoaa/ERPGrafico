@@ -12,6 +12,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
@@ -472,343 +473,345 @@ export function OrderCommandCenter({
                     "w-[95vw] max-h-[95vh] overflow-y-auto bg-background/95 backdrop-blur-md border-border p-0 rounded-xl transition-all duration-500",
                     maxWidth
                 )}>
-                    <div className="p-6 pb-2">
-                        <DialogHeader className="pb-4 border-b">
-                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-3">
-                                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                                            <LayoutDashboard className="h-6 w-6 text-primary" />
-                                            HUB de mando
-                                            <span className="text-muted-foreground font-light mx-2">|</span>
+                    <TooltipProvider delayDuration={0}>
+                        <div className="p-6 pb-2">
+                            <DialogHeader className="pb-4 border-b">
+                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-3">
+                                            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                                                <LayoutDashboard className="h-6 w-6 text-primary" />
+                                                HUB de mando
+                                                <span className="text-muted-foreground font-light mx-2">|</span>
 
-                                        </DialogTitle>
+                                            </DialogTitle>
 
-                                        <Badge
-                                            variant='outline'
-                                            className={cn(
-                                                "rounded-sm border-2 px-2 py-0.5 gap-1.5 font-bold uppercase tracking-tight text-[10px]",
-                                                globalStatus.variant === 'success' && "border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 bg-green-500/5",
-                                                globalStatus.variant === 'active' && "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-500/5",
-                                                globalStatus.variant === 'destructive' && "border-red-600 text-red-600 dark:border-red-400 dark:text-red-400 bg-red-500/5",
-                                                globalStatus.variant === 'neutral' && "border-muted-foreground text-muted-foreground bg-muted/5"
-                                            )}
-                                        >
-                                            <StatusIcon className='size-3' />
-                                            {globalStatus.label}
-                                        </Badge>
-                                    </div>
-                                    <DialogDescription className="flex items-center gap-4">
-                                        <span className="flex items-center gap-1.5 text-xs font-medium">
-                                            <span className="text-muted-foreground/30 ml-2">{type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>
-                                            <span className="text-muted-foreground/30">|</span>
-                                            {new Date(order.created_at || order.date).toLocaleDateString()}
-                                            <span className="text-muted-foreground/30 ml-2">|</span>
-                                            <span className="text-foreground tracking-tight font-semibold ml-1">
-                                                {type === 'purchase' ? order.supplier_name : order.customer_name}
+                                            <Badge
+                                                variant='outline'
+                                                className={cn(
+                                                    "rounded-sm border-2 px-2 py-0.5 gap-1.5 font-bold uppercase tracking-tight text-[10px]",
+                                                    globalStatus.variant === 'success' && "border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 bg-green-500/5",
+                                                    globalStatus.variant === 'active' && "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-500/5",
+                                                    globalStatus.variant === 'destructive' && "border-red-600 text-red-600 dark:border-red-400 dark:text-red-400 bg-red-500/5",
+                                                    globalStatus.variant === 'neutral' && "border-muted-foreground text-muted-foreground bg-muted/5"
+                                                )}
+                                            >
+                                                <StatusIcon className='size-3' />
+                                                {globalStatus.label}
+                                            </Badge>
+                                        </div>
+                                        <DialogDescription className="flex items-center gap-4">
+                                            <span className="flex items-center gap-1.5 text-xs font-medium">
+                                                <span className="text-muted-foreground/30 ml-2">{type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>
+                                                <span className="text-muted-foreground/30">|</span>
+                                                {new Date(order.created_at || order.date).toLocaleDateString()}
+                                                <span className="text-muted-foreground/30 ml-2">|</span>
+                                                <span className="text-foreground tracking-tight font-semibold ml-1">
+                                                    {type === 'purchase' ? order.supplier_name : order.customer_name}
+                                                </span>
                                             </span>
-                                        </span>
-                                    </DialogDescription>
+                                        </DialogDescription>
+                                    </div>
                                 </div>
-                            </div>
-                        </DialogHeader>
-                    </div>
+                            </DialogHeader>
+                        </div>
 
-                    <div className="p-6 pt-2">
-                        {/* Responsive Grid: dynamic columns based on content */}
-                        <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4", gridCols)}>
+                        <div className="p-6 pt-2">
+                            {/* Responsive Grid: dynamic columns based on content */}
+                            <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4", gridCols)}>
 
-                            {/* 1. Origen */}
-                            <PhaseCard
-                                title="Origen"
-                                icon={TrendingUp}
-                                variant={order.status !== 'DRAFT' ? 'success' : 'neutral'}
-                                documents={[
-                                    {
-                                        type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-                                        number: formatDocumentId(isSale ? 'NV' : 'OCS', order.number || order.id, order.display_id),
-                                        icon: FileText,
-                                        id: order.id,
-                                        docType: type === 'sale' ? 'sale_order' : 'purchase_order',
+                                {/* 1. Origen */}
+                                <PhaseCard
+                                    title="Origen"
+                                    icon={TrendingUp}
+                                    variant={order.status !== 'DRAFT' ? 'success' : 'neutral'}
+                                    documents={[
+                                        {
+                                            type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
+                                            number: formatDocumentId(isSale ? 'NV' : 'OCS', order.number || order.id, order.display_id),
+                                            icon: FileText,
+                                            id: order.id,
+                                            docType: type === 'sale' ? 'sale_order' : 'purchase_order',
+                                            actions: [
+                                                ...(order.status === 'DRAFT' ? [{
+                                                    icon: Trash2,
+                                                    title: 'Eliminar Borrador',
+                                                    color: 'text-red-500 hover:bg-red-500/10',
+                                                    onClick: () => api.delete(type === 'purchase' ? `/purchasing/orders/${order.id}/` : `/sales/orders/${order.id}/`).then(() => { toast.success("Borrador eliminado"); onActionSuccess?.() })
+                                                }] : []),
+                                                ...((order.status !== 'CANCELLED' && order.status !== 'DRAFT') ? [{
+                                                    icon: X,
+                                                    title: 'Anular Orden',
+                                                    color: 'text-red-600 hover:bg-red-600/10',
+                                                    onClick: () => handleAnnulOrder(order.id)
+                                                }] : [])
+                                            ]
+                                        }
+                                    ]}
+                                    onViewDetail={openDetails}
+                                    actions={[
+                                        ...(order.status === 'DRAFT' ? [{
+                                            id: 'edit-order',
+                                            label: 'Editar Orden',
+                                            icon: Edit,
+                                            onClick: () => {
+                                                if (type === 'purchase') {
+                                                    if (onEdit) {
+                                                        onEdit(order.id)
+                                                    } else {
+                                                        router.push(`/purchasing/checkout?orderId=${order.id}`)
+                                                    }
+                                                } else {
+                                                    toast.info("Edición de ventas no implementada desde aquí")
+                                                }
+                                            }
+                                        }] : [])
+                                    ]}
+                                    order={order}
+                                    userPermissions={userPermissions}
+                                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                    actionEngineRef={actionEngineRef}
+                                >
+                                    <div className="space-y-1 py-1">
+                                        {(order.lines || order.items || []).map((line: any, idx: number) => (
+                                            <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
+                                                <span className="text-foreground/70 line-clamp-2 leading-tight">
+                                                    {line.product_name || line.description}
+                                                </span>
+                                                <span className="shrink-0 font-bold text-primary/80">
+                                                    {Math.round(line.quantity)} {line.uom_name || line.unit_name || 'un'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </PhaseCard>
+
+                                {/* 2. Producción */}
+                                {showProduction && (
+                                    <PhaseCard
+                                        title="Producción"
+                                        icon={ClipboardList}
+                                        variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
+                                        documents={order.work_orders?.map((ot: any) => ({
+                                            type: 'Orden de Trabajo',
+                                            number: ot.display_id || `OT-${ot.code || ot.id}`,
+                                            icon: ClipboardList,
+                                            id: ot.id,
+                                            docType: 'work_order',
+                                            status: ot.status,
+                                            progressValue: ot.production_progress || 0,
+                                            actions: [
+                                                // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
+                                                ...((ot.status !== 'CANCELLED' &&
+                                                    invoices.some((inv: any) => inv.status === 'DRAFT') &&
+                                                    ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage)) ? [{
+                                                        icon: Ban,
+                                                        title: 'Anular OT',
+                                                        color: 'text-orange-500 hover:bg-orange-500/10',
+                                                        onClick: () => handleAnnulWorkOrder(ot.id)
+                                                    }] : [])
+                                            ]
+                                        })) || []}
+                                        onViewDetail={openDetails}
+                                        actions={(registry.production?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                                        emptyMessage="Sin órdenes de trabajo"
+                                        order={order}
+                                        userPermissions={userPermissions}
+                                        onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                        actionEngineRef={actionEngineRef}
+                                        showDocProgress={true}
+                                        stageId="production"
+                                        isComplete={totalOTProgress === 100 && totalOTs > 0}
+                                    >
+                                        {totalOTs > 0 ? (
+                                            <div className="space-y-1 px-1">
+                                                <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
+                                                    <span>PROGRESO</span>
+                                                    <span className="text-primary">{Math.round(showAnimations ? totalOTProgress : 0)}%</span>
+                                                </div>
+                                                <Progress value={showAnimations ? totalOTProgress : 0} className="h-1 bg-white/5 transition-all duration-1000" />
+                                            </div>
+                                        ) : (
+                                            <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">Sin inicio</div>
+                                        )}
+                                    </PhaseCard>
+                                )}
+
+                                {/* 3. Logística / Cumplimiento */}
+                                {showLogistics && (
+                                    <PhaseCard
+                                        title={(() => {
+                                            const lines = order.lines || order.items || []
+                                            const allServices = lines.every((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
+                                            const hasServices = lines.some((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
+                                            const onlySubscriptions = lines.every((l: any) => l.product_type === 'SUBSCRIPTION')
+
+                                            if (onlySubscriptions) return 'Suscripciones'
+                                            return allServices ? 'Cumplimiento' : (hasServices ? 'Logística/Cumplimiento' : 'Logística')
+                                        })()}
+                                        icon={Package}
+                                        variant={
+                                            logisticsProgress === 100 ? 'success' :
+                                                logisticsProgress > 0 ? 'active' : 'neutral'
+                                        }
+                                        documents={logisticsDocs}
+                                        onViewDetail={openDetails}
+                                        actions={(registry[isSale ? 'deliveries' : 'receptions']?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                                        emptyMessage="Sin movimientos"
+                                        order={order}
+                                        userPermissions={userPermissions}
+                                        onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                        actionEngineRef={actionEngineRef}
+                                        stageId="logistics"
+                                        isComplete={logisticsProgress >= 100}
+                                    >
+                                        <div className="space-y-1.5 py-1">
+                                            {(order.lines || order.items || []).map((line: any, idx: number) => {
+                                                const total = parseFloat(line.quantity) || 1
+                                                const current = parseFloat(isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0))
+                                                const pct = Math.min(100, Math.round((current / total) * 100))
+
+                                                return (
+                                                    <div key={idx} className="space-y-0.5">
+                                                        <div className="flex items-center justify-between text-[10px] gap-2">
+                                                            <span className="text-foreground/70 line-clamp-1 flex-1">
+                                                                {line.product_name || line.description}
+                                                            </span>
+                                                            <span className="shrink-0 font-bold text-primary/80">
+                                                                {Math.round(showAnimations ? current : 0)}/{Math.round(total)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/30" : "bg-primary/30")}
+                                                                style={{ width: `${showAnimations ? pct : 0}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </PhaseCard>
+                                )}
+
+                                {/* 4. Facturación */}
+                                <PhaseCard
+                                    title="Facturación"
+                                    icon={Receipt}
+                                    variant={billingIsComplete ? 'success' : 'neutral'}
+                                    documents={(order.related_documents?.invoices || []).map((inv: any) => ({
+                                        type: inv.type_display,
+                                        number: formatDocumentId(inv.type_display, inv.number || 'BORRADOR', inv.display_id),
+                                        icon: Receipt,
+                                        id: inv.id,
+                                        docType: 'invoice',
+                                        status: inv.status,
                                         actions: [
-                                            ...(order.status === 'DRAFT' ? [{
+                                            ...(inv.status === 'DRAFT' || inv.number === 'Draft' ? [{
                                                 icon: Trash2,
                                                 title: 'Eliminar Borrador',
                                                 color: 'text-red-500 hover:bg-red-500/10',
-                                                onClick: () => api.delete(type === 'purchase' ? `/purchasing/orders/${order.id}/` : `/sales/orders/${order.id}/`).then(() => { toast.success("Borrador eliminado"); onActionSuccess?.() })
+                                                onClick: () => handleDeleteDraft(inv.id)
                                             }] : []),
-                                            ...((order.status !== 'CANCELLED' && order.status !== 'DRAFT') ? [{
-                                                icon: X,
-                                                title: 'Anular Orden',
+                                            // Removed annul-document action - only DRAFT invoices can be annulled
+                                            // and they should be deleted instead
+                                        ]
+                                    }))}
+                                    onViewDetail={openDetails}
+                                    actions={[...(registry.documents?.actions || []), ...billingActions].filter((a: any) => !a.id.includes('view-'))}
+                                    emptyMessage="Pendiente de emisión"
+                                    order={order}
+                                    userPermissions={userPermissions}
+                                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                    actionEngineRef={actionEngineRef}
+                                >
+                                    <div className="py-2 flex justify-between items-center border-t border-white/5 mt-2">
+                                        <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">TOTAL</span>
+                                        <span className="text-sm font-black text-foreground">${parseFloat(order.total).toLocaleString()}</span>
+                                    </div>
+                                </PhaseCard>
+
+                                {/* 5. Tesorería */}
+                                <PhaseCard
+                                    title="Tesorería"
+                                    icon={Banknote}
+                                    variant={
+                                        (order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) && !hasPendingTransactions ? 'success' :
+                                            (parseFloat(order.pending_amount) < parseFloat(order.total) || hasPendingTransactions) ? 'active' : 'neutral'
+                                    }
+                                    documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
+                                        type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
+                                        number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
+                                        icon: Banknote,
+                                        id: pay.id,
+                                        docType: 'payment',
+                                        status: pay.payment_method,
+                                        actions: [
+                                            ...(((
+                                                (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
+                                                (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
+                                            ) && !pay.transaction_number) ? [{
+                                                icon: Hash,
+                                                title: 'Registrar N° Transacción',
+                                                color: 'text-orange-600 hover:bg-orange-600/10',
+                                                onClick: () => setTrForm({
+                                                    open: true,
+                                                    id: pay.id,
+                                                    initialValue: pay.transaction_number || ""
+                                                })
+                                            }] : []),
+                                            // Only show payment annulment if invoice is DRAFT
+                                            ...((invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
+                                                icon: Ban,
+                                                title: 'Anular Pago',
                                                 color: 'text-red-600 hover:bg-red-600/10',
-                                                onClick: () => handleAnnulOrder(order.id)
+                                                onClick: () => handleDeletePayment(pay.id)
                                             }] : [])
                                         ]
-                                    }
-                                ]}
-                                onViewDetail={openDetails}
-                                actions={[
-                                    ...(order.status === 'DRAFT' ? [{
-                                        id: 'edit-order',
-                                        label: 'Editar Orden',
-                                        icon: Edit,
-                                        onClick: () => {
-                                            if (type === 'purchase') {
-                                                if (onEdit) {
-                                                    onEdit(order.id)
-                                                } else {
-                                                    router.push(`/purchasing/checkout?orderId=${order.id}`)
-                                                }
-                                            } else {
-                                                toast.info("Edición de ventas no implementada desde aquí")
-                                            }
-                                        }
-                                    }] : [])
-                                ]}
-                                order={order}
-                                userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                                actionEngineRef={actionEngineRef}
-                            >
-                                <div className="space-y-1 py-1">
-                                    {(order.lines || order.items || []).map((line: any, idx: number) => (
-                                        <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
-                                            <span className="text-foreground/70 line-clamp-2 leading-tight">
-                                                {line.product_name || line.description}
-                                            </span>
-                                            <span className="shrink-0 font-bold text-primary/80">
-                                                {Math.round(line.quantity)} {line.uom_name || line.unit_name || 'un'}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </PhaseCard>
-
-                            {/* 2. Producción */}
-                            {showProduction && (
-                                <PhaseCard
-                                    title="Producción"
-                                    icon={ClipboardList}
-                                    variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
-                                    documents={order.work_orders?.map((ot: any) => ({
-                                        type: 'Orden de Trabajo',
-                                        number: ot.display_id || `OT-${ot.code || ot.id}`,
-                                        icon: ClipboardList,
-                                        id: ot.id,
-                                        docType: 'work_order',
-                                        status: ot.status,
-                                        progressValue: ot.production_progress || 0,
-                                        actions: [
-                                            // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
-                                            ...((ot.status !== 'CANCELLED' &&
-                                                invoices.some((inv: any) => inv.status === 'DRAFT') &&
-                                                ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage)) ? [{
-                                                    icon: Ban,
-                                                    title: 'Anular OT',
-                                                    color: 'text-orange-500 hover:bg-orange-500/10',
-                                                    onClick: () => handleAnnulWorkOrder(ot.id)
-                                                }] : [])
-                                        ]
-                                    })) || []}
+                                    }))}
                                     onViewDetail={openDetails}
-                                    actions={(registry.production?.actions || []).filter((a: any) => !a.id.includes('view-'))}
-                                    emptyMessage="Sin órdenes de trabajo"
+                                    actions={(registry.payments?.actions || []).filter((a: any) =>
+                                        !a.id.includes('view-') &&
+                                        (a.id.includes('history') ? (order.related_documents?.payments?.length > 0 || order.payments_detail?.length > 0) : true)
+                                    )}
+                                    emptyMessage="Sin pagos registrados"
                                     order={order}
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                     actionEngineRef={actionEngineRef}
-                                    showDocProgress={true}
-                                    stageId="production"
-                                    isComplete={totalOTProgress === 100 && totalOTs > 0}
                                 >
-                                    {totalOTs > 0 ? (
-                                        <div className="space-y-1 px-1">
-                                            <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
-                                                <span>PROGRESO</span>
-                                                <span className="text-primary">{Math.round(showAnimations ? totalOTProgress : 0)}%</span>
+                                    <div className="space-y-1 py-1">
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
+                                            <span>PAGADO</span>
+                                            <span className="text-primary">
+                                                {Math.round(showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0)}%
+                                            </span>
+                                        </div>
+                                        <Progress
+                                            value={showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0}
+                                            className="h-1 bg-white/5 transition-all duration-1000"
+                                        />
+                                        {parseFloat(order.pending_amount) > 0 && (
+                                            <div className="flex justify-between items-center text-[10px] mt-1 border-t border-white/5 pt-1">
+                                                <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">POR PAGAR</span>
+                                                <span className="font-bold text-red-500/80">${Math.round(order.pending_amount).toLocaleString()}</span>
                                             </div>
-                                            <Progress value={showAnimations ? totalOTProgress : 0} className="h-1 bg-white/5 transition-all duration-1000" />
-                                        </div>
-                                    ) : (
-                                        <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">Sin inicio</div>
-                                    )}
-                                </PhaseCard>
-                            )}
-
-                            {/* 3. Logística / Cumplimiento */}
-                            {showLogistics && (
-                                <PhaseCard
-                                    title={(() => {
-                                        const lines = order.lines || order.items || []
-                                        const allServices = lines.every((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
-                                        const hasServices = lines.some((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
-                                        const onlySubscriptions = lines.every((l: any) => l.product_type === 'SUBSCRIPTION')
-
-                                        if (onlySubscriptions) return 'Suscripciones'
-                                        return allServices ? 'Cumplimiento' : (hasServices ? 'Logística/Cumplimiento' : 'Logística')
-                                    })()}
-                                    icon={Package}
-                                    variant={
-                                        logisticsProgress === 100 ? 'success' :
-                                            logisticsProgress > 0 ? 'active' : 'neutral'
-                                    }
-                                    documents={logisticsDocs}
-                                    onViewDetail={openDetails}
-                                    actions={(registry[isSale ? 'deliveries' : 'receptions']?.actions || []).filter((a: any) => !a.id.includes('view-'))}
-                                    emptyMessage="Sin movimientos"
-                                    order={order}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                                    actionEngineRef={actionEngineRef}
-                                    stageId="logistics"
-                                    isComplete={logisticsProgress >= 100}
-                                >
-                                    <div className="space-y-1.5 py-1">
-                                        {(order.lines || order.items || []).map((line: any, idx: number) => {
-                                            const total = parseFloat(line.quantity) || 1
-                                            const current = parseFloat(isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0))
-                                            const pct = Math.min(100, Math.round((current / total) * 100))
-
-                                            return (
-                                                <div key={idx} className="space-y-0.5">
-                                                    <div className="flex items-center justify-between text-[10px] gap-2">
-                                                        <span className="text-foreground/70 line-clamp-1 flex-1">
-                                                            {line.product_name || line.description}
-                                                        </span>
-                                                        <span className="shrink-0 font-bold text-primary/80">
-                                                            {Math.round(showAnimations ? current : 0)}/{Math.round(total)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/30" : "bg-primary/30")}
-                                                            style={{ width: `${showAnimations ? pct : 0}%` }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
+                                        )}
                                     </div>
                                 </PhaseCard>
-                            )}
-
-                            {/* 4. Facturación */}
-                            <PhaseCard
-                                title="Facturación"
-                                icon={Receipt}
-                                variant={billingIsComplete ? 'success' : 'neutral'}
-                                documents={(order.related_documents?.invoices || []).map((inv: any) => ({
-                                    type: inv.type_display,
-                                    number: formatDocumentId(inv.type_display, inv.number || 'BORRADOR', inv.display_id),
-                                    icon: Receipt,
-                                    id: inv.id,
-                                    docType: 'invoice',
-                                    status: inv.status,
-                                    actions: [
-                                        ...(inv.status === 'DRAFT' || inv.number === 'Draft' ? [{
-                                            icon: Trash2,
-                                            title: 'Eliminar Borrador',
-                                            color: 'text-red-500 hover:bg-red-500/10',
-                                            onClick: () => handleDeleteDraft(inv.id)
-                                        }] : []),
-                                        // Removed annul-document action - only DRAFT invoices can be annulled
-                                        // and they should be deleted instead
-                                    ]
-                                }))}
-                                onViewDetail={openDetails}
-                                actions={[...(registry.documents?.actions || []), ...billingActions].filter((a: any) => !a.id.includes('view-'))}
-                                emptyMessage="Pendiente de emisión"
-                                order={order}
-                                userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                                actionEngineRef={actionEngineRef}
-                            >
-                                <div className="py-2 flex justify-between items-center border-t border-white/5 mt-2">
-                                    <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">TOTAL</span>
-                                    <span className="text-sm font-black text-foreground">${parseFloat(order.total).toLocaleString()}</span>
-                                </div>
-                            </PhaseCard>
-
-                            {/* 5. Tesorería */}
-                            <PhaseCard
-                                title="Tesorería"
-                                icon={Banknote}
-                                variant={
-                                    (order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) && !hasPendingTransactions ? 'success' :
-                                        (parseFloat(order.pending_amount) < parseFloat(order.total) || hasPendingTransactions) ? 'active' : 'neutral'
-                                }
-                                documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
-                                    type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
-                                    number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
-                                    icon: Banknote,
-                                    id: pay.id,
-                                    docType: 'payment',
-                                    status: pay.payment_method,
-                                    actions: [
-                                        ...(((
-                                            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
-                                            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
-                                        ) && !pay.transaction_number) ? [{
-                                            icon: Hash,
-                                            title: 'Registrar N° Transacción',
-                                            color: 'text-orange-600 hover:bg-orange-600/10',
-                                            onClick: () => setTrForm({
-                                                open: true,
-                                                id: pay.id,
-                                                initialValue: pay.transaction_number || ""
-                                            })
-                                        }] : []),
-                                        // Only show payment annulment if invoice is DRAFT
-                                        ...((invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
-                                            icon: Ban,
-                                            title: 'Anular Pago',
-                                            color: 'text-red-600 hover:bg-red-600/10',
-                                            onClick: () => handleDeletePayment(pay.id)
-                                        }] : [])
-                                    ]
-                                }))}
-                                onViewDetail={openDetails}
-                                actions={(registry.payments?.actions || []).filter((a: any) =>
-                                    !a.id.includes('view-') &&
-                                    (a.id.includes('history') ? (order.related_documents?.payments?.length > 0 || order.payments_detail?.length > 0) : true)
-                                )}
-                                emptyMessage="Sin pagos registrados"
-                                order={order}
-                                userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                                actionEngineRef={actionEngineRef}
-                            >
-                                <div className="space-y-1 py-1">
-                                    <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
-                                        <span>PAGADO</span>
-                                        <span className="text-primary">
-                                            {Math.round(showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0)}%
-                                        </span>
-                                    </div>
-                                    <Progress
-                                        value={showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0}
-                                        className="h-1 bg-white/5 transition-all duration-1000"
-                                    />
-                                    {parseFloat(order.pending_amount) > 0 && (
-                                        <div className="flex justify-between items-center text-[10px] mt-1 border-t border-white/5 pt-1">
-                                            <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">POR PAGAR</span>
-                                            <span className="font-bold text-red-500/80">${Math.round(order.pending_amount).toLocaleString()}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </PhaseCard>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="hidden">
-                        <ActionCategory
-                            ref={actionEngineRef}
-                            category={{ actions: [] } as any}
-                            order={order}
-                            userPermissions={userPermissions}
-                            onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                        />
-                    </div>
+                        <div className="hidden">
+                            <ActionCategory
+                                ref={actionEngineRef}
+                                category={{ actions: [] } as any}
+                                order={order}
+                                userPermissions={userPermissions}
+                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                            />
+                        </div>
+                    </TooltipProvider>
                 </DialogContent>
             </Dialog >
 
@@ -875,12 +878,6 @@ function PhaseCard({
         neutral: 'bg-white/10 text-muted-foreground',
     }
 
-    const statusDot: Record<string, string> = {
-        success: 'bg-green-500 shadow-green-500/50',
-        active: 'bg-primary shadow-primary/50 animate-pulse',
-        neutral: 'bg-white/20',
-    }
-
     // Separate actions into primary (closing) and secondary
     const categorizedActions = (() => {
         const filtered = actions?.filter((action: any) => {
@@ -931,7 +928,34 @@ function PhaseCard({
                         {title}
                     </h3>
                 </div>
-                <div className={cn("w-2 h-2 rounded-full shadow-[0_0_8px]", statusDot[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])} />
+
+                {/* Header Action Icons (Replacing status dots) */}
+                <div className="flex items-center gap-1.5">
+                    {categorizedActions.secondary.filter((a: any) =>
+                        a.id === 'create-note' || a.id === 'payment-history'
+                    ).map((action: any, idx: number) => (
+                        <Tooltip key={idx}>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn(
+                                        "h-8 w-8 rounded-full transition-all active:scale-90 border border-white/10 shadow-sm",
+                                        "bg-white/5 hover:bg-white/10",
+                                        action.id === 'create-note' && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
+                                        action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40"
+                                    )}
+                                    onClick={(e) => { e.stopPropagation(); action.onClick(order) }}
+                                >
+                                    <action.icon className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{action.label}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    ))}
+                </div>
             </div>
 
             <CardContent className="p-5 flex-1 flex flex-col gap-4 relative z-10">
@@ -1014,20 +1038,26 @@ function PhaseCard({
             </CardContent>
 
             {/* Bottom Ghost Actions - Centered and Borderless - FLAT */}
-            {categorizedActions.secondary.length > 0 && (
-                <div className="pb-1 px-4">
-                    <ActionCategory
-                        category={{ actions: categorizedActions.secondary } as any}
-                        order={order}
-                        userPermissions={userPermissions}
-                        onActionSuccess={onActionSuccess}
-                        layout="flex"
-                        compact={true}
-                        ghost={true}
-                        showBadge={false}
-                    />
-                </div>
-            )}
+            {categorizedActions.secondary.filter((a: any) =>
+                a.id !== 'create-note' && a.id !== 'payment-history'
+            ).length > 0 && (
+                    <div className="pb-1 px-4">
+                        <ActionCategory
+                            category={{
+                                actions: categorizedActions.secondary.filter((a: any) =>
+                                    a.id !== 'create-note' && a.id !== 'payment-history'
+                                )
+                            } as any}
+                            order={order}
+                            userPermissions={userPermissions}
+                            onActionSuccess={onActionSuccess}
+                            layout="flex"
+                            compact={true}
+                            ghost={true}
+                            showBadge={false}
+                        />
+                    </div>
+                )}
         </Card>
     )
 }
