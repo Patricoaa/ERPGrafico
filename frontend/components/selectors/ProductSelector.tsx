@@ -85,7 +85,9 @@ export function ProductSelector({
                 }
 
                 if (excludeIds && excludeIds.length > 0) {
-                    const excludedStrIds = excludeIds.map(id => id.toString())
+                    const excludedStrIds = excludeIds
+                        .filter(id => id !== null && id !== undefined)
+                        .map(id => id.toString())
                     allProducts = allProducts.filter((p: any) => !excludedStrIds.includes(p.id.toString()))
                 }
 
@@ -97,8 +99,8 @@ export function ProductSelector({
                 setProducts(allProducts)
                 setFilteredProducts(allProducts)
 
-                if (value) {
-                    const found = allProducts.find((p: any) => p.id.toString() === value.toString())
+                if (value !== null && value !== undefined && value !== "") {
+                    const found = allProducts.find((p: any) => p.id?.toString() === value.toString())
                     if (found) setSelectedProduct(found)
                 }
             } catch (error) {
