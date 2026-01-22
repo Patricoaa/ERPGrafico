@@ -338,6 +338,15 @@ class AccountingMapper:
             # Inventory Account Credit
             # If it's a manufacturable product without direct inventory tracking, we credit the components used.
             if not product.track_inventory and product.product_type == 'MANUFACTURABLE':
+                # Check if this product has a work order (advanced manufacturing)
+                # If so, the cost was already expensed during OT finalization
+                if line.sale_line.work_orders.exists():
+                    # Cost was already expensed during OT finalization
+                    # Skip accounting entry creation to avoid duplication
+                    print(f"DEBUG: Skipping COGS entry for {product.internal_code} - already expensed in OT")
+                    continue
+                
+                # Continue with existing BOM explosion logic for express manufacturing
                 from production.models import BillOfMaterials
                 from inventory.services import UoMService
                 active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()

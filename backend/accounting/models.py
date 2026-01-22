@@ -367,6 +367,25 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta de gasto usada por defecto para productos consumibles (tintas, papel, etc.)")
     )
 
+    # COGS (Cost of Goods Sold) Accounts
+    merchandise_cogs_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_merchandise_cogs',
+        verbose_name=_("Cuenta Costo de Mercaderías"),
+        help_text=_("Cuenta 5.1.01 - Para productos STORABLE comprados para reventa")
+    )
+
+    manufactured_cogs_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settings_manufactured_cogs',
+        verbose_name=_("Cuenta Costo de Producción"),
+        help_text=_("Cuenta 5.1.02 - Para productos MANUFACTURABLE fabricados internamente")
+    )
+
     # Service Products Account
     default_service_expense_account = models.ForeignKey(
         Account,

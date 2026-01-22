@@ -332,10 +332,13 @@ class SalesService:
                     # SAFEGUARD: If this sale line already has a Work Order, 
                     # do NOT explode BOM again here (production already consumed materials).
                     if line.sale_line.work_orders.exists():
-                        print(f"DEBUG: Skipping BOM explosion for {product.internal_code} - OT already exists.")
+                        print(f"DEBUG: Product {product.internal_code} has Work Order - cost already expensed in OT")
+                        # For products with finished OTs, the cost was already expensed during production
+                        # We just need to set the unit_cost for reference (no new stock moves or accounting entries)
                         line.unit_cost = product.get_bom_cost()
                         line.save()
-                        # NOTE: removed continue so we fall through to quantity update
+                        # IMPORTANT: Do NOT create stock moves or accounting entries here
+                        # They were already created during OT finalization
                     else:
                         active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
                         if active_bom:

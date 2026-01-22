@@ -490,6 +490,73 @@ class WorkOrderService:
                 description=f"Entrada producción OT-{work_order.number}"
             )
         
+        # 3. Generate Accounting Entry for non-tracked manufacturable products
+        # For products that don't track inventory, we need to expense the materials immediately
+        # since there's no intermediate "Finished Goods Inventory" asset account
+        if product and not product.track_inventory and product.product_type == Product.Type.MANUFACTURABLE:
+            if total_material_cost > 0:
+                from accounting.models import AccountingSettings, JournalEntry
+                from accounting.services import JournalEntryService
+                
+                settings = AccountingSettings.objects.first()
+                if not settings:
+                    raise ValidationError("Debe configurar la contabilidad primero.")
+                
+                # Get COGS account (expense)
+                cogs_account = product.get_expense_account or settings.default_expense_account
+                if not cogs_account:
+                    raise ValidationError(f"Falta configurar cuenta de costo/gasto para el producto {product.internal_code}.")
+                
+                # Create journal entry
+                entry_data = {
+                    'date': timezone.now().date(),
+                    'description': f"Consumo Producción OT-{work_order.number}",
+                    'reference': f"OT-{work_order.number}",
+                    'state': JournalEntry.State.DRAFT
+                }
+                
+                items = []
+                
+                # Debit: COGS (Expense)
+                items.append({
+                    'account': cogs_account,
+                    'debit': total_material_cost,
+                    'credit': Decimal('0.00'),
+                    'label': f"COGS Producción: {product.name[:100]}"
+                })
+                
+                # Credit: Component Inventory Accounts (grouped by account)
+                component_credits = {}  # account -> amount
+                
+                for consumption in ProductionConsumption.objects.filter(work_order=work_order):
+                    component = consumption.product
+                    comp_cost = (consumption.quantity * component.cost_price).quantize(Decimal('0.01'))
+                    
+                    comp_inventory_account = component.get_asset_account or settings.default_inventory_account
+                    if not comp_inventory_account:
+                        raise ValidationError(f"Falta cuenta de inventario para {component.internal_code}")
+                    
+                    component_credits[comp_inventory_account] = component_credits.get(comp_inventory_account, Decimal('0.00')) + comp_cost
+                
+                # Add credit items
+                for account, amount in component_credits.items():
+                    items.append({
+                        'account': account,
+                        'debit': Decimal('0.00'),
+                        'credit': amount,
+                        'label': f"Consumo OT-{work_order.number}"
+                    })
+                
+                # Create and post entry
+                entry = JournalEntryService.create_entry(entry_data, items)
+                JournalEntryService.post_entry(entry)
+                
+                # Link stock moves to this entry
+                for consumption in ProductionConsumption.objects.filter(work_order=work_order):
+                    if consumption.stock_move:
+                        consumption.stock_move.journal_entry = entry
+                        consumption.stock_move.save()
+        
         # If associated with a sale line, update its status (conceptually)
         if work_order.sale_line:
             # Possible logic to mark line as 'Produced' or 'Ready for dispatch'
