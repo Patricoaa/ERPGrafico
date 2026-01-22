@@ -214,10 +214,8 @@ export default function AccountingSettingsPage() {
 
                                         <Separator className="my-4" />
                                         <p className="text-xs font-semibold uppercase text-muted-foreground">Costo de Ventas (COGS)</p>
-                                        <AccountField form={form} name="merchandise_cogs_account" label="Costo de Mercaderías (5.1.01)" accountType="EXPENSE" />
-                                        <AccountField form={form} name="manufactured_cogs_account" label="Costo de Productos Fabricados (5.1.02)" accountType="EXPENSE" />
-                                        <Separator className="my-2" />
-                                        <AccountField form={form} name="default_expense_account" label="Gastos Generales (Fallback)" accountType="EXPENSE" />
+                                        <AccountField form={form} name="merchandise_cogs_account" label="Costo de Mercaderías (Gasto)" accountType="EXPENSE" />
+                                        <AccountField form={form} name="manufactured_cogs_account" label="Costo de Productos Fabricados (Gasto)" accountType="EXPENSE" />
 
                                         <Separator className="my-4" />
                                         <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios (Ingreso)" accountType="INCOME" />
@@ -271,15 +269,6 @@ export default function AccountingSettingsPage() {
                                                     label="Gastos Consumibles (CONSUMABLE)"
                                                     accountType="EXPENSE"
                                                 />
-
-                                                <Separator className="my-2" />
-
-                                                <AccountField
-                                                    form={form}
-                                                    name="default_inventory_account"
-                                                    label="Inventario General (Fallback - Deprecated)"
-                                                    accountType="ASSET"
-                                                />
                                             </div>
 
                                             <div className="space-y-4">
@@ -330,6 +319,16 @@ export default function AccountingSettingsPage() {
                                                 />
                                             </div>
                                         </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">Configuración de Respaldo (Fallbacks)</CardTitle>
+                                        <CardDescription>Cuentas utilizadas como último recurso si no hay mapeo específico.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <AccountField form={form} name="default_inventory_account" label="Inventario Global (Legacy)" accountType="ASSET" />
+                                        <AccountField form={form} name="default_expense_account" label="Gasto/Costo Global (Legacy)" accountType="EXPENSE" />
                                     </CardContent>
                                 </Card>
                             </div>
