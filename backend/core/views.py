@@ -24,14 +24,29 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
+        try:
+            response = super().post(request, *args, **kwargs)
+        except Exception as e:
+            # Catch login failures (e.g. invalid credentials)
+            # Log as Security Incident
+            username = request.data.get('username') or "unknown"
+            
+            # We try to get the user object if possible to link it, even if auth failed
+            user_obj = User.objects.filter(username=username).first()
+            
+            ActionLoggingService.log_action(
+                user=user_obj, # Can be None
+                action_type=ActionLog.Type.SECURITY,
+                description=f"Intento de inicio de sesión fallido para usuario '{username}'.",
+                request=request,
+                metadata={'error': str(e)}
+            )
+            # Re-raise exception so normal error response is sent to client
+            raise e
         
         if response.status_code == 200:
             try:
-                # User is technically authenticated if we got 200, but request.user 
-                # might not be populated yet in this view depending on auth classes.
-                # However, we can look up the user by the credentials provided or use the user from the serializer if accessible.
-                # Simplest way for Audit Log purposes is to interpret the request data.
+                # User is technically authenticated if we got 200
                 username = request.data.get('username')
                 if username:
                     user = User.objects.filter(username=username).first()
