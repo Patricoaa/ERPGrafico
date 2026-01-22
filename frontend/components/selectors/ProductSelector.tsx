@@ -66,15 +66,15 @@ export function ProductSelector({
         const fetchProducts = async () => {
             setLoading(true)
             try {
-                let url = '/inventory/products/'
+                let url = `/inventory/products/?search=${encodeURIComponent(searchTerm)}`
                 if (productType) {
-                    url += `?product_type=${productType}`
+                    url += `&product_type=${productType}`
                 }
 
                 if (context === 'sale') {
-                    url += (url.includes('?') ? '&' : '?') + 'can_be_sold=true'
+                    url += '&can_be_sold=true'
                 } else if (context === 'purchase') {
-                    url += (url.includes('?') ? '&' : '?') + 'can_be_purchased=true'
+                    url += '&can_be_purchased=true'
                 }
 
                 const res = await api.get(url)
@@ -85,7 +85,8 @@ export function ProductSelector({
                 }
 
                 if (excludeIds && excludeIds.length > 0) {
-                    allProducts = allProducts.filter((p: any) => !excludeIds.map(id => id.toString()).includes(p.id.toString()))
+                    const excludedStrIds = excludeIds.map(id => id.toString())
+                    allProducts = allProducts.filter((p: any) => !excludedStrIds.includes(p.id.toString()))
                 }
 
                 // Apply custom filter
@@ -98,7 +99,7 @@ export function ProductSelector({
 
                 if (value) {
                     const found = allProducts.find((p: any) => p.id.toString() === value.toString())
-                    setSelectedProduct(found)
+                    if (found) setSelectedProduct(found)
                 }
             } catch (error) {
                 console.error("Error fetching products", error)
@@ -106,8 +107,13 @@ export function ProductSelector({
                 setLoading(false)
             }
         }
-        fetchProducts()
-    }, [value, productType, context, customFilter])
+
+        const timeoutId = setTimeout(() => {
+            fetchProducts()
+        }, 300)
+
+        return () => clearTimeout(timeoutId)
+    }, [value, productType, context, customFilter, excludeIds, searchTerm])
 
     const isStockRestricted = (product: any) => {
         if (!restrictStock) return false

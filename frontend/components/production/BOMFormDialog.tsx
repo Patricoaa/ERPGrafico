@@ -177,8 +177,12 @@ export function BOMFormDialog({
                 await api.post("/production/boms/", payload)
                 toast.success("BOM creada correctamente")
             }
-            onSuccess()
-            onOpenChange(false)
+            if (onSuccess) onSuccess()
+
+            // Small delay before closing to let Radix UI clean up and prevent parent dialog closure
+            setTimeout(() => {
+                onOpenChange(false)
+            }, 100)
         } catch (error: any) {
             console.error("Error saving BOM:", error)
             toast.error("Error al guardar BOM: " + (error.response?.data?.detail || error.message))
@@ -192,6 +196,8 @@ export function BOMFormDialog({
             <DialogContent
                 className="max-w-[95vw] md:max-w-[1200px] max-h-[90vh] flex flex-col"
                 onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+                onPointerDownOutside={(e) => e.preventDefault()}
             >
                 <DialogHeader className="pr-12">
                     <DialogTitle className="flex items-center gap-2 text-xl font-bold">

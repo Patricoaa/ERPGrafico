@@ -286,9 +286,18 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
     
     def get_total_cost(self, obj):
         from decimal import Decimal
+        from inventory.services import UoMService
         total = Decimal('0.00')
         for line in obj.lines.all():
-            total += line.quantity * line.component.cost_price
+            qty = line.quantity
+            # Convert quantity from BOM Line UoM to Component Base UoM if they differ
+            if line.uom and line.component.uom and line.uom != line.component.uom:
+                try:
+                    qty = UoMService.convert_quantity(line.quantity, line.uom, line.component.uom)
+                except Exception:
+                    # In case of error (e.g. incompatible categories), use original quantity
+                    pass
+            total += qty * line.component.cost_price
         return float(total)
 
     def validate(self, data):

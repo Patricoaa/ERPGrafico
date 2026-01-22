@@ -1,0 +1,31 @@
+# Backend
+backend/media/
+backend/db.sqlite3
+backend/venv/
+backend/__pycache__/
+*.py[cod]
+backend/error.txt
+backend/error_log.txt
+backend/error_views.txt
+backend/full_error.txt
+backend/traceback.txt
+backend/traceback_utf8.txt
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Environments
+.env
+.env*
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
