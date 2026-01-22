@@ -60,7 +60,10 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
             setHistory(res.data)
         } catch (err: any) {
             console.error("Error fetching history:", err)
-            setError(err.response?.data?.detail || "Error al cargar el historial")
+            const message = err.code === 'ERR_NETWORK'
+                ? "Error de conexión con el servidor"
+                : (err.response?.data?.detail || "Error al cargar el historial")
+            setError(message)
         } finally {
             setLoading(false)
         }

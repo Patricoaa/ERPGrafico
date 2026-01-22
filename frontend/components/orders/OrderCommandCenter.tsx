@@ -945,7 +945,10 @@ function PhaseCard({
                                         action.id === 'create-note' && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
                                         action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40"
                                     )}
-                                    onClick={(e) => { e.stopPropagation(); action.onClick(order) }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        actionEngineRef.current?.handleActionClick(action.id);
+                                    }}
                                 >
                                     <action.icon className="h-4 w-4" />
                                 </Button>
