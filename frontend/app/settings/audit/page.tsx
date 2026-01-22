@@ -157,7 +157,17 @@ export default function AuditHubPage() {
             accessorKey: "source",
             header: "Origen",
             id: "source",
-            cell: ({ row }: any) => null,
+            cell: ({ row }: any) => {
+                const source = row.original.source;
+                const label = source === 'action_log' ? 'Sistema' : 'Datos';
+                const variant = source === 'action_log' ? 'default' : 'secondary';
+
+                return (
+                    <DataCell.Badge variant={variant} className="font-normal">
+                        {label}
+                    </DataCell.Badge>
+                );
+            }
         }
     ];
 

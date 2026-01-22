@@ -75,8 +75,17 @@ class HistoricalRecordSerializer(serializers.Serializer):
             if name.startswith('history_'):
                 continue
             
-            value = getattr(instance, name)
-            # If it's a model instance (Foreign Key), get its primary key
+            # Use attname for relations to avoid DB lookup and DoesNotExist errors
+            # This is critical for historical records where the related object might have been deleted
+            if field.is_relation and field.attname:
+                try:
+                    value = getattr(instance, field.attname)
+                except Exception:
+                    value = None
+            else:
+                value = getattr(instance, name)
+
+            # If it's a model instance (Foreign Key) that somehow got resolved, get its primary key
             if hasattr(value, 'pk') and hasattr(value, '_meta'):
                 ret[name] = value.pk
             else:

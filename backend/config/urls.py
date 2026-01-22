@@ -23,7 +23,7 @@ from rest_framework_simplejwt.views import (
 
 from django.conf import settings
 from django.conf.urls.static import static
-from core.views import CurrentUserView, CustomTokenRefreshView
+from core.views import CurrentUserView, CustomTokenRefreshView, CustomTokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -40,7 +40,7 @@ urlpatterns = [
     
     # Auth endpoints
     path('api/auth/user/', CurrentUserView.as_view(), name='current-user'),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

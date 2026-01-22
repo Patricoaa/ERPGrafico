@@ -3,12 +3,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 from .models import User, CompanySettings, ActionLog
 from .serializers import (
     UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer,
     ActionLogSerializer, HistoricalRecordSerializer
 )
+from .services import ActionLoggingService
 from inventory.models import Product, StockMove
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
@@ -20,6 +21,32 @@ from accounting.models import JournalEntry
 
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = CustomTokenRefreshSerializer
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            try:
+                # User is technically authenticated if we got 200, but request.user 
+                # might not be populated yet in this view depending on auth classes.
+                # However, we can look up the user by the credentials provided or use the user from the serializer if accessible.
+                # Simplest way for Audit Log purposes is to interpret the request data.
+                username = request.data.get('username')
+                if username:
+                    user = User.objects.filter(username=username).first()
+                    if user:
+                        ActionLoggingService.log_action(
+                            user=user,
+                            action_type=ActionLog.Type.LOGIN,
+                            description=f"Usuario {user.username} ha iniciado sesión.",
+                            request=request
+                        )
+            except Exception as e:
+                # Don't fail login if logging fails
+                print(f"Login audit log error: {e}")
+                
+        return response
 
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
