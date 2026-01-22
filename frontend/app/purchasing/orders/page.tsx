@@ -6,7 +6,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
-import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard } from "lucide-react"
+import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard, Plus } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -260,11 +260,11 @@ export default function PurchaseOrdersPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
+            <div className="flex items-center gap-4 space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
-                <div className="flex items-center space-x-2">
-                    <Button onClick={() => setCheckoutOpen(true)}>
-                        Nueva Orden de Compra
+                <div className="flex items-center space-x-2 pt-1">
+                    <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setCheckoutOpen(true)} title="Nueva Orden de Compra">
+                        <Plus className="h-4 w-4" />
                     </Button>
                     {editingOrder && (
                         <PurchaseOrderForm

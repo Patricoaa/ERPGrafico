@@ -10,7 +10,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, Edit, Trash2, Loader2, UserPlus } from "lucide-react"
+import { Plus, Edit, Trash2, Loader2, UserPlus, ChevronLeft } from "lucide-react"
 import { UserForm } from "@/components/forms/UserForm"
 
 export default function UsersSettingsPage() {
@@ -112,14 +112,21 @@ export default function UsersSettingsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <h2 className="text-3xl font-bold tracking-tight">Usuarios y Permisos</h2>
                 </div>
-                <UserForm onSuccess={fetchUsers} />
+                <UserForm
+                    onSuccess={fetchUsers}
+                    trigger={
+                        <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Usuario">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    }
+                />
             </div>
 
             <div className="">

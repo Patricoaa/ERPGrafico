@@ -182,11 +182,11 @@ export default function BOMsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
+            <div className="flex items-center gap-4 space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Listas de Materiales (BOM)</h2>
-                <div className="flex items-center space-x-2">
-                    <Button onClick={() => { setEditingBom(null); setIsFormOpen(true); }}>
-                        <Plus className="mr-2 h-4 w-4" /> Nueva Lista
+                <div className="flex items-center pt-1">
+                    <Button size="icon" className="rounded-full h-8 w-8" onClick={() => { setEditingBom(null); setIsFormOpen(true); }} title="Nueva Lista">
+                        <Plus className="h-4 w-4" />
                     </Button>
                 </div>
             </div>

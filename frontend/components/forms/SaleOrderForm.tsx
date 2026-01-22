@@ -76,6 +76,7 @@ interface SaleOrderFormProps {
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    triggerVariant?: "default" | "circular"
 }
 
 const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => {
@@ -138,7 +139,7 @@ const DynamicFieldsRenderer = ({ schema, value, onChange }: { schema: any, value
     )
 }
 
-export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open: openProp, onOpenChange }: SaleOrderFormProps) {
+export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open: openProp, onOpenChange, triggerVariant = "default" }: SaleOrderFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -303,7 +304,13 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
         <Dialog open={open} onOpenChange={setOpen}>
             {!initialData && (
                 <DialogTrigger asChild>
-                    <Button>Nueva Nota de Venta</Button>
+                    {triggerVariant === "circular" ? (
+                        <Button size="icon" className="rounded-full h-8 w-8" title="Nueva Nota de Venta">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button>Nueva Nota de Venta</Button>
+                    )}
                 </DialogTrigger>
             )}
             <DialogContent className="sm:max-w-[1200px] w-[95vw] max-h-[90vh] overflow-y-auto">

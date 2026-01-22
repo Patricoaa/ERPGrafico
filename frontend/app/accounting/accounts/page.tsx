@@ -157,9 +157,10 @@ export default function AccountsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
+            <div className="flex items-center gap-4 space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Plan de Cuentas</h2>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 pt-1">
+                    <AccountForm accounts={accounts} onSuccess={fetchAccounts} triggerVariant="circular" />
                     <DataManagement
                         endpoint="/accounting/accounts/"
                         onImportSuccess={fetchAccounts}
@@ -168,7 +169,6 @@ export default function AccountsPage() {
                             { code: '1.1.01', name: 'Nombre de Cuenta', account_type: 'ASSET' }
                         ]}
                     />
-                    <AccountForm accounts={accounts} onSuccess={fetchAccounts} />
                 </div>
             </div>
             <DataTable

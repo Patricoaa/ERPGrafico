@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
+import { Plus } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -51,9 +52,10 @@ interface AccountFormProps {
     accounts?: any[]
     initialData?: any // Use any for initialData to avoid strict prop widening issues
     triggerText?: React.ReactNode
+    triggerVariant?: "default" | "circular"
 }
 
-export function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nueva Cuenta" }: AccountFormProps) {
+export function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nueva Cuenta", triggerVariant = "default" }: AccountFormProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
 
@@ -153,9 +155,15 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant={initialData ? "ghost" : "default"} size={initialData ? "sm" : "default"}>
-                    {triggerText}
-                </Button>
+                {triggerVariant === "circular" ? (
+                    <Button size="icon" className="rounded-full h-8 w-8" title="Crear Cuenta Contable">
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                ) : (
+                    <Button variant={initialData ? "ghost" : "default"} size={initialData ? "sm" : "default"}>
+                        {triggerText}
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>

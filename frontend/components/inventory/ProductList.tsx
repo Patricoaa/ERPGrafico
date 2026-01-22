@@ -273,13 +273,11 @@ export function ProductList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
                 <h3 className="text-lg font-semibold">Catálogo de Productos</h3>
-                <div className="flex items-center gap-2">
-                    <Button onClick={() => setIsFormOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
-                    </Button>
-                </div>
+                <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsFormOpen(true)} title="Nuevo Producto">
+                    <Plus className="h-4 w-4" />
+                </Button>
             </div>
 
             <div className="">

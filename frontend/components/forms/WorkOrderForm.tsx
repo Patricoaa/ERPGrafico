@@ -73,9 +73,10 @@ interface WorkOrderFormProps {
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    triggerVariant?: "default" | "circular"
 }
 
-export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenChange }: WorkOrderFormProps) {
+export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenChange, triggerVariant = "default" }: WorkOrderFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -399,7 +400,13 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         <Dialog open={open} onOpenChange={setOpen}>
             {!initialData && (
                 <DialogTrigger asChild>
-                    <Button>Nueva Orden de Trabajo</Button>
+                    {triggerVariant === "circular" ? (
+                        <Button size="icon" className="rounded-full h-8 w-8" title="Nueva OT">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button>Nueva Orden de Trabajo</Button>
+                    )}
                 </DialogTrigger>
             )}
             <DialogContent className="sm:max-w-[1000px] w-[95vw] max-h-[90vh] overflow-y-auto">

@@ -526,7 +526,6 @@ class BillingService:
         if invoice.number and invoice.number != 'Draft':
             raise ValidationError(
                 "❌ No se puede anular una factura con folio asignado.\n"
-                "📋 Razón: Obligación fiscal de mantener trazabilidad de documentos emitidos.\n"
                 "💡 Use una Nota de Crédito para ajustar esta factura."
             )
         

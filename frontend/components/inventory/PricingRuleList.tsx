@@ -191,15 +191,11 @@ export function PricingRuleList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Button onClick={() => setIsFormOpen(true)} size="sm">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nueva Regla
-                    </Button>
-                </div>
+            <div className="flex items-center gap-4">
+                <h3 className="text-xl font-semibold">Reglas de Precio</h3>
+                <Button onClick={() => setIsFormOpen(true)} size="icon" className="rounded-full h-8 w-8" title="Nueva Regla">
+                    <Plus className="h-4 w-4" />
+                </Button>
             </div>
 
             <PricingRuleForm

@@ -244,9 +244,10 @@ export default function SubscriptionsPage() {
 
     return (
         <div className="container mx-auto p-6 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
                 <h1 className="text-3xl font-bold">Gestión de Suscripciones</h1>
             </div>
+            {/* If a creation button is added later, it should go here with triggerVariant="circular" */}
 
             {/* Stats Cards */}
             {stats && (

@@ -76,6 +76,7 @@ interface JournalEntryFormProps {
     onSuccess?: () => void
     initialData?: any
     triggerText?: string
+    triggerVariant?: "default" | "circular"
 }
 
 const TotalBalance = ({ control }: { control: Control<JournalEntryFormValues> }) => {
@@ -100,7 +101,7 @@ const TotalBalance = ({ control }: { control: Control<JournalEntryFormValues> })
     )
 }
 
-export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialData, triggerText = "Nuevo Asiento" }: JournalEntryFormProps) {
+export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialData, triggerText = "Nuevo Asiento", triggerVariant = "default" }: JournalEntryFormProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [accounts, setAccounts] = useState<any[]>(accountsProp || [])
@@ -207,9 +208,15 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant={initialData ? "ghost" : "default"} size={initialData ? "icon" : "default"}>
-                    {initialData ? <Pencil className="h-4 w-4" /> : triggerText}
-                </Button>
+                {triggerVariant === "circular" ? (
+                    <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Asiento">
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                ) : (
+                    <Button variant={initialData ? "ghost" : "default"} size={initialData ? "icon" : "default"}>
+                        {initialData ? <Pencil className="h-4 w-4" /> : triggerText}
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-y-auto"> {/* Increased width significantly and restored scroll */}
                 <DialogHeader>

@@ -334,21 +334,16 @@ export function ReplenishmentDashboard() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-center gap-4">
                 <h1 className="text-3xl font-bold tracking-tight">Gestión de Reabastecimiento</h1>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleRunScheduler} disabled={isLoading} className="h-9">
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        Planificar
-                    </Button>
+                <div className="flex items-center gap-2 pt-1">
                     <Dialog open={isDialogOpen} onOpenChange={(open) => {
                         setIsDialogOpen(open)
                         if (!open) setEditingRule(null)
                     }}>
                         <DialogTrigger asChild>
-                            <Button size="sm" className="h-9">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Nueva Regla
+                            <Button size="icon" className="rounded-full h-8 w-8" title="Nueva Regla">
+                                <Plus className="h-4 w-4" />
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[500px]">
@@ -469,6 +464,10 @@ export function ReplenishmentDashboard() {
                             </Form>
                         </DialogContent>
                     </Dialog>
+                    <Button variant="outline" size="sm" onClick={handleRunScheduler} disabled={isLoading} className="h-8 rounded-full">
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Planificar
+                    </Button>
                 </div>
             </div>
 

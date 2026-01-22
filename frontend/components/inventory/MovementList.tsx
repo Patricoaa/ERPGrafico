@@ -197,11 +197,10 @@ export function MovementList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Historial de Movimientos</h3>
-                <Button onClick={() => setShowAdjustmentModal(true)} className="gap-2">
+            <div className="flex items-center gap-4">
+                <h3 className="text-xl font-semibold">Historial de Movimientos</h3>
+                <Button onClick={() => setShowAdjustmentModal(true)} size="icon" className="rounded-full h-8 w-8" title="Nuevo Ajuste">
                     <Plus className="h-4 w-4" />
-                    Nuevo Ajuste
                 </Button>
             </div>
 

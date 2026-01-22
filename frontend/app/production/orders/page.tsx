@@ -219,63 +219,43 @@ export default function WorkOrdersPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
-                <div>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
                     <h2 className="text-3xl font-bold tracking-tight">Ordenes de Trabajo (OT)</h2>
-                    <p className="text-muted-foreground mt-1">Gestión de flujo de producción</p>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                    <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "kanban" | "list")} className="w-auto">
-                        <TabsList>
-                            <TabsTrigger value="kanban" className="flex items-center gap-2">
-                                <LayoutGrid className="h-4 w-4" />
-                                <span className="hidden sm:inline">Tablero</span>
-                            </TabsTrigger>
-                            <TabsTrigger value="list" className="flex items-center gap-2">
-                                <List className="h-4 w-4" />
-                                <span className="hidden sm:inline">Lista</span>
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-
-                    <div className="h-8 w-[1px] bg-border hidden sm:block"></div>
-
                     <WorkOrderForm
                         onSuccess={fetchOrders}
-                        open={isFormOpen && !editingOrder}
-                        onOpenChange={(open) => {
-                            setIsFormOpen(open)
-                            if (!open) setEditingOrder(null)
-                        }}
+                        triggerVariant="circular"
                     />
-                    {editingOrder && (
-                        <WorkOrderForm
-                            initialData={editingOrder}
-                            open={isFormOpen && !!editingOrder}
-                            onOpenChange={(open) => {
-                                setIsFormOpen(open)
-                                if (!open) setEditingOrder(null)
-                            }}
-                            onSuccess={fetchOrders}
-                        />
-                    )}
-                    {activeWizardId && (
-                        <WorkOrderWizard
-                            orderId={activeWizardId}
-                            open={!!activeWizardId}
-                            onOpenChange={(open) => {
-                                if (!open) {
-                                    setActiveWizardId(null)
-                                    setRequestedStage(undefined)
-                                }
-                            }}
-                            onSuccess={fetchOrders}
-                            targetStage={requestedStage}
-                        />
-                    )}
                 </div>
+                {/* Secondary title/info if needed */}
             </div>
+
+            {/* Hidden Forms */}
+            {editingOrder && (
+                <WorkOrderForm
+                    initialData={editingOrder}
+                    open={isFormOpen && !!editingOrder}
+                    onOpenChange={(open) => {
+                        setIsFormOpen(open)
+                        if (!open) setEditingOrder(null)
+                    }}
+                    onSuccess={fetchOrders}
+                />
+            )}
+            {activeWizardId && (
+                <WorkOrderWizard
+                    orderId={activeWizardId}
+                    open={!!activeWizardId}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setActiveWizardId(null)
+                            setRequestedStage(undefined)
+                        }
+                    }}
+                    onSuccess={fetchOrders}
+                    targetStage={requestedStage}
+                />
+            )}
 
             <div className="mt-2">
                 <DataTable
@@ -302,6 +282,20 @@ export default function WorkOrdersPage() {
                         <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
                     }
                     onReset={() => setDateRange(undefined)}
+                    rightAction={
+                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "kanban" | "list")} className="w-auto">
+                            <TabsList>
+                                <TabsTrigger value="kanban" className="flex items-center gap-2">
+                                    <LayoutGrid className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Tablero</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="list" className="flex items-center gap-2">
+                                    <List className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Lista</span>
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    }
                     renderCustomView={viewMode === "kanban" ? (table) => (
                         <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
                             {loading ? (
@@ -318,6 +312,6 @@ export default function WorkOrdersPage() {
                     ) : undefined}
                 />
             </div>
-        </div>
+        </div >
     )
 }

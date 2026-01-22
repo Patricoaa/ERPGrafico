@@ -152,6 +152,18 @@ export function UoMList() {
 
     return (
         <div className="space-y-4">
+            <div className="flex items-center gap-4">
+                <h3 className="text-xl font-semibold">Unidades de Medida</h3>
+                <Button
+                    onClick={() => { setCurrentUoM({ active: true, ratio: "1.00000", rounding: "0.01000", uom_type: "REFERENCE" }); setIsUoMModalOpen(true) }}
+                    size="icon"
+                    className="rounded-full h-8 w-8"
+                    title="Nueva Unidad"
+                >
+                    <Plus className="h-4 w-4" />
+                </Button>
+            </div>
+
             <DataTable
                 columns={columns}
                 data={uoms}
@@ -170,11 +182,6 @@ export function UoMList() {
                     },
                 ]}
                 useAdvancedFilter={true}
-                toolbarAction={
-                    <Button onClick={() => { setCurrentUoM({ active: true, ratio: "1.00000", rounding: "0.01000", uom_type: "REFERENCE" }); setIsUoMModalOpen(true) }} size="sm">
-                        <Plus className="mr-2 h-4 w-4" /> Nueva Unidad
-                    </Button>
-                }
             />
 
             <Dialog open={isUoMModalOpen} onOpenChange={setIsUoMModalOpen}>
