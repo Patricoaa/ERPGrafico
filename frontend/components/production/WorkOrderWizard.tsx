@@ -36,7 +36,7 @@ import {
     LayoutDashboard,
     CalendarIcon
 } from "lucide-react"
-import { cn, formatBytes } from "@/lib/utils"
+import { cn, formatBytes, translateStatus } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -563,7 +563,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         )}
                         <div className="mb-6 flex items-center justify-between">
                             <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
-                            <Badge variant="outline">{order?.status}</Badge>
+                            <Badge variant="outline">{translateStatus(order?.status)}</Badge>
                         </div>
 
                         {/* Stage Content */}

@@ -39,7 +39,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
+import { cn, translateStatus } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Switch } from "@/components/ui/switch"
@@ -383,31 +383,13 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const renderStatusBadge = () => {
         if (!initialData) return null
 
-        const stageMap: Record<string, string> = {
-            'MATERIAL_ASSIGNMENT': 'Asignación Materiales',
-            'MATERIAL_APPROVAL': 'Aprobación Stock',
-            'PREPRESS': 'Pre-Impresión',
-            'PRESS': 'Impresión',
-            'POSTPRESS': 'Post-Impresión',
-            'FINISHED': 'Terminado',
-            'CANCELLED': 'Anulado'
-        }
-
-        const statusMap: Record<string, string> = {
-            'DRAFT': 'BORRADOR',
-            'PLANNED': 'PLANIFICADA',
-            'IN_PROGRESS': 'EN PROCESO',
-            'FINISHED': 'TERMINADA',
-            'CANCELLED': 'ANULADA'
-        }
-
         return (
             <div className="flex items-center gap-2">
                 <Badge variant={initialData.status === 'FINISHED' ? 'default' : initialData.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
-                    {statusMap[initialData.status] || initialData.status}
+                    {translateStatus(initialData.status)}
                 </Badge>
                 <Badge variant="outline" className="border-primary/20 text-primary">
-                    {stageMap[initialData.current_stage] || initialData.current_stage}
+                    {translateStatus(initialData.current_stage)}
                 </Badge>
             </div>
         )

@@ -45,7 +45,7 @@ import { saleOrderActions } from "@/lib/actions/sale-actions"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
-import { cn } from "@/lib/utils"
+import { cn, translateStatus } from "@/lib/utils"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
@@ -353,18 +353,7 @@ export function OrderCommandCenter({
     }
 
     const getStatusLabel = (status: string) => {
-        const labels: Record<string, string> = {
-            'PENDING': 'PENDIENTE',
-            'PARTIAL': 'PARCIAL',
-            'RECEIVED': 'RECIBIDA',
-            'DELIVERED': 'DESPACHADA',
-            'POSTED': 'EMITIDA',
-            'PAID': 'PAGADA',
-            'CANCELLED': 'ANULADA',
-            'DRAFT': 'BORRADOR',
-            'CONFIRMED': 'CONFIRMADA'
-        }
-        return labels[status.toUpperCase()] || status
+        return translateStatus(status).toUpperCase()
     }
 
     const totalOTs = order.work_orders?.length || 0

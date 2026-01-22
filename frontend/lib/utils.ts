@@ -33,6 +33,7 @@ export function translateStatus(status: string | null | undefined): string {
     'PRESS': 'Impresión',
     'POSTPRESS': 'Post-Impresión',
     'PARTIAL': 'Parcial',
+    'SUBSCRIPTION_IN_PROGRESS': 'Suscripción en Proceso',
   }
   return map[status.toUpperCase()] || status
 }
@@ -101,6 +102,7 @@ export function translateProductType(type: string): string {
     'STORABLE': 'Almacenable',
     'MANUFACTURABLE': 'Fabricable',
     'SERVICE': 'Servicio',
+    'SUBSCRIPTION': 'Suscripción',
   }
   return map[type.toUpperCase()] || type
 }

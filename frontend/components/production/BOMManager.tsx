@@ -115,6 +115,7 @@ export function BOMManager({ product }: BOMManagerProps) {
                         </CardDescription>
                     </div>
                     <Button
+                        type="button"
                         onClick={(e) => {
                             e.stopPropagation()
                             handleCreate()
@@ -187,6 +188,7 @@ export function BOMManager({ product }: BOMManagerProps) {
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-1">
                                                 <Button
+                                                    type="button"
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 hover:text-blue-600"
@@ -195,6 +197,7 @@ export function BOMManager({ product }: BOMManagerProps) {
                                                     <Edit className="h-3.5 w-3.5" />
                                                 </Button>
                                                 <Button
+                                                    type="button"
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 hover:text-red-600"

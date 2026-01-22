@@ -568,12 +568,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                                     canBeSold={form.watch("can_be_sold")}
                                                     uoms={uoms}
                                                 />
-                                                <ProductManufacturingTab
-                                                    form={form as any}
-                                                    initialData={initialData}
-                                                    products={products}
-                                                    uoms={uoms}
-                                                />
+
                                             </div>
                                         </div>
                                     </TabsContent>
