@@ -364,9 +364,7 @@ export function SalesCheckoutWizard({
                 }))))
             }
 
-            await api.post('/billing/invoices/pos_checkout/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await api.post('/billing/invoices/pos_checkout/', formData)
 
             toast.success("Venta procesada correctamente")
             onComplete()

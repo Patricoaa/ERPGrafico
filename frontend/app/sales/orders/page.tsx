@@ -174,9 +174,7 @@ export default function SalesOrdersPage() {
             if (data.documentDate) formData.append('document_date', data.documentDate)
             if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
 
-            await api.post('/billing/invoices/pos_checkout/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await api.post('/billing/invoices/pos_checkout/', formData)
 
             toast.success("Operación procesada correctamente")
             setPayingOrder(null)

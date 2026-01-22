@@ -146,9 +146,7 @@ export default function PurchaseInvoicesPage() {
             if (data.documentDate) formData.append('document_date', data.documentDate)
             if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
 
-            await api.post('/treasury/payments/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await api.post('/treasury/payments/', formData)
             toast.success("Operación registrada correctamente")
             setPayingDoc(null)
             fetchDocuments()

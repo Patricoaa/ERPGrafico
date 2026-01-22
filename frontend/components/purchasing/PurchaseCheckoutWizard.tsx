@@ -333,9 +333,7 @@ export function PurchaseCheckoutWizard({
                 formData.append('receipt_data', JSON.stringify(receiptPayload))
             }
 
-            await api.post('/purchasing/orders/purchase_checkout/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await api.post('/purchasing/orders/purchase_checkout/', formData)
 
             toast.success("Compra procesada correctamente")
             onComplete()

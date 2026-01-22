@@ -124,9 +124,7 @@ export function SaleNoteModal({
                 formData.append('document_attachment', attachment)
             }
 
-            await api.post(`/sales/orders/${orderId}/register_note/`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await api.post(`/sales/orders/${orderId}/register_note/`, formData)
 
             toast.success("Nota registrada correctamente")
             onOpenChange(false)

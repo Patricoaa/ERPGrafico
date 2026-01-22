@@ -91,9 +91,7 @@ export default function SalesInvoicesPage() {
             if (data.documentDate) formData.append('document_date', data.documentDate)
             if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
 
-            await api.post('/treasury/payments/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await api.post('/treasury/payments/', formData)
             toast.success("Operación registrada correctamente")
             setPayingInv(null)
             fetchInvoices()
@@ -277,7 +275,7 @@ export default function SalesInvoicesPage() {
                     <DataTable
                         columns={columns}
                         data={invoices}
-                        filterColumn="customer_name"
+                        filterColumn="partner_name"
                         searchPlaceholder="Buscar por cliente..."
                         facetedFilters={[
                             {
