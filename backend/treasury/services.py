@@ -165,7 +165,12 @@ class TreasuryService:
                                       (settings.default_receivable_account if settings else None)
             
             if not target_account:
-                raise ValidationError("No se encontró cuenta para el Cobro/Reembolso Entrante.")
+                partner_name = partner.name if partner else "Sin Contacto"
+                raise ValidationError(
+                    f"No se encontró cuenta para el Cobro/Reembolso Entrante. "
+                    f"Verifique que el contacto '{partner_name}' tenga cuenta contable o "
+                    f"que se haya configurado la cuenta por cobrar por defecto."
+                )
 
             # Debit Treasury (Money In)
             JournalItem.objects.create(entry=entry, account=payment.account, debit=amount, credit=0)
@@ -189,7 +194,12 @@ class TreasuryService:
                                  (settings.default_receivable_account if settings else None)
 
             if not target_account:
-                raise ValidationError("No se encontró cuenta para el Pago/Reembolso Saliente.")
+                partner_name = partner.name if partner else "Sin Contacto"
+                raise ValidationError(
+                    f"No se encontró cuenta para el Pago/Reembolso Saliente. "
+                    f"Verifique que el contacto '{partner_name}' tenga una cuenta contable o "
+                    f"que se haya configurado la cuenta por pagar por defecto."
+                )
 
             # Credit Treasury (Money Out)
             JournalItem.objects.create(entry=entry, account=payment.account, debit=0, credit=amount)

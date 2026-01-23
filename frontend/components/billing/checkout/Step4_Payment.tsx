@@ -63,10 +63,20 @@ export function Step4_Payment({
     }
 
     const handleMethodChange = (val: string) => {
-        setData({ ...formData, method: val })
+        // Find filtered accounts for the NEW method immediately to help auto-selection
+        const nextFiltered = accounts.filter(acc => {
+            if (val === 'CASH') return acc.allows_cash
+            if (val === 'CARD') return acc.allows_card
+            if (val === 'TRANSFER') return acc.allows_transfer
+            return false
+        })
+
+        const defaultAccount = nextFiltered.length === 1 ? nextFiltered[0].id.toString() : (formData.treasury_account_id || "")
+
+        setData({ ...formData, method: val, treasury_account_id: defaultAccount })
         setTempAmount(formData.amount ? formData.amount.toString() : "")
         setTempTx(formData.transaction_number || "")
-        setTempAccount(formData.treasury_account_id || "")
+        setTempAccount(defaultAccount)
         setTempIsPending(formData.is_pending || false)
         setIsAmountModalOpen(true)
     }
@@ -291,58 +301,58 @@ export function Step4_Payment({
                         </div>
 
                         {(formData.method === 'CARD' || formData.method === 'TRANSFER') && (
-                            <>
-                                <div className="space-y-3">
-                                    <Label htmlFor="modal-tx" className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-muted-foreground">
-                                        <span>N° Transacción</span>
-                                        {formData.method === 'TRANSFER' && !tempIsPending && <span className="text-[10px] text-rose-500 font-black ml-1 uppercase tracking-tighter border-b border-rose-500/20">* Requerido</span>}
+                            <div className="space-y-3">
+                                <Label htmlFor="modal-tx" className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-muted-foreground">
+                                    <span>N° Transacción</span>
+                                    {formData.method === 'TRANSFER' && !tempIsPending && <span className="text-[10px] text-rose-500 font-black ml-1 uppercase tracking-tighter border-b border-rose-500/20">* Requerido</span>}
+                                </Label>
+                                <Input
+                                    id="modal-tx"
+                                    className="h-12 font-bold rounded-xl border-2 uppercase"
+                                    value={tempTx}
+                                    onChange={(e) => setTempTx(e.target.value)}
+                                    placeholder="Ingrese N Operación..."
+                                    disabled={tempIsPending}
+                                />
+                            </div>
+                        )}
+
+                        {filteredAccounts.length > 1 && (
+                            <div className="space-y-3">
+                                <Label htmlFor="modal-account" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Cuenta Destino</Label>
+                                <select
+                                    id="modal-account"
+                                    className="flex h-12 w-full rounded-xl border-2 bg-background px-4 py-2 font-bold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 hover:border-primary/50 uppercase"
+                                    value={tempAccount}
+                                    onChange={(e) => setTempAccount(e.target.value)}
+                                >
+                                    <option value="" className="font-bold">Seleccionar cuenta...</option>
+                                    {filteredAccounts.map((acc) => (
+                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {(formData.method === 'CARD' || formData.method === 'TRANSFER') && (
+                            <div className="flex items-center space-x-3 pt-2 p-4 bg-amber-500/5 rounded-xl border border-amber-500/10">
+                                <Checkbox
+                                    id="modal-pending"
+                                    checked={tempIsPending}
+                                    onCheckedChange={(checked) => {
+                                        const isChecked = !!checked;
+                                        setTempIsPending(isChecked);
+                                        if (isChecked) setTempTx("");
+                                    }}
+                                    className="h-6 w-6 rounded-lg"
+                                />
+                                <div className="flex flex-col">
+                                    <Label htmlFor="modal-pending" className="text-sm font-black text-amber-950 cursor-pointer uppercase tracking-tight">
+                                        Informar Transacción Luego
                                     </Label>
-                                    <Input
-                                        id="modal-tx"
-                                        className="h-12 font-bold rounded-xl border-2 uppercase"
-                                        value={tempTx}
-                                        onChange={(e) => setTempTx(e.target.value)}
-                                        placeholder="Ingrese N Operación..."
-                                        disabled={tempIsPending}
-                                    />
+                                    <p className="text-[10px] text-amber-700 font-medium">Se registrará como movimiento pendiente para conciliación.</p>
                                 </div>
-
-                                {filteredAccounts.length > 1 && (
-                                    <div className="space-y-3">
-                                        <Label htmlFor="modal-account" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Cuenta Destino</Label>
-                                        <select
-                                            id="modal-account"
-                                            className="flex h-12 w-full rounded-xl border-2 bg-background px-4 py-2 font-bold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 hover:border-primary/50 uppercase"
-                                            value={tempAccount}
-                                            onChange={(e) => setTempAccount(e.target.value)}
-                                        >
-                                            <option value="" className="font-bold">Seleccionar cuenta...</option>
-                                            {filteredAccounts.map((acc) => (
-                                                <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
-
-                                <div className="flex items-center space-x-3 pt-2 p-4 bg-amber-500/5 rounded-xl border border-amber-500/10">
-                                    <Checkbox
-                                        id="modal-pending"
-                                        checked={tempIsPending}
-                                        onCheckedChange={(checked) => {
-                                            const isChecked = !!checked;
-                                            setTempIsPending(isChecked);
-                                            if (isChecked) setTempTx("");
-                                        }}
-                                        className="h-6 w-6 rounded-lg"
-                                    />
-                                    <div className="flex flex-col">
-                                        <Label htmlFor="modal-pending" className="text-sm font-black text-amber-950 cursor-pointer uppercase tracking-tight">
-                                            Informar Transacción Luego
-                                        </Label>
-                                        <p className="text-[10px] text-amber-700 font-medium">Se registrará como movimiento pendiente para conciliación.</p>
-                                    </div>
-                                </div>
-                            </>
+                            </div>
                         )}
                     </div>
                     <DialogFooter className="gap-3 sm:justify-end border-t pt-6">

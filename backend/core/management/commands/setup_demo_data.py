@@ -186,6 +186,17 @@ class Command(BaseCommand):
                 settings.default_subscription_revenue_account = service_revenue_acc
                 self.stdout.write("  ✓ Cuenta de ingresos por servicios/suscripción configurada")
             
+            # NUEVO: Cuentas por Cobrar/Pagar por defecto
+            ar_acc = Account.objects.filter(code='1.1.02.01').first()
+            if ar_acc:
+                settings.default_receivable_account = ar_acc
+                self.stdout.write("  ✓ Cuenta por cobrar por defecto configurada (1.1.02.01)")
+            
+            ap_acc = Account.objects.filter(code='2.1.01.01').first()
+            if ap_acc:
+                settings.default_payable_account = ap_acc
+                self.stdout.write("  ✓ Cuenta por pagar por defecto configurada (2.1.01.01)")
+            
             settings.save()
             self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")
 
