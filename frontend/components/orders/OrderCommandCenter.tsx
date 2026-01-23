@@ -910,13 +910,13 @@ export function OrderCommandCenter({
                                             <span>{isNoteMode ? 'DEVUELTO' : 'PAGADO'}</span>
                                             <span className="text-primary">
                                                 {isNoteMode ?
-                                                    (activeInvoice.status === 'PAID' ? '100%' : '0%') :
+                                                    Math.round(showAnimations ? (1 - ((parseFloat(activeInvoice?.pending_amount || '0')) / (parseFloat(activeInvoice?.total) || 1))) * 100 : 0) + '%' :
                                                     Math.round(showAnimations ? (1 - ((parseFloat(activeDoc?.pending_amount || '0')) / (activeDoc?.total || 1))) * 100 : 0) + '%'
                                                 }
                                             </span>
                                         </div>
                                         <Progress
-                                            value={isNoteMode ? (activeInvoice.status === 'PAID' ? 100 : 0) : (showAnimations ? (1 - ((parseFloat(activeDoc?.pending_amount || '0')) / (activeDoc?.total || 1))) * 100 : 0)}
+                                            value={isNoteMode ? (showAnimations ? (1 - ((parseFloat(activeInvoice?.pending_amount || '0')) / (parseFloat(activeInvoice?.total) || 1))) * 100 : 0) : (showAnimations ? (1 - ((parseFloat(activeDoc?.pending_amount || '0')) / (activeDoc?.total || 1))) * 100 : 0)}
                                             className="h-1 bg-white/5 transition-all duration-1000"
                                         />
                                         {!isNoteMode && parseFloat(activeDoc?.pending_amount || '0') > 0 && (
@@ -925,10 +925,10 @@ export function OrderCommandCenter({
                                                 <span className="font-bold text-red-500/80">${Math.round(parseFloat(activeDoc?.pending_amount || '0')).toLocaleString()}</span>
                                             </div>
                                         )}
-                                        {isNoteMode && activeInvoice.status !== 'PAID' && (
+                                        {isNoteMode && parseFloat(activeInvoice?.pending_amount || '0') > 0 && (
                                             <div className="flex justify-between items-center text-[10px] mt-1 border-t border-white/5 pt-1">
                                                 <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">POR DEVOLVER</span>
-                                                <span className="font-bold text-orange-500/80">${Math.round(activeInvoice.total).toLocaleString()}</span>
+                                                <span className="font-bold text-orange-500/80">${Math.round(parseFloat(activeInvoice?.pending_amount || '0')).toLocaleString()}</span>
                                             </div>
                                         )}
                                     </div>
@@ -1035,7 +1035,7 @@ function PhaseCard({
             return true
         }) || []
 
-        const secondaryIds = ['history', 'note', 'view-']
+        const secondaryIds = ['history', 'note', 'view-', 'complete-folio', 'register-payment']
         const secondary = filtered.filter((a: any) => secondaryIds.some(id => a.id.toLowerCase().includes(id)))
         const primary = filtered.filter((a: any) => !secondaryIds.some(id => a.id.toLowerCase().includes(id)))
 
@@ -1074,7 +1074,7 @@ function PhaseCard({
                 {/* Header Action Icons (Replacing status dots) */}
                 <div className="flex items-center gap-1.5">
                     {categorizedActions.secondary.filter((a: any) =>
-                        ['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
+                        ['create-note', 'create-credit-note', 'create-debit-note', 'payment-history', 'complete-folio', 'register-payment'].includes(a.id)
                     ).map((action: any, idx: number) => (
                         <Tooltip key={idx}>
                             <TooltipTrigger asChild>
@@ -1085,7 +1085,9 @@ function PhaseCard({
                                         "h-8 w-8 rounded-full transition-all active:scale-90 border border-white/10 shadow-sm",
                                         "bg-white/5 hover:bg-white/10",
                                         (action.id.includes('note')) && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
-                                        action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40"
+                                        action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40",
+                                        action.id === 'complete-folio' && "text-blue-500 bg-blue-500/5 border-blue-500/20 hover:bg-blue-500/10 hover:border-blue-500/40",
+                                        action.id === 'register-payment' && "text-green-500 bg-green-500/5 border-green-500/20 hover:bg-green-500/10 hover:border-green-500/40"
                                     )}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -1194,7 +1196,7 @@ function PhaseCard({
                         <ActionCategory
                             category={{
                                 actions: categorizedActions.secondary.filter((a: any) =>
-                                    !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
+                                    !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history', 'complete-folio', 'register-payment'].includes(a.id)
                                 )
                             } as any}
                             order={order}

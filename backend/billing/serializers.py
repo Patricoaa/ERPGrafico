@@ -86,8 +86,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'product': m.product.name,
             'quantity': m.quantity,
             'warehouse': m.warehouse.name,
-            'move_type_display': m.get_move_type_display(),
-            'state': m.state
+            'move_type_display': m.get_move_type_display()
         } for m in moves]
 
     def get_adjustments(self, obj):

@@ -7,7 +7,7 @@ from typing import List, Dict, Optional
 from billing.models import Invoice
 from billing.note_workflow import NoteWorkflow
 from accounting.models import JournalEntry, JournalItem, AccountingSettings, AccountType
-from inventory.models import StockMove, Product, Warehouse
+from inventory.models import StockMove, Product, Warehouse, UoM
 from core.services import SequenceService
 
 
@@ -261,7 +261,6 @@ class NoteCheckoutService:
             return workflow
             
         is_sale = workflow.sale_order is not None
-        from inventory.models import StockMove, UoM
         
         # Determine items to process
         items_to_move = []
@@ -867,7 +866,6 @@ class NoteCheckoutService:
             
         # 6.5 Link created stock moves to the accounting entry for Hub visibility
         # If immediate return was selected, we search for the moves created in step 5
-        from inventory.models import StockMove
         StockMove.objects.filter(description__contains=f"(REF: WF-{workflow.id})").update(journal_entry=entry)
         
         # 7. Process Payment
