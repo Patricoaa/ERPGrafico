@@ -365,7 +365,8 @@ export function OrderCommandCenter({
     if (!order && !activeInvoice) return null
 
     const isNoteMode = activeInvoice && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(activeInvoice.dte_type)
-    const activeDoc = isNoteMode ? activeInvoice : order
+    const activeDoc = activeInvoice || order
+    if (!activeDoc) return null
 
     const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
     const isSale = type === 'sale'
@@ -383,19 +384,19 @@ export function OrderCommandCenter({
         return translateStatus(status).toUpperCase()
     }
 
-    const totalOTs = order.work_orders?.length || 0
-    const totalOTProgress = order.production_progress || 0
+    const totalOTs = order?.work_orders?.length || 0
+    const totalOTProgress = order?.production_progress || 0
 
     // Calculate if there are issues with invoices (drafts or missing folio)
     // MUST be declared before logisticsDocs since it's used there
-    const invoices = order.related_documents?.invoices || []
+    const invoices = activeDoc.related_documents?.invoices || []
     const billingIsComplete = invoices.length > 0 && !invoices.some((inv: any) =>
         inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
     )
 
     // Resolve Logistics Documents with Nomenclature and individual progress if applicable
     const logisticsDocs = (() => {
-        if (order.related_stock_moves?.length > 0) return order.related_stock_moves.map((m: any) => ({
+        if (activeDoc.related_stock_moves?.length > 0) return activeDoc.related_stock_moves.map((m: any) => ({
             type: m.move_type_display || 'Movimiento',
             number: formatDocumentId('MOV', m.id, m.display_id),
             icon: Package,
@@ -405,7 +406,7 @@ export function OrderCommandCenter({
             actions: [] // Stock moves usually don't have direct annulment here yet
         }))
 
-        const specificDocs = isSale ? order.related_documents?.deliveries : (order.related_documents?.receipts || order.related_documents?.receptions)
+        const specificDocs = isSale ? activeDoc.related_documents?.deliveries : (activeDoc.related_documents?.receipts || activeDoc.related_documents?.receptions)
         return (specificDocs || []).map((doc: any) => ({
             type: isSale ? 'Despacho' : 'Recepción',
             number: formatDocumentId(isSale ? 'DES' : 'REC', doc.number || doc.id, doc.display_id),
@@ -427,7 +428,7 @@ export function OrderCommandCenter({
 
     // Calculate dynamic logistics progress - Always use frontend logic to sync with docs
     const logisticsProgress = (() => {
-        const lines = order.lines || order.items || []
+        const lines = activeDoc.lines || activeDoc.items || []
         if (lines.length === 0) return 0
 
         const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
@@ -444,7 +445,7 @@ export function OrderCommandCenter({
     })()
 
     // Calculate if there are pending transaction numbers in treasury
-    const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
+    const payments = activeDoc.serialized_payments || activeDoc.payments_detail || activeDoc.related_documents?.payments || []
     const hasPendingTransactions = payments.some((pay: any) => {
         const requiresTR = (
             (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
@@ -466,9 +467,9 @@ export function OrderCommandCenter({
         // Logic for completado/progreso/pendiente based on phases
         const stages = []
         if (isSale && totalOTs > 0) stages.push(totalOTProgress === 100)
-        if (order.document_type !== 'SERVICE_OBLIGATION') stages.push(logisticsProgress === 100)
+        if (activeDoc.document_type !== 'SERVICE_OBLIGATION') stages.push(logisticsProgress === 100)
         stages.push(billingIsComplete)
-        stages.push((order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) && !hasPendingTransactions)
+        stages.push((activeDoc.status === 'PAID' || activeDoc.payment_status === 'PAID' || parseFloat(activeDoc.pending_amount || '0') <= 0) && !hasPendingTransactions)
 
         if (stages.every(s => s)) return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
         if (stages.some(s => s)) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
@@ -480,8 +481,8 @@ export function OrderCommandCenter({
     const StatusIcon = globalStatus.icon
 
     // Calculate visible columns for dynamic width
-    const showProduction = isSale && (order.work_orders?.length > 0 || (order.lines || order.items || []).some((l: any) => l.is_manufacturable))
-    const showLogistics = (order.lines || order.items || []).length > 0 && !(order.lines || order.items || []).every((l: any) => l.product_type === 'SUBSCRIPTION')
+    const showProduction = isSale && ((order?.work_orders?.length || 0) > 0 || (activeDoc.lines || activeDoc.items || []).some((l: any) => l.is_manufacturable))
+    const showLogistics = (activeDoc.lines || activeDoc.items || []).length > 0 && !(activeDoc.lines || activeDoc.items || []).every((l: any) => l.product_type === 'SUBSCRIPTION')
 
     let visibleCols = 3 // Origen, Facturación, Tesorería
     if (showProduction) visibleCols++
@@ -539,12 +540,12 @@ export function OrderCommandCenter({
                                         </div>
                                         <DialogDescription className="flex items-center gap-4">
                                             <span className="flex items-center gap-1.5 text-xs font-medium">
-                                                <span className="text-muted-foreground/30 ml-2">{type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV'}-{order.number || order.id}</span>
+                                                <span className="text-muted-foreground/30 ml-2">{type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV'}-{activeDoc.number || activeDoc.id}</span>
                                                 <span className="text-muted-foreground/30">|</span>
-                                                {new Date(order.created_at || order.date).toLocaleDateString()}
+                                                {new Date(activeDoc.created_at || activeDoc.date).toLocaleDateString()}
                                                 <span className="text-muted-foreground/30 ml-2">|</span>
                                                 <span className="text-foreground tracking-tight font-semibold ml-1">
-                                                    {type === 'purchase' ? order.supplier_name : order.customer_name}
+                                                    {type === 'purchase' ? activeDoc.supplier_name : activeDoc.customer_name}
                                                 </span>
                                             </span>
                                         </DialogDescription>
@@ -571,7 +572,7 @@ export function OrderCommandCenter({
                                             docType: 'invoice',
                                             actions: []
                                         }
-                                    ] : [
+                                    ] : (order ? [
                                         {
                                             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
                                             number: formatDocumentId(isSale ? 'NV' : 'OCS', order.number || order.id, order.display_id),
@@ -593,9 +594,18 @@ export function OrderCommandCenter({
                                                 }] : [])
                                             ]
                                         }
-                                    ]}
+                                    ] : (activeInvoice ? [
+                                        {
+                                            type: activeInvoice.dte_type_display || 'Factura Directa',
+                                            number: formatDocumentId('FACT', activeInvoice.number || '---', activeInvoice.display_id),
+                                            icon: FileText,
+                                            id: activeInvoice.id,
+                                            docType: 'invoice',
+                                            actions: []
+                                        }
+                                    ] : []))}
                                     onViewDetail={openDetails}
-                                    actions={isNoteMode ? [] : [
+                                    actions={isNoteMode ? [] : (order ? [
                                         ...(order.status === 'DRAFT' ? [{
                                             id: 'edit-order',
                                             label: 'Editar Orden',
@@ -612,7 +622,7 @@ export function OrderCommandCenter({
                                                 }
                                             }
                                         }] : [])
-                                    ]}
+                                    ] : [])}
                                     order={order}
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
@@ -901,18 +911,18 @@ export function OrderCommandCenter({
                                             <span className="text-primary">
                                                 {isNoteMode ?
                                                     (activeInvoice.status === 'PAID' ? '100%' : '0%') :
-                                                    Math.round(showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0) + '%'
+                                                    Math.round(showAnimations ? (1 - ((parseFloat(activeDoc?.pending_amount || '0')) / (activeDoc?.total || 1))) * 100 : 0) + '%'
                                                 }
                                             </span>
                                         </div>
                                         <Progress
-                                            value={isNoteMode ? (activeInvoice.status === 'PAID' ? 100 : 0) : (showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0)}
+                                            value={isNoteMode ? (activeInvoice.status === 'PAID' ? 100 : 0) : (showAnimations ? (1 - ((parseFloat(activeDoc?.pending_amount || '0')) / (activeDoc?.total || 1))) * 100 : 0)}
                                             className="h-1 bg-white/5 transition-all duration-1000"
                                         />
-                                        {!isNoteMode && parseFloat(order.pending_amount) > 0 && (
+                                        {!isNoteMode && parseFloat(activeDoc?.pending_amount || '0') > 0 && (
                                             <div className="flex justify-between items-center text-[10px] mt-1 border-t border-white/5 pt-1">
                                                 <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">POR PAGAR</span>
-                                                <span className="font-bold text-red-500/80">${Math.round(order.pending_amount).toLocaleString()}</span>
+                                                <span className="font-bold text-red-500/80">${Math.round(parseFloat(activeDoc?.pending_amount || '0')).toLocaleString()}</span>
                                             </div>
                                         )}
                                         {isNoteMode && activeInvoice.status !== 'PAID' && (
@@ -1015,7 +1025,7 @@ function PhaseCard({
             if (action.requiredPermissions && !action.requiredPermissions.some((p: string) => userPermissions.includes(p))) {
                 return false
             }
-            if (action.excludedStatus && action.excludedStatus.includes(order.status)) {
+            if (action.excludedStatus && action.excludedStatus.includes(order?.status)) {
                 return false
             }
             if (action.checkAvailability && !action.checkAvailability(order)) {
