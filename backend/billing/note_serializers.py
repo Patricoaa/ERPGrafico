@@ -195,6 +195,5 @@ class FullNoteCheckoutSerializer(serializers.Serializer):
     payment_data = serializers.DictField(required=False, allow_null=True)
     # expected keys: method, amount, treasury_account_id, transaction_number, is_pending
     
-    # Attachment handled by View (request.FILES)
-    document_attachment = serializers.FileField(required=False)
+    # document_attachment handled by View (request.FILES)
 

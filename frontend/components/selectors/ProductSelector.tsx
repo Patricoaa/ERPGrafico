@@ -39,15 +39,17 @@ interface ProductSelectorProps {
     className?: string
 }
 
+const EMPTY_ARRAY: any[] = []
+
 export function ProductSelector({
     value,
     onChange,
     placeholder = "Seleccionar producto...",
     productType,
-    allowedTypes,
+    allowedTypes = EMPTY_ARRAY,
     disabled = false,
     restrictStock = false,
-    excludeIds = [],
+    excludeIds = EMPTY_ARRAY,
     context,
     onSelect,
     customFilter,
@@ -62,7 +64,27 @@ export function ProductSelector({
     const [selectedProduct, setSelectedProduct] = useState<any>(null)
     const [displayLimit, setDisplayLimit] = useState(20)
 
+    // Effect to fetch the selected product if it's missing but we have a value
     useEffect(() => {
+        const fetchSingleProduct = async () => {
+            if (value && (!selectedProduct || selectedProduct.id.toString() !== value.toString())) {
+                try {
+                    const res = await api.get(`/inventory/products/${value}/`)
+                    setSelectedProduct(res.data)
+                } catch (error) {
+                    console.error("Error fetching single product", error)
+                }
+            } else if (!value) {
+                setSelectedProduct(null)
+            }
+        }
+        fetchSingleProduct()
+    }, [value])
+
+    // Effect to fetch full list only when open or searching
+    useEffect(() => {
+        if (!open && !searchTerm) return
+
         const fetchProducts = async () => {
             setLoading(true)
             try {
@@ -98,11 +120,6 @@ export function ProductSelector({
 
                 setProducts(allProducts)
                 setFilteredProducts(allProducts)
-
-                if (value !== null && value !== undefined && value !== "") {
-                    const found = allProducts.find((p: any) => p.id?.toString() === value.toString())
-                    if (found) setSelectedProduct(found)
-                }
             } catch (error) {
                 console.error("Error fetching products", error)
             } finally {
@@ -115,7 +132,7 @@ export function ProductSelector({
         }, 300)
 
         return () => clearTimeout(timeoutId)
-    }, [value, productType, context, customFilter, excludeIds, searchTerm])
+    }, [open, searchTerm, productType, context, allowedTypes, excludeIds, customFilter])
 
     const isStockRestricted = (product: any) => {
         if (!restrictStock) return false

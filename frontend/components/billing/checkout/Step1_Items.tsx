@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, Tag } from "lucide-react"
+import { AlertCircle, Tag, Package, Hash } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Step1_ItemsProps {
@@ -19,21 +19,6 @@ export function Step1_Items({
     selectedItems,
     setSelectedItems
 }: Step1_ItemsProps) {
-    const isCreditNote = originalInvoice?.dte_type !== 'NOTA_CREDITO' // If original is NOT credit note, we are making a correction (NC/ND). Actually simpler: Check context. 
-    // Wait, the prop "isCreditNote" logic was previously based on "workflow".
-    // We don't have workflow. But we are making an NC usually if we are correcting an Invoice.
-    // The previous code checked `workflow.invoice.dte_type === 'NOTA_CREDITO'`.
-    // Wait, NoteCheckoutWizard has `initialType`. We should ideally pass `initialType` or `isCreditNote` prop here too?
-    // Or just look at selectedItems limit logic.
-    // Let's assume we are making a correction. The limit logic applies if we are making a Credit Note.
-    // I should add `isCreditNote` prop to Step1_Items to be safe.
-
-    // However, I need to match the signature in NoteCheckoutWizard:
-    // <Step1_Items originalInvoice={originalInvoice} selectedItems={selectedItems} setSelectedItems={setSelectedItems} />
-    // I will add `isCreditNote` logic based on parent or usage.
-    // Safe bet: NoteCheckoutService init logic set `note_type`.
-    // Let's rely on props. I'll stick to a simple mapping for now.
-
     const lines = originalInvoice?.lines || []
 
     const toggleItem = (lineId: number) => {
@@ -56,7 +41,9 @@ export function Step1_Items({
                     has_bom: line.has_bom,
                     requires_advanced_manufacturing: line.requires_advanced_manufacturing,
                     quantity: line.quantity_delivered || line.quantity,
+                    uom_name: line.uom_name,
                     unit_price: line.unit_price,
+                    unit_price_gross: line.unit_price_gross,
                     tax_amount: (line.unit_price_gross - line.unit_price),
                     reason: ""
                 }
@@ -75,15 +62,16 @@ export function Step1_Items({
 
     // Helper to check if row is selected
     const isSelected = (lineId: number) => selectedItems.some(i => i.line_id === lineId)
-    const getItem = (lineId: number) => selectedItems.find(i => i.line_id === lineId)
+    const getItem = (lineId: number) => selectedItems.find(lineItem => lineItem.line_id === lineId)
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="flex flex-col gap-1">
-                <h3 className="text-2xl font-black tracking-tighter text-foreground uppercase">
+                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
+                    <Package className="h-5 w-5 text-primary" />
                     Selección de Productos
                 </h3>
-                <p className="text-sm text-muted-foreground font-medium">
+                <p className="text-sm text-muted-foreground">
                     Seleccione los ítems de la factura original que desea corregir.
                 </p>
             </div>
@@ -110,34 +98,43 @@ export function Step1_Items({
 
                             return (
                                 <TableRow key={line.id} className={cn(
-                                    "transition-colors",
-                                    selected ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/5 border-l-4 border-l-transparent"
+                                    "transition-colors h-20",
+                                    selected ? "bg-primary/[0.02] border-l-4 border-l-primary" : "hover:bg-muted/5 border-l-4 border-l-transparent"
                                 )}>
                                     <TableCell className="text-center">
                                         <Checkbox
                                             checked={selected}
                                             onCheckedChange={() => toggleItem(line.id)}
-                                            className="h-5 w-5 rounded-md border-2 border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                            className="h-6 w-6 rounded-lg border-2 border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all"
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col gap-0.5">
+                                        <div className="flex flex-col gap-1">
                                             <span className="font-bold text-sm tracking-tight text-foreground leading-tight">
                                                 {line.product_name}
                                             </span>
-                                            <span className="text-[10px] text-muted-foreground font-black uppercase tracking-tighter tabular-nums">
-                                                ID: {line.product_code || line.product}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-[9px] h-4 font-black uppercase tracking-tighter opacity-70">
+                                                    {line.product_code || line.product}
+                                                </Badge>
+                                                {line.product_type === 'MANUFACTURABLE' && (
+                                                    <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none text-[8px] py-0 h-4 font-black uppercase tracking-tighter">
+                                                        Fab
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right font-medium text-xs tabular-nums text-muted-foreground">
+                                    <TableCell className="text-right font-bold text-xs tabular-nums text-muted-foreground/60">
                                         {line.quantity} {line.uom_name}
                                     </TableCell>
-                                    <TableCell className="text-right font-bold text-xs tabular-nums text-emerald-600 bg-emerald-500/5 px-3">
-                                        {line.quantity_delivered || 0} {line.uom_name}
+                                    <TableCell className="text-right font-black text-xs tabular-nums text-emerald-600 px-3">
+                                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none">
+                                            {line.quantity_delivered || 0} {line.uom_name}
+                                        </Badge>
                                     </TableCell>
                                     <TableCell className="px-4">
-                                        <div className="relative group">
+                                        <div className="relative group max-w-[120px] mx-auto">
                                             <Input
                                                 type="number"
                                                 step="1"
@@ -148,15 +145,15 @@ export function Step1_Items({
                                                     updateItem(line.id, 'quantity', val);
                                                 }}
                                                 className={cn(
-                                                    "h-10 text-center font-black text-base transition-all rounded-xl border-2",
+                                                    "h-12 text-center font-black text-lg transition-all rounded-xl border-2",
                                                     selected ? "bg-background border-primary shadow-sm" : "bg-muted/30 border-transparent opacity-50"
                                                 )}
-                                                max={maxQty} // Always cap at delivered for safety? Yes.
+                                                max={maxQty}
                                                 min={1}
                                             />
                                             {selected && (
-                                                <div className="absolute -top-2 -right-2">
-                                                    <Badge className="h-5 min-w-5 flex items-center justify-center bg-primary text-[10px] font-black pointer-events-none">
+                                                <div className="absolute -top-3 -right-3">
+                                                    <Badge className="h-6 min-w-6 flex items-center justify-center bg-primary text-[9px] font-black border-2 border-background shadow-md">
                                                         MAX {maxQty}
                                                     </Badge>
                                                 </div>
@@ -170,7 +167,7 @@ export function Step1_Items({
                                             value={itemData?.reason || ""}
                                             onChange={(e) => updateItem(line.id, 'reason', e.target.value)}
                                             className={cn(
-                                                "h-10 text-xs font-semibold placeholder:font-medium placeholder:italic transition-all border-2",
+                                                "h-12 text-xs font-bold placeholder:font-medium placeholder:italic transition-all border-2 rounded-xl",
                                                 selected ? "bg-background border-muted shadow-sm focus:border-primary" : "bg-muted/30 border-transparent opacity-50"
                                             )}
                                         />
@@ -181,20 +178,8 @@ export function Step1_Items({
                     </TableBody>
                 </Table>
             </div>
-
-            <div className="bg-blue-50/50 border-2 border-blue-100 rounded-2xl p-5 flex gap-4 text-blue-900 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="p-2 bg-blue-100 rounded-xl shrink-0 h-fit">
-                    <AlertCircle className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="space-y-1">
-                    <p className="text-sm font-black uppercase tracking-tight">Regla de Negocio: Devoluciones</p>
-                    <p className="text-xs leading-relaxed font-semibold opacity-80">
-                        Solo puede corregir hasta la cantidad disponible/entregada.
-                        Use números enteros para las cantidades.
-                    </p>
-                </div>
-            </div>
         </div>
     )
 }
+
 

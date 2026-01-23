@@ -1,9 +1,9 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import { ShoppingBag } from "lucide-react"
+import { formatCurrency } from "@/lib/currency"
 
 interface NoteItemsSummaryProps {
     items: any[]
@@ -19,61 +19,67 @@ export function NoteItemsSummary({
     total
 }: NoteItemsSummaryProps) {
     return (
-        <div className="flex flex-col h-full bg-card">
-            <div className="p-4 border-b bg-muted/30">
-                <div className="flex items-center gap-2">
-                    <ShoppingBag className="h-4 w-4 text-primary" />
-                    <h3 className="font-semibold text-sm">Resumen de Ítems</h3>
+        <div className="h-full flex flex-col bg-muted/20 border-l">
+            <div className="flex-1 overflow-auto custom-scrollbar">
+                <div className="p-6 space-y-6">
+                    <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 flex items-center gap-2">
+                            <ShoppingBag className="h-4 w-4" />
+                            Detalle de Productos
+                        </h3>
+
+                        <div className="space-y-4">
+                            {items.length === 0 ? (
+                                <p className="text-center text-muted-foreground text-[11px] font-bold py-8 uppercase tracking-tighter">
+                                    No hay productos seleccionados
+                                </p>
+                            ) : (
+                                items.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
+                                        <div className="space-y-1.5 flex-1 min-w-0">
+                                            <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={item.product_name}>
+                                                {item.product_name || `Producto ${item.product_id}`}
+                                            </p>
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground font-bold">
+                                                    {item.quantity} {item.uom_name || 'un'}
+                                                </Badge>
+                                                {item.reason && (
+                                                    <Badge variant="outline" className="text-[8px] h-3 px-1 font-normal opacity-70 border-muted-foreground/20 italic truncate max-w-[120px]">
+                                                        {item.reason}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <p className="font-mono text-xs font-black whitespace-nowrap pt-0.5">
+                                            {formatCurrency((parseFloat(item.unit_price_gross) || (parseFloat(item.unit_price) + parseFloat(item.tax_amount))) * parseFloat(item.quantity))}
+                                        </p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <ScrollArea className="flex-1">
-                <div className="p-4 space-y-4">
-                    {items.length === 0 ? (
-                        <p className="text-center text-muted-foreground text-sm py-8">
-                            No hay productos seleccionados
-                        </p>
-                    ) : (
-                        items.map((item, index) => (
-                            <div key={index} className="space-y-1">
-                                <div className="flex justify-between items-start gap-4">
-                                    <span className="text-sm font-medium leading-none truncate">
-                                        {item.product_name || `Producto ${item.product_id}`}
-                                    </span>
-                                    <span className="text-sm font-bold shrink-0">
-                                        ${(parseFloat(item.unit_price) * parseFloat(item.quantity)).toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-xs text-muted-foreground">
-                                    <span>Cant: {item.quantity}</span>
-                                    <span>${parseFloat(item.unit_price).toLocaleString()} c/u</span>
-                                </div>
-                                {item.reason && (
-                                    <p className="text-[10px] text-muted-foreground italic">
-                                        Razón: {item.reason}
-                                    </p>
-                                )}
-                            </div>
-                        ))
-                    )}
+            <div className="p-6 bg-background border-t shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] space-y-3">
+                <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
+                    <span>Subtotal Neto</span>
+                    <span className="whitespace-nowrap font-mono">{formatCurrency(totalNet)}</span>
                 </div>
-            </ScrollArea>
-
-            <div className="p-4 border-t bg-muted/30 space-y-2 mt-auto">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Neto</span>
-                    <span>${totalNet.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                     <span>IVA (19%)</span>
-                    <span>${totalTax.toLocaleString()}</span>
+                    <span className="whitespace-nowrap font-mono">{formatCurrency(totalTax)}</span>
                 </div>
-                <Separator className="my-2" />
-                <div className="flex justify-between items-center font-bold text-lg">
-                    <span>Total</span>
-                    <span className="text-primary">${total.toLocaleString()}</span>
+                <Separator className="my-2 opacity-50" />
+                <div className="flex justify-between items-center pt-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Total Ajuste</span>
+                    <span className="text-2xl font-black text-primary tracking-tighter whitespace-nowrap">
+                        {formatCurrency(total)}
+                    </span>
                 </div>
             </div>
         </div>
     )
 }
+

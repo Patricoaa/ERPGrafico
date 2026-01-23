@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Tag, CreditCard, ShoppingBag, CheckCircle2, Paintbrush } from "lucide-react"
+import { FileText, User, CreditCard, ShoppingBag, CheckCircle2, Paintbrush } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ProcessSummarySidebarProps {
@@ -53,7 +53,7 @@ export function ProcessSummarySidebar({
     }
 
     steps.push(
-        { id: 'dte', label: 'Documento', icon: Tag },
+        { id: 'dte', label: 'Documento', icon: FileText },
         { id: 'payment', label: 'Pago', icon: CreditCard }
     )
 

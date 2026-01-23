@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, ShoppingCart } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import api from "@/lib/api"
@@ -115,7 +115,10 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Selección de Productos</h3>
+                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
+                    <ShoppingCart className="h-5 w-5 text-primary" />
+                    Selección de Productos
+                </h3>
                 <Button
                     type="button"
                     variant="outline"

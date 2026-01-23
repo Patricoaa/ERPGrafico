@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ArrowRight } from "lucide-react"
+import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ArrowRight, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Sub-components
@@ -105,7 +105,7 @@ export function NoteCheckoutWizard({
             setOriginalInvoice(invRes.data)
 
             // Initial Payment Amount default
-            setPaymentData(p => ({ ...p, amount: invRes.data.total })) // Correct logic will happen when items are selected
+            setPaymentData((p: any) => ({ ...p, amount: invRes.data.total })) // Correct logic will happen when items are selected
 
         } catch (error: any) {
             console.error("Error initializing note wizard:", error)
@@ -276,30 +276,34 @@ export function NoteCheckoutWizard({
     const getNextButtonLabel = () => {
         if (isStepLoading) return "Procesando..."
         if (isLastStep) return "Finalizar Proceso"
-        if (step === 1) return requiresLogistics ? "Continuar a Logística" : "Continuar a Documento"
-        if (step === 2) return "Continuar a Documento"
-        if (step === 3) return "Continuar a Pago"
-        return "Continuar"
+        if (step === 1) return requiresLogistics ? "Siguiente" : "Siguiente"
+        if (step === 2) return "Siguiente"
+        if (step === 3) return "Siguiente"
+        return "Siguiente"
     }
 
     return (
         <Dialog open={open} onOpenChange={(val) => !isStepLoading && onOpenChange(val)}>
-            <DialogContent className="sm:max-w-[1400px] w-[95vw] min-h-[85vh] max-h-[90vh] overflow-hidden flex flex-col p-0 text-foreground">
-                <div className="p-6 border-b flex justify-between items-center bg-muted/30 shrink-0">
-                    <div>
-                        <DialogTitle className="text-2xl flex items-center gap-2">
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] h-[90vh] overflow-hidden flex flex-col p-0 text-foreground">
+                <div className="p-6 border-b flex justify-between items-center bg-background shrink-0">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-primary/10 rounded-2xl">
                             <FileText className="h-6 w-6 text-primary" />
-                            {title}
+                        </div>
+                        <div>
+                            <DialogTitle className="font-black tracking-tighter uppercase">
+                                {title}
+                            </DialogTitle>
                             {originalInvoice && (
-                                <span className="text-sm font-normal text-muted-foreground ml-2">
+                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                                     corrigiendo {originalInvoice.dte_type_display} {originalInvoice.number}
-                                </span>
+                                </p>
                             )}
-                        </DialogTitle>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex flex-1 overflow-hidden relative">
                     {/* Left Sidebar */}
                     {!initializing && (
                         <NoteProcessSidebar
@@ -309,17 +313,20 @@ export function NoteCheckoutWizard({
                             requiresLogistics={requiresLogistics}
                             itemsCount={selectedItems.length}
                             dteNumber={registrationData.document_number}
+                            paymentData={paymentData}
                         />
                     )}
 
                     {/* Center Content */}
                     <div className="flex-1 flex flex-col min-w-0 h-full relative">
-                        <div className="flex-1 p-8 overflow-y-auto bg-background pb-32">
-                            {renderStep()}
+                        <div className="flex-1 p-10 overflow-y-auto bg-background custom-scrollbar">
+                            <div className="max-w-4xl mx-auto">
+                                {renderStep()}
+                            </div>
                         </div>
 
                         {/* Footer */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6 border-t bg-background/80 backdrop-blur-md flex justify-between z-20 shrink-0">
+                        <div className="p-6 border-t bg-background flex justify-between z-10 shrink-0">
                             <Button
                                 variant="outline"
                                 onClick={handleBack}
@@ -330,36 +337,31 @@ export function NoteCheckoutWizard({
                                 Atrás
                             </Button>
 
-                            <Button
-                                onClick={isLastStep ? handleFinish : handleNext}
-                                disabled={isStepLoading}
-                                className={cn(
-                                    "group px-10 py-7 rounded-2xl font-black text-base transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl",
-                                    isLastStep ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-primary text-primary-foreground"
-                                )}
-                            >
-                                {isStepLoading ? (
-                                    <>
-                                        <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                                        {getNextButtonLabel()}
-                                    </>
-                                ) : (
-                                    <>
-                                        {getNextButtonLabel()}
-                                        {isLastStep ? (
-                                            <CheckCircle2 className="ml-3 h-5 w-5 transition-transform group-hover:scale-110" />
-                                        ) : (
-                                            <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                                        )}
-                                    </>
-                                )}
-                            </Button>
+                            {step < totalSteps ? (
+                                <Button onClick={handleNext} className="w-40 h-12 font-bold" disabled={isStepLoading}>
+                                    Siguiente
+                                    <ChevronRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={handleFinish}
+                                    className="w-48 h-12 bg-emerald-600 hover:bg-emerald-700 font-bold"
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                    )}
+                                    Finalizar Proceso
+                                </Button>
+                            )}
                         </div>
                     </div>
 
                     {/* Right Sidebar */}
                     {!initializing && (
-                        <div className="w-80 border-l hidden lg:block overflow-y-auto bg-muted/5">
+                        <div className="w-80 hidden lg:block overflow-hidden relative">
                             <NoteItemsSummary
                                 items={selectedItems}
                                 totalNet={totalNet}

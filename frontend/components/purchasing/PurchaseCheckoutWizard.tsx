@@ -19,7 +19,7 @@ import api from "@/lib/api"
 import { PricingUtils } from "@/lib/pricing"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
-import { Check, ChevronRight, ChevronLeft, Loader2 } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -351,9 +351,14 @@ export function PurchaseCheckoutWizard({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[1400px] w-[95vw] min-h-[85vh] max-h-[90vh] overflow-hidden flex flex-col p-0">
-                <div className="p-6 border-b flex justify-between items-center bg-muted/30">
-                    <div>
-                        <DialogTitle className="text-2xl">Procesar Compra</DialogTitle>
+                <div className="p-6 border-b flex justify-between items-center bg-background shrink-0">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-primary/10 rounded-2xl">
+                            <ShoppingCart className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                            <DialogTitle className="font-black tracking-tighter uppercase">Procesar Compra</DialogTitle>
+                        </div>
                     </div>
                 </div>
 

@@ -686,7 +686,7 @@ class NoteCheckoutService:
         invoice = Invoice.objects.create(
             dte_type=note_type,
             status=Invoice.Status.DRAFT,
-            date=registration_data.get('date') or timezone.now().date(),
+            date=registration_data.get('document_date') or timezone.now().date(),
             sale_order=corrected_invoice.sale_order,
             purchase_order=corrected_invoice.purchase_order,
             contact=corrected_invoice.contact,
@@ -700,7 +700,7 @@ class NoteCheckoutService:
             corrected_invoice=corrected_invoice,
             sale_order=corrected_invoice.sale_order,
             purchase_order=corrected_invoice.purchase_order,
-            current_stage=NoteWorkflow.Stage.items_selected, # Temp stage
+            current_stage=NoteWorkflow.Stage.ITEMS_SELECTED, # Temp stage
             reason=reason,
             created_by=created_by,
             selected_items=selected_items, # Save intent
@@ -825,8 +825,12 @@ class NoteCheckoutService:
         
         # 7. Process Payment
         if payment_data:
-             NoteCheckoutService.process_payment(workflow.id, payment_data)
+            workflow.current_stage = NoteWorkflow.Stage.PAYMENT_PENDING
+            workflow.save()
+            NoteCheckoutService.process_payment(workflow.id, payment_data)
         
+        # Reload workflow in case it was modified by process_payment
+        workflow.refresh_from_db()
         workflow.current_stage = NoteWorkflow.Stage.COMPLETED
         workflow.save()
         

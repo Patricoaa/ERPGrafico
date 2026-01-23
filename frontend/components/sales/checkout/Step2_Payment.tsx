@@ -129,7 +129,17 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            <div className="flex flex-col gap-1">
+                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    Registro de Pago
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                    Ingrese la información relacionada al Pago.
+                </p>
+            </div>
+            <Label className="text-sm font-semibold"></Label>
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex justify-between items-center">
                 <div>
                     <Label className="text-[10px] font-bold uppercase text-muted-foreground">Total a Cobrar</Label>
@@ -154,7 +164,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
             )}
 
             <div className="space-y-4">
-                <Label className="text-sm font-semibold">Método de Pago</Label>
+                <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</Label>
                 <RadioGroup
                     value={paymentData.method}
                     onValueChange={handleMethodChange}
@@ -191,7 +201,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_Paym
             <div className="space-y-4 animate-in fade-in duration-300">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="pay-amount" className="text-xs font-bold uppercase">Monto Recibido</Label>
+                        <Label htmlFor="pay-amount" className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Monto Recibido</Label>
                         <Input
                             id="pay-amount"
                             type="number"

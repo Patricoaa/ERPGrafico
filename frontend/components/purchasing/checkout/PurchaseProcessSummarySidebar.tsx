@@ -1,6 +1,6 @@
 "use client"
 
-import { Building2, Tag, CreditCard, Package, Warehouse, CheckCircle2, ShoppingCart } from "lucide-react"
+import { FileText, Building2, Tag, CreditCard, Package, Warehouse, CheckCircle2, ShoppingCart } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { PaymentMethod, ReceptionType } from "@/types/checkout"
@@ -38,7 +38,7 @@ const receiptLabels: Record<string, string> = {
 const STEPS = [
     { id: 1, label: 'Proveedor', icon: Building2 },
     { id: 2, label: 'Productos', icon: ShoppingCart },
-    { id: 3, label: 'Documento', icon: Tag },
+    { id: 3, label: 'Documento', icon: FileText },
     { id: 4, label: 'Pago', icon: CreditCard },
     { id: 5, label: 'Recepción', icon: Package, subLabel: 'Bodega', subIcon: Warehouse }
 ]

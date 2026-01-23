@@ -15,8 +15,16 @@ interface Step1_DTEProps {
 export function Step1_DTE({ dteData, setDteData, isPurchase = false }: Step1_DTEProps) {
     return (
         <div className="space-y-6">
+            <div className="flex flex-col gap-1">
+                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Registro de Documento
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                    Ingrese la información relacionada al DTE y adjunte el respaldo legal.
+                </p>
+            </div>
             <div className="space-y-4">
-                <Label className="text-sm font-semibold">Tipo de Documento</Label>
                 <RadioGroup
                     value={dteData.type}
                     onValueChange={(val) => setDteData({ ...dteData, type: val })}

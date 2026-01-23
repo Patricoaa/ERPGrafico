@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText, Package, Tag, CheckCircle2, AlertCircle, CreditCard } from "lucide-react"
+import { FileText, Package, Tag, CheckCircle2, CreditCard, ShoppingBag, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NoteProcessSidebarProps {
@@ -10,6 +10,17 @@ interface NoteProcessSidebarProps {
     requiresLogistics: boolean
     itemsCount: number
     dteNumber?: string
+    paymentData?: {
+        method: string
+        amount: number
+    }
+}
+
+const methodLabels: Record<string, string> = {
+    'CASH': 'Efectivo',
+    'CARD': 'Tarjeta',
+    'TRANSFER': 'Transferencia',
+    'CREDIT': 'Crédito'
 }
 
 export function NoteProcessSidebar({
@@ -18,14 +29,15 @@ export function NoteProcessSidebar({
     noteType,
     requiresLogistics,
     itemsCount,
-    dteNumber
+    dteNumber,
+    paymentData
 }: NoteProcessSidebarProps) {
     const steps = [
         { id: 'items', label: 'Productos', icon: Package },
     ]
 
     if (requiresLogistics) {
-        steps.push({ id: 'logistics', label: 'Logística', icon: Tag })
+        steps.push({ id: 'logistics', label: 'Logística', icon: Truck })
     }
 
     steps.push(
@@ -35,8 +47,8 @@ export function NoteProcessSidebar({
 
     return (
         <div className="w-64 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">
-            <h3 className="text-xs font-bold uppercase text-muted-foreground mb-4 px-2">
-                {noteType === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'}
+            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 mb-4 px-2">
+                {noteType === 'NOTA_CREDITO' ? 'Proceso Nota Crédito' : 'Proceso Nota Débito'}
             </h3>
 
             {steps.map((step, index) => {
@@ -71,8 +83,20 @@ export function NoteProcessSidebar({
                                 {step.id === 'logistics' && (
                                     <p className="text-xs font-semibold">Movimiento registrado</p>
                                 )}
-                                {step.id === 'dte' && dteNumber && (
-                                    <p className="text-xs font-semibold">Folio: {dteNumber}</p>
+                                {step.id === 'dte' && (
+                                    <p className="text-xs font-semibold">
+                                        {dteNumber ? `Folio: ${dteNumber}` : 'Documento registrado'}
+                                    </p>
+                                )}
+                                {step.id === 'payment' && paymentData && paymentData.method && (
+                                    <div className="space-y-0.5">
+                                        <p className="text-xs font-semibold">
+                                            {methodLabels[paymentData.method]}
+                                        </p>
+                                        <p className="text-xs font-bold">
+                                            ${paymentData.amount.toLocaleString()}
+                                        </p>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -82,3 +106,4 @@ export function NoteProcessSidebar({
         </div>
     )
 }
+

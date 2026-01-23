@@ -37,7 +37,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Truck, Package, Store, Calendar, Info, AlertTriangle } from "lucide-react"
+import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useState, useEffect } from "react"
@@ -123,8 +123,15 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
     return (
         <div className="space-y-6">
-            <div className="space-y-4">
-                <Label className="text-sm font-semibold">Opciones de Entrega</Label>
+            <div className="flex flex-col gap-1">
+                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
+                    <ShoppingBag className="h-5 w-5 text-primary" />
+                    Opciones de Entrega
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                    Ingrese la información relacionada al despacho.
+                </p>
+                <Label className="text-sm font-semibold"></Label>
 
                 {hasRestrictedItems && (
                     <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">

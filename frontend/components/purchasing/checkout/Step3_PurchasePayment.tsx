@@ -135,7 +135,16 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            <div className="flex flex-col gap-1">
+                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    Registro de Pago
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                    Ingrese la información relacionada al Pago.
+                </p>
+            </div>
             <div className="p-4 bg-destructive/5 rounded-xl border border-destructive/10 flex justify-between items-center">
                 <div>
                     <Label className="text-[10px] font-bold uppercase text-muted-foreground">Total de la Compra</Label>
@@ -160,7 +169,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
             )}
 
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                <Label className="text-sm font-semibold">Método de Pago</Label>
+                <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</Label>
                 <RadioGroup
                     value={paymentData.method}
                     onValueChange={handleMethodChange}
@@ -215,7 +224,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
 
             <div className={`grid gap-4 ${pendingDebt > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 <div className="space-y-2">
-                    <Label htmlFor="pay-amount" className="text-sm font-semibold">Monto a Pagar Ahora</Label>
+                    <Label htmlFor="pay-amount" className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Monto a Pagar Ahora</Label>
                     <Input
                         id="pay-amount"
                         type="number"
@@ -226,7 +235,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                         className="text-lg font-semibold cursor-pointer hover:bg-muted/50"
                     />
                     <p className="text-xs text-muted-foreground">
-                        Puede pagar el total o un monto parcial. La diferencia quedará como deuda pendiente.
+                        Puede registrar el pago del total o un monto parcial. La diferencia quedará como deuda pendiente.
                     </p>
                 </div>
 
