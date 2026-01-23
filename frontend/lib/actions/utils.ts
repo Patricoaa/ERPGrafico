@@ -57,6 +57,7 @@ export function filterAvailableActions(
  * Calculate dynamic badge count for an action
  */
 export function getActionBadgeCount(action: Action, order: any): number | undefined {
+    if (!order) return undefined
     switch (action.id) {
         case 'payment-history':
             return order.related_documents?.payments?.length || order.serialized_payments?.length

@@ -566,40 +566,40 @@ export function OrderCommandCenter({
                                     documents={isNoteMode ? [
                                         {
                                             type: 'Documento Rectificado',
-                                            number: formatDocumentId('FACT', activeInvoice.corrected_invoice?.number || '---', activeInvoice.corrected_invoice?.display_id),
+                                            number: formatDocumentId('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
                                             icon: FileText,
-                                            id: activeInvoice.corrected_invoice?.id,
+                                            id: activeInvoice?.corrected_invoice?.id,
                                             docType: 'invoice',
                                             actions: []
                                         }
                                     ] : (order ? [
                                         {
                                             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-                                            number: formatDocumentId(isSale ? 'NV' : 'OCS', order.number || order.id, order.display_id),
+                                            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
                                             icon: FileText,
-                                            id: order.id,
+                                            id: order?.id,
                                             docType: type === 'sale' ? 'sale_order' : 'purchase_order',
                                             actions: [
-                                                ...(order.status === 'DRAFT' ? [{
+                                                ...(order?.status === 'DRAFT' ? [{
                                                     icon: Trash2,
                                                     title: 'Eliminar Borrador',
                                                     color: 'text-red-500 hover:bg-red-500/10',
-                                                    onClick: () => api.delete(type === 'purchase' ? `/purchasing/orders/${order.id}/` : `/sales/orders/${order.id}/`).then(() => { toast.success("Borrador eliminado"); onActionSuccess?.() })
+                                                    onClick: () => api.delete(type === 'purchase' ? `/purchasing/orders/${order?.id}/` : `/sales/orders/${order?.id}/`).then(() => { toast.success("Borrador eliminado"); onActionSuccess?.() })
                                                 }] : []),
-                                                ...((order.status !== 'CANCELLED' && order.status !== 'DRAFT') ? [{
+                                                ...((order?.status !== 'CANCELLED' && order?.status !== 'DRAFT') ? [{
                                                     icon: X,
                                                     title: 'Anular Orden',
                                                     color: 'text-red-600 hover:bg-red-600/10',
-                                                    onClick: () => handleAnnulOrder(order.id)
+                                                    onClick: () => handleAnnulOrder(order?.id)
                                                 }] : [])
                                             ]
                                         }
                                     ] : (activeInvoice ? [
                                         {
-                                            type: activeInvoice.dte_type_display || 'Factura Directa',
-                                            number: formatDocumentId('FACT', activeInvoice.number || '---', activeInvoice.display_id),
+                                            type: activeInvoice?.dte_type_display || 'Factura Directa',
+                                            number: formatDocumentId('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
                                             icon: FileText,
-                                            id: activeInvoice.id,
+                                            id: activeInvoice?.id,
                                             docType: 'invoice',
                                             actions: []
                                         }
@@ -613,9 +613,9 @@ export function OrderCommandCenter({
                                             onClick: () => {
                                                 if (type === 'purchase') {
                                                     if (onEdit) {
-                                                        onEdit(order.id)
+                                                        onEdit(order?.id)
                                                     } else {
-                                                        router.push(`/purchasing/checkout?orderId=${order.id}`)
+                                                        router.push(`/purchasing/checkout?orderId=${order?.id}`)
                                                     }
                                                 } else {
                                                     toast.info("Edición de ventas no implementada desde aquí")
@@ -629,7 +629,7 @@ export function OrderCommandCenter({
                                     actionEngineRef={actionEngineRef}
                                 >
                                     <div className="space-y-1 py-1">
-                                        {(isNoteMode ? activeInvoice.lines : (order.lines || order.items || [])).map((line: any, idx: number) => (
+                                        {(activeDoc?.lines || activeDoc?.items || []).map((line: any, idx: number) => (
                                             <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
                                                 <span className="text-foreground/70 line-clamp-2 leading-tight">
                                                     {line.product_name || line.description}
@@ -648,7 +648,7 @@ export function OrderCommandCenter({
                                         title="Producción"
                                         icon={ClipboardList}
                                         variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
-                                        documents={order.work_orders?.map((ot: any) => ({
+                                        documents={order?.work_orders?.map((ot: any) => ({
                                             type: 'Orden de Trabajo',
                                             number: ot.display_id || `OT-${ot.code || ot.id}`,
                                             icon: ClipboardList,
@@ -697,7 +697,7 @@ export function OrderCommandCenter({
                                 {showLogistics && (
                                     <PhaseCard
                                         title={(() => {
-                                            const lines = order.lines || order.items || []
+                                            const lines = activeDoc?.lines || activeDoc?.items || []
                                             const allServices = lines.every((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
                                             const hasServices = lines.some((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
                                             const onlySubscriptions = lines.every((l: any) => l.product_type === 'SUBSCRIPTION')
@@ -732,7 +732,7 @@ export function OrderCommandCenter({
                                     >
                                         {!isNoteMode ? (
                                             <div className="space-y-1.5 py-1">
-                                                {(order.lines || order.items || []).map((line: any, idx: number) => {
+                                                {(activeDoc?.lines || activeDoc?.items || []).map((line: any, idx: number) => {
                                                     const total = parseFloat(line.quantity) || 1
                                                     const current = parseFloat(isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0))
                                                     const pct = Math.min(100, Math.round((current / total) * 100))
@@ -787,7 +787,7 @@ export function OrderCommandCenter({
                                                 }] : [])
                                             ]
                                         }
-                                    ] : (order.related_documents?.invoices || []).map((inv: any) => ({
+                                    ] : (order?.related_documents?.invoices || []).map((inv: any) => ({
                                         type: inv.type_display,
                                         number: formatDocumentId(inv.type_display, inv.number || 'BORRADOR', inv.display_id),
                                         icon: Receipt,
@@ -815,20 +815,20 @@ export function OrderCommandCenter({
                                     {isNoteMode ? (
                                         <div className="py-2 flex justify-between items-center border-t border-white/5 mt-2">
                                             <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">TOTAL NOTA</span>
-                                            <span className="text-sm font-black text-foreground">${parseFloat(activeInvoice.total).toLocaleString()}</span>
+                                            <span className="text-sm font-black text-foreground">${parseFloat(activeInvoice?.total || '0').toLocaleString()}</span>
                                         </div>
                                     ) : (
                                         <div className="py-2 flex justify-between items-center border-t border-white/5 mt-2">
                                             <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">TOTAL</span>
-                                            <span className="text-sm font-black text-foreground">${parseFloat(order.total).toLocaleString()}</span>
+                                            <span className="text-sm font-black text-foreground">${parseFloat(activeDoc?.total || '0').toLocaleString()}</span>
                                         </div>
                                     )}
 
                                     {/* Related Notes in Parent Mode */}
-                                    {!isNoteMode && (order.related_documents?.invoices || []).some((inv: any) => inv.adjustments?.length > 0) && (
+                                    {!isNoteMode && (order?.related_documents?.invoices || []).some((inv: any) => inv.adjustments?.length > 0) && (
                                         <div className="mt-2 pt-2 border-t border-dashed border-white/10 space-y-1">
                                             <span className="text-[8px] font-black text-primary/50 uppercase tracking-widest">NOTAS RELACIONADAS</span>
-                                            {(order.related_documents?.invoices || []).flatMap((inv: any) => inv.adjustments || []).map((adj: any) => (
+                                            {(order?.related_documents?.invoices || []).flatMap((inv: any) => inv.adjustments || []).map((adj: any) => (
                                                 <div
                                                     key={adj.id}
                                                     className="flex items-center justify-between p-1.5 bg-purple-500/5 rounded border border-purple-500/20 cursor-pointer hover:bg-purple-500/10 transition-colors"
@@ -852,11 +852,11 @@ export function OrderCommandCenter({
                                     title="Tesorería"
                                     icon={Banknote}
                                     variant={
-                                        isNoteMode ? (activeInvoice.status === 'PAID' ? 'success' : activeInvoice.status === 'POSTED' ? 'active' : 'neutral') :
-                                            ((order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) && !hasPendingTransactions ? 'success' :
-                                                (parseFloat(order.pending_amount) < parseFloat(order.total) || hasPendingTransactions) ? 'active' : 'neutral')
+                                        isNoteMode ? (activeInvoice?.status === 'PAID' ? 'success' : activeInvoice?.status === 'POSTED' ? 'active' : 'neutral') :
+                                            ((activeDoc?.status === 'PAID' || activeDoc?.payment_status === 'PAID' || parseFloat(activeDoc?.pending_amount || '0') <= 0) && !hasPendingTransactions ? 'success' :
+                                                (parseFloat(activeDoc?.pending_amount || '0') < parseFloat(activeDoc?.total || '1') || hasPendingTransactions) ? 'active' : 'neutral')
                                     }
-                                    documents={isNoteMode ? (activeInvoice.serialized_payments || []).map((pay: any) => ({
+                                    documents={isNoteMode ? (activeInvoice?.serialized_payments || []).map((pay: any) => ({
                                         type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
                                         number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
                                         icon: Banknote,
@@ -864,7 +864,7 @@ export function OrderCommandCenter({
                                         docType: 'payment',
                                         status: pay.payment_method,
                                         actions: []
-                                    })) : (order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
+                                    })) : (activeDoc?.serialized_payments || activeDoc?.payments_detail || activeDoc?.related_documents?.payments || []).map((pay: any) => ({
                                         type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
                                         number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
                                         icon: Banknote,
@@ -897,7 +897,7 @@ export function OrderCommandCenter({
                                     onViewDetail={openDetails}
                                     actions={isNoteMode ? [] : (registry.payments?.actions || []).filter((a: any) =>
                                         !a.id.includes('view-') &&
-                                        (a.id.includes('history') ? (order.related_documents?.payments?.length > 0 || order.payments_detail?.length > 0) : true)
+                                        (a.id.includes('history') ? (order?.related_documents?.payments?.length > 0 || order?.payments_detail?.length > 0) : true)
                                     )}
                                     emptyMessage={isNoteMode ? "Sin devoluciones registradas" : "Sin pagos registrados"}
                                     order={order}

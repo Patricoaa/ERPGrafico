@@ -51,8 +51,8 @@ export const ActionCategory = forwardRef(({
     }))
 
     // Detemine order type helper
-    const isSale = !!order.customer_name || !!order.customer
-    const isPurchase = !!order.supplier_name || !!order.supplier
+    const isSale = !!order?.customer_name || !!order?.customer
+    const isPurchase = !!order?.supplier_name || !!order?.supplier
 
     const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
 
@@ -80,8 +80,8 @@ export const ActionCategory = forwardRef(({
             case 'view-receptions':
             case 'view-deliveries':
                 const docs = actionId === 'view-documents'
-                    ? (order.related_documents?.invoices || order.invoices || [])
-                    : (isSale ? (order.related_documents?.deliveries || []) : (order.related_documents?.receipts || []))
+                    ? (order?.related_documents?.invoices || order?.invoices || [])
+                    : (isSale ? (order?.related_documents?.deliveries || []) : (order?.related_documents?.receipts || []))
 
                 if (docs.length === 0) {
                     toast.error("No se han encontrado documentos.")
@@ -106,7 +106,7 @@ export const ActionCategory = forwardRef(({
                 handleRegenerateDocument()
                 break
             case 'create-work-order':
-                router.push(`/production/work-orders/new?sale_order_id=${order.id}`)
+                router.push(`/production/work-orders/new?sale_order_id=${order?.id}`)
                 break
             case 'view-work-orders':
                 // For Work Orders we'll keep it as a list for now or open specific one
@@ -132,7 +132,7 @@ export const ActionCategory = forwardRef(({
     const closeModal = () => setActiveModal(null)
 
     const handleAnnulDocument = async (force: boolean = false) => {
-        const invoices = order.related_documents?.invoices || order.invoices || []
+        const invoices = order?.related_documents?.invoices || order?.invoices || []
         const invoice = invoices.find((inv: any) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
 
         if (!invoice) {
@@ -173,7 +173,7 @@ export const ActionCategory = forwardRef(({
             // Let's try sending defaults, the user will confirm in the next step.
 
             const response = await api.post('/billing/invoices/create_from_order/', {
-                order_id: order.id,
+                order_id: order?.id,
                 order_type: isSale ? 'sale' : 'purchase',
                 dte_type: 'FACTURA_ELECTRONICA', // Default, will change in completion
                 payment_method: 'CREDIT'
@@ -191,7 +191,7 @@ export const ActionCategory = forwardRef(({
     }
 
     const handleDeleteDraft = async () => {
-        const invoices = order.related_documents?.invoices || order.invoices || []
+        const invoices = order?.related_documents?.invoices || order?.invoices || []
         const draftInvoice = invoices.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
 
         if (!draftInvoice) {
@@ -220,8 +220,8 @@ export const ActionCategory = forwardRef(({
             await api.post('/treasury/payments/', {
                 ...data,
                 payment_type: isSale ? 'INBOUND' : 'OUTBOUND',
-                [isSale ? 'sale_order' : 'purchase_order']: order.id,
-                partner: (order.customer || order.supplier)?.id || (isSale ? order.customer_id : order.supplier_id)
+                [isSale ? 'sale_order' : 'purchase_order']: order?.id,
+                partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id)
             })
             toast.success("Pago registrado correctamente")
             closeModal()
@@ -238,8 +238,10 @@ export const ActionCategory = forwardRef(({
         if (action.requiredPermissions && !action.requiredPermissions.some(p => userPermissions.includes(p))) {
             return false
         }
-        if (action.checkAvailability && !action.checkAvailability(order)) {
-            return false
+        // If no order, we can't check availability for order-based actions
+        if (action.checkAvailability) {
+            if (!order) return false
+            if (!action.checkAvailability(order)) return false
         }
         return true
     }) || []
@@ -294,8 +296,8 @@ export const ActionCategory = forwardRef(({
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={tempInvoiceId || (order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.id}
-                    invoiceType={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.dte_type}
+                    invoiceId={tempInvoiceId || (order?.related_documents?.invoices || order?.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.id}
+                    invoiceType={(order?.related_documents?.invoices || order?.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.dte_type}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}
@@ -305,14 +307,14 @@ export const ActionCategory = forwardRef(({
                     <DeliveryModal
                         open={true}
                         onOpenChange={closeModal}
-                        orderId={order.id}
+                        orderId={order?.id}
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                     />
                 ) : (
                     <ReceiptModal
                         open={true}
                         onOpenChange={closeModal}
-                        orderId={order.id}
+                        orderId={order?.id}
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                         filterType={activeModal === 'confirm-service-delivery' ? 'SERVICE' : (activeModal === 'register-reception' ? 'PRODUCT' : 'ALL')}
                     />
@@ -331,8 +333,8 @@ export const ActionCategory = forwardRef(({
                 <PaymentModal
                     open={true}
                     onOpenChange={closeModal}
-                    total={order.total}
-                    pendingAmount={order.pending_amount ?? order.total}
+                    total={order?.total}
+                    pendingAmount={order?.pending_amount ?? order?.total}
                     onConfirm={handlePaymentConfirm}
                     isPurchase={isPurchase}
                 />
@@ -342,7 +344,7 @@ export const ActionCategory = forwardRef(({
                 <PaymentReferenceModal
                     open={true}
                     onOpenChange={closeModal}
-                    payments={order.related_documents?.payments || order.serialized_payments || []}
+                    payments={order?.related_documents?.payments || order?.serialized_payments || []}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}
@@ -351,8 +353,8 @@ export const ActionCategory = forwardRef(({
                 <NoteCheckoutWizard
                     open={true}
                     onOpenChange={closeModal}
-                    orderId={order.id}
-                    invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
+                    orderId={order?.id}
+                    invoiceId={(order?.related_documents?.invoices || order?.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
                     initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
@@ -372,7 +374,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     type="work_orders"
-                    data={order.work_orders || []}
+                    data={order?.work_orders || []}
                     onItemClick={(type, id) => {
                         setViewConfig({ type, id })
                         setActiveModal('transaction-view')
