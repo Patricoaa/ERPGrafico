@@ -12,7 +12,8 @@ from billing.note_serializers import (
     ProcessLogisticsSerializer,
     RegisterDocumentSerializer,
     CompleteWorkflowSerializer,
-    CancelWorkflowSerializer
+    CancelWorkflowSerializer,
+    FullNoteCheckoutSerializer
 )
 from core.views import AuditHistoryMixin
 
@@ -297,6 +298,51 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 )
                 
                 return Response(NoteWorkflowSerializer(updated_workflow).data)
+            except ValidationError as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='checkout')
+    def checkout(self, request):
+        """
+        Atomic checkout for Notes.
+        POST /billing/note-workflows/checkout/
+        """
+        import json
+        
+        # Handle FormData parsing for JSON fields
+        data = request.data.dict() if hasattr(request.data, 'dict') else request.data.copy()
+        
+        # Parse JSON fields if they are strings (Multipart/form-data)
+        for field in ['selected_items', 'logistics_data', 'registration_data', 'payment_data']:
+            if field in data and isinstance(data[field], str):
+                try:
+                    data[field] = json.loads(data[field])
+                except json.JSONDecodeError:
+                    pass
+        
+        serializer = FullNoteCheckoutSerializer(data=data)
+        
+        if serializer.is_valid():
+            try:
+                workflow = NoteCheckoutService.process_full_checkout(
+                    original_invoice_id=serializer.validated_data['original_invoice_id'],
+                    note_type=serializer.validated_data['note_type'],
+                    selected_items=serializer.validated_data['selected_items'],
+                    registration_data=serializer.validated_data['registration_data'],
+                    logistics_data=serializer.validated_data.get('logistics_data'),
+                    payment_data=serializer.validated_data.get('payment_data'),
+                    reason=serializer.validated_data.get('reason', ''),
+                    document_attachment=request.FILES.get('document_attachment'),
+                    created_by=request.user
+                )
+                return Response(NoteWorkflowSerializer(workflow).data, status=status.HTTP_201_CREATED)
             except ValidationError as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:

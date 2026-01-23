@@ -1,51 +1,48 @@
 "use client"
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-    Loader2,
     CreditCard,
     Banknote,
-    ArrowRight,
     Wallet,
-    CheckCircle2,
     ShieldCheck
 } from "lucide-react"
 import api from "@/lib/api"
-import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface Step4_PaymentProps {
-    workflow: any
-    onSuccess: (updatedWorkflow: any) => void
+    isCreditNote: boolean
+    total: number
+    data: any
+    setData: (data: any) => void
 }
 
-export const Step4_Payment = forwardRef(({
-    workflow,
-    onSuccess
-}: Step4_PaymentProps, ref) => {
-    const [loading, setLoading] = useState(false)
+export function Step4_Payment({
+    isCreditNote,
+    total,
+    data,
+    setData
+}: Step4_PaymentProps) {
     const [accounts, setAccounts] = useState<any[]>([])
-    const [formData, setFormData] = useState({
-        method: 'CREDIT',
-        amount: workflow.total,
+
+    // Default form data handled by parent, but safe access here
+    const formData = data || {
+        method: '',
+        amount: total,
         treasury_account_id: '',
         transaction_number: '',
         is_pending: false
-    })
+    }
 
-    const isNC = workflow.is_credit_note
-    const isSale = !!workflow.sale_order
-
-    useImperativeHandle(ref, () => ({
-        submit: handleSubmit,
-        loading
-    }))
+    const setField = (field: string, value: any) => {
+        setData({ ...formData, [field]: value })
+    }
 
     useEffect(() => {
         const fetchAccounts = async () => {
@@ -60,24 +57,6 @@ export const Step4_Payment = forwardRef(({
         fetchAccounts()
     }, [])
 
-    const handleSubmit = async () => {
-        if (formData.method !== 'CREDIT' && formData.amount > 0 && !formData.treasury_account_id && formData.method !== 'CASH') {
-            toast.error("Debe seleccionar una cuenta de tesorería.")
-            return
-        }
-
-        try {
-            setLoading(true)
-            const res = await api.post(`/billing/note-workflows/${workflow.id}/process-payment/`, formData)
-            onSuccess(res.data)
-        } catch (error: any) {
-            console.error("Error processing payment:", error)
-            toast.error(error.response?.data?.error || "Error al procesar el pago.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const filteredAccounts = accounts.filter(a => {
         if (formData.method === 'CASH') return a.allows_cash
         if (formData.method === 'CARD') return a.allows_card
@@ -85,23 +64,26 @@ export const Step4_Payment = forwardRef(({
         return false
     })
 
+    const balance = total - formData.amount
+    const hasBalance = balance > 0
+    const assignmentText = isCreditNote ? 'Abonar a Crédito de Cliente' : 'Cargar a Crédito de Cliente'
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col gap-1">
                 <h3 className="text-2xl font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
                     <Wallet className="h-7 w-7 text-primary" />
-                    {isNC ? 'Devolución de Pago' : 'Registro de Cobro'}
+                    {isCreditNote ? 'Devolución de Pago' : 'Registro de Cobro'}
                 </h3>
                 <p className="text-sm text-muted-foreground font-medium">
-                    {isNC
+                    {isCreditNote
                         ? 'Indique cómo se realizará la devolución del dinero al cliente.'
                         : 'Registre el pago adicional recibido por este ajuste.'}
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
-                    { id: 'CREDIT', label: 'Crédito / Saldo', icon: ShieldCheck, desc: 'Ajusta el saldo de la factura' },
                     { id: 'CASH', label: 'Efectivo', icon: Banknote, desc: 'Dinero en caja' },
                     { id: 'TRANSFER', label: 'Transferencia', icon: CreditCard, desc: 'Depósito bancario' },
                     { id: 'CARD', label: 'Tarjeta', icon: CreditCard, desc: 'Transbank / Webpay' }
@@ -109,7 +91,7 @@ export const Step4_Payment = forwardRef(({
                     <button
                         key={m.id}
                         type="button"
-                        onClick={() => setFormData(p => ({ ...p, method: m.id }))}
+                        onClick={() => setField('method', formData.method === m.id ? '' : m.id)} // Toggle off
                         className={cn(
                             "flex flex-col items-center justify-center p-6 border-2 rounded-2xl transition-all gap-2",
                             formData.method === m.id
@@ -128,25 +110,40 @@ export const Step4_Payment = forwardRef(({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Amount */}
                         <div className="space-y-4">
-                            <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Monto a {isNC ? 'Devolver' : 'Cobrar'}</Label>
+                            <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Monto a {isCreditNote ? 'Devolver' : 'Cobrar'}</Label>
                             <div className="relative">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-xl text-muted-foreground">$</span>
                                 <Input
                                     type="number"
                                     className="h-14 pl-10 font-black text-2xl tabular-nums rounded-xl border-2"
                                     value={formData.amount}
-                                    onChange={(e) => setFormData(p => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
+                                    onChange={(e) => {
+                                        let val = parseFloat(e.target.value) || 0
+                                        if (val > total) val = total
+                                        if (val < 0) val = 0
+                                        setField('amount', val)
+                                    }}
+                                    max={total}
                                 />
                             </div>
+                            {hasBalance && (
+                                <div className="p-3 bg-muted/10 rounded-xl border-l-4 border-muted flex items-center gap-3">
+                                    <ShieldCheck className="h-5 w-5 text-muted-foreground" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Saldo Restante</span>
+                                        <span className="font-bold text-sm text-foreground">{assignmentText}: ${balance.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Treasury Account */}
-                        {formData.method !== 'CREDIT' && (
+                        {formData.method && (
                             <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
                                 <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Cuenta de Tesorería</Label>
                                 <Select
                                     value={formData.treasury_account_id}
-                                    onValueChange={(val) => setFormData(p => ({ ...p, treasury_account_id: val }))}
+                                    onValueChange={(val) => setField('treasury_account_id', val)}
                                 >
                                     <SelectTrigger className="h-14 font-bold rounded-xl border-2">
                                         <SelectValue placeholder="Seleccione cuenta..." />
@@ -170,7 +167,7 @@ export const Step4_Payment = forwardRef(({
                                 placeholder="Ej: 12345678"
                                 className="h-14 font-bold rounded-xl border-2"
                                 value={formData.transaction_number}
-                                onChange={(e) => setFormData(p => ({ ...p, transaction_number: e.target.value }))}
+                                onChange={(e) => setField('transaction_number', e.target.value)}
                             />
                         </div>
                     )}
@@ -179,7 +176,7 @@ export const Step4_Payment = forwardRef(({
                         <Checkbox
                             id="audit"
                             checked={formData.is_pending}
-                            onCheckedChange={(val) => setFormData(p => ({ ...p, is_pending: !!val }))}
+                            onCheckedChange={(val) => setField('is_pending', !!val)}
                             className="h-6 w-6 rounded-lg border-2 border-primary/30 mt-0.5"
                         />
                         <div className="space-y-1">
@@ -195,6 +192,4 @@ export const Step4_Payment = forwardRef(({
             </Card>
         </div>
     )
-})
-
-Step4_Payment.displayName = "Step4_Payment"
+}

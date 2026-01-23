@@ -165,3 +165,36 @@ class CancelWorkflowSerializer(serializers.Serializer):
     """Serializer for cancelling workflow"""
     workflow_id = serializers.IntegerField(required=True)
     reason = serializers.CharField(required=False, allow_blank=True, help_text="Motivo de cancelación")
+
+
+class FullNoteCheckoutSerializer(serializers.Serializer):
+    """
+    Serializer for the atomic Note Checkout process.
+    Receives all data at once and processes it in a single transaction.
+    """
+    # Base Data
+    original_invoice_id = serializers.IntegerField(required=True)
+    note_type = serializers.ChoiceField(choices=[Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO])
+    reason = serializers.CharField(required=False, allow_blank=True)
+    
+    # Step 1: Items
+    selected_items = serializers.ListField(
+        child=serializers.DictField(),
+        required=True,
+        allow_empty=False
+    )
+    
+    # Step 2: Logistics (Optional based on items)
+    logistics_data = serializers.DictField(required=False, allow_null=True)
+    
+    # Step 3: DTE Registration
+    # expected keys: document_number, document_date, is_pending
+    registration_data = serializers.DictField(required=True)
+    
+    # Step 4: Payment (Optional)
+    payment_data = serializers.DictField(required=False, allow_null=True)
+    # expected keys: method, amount, treasury_account_id, transaction_number, is_pending
+    
+    # Attachment handled by View (request.FILES)
+    document_attachment = serializers.FileField(required=False)
+

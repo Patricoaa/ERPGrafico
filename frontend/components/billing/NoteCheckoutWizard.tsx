@@ -1,17 +1,15 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
-    DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { Check, ChevronRight, ChevronLeft, Loader2, FileText, Package, Truck, Wallet, CheckCircle2, ArrowRight } from "lucide-react"
+import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Sub-components
@@ -42,69 +40,182 @@ export function NoteCheckoutWizard({
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [initializing, setInitializing] = useState(true)
-    const [workflow, setWorkflow] = useState<any>(null)
-    const [originalInvoice, setOriginalInvoice] = useState<any>(null)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const stepRef = useRef<any>(null)
 
-    // Initial load: Initialize workflow
+    // Original Data
+    const [originalInvoice, setOriginalInvoice] = useState<any>(null)
+
+    // Wizard State (Accumulated Data)
+    const [selectedItems, setSelectedItems] = useState<any[]>([])
+    const [logisticsData, setLogisticsData] = useState<any>(null)
+    const [registrationData, setRegistrationData] = useState<any>({
+        document_number: '',
+        document_date: new Date().toISOString().split('T')[0],
+        is_pending: false,
+        attachment: null
+    })
+    const [paymentData, setPaymentData] = useState<any>({
+        method: '', // Blank means "Credit" if not selected? User wants implicit Credit.
+        amount: 0,
+        treasury_account_id: '',
+        transaction_number: '',
+        is_pending: false
+    })
+
+    // Computed Properties
+    const requiresLogistics = selectedItems.some(item => {
+        // Simple logic: if product tracks inventory, it might require logistics.
+        // We rely on item properties passed from Step1 which should come from original invoice
+        return item.track_inventory && (item.product_type !== 'MANUFACTURABLE' || (item.product_type === 'MANUFACTURABLE' && item.has_bom && !item.requires_advanced_manufacturing))
+    })
+
+    const totalNet = selectedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0)
+    const totalTax = selectedItems.reduce((acc, item) => acc + (item.quantity * item.tax_amount), 0)
+    const total = totalNet + totalTax
+
+    // Reset state on open
     useEffect(() => {
-        if (open && !workflow) {
-            initWorkflow()
+        if (open) {
+            initWizard()
+        } else {
+            // Optional: reset state on close
         }
     }, [open])
 
-    const initWorkflow = async () => {
+    const initWizard = async () => {
         try {
             setInitializing(true)
-            // 1. Fetch original invoice details for display
+            setStep(1)
+            setSelectedItems([])
+            setLogisticsData(null)
+            setRegistrationData({
+                document_number: '',
+                document_date: new Date().toISOString().split('T')[0],
+                is_pending: false,
+                attachment: null
+            })
+            setPaymentData({
+                method: '',
+                amount: 0,
+                treasury_account_id: '',
+                transaction_number: '',
+                is_pending: false
+            })
+
             const invRes = await api.get(`/billing/invoices/${invoiceId}/`)
             setOriginalInvoice(invRes.data)
 
-            // 2. Initialize workflow on backend
-            const res = await api.post("/billing/note-workflows/init/", {
-                corrected_invoice_id: invoiceId,
-                note_type: initialType,
-                reason: `Corrección de ${invRes.data.dte_type_display || 'factura'} ${invRes.data.number || 'Draft'}`
-            })
-            setWorkflow(res.data)
-            setStep(1) // Step 1: Select items
+            // Initial Payment Amount default
+            setPaymentData(p => ({ ...p, amount: invRes.data.total })) // Correct logic will happen when items are selected
+
         } catch (error: any) {
-            console.error("Error initializing note workflow:", error)
-            toast.error(error.response?.data?.error || "Error al iniciar el proceso de nota.")
+            console.error("Error initializing note wizard:", error)
+            toast.error("Error al cargar datos de la factura original.")
             onOpenChange(false)
         } finally {
             setInitializing(false)
         }
     }
 
-    const handleNext = async () => {
-        if (stepRef.current?.submit) {
-            setIsSubmitting(true)
-            try {
-                await stepRef.current.submit()
-            } catch (error) {
-                console.error("Wizard submit error:", error)
-            } finally {
-                setIsSubmitting(false)
+    // Update payment amount when totals change
+    useEffect(() => {
+        setPaymentData((prev: any) => ({ ...prev, amount: total }))
+    }, [total])
+
+
+    const handleNext = () => {
+        // Validations per step
+        if (step === 1) {
+            if (selectedItems.length === 0) {
+                toast.error("Seleccione al menos un ítem.")
+                return
             }
+            if (requiresLogistics) {
+                setStep(2)
+            } else {
+                setStep(3)
+            }
+        }
+        else if (step === 2) {
+            if (!logisticsData) {
+                toast.error("Complete la información de logística.")
+                return
+            }
+            setStep(3)
+        }
+        else if (step === 3) {
+            if (!registrationData.is_pending && initialType === 'NOTA_CREDITO' && !registrationData.attachment) {
+                toast.error("El adjunto es obligatorio para NC.")
+                return
+            }
+            if (!registrationData.document_number && !registrationData.is_pending) {
+                toast.error("Ingrese el número de folio.")
+                return
+            }
+            setStep(4)
         }
     }
 
     const handleBack = () => {
-        if (step > 1) {
-            if (step === 3 && !workflow.requires_logistics) {
-                setStep(1)
-            } else {
-                setStep(prev => prev - 1)
-            }
+        if (step === 3 && !requiresLogistics) {
+            setStep(1)
+        } else {
+            setStep(prev => prev - 1)
         }
     }
 
-    const onComplete = () => {
-        toast.success(`Proceso finalizado exitosamente.`)
-        onSuccess?.()
-        onOpenChange(false)
+    const handleFinish = async () => {
+        setLoading(true)
+        try {
+            const formData = new FormData()
+
+            // Base Data
+            formData.append('original_invoice_id', invoiceId.toString())
+            formData.append('note_type', initialType)
+
+            // Items
+            formData.append('selected_items', JSON.stringify(selectedItems.map(i => ({
+                product_id: i.product_id,
+                quantity: i.quantity,
+                unit_price: i.unit_price,
+                tax_amount: i.tax_amount,
+                reason: i.reason
+            }))))
+
+            // Logistics
+            if (requiresLogistics && logisticsData) {
+                formData.append('logistics_data', JSON.stringify(logisticsData))
+            }
+
+            // Registration
+            const { attachment, ...regRest } = registrationData
+            formData.append('registration_data', JSON.stringify(regRest))
+            if (attachment) {
+                formData.append('document_attachment', attachment)
+            }
+
+            // Payment
+            if (paymentData.method) {
+                // User explicitly selected a payment method (Refund/Payment)
+                // If method is CREDIT (implicit), we effectively send nothing or handle it in backend?
+                // Backend expects 'payment_data' only if we want to register it.
+                // If amount > 0 and no method -> error?
+                // If paymentData.amount < total, the dif is credit.
+                // We send payment_data if there is an actual payment to register.
+                formData.append('payment_data', JSON.stringify(paymentData))
+            }
+
+            await api.post('/billing/note-workflows/checkout/', formData)
+
+            toast.success("Nota generada exitosamente.")
+            onSuccess?.()
+            onOpenChange(false)
+
+        } catch (error: any) {
+            console.error("Checkout error:", error)
+            toast.error(error.response?.data?.error || "Error al finalizar el proceso.")
+        } finally {
+            setLoading(false)
+        }
     }
 
     const renderStep = () => {
@@ -112,9 +223,7 @@ export function NoteCheckoutWizard({
             return (
                 <div className="h-[400px] flex flex-col items-center justify-center space-y-4">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground animate-pulse">
-                        Iniciando flujo de nota...
-                    </p>
+                    <p className="text-sm text-muted-foreground animate-pulse">Cargando...</p>
                 </div>
             )
         }
@@ -123,46 +232,35 @@ export function NoteCheckoutWizard({
             case 1:
                 return (
                     <Step1_Items
-                        ref={stepRef}
-                        workflow={workflow}
                         originalInvoice={originalInvoice}
-                        onSuccess={(updatedWorkflow: any) => {
-                            setWorkflow(updatedWorkflow)
-                            setStep(updatedWorkflow.requires_logistics ? 2 : 3)
-                        }}
+                        selectedItems={selectedItems}
+                        setSelectedItems={setSelectedItems}
                     />
                 )
             case 2:
+                // We need to confirm props for Step2
                 return (
                     <Step2_Logistics
-                        ref={stepRef}
-                        workflow={workflow}
-                        onSuccess={(updatedWorkflow: any) => {
-                            setWorkflow(updatedWorkflow)
-                            setStep(3)
-                        }}
+                        isCreditNote={initialType === 'NOTA_CREDITO'}
+                        data={logisticsData}
+                        setData={setLogisticsData}
                     />
                 )
             case 3:
                 return (
                     <Step3_Registration
-                        ref={stepRef}
-                        workflow={workflow}
-                        onSuccess={(updatedWorkflow: any) => {
-                            setWorkflow(updatedWorkflow)
-                            setStep(4)
-                        }}
+                        isCreditNote={initialType === 'NOTA_CREDITO'}
+                        data={registrationData}
+                        setData={setRegistrationData}
                     />
                 )
             case 4:
                 return (
                     <Step4_Payment
-                        ref={stepRef}
-                        workflow={workflow}
-                        onSuccess={(updatedWorkflow: any) => {
-                            setWorkflow(updatedWorkflow)
-                            onComplete()
-                        }}
+                        isCreditNote={initialType === 'NOTA_CREDITO'}
+                        total={total}
+                        data={paymentData}
+                        setData={setPaymentData}
                     />
                 )
             default:
@@ -171,15 +269,15 @@ export function NoteCheckoutWizard({
     }
 
     const title = initialType === 'NOTA_CREDITO' ? 'Emitir Nota de Crédito' : 'Emitir Nota de Débito'
-    const totalSteps = workflow?.requires_logistics ? 4 : 3
+    const totalSteps = requiresLogistics ? 4 : 3
     const isLastStep = step === 4
-    const isStepLoading = isSubmitting || initializing || loading
+    const isStepLoading = loading || initializing
 
     const getNextButtonLabel = () => {
         if (isStepLoading) return "Procesando..."
         if (isLastStep) return "Finalizar Proceso"
-        if (step === 1) return workflow?.requires_logistics ? "Continuar a Logística" : "Continuar a Documento"
-        if (step === 2) return "Procesar Logística"
+        if (step === 1) return requiresLogistics ? "Continuar a Logística" : "Continuar a Documento"
+        if (step === 2) return "Continuar a Documento"
         if (step === 3) return "Continuar a Pago"
         return "Continuar"
     }
@@ -202,31 +300,30 @@ export function NoteCheckoutWizard({
                 </div>
 
                 <div className="flex flex-1 overflow-hidden">
-                    {/* Left Sidebar - Process tracking */}
+                    {/* Left Sidebar */}
                     {!initializing && (
                         <NoteProcessSidebar
-                            currentStep={step > 2 && !workflow.requires_logistics ? step - 1 : step}
+                            currentStep={step > 2 && !requiresLogistics ? step - 1 : step}
                             totalSteps={totalSteps}
                             noteType={initialType}
-                            requiresLogistics={workflow?.requires_logistics}
-                            itemsCount={workflow?.selected_items?.length || 0}
-                            dteNumber={workflow?.invoice?.number}
+                            requiresLogistics={requiresLogistics}
+                            itemsCount={selectedItems.length}
+                            dteNumber={registrationData.document_number}
                         />
                     )}
 
-                    {/* Center - Content Area Wrapper */}
+                    {/* Center Content */}
                     <div className="flex-1 flex flex-col min-w-0 h-full relative">
-                        {/* Scrollable Content */}
                         <div className="flex-1 p-8 overflow-y-auto bg-background pb-32">
                             {renderStep()}
                         </div>
 
-                        {/* Fixed Footer */}
+                        {/* Footer */}
                         <div className="absolute bottom-0 left-0 right-0 p-6 border-t bg-background/80 backdrop-blur-md flex justify-between z-20 shrink-0">
                             <Button
                                 variant="outline"
                                 onClick={handleBack}
-                                disabled={step === 1 || isStepLoading || initializing}
+                                disabled={step === 1 || isStepLoading}
                                 className="h-12 px-6 font-bold"
                             >
                                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -234,7 +331,7 @@ export function NoteCheckoutWizard({
                             </Button>
 
                             <Button
-                                onClick={handleNext}
+                                onClick={isLastStep ? handleFinish : handleNext}
                                 disabled={isStepLoading}
                                 className={cn(
                                     "group px-10 py-7 rounded-2xl font-black text-base transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl",
@@ -260,14 +357,14 @@ export function NoteCheckoutWizard({
                         </div>
                     </div>
 
-                    {/* Right Sidebar - Items Summary */}
+                    {/* Right Sidebar */}
                     {!initializing && (
                         <div className="w-80 border-l hidden lg:block overflow-y-auto bg-muted/5">
                             <NoteItemsSummary
-                                items={workflow?.selected_items || []}
-                                totalNet={workflow?.total_net || 0}
-                                totalTax={workflow?.total_tax || 0}
-                                total={workflow?.total || 0}
+                                items={selectedItems}
+                                totalNet={totalNet}
+                                totalTax={totalTax}
+                                total={total}
                             />
                         </div>
                     )}

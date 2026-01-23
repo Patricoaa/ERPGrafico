@@ -1,41 +1,40 @@
 "use client"
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, Truck, Warehouse, Calendar, ArrowRight, ArrowLeft, FileText } from "lucide-react"
+import { Loader2, Truck, Warehouse, Calendar, FileText } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
 interface Step2_LogisticsProps {
-    workflow: any
-    onSuccess: (updatedWorkflow: any) => void
+    isCreditNote: boolean
+    data: any
+    setData: (data: any) => void
 }
 
-export const Step2_Logistics = forwardRef(({
-    workflow,
-    onSuccess
-}: Step2_LogisticsProps, ref) => {
-    const [loading, setLoading] = useState(false)
+export function Step2_Logistics({
+    isCreditNote,
+    data,
+    setData
+}: Step2_LogisticsProps) {
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [fetchingWarehouses, setFetchingWarehouses] = useState(true)
 
-    const [formData, setFormData] = useState({
-        warehouse_id: "",
-        date: new Date().toISOString().split('T')[0],
-        notes: ""
-    })
-
-    useImperativeHandle(ref, () => ({
-        submit: handleSubmit,
-        loading
-    }))
+    // Initialize data if null
+    useEffect(() => {
+        if (!data) {
+            setData({
+                warehouse_id: "",
+                date: new Date().toISOString().split('T')[0],
+                notes: ""
+            })
+        }
+    }, [])
 
     useEffect(() => {
         fetchWarehouses()
@@ -45,11 +44,15 @@ export const Step2_Logistics = forwardRef(({
         try {
             setFetchingWarehouses(true)
             const res = await api.get('/inventory/warehouses/')
-            const data = res.data.results || res.data
-            setWarehouses(Array.isArray(data) ? data : [])
+            const list = res.data.results || res.data
+            setWarehouses(Array.isArray(list) ? list : [])
 
-            if (Array.isArray(data) && data.length > 0) {
-                setFormData(prev => ({ ...prev, warehouse_id: data[0].id.toString() }))
+            if (Array.isArray(list) && list.length > 0 && (!data || !data.warehouse_id)) {
+                // Pre-select first warehouse if none selected
+                setData({
+                    ...(data || { date: new Date().toISOString().split('T')[0], notes: "" }),
+                    warehouse_id: list[0].id.toString()
+                })
             }
         } catch (err) {
             console.error("Error fetching warehouses", err)
@@ -59,30 +62,14 @@ export const Step2_Logistics = forwardRef(({
         }
     }
 
-    const handleSubmit = async () => {
-        if (!formData.warehouse_id) {
-            toast.error("Debe seleccionar una bodega.")
-            return
-        }
-
-        try {
-            setLoading(true)
-            const res = await api.post(`/billing/note-workflows/${workflow.id}/process-logistics/`, {
-                warehouse_id: parseInt(formData.warehouse_id),
-                date: formData.date,
-                notes: formData.notes
-            })
-            onSuccess(res.data)
-        } catch (error: any) {
-            console.error("Error processing logistics:", error)
-            toast.error(error.response?.data?.error || "Error al procesar logística.")
-        } finally {
-            setLoading(false)
-        }
+    // Safe access to data fields
+    const formData = data || {
+        warehouse_id: "",
+        date: new Date().toISOString().split('T')[0],
+        notes: ""
     }
 
-    const isNC = workflow.is_credit_note
-    const moveTypeLabel = isNC ? "Entrada de Stock" : "Salida de Stock"
+    const moveTypeLabel = isCreditNote ? "Entrada de Stock" : "Salida de Stock"
 
     return (
         <div className="space-y-8">
@@ -99,7 +86,7 @@ export const Step2_Logistics = forwardRef(({
             <Card className="border-2 rounded-2xl shadow-sm border-muted/20 overflow-hidden bg-card">
                 <div className={cn(
                     "p-4 px-6 flex items-center justify-between border-b-2",
-                    isNC ? "bg-emerald-500/5 text-emerald-700 border-emerald-500/10" : "bg-rose-500/5 text-rose-700 border-rose-500/10"
+                    isCreditNote ? "bg-emerald-500/5 text-emerald-700 border-emerald-500/10" : "bg-rose-500/5 text-rose-700 border-rose-500/10"
                 )}>
                     <div className="flex items-center gap-3 font-black text-xs uppercase tracking-widest tabular-nums">
                         <Warehouse className="h-4 w-4" />
@@ -107,9 +94,9 @@ export const Step2_Logistics = forwardRef(({
                     </div>
                     <Badge variant="outline" className={cn(
                         "font-black uppercase text-[10px] tabular-nums",
-                        isNC ? "border-emerald-500 text-emerald-600" : "border-rose-500 text-rose-600"
+                        isCreditNote ? "border-emerald-500 text-emerald-600" : "border-rose-500 text-rose-600"
                     )}>
-                        {isNC ? "+ INCREMENTO STOCK" : "- DISMINUCIÓN STOCK"}
+                        {isCreditNote ? "+ INCREMENTO STOCK" : "- DISMINUCIÓN STOCK"}
                     </Badge>
                 </div>
                 <CardContent className="p-8 space-y-8">
@@ -122,7 +109,7 @@ export const Step2_Logistics = forwardRef(({
                             </Label>
                             <Select
                                 value={formData.warehouse_id}
-                                onValueChange={(val) => setFormData(p => ({ ...p, warehouse_id: val }))}
+                                onValueChange={(val) => setData({ ...formData, warehouse_id: val })}
                                 disabled={fetchingWarehouses}
                             >
                                 <SelectTrigger className="h-14 font-bold bg-background border-2 rounded-xl transition-all focus:ring-primary hover:border-primary/50">
@@ -152,7 +139,7 @@ export const Step2_Logistics = forwardRef(({
                                 type="date"
                                 className="h-14 font-bold bg-background border-2 rounded-xl transition-all focus:ring-primary hover:border-primary/50 tabular-nums"
                                 value={formData.date}
-                                onChange={(e) => setFormData(p => ({ ...p, date: e.target.value }))}
+                                onChange={(e) => setData({ ...formData, date: e.target.value })}
                             />
                         </div>
                     </div>
@@ -167,14 +154,12 @@ export const Step2_Logistics = forwardRef(({
                             placeholder="Ej: Ingreso por devolución de cliente por falla en impresión..."
                             className="h-14 font-semibold bg-background border-2 rounded-xl transition-all focus:ring-primary hover:border-primary/50"
                             value={formData.notes}
-                            onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
+                            onChange={(e) => setData({ ...formData, notes: e.target.value })}
                         />
                     </div>
                 </CardContent>
             </Card>
         </div>
     )
-})
-
-Step2_Logistics.displayName = "Step2_Logistics"
+}
 

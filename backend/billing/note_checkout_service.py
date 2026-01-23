@@ -654,3 +654,180 @@ class NoteCheckoutService:
         workflow.save()
         
         return workflow
+        return workflow
+
+    @staticmethod
+    @transaction.atomic
+    def process_full_checkout(
+        original_invoice_id: int,
+        note_type: str,
+        selected_items: List[Dict],
+        registration_data: Dict,
+        logistics_data: Optional[Dict] = None,
+        payment_data: Optional[Dict] = None,
+        reason: str = "",
+        document_attachment=None,
+        created_by=None
+    ) -> NoteWorkflow:
+        """
+        ATOMIC CHECKOUT: Handle strict transaction for Note creation.
+        Replaces the staged workflow with a single commit-at-end process.
+        """
+        # 1. Validate Original Invoice
+        try:
+            corrected_invoice = Invoice.objects.get(id=original_invoice_id)
+        except Invoice.DoesNotExist:
+            raise ValidationError(f"Factura con ID {original_invoice_id} no existe.")
+        
+        if corrected_invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
+            raise ValidationError("Solo se pueden crear notas desde facturas Publicadas o Pagadas.")
+
+        # 2. Initialize Invoice (Draft)
+        invoice = Invoice.objects.create(
+            dte_type=note_type,
+            status=Invoice.Status.DRAFT,
+            date=registration_data.get('date') or timezone.now().date(),
+            sale_order=corrected_invoice.sale_order,
+            purchase_order=corrected_invoice.purchase_order,
+            contact=corrected_invoice.contact,
+            corrected_invoice=corrected_invoice,
+            payment_method=corrected_invoice.payment_method
+        )
+
+        # 3. Create Transient Workflow (for tracking and passing context to existing methods)
+        workflow = NoteWorkflow.objects.create(
+            invoice=invoice,
+            corrected_invoice=corrected_invoice,
+            sale_order=corrected_invoice.sale_order,
+            purchase_order=corrected_invoice.purchase_order,
+            current_stage=NoteWorkflow.Stage.items_selected, # Temp stage
+            reason=reason,
+            created_by=created_by,
+            selected_items=selected_items, # Save intent
+            logistics_data=logistics_data,
+            registration_data=registration_data,
+            payment_data=payment_data
+        )
+
+        # 4. Process Items (Calculate Totals & Validation)
+        # Reuse logic from select_items but without extra DB saves
+        total_net = Decimal('0')
+        total_tax = Decimal('0')
+        has_stockable = False
+        
+        validated_items = []
+        for item in selected_items:
+            product = Product.objects.get(id=item['product_id'])
+            quantity = Decimal(str(item['quantity']))
+            
+            if quantity <= 0: continue
+            
+            # Validation against delivered
+            if workflow.is_credit_note and workflow.sale_order:
+                sale_line = workflow.sale_order.lines.filter(product=product).first()
+                if sale_line and quantity > sale_line.quantity_delivered:
+                     raise ValidationError(f"Cantidad excede lo entregado para {product.name}")
+
+            # Determine stockable
+            creates_stock_move = False
+            if product.track_inventory:
+                 if product.product_type == Product.Type.MANUFACTURABLE:
+                     if not product.requires_advanced_manufacturing and product.has_bom:
+                         creates_stock_move = True
+                 else:
+                     creates_stock_move = True
+            
+            if creates_stock_move: has_stockable = True
+
+            # Calculate Line Totals
+            unit_price = Decimal(str(item.get('unit_price', 0)))
+            # If price not provided, could fallback to invoice price, but frontend should send it.
+            
+            tax_amount = Decimal(str(item.get('tax_amount', 0)))
+            line_net = quantity * unit_price
+            line_tax = quantity * tax_amount
+            
+            total_net += line_net
+            total_tax += line_tax
+            
+            validated_items.append({
+                'product_id': product.id,
+                'product_name': product.name,
+                'quantity': float(quantity),
+                'unit_price': float(unit_price),
+                'tax_amount': float(tax_amount),
+                'line_net': float(line_net),
+                'creates_stock_move': creates_stock_move,
+                'reason': item.get('reason', '')
+            })
+
+        workflow.selected_items = validated_items
+        workflow.requires_logistics = has_stockable
+        
+        # Update Invoice Totals
+        invoice.total_net = total_net
+        invoice.total_tax = total_tax
+        invoice.total = total_net + total_tax
+        invoice.save()
+
+        # 5. Process Logistics (Stock Moves)
+        # Only if required AND data provided
+        if has_stockable and logistics_data:
+            warehouse_id = logistics_data.get('warehouse_id')
+            move_date = logistics_data.get('date') or timezone.now().date()
+            warehouse = Warehouse.objects.get(id=warehouse_id)
+            is_sale = workflow.sale_order is not None
+            
+            for item in validated_items:
+                if not item['creates_stock_move']: continue
+                
+                product = Product.objects.get(id=item['product_id'])
+                quantity = Decimal(str(item['quantity']))
+                
+                # Logic: Sale NC (Return) -> IN. Sale ND -> OUT.
+                # Logic: Purchase NC (Return) -> OUT. Purchase ND -> IN.
+                if is_sale:
+                    move_type = StockMove.Type.IN if workflow.is_credit_note else StockMove.Type.OUT
+                else:
+                    move_type = StockMove.Type.OUT if workflow.is_credit_note else StockMove.Type.IN
+                
+                signed_qty = quantity if move_type == StockMove.Type.IN else -quantity
+                
+                StockMove.objects.create(
+                    date=move_date,
+                    product=product,
+                    warehouse=warehouse,
+                    uom=product.uom,
+                    quantity=signed_qty,
+                    move_type=move_type,
+                    description=f"{invoice.get_dte_type_display()} {registration_data.get('document_number')} (REF: WF-{workflow.id})"
+                )
+
+        # 6. document Registration (DTE & Accounting)
+        doc_number = registration_data.get('document_number')
+        doc_date = registration_data.get('document_date')
+        val_is_pending = registration_data.get('is_pending', False)
+        
+        invoice.number = doc_number
+        invoice.date = doc_date
+        if document_attachment:
+            invoice.document_attachment = document_attachment
+        
+        invoice.status = Invoice.Status.DRAFT if val_is_pending else Invoice.Status.POSTED
+        invoice.save()
+        
+        # Create Accounting Entry
+        entry = NoteCheckoutService._create_accounting_entry(workflow, AccountingSettings.objects.first())
+        
+        if not val_is_pending:
+            from accounting.services import JournalEntryService
+            JournalEntryService.post_entry(entry)
+        
+        # 7. Process Payment
+        if payment_data:
+             NoteCheckoutService.process_payment(workflow.id, payment_data)
+        
+        workflow.current_stage = NoteWorkflow.Stage.COMPLETED
+        workflow.save()
+        
+        return workflow

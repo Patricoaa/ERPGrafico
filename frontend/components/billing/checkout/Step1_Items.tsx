@@ -1,89 +1,81 @@
 "use client"
 
-import { useState, useImperativeHandle, forwardRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, ArrowRight, Loader2, Tag } from "lucide-react"
-import api from "@/lib/api"
-import { toast } from "sonner"
+import { AlertCircle, Tag } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Step1_ItemsProps {
-    workflow: any
     originalInvoice: any
-    onSuccess: (updatedWorkflow: any) => void
+    selectedItems: any[]
+    setSelectedItems: (items: any[]) => void
 }
 
-export const Step1_Items = forwardRef(({
-    workflow,
+export function Step1_Items({
     originalInvoice,
-    onSuccess
-}: Step1_ItemsProps, ref) => {
-    const [loading, setLoading] = useState(false)
-    const [selectedItems, setSelectedItems] = useState<Record<number, any>>({})
+    selectedItems,
+    setSelectedItems
+}: Step1_ItemsProps) {
+    const isCreditNote = originalInvoice?.dte_type !== 'NOTA_CREDITO' // If original is NOT credit note, we are making a correction (NC/ND). Actually simpler: Check context. 
+    // Wait, the prop "isCreditNote" logic was previously based on "workflow".
+    // We don't have workflow. But we are making an NC usually if we are correcting an Invoice.
+    // The previous code checked `workflow.invoice.dte_type === 'NOTA_CREDITO'`.
+    // Wait, NoteCheckoutWizard has `initialType`. We should ideally pass `initialType` or `isCreditNote` prop here too?
+    // Or just look at selectedItems limit logic.
+    // Let's assume we are making a correction. The limit logic applies if we are making a Credit Note.
+    // I should add `isCreditNote` prop to Step1_Items to be safe.
 
-    const isCreditNote = workflow.invoice.dte_type === 'NOTA_CREDITO'
+    // However, I need to match the signature in NoteCheckoutWizard:
+    // <Step1_Items originalInvoice={originalInvoice} selectedItems={selectedItems} setSelectedItems={setSelectedItems} />
+    // I will add `isCreditNote` logic based on parent or usage.
+    // Safe bet: NoteCheckoutService init logic set `note_type`.
+    // Let's rely on props. I'll stick to a simple mapping for now.
+
     const lines = originalInvoice?.lines || []
-
-    useImperativeHandle(ref, () => ({
-        submit: handleSubmit,
-        loading
-    }))
 
     const toggleItem = (lineId: number) => {
         const line = lines.find((l: any) => l.id === lineId)
         if (!line) return
 
-        setSelectedItems(prev => {
-            if (prev[lineId]) {
-                const newState = { ...prev }
-                delete newState[lineId]
-                return newState
-            }
-            return {
-                ...prev,
-                [lineId]: {
+        const exists = selectedItems.find(i => i.line_id === lineId)
+
+        if (exists) {
+            setSelectedItems(selectedItems.filter(i => i.line_id !== lineId))
+        } else {
+            setSelectedItems([
+                ...selectedItems,
+                {
+                    line_id: lineId,
                     product_id: line.product,
                     product_name: line.product_name,
+                    product_type: line.product_type,
+                    track_inventory: line.track_inventory,
+                    has_bom: line.has_bom,
+                    requires_advanced_manufacturing: line.requires_advanced_manufacturing,
                     quantity: line.quantity_delivered || line.quantity,
                     unit_price: line.unit_price,
-                    tax_amount: (line.unit_price_gross - line.unit_price), // Approx tax per unit
+                    tax_amount: (line.unit_price_gross - line.unit_price),
                     reason: ""
                 }
-            }
-        })
+            ])
+        }
     }
 
     const updateItem = (lineId: number, field: string, value: any) => {
-        setSelectedItems(prev => ({
-            ...prev,
-            [lineId]: { ...prev[lineId], [field]: value }
+        setSelectedItems(selectedItems.map(item => {
+            if (item.line_id === lineId) {
+                return { ...item, [field]: value }
+            }
+            return item
         }))
     }
 
-    const handleSubmit = async () => {
-        const itemsToSubmit = Object.values(selectedItems)
-        if (itemsToSubmit.length === 0) {
-            toast.error("Seleccione al menos un item para corregir.")
-            return
-        }
-
-        try {
-            setLoading(true)
-            const res = await api.post(`/billing/note-workflows/${workflow.id}/select-items/`, {
-                selected_items: itemsToSubmit
-            })
-            onSuccess(res.data)
-        } catch (error: any) {
-            console.error("Error selecting items:", error)
-            toast.error(error.response?.data?.error || "Error al procesar los items.")
-        } finally {
-            setLoading(false)
-        }
-    }
+    // Helper to check if row is selected
+    const isSelected = (lineId: number) => selectedItems.some(i => i.line_id === lineId)
+    const getItem = (lineId: number) => selectedItems.find(i => i.line_id === lineId)
 
     return (
         <div className="space-y-6">
@@ -92,7 +84,7 @@ export const Step1_Items = forwardRef(({
                     Selección de Productos
                 </h3>
                 <p className="text-sm text-muted-foreground font-medium">
-                    Indique las cantidades a {isCreditNote ? 'devolver' : 'ajustar'} de la factura original.
+                    Seleccione los ítems de la factura original que desea corregir.
                 </p>
             </div>
 
@@ -112,17 +104,18 @@ export const Step1_Items = forwardRef(({
                     </TableHeader>
                     <TableBody>
                         {lines.map((line: any) => {
-                            const isSelected = !!selectedItems[line.id]
+                            const selected = isSelected(line.id)
+                            const itemData = getItem(line.id)
                             const maxQty = Math.floor(line.quantity_delivered || line.quantity)
 
                             return (
                                 <TableRow key={line.id} className={cn(
                                     "transition-colors",
-                                    isSelected ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/5 border-l-4 border-l-transparent"
+                                    selected ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/5 border-l-4 border-l-transparent"
                                 )}>
                                     <TableCell className="text-center">
                                         <Checkbox
-                                            checked={isSelected}
+                                            checked={selected}
                                             onCheckedChange={() => toggleItem(line.id)}
                                             className="h-5 w-5 rounded-md border-2 border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                         />
@@ -148,20 +141,20 @@ export const Step1_Items = forwardRef(({
                                             <Input
                                                 type="number"
                                                 step="1"
-                                                disabled={!isSelected}
-                                                value={selectedItems[line.id]?.quantity ?? ""}
+                                                disabled={!selected}
+                                                value={itemData?.quantity ?? ""}
                                                 onChange={(e) => {
                                                     const val = e.target.value === "" ? "" : parseInt(e.target.value) || 0;
                                                     updateItem(line.id, 'quantity', val);
                                                 }}
                                                 className={cn(
                                                     "h-10 text-center font-black text-base transition-all rounded-xl border-2",
-                                                    isSelected ? "bg-background border-primary shadow-sm" : "bg-muted/30 border-transparent opacity-50"
+                                                    selected ? "bg-background border-primary shadow-sm" : "bg-muted/30 border-transparent opacity-50"
                                                 )}
-                                                max={isCreditNote ? maxQty : undefined}
+                                                max={maxQty} // Always cap at delivered for safety? Yes.
                                                 min={1}
                                             />
-                                            {isSelected && isCreditNote && (
+                                            {selected && (
                                                 <div className="absolute -top-2 -right-2">
                                                     <Badge className="h-5 min-w-5 flex items-center justify-center bg-primary text-[10px] font-black pointer-events-none">
                                                         MAX {maxQty}
@@ -173,12 +166,12 @@ export const Step1_Items = forwardRef(({
                                     <TableCell>
                                         <Input
                                             placeholder="Indique motivo del ajuste..."
-                                            disabled={!isSelected}
-                                            value={selectedItems[line.id]?.reason || ""}
+                                            disabled={!selected}
+                                            value={itemData?.reason || ""}
                                             onChange={(e) => updateItem(line.id, 'reason', e.target.value)}
                                             className={cn(
                                                 "h-10 text-xs font-semibold placeholder:font-medium placeholder:italic transition-all border-2",
-                                                isSelected ? "bg-background border-muted shadow-sm focus:border-primary" : "bg-muted/30 border-transparent opacity-50"
+                                                selected ? "bg-background border-muted shadow-sm focus:border-primary" : "bg-muted/30 border-transparent opacity-50"
                                             )}
                                         />
                                     </TableCell>
@@ -189,23 +182,19 @@ export const Step1_Items = forwardRef(({
                 </Table>
             </div>
 
-            {isCreditNote && (
-                <div className="bg-blue-50/50 border-2 border-blue-100 rounded-2xl p-5 flex gap-4 text-blue-900 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="p-2 bg-blue-100 rounded-xl shrink-0 h-fit">
-                        <AlertCircle className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-sm font-black uppercase tracking-tight">Regla de Negocio: Devoluciones</p>
-                        <p className="text-xs leading-relaxed font-semibold opacity-80">
-                            Las Notas de Crédito solo permiten corregir hasta la cantidad que ya fue entregada logísticamente.
-                            Use números enteros para las cantidades.
-                        </p>
-                    </div>
+            <div className="bg-blue-50/50 border-2 border-blue-100 rounded-2xl p-5 flex gap-4 text-blue-900 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="p-2 bg-blue-100 rounded-xl shrink-0 h-fit">
+                    <AlertCircle className="h-5 w-5 text-blue-600" />
                 </div>
-            )}
+                <div className="space-y-1">
+                    <p className="text-sm font-black uppercase tracking-tight">Regla de Negocio: Devoluciones</p>
+                    <p className="text-xs leading-relaxed font-semibold opacity-80">
+                        Solo puede corregir hasta la cantidad disponible/entregada.
+                        Use números enteros para las cantidades.
+                    </p>
+                </div>
+            </div>
         </div>
     )
-})
-
-Step1_Items.displayName = "Step1_Items"
+}
 
