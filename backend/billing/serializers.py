@@ -21,6 +21,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
     adjustments = serializers.SerializerMethodField()
+    corrected_invoice = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -34,6 +35,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return obj.total - total_paid
 
     def get_lines(self, obj):
+        # 1. Prioritize NoteWorkflow items for NC/ND
+        if obj.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
+            try:
+                if hasattr(obj, 'workflow') and obj.workflow and obj.workflow.selected_items:
+                    return obj.workflow.selected_items
+            except:
+                pass
+
+        # 2. Fallback to order lines
         if obj.sale_order:
             from sales.serializers import SaleLineSerializer
             return SaleLineSerializer(obj.sale_order.lines.all(), many=True).data
@@ -89,8 +99,20 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'dte_type': a.dte_type,
             'dte_type_display': a.get_dte_type_display(),
             'status': a.status,
-            'total': a.total
+            'total': float(a.total),
+            'display_id': a.display_id
         } for a in adjustments]
+
+    def get_corrected_invoice(self, obj):
+        if not obj.corrected_invoice:
+            return None
+        return {
+            'id': obj.corrected_invoice.id,
+            'number': obj.corrected_invoice.number,
+            'display_id': obj.corrected_invoice.display_id,
+            'dte_type': obj.corrected_invoice.dte_type,
+            'dte_type_display': obj.corrected_invoice.get_dte_type_display()
+        }
 
 class CreateInvoiceSerializer(serializers.Serializer):
     order_id = serializers.IntegerField()

@@ -864,6 +864,11 @@ class NoteCheckoutService:
         if not val_is_pending:
             from accounting.services import JournalEntryService
             JournalEntryService.post_entry(entry)
+            
+        # 6.5 Link created stock moves to the accounting entry for Hub visibility
+        # If immediate return was selected, we search for the moves created in step 5
+        from inventory.models import StockMove
+        StockMove.objects.filter(description__contains=f"(REF: WF-{workflow.id})").update(journal_entry=entry)
         
         # 7. Process Payment
         if payment_data:

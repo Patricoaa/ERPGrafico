@@ -54,6 +54,7 @@ export const ActionCategory = forwardRef(({
     const isSale = !!order?.customer_name || !!order?.customer
     const isPurchase = !!order?.supplier_name || !!order?.supplier
 
+    const resolvedInvoices = (order?.dte_type ? [order] : (order?.related_documents?.invoices || order?.invoices)) || []
     const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
 
     const handleActionClick = (actionId: string) => {
@@ -80,7 +81,7 @@ export const ActionCategory = forwardRef(({
             case 'view-receptions':
             case 'view-deliveries':
                 const docs = actionId === 'view-documents'
-                    ? (order?.related_documents?.invoices || order?.invoices || [])
+                    ? resolvedInvoices
                     : (isSale ? (order?.related_documents?.deliveries || []) : (order?.related_documents?.receipts || []))
 
                 if (docs.length === 0) {
@@ -132,7 +133,7 @@ export const ActionCategory = forwardRef(({
     const closeModal = () => setActiveModal(null)
 
     const handleAnnulDocument = async (force: boolean = false) => {
-        const invoices = order?.related_documents?.invoices || order?.invoices || []
+        const invoices = resolvedInvoices
         const invoice = invoices.find((inv: any) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
 
         if (!invoice) {
@@ -191,7 +192,7 @@ export const ActionCategory = forwardRef(({
     }
 
     const handleDeleteDraft = async () => {
-        const invoices = order?.related_documents?.invoices || order?.invoices || []
+        const invoices = resolvedInvoices
         const draftInvoice = invoices.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
 
         if (!draftInvoice) {
@@ -296,8 +297,8 @@ export const ActionCategory = forwardRef(({
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={tempInvoiceId || (order?.related_documents?.invoices || order?.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.id}
-                    invoiceType={(order?.related_documents?.invoices || order?.invoices)?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.dte_type}
+                    invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.id}
+                    invoiceType={resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.dte_type}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}
@@ -354,7 +355,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     orderId={order?.id}
-                    invoiceId={(order?.related_documents?.invoices || order?.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
+                    invoiceId={resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
                     initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
