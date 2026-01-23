@@ -9,7 +9,6 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_type = serializers.CharField(source='product.product_type', read_only=True)
     quantity_pending = serializers.ReadOnlyField()
-    id = serializers.IntegerField(required=False) # Helper for updates
     uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     
     track_inventory = serializers.SerializerMethodField()

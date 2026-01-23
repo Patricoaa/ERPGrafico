@@ -16,6 +16,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
     product_type = serializers.SerializerMethodField()
     track_inventory = serializers.SerializerMethodField()
+    manufacturable_quantity = serializers.SerializerMethodField()
     mfg_auto_finalize = serializers.SerializerMethodField()
     has_bom = serializers.SerializerMethodField()
     
@@ -51,8 +52,6 @@ class SaleLineSerializer(serializers.ModelSerializer):
     
     def get_requires_advanced_manufacturing(self, obj):
         return obj.product.requires_advanced_manufacturing if obj.product else False
-
-    mfg_auto_finalize = serializers.SerializerMethodField()
 
     def get_mfg_auto_finalize(self, obj):
         return obj.product.mfg_auto_finalize if obj.product else False

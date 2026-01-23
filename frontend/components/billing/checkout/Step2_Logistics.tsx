@@ -4,10 +4,10 @@ import { useState, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Loader2, Truck, Warehouse, Calendar, FileText, ArrowDownLeft, ArrowUpRight, AlertTriangle, Package, Info } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag, Warehouse } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
@@ -18,6 +18,46 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
+function UoMSelector({ line, currentUom, onUomChange }: { line: any, currentUom: any, onUomChange: (uomId: number) => void }) {
+    const [allowedUoms, setAllowedUoms] = useState<any[]>([])
+
+    useEffect(() => {
+        const fetchAllowed = async () => {
+            try {
+                const res = await api.get(`/inventory/uoms/allowed/?product_id=${line.product_id || line.product}&context=sale`)
+                setAllowedUoms(res.data)
+            } catch (err) {
+                console.error("Error fetching allowed UoMs", err)
+            }
+        }
+        fetchAllowed()
+    }, [line.id, line.product_id])
+
+    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{line.uom_name}</span>
+
+    return (
+        <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
+            <SelectTrigger className="h-7 text-[10px] w-24">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                {allowedUoms.map((u: any) => (
+                    <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
+                        {u.name}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    )
+}
 
 interface Step2_LogisticsProps {
     isCreditNote: boolean
@@ -71,7 +111,7 @@ export function Step2_Logistics({
             }
         } catch (err) {
             console.error("Error fetching warehouses", err)
-            toast.error("Error al cargar almacenes")
+            // toast.error("Error al cargar almacenes")
         } finally {
             setFetchingWarehouses(false)
         }
@@ -85,274 +125,224 @@ export function Step2_Logistics({
         notes: ""
     }
 
+    // If restricted items exist and type is IMMEDIATE, switch to SCHEDULED automatically
+    if (hasRestrictedItems && formData.delivery_type === 'IMMEDIATE') {
+        setTimeout(() => {
+            setData({ ...formData, delivery_type: 'SCHEDULED' });
+        }, 0);
+    }
+
     const moveTypeLabel = isCreditNote ? "Entrada de Stock" : "Salida de Stock"
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-1">
-                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <Truck className="h-5 w-5 text-primary" />
-                    Gestión Logística
+                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
+                    <ShoppingBag className="h-5 w-5 text-primary" />
+                    Opciones de Logística
                 </h3>
                 <p className="text-sm text-muted-foreground">
                     Configure cómo se procesará el movimiento de inventario.
                 </p>
+
+                {hasRestrictedItems && (
+                    <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 mt-2">
+                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <p className="text-xs font-bold uppercase tracking-wider tabular-nums leading-none">Producción Requerida</p>
+                            <p className="text-xs font-medium">Hay {manufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
+                        </div>
+                    </div>
+                )}
+
+                <RadioGroup
+                    value={formData.delivery_type}
+                    onValueChange={(val) => {
+                        if (val === 'PARTIAL') {
+                            const initialLineData = selectedItems
+                                .filter(item => item.creates_stock_move)
+                                .map(item => ({
+                                    line_id: item.line_id,
+                                    product_id: item.product_id,
+                                    quantity: item.quantity,
+                                    uom_id: item.uom_id
+                                }));
+                            setData({ ...formData, delivery_type: val, line_data: initialLineData });
+                        } else {
+                            setData({ ...formData, delivery_type: val });
+                        }
+                    }}
+                    className="grid gap-3 mt-4"
+                >
+                    <Label
+                        htmlFor="del-immediate"
+                        className={cn(
+                            "flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
+                            hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
+                        )}
+                    >
+                        <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
+                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'IMMEDIATE' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <Package className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <span className="text-sm font-bold block">Movimiento Inmediato</span>
+                            <span className="text-[10px] text-muted-foreground">Rebajar/Aumentar stock ahora mismo.</span>
+                        </div>
+                    </Label>
+
+                    <Label
+                        htmlFor="del-scheduled"
+                        className={cn(
+                            "flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
+                        )}
+                    >
+                        <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
+                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'SCHEDULED' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <Calendar className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <span className="text-sm font-bold block">Programar Movimiento</span>
+                            <span className="text-[10px] text-muted-foreground">Registrar para una fecha futura.</span>
+                        </div>
+                    </Label>
+
+                    <Label
+                        htmlFor="del-partial"
+                        className={cn(
+                            "flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
+                        )}
+                    >
+                        <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
+                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <Truck className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <span className="text-sm font-bold block">Carga Parcial</span>
+                            <span className="text-[10px] text-muted-foreground">Procesar solo algunos ítems ahora.</span>
+                        </div>
+                    </Label>
+                </RadioGroup>
             </div>
 
-            {hasRestrictedItems && (
-                <div className="flex items-start gap-4 p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl text-amber-900 shadow-sm animate-in fade-in slide-in-from-top-2">
-                    <div className="p-2 bg-amber-100 rounded-xl">
-                        <AlertTriangle className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-sm font-black uppercase tracking-wider tabular-nums leading-none mb-1">Items de Fabricación</p>
-                        <p className="text-xs font-bold opacity-80 leading-relaxed">
-                            Hay {manufacturableItems.length} productos que requieren fabricación o no controlan stock directo.
-                            El movimiento inmediato está deshabilitado para estos ítems ya que no afectan inventario físicamente ahora.
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Options Column */}
-                <div className="lg:col-span-12 xl:col-span-5 space-y-6">
-                    <Card className="border-2 rounded-[2rem] shadow-sm border-muted/20 overflow-hidden bg-card">
-                        <div className={cn(
-                            "p-4 px-6 flex items-center justify-between border-b-2",
-                            isCreditNote ? "bg-emerald-500/5 text-emerald-700 border-emerald-500/10" : "bg-rose-500/5 text-rose-700 border-rose-500/10"
-                        )}>
-                            <div className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest leading-none">
-                                {isCreditNote ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
-                                {moveTypeLabel}
-                            </div>
+            <div className="space-y-4 animate-in fade-in duration-300">
+                {formData.delivery_type === 'PARTIAL' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                        <div className="flex flex-col gap-1">
+                            <Label className="text-sm font-semibold">Cantidades para Movimiento Inmediato</Label>
+                            <p className="text-xs text-muted-foreground">
+                                Especifique las cantidades que procesará ahora.
+                            </p>
                         </div>
-                        <CardContent className="p-6 space-y-6">
-                            <RadioGroup
-                                value={formData.delivery_type}
-                                onValueChange={(val) => {
-                                    if (val === 'PARTIAL') {
-                                        const initialLineData = selectedItems
-                                            .filter(item => item.creates_stock_move)
-                                            .map(item => ({
-                                                line_id: item.line_id,
-                                                product_id: item.product_id,
-                                                quantity: item.quantity,
-                                                uom_id: item.uom_id
-                                            }));
-                                        setData({ ...formData, delivery_type: val, line_data: initialLineData });
-                                    } else {
-                                        setData({ ...formData, delivery_type: val });
-                                    }
-                                }}
-                                className="grid gap-3"
-                            >
-                                <Label
-                                    htmlFor="log-immediate"
-                                    className={cn(
-                                        "flex items-center gap-4 rounded-2xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                                        formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/[0.03]",
-                                        hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
-                                    )}
-                                >
-                                    <RadioGroupItem value="IMMEDIATE" id="log-immediate" className="sr-only" disabled={hasRestrictedItems} />
-                                    <div className={cn(
-                                        "p-2 rounded-xl border-2 transition-colors",
-                                        formData.delivery_type === 'IMMEDIATE' ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-muted"
-                                    )}>
-                                        <Package className="h-5 w-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <span className="text-xs font-black uppercase tracking-widest block">Inmediato</span>
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Procesar stock ahora mismo</span>
-                                    </div>
-                                </Label>
+                        <div className="rounded-md border overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/50">
+                                        <TableHead className="w-[45%] text-[10px] font-bold uppercase tracking-wider">Producto</TableHead>
+                                        <TableHead className="w-[15%] text-right text-[10px] font-bold uppercase tracking-wider">Total</TableHead>
+                                        <TableHead className="w-[20%] text-[10px] font-bold uppercase tracking-wider">A Procesar</TableHead>
+                                        <TableHead className="w-[20%] text-[10px] font-bold uppercase tracking-wider">Unidad</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {selectedItems.map((item) => {
+                                        const isEligible = item.creates_stock_move;
+                                        const currentVal = (formData.line_data || [])
+                                            .find((ld: any) => ld.line_id === item.line_id)?.quantity ?? 0;
 
-                                <Label
-                                    htmlFor="log-scheduled"
-                                    className={cn(
-                                        "flex items-center gap-4 rounded-2xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                                        formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/[0.03]"
-                                    )}
-                                >
-                                    <RadioGroupItem value="SCHEDULED" id="log-scheduled" className="sr-only" />
-                                    <div className={cn(
-                                        "p-2 rounded-xl border-2 transition-colors",
-                                        formData.delivery_type === 'SCHEDULED' ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-muted"
-                                    )}>
-                                        <Calendar className="h-5 w-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <span className="text-xs font-black uppercase tracking-widest block">Programado</span>
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Solo registrar para fecha futura</span>
-                                    </div>
-                                </Label>
+                                        return (
+                                            <TableRow key={item.line_id} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
+                                                <TableCell>
+                                                    <div className="flex flex-col gap-1 py-1">
+                                                        <span className="font-medium text-xs leading-tight">{item.product_name}</span>
+                                                        {!isEligible && (
+                                                            <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Sin control de stock</span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right font-semibold text-xs tabular-nums">
+                                                    {item.quantity.toLocaleString('es-CL')}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        max={item.quantity}
+                                                        value={currentVal}
+                                                        disabled={!isEligible}
+                                                        onChange={(e) => {
+                                                            const val = parseFloat(e.target.value) || 0;
+                                                            const lines = [...(formData.line_data || [])];
+                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
+                                                            if (idx >= 0) {
+                                                                lines[idx] = { ...lines[idx], quantity: val };
+                                                            } else {
+                                                                lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: val, uom_id: item.uom_id });
+                                                            }
+                                                            setData({ ...formData, line_data: lines });
+                                                        }}
+                                                        className="h-8 text-xs"
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="text-sm text-muted-foreground font-medium">
+                                                    <UoMSelector
+                                                        line={item}
+                                                        currentUom={(formData.line_data || []).find((ld: any) => ld.line_id === item.line_id)?.uom_id || item.uom_id}
+                                                        onUomChange={(uomId) => {
+                                                            const lines = [...(formData.line_data || [])];
+                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
+                                                            if (idx >= 0) {
+                                                                lines[idx] = { ...lines[idx], uom_id: uomId };
+                                                            } else {
+                                                                lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: 1, uom_id: uomId });
+                                                            }
+                                                            setData({ ...formData, line_data: lines });
+                                                        }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                )}
 
-                                <Label
-                                    htmlFor="log-partial"
-                                    className={cn(
-                                        "flex items-center gap-4 rounded-2xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                                        formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/[0.03]"
-                                    )}
-                                >
-                                    <RadioGroupItem value="PARTIAL" id="log-partial" className="sr-only" />
-                                    <div className={cn(
-                                        "p-2 rounded-xl border-2 transition-colors",
-                                        formData.delivery_type === 'PARTIAL' ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-muted"
-                                    )}>
-                                        <Truck className="h-5 w-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <span className="text-xs font-black uppercase tracking-widest block">Carga Parcial</span>
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Ingresar/Retirar solo algunos ítems</span>
-                                    </div>
-                                </Label>
-                            </RadioGroup>
-
-                            <div className="space-y-4 pt-4 border-t-2 border-dashed">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                                        <Warehouse className="h-3 w-3" />
-                                        Bodega
-                                    </Label>
-                                    <select
-                                        className="flex h-12 w-full rounded-xl border-2 bg-background px-4 py-2 font-bold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none disabled:opacity-50"
-                                        value={formData.warehouse_id}
-                                        onChange={(e) => setData({ ...formData, warehouse_id: e.target.value })}
-                                        disabled={fetchingWarehouses}
-                                    >
-                                        <option value="">Seleccione bodega...</option>
-                                        {warehouses.map(w => (
-                                            <option key={w.id} value={w.id.toString()}>
-                                                {w.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                                        <Calendar className="h-3 w-3" />
-                                        Fecha
-                                    </Label>
-                                    <Input
-                                        type="date"
-                                        className="h-12 font-bold bg-background border-2 rounded-xl tabular-nums transition-all"
-                                        value={formData.date}
-                                        onChange={(e) => setData({ ...formData, date: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Grid Column 2: Detail or Table */}
-                <div className="lg:col-span-12 xl:col-span-7 space-y-6">
-                    {formData.delivery_type === 'PARTIAL' ? (
-                        <Card className="border-2 rounded-[2rem] shadow-sm border-muted/20 overflow-hidden bg-card flex flex-col h-full min-h-[400px]">
-                            <div className="p-4 px-6 border-b-2 bg-muted/5">
-                                <span className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                                    <Truck className="h-4 w-4 text-primary" />
-                                    Detalle de Carga Parcial
-                                </span>
-                            </div>
-                            <CardContent className="p-0 flex-1 overflow-auto">
-                                <Table>
-                                    <TableHeader className="sticky top-0 bg-background z-10 border-b-2">
-                                        <TableRow>
-                                            <TableHead className="font-black uppercase text-[9px] tracking-widest">Producto</TableHead>
-                                            <TableHead className="text-right font-black uppercase text-[9px] tracking-widest">Total</TableHead>
-                                            <TableHead className="w-32 text-center font-black uppercase text-[9px] tracking-widest">A Procesar</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {selectedItems.map((item) => {
-                                            const isEligible = item.creates_stock_move;
-                                            const currentVal = (formData.line_data || [])
-                                                .find((ld: any) => ld.line_id === item.line_id)?.quantity ?? 0;
-
-                                            return (
-                                                <TableRow key={item.line_id} className={cn(
-                                                    "h-16",
-                                                    !isEligible && "bg-muted/30 opacity-60"
-                                                )}>
-                                                    <TableCell>
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="font-bold text-xs leading-tight">{item.product_name}</span>
-                                                            {!isEligible && (
-                                                                <span className="text-[9px] font-black text-amber-600 uppercase tracking-tighter">Sin control de stock</span>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-bold text-xs tabular-nums opacity-60">
-                                                        {item.quantity} {item.uom_name}
-                                                    </TableCell>
-                                                    <TableCell className="px-4">
-                                                        <Input
-                                                            type="number"
-                                                            step="1"
-                                                            min="0"
-                                                            max={item.quantity}
-                                                            value={currentVal}
-                                                            disabled={!isEligible}
-                                                            onChange={(e) => {
-                                                                const val = parseFloat(e.target.value) || 0;
-                                                                const lines = [...(formData.line_data || [])];
-                                                                const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
-                                                                if (idx >= 0) {
-                                                                    lines[idx] = { ...lines[idx], quantity: val };
-                                                                } else {
-                                                                    lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: val, uom_id: item.uom_id });
-                                                                }
-                                                                setData({ ...formData, line_data: lines });
-                                                            }}
-                                                            className="h-9 text-center font-black text-xs border-2 rounded-xl focus:ring-primary/20"
-                                                        />
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="space-y-6">
-                            <Card className="border-2 rounded-[2rem] shadow-sm border-muted/20 overflow-hidden bg-card">
-                                <CardContent className="p-8 space-y-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                                            <FileText className="h-3 w-3" />
-                                            Observaciones Logísticas
-                                        </Label>
-                                        <Input
-                                            placeholder="Indicaciones para el transporte o recepción..."
-                                            className="h-14 font-bold bg-background border-2 rounded-2xl transition-all focus:ring-primary/20"
-                                            value={formData.notes}
-                                            onChange={(e) => setData({ ...formData, notes: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="p-5 bg-primary/[0.03] border-2 border-dashed border-primary/20 rounded-2xl">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-primary/10 rounded-xl">
-                                                <Info className="h-5 w-5 text-primary" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] font-black uppercase text-primary tracking-widest leading-none">Resumen de Operación</p>
-                                                <p className="text-[11px] font-bold opacity-60 leading-tight">
-                                                    {formData.delivery_type === 'IMMEDIATE'
-                                                        ? `Se generará un movimiento de ${moveTypeLabel.toLowerCase()} para todos los productos de stock en la bodega seleccionada.`
-                                                        : `La nota se emitirá pero el movimiento de stock quedará pendiente para ser procesado manualmente después.`}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                <div className="grid grid-cols-1 gap-4">
+                    {(formData.delivery_type === 'PARTIAL' || formData.delivery_type === 'SCHEDULED') && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                            <Label htmlFor="del-date" className="text-xs font-bold uppercase flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5" />
+                                {formData.delivery_type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha de Operación'}
+                            </Label>
+                            <Input
+                                id="del-date"
+                                type="date"
+                                className="h-10 text-sm font-medium"
+                                value={formData.date || ""}
+                                onChange={(e) => setData({ ...formData, date: e.target.value })}
+                            />
                         </div>
                     )}
                 </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="del-notes" className="text-xs font-bold uppercase">Notas / Observaciones</Label>
+                    <Textarea
+                        id="del-notes"
+                        placeholder="Indicaciones especiales para el movimiento de inventario..."
+                        rows={3}
+                        value={formData.notes}
+                        onChange={(e) => setData({ ...formData, notes: e.target.value })}
+                    />
+                </div>
+
+
             </div>
         </div>
     )
