@@ -46,10 +46,10 @@ class NoteCheckoutService:
         except Invoice.DoesNotExist:
             raise ValidationError(f"Factura con ID {corrected_invoice_id} no existe.")
         
-        # CRITICAL VALIDATION: Only from POSTED invoices
-        if corrected_invoice.status != Invoice.Status.POSTED:
+        # CRITICAL VALIDATION: Only from POSTED or PAID invoices
+        if corrected_invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
             raise ValidationError(
-                f"Solo se pueden crear NC/ND desde facturas publicadas. "
+                f"Solo se pueden crear NC/ND desde facturas publicadas o pagadas. "
                 f"Estado actual: {corrected_invoice.get_status_display()}"
             )
         
@@ -185,7 +185,12 @@ class NoteCheckoutService:
         # Update workflow
         workflow.selected_items = validated_items
         workflow.requires_logistics = has_stockable
-        workflow.current_stage = NoteWorkflow.Stage.ITEMS_SELECTED
+        
+        if has_stockable:
+            workflow.current_stage = NoteWorkflow.Stage.ITEMS_SELECTED
+        else:
+            workflow.current_stage = NoteWorkflow.Stage.LOGISTICS_COMPLETED
+            
         workflow.save()
         
         # Update invoice totals
@@ -235,6 +240,8 @@ class NoteCheckoutService:
         except Warehouse.DoesNotExist:
             raise ValidationError(f"Bodega con ID {warehouse_id} no existe.")
         
+        is_sale = workflow.sale_order is not None
+        
         # Create stock movements for stockable items
         for item in workflow.selected_items:
             if not item.get('creates_stock_move', False):
@@ -243,15 +250,25 @@ class NoteCheckoutService:
             product = Product.objects.get(id=item['product_id'])
             quantity = Decimal(str(item['quantity']))
             
-            # Determine move type
-            move_type = StockMove.Type.IN if workflow.is_credit_note else StockMove.Type.OUT
+            # Determine move type correctly based on context
+            if is_sale:
+                # Sales: Credit Note (Return) -> IN; Debit Note (Extra) -> OUT
+                move_type = StockMove.Type.IN if workflow.is_credit_note else StockMove.Type.OUT
+            else:
+                # Purchases: Credit Note (Return) -> OUT; Debit Note (Extra) -> IN
+                move_type = StockMove.Type.OUT if workflow.is_credit_note else StockMove.Type.IN
+            
+            # Apply sign correctly (Pos for Add/IN, Neg for Remove/OUT)
+            signed_qty = quantity if move_type == StockMove.Type.IN else -quantity
+
+            print(f"DEBUG: NoteProcessLogistics - Workflow {workflow.id}, Product {product.internal_code}, Move {move_type}, Qty {signed_qty}")
             
             StockMove.objects.create(
                 date=date,
                 product=product,
                 warehouse=warehouse,
                 uom=product.uom,
-                quantity=quantity,
+                quantity=signed_qty,
                 move_type=move_type,
                 description=f"{workflow.invoice.get_dte_type_display()} - {workflow.invoice.display_id} (REF: WORKFLOW-{workflow.id})"
             )
@@ -314,7 +331,7 @@ class NoteCheckoutService:
             document_number: Folio number
             document_date: Document date (optional, defaults to today)
             document_attachment: PDF/XML file (optional)
-            is_pending: If True, defer accounting entry posting
+            is_pending: If True, create as DRAFT and don't post entry
         
         Returns:
             Updated workflow in REGISTRATION_PENDING stage
@@ -323,6 +340,11 @@ class NoteCheckoutService:
             'invoice', 'corrected_invoice', 'sale_order', 'purchase_order'
         ).get(id=workflow_id)
         
+        # Robustness: Allow if in ITEMS_SELECTED but doesn't require logistics
+        if workflow.current_stage == NoteWorkflow.Stage.ITEMS_SELECTED and not workflow.requires_logistics:
+            workflow.current_stage = NoteWorkflow.Stage.LOGISTICS_COMPLETED
+            workflow.save()
+
         if workflow.current_stage != NoteWorkflow.Stage.LOGISTICS_COMPLETED:
             raise ValidationError(
                 f"No se puede registrar documento en etapa {workflow.get_current_stage_display()}"
@@ -332,11 +354,21 @@ class NoteCheckoutService:
         if not settings:
             raise ValidationError("Debe configurar la contabilidad primero.")
         
+        # Mandatory attachment for NC if not pending
+        if workflow.is_credit_note and not is_pending and not document_attachment:
+            raise ValidationError("El archivo PDF/XML es obligatorio para emitir la nota de crédito.")
+
         # Update invoice
         workflow.invoice.number = document_number
         workflow.invoice.date = document_date or timezone.now().date()
         if document_attachment:
             workflow.invoice.document_attachment = document_attachment
+        
+        if is_pending:
+            workflow.invoice.status = Invoice.Status.DRAFT
+        else:
+            workflow.invoice.status = Invoice.Status.POSTED
+            
         workflow.invoice.save()
         
         # Create accounting entry
@@ -346,8 +378,6 @@ class NoteCheckoutService:
             # Post entry immediately
             from accounting.services import JournalEntryService
             JournalEntryService.post_entry(entry)
-            workflow.invoice.status = Invoice.Status.POSTED
-            workflow.invoice.save()
         
         # Update workflow
         workflow.registration_data = {
@@ -356,7 +386,7 @@ class NoteCheckoutService:
             'is_pending': is_pending
         }
         workflow.registration_deferred = is_pending
-        workflow.current_stage = NoteWorkflow.Stage.REGISTRATION_PENDING
+        workflow.current_stage = NoteWorkflow.Stage.PAYMENT_PENDING # Move straight to payment
         workflow.save()
         
         return workflow
@@ -368,9 +398,8 @@ class NoteCheckoutService:
         
         Business rules:
         - Services/Consumables: Reverse to income/expense accounts
-        - Stockables: Reverse to inventory account
-        - Manufacturables (with BOM): Reverse to inventory
-        - Manufacturables (without BOM/advanced): Reverse to COGS (no stock recovery)
+        - Stockables: Reverse to inventory account AND reverse COGS
+        - Manufacturables (with BOM): Reverse to inventory AND reverse COGS
         """
         invoice = workflow.invoice
         is_sale = workflow.sale_order is not None
@@ -387,31 +416,33 @@ class NoteCheckoutService:
         invoice.save()
         
         # Determine receivable/payable account
+        contact = workflow.corrected_invoice.contact
         if is_sale:
             partner_account = (
-                workflow.corrected_invoice.contact.account_receivable or
-                settings.default_receivable_account
-            )
+                contact.account_receivable if contact else None
+            ) or settings.default_receivable_account
         else:
             partner_account = (
-                workflow.corrected_invoice.contact.account_payable or
-                settings.default_payable_account
-            )
+                contact.account_payable if contact else None
+            ) or settings.default_payable_account
         
         if not partner_account:
-            raise ValidationError("No se encontró cuenta por cobrar/pagar.")
+            partner_type = "por cobrar" if is_sale else "por pagar"
+            raise ValidationError(f"No se encontró cuenta {partner_type} por defecto en la configuración contable o en el contacto.")
         
         # Create receivable/payable entry
         total_amount = invoice.total
         
         if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO:
-            # Credit Note: Reduces debt -> Debit partner account
-            debit_amount = total_amount if is_sale else 0
-            credit_amount = 0 if is_sale else total_amount
-        else:
-            # Debit Note: Increases debt -> Credit partner account
+            # Credit Note: Reduces debt
+            # Sale NC -> Credit Receivable; Purchase NC -> Debit Payable
             debit_amount = 0 if is_sale else total_amount
             credit_amount = total_amount if is_sale else 0
+        else:
+            # Debit Note: Increases debt
+            # Sale ND -> Debit Receivable; Purchase ND -> Credit Payable
+            debit_amount = total_amount if is_sale else 0
+            credit_amount = 0 if is_sale else total_amount
         
         JournalItem.objects.create(
             entry=entry,
@@ -426,32 +457,33 @@ class NoteCheckoutService:
         for item in workflow.selected_items:
             product = Product.objects.get(id=item['product_id'])
             line_net = Decimal(str(item['line_net']))
-            line_tax = Decimal(str(item['line_tax']))
             
-            # Determine account based on product type
+            # 1. Main Net Amount Line (Revenue/Expense reversal)
             if product.product_type == Product.Type.SERVICE:
-                # Service -> Income/Expense account
-                product_account = product.income_account or settings.default_revenue_account
+                product_account = product.income_account or settings.default_service_revenue_account or settings.default_revenue_account
             elif product.product_type == Product.Type.CONSUMABLE:
-                # Consumable -> Expense account
-                product_account = product.expense_account or settings.default_expense_account
+                product_account = product.expense_account or settings.default_consumable_account or settings.default_expense_account
             elif product.track_inventory:
-                # Stockable -> Inventory account
-                product_account = settings.default_inventory_account
+                # For sales, reverse revenue. For purchases, reverse stock bridge/inventory.
+                # Here we handle the REVENUE/EXPENSE side first.
+                if is_sale:
+                    product_account = product.income_account or settings.default_revenue_account
+                else:
+                    # Purchase return: Credit the "Inventory bridge" (liability) or Expense
+                    product_account = settings.stock_input_account or settings.default_expense_account
             else:
-                # Manufacturable without stock -> COGS
                 product_account = settings.default_expense_account
             
             if not product_account:
-                raise ValidationError(f"No se encontró cuenta contable para {product.name}")
+                account_req = "Ingresos" if is_sale else "Gastos"
+                raise ValidationError(f"No se encontró cuenta de {account_req} para '{product.name}'.")
             
-            # Revenue/Expense line (net amount)
             if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO:
-                debit_amount = 0 if is_sale else line_net
-                credit_amount = line_net if is_sale else 0
-            else:
                 debit_amount = line_net if is_sale else 0
                 credit_amount = 0 if is_sale else line_net
+            else:
+                debit_amount = 0 if is_sale else line_net
+                credit_amount = line_net if is_sale else 0
             
             JournalItem.objects.create(
                 entry=entry,
@@ -460,20 +492,52 @@ class NoteCheckoutService:
                 credit=credit_amount,
                 label=f"{product.name} - {item['reason']}" if item.get('reason') else product.name
             )
+
+            # 2. STOCK VALUATION REVERSAL (Only for sales of stockable items)
+            # If Customer NC (Return): Debit Inventory, Credit COGS (at current cost)
+            if is_sale and workflow.is_credit_note and item.get('creates_stock_move'):
+                # Valuation amount = qty * current_cost
+                valuation_amount = (Decimal(str(item['quantity'])) * product.cost_price).quantize(Decimal('1'))
+                
+                if valuation_amount > 0:
+                    inv_account = settings.storable_inventory_account or settings.default_inventory_account
+                    cogs_account = settings.merchandise_cogs_account or settings.default_expense_account
+                    
+                    if product.product_type == Product.Type.MANUFACTURABLE:
+                        inv_account = settings.manufacturable_inventory_account or inv_account
+                        cogs_account = settings.manufactured_cogs_account or cogs_account
+
+                    if inv_account and cogs_account:
+                        # Entry: Inventory (Debit) and COGS (Credit)
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=inv_account,
+                            debit=valuation_amount,
+                            credit=0,
+                            label=f"Devolución Stock: {product.name}"
+                        )
+                        JournalItem.objects.create(
+                            entry=entry,
+                            account=cogs_account,
+                            debit=0,
+                            credit=valuation_amount,
+                            label=f"Reverso Costo Venta: {product.name}"
+                        )
         
         # Tax entry
         if invoice.total_tax > 0:
             tax_account = settings.default_tax_payable_account if is_sale else settings.default_tax_receivable_account
             
             if not tax_account:
-                raise ValidationError("No se encontró cuenta de impuestos.")
+                tax_type = "IVA Débito" if is_sale else "IVA Crédito"
+                raise ValidationError(f"No se encontró cuenta de {tax_type} por defecto en la configuración contable.")
             
             if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO:
-                debit_amount = 0 if is_sale else invoice.total_tax
-                credit_amount = invoice.total_tax if is_sale else 0
-            else:
                 debit_amount = invoice.total_tax if is_sale else 0
                 credit_amount = 0 if is_sale else invoice.total_tax
+            else:
+                debit_amount = 0 if is_sale else invoice.total_tax
+                credit_amount = invoice.total_tax if is_sale else 0
             
             JournalItem.objects.create(
                 entry=entry,
@@ -487,38 +551,76 @@ class NoteCheckoutService:
     
     @staticmethod
     @transaction.atomic
-    def complete_workflow(workflow_id: int, payment_data: Dict = None) -> NoteWorkflow:
+    def process_payment(workflow_id: int, payment_data: Dict) -> NoteWorkflow:
         """
-        Stage 5: Complete workflow and apply payment adjustments
+        Stage 5: Process payment/refund
         
         Args:
             workflow_id: NoteWorkflow ID
-            payment_data: Optional payment information
-        
-        Returns:
-            Completed workflow
+            payment_data: Dict with:
+                - method: 'CASH', 'CARD', 'TRANSFER', 'CREDIT'
+                - amount: Decimal or str
+                - treasury_account_id: int (optional)
+                - transaction_number: str (optional)
+                - is_pending: bool
         """
-        workflow = NoteWorkflow.objects.select_related('invoice').get(id=workflow_id)
+        workflow = NoteWorkflow.objects.get(id=workflow_id)
+        if workflow.current_stage != NoteWorkflow.Stage.PAYMENT_PENDING:
+             raise ValidationError(f"No se puede procesar pago en etapa {workflow.get_current_stage_display()}")
+
+        # 1. Register payment logic via TreasuryService
+        from treasury.services import TreasuryService
         
-        if workflow.current_stage != NoteWorkflow.Stage.REGISTRATION_PENDING:
-            raise ValidationError(
-                f"No se puede completar workflow en etapa {workflow.get_current_stage_display()}"
+        method = payment_data.get('method')
+        amount = Decimal(str(payment_data.get('amount', 0)))
+        is_sale = workflow.sale_order is not None
+        
+        if method != 'CREDIT' and amount > 0:
+            # For Credit Note on Sale -> OUTBOUND (Refund)
+            # For Debit Note on Sale -> INBOUND (Payment)
+            # For Credit Note on Purchase -> INBOUND (Refund from supplier)
+            # For Debit Note on Purchase -> OUTBOUND (Payment to supplier)
+            
+            if is_sale:
+                p_type = 'OUTBOUND' if workflow.is_credit_note else 'INBOUND'
+                partner = workflow.sale_order.customer
+            else:
+                p_type = 'INBOUND' if workflow.is_credit_note else 'OUTBOUND'
+                partner = workflow.purchase_order.supplier
+
+            TreasuryService.register_payment(
+                amount=amount,
+                payment_type=p_type,
+                payment_method=method,
+                reference=f"{workflow.invoice.dte_type[:3]}-{workflow.invoice.number}",
+                partner=partner,
+                invoice=workflow.invoice,
+                treasury_account_id=payment_data.get('treasury_account_id'),
+                transaction_number=payment_data.get('transaction_number'),
+                is_pending_registration=payment_data.get('is_pending', False)
             )
-        
-        # If registration was deferred and not yet posted, post now
-        if workflow.registration_deferred and workflow.invoice.status == Invoice.Status.DRAFT:
-            from accounting.services import JournalEntryService
-            JournalEntryService.post_entry(workflow.invoice.journal_entry)
-            workflow.invoice.status = Invoice.Status.POSTED
-            workflow.invoice.save()
-        
-        # Store payment data if provided
-        if payment_data:
-            workflow.payment_data = payment_data
-        
+
+        workflow.payment_data = payment_data
         workflow.current_stage = NoteWorkflow.Stage.COMPLETED
         workflow.save()
+        return workflow
+
+    @staticmethod
+    @transaction.atomic
+    def complete_workflow(workflow_id: int, payment_data: Dict = None) -> NoteWorkflow:
+        """
+        Final verification and completion.
+        If payment_data is provided, it calls process_payment first.
+        """
+        workflow = NoteWorkflow.objects.get(id=workflow_id)
         
+        if payment_data:
+            return NoteCheckoutService.process_payment(workflow_id, payment_data)
+
+        if workflow.current_stage == NoteWorkflow.Stage.PAYMENT_PENDING:
+            workflow.current_stage = NoteWorkflow.Stage.COMPLETED
+            workflow.save()
+            
         return workflow
     
     @staticmethod

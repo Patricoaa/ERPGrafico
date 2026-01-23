@@ -138,11 +138,11 @@ class NoteWorkflow(models.Model):
     
     def clean(self):
         """Validation rules"""
-        # Validate corrected invoice is POSTED
+        # Validate corrected invoice is POSTED or PAID
         if self.corrected_invoice_id:
-            if self.corrected_invoice.status != 'POSTED':
+            if self.corrected_invoice.status not in ['POSTED', 'PAID']:
                 raise ValidationError({
-                    'corrected_invoice': _("Solo se pueden crear NC/ND desde facturas publicadas.")
+                    'corrected_invoice': _("Solo se pueden crear NC/ND desde facturas publicadas o pagadas.")
                 })
             
             # Cannot create note from another note

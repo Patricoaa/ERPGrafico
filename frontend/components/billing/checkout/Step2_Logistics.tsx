@@ -1,26 +1,27 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, Truck, Warehouse, Calendar, ArrowRight, ArrowLeft } from "lucide-react"
+import { Loader2, Truck, Warehouse, Calendar, ArrowRight, ArrowLeft, FileText } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 interface Step2_LogisticsProps {
     workflow: any
     onSuccess: (updatedWorkflow: any) => void
-    onSkip: () => void
 }
 
-export function Step2_Logistics({
+export const Step2_Logistics = forwardRef(({
     workflow,
-    onSuccess,
-    onSkip
-}: Step2_LogisticsProps) {
+    onSuccess
+}: Step2_LogisticsProps, ref) => {
     const [loading, setLoading] = useState(false)
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [fetchingWarehouses, setFetchingWarehouses] = useState(true)
@@ -30,6 +31,11 @@ export function Step2_Logistics({
         date: new Date().toISOString().split('T')[0],
         notes: ""
     })
+
+    useImperativeHandle(ref, () => ({
+        submit: handleSubmit,
+        loading
+    }))
 
     useEffect(() => {
         fetchWarehouses()
@@ -42,7 +48,6 @@ export function Step2_Logistics({
             const data = res.data.results || res.data
             setWarehouses(Array.isArray(data) ? data : [])
 
-            // Auto-select first warehouse if available
             if (Array.isArray(data) && data.length > 0) {
                 setFormData(prev => ({ ...prev, warehouse_id: data[0].id.toString() }))
             }
@@ -76,54 +81,60 @@ export function Step2_Logistics({
         }
     }
 
-    const isNC = workflow.invoice.dte_type === 'NOTA_CREDITO'
+    const isNC = workflow.is_credit_note
     const moveTypeLabel = isNC ? "Entrada de Stock" : "Salida de Stock"
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="space-y-2">
-                <h3 className="text-xl font-black flex items-center gap-2">
-                    <Truck className="h-6 w-6 text-primary" />
-                    Procesamiento Logístico
+        <div className="space-y-8">
+            <div className="flex flex-col gap-1">
+                <h3 className="text-2xl font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
+                    <Truck className="h-7 w-7 text-primary" />
+                    Gestión Logística
                 </h3>
-                <p className="text-muted-foreground text-sm">
-                    Configure el movimiento físico de mercancía para esta nota.
+                <p className="text-sm text-muted-foreground font-medium">
+                    Configure el movimiento de inventario para los productos seleccionados.
                 </p>
             </div>
 
-            <Card className="border-2 border-primary/10 shadow-lg overflow-hidden">
+            <Card className="border-2 rounded-2xl shadow-sm border-muted/20 overflow-hidden bg-card">
                 <div className={cn(
-                    "p-4 flex items-center justify-between",
-                    isNC ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                    "p-4 px-6 flex items-center justify-between border-b-2",
+                    isNC ? "bg-emerald-500/5 text-emerald-700 border-emerald-500/10" : "bg-rose-500/5 text-rose-700 border-rose-500/10"
                 )}>
-                    <div className="flex items-center gap-2 font-black text-xs uppercase tracking-widest">
-                        <Truck className="h-4 w-4" />
-                        {moveTypeLabel} (Recuperación de Stock)
+                    <div className="flex items-center gap-3 font-black text-xs uppercase tracking-widest tabular-nums">
+                        <Warehouse className="h-4 w-4" />
+                        Movimiento: {moveTypeLabel}
                     </div>
+                    <Badge variant="outline" className={cn(
+                        "font-black uppercase text-[10px] tabular-nums",
+                        isNC ? "border-emerald-500 text-emerald-600" : "border-rose-500 text-rose-600"
+                    )}>
+                        {isNC ? "+ INCREMENTO STOCK" : "- DISMINUCIÓN STOCK"}
+                    </Badge>
                 </div>
-                <CardContent className="p-8 space-y-6">
+                <CardContent className="p-8 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Warehouse Selection */}
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter flex items-center gap-2">
                                 <Warehouse className="h-3 w-3" />
-                                Bodega de Destino
+                                Bodega de Destino / Origen
                             </Label>
                             <Select
                                 value={formData.warehouse_id}
                                 onValueChange={(val) => setFormData(p => ({ ...p, warehouse_id: val }))}
                                 disabled={fetchingWarehouses}
                             >
-                                <SelectTrigger className="h-12 font-bold bg-muted/20 border-2">
+                                <SelectTrigger className="h-14 font-bold bg-background border-2 rounded-xl transition-all focus:ring-primary hover:border-primary/50">
                                     {fetchingWarehouses ? (
-                                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto" />
                                     ) : (
                                         <SelectValue placeholder="Seleccione bodega..." />
                                     )}
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="rounded-xl border-2 shadow-xl">
                                     {warehouses.map(w => (
-                                        <SelectItem key={w.id} value={w.id.toString()} className="font-medium">
+                                        <SelectItem key={w.id} value={w.id.toString()} className="font-bold uppercase text-xs py-3">
                                             {w.name}
                                         </SelectItem>
                                     ))}
@@ -132,14 +143,14 @@ export function Step2_Logistics({
                         </div>
 
                         {/* Date Selection */}
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter flex items-center gap-2">
                                 <Calendar className="h-3 w-3" />
-                                Fecha del Movimiento
+                                Fecha de Registro
                             </Label>
                             <Input
                                 type="date"
-                                className="h-12 font-bold bg-muted/20 border-2"
+                                className="h-14 font-bold bg-background border-2 rounded-xl transition-all focus:ring-primary hover:border-primary/50 tabular-nums"
                                 value={formData.date}
                                 onChange={(e) => setFormData(p => ({ ...p, date: e.target.value }))}
                             />
@@ -147,50 +158,23 @@ export function Step2_Logistics({
                     </div>
 
                     {/* Notes */}
-                    <div className="space-y-3 pt-2">
-                        <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Observaciones Logísticas</Label>
+                    <div className="space-y-4 pt-2">
+                        <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter flex items-center gap-2">
+                            <FileText className="h-3 w-3" />
+                            Observaciones / Notas Internas
+                        </Label>
                         <Input
-                            placeholder="Ej: Ingreso por devolución de cliente..."
-                            className="h-12 font-medium bg-muted/20 border-2"
+                            placeholder="Ej: Ingreso por devolución de cliente por falla en impresión..."
+                            className="h-14 font-semibold bg-background border-2 rounded-xl transition-all focus:ring-primary hover:border-primary/50"
                             value={formData.notes}
                             onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
                         />
                     </div>
                 </CardContent>
             </Card>
-
-            <div className="flex justify-between items-center pt-6">
-                <Button
-                    variant="ghost"
-                    onClick={onSkip}
-                    disabled={loading}
-                    className="text-muted-foreground hover:text-foreground font-bold"
-                >
-                    Saltar etapa logística (No recomendado)
-                </Button>
-
-                <Button
-                    onClick={handleSubmit}
-                    disabled={loading || !formData.warehouse_id}
-                    className="group px-10 py-7 rounded-2xl font-black text-base transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl hover:shadow-primary/20"
-                >
-                    {loading ? (
-                        <>
-                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                            Procesando...
-                        </>
-                    ) : (
-                        <>
-                            Confirmar Logística
-                            <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                        </>
-                    )}
-                </Button>
-            </div>
         </div>
     )
-}
+})
 
-function cn(...inputs: any[]) {
-    return inputs.filter(Boolean).join(" ")
-}
+Step2_Logistics.displayName = "Step2_Logistics"
+

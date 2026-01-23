@@ -72,7 +72,8 @@ export const ActionCategory = forwardRef(({
             case 'payment-history':
             case 'register-payment':
             case 'register-payment-ref':
-            case 'create-note':
+            case 'create-credit-note':
+            case 'create-debit-note':
                 setActiveModal(actionId)
                 break
             case 'view-documents':
@@ -346,13 +347,13 @@ export const ActionCategory = forwardRef(({
                 />
             )}
 
-            {activeModal === 'create-note' && (
+            {(activeModal === 'create-credit-note' || activeModal === 'create-debit-note') && (
                 <NoteCheckoutWizard
                     open={true}
                     onOpenChange={closeModal}
                     orderId={order.id}
                     invoiceId={(order.related_documents?.invoices || order.invoices)?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
-                    initialType="NOTA_CREDITO"
+                    initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}

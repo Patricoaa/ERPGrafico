@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useImperativeHandle, forwardRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, ArrowRight, Loader2 } from "lucide-react"
+import { AlertCircle, ArrowRight, Loader2, Tag } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 interface Step1_ItemsProps {
     workflow: any
@@ -16,16 +17,21 @@ interface Step1_ItemsProps {
     onSuccess: (updatedWorkflow: any) => void
 }
 
-export function Step1_Items({
+export const Step1_Items = forwardRef(({
     workflow,
     originalInvoice,
     onSuccess
-}: Step1_ItemsProps) {
+}: Step1_ItemsProps, ref) => {
     const [loading, setLoading] = useState(false)
     const [selectedItems, setSelectedItems] = useState<Record<number, any>>({})
 
     const isCreditNote = workflow.invoice.dte_type === 'NOTA_CREDITO'
     const lines = originalInvoice?.lines || []
+
+    useImperativeHandle(ref, () => ({
+        submit: handleSubmit,
+        loading
+    }))
 
     const toggleItem = (lineId: number) => {
         const line = lines.find((l: any) => l.id === lineId)
@@ -81,68 +87,99 @@ export function Step1_Items({
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-bold">Selección de Productos/Servicios</h3>
-                <Badge variant="outline" className="text-[10px] font-bold">
-                    {lines.length} Líneas Disponibles
-                </Badge>
+            <div className="flex flex-col gap-1">
+                <h3 className="text-2xl font-black tracking-tighter text-foreground uppercase">
+                    Selección de Productos
+                </h3>
+                <p className="text-sm text-muted-foreground font-medium">
+                    Indique las cantidades a {isCreditNote ? 'devolver' : 'ajustar'} de la factura original.
+                </p>
             </div>
 
-            <div className="border rounded-xl overflow-hidden bg-muted/5">
+            <div className="border-2 rounded-2xl overflow-hidden bg-card shadow-sm border-muted/20">
                 <Table>
-                    <TableHeader className="bg-muted/50">
-                        <TableRow>
-                            <TableHead className="w-12"></TableHead>
-                            <TableHead>Producto/Servicio</TableHead>
-                            <TableHead className="text-right">Original</TableHead>
-                            <TableHead className="text-right">Entregado</TableHead>
-                            <TableHead className="w-32 text-center">Cant. Corregir</TableHead>
-                            <TableHead>Motivo</TableHead>
+                    <TableHeader className="bg-muted/30">
+                        <TableRow className="hover:bg-transparent border-b-2">
+                            <TableHead className="w-14 text-center">
+                                <Tag className="h-4 w-4 mx-auto text-muted-foreground" />
+                            </TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Producto/Servicio</TableHead>
+                            <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground">Original</TableHead>
+                            <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground">Entregado</TableHead>
+                            <TableHead className="w-40 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground">Cant. Corregir</TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Motivo / Razón</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {lines.map((line: any) => {
                             const isSelected = !!selectedItems[line.id]
-                            const maxQty = line.quantity_delivered || line.quantity
+                            const maxQty = Math.floor(line.quantity_delivered || line.quantity)
 
                             return (
-                                <TableRow key={line.id} className={cn(isSelected && "bg-primary/5")}>
-                                    <TableCell>
+                                <TableRow key={line.id} className={cn(
+                                    "transition-colors",
+                                    isSelected ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/5 border-l-4 border-l-transparent"
+                                )}>
+                                    <TableCell className="text-center">
                                         <Checkbox
                                             checked={isSelected}
                                             onCheckedChange={() => toggleItem(line.id)}
+                                            className="h-5 w-5 rounded-md border-2 border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-sm tracking-tight">{line.product_name}</span>
-                                            <span className="text-[10px] text-muted-foreground uppercase">{line.product_code || line.id}</span>
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="font-bold text-sm tracking-tight text-foreground leading-tight">
+                                                {line.product_name}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground font-black uppercase tracking-tighter tabular-nums">
+                                                ID: {line.product_code || line.product}
+                                            </span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right font-medium text-xs">
+                                    <TableCell className="text-right font-medium text-xs tabular-nums text-muted-foreground">
                                         {line.quantity} {line.uom_name}
                                     </TableCell>
-                                    <TableCell className="text-right font-bold text-xs text-green-600">
+                                    <TableCell className="text-right font-bold text-xs tabular-nums text-emerald-600 bg-emerald-500/5 px-3">
                                         {line.quantity_delivered || 0} {line.uom_name}
                                     </TableCell>
-                                    <TableCell>
-                                        <Input
-                                            type="number"
-                                            disabled={!isSelected}
-                                            value={selectedItems[line.id]?.quantity || ""}
-                                            onChange={(e) => updateItem(line.id, 'quantity', e.target.value)}
-                                            className="h-8 text-center font-bold"
-                                            max={isCreditNote ? maxQty : undefined}
-                                            min={0.0001}
-                                        />
+                                    <TableCell className="px-4">
+                                        <div className="relative group">
+                                            <Input
+                                                type="number"
+                                                step="1"
+                                                disabled={!isSelected}
+                                                value={selectedItems[line.id]?.quantity ?? ""}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === "" ? "" : parseInt(e.target.value) || 0;
+                                                    updateItem(line.id, 'quantity', val);
+                                                }}
+                                                className={cn(
+                                                    "h-10 text-center font-black text-base transition-all rounded-xl border-2",
+                                                    isSelected ? "bg-background border-primary shadow-sm" : "bg-muted/30 border-transparent opacity-50"
+                                                )}
+                                                max={isCreditNote ? maxQty : undefined}
+                                                min={1}
+                                            />
+                                            {isSelected && isCreditNote && (
+                                                <div className="absolute -top-2 -right-2">
+                                                    <Badge className="h-5 min-w-5 flex items-center justify-center bg-primary text-[10px] font-black pointer-events-none">
+                                                        MAX {maxQty}
+                                                    </Badge>
+                                                </div>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         <Input
-                                            placeholder="Ej: Producto dañado"
+                                            placeholder="Indique motivo del ajuste..."
                                             disabled={!isSelected}
                                             value={selectedItems[line.id]?.reason || ""}
                                             onChange={(e) => updateItem(line.id, 'reason', e.target.value)}
-                                            className="h-8 text-xs"
+                                            className={cn(
+                                                "h-10 text-xs font-semibold placeholder:font-medium placeholder:italic transition-all border-2",
+                                                isSelected ? "bg-background border-muted shadow-sm focus:border-primary" : "bg-muted/30 border-transparent opacity-50"
+                                            )}
                                         />
                                     </TableCell>
                                 </TableRow>
@@ -153,37 +190,22 @@ export function Step1_Items({
             </div>
 
             {isCreditNote && (
-                <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 flex gap-3 text-amber-800">
-                    <AlertCircle className="h-5 w-5 shrink-0" />
-                    <p className="text-xs leading-relaxed font-medium">
-                        <strong>Nota:</strong> Para Notas de Crédito, la cantidad a corregir no puede superar la cantidad efectivamente entregada de cada producto.
-                    </p>
+                <div className="bg-blue-50/50 border-2 border-blue-100 rounded-2xl p-5 flex gap-4 text-blue-900 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="p-2 bg-blue-100 rounded-xl shrink-0 h-fit">
+                        <AlertCircle className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm font-black uppercase tracking-tight">Regla de Negocio: Devoluciones</p>
+                        <p className="text-xs leading-relaxed font-semibold opacity-80">
+                            Las Notas de Crédito solo permiten corregir hasta la cantidad que ya fue entregada logísticamente.
+                            Use números enteros para las cantidades.
+                        </p>
+                    </div>
                 </div>
             )}
-
-            <div className="flex justify-end pt-4">
-                <Button
-                    onClick={handleSubmit}
-                    disabled={loading || Object.keys(selectedItems).length === 0}
-                    className="group px-8 py-6 rounded-xl font-bold transition-all hover:scale-[1.02]"
-                >
-                    {loading ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Procesando...
-                        </>
-                    ) : (
-                        <>
-                            Continuar
-                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </>
-                    )}
-                </Button>
-            </div>
         </div>
     )
-}
+})
 
-function cn(...inputs: any[]) {
-    return inputs.filter(Boolean).join(" ")
-}
+Step1_Items.displayName = "Step1_Items"
+

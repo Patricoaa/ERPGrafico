@@ -6,6 +6,7 @@ import { Loader2, CheckCircle2, Wallet, ArrowRight, Printer, FileText } from "lu
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 interface Step4_CompletionProps {
     workflow: any
@@ -122,10 +123,3 @@ export function Step4_Completion({
     )
 }
 
-function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
-    return (
-        <span className={`px-2 py-0.5 rounded-full ${className}`}>
-            {children}
-        </span>
-    )
-}

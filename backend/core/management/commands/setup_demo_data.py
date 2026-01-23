@@ -11,7 +11,7 @@ from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
 from treasury.models import TreasuryAccount, Payment
-from billing.models import Invoice
+from billing.models import Invoice, NoteWorkflow
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
 from core.models import User
@@ -225,11 +225,13 @@ class Command(BaseCommand):
         _safe_delete(BillOfMaterialsLine, "BillOfMaterialsLine")
         _safe_delete(BillOfMaterials, "BillOfMaterials")
 
-        # 1. Budgeting
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
 
-        # 2. Subscriptions
+        # 2. Note Workflows (Reference Invoices)
+        _safe_delete(NoteWorkflow, "NoteWorkflow")
+
+        # 3. Subscriptions
         _safe_delete(Subscription, "Subscription")
 
         # 3. Transactional documents

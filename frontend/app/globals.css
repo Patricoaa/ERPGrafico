@@ -118,3 +118,8 @@
     scrollbar-width: none;
   }
 }
+
+/* TEST RULE - if this works, the CSS file is loading */
+body {
+  border: 5px solid red !important;
+}

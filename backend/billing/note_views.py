@@ -93,7 +93,7 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='select-items')
     def select_items(self, request, pk=None):
         """
         Select items/products for the note
@@ -135,7 +135,7 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='process-logistics')
     def process_logistics(self, request, pk=None):
         """
         Process logistics (stock movements)
@@ -173,7 +173,7 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='skip-logistics')
     def skip_logistics(self, request, pk=None):
         """
         Skip logistics stage if no stockable items
@@ -192,7 +192,7 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='register-document')
     def register_document(self, request, pk=None):
         """
         Register document (DTE folio and accounting)
@@ -207,9 +207,12 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         workflow = self.get_object()
         
+        # Flatten QueryDict if needed
+        data = request.data.dict() if hasattr(request.data, 'dict') else request.data
+        
         serializer = RegisterDocumentSerializer(data={
             'workflow_id': workflow.id,
-            **request.data
+            **data
         })
         
         if serializer.is_valid():

@@ -939,7 +939,7 @@ function PhaseCard({
                 {/* Header Action Icons (Replacing status dots) */}
                 <div className="flex items-center gap-1.5">
                     {categorizedActions.secondary.filter((a: any) =>
-                        a.id === 'create-note' || a.id === 'payment-history'
+                        ['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
                     ).map((action: any, idx: number) => (
                         <Tooltip key={idx}>
                             <TooltipTrigger asChild>
@@ -949,7 +949,7 @@ function PhaseCard({
                                     className={cn(
                                         "h-8 w-8 rounded-full transition-all active:scale-90 border border-white/10 shadow-sm",
                                         "bg-white/5 hover:bg-white/10",
-                                        action.id === 'create-note' && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
+                                        (action.id.includes('note')) && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
                                         action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40"
                                     )}
                                     onClick={(e) => {
@@ -1053,13 +1053,13 @@ function PhaseCard({
 
             {/* Bottom Ghost Actions - Centered and Borderless - FLAT */}
             {categorizedActions.secondary.filter((a: any) =>
-                a.id !== 'create-note' && a.id !== 'payment-history'
+                !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
             ).length > 0 && (
                     <div className="pb-1 px-4">
                         <ActionCategory
                             category={{
                                 actions: categorizedActions.secondary.filter((a: any) =>
-                                    a.id !== 'create-note' && a.id !== 'payment-history'
+                                    !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
                                 )
                             } as any}
                             order={order}

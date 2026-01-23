@@ -14,7 +14,9 @@ import {
     Hash,
     RotateCcw,
     PackageMinus,
-    DollarSign
+    DollarSign,
+    MinusCircle,
+    PlusCircle
 } from 'lucide-react'
 
 /**
@@ -194,13 +196,26 @@ export const saleOrderActions: ActionRegistry = {
         icon: FileBadge,
         actions: [
             {
-                id: 'create-note',
-                label: 'Crear Nota',
-                icon: FileBadge,
+                id: 'create-credit-note',
+                label: 'Crear Nota de Crédito',
+                icon: MinusCircle,
                 requiredPermissions: ['billing.add_invoice'],
                 excludedStatus: ['DRAFT', 'CANCELLED'],
                 checkAvailability: (order) => {
-                    // Show if there's a posted invoice that's not a note
+                    const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.status !== 'DRAFT' &&
+                        !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)
+                    )
+                    return hasValidInvoice
+                }
+            },
+            {
+                id: 'create-debit-note',
+                label: 'Crear Nota de Débito',
+                icon: PlusCircle,
+                requiredPermissions: ['billing.add_invoice'],
+                excludedStatus: ['DRAFT', 'CANCELLED'],
+                checkAvailability: (order) => {
                     const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
                         !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)

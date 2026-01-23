@@ -223,11 +223,11 @@ def posted_sale_invoice(comprehensive_setup):
 # ==================== VALIDATION TESTS ====================
 
 @pytest.mark.django_db
-def test_init_workflow_only_posted_invoices(comprehensive_setup):
-    """Test that workflow can only be created from POSTED invoices"""
+def test_init_workflow_valid_origin_statuses(comprehensive_setup):
+    """Test that workflow can be created from POSTED or PAID invoices, but not DRAFT"""
     setup = comprehensive_setup
     
-    # Create DRAFT invoice
+    # 1. DRAFT invoice should fail
     draft_invoice = Invoice.objects.create(
         dte_type=Invoice.DTEType.FACTURA,
         status=Invoice.Status.DRAFT,
@@ -235,13 +235,27 @@ def test_init_workflow_only_posted_invoices(comprehensive_setup):
         total=Decimal('1000')
     )
     
-    # Should fail
-    with pytest.raises(ValidationError, match="Solo se pueden crear NC/ND desde facturas publicadas"):
+    with pytest.raises(ValidationError, match="Solo se pueden crear NC/ND desde facturas publicadas o pagadas"):
         NoteCheckoutService.init_note_workflow(
             corrected_invoice_id=draft_invoice.id,
             note_type=Invoice.DTEType.NOTA_CREDITO,
             reason="Test"
         )
+
+    # 2. PAID invoice should succeed
+    paid_invoice = Invoice.objects.create(
+        dte_type=Invoice.DTEType.FACTURA,
+        status=Invoice.Status.PAID,
+        contact=setup['customer'],
+        total=Decimal('1000')
+    )
+    
+    workflow = NoteCheckoutService.init_note_workflow(
+        corrected_invoice_id=paid_invoice.id,
+        note_type=Invoice.DTEType.NOTA_CREDITO,
+        reason="Test"
+    )
+    assert workflow.corrected_invoice == paid_invoice
 
 
 @pytest.mark.django_db
