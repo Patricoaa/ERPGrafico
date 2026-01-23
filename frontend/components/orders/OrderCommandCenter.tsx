@@ -623,7 +623,7 @@ export function OrderCommandCenter({
                                             }
                                         }] : [])
                                     ] : [])}
-                                    order={order}
+                                    order={activeDoc}
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                     actionEngineRef={actionEngineRef}
@@ -671,7 +671,7 @@ export function OrderCommandCenter({
                                         onViewDetail={openDetails}
                                         actions={(registry.production?.actions || []).filter((a: any) => !a.id.includes('view-'))}
                                         emptyMessage="Sin órdenes de trabajo"
-                                        order={order}
+                                        order={activeDoc}
                                         userPermissions={userPermissions}
                                         onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                         actionEngineRef={actionEngineRef}
@@ -723,7 +723,7 @@ export function OrderCommandCenter({
                                         onViewDetail={openDetails}
                                         actions={(isNoteMode ? (registry.returns?.actions || registry[isSale ? 'deliveries' : 'receptions']?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: any) => !a.id.includes('view-'))}
                                         emptyMessage={isNoteMode ? "Sin movimientos asociados" : "Sin movimientos"}
-                                        order={order}
+                                        order={activeDoc}
                                         userPermissions={userPermissions}
                                         onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                         actionEngineRef={actionEngineRef}
@@ -807,7 +807,7 @@ export function OrderCommandCenter({
                                     onViewDetail={openDetails}
                                     actions={(isNoteMode ? (registry.documents?.actions || []) : [...(registry.documents?.actions || []), ...billingActions]).filter((a: any) => !a.id.includes('view-'))}
                                     emptyMessage="Pendiente de emisión"
-                                    order={order}
+                                    order={activeDoc}
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                     actionEngineRef={actionEngineRef}
@@ -900,7 +900,7 @@ export function OrderCommandCenter({
                                         (a.id.includes('history') ? (activeDoc?.related_documents?.payments?.length > 0 || activeDoc?.serialized_payments?.length > 0) : true)
                                     )}
                                     emptyMessage={isNoteMode ? "Sin devoluciones registradas" : "Sin pagos registrados"}
-                                    order={order}
+                                    order={activeDoc}
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                     actionEngineRef={actionEngineRef}
@@ -1028,8 +1028,9 @@ function PhaseCard({
             if (action.excludedStatus && action.excludedStatus.includes(order?.status)) {
                 return false
             }
-            if (action.checkAvailability && !action.checkAvailability(order)) {
-                return false
+            if (action.checkAvailability) {
+                if (!order) return false
+                if (!action.checkAvailability(order)) return false
             }
             return true
         }) || []

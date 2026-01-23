@@ -35,6 +35,7 @@ export const saleOrderActions: ActionRegistry = {
                 icon: FileEdit,
                 requiredPermissions: ['billing.change_invoice'],
                 checkAvailability: (order) => {
+                    if (!order) return false
                     // Show if there's any invoice without a real folio number
                     const invoices = order.related_documents?.invoices || order.invoices || []
                     return invoices.some((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
@@ -99,6 +100,7 @@ export const saleOrderActions: ActionRegistry = {
                 requiredPermissions: ['inventory.add_stockmove'],
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
+                    if (!order) return false
                     // Show if not fully delivered
                     return order.delivery_status !== 'DELIVERED'
                 },
@@ -148,6 +150,7 @@ export const saleOrderActions: ActionRegistry = {
                 icon: Banknote,
                 requiredPermissions: ['treasury.add_payment'],
                 checkAvailability: (order) => {
+                    if (!order) return false
                     // Show if there's a pending amount or order is not paid
                     const hasPendingAmount = (order.pending_amount ?? 0) > 0
                     return hasPendingAmount || (order.status !== 'PAID' && order.status !== 'CANCELLED')

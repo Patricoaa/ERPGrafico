@@ -34,6 +34,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 icon: FileEdit,
                 requiredPermissions: ['billing.change_invoice'],
                 checkAvailability: (order) => {
+                    if (!order) return false
                     // Show if there's any invoice without a real folio number
                     const invoices = order.related_documents?.invoices || order.invoices || []
                     return invoices.some((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
@@ -63,6 +64,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['inventory.add_stockmove'],
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
+                    if (!order) return false
                     // Show if not fully received and has physical products
                     const lines = order.lines || order.items || []
                     const hasProducts = lines.some((l: any) => l.product_type !== 'SERVICE' && (parseFloat(l.quantity_pending) || 0) > 0)
@@ -129,6 +131,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['treasury.add_payment'],
                 // Removed specific requiredStatus to rely on financial state
                 checkAvailability: (order) => {
+                    if (!order) return false
                     // Show if there's a pending amount or order is not paid
                     const hasPendingAmount = (order.pending_amount ?? 0) > 0
                     return hasPendingAmount || (order.status !== 'PAID' && order.status !== 'CANCELLED')
