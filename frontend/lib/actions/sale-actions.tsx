@@ -205,16 +205,22 @@ export const saleOrderActions: ActionRegistry = {
                 requiredPermissions: ['billing.add_invoice'],
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    const hasInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                    if (!order) return false
+                    // Only show if there's a FACTURA (not BOLETA)
+                    const hasFactura = order.related_documents?.invoices?.some((inv: any) =>
                         inv.dte_type === 'FACTURA'
                     )
-                    return hasInvoice
+                    // Don't show if there are any boletas (fiscal restriction)
+                    const hasBoleta = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.dte_type === 'BOLETA'
+                    )
+                    return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    const hasIssuedInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                    const hasIssuedFactura = order.related_documents?.invoices?.some((inv: any) =>
                         inv.status !== 'DRAFT' && inv.dte_type === 'FACTURA'
                     )
-                    return !hasIssuedInvoice
+                    return !hasIssuedFactura
                 },
                 disabledTooltip: "Debe emitir la factura antes de crear una nota de crédito"
             },
@@ -225,16 +231,22 @@ export const saleOrderActions: ActionRegistry = {
                 requiredPermissions: ['billing.add_invoice'],
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    const hasInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                    if (!order) return false
+                    // Only show if there's a FACTURA (not BOLETA)
+                    const hasFactura = order.related_documents?.invoices?.some((inv: any) =>
                         inv.dte_type === 'FACTURA'
                     )
-                    return hasInvoice
+                    // Don't show if there are any boletas (fiscal restriction)
+                    const hasBoleta = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.dte_type === 'BOLETA'
+                    )
+                    return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    const hasIssuedInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                    const hasIssuedFactura = order.related_documents?.invoices?.some((inv: any) =>
                         inv.status !== 'DRAFT' && inv.dte_type === 'FACTURA'
                     )
-                    return !hasIssuedInvoice
+                    return !hasIssuedFactura
                 },
                 disabledTooltip: "Debe emitir la factura antes de crear una nota de débito"
             }

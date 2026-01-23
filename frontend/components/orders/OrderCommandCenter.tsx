@@ -1035,7 +1035,7 @@ function PhaseCard({
             return true
         }) || []
 
-        const secondaryIds = ['history', 'note', 'view-', 'complete-folio', 'register-payment']
+        const secondaryIds = ['history', 'note', 'view-']
         const secondary = filtered.filter((a: any) => secondaryIds.some(id => a.id.toLowerCase().includes(id)))
         const primary = filtered.filter((a: any) => !secondaryIds.some(id => a.id.toLowerCase().includes(id)))
 
@@ -1074,7 +1074,7 @@ function PhaseCard({
                 {/* Header Action Icons (Replacing status dots) */}
                 <div className="flex items-center gap-1.5">
                     {categorizedActions.secondary.filter((a: any) =>
-                        ['create-note', 'create-credit-note', 'create-debit-note', 'payment-history', 'complete-folio', 'register-payment'].includes(a.id)
+                        ['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
                     ).map((action: any, idx: number) => (
                         <Tooltip key={idx}>
                             <TooltipTrigger asChild>
@@ -1085,9 +1085,7 @@ function PhaseCard({
                                         "h-8 w-8 rounded-full transition-all active:scale-90 border border-white/10 shadow-sm",
                                         "bg-white/5 hover:bg-white/10",
                                         (action.id.includes('note')) && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
-                                        action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40",
-                                        action.id === 'complete-folio' && "text-blue-500 bg-blue-500/5 border-blue-500/20 hover:bg-blue-500/10 hover:border-blue-500/40",
-                                        action.id === 'register-payment' && "text-green-500 bg-green-500/5 border-green-500/20 hover:bg-green-500/10 hover:border-green-500/40"
+                                        action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40"
                                     )}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -1196,7 +1194,7 @@ function PhaseCard({
                         <ActionCategory
                             category={{
                                 actions: categorizedActions.secondary.filter((a: any) =>
-                                    !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history', 'complete-folio', 'register-payment'].includes(a.id)
+                                    !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
                                 )
                             } as any}
                             order={order}

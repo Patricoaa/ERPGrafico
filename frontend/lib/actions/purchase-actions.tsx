@@ -186,16 +186,22 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['billing.add_invoice'],
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    const hasInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                    if (!order) return false
+                    // Only show if there's a FACTURA or PURCHASE_INV (not BOLETA)
+                    const hasFactura = order.related_documents?.invoices?.some((inv: any) =>
                         ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
                     )
-                    return hasInvoice
+                    // Don't show if there are any boletas (fiscal restriction)
+                    const hasBoleta = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.dte_type === 'BOLETA'
+                    )
+                    return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    const hasIssuedInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                    const hasIssuedFactura = order.related_documents?.invoices?.some((inv: any) =>
                         inv.status !== 'DRAFT' && ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
                     )
-                    return !hasIssuedInvoice
+                    return !hasIssuedFactura
                 },
                 disabledTooltip: "Debe registrar la factura antes de crear una nota de crédito"
             },
@@ -206,16 +212,22 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['billing.add_invoice'],
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    const hasInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                    if (!order) return false
+                    // Only show if there's a FACTURA or PURCHASE_INV (not BOLETA)
+                    const hasFactura = order.related_documents?.invoices?.some((inv: any) =>
                         ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
                     )
-                    return hasInvoice
+                    // Don't show if there are any boletas (fiscal restriction)
+                    const hasBoleta = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.dte_type === 'BOLETA'
+                    )
+                    return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    const hasIssuedInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                    const hasIssuedFactura = order.related_documents?.invoices?.some((inv: any) =>
                         inv.status !== 'DRAFT' && ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
                     )
-                    return !hasIssuedInvoice
+                    return !hasIssuedFactura
                 },
                 disabledTooltip: "Debe registrar la factura antes de crear una nota de débito"
             }
