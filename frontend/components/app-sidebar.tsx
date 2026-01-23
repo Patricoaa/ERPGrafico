@@ -23,16 +23,15 @@ const categoryItems: Record<string, any> = {
     "accounting": [
         { title: "Plan de Cuentas", url: "/accounting/accounts" },
         { title: "Asientos Contables", url: "/accounting/entries" },
+        { title: "Documentos Emitidos", url: "/billing/sales" },
+        { title: "Documentos Recibidos", url: "/billing/purchases" },
     ],
     "contacts": [], // Simple list
     "sales": [
         { title: "Notas de Venta", url: "/sales/orders" },
         { title: "POS", url: "/sales/pos" },
     ],
-    "billing": [
-        { title: "Documentos Emitidos", url: "/billing/sales" },
-        { title: "Documentos Recibidos", url: "/billing/purchases" },
-    ],
+
     "inventory": [
         { title: "Productos", url: "/inventory/products" },
         { title: "Stock", url: "/inventory/stock" },
@@ -62,7 +61,7 @@ const titles: Record<string, string> = {
     "accounting": "Contabilidad",
     "contacts": "Contactos",
     "sales": "Ventas",
-    "billing": "Facturación",
+
     "inventory": "Inventario",
     "production": "Producción",
     "treasury": "Tesorería",

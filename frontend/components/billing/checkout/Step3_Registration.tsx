@@ -49,8 +49,12 @@ export function Step3_Registration({
                         id="is_pending"
                         checked={formData.is_pending}
                         onCheckedChange={(val) => {
-                            setField('is_pending', !!val)
-                            if (val) setField('document_number', '')
+                            const isChecked = !!val;
+                            setData({
+                                ...formData,
+                                is_pending: isChecked,
+                                document_number: isChecked ? '' : formData.document_number
+                            });
                         }}
                         className="h-5 w-5 rounded-md border-2"
                     />

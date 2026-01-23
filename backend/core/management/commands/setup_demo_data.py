@@ -1,9 +1,10 @@
+#docker compose exec backend python manage.py setup_demo_data --purge
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 from decimal import Decimal
 import random
-
 from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
 from accounting.services import AccountingService
 from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, PricingRule, Subscription

@@ -20,7 +20,7 @@ const mainItems = [
     { id: "accounting", icon: Calculator, label: "Contabilidad" },
     { id: "contacts", icon: Users, label: "Contactos" },
     { id: "sales", icon: ShoppingCart, label: "Ventas" },
-    { id: "billing", icon: FileText, label: "Facturación" },
+
     { id: "inventory", icon: Package, label: "Inventario" },
     { id: "production", icon: Printer, label: "Producción" },
     { id: "treasury", icon: Banknote, label: "Tesorería" },
