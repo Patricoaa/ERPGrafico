@@ -204,7 +204,7 @@ export const saleOrderActions: ActionRegistry = {
                 checkAvailability: (order) => {
                     const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
-                        !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)
+                        inv.dte_type === 'FACTURA'
                     )
                     return hasValidInvoice
                 }
@@ -218,7 +218,7 @@ export const saleOrderActions: ActionRegistry = {
                 checkAvailability: (order) => {
                     const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
-                        !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type)
+                        inv.dte_type === 'FACTURA'
                     )
                     return hasValidInvoice
                 }
