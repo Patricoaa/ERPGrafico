@@ -350,7 +350,7 @@ export function PurchaseCheckoutWizard({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1400px] w-[95vw] min-h-[85vh] max-h-[90vh] overflow-hidden flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1400px] w-[95vw] h-[90vh] overflow-hidden flex flex-col p-0 text-foreground">
                 <div className="p-6 border-b flex justify-between items-center bg-background shrink-0">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-primary/10 rounded-2xl">
@@ -395,6 +395,9 @@ export function PurchaseCheckoutWizard({
                                 <Step1_ProductSelection
                                     orderLines={currentOrderLines}
                                     setOrderLines={setCurrentOrderLines}
+                                    selectedWarehouseId={selectedWarehouseId}
+                                    onWarehouseChange={setSelectedWarehouseId}
+                                    selectedSupplierId={selectedSupplierId}
                                 />
                             )}
                             {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
@@ -413,26 +416,26 @@ export function PurchaseCheckoutWizard({
                             )}
                         </div>
 
-                        {/* Fixed Footer with Progress Buttons */}
                         <div className="p-6 border-t bg-background flex justify-between z-10 shrink-0">
                             <Button
-                                variant="ghost"
+                                variant="outline"
                                 onClick={handleBack}
                                 disabled={step === 1 || loading}
+                                className="h-12 px-6 font-bold"
                             >
                                 <ChevronLeft className="mr-2 h-4 w-4" />
                                 Atrás
                             </Button>
 
                             {step < totalSteps ? (
-                                <Button onClick={handleNext} className="w-40">
+                                <Button onClick={handleNext} className="w-40 h-12 font-bold">
                                     Siguiente
                                     <ChevronRight className="ml-2 h-4 w-4" />
                                 </Button>
                             ) : (
                                 <Button
                                     onClick={handleFinish}
-                                    className="w-48 bg-emerald-600 hover:bg-emerald-700"
+                                    className="w-48 h-12 bg-emerald-600 hover:bg-emerald-700 font-bold"
                                     disabled={loading}
                                 >
                                     {loading ? (

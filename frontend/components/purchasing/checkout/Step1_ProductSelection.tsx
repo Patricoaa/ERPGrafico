@@ -21,12 +21,21 @@ import { PricingUtils } from "@/lib/pricing"
 interface Step1_ProductSelectionProps {
     orderLines: any[]
     setOrderLines: (lines: any[] | ((prev: any[]) => any[])) => void
+    selectedWarehouseId?: string
+    onWarehouseChange?: (id: string) => void
+    selectedSupplierId?: string | null
 }
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Info } from "lucide-react"
+import { Info, AlertTriangle } from "lucide-react"
 
-export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_ProductSelectionProps) {
+export function Step1_ProductSelection({
+    orderLines,
+    setOrderLines,
+    selectedWarehouseId,
+    onWarehouseChange,
+    selectedSupplierId
+}: Step1_ProductSelectionProps) {
     const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoMs] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -95,6 +104,11 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                 uom_name: uoms.find(u => u.id.toString() === ((product.purchase_uom || product.uom)?.toString()))?.name,
                 product_type: product.product_type
             })
+
+            // Suggest warehouse if not set
+            if (!selectedWarehouseId && product.receiving_warehouse && onWarehouseChange) {
+                onWarehouseChange(product.receiving_warehouse.toString())
+            }
         } else {
             updateLine(index, 'product', productId)
         }
@@ -165,6 +179,18 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                                         context="purchase"
                                         onChange={(val) => handleProductChange(index, val)}
                                     />
+                                    {(() => {
+                                        const product = products.find(p => p.id.toString() === (line.product?.toString() || line.id?.toString()))
+                                        if (product && product.preferred_supplier && selectedSupplierId && product.preferred_supplier.toString() !== selectedSupplierId) {
+                                            return (
+                                                <div className="flex items-center gap-1 mt-1 text-[10px] text-amber-600 font-medium">
+                                                    <AlertTriangle className="h-3 w-3" />
+                                                    Sugerido: {product.preferred_supplier_name}
+                                                </div>
+                                            )
+                                        }
+                                        return null
+                                    })()}
                                 </TableCell>
                                 <TableCell>
                                     <Input
@@ -226,25 +252,7 @@ export function Step1_ProductSelection({ orderLines, setOrderLines }: Step1_Prod
                     </TableBody>
                 </Table>
             </div>
-            <div className="flex justify-end p-4 bg-muted/20 rounded-lg">
-                <div className="text-right space-y-1">
-                    <div className="text-sm text-muted-foreground">
-                        Subtotal: {orderLines.reduce((sum, line) => sum + ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0)), 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                        IVA (19%): {orderLines.reduce((sum, line) => {
-                            const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
-                            return sum + PricingUtils.calculateTax(net)
-                        }, 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                    </div>
-                    <div className="text-xl font-bold">
-                        Total: {orderLines.reduce((sum, line) => {
-                            const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
-                            return sum + PricingUtils.netToGross(net)
-                        }, 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                    </div>
-                </div>
-            </div>
+
         </div>
     )
 }

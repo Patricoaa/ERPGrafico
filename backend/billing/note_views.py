@@ -161,6 +161,8 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     workflow_id=workflow.id,
                     warehouse_id=serializer.validated_data['warehouse_id'],
                     date=serializer.validated_data['date'],
+                    delivery_type=serializer.validated_data.get('delivery_type', 'IMMEDIATE'),
+                    line_data=serializer.validated_data.get('line_data'),
                     notes=serializer.validated_data.get('notes', '')
                 )
                 

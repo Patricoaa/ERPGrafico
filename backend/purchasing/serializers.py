@@ -12,10 +12,27 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False) # Helper for updates
     uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     
+    track_inventory = serializers.SerializerMethodField()
+    has_bom = serializers.SerializerMethodField()
+    requires_advanced_manufacturing = serializers.SerializerMethodField()
+    
     class Meta:
         model = PurchaseLine
-        fields = ['id', 'product', 'product_name', 'product_type', 'quantity', 'uom', 'uom_name', 'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending']
+        fields = [
+            'id', 'product', 'product_name', 'product_type', 'quantity', 'uom', 'uom_name', 
+            'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending',
+            'track_inventory', 'has_bom', 'requires_advanced_manufacturing'
+        ]
         read_only_fields = ['subtotal', 'quantity_received', 'quantity_pending']
+
+    def get_track_inventory(self, obj):
+        return obj.product.track_inventory if obj.product else False
+
+    def get_has_bom(self, obj):
+        return obj.product.has_bom if obj.product else False
+
+    def get_requires_advanced_manufacturing(self, obj):
+        return obj.product.requires_advanced_manufacturing if obj.product else False
 
     def validate(self, data):
         product = data.get('product')

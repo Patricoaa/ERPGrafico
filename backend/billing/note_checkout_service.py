@@ -207,6 +207,8 @@ class NoteCheckoutService:
         workflow_id: int,
         warehouse_id: int,
         date: str,
+        delivery_type: str = 'IMMEDIATE',
+        line_data: list = None,
         notes: str = ""
     ) -> NoteWorkflow:
         """
@@ -217,6 +219,8 @@ class NoteCheckoutService:
             workflow_id: NoteWorkflow ID
             warehouse_id: Warehouse for receiving/dispatching
             date: Date for stock movement
+            delivery_type: Type of delivery (IMMEDIATE, SCHEDULED, PARTIAL)
+            line_data: List of line quantities for partial delivery
             notes: Additional notes
         
         Returns:
@@ -240,15 +244,58 @@ class NoteCheckoutService:
         except Warehouse.DoesNotExist:
             raise ValidationError(f"Bodega con ID {warehouse_id} no existe.")
         
-        is_sale = workflow.sale_order is not None
+        # Save logistics data
+        workflow.logistics_data = {
+            'warehouse_id': warehouse_id,
+            'warehouse_name': warehouse.name,
+            'date': str(date),
+            'delivery_type': delivery_type,
+            'notes': notes,
+            'line_data': line_data
+        }
         
-        # Create stock movements for stockable items
-        for item in workflow.selected_items:
-            if not item.get('creates_stock_move', False):
-                continue
+        # If scheduled, we don't create stock moves now
+        if delivery_type == 'SCHEDULED':
+            workflow.current_stage = NoteWorkflow.Stage.LOGISTICS_COMPLETED
+            workflow.save()
+            return workflow
             
-            product = Product.objects.get(id=item['product_id'])
-            quantity = Decimal(str(item['quantity']))
+        is_sale = workflow.sale_order is not None
+        from inventory.models import StockMove, UoM
+        
+        # Determine items to process
+        items_to_move = []
+        if delivery_type == 'PARTIAL' and line_data:
+            for ld in line_data:
+                line_id = ld.get('line_id')
+                quantity = Decimal(str(ld.get('quantity', 0)))
+                
+                if quantity <= 0:
+                    continue
+                
+                # Find matching item in selected_items
+                item = next((i for i in workflow.selected_items if i['line_id'] == line_id), None)
+                if item and item.get('creates_stock_move', False):
+                    items_to_move.append({
+                        'product_id': item['product_id'],
+                        'quantity': quantity,
+                        'uom_id': ld.get('uom_id')
+                    })
+        else:
+            # IMMEDIATE (Full)
+            for item in workflow.selected_items:
+                if item.get('creates_stock_move', False):
+                    items_to_move.append({
+                        'product_id': item['product_id'],
+                        'quantity': Decimal(str(item['quantity'])),
+                        'uom_id': None
+                    })
+
+        # Create stock movements
+        for move_item in items_to_move:
+            product = Product.objects.get(id=move_item['product_id'])
+            quantity = move_item['quantity']
+            uom_id = move_item.get('uom_id')
             
             # Determine move type correctly based on context
             if is_sale:
@@ -260,29 +307,24 @@ class NoteCheckoutService:
             
             # Apply sign correctly (Pos for Add/IN, Neg for Remove/OUT)
             signed_qty = quantity if move_type == StockMove.Type.IN else -quantity
+            
+            uom = UoM.objects.filter(id=uom_id).first() if uom_id else product.uom
 
             print(f"DEBUG: NoteProcessLogistics - Workflow {workflow.id}, Product {product.internal_code}, Move {move_type}, Qty {signed_qty}")
-            
+
             StockMove.objects.create(
                 date=date,
                 product=product,
                 warehouse=warehouse,
-                uom=product.uom,
+                uom=uom,
                 quantity=signed_qty,
                 move_type=move_type,
                 description=f"{workflow.invoice.get_dte_type_display()} - {workflow.invoice.display_id} (REF: WORKFLOW-{workflow.id})"
             )
         
-        # Update workflow
-        workflow.logistics_data = {
-            'warehouse_id': warehouse_id,
-            'warehouse_name': warehouse.name,
-            'date': str(date),
-            'notes': notes
-        }
+        # Advance workflow
         workflow.current_stage = NoteWorkflow.Stage.LOGISTICS_COMPLETED
         workflow.save()
-        
         return workflow
     
     @staticmethod

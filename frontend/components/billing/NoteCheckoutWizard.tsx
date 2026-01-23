@@ -62,11 +62,7 @@ export function NoteCheckoutWizard({
     })
 
     // Computed Properties
-    const requiresLogistics = selectedItems.some(item => {
-        // Simple logic: if product tracks inventory, it might require logistics.
-        // We rely on item properties passed from Step1 which should come from original invoice
-        return item.track_inventory && (item.product_type !== 'MANUFACTURABLE' || (item.product_type === 'MANUFACTURABLE' && item.has_bom && !item.requires_advanced_manufacturing))
-    })
+    const requiresLogistics = selectedItems.some(item => item.creates_stock_move)
 
     const totalNet = selectedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0)
     const totalTax = selectedItems.reduce((acc, item) => acc + (item.quantity * item.tax_amount), 0)
@@ -244,6 +240,7 @@ export function NoteCheckoutWizard({
                         isCreditNote={initialType === 'NOTA_CREDITO'}
                         data={logisticsData}
                         setData={setLogisticsData}
+                        selectedItems={selectedItems}
                     />
                 )
             case 3:

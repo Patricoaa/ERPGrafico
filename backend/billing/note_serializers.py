@@ -143,6 +143,16 @@ class ProcessLogisticsSerializer(serializers.Serializer):
     workflow_id = serializers.IntegerField(required=True)
     warehouse_id = serializers.IntegerField(required=True, help_text="ID de la bodega")
     date = serializers.DateField(required=True, help_text="Fecha del movimiento")
+    delivery_type = serializers.ChoiceField(
+        choices=['IMMEDIATE', 'SCHEDULED', 'PARTIAL'],
+        default='IMMEDIATE',
+        help_text="Tipo de entrega"
+    )
+    line_data = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        help_text="Datos de líneas para despacho parcial: [{line_id, quantity, uom_id}]"
+    )
     notes = serializers.CharField(required=False, allow_blank=True, help_text="Notas adicionales")
 
 

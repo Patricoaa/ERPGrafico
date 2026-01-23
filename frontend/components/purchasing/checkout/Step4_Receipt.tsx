@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { FileText, Receipt, FileCheck, Package, Warehouse } from "lucide-react"
+import { FileText, Receipt, FileCheck, Package } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import {
@@ -198,32 +198,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
 
     return (
         <div className="space-y-6">
-            {!allServices && (
-                <div className="p-4 bg-muted/30 rounded-xl border border-dashed animate-in fade-in">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block flex items-center gap-2">
-                        <Warehouse className="h-4 w-4" />
-                        Bodega de Recepción
-                    </Label>
-                    <Select
-                        value={receiptData.warehouseId?.toString()}
-                        onValueChange={(val) => setReceiptData({ ...receiptData, warehouseId: val })}
-                    >
-                        <SelectTrigger className="w-full h-11">
-                            <SelectValue placeholder="Seleccionar bodega de destino" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {warehouses.map((wh) => (
-                                <SelectItem key={wh.id} value={wh.id.toString()}>
-                                    {wh.name} {wh.code ? `(${wh.code})` : ''}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <p className="text-[10px] text-muted-foreground mt-2">
-                        Seleccione la bodega donde se registrará el ingreso de los productos almacenables.
-                    </p>
-                </div>
-            )}
+            {/* Removed Warehouse Selector as per requirements */}
 
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
                 <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block flex items-center gap-2">

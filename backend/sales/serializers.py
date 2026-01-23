@@ -16,7 +16,8 @@ class SaleLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
     product_type = serializers.SerializerMethodField()
     track_inventory = serializers.SerializerMethodField()
-    manufacturable_quantity = serializers.SerializerMethodField()
+    mfg_auto_finalize = serializers.SerializerMethodField()
+    has_bom = serializers.SerializerMethodField()
     
     product_code = serializers.CharField(source='product.code', read_only=True, allow_null=True)
     
@@ -31,7 +32,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
             'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
             'unit_price', 'unit_price_gross', 'tax_rate', 'subtotal', 'quantity_delivered', 
             'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',
-            'is_production_finished', 'work_order_summary', 'mfg_auto_finalize'
+            'is_production_finished', 'work_order_summary', 'mfg_auto_finalize', 'has_bom'
         ]
 
     def get_product_type(self, obj):
@@ -55,6 +56,9 @@ class SaleLineSerializer(serializers.ModelSerializer):
 
     def get_mfg_auto_finalize(self, obj):
         return obj.product.mfg_auto_finalize if obj.product else False
+
+    def get_has_bom(self, obj):
+        return obj.product.has_bom if obj.product else False
 
     is_production_finished = serializers.SerializerMethodField()
     work_order_summary = serializers.SerializerMethodField()

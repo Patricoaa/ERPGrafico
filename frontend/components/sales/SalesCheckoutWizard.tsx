@@ -95,14 +95,22 @@ export function SalesCheckoutWizard({
 
     // Auto-suggest delivery date if fabricable (includes any mfg or BOM)
     useEffect(() => {
-        const hasFabricable = currentOrderLines.some((line: any) =>
+        const fabricableLines = currentOrderLines.filter((line: any) =>
             ((line.product_type === 'MANUFACTURABLE' || line.has_bom) && !line.mfg_auto_finalize)
         );
-        if (hasFabricable) {
+
+        if (fabricableLines.length > 0) {
             setDeliveryData((prev: any) => ({ ...prev, type: 'SCHEDULED' }));
-            // Suggest +5 days
+
+            // Get the maximum default delivery days from the products
+            const maxDays = fabricableLines.reduce((max, line) => {
+                const days = line.mfg_default_delivery_days || 5;
+                return Math.max(max, days);
+            }, 0);
+
+            // Suggest +maxDays
             const suggestedDate = new Date();
-            suggestedDate.setDate(suggestedDate.getDate() + 5);
+            suggestedDate.setDate(suggestedDate.getDate() + maxDays);
             setDeliveryData((prev: any) => ({ ...prev, date: suggestedDate.toISOString().split('T')[0] }));
         }
     }, [currentOrderLines]);

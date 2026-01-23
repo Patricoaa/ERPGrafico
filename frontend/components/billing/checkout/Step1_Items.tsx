@@ -40,8 +40,10 @@ export function Step1_Items({
                     track_inventory: line.track_inventory,
                     has_bom: line.has_bom,
                     requires_advanced_manufacturing: line.requires_advanced_manufacturing,
+                    creates_stock_move: line.track_inventory && (line.product_type !== 'MANUFACTURABLE' || (!line.requires_advanced_manufacturing && line.has_bom)),
                     quantity: line.quantity_delivered || line.quantity,
                     uom_name: line.uom_name,
+                    uom_id: line.uom,
                     unit_price: line.unit_price,
                     unit_price_gross: line.unit_price_gross,
                     tax_amount: (line.unit_price_gross - line.unit_price),
@@ -76,10 +78,10 @@ export function Step1_Items({
                 </p>
             </div>
 
-            <div className="border-2 rounded-2xl overflow-hidden bg-card shadow-sm border-muted/20">
+            <div className="rounded-md border flex-1 overflow-auto min-h-[400px]">
                 <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow className="hover:bg-transparent border-b-2">
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                        <TableRow>
                             <TableHead className="w-14 text-center">
                                 <Tag className="h-4 w-4 mx-auto text-muted-foreground" />
                             </TableHead>
@@ -99,7 +101,7 @@ export function Step1_Items({
                             return (
                                 <TableRow key={line.id} className={cn(
                                     "transition-colors h-20",
-                                    selected ? "bg-primary/[0.02] border-l-4 border-l-primary" : "hover:bg-muted/5 border-l-4 border-l-transparent"
+                                    selected ? "bg-primary/[0.02]" : "hover:bg-muted/5"
                                 )}>
                                     <TableCell className="text-center">
                                         <Checkbox
@@ -126,12 +128,16 @@ export function Step1_Items({
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right font-bold text-xs tabular-nums text-muted-foreground/60">
-                                        {line.quantity} {line.uom_name}
+                                        <div className="flex flex-col">
+                                            <span>{Math.floor(line.quantity)}</span>
+                                            <span className="text-[10px] font-medium opacity-70">{line.uom_name}</span>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right font-black text-xs tabular-nums text-emerald-600 px-3">
-                                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none">
-                                            {line.quantity_delivered || 0} {line.uom_name}
-                                        </Badge>
+                                        <div className="flex flex-col">
+                                            <span>{Math.floor(line.quantity_delivered || 0)}</span>
+                                            <span className="text-[10px] font-bold text-emerald-700/60 uppercase">{line.uom_name}</span>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="px-4">
                                         <div className="relative group max-w-[120px] mx-auto">
@@ -145,15 +151,15 @@ export function Step1_Items({
                                                     updateItem(line.id, 'quantity', val);
                                                 }}
                                                 className={cn(
-                                                    "h-12 text-center font-black text-lg transition-all rounded-xl border-2",
-                                                    selected ? "bg-background border-primary shadow-sm" : "bg-muted/30 border-transparent opacity-50"
+                                                    "h-10 text-center font-bold transition-all",
+                                                    !selected && "opacity-50"
                                                 )}
                                                 max={maxQty}
                                                 min={1}
                                             />
                                             {selected && (
                                                 <div className="absolute -top-3 -right-3">
-                                                    <Badge className="h-6 min-w-6 flex items-center justify-center bg-primary text-[9px] font-black border-2 border-background shadow-md">
+                                                    <Badge className="h-5 min-w-5 flex items-center justify-center bg-primary text-[8px] font-black border-2 border-background shadow-sm">
                                                         MAX {maxQty}
                                                     </Badge>
                                                 </div>
@@ -162,13 +168,14 @@ export function Step1_Items({
                                     </TableCell>
                                     <TableCell>
                                         <Input
-                                            placeholder="Indique motivo del ajuste..."
+                                            placeholder="Indique motivo..."
                                             disabled={!selected}
                                             value={itemData?.reason || ""}
                                             onChange={(e) => updateItem(line.id, 'reason', e.target.value)}
+                                            // Fixing the function name below
                                             className={cn(
-                                                "h-12 text-xs font-bold placeholder:font-medium placeholder:italic transition-all border-2 rounded-xl",
-                                                selected ? "bg-background border-muted shadow-sm focus:border-primary" : "bg-muted/30 border-transparent opacity-50"
+                                                "h-10 text-xs font-medium placeholder:italic transition-all",
+                                                !selected && "opacity-50"
                                             )}
                                         />
                                     </TableCell>
