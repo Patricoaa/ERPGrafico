@@ -20,6 +20,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     lines = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
+    adjustments = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -70,12 +71,26 @@ class InvoiceSerializer(serializers.ModelSerializer):
         
         return [{
             'id': m.id,
+            'display_id': f"MOV-{m.id:06d}",
             'date': m.date,
             'product': m.product.name,
             'quantity': m.quantity,
             'warehouse': m.warehouse.name,
-            'move_type_display': m.get_move_type_display()
+            'move_type_display': m.get_move_type_display(),
+            'state': m.state
         } for m in moves]
+
+    def get_adjustments(self, obj):
+        # Only Facturas/Boletas usually have adjustments (Notes correcting them)
+        adjustments = obj.adjustments.all()
+        return [{
+            'id': a.id,
+            'number': a.number,
+            'dte_type': a.dte_type,
+            'dte_type_display': a.get_dte_type_display(),
+            'status': a.status,
+            'total': a.total
+        } for a in adjustments]
 
 class CreateInvoiceSerializer(serializers.Serializer):
     order_id = serializers.IntegerField()

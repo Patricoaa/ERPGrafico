@@ -38,7 +38,8 @@ import {
     XCircle,
     Edit,
     Check,
-    Ban
+    Ban,
+    FileBadge
 } from "lucide-react"
 import { ActionCategory } from "./ActionCategory"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
@@ -52,6 +53,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface OrderCommandCenterProps {
     orderId: number | null
+    invoiceId?: number | null
     type: 'purchase' | 'sale' | 'obligation'
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -90,6 +92,7 @@ const formatDocumentId = (prefix: string, number: string | number, displayId?: s
 
 export function OrderCommandCenter({
     orderId,
+    invoiceId,
     type,
     open,
     onOpenChange,
@@ -97,6 +100,7 @@ export function OrderCommandCenter({
     onEdit
 }: OrderCommandCenterProps) {
     const [order, setOrder] = useState<any>(null)
+    const [activeInvoice, setActiveInvoice] = useState<any>(null)
     const [loading, setLoading] = useState(false)
     const [userPermissions, setUserPermissions] = useState<string[]>([])
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
@@ -122,16 +126,34 @@ export function OrderCommandCenter({
     const actionEngineRef = useRef<any>(null)
 
     const fetchOrderDetails = async () => {
-        if (!orderId) return
+        if (!orderId && !invoiceId) return
         setLoading(true)
         try {
-            const endpoint =
-                type === 'purchase' ? `/purchasing/orders/${orderId}/` :
-                    `/sales/orders/${orderId}/`
-            const response = await api.get(endpoint)
-            setOrder(response.data)
+            // Priority 1: Fetch Specific Invoice if provided
+            if (invoiceId) {
+                const invRes = await api.get(`/billing/invoices/${invoiceId}/`)
+                setActiveInvoice(invRes.data)
+
+                // If it belongs to an order, fetch order too for context
+                if (invRes.data.sale_order || invRes.data.purchase_order) {
+                    const oType = invRes.data.sale_order ? 'sales' : 'purchasing'
+                    const oId = invRes.data.sale_order || invRes.data.purchase_order
+                    const orderRes = await api.get(`/${oType}/orders/${oId}/`)
+                    setOrder(orderRes.data)
+                } else {
+                    // Standalone invoice
+                    setOrder(null)
+                }
+            } else if (orderId) {
+                const endpoint =
+                    type === 'purchase' ? `/purchasing/orders/${orderId}/` :
+                        `/sales/orders/${orderId}/`
+                const response = await api.get(endpoint)
+                setOrder(response.data)
+                setActiveInvoice(null)
+            }
         } catch (error) {
-            console.error("Error fetching order details:", error)
+            console.error("Error fetching order/invoice details:", error)
         } finally {
             setLoading(false)
         }
@@ -149,14 +171,15 @@ export function OrderCommandCenter({
     const [showAnimations, setShowAnimations] = useState(false)
 
     useEffect(() => {
-        if (open && orderId) {
+        if (open && (orderId || invoiceId)) {
             fetchOrderDetails()
             fetchUserPermissions()
         } else {
             setOrder(null)
+            setActiveInvoice(null)
             setShowAnimations(false)
         }
-    }, [open, orderId])
+    }, [open, orderId, invoiceId])
 
     const router = useRouter()
 
@@ -339,7 +362,10 @@ export function OrderCommandCenter({
         })
     }
 
-    if (!order) return null
+    if (!order && !activeInvoice) return null
+
+    const isNoteMode = activeInvoice && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(activeInvoice.dte_type)
+    const activeDoc = isNoteMode ? activeInvoice : order
 
     const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
     const isSale = type === 'sale'
@@ -428,7 +454,14 @@ export function OrderCommandCenter({
     })
 
     const getGlobalStatus = () => {
-        if (order.status === 'CANCELLED') return { label: 'Anulado', variant: 'destructive', icon: XCircle }
+        const docToEvaluate = isNoteMode ? activeInvoice : order
+        if (docToEvaluate.status === 'CANCELLED') return { label: 'Anulado', variant: 'destructive', icon: XCircle }
+
+        if (isNoteMode) {
+            if (activeInvoice.status === 'PAID') return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
+            if (activeInvoice.status === 'POSTED') return { label: 'Publicado', variant: 'active', icon: PlayCircle }
+            return { label: 'Borrador', variant: 'neutral', icon: AlertCircle }
+        }
 
         // Logic for completado/progreso/pendiente based on phases
         const stages = []
@@ -481,7 +514,11 @@ export function OrderCommandCenter({
                                         <div className="flex items-center gap-3">
                                             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                                                 <LayoutDashboard className="h-6 w-6 text-primary" />
-                                                HUB de mando
+                                                {isNoteMode ? (
+                                                    <span className="flex items-center gap-2">
+                                                        HUB de {activeInvoice.dte_type_display}
+                                                    </span>
+                                                ) : "HUB de mando"}
                                                 <span className="text-muted-foreground font-light mx-2">|</span>
 
                                             </DialogTitle>
@@ -524,8 +561,17 @@ export function OrderCommandCenter({
                                 <PhaseCard
                                     title="Origen"
                                     icon={TrendingUp}
-                                    variant={order.status !== 'DRAFT' ? 'success' : 'neutral'}
-                                    documents={[
+                                    variant={activeDoc.status !== 'DRAFT' ? 'success' : 'neutral'}
+                                    documents={isNoteMode ? [
+                                        {
+                                            type: 'Documento Rectificado',
+                                            number: formatDocumentId('FACT', activeInvoice.corrected_invoice?.number || '---', activeInvoice.corrected_invoice?.display_id),
+                                            icon: FileText,
+                                            id: activeInvoice.corrected_invoice?.id,
+                                            docType: 'invoice',
+                                            actions: []
+                                        }
+                                    ] : [
                                         {
                                             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
                                             number: formatDocumentId(isSale ? 'NV' : 'OCS', order.number || order.id, order.display_id),
@@ -549,7 +595,7 @@ export function OrderCommandCenter({
                                         }
                                     ]}
                                     onViewDetail={openDetails}
-                                    actions={[
+                                    actions={isNoteMode ? [] : [
                                         ...(order.status === 'DRAFT' ? [{
                                             id: 'edit-order',
                                             label: 'Editar Orden',
@@ -573,7 +619,7 @@ export function OrderCommandCenter({
                                     actionEngineRef={actionEngineRef}
                                 >
                                     <div className="space-y-1 py-1">
-                                        {(order.lines || order.items || []).map((line: any, idx: number) => (
+                                        {(isNoteMode ? activeInvoice.lines : (order.lines || order.items || [])).map((line: any, idx: number) => (
                                             <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
                                                 <span className="text-foreground/70 line-clamp-2 leading-tight">
                                                     {line.product_name || line.description}
@@ -587,7 +633,7 @@ export function OrderCommandCenter({
                                 </PhaseCard>
 
                                 {/* 2. Producción */}
-                                {showProduction && (
+                                {showProduction && !isNoteMode && (
                                     <PhaseCard
                                         title="Producción"
                                         icon={ClipboardList}
@@ -651,46 +697,61 @@ export function OrderCommandCenter({
                                         })()}
                                         icon={Package}
                                         variant={
-                                            logisticsProgress === 100 ? 'success' :
-                                                logisticsProgress > 0 ? 'active' : 'neutral'
+                                            isNoteMode ? (activeInvoice.related_stock_moves?.length > 0 ? 'success' : 'neutral') :
+                                                (logisticsProgress === 100 ? 'success' :
+                                                    logisticsProgress > 0 ? 'active' : 'neutral')
                                         }
-                                        documents={logisticsDocs}
+                                        documents={isNoteMode ? (activeInvoice.related_stock_moves || []).map((m: any) => ({
+                                            type: m.move_type_display || 'Movimiento',
+                                            number: m.display_id || `MOV-${m.id}`,
+                                            icon: Package,
+                                            id: m.id,
+                                            docType: 'inventory',
+                                            status: m.state || 'Realizado',
+                                            actions: []
+                                        })) : logisticsDocs}
                                         onViewDetail={openDetails}
-                                        actions={(registry[isSale ? 'deliveries' : 'receptions']?.actions || []).filter((a: any) => !a.id.includes('view-'))}
-                                        emptyMessage="Sin movimientos"
+                                        actions={isNoteMode ? [] : (registry[isSale ? 'deliveries' : 'receptions']?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                                        emptyMessage={isNoteMode ? "Sin movimientos asociados" : "Sin movimientos"}
                                         order={order}
                                         userPermissions={userPermissions}
                                         onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                         actionEngineRef={actionEngineRef}
                                         stageId="logistics"
-                                        isComplete={logisticsProgress >= 100}
+                                        isComplete={isNoteMode ? activeInvoice.related_stock_moves?.length > 0 : logisticsProgress >= 100}
                                     >
-                                        <div className="space-y-1.5 py-1">
-                                            {(order.lines || order.items || []).map((line: any, idx: number) => {
-                                                const total = parseFloat(line.quantity) || 1
-                                                const current = parseFloat(isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0))
-                                                const pct = Math.min(100, Math.round((current / total) * 100))
+                                        {!isNoteMode ? (
+                                            <div className="space-y-1.5 py-1">
+                                                {(order.lines || order.items || []).map((line: any, idx: number) => {
+                                                    const total = parseFloat(line.quantity) || 1
+                                                    const current = parseFloat(isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0))
+                                                    const pct = Math.min(100, Math.round((current / total) * 100))
 
-                                                return (
-                                                    <div key={idx} className="space-y-0.5">
-                                                        <div className="flex items-center justify-between text-[10px] gap-2">
-                                                            <span className="text-foreground/70 line-clamp-1 flex-1">
-                                                                {line.product_name || line.description}
-                                                            </span>
-                                                            <span className="shrink-0 font-bold text-primary/80">
-                                                                {Math.round(showAnimations ? current : 0)}/{Math.round(total)}
-                                                            </span>
+                                                    return (
+                                                        <div key={idx} className="space-y-0.5">
+                                                            <div className="flex items-center justify-between text-[10px] gap-2">
+                                                                <span className="text-foreground/70 line-clamp-1 flex-1">
+                                                                    {line.product_name || line.description}
+                                                                </span>
+                                                                <span className="shrink-0 font-bold text-primary/80">
+                                                                    {Math.round(showAnimations ? current : 0)}/{Math.round(total)}
+                                                                </span>
+                                                            </div>
+                                                            <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/30" : "bg-primary/30")}
+                                                                    style={{ width: `${showAnimations ? pct : 0}%` }}
+                                                                />
+                                                            </div>
                                                         </div>
-                                                        <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                            <div
-                                                                className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/30" : "bg-primary/30")}
-                                                                style={{ width: `${showAnimations ? pct : 0}%` }}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">
+                                                {activeInvoice.related_stock_moves?.length > 0 ? "Movimientos registrados" : "No se requieren movimientos"}
+                                            </div>
+                                        )}
                                     </PhaseCard>
                                 )}
 
@@ -698,14 +759,32 @@ export function OrderCommandCenter({
                                 <PhaseCard
                                     title="Facturación"
                                     icon={Receipt}
-                                    variant={billingIsComplete ? 'success' : 'neutral'}
-                                    documents={(order.related_documents?.invoices || []).map((inv: any) => ({
+                                    variant={isNoteMode ? (activeInvoice.status !== 'DRAFT' ? 'success' : 'neutral') : (billingIsComplete ? 'success' : 'neutral')}
+                                    documents={isNoteMode ? [
+                                        {
+                                            type: activeInvoice.dte_type_display,
+                                            number: formatDocumentId(activeInvoice.dte_type_display, activeInvoice.number || 'BORRADOR', activeInvoice.display_id),
+                                            icon: Receipt,
+                                            id: activeInvoice.id,
+                                            docType: 'invoice',
+                                            status: activeInvoice.status,
+                                            actions: [
+                                                ...(activeInvoice.status === 'DRAFT' ? [{
+                                                    icon: Trash2,
+                                                    title: 'Eliminar Borrador',
+                                                    color: 'text-red-500 hover:bg-red-500/10',
+                                                    onClick: () => handleDeleteDraft(activeInvoice.id)
+                                                }] : [])
+                                            ]
+                                        }
+                                    ] : (order.related_documents?.invoices || []).map((inv: any) => ({
                                         type: inv.type_display,
                                         number: formatDocumentId(inv.type_display, inv.number || 'BORRADOR', inv.display_id),
                                         icon: Receipt,
                                         id: inv.id,
                                         docType: 'invoice',
                                         status: inv.status,
+                                        hasAdjustments: inv.adjustments?.length > 0,
                                         actions: [
                                             ...(inv.status === 'DRAFT' || inv.number === 'Draft' ? [{
                                                 icon: Trash2,
@@ -713,22 +792,49 @@ export function OrderCommandCenter({
                                                 color: 'text-red-500 hover:bg-red-500/10',
                                                 onClick: () => handleDeleteDraft(inv.id)
                                             }] : []),
-                                            // Removed annul-document action - only DRAFT invoices can be annulled
-                                            // and they should be deleted instead
                                         ]
                                     }))}
                                     onViewDetail={openDetails}
-                                    actions={[...(registry.documents?.actions || []), ...billingActions].filter((a: any) => !a.id.includes('view-'))}
+                                    actions={isNoteMode ? [] : [...(registry.documents?.actions || []), ...billingActions].filter((a: any) => !a.id.includes('view-'))}
                                     emptyMessage="Pendiente de emisión"
                                     order={order}
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                     actionEngineRef={actionEngineRef}
                                 >
-                                    <div className="py-2 flex justify-between items-center border-t border-white/5 mt-2">
-                                        <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">TOTAL</span>
-                                        <span className="text-sm font-black text-foreground">${parseFloat(order.total).toLocaleString()}</span>
-                                    </div>
+                                    {isNoteMode ? (
+                                        <div className="py-2 flex justify-between items-center border-t border-white/5 mt-2">
+                                            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">TOTAL NOTA</span>
+                                            <span className="text-sm font-black text-foreground">${parseFloat(activeInvoice.total).toLocaleString()}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="py-2 flex justify-between items-center border-t border-white/5 mt-2">
+                                            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">TOTAL</span>
+                                            <span className="text-sm font-black text-foreground">${parseFloat(order.total).toLocaleString()}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Related Notes in Parent Mode */}
+                                    {!isNoteMode && (order.related_documents?.invoices || []).some((inv: any) => inv.adjustments?.length > 0) && (
+                                        <div className="mt-2 pt-2 border-t border-dashed border-white/10 space-y-1">
+                                            <span className="text-[8px] font-black text-primary/50 uppercase tracking-widest">NOTAS RELACIONADAS</span>
+                                            {(order.related_documents?.invoices || []).flatMap((inv: any) => inv.adjustments || []).map((adj: any) => (
+                                                <div
+                                                    key={adj.id}
+                                                    className="flex items-center justify-between p-1.5 bg-purple-500/5 rounded border border-purple-500/20 cursor-pointer hover:bg-purple-500/10 transition-colors"
+                                                    onClick={() => openDetails('invoice', adj.id)}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <FileBadge className="size-3 text-purple-500" />
+                                                        <span className="text-[9px] font-bold">{adj.dte_type_display} {adj.number}</span>
+                                                    </div>
+                                                    <Badge variant="outline" className="text-[8px] h-4 border-purple-500/30 text-purple-500 px-1 font-black">
+                                                        APLICADA
+                                                    </Badge>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </PhaseCard>
 
                                 {/* 5. Tesorería */}
@@ -736,10 +842,19 @@ export function OrderCommandCenter({
                                     title="Tesorería"
                                     icon={Banknote}
                                     variant={
-                                        (order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) && !hasPendingTransactions ? 'success' :
-                                            (parseFloat(order.pending_amount) < parseFloat(order.total) || hasPendingTransactions) ? 'active' : 'neutral'
+                                        isNoteMode ? (activeInvoice.status === 'PAID' ? 'success' : activeInvoice.status === 'POSTED' ? 'active' : 'neutral') :
+                                            ((order.status === 'PAID' || order.payment_status === 'PAID' || parseFloat(order.pending_amount) <= 0) && !hasPendingTransactions ? 'success' :
+                                                (parseFloat(order.pending_amount) < parseFloat(order.total) || hasPendingTransactions) ? 'active' : 'neutral')
                                     }
-                                    documents={(order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
+                                    documents={isNoteMode ? (activeInvoice.serialized_payments || []).map((pay: any) => ({
+                                        type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
+                                        number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
+                                        icon: Banknote,
+                                        id: pay.id,
+                                        docType: 'payment',
+                                        status: pay.payment_method,
+                                        actions: []
+                                    })) : (order.serialized_payments || order.payments_detail || order.related_documents?.payments || []).map((pay: any) => ({
                                         type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
                                         number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
                                         icon: Banknote,
@@ -770,11 +885,11 @@ export function OrderCommandCenter({
                                         ]
                                     }))}
                                     onViewDetail={openDetails}
-                                    actions={(registry.payments?.actions || []).filter((a: any) =>
+                                    actions={isNoteMode ? [] : (registry.payments?.actions || []).filter((a: any) =>
                                         !a.id.includes('view-') &&
                                         (a.id.includes('history') ? (order.related_documents?.payments?.length > 0 || order.payments_detail?.length > 0) : true)
                                     )}
-                                    emptyMessage="Sin pagos registrados"
+                                    emptyMessage={isNoteMode ? "Sin devoluciones registradas" : "Sin pagos registrados"}
                                     order={order}
                                     userPermissions={userPermissions}
                                     onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
@@ -782,19 +897,28 @@ export function OrderCommandCenter({
                                 >
                                     <div className="space-y-1 py-1">
                                         <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
-                                            <span>PAGADO</span>
+                                            <span>{isNoteMode ? 'DEVUELTO' : 'PAGADO'}</span>
                                             <span className="text-primary">
-                                                {Math.round(showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0)}%
+                                                {isNoteMode ?
+                                                    (activeInvoice.status === 'PAID' ? '100%' : '0%') :
+                                                    Math.round(showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0) + '%'
+                                                }
                                             </span>
                                         </div>
                                         <Progress
-                                            value={showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0}
+                                            value={isNoteMode ? (activeInvoice.status === 'PAID' ? 100 : 0) : (showAnimations ? (1 - (order.pending_amount / (order.total || 1))) * 100 : 0)}
                                             className="h-1 bg-white/5 transition-all duration-1000"
                                         />
-                                        {parseFloat(order.pending_amount) > 0 && (
+                                        {!isNoteMode && parseFloat(order.pending_amount) > 0 && (
                                             <div className="flex justify-between items-center text-[10px] mt-1 border-t border-white/5 pt-1">
                                                 <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">POR PAGAR</span>
                                                 <span className="font-bold text-red-500/80">${Math.round(order.pending_amount).toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                        {isNoteMode && activeInvoice.status !== 'PAID' && (
+                                            <div className="flex justify-between items-center text-[10px] mt-1 border-t border-white/5 pt-1">
+                                                <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">POR DEVOLVER</span>
+                                                <span className="font-bold text-orange-500/80">${Math.round(activeInvoice.total).toLocaleString()}</span>
                                             </div>
                                         )}
                                     </div>

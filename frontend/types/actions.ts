@@ -34,6 +34,8 @@ export interface Action {
     badge?: ActionBadge
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost'
     description?: string
+    isDisabled?: (order: any) => boolean
+    disabledTooltip?: string
 }
 
 /**

@@ -26,7 +26,7 @@ export default function SalesInvoicesPage() {
     const [payingInv, setPayingInv] = useState<any | null>(null)
 
     // Action Panel state
-    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+    const [selectedHub, setSelectedHub] = useState<{ orderId: number | null, invoiceId?: number | null }>({ orderId: null })
 
     useEffect(() => {
         fetchInvoices()
@@ -181,7 +181,10 @@ export default function SalesInvoicesPage() {
                             <Button
                                 variant="default"
                                 size="sm"
-                                onClick={() => setSelectedOrderId(inv.sale_order)}
+                                onClick={() => setSelectedHub({
+                                    orderId: inv.sale_order,
+                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) ? inv.id : null
+                                })}
                                 title="Gestionar Orden"
                                 className="h-8 px-3 w-full"
                             >
@@ -335,10 +338,11 @@ export default function SalesInvoicesPage() {
             )}
 
             <OrderCommandCenter
-                orderId={selectedOrderId}
+                orderId={selectedHub.orderId}
+                invoiceId={selectedHub.invoiceId}
                 type="sale"
-                open={selectedOrderId !== null}
-                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                open={selectedHub.orderId !== null || !!selectedHub.invoiceId}
+                onOpenChange={(open) => !open && setSelectedHub({ orderId: null })}
                 onActionSuccess={fetchInvoices}
             />
         </div>

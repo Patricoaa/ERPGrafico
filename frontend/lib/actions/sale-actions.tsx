@@ -200,28 +200,40 @@ export const saleOrderActions: ActionRegistry = {
                 label: 'Crear Nota de Crédito',
                 icon: MinusCircle,
                 requiredPermissions: ['billing.add_invoice'],
-                excludedStatus: ['DRAFT', 'CANCELLED'],
+                excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.status !== 'DRAFT' &&
+                    const hasInvoice = order.related_documents?.invoices?.some((inv: any) =>
                         inv.dte_type === 'FACTURA'
                     )
-                    return hasValidInvoice
-                }
+                    return hasInvoice
+                },
+                isDisabled: (order) => {
+                    const hasIssuedInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.status !== 'DRAFT' && inv.dte_type === 'FACTURA'
+                    )
+                    return !hasIssuedInvoice
+                },
+                disabledTooltip: "Debe emitir la factura antes de crear una nota de crédito"
             },
             {
                 id: 'create-debit-note',
                 label: 'Crear Nota de Débito',
                 icon: PlusCircle,
                 requiredPermissions: ['billing.add_invoice'],
-                excludedStatus: ['DRAFT', 'CANCELLED'],
+                excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.status !== 'DRAFT' &&
+                    const hasInvoice = order.related_documents?.invoices?.some((inv: any) =>
                         inv.dte_type === 'FACTURA'
                     )
-                    return hasValidInvoice
-                }
+                    return hasInvoice
+                },
+                isDisabled: (order) => {
+                    const hasIssuedInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.status !== 'DRAFT' && inv.dte_type === 'FACTURA'
+                    )
+                    return !hasIssuedInvoice
+                },
+                disabledTooltip: "Debe emitir la factura antes de crear una nota de débito"
             }
         ]
     },

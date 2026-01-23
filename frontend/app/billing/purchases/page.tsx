@@ -62,7 +62,7 @@ export default function PurchaseInvoicesPage() {
     const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
 
     // Action Panel state
-    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+    const [selectedHub, setSelectedHub] = useState<{ orderId: number | null, invoiceId?: number | null }>({ orderId: null })
 
     useEffect(() => {
         fetchDocuments()
@@ -355,7 +355,10 @@ export default function PurchaseInvoicesPage() {
                             <Button
                                 variant="default"
                                 size="sm"
-                                onClick={() => setSelectedOrderId(doc.purchase_order!)}
+                                onClick={() => setSelectedHub({
+                                    orderId: doc.purchase_order!,
+                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null
+                                })}
                                 title="Gestionar Orden"
                                 className="h-8 px-3"
                             >
@@ -576,10 +579,11 @@ export default function PurchaseInvoicesPage() {
             }
 
             <OrderCommandCenter
-                orderId={selectedOrderId}
+                orderId={selectedHub.orderId}
+                invoiceId={selectedHub.invoiceId}
                 type="purchase"
-                open={selectedOrderId !== null}
-                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                open={selectedHub.orderId !== null || !!selectedHub.invoiceId}
+                onOpenChange={(open) => !open && setSelectedHub({ orderId: null })}
                 onActionSuccess={fetchDocuments}
             />
         </div >

@@ -6,6 +6,8 @@ import { Action } from "@/types/actions"
 import { getActionBadgeCount } from "@/lib/actions/utils"
 import { cn } from "@/lib/utils"
 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
 interface ActionButtonProps {
     action: Action
     order: any
@@ -29,15 +31,18 @@ export function ActionButton({
     const Icon = action.icon
     const badgeCount = getActionBadgeCount(action, order)
     const badge = action.badge
+    const isDisabled = action.isDisabled?.(order) || false
 
-    return (
+    const buttonElement = (
         <Button
             variant={ghost ? "ghost" : (action.variant || "outline")}
-            onClick={onClick}
+            onClick={isDisabled ? undefined : onClick}
+            disabled={isDisabled}
             className={cn(
                 "w-full justify-start text-left font-medium transition-all duration-200 group h-auto",
                 compact ? "py-1.5 px-2" : "py-2 px-3",
                 ghost ? "hover:bg-black/5 dark:hover:bg-white/5 border-none shadow-none !text-black active:scale-[0.98] transition-all duration-200" : (action.variant === 'destructive' ? 'hover:bg-destructive/10' : 'hover:border-primary/50 hover:bg-primary/5'),
+                isDisabled && "opacity-50 cursor-not-allowed",
                 className
             )}
         >
@@ -79,4 +84,23 @@ export function ActionButton({
             </div>
         </Button>
     )
+
+    if (isDisabled && action.disabledTooltip) {
+        return (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="w-full cursor-not-allowed">
+                            {buttonElement}
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{action.disabledTooltip}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        )
+    }
+
+    return buttonElement
 }

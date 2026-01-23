@@ -181,28 +181,40 @@ export const purchaseOrderActions: ActionRegistry = {
                 label: 'Crear Nota de Crédito',
                 icon: MinusCircle,
                 requiredPermissions: ['billing.add_invoice'],
-                excludedStatus: ['DRAFT', 'CANCELLED'],
+                excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.status !== 'DRAFT' &&
+                    const hasInvoice = order.related_documents?.invoices?.some((inv: any) =>
                         ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
                     )
-                    return hasValidInvoice
-                }
+                    return hasInvoice
+                },
+                isDisabled: (order) => {
+                    const hasIssuedInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.status !== 'DRAFT' && ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
+                    )
+                    return !hasIssuedInvoice
+                },
+                disabledTooltip: "Debe registrar la factura antes de crear una nota de crédito"
             },
             {
                 id: 'create-debit-note',
                 label: 'Crear Nota de Débito',
                 icon: PlusCircle,
                 requiredPermissions: ['billing.add_invoice'],
-                excludedStatus: ['DRAFT', 'CANCELLED'],
+                excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    const hasValidInvoice = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.status !== 'DRAFT' &&
+                    const hasInvoice = order.related_documents?.invoices?.some((inv: any) =>
                         ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
                     )
-                    return hasValidInvoice
-                }
+                    return hasInvoice
+                },
+                isDisabled: (order) => {
+                    const hasIssuedInvoice = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.status !== 'DRAFT' && ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
+                    )
+                    return !hasIssuedInvoice
+                },
+                disabledTooltip: "Debe registrar la factura antes de crear una nota de débito"
             }
         ]
     },
