@@ -17,6 +17,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
@@ -232,17 +233,53 @@ export default function SalesInvoicesPage() {
                                         )}
 
                                         {/* Registrar Nota (Solo para Facturas/Boletas, no sobre Notas) */}
-                                        {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-purple-600"
-                                                onClick={() => setNotingInvoice(inv)}
-                                                title="Registrar Nota Crédito/Débito"
-                                            >
-                                                <FileBadge className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                                        {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (() => {
+                                            // Check Disable Conditions
+                                            const isDraft = inv.status === 'DRAFT'
+                                            const isPaid = inv.status === 'PAID'
+                                            // Fallback to true if unknown, but usually we want strict check. 
+                                            // If no order, then logistics might check stock moves, but for now assuming order context.
+                                            // If no order (standalone invoice), assume logistics is not applicable or "delivered".
+                                            const isDelivered = inv.sale_order ? inv.order_delivery_status === 'DELIVERED' : true
+
+                                            // "Hasta que las facturas no esten en estado borrador, no se encuentren pagos pendientes, se encuentra completamente finalizao la logistica"
+                                            const disabled = isDraft || !isPaid || !isDelivered
+
+                                            let tooltipText = ""
+                                            if (isDraft) tooltipText = "La factura debe estar publicada (no borrador)"
+                                            else if (!isPaid) tooltipText = "La factura debe estar completamente pagada"
+                                            else if (!isDelivered) tooltipText = "La logística debe estar completamente finalizada"
+
+                                            const ButtonComponent = (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className={disabled ? "text-muted-foreground opacity-50 cursor-not-allowed" : "text-purple-600"}
+                                                    onClick={() => !disabled && setNotingInvoice(inv)}
+                                                    disabled={disabled}
+                                                    title={disabled ? "" : "Registrar Nota Crédito/Débito"}
+                                                >
+                                                    <FileBadge className="h-4 w-4" />
+                                                </Button>
+                                            )
+
+                                            if (disabled) {
+                                                return (
+                                                    <TooltipProvider delayDuration={0}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div>{ButtonComponent}</div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>{tooltipText}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                )
+                                            }
+
+                                            return ButtonComponent
+                                        })()}
 
                                         <Button
                                             variant="ghost"

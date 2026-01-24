@@ -22,6 +22,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     serialized_payments = serializers.SerializerMethodField()
     adjustments = serializers.SerializerMethodField()
     corrected_invoice = serializers.SerializerMethodField()
+    order_delivery_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -112,6 +113,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'dte_type': obj.corrected_invoice.dte_type,
             'dte_type_display': obj.corrected_invoice.get_dte_type_display()
         }
+
+    def get_order_delivery_status(self, obj):
+        if obj.sale_order:
+            return obj.sale_order.delivery_status
+        if obj.purchase_order:
+            return obj.purchase_order.receiving_status
+        return None
 
 class CreateInvoiceSerializer(serializers.Serializer):
     order_id = serializers.IntegerField()

@@ -217,15 +217,35 @@ export const saleOrderActions: ActionRegistry = {
                     return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    const hasIssuedFacturaWithFolio = order.related_documents?.invoices?.some((inv: any) =>
+                    // Logic: Disabled IF:
+                    // 1. Invoice is DRAFT (Must be POSTED or PAID)
+                    // 2. Order NOT PAID (Must be fully paid)
+                    // 3. Order NOT DELIVERED (Must be fully delivered)
+                    // 4. Missing folio (Must have folio)
+
+                    const invoices = order.related_documents?.invoices || []
+
+                    // Allow if ANY invoice is valid for NC, but usually we block if the order isn't fully ready.
+                    // Strict rules as per user request:
+                    // "Hasta que las facturas no esten en estado borrador, no se encuentren pagos pendientes, se encuentra completamente finalizao la logistica"
+
+                    const isOrderPaid = order.status === 'PAID'
+                    const isOrderDelivered = order.delivery_status === 'DELIVERED'
+
+                    const hasIssuedFacturaWithFolio = invoices.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
                         inv.dte_type === 'FACTURA' &&
                         inv.number &&
                         inv.number !== 'Draft'
                     )
-                    return !hasIssuedFacturaWithFolio
+
+                    return !isOrderPaid || !isOrderDelivered || !hasIssuedFacturaWithFolio
                 },
-                disabledTooltip: "Debe registrar el folio de la factura antes de crear una nota de crédito"
+                disabledTooltip: (order) => {
+                    if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
+                    if (order.delivery_status !== 'DELIVERED') return "La logística debe estar completamente finalizada"
+                    return "Debe existir una factura publicada con folio asignado"
+                }
             },
             {
                 id: 'create-debit-note',
@@ -246,15 +266,26 @@ export const saleOrderActions: ActionRegistry = {
                     return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    const hasIssuedFacturaWithFolio = order.related_documents?.invoices?.some((inv: any) =>
+                    // Same logic as Credit Note
+                    const invoices = order.related_documents?.invoices || []
+
+                    const isOrderPaid = order.status === 'PAID'
+                    const isOrderDelivered = order.delivery_status === 'DELIVERED'
+
+                    const hasIssuedFacturaWithFolio = invoices.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
                         inv.dte_type === 'FACTURA' &&
                         inv.number &&
                         inv.number !== 'Draft'
                     )
-                    return !hasIssuedFacturaWithFolio
+
+                    return !isOrderPaid || !isOrderDelivered || !hasIssuedFacturaWithFolio
                 },
-                disabledTooltip: "Debe registrar el folio de la factura antes de crear una nota de débito"
+                disabledTooltip: (order) => {
+                    if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
+                    if (order.delivery_status !== 'DELIVERED') return "La logística debe estar completamente finalizada"
+                    return "Debe existir una factura publicada con folio asignado"
+                }
             }
         ]
     },

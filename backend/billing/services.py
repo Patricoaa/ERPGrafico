@@ -347,27 +347,49 @@ class BillingService:
             else:
                 # Prepare data for immediate lines
                 line_data = []
+
+                # Pre-fetch lines for faster lookup and ID resolution
+                # This fixes the issue where frontend sends product_id as line_id
+                all_order_lines = list(order.lines.all())
+                lines_by_id = {line.id: line for line in all_order_lines}
+                lines_by_product = {line.product_id: line for line in all_order_lines if line.product_id}
+
                 for item in immediate_lines:
                     try:
+                        resolved_line = None
+                        qty = 0
+                        uom_id = None
+                        
                         if isinstance(item, dict):
                             # Frontend sends lineId, but we might also support id
-                            line_id = item.get('line_id') or item.get('lineId') or item.get('id')
+                            raw_id = item.get('line_id') or item.get('lineId') or item.get('id')
                             qty = Decimal(str(item.get('quantity', 0)))
                             # Frontend sends uom, but backend partial_dispatch expects uom_id (or we adapt)
                             uom_id = item.get('uom') or item.get('uom_id')
+                            
+                            # Try to resolve line
+                            if raw_id in lines_by_id:
+                                resolved_line = lines_by_id[raw_id]
+                            elif raw_id in lines_by_product:
+                                resolved_line = lines_by_product[raw_id]
                         else:
-                            line_id = item
-                            line = order.lines.get(id=line_id)
-                            qty = line.quantity_pending
-                            uom_id = line.uom.id if line.uom else None
+                            raw_id = item
+                            if raw_id in lines_by_id:
+                                resolved_line = lines_by_id[raw_id]
+                            elif raw_id in lines_by_product:
+                                resolved_line = lines_by_product[raw_id]
+                            
+                            if resolved_line:
+                                qty = resolved_line.quantity_pending
+                                uom_id = resolved_line.uom.id if resolved_line.uom else None
                         
-                        if qty > 0 and line_id:
+                        if resolved_line and qty > 0:
                             line_data.append({
-                                'line_id': line_id,
+                                'line_id': resolved_line.id,
                                 'quantity': qty,
                                 'uom_id': uom_id
                             })
-                    except (SaleOrder.DoesNotExist, ValueError, TypeError):
+                    except (ValueError, TypeError):
                         continue
                 
                 if line_data:
