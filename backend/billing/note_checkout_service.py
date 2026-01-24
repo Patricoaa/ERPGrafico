@@ -433,18 +433,20 @@ class NoteCheckoutService:
         return workflow
     
     @staticmethod
-    def _create_accounting_entry(workflow: NoteWorkflow, settings: AccountingSettings) -> JournalEntry:
+    def _create_accounting_entry(workflow: NoteWorkflow, settings: AccountingSettings, moved_quantities: Dict[int, Decimal] = None) -> JournalEntry:
         """
         Create journal entry for the note
         
-        Business rules:
-        - Services/Consumables: Reverse to income/expense accounts
-        - Stockables: Reverse to inventory account AND reverse COGS
-        - Manufacturables (with BOM): Reverse to inventory AND reverse COGS
+        Args:
+            moved_quantities: Optional map of product_id -> quantity actually moved.
+                            If None, assumes full quantity (backend backward compatibility).
+                            If provided, COGS reversal uses this quantity.
         """
         invoice = workflow.invoice
         is_sale = workflow.sale_order is not None
         
+        # ... [rest of method] ...
+
         # Create entry
         entry = JournalEntry.objects.create(
             date=invoice.date,
@@ -499,7 +501,7 @@ class NoteCheckoutService:
             product = Product.objects.get(id=item['product_id'])
             line_net = Decimal(str(item['line_net']))
             
-            # 1. Main Net Amount Line (Revenue/Expense reversal)
+            # 1. Main Net Amount Line (Revenue/Expense reversal) - ALWAYS FULL IVOICE AMOUNT
             if product.product_type == Product.Type.SERVICE:
                 product_account = product.income_account or settings.default_service_revenue_account or settings.default_revenue_account
             elif product.product_type == Product.Type.CONSUMABLE:
@@ -536,9 +538,19 @@ class NoteCheckoutService:
 
             # 2. STOCK VALUATION REVERSAL (Only for sales of stockable items)
             # If Customer NC (Return): Debit Inventory, Credit COGS (at current cost)
+            # THIS DEPENDS ON ACTUAL STOCK MOVEMENTS
             if is_sale and workflow.is_credit_note and item.get('creates_stock_move'):
+                
+                # Determine quantity for COGS reversal
+                if moved_quantities is not None:
+                    # Use actual moved quantity (Partial Support)
+                    qty_for_cogs = moved_quantities.get(product.id, Decimal(0))
+                else:
+                    # Fallback to full invoice quantity
+                    qty_for_cogs = Decimal(str(item['quantity']))
+                
                 # Valuation amount = qty * current_cost
-                valuation_amount = (Decimal(str(item['quantity'])) * product.cost_price).quantize(Decimal('1'))
+                valuation_amount = (qty_for_cogs * product.cost_price).quantize(Decimal('1'))
                 
                 if valuation_amount > 0:
                     inv_account = settings.storable_inventory_account or settings.default_inventory_account
@@ -798,8 +810,10 @@ class NoteCheckoutService:
                 'unit_price': float(unit_price),
                 'tax_amount': float(tax_amount),
                 'line_net': float(line_net),
+                'line_tax': float(line_tax),
                 'creates_stock_move': creates_stock_move,
-                'reason': item.get('reason', '')
+                'reason': item.get('reason', ''),
+                'line_id': item.get('line_id')
             })
 
         workflow.selected_items = validated_items
@@ -812,18 +826,70 @@ class NoteCheckoutService:
         invoice.save()
 
         # 5. Process Logistics (Stock Moves)
-        # Only if required AND data provided
+        # Parse logistics data to determine what actually moves
+        moved_quantities = {} # map product_id -> quantity
+        
         if has_stockable and logistics_data:
             warehouse_id = logistics_data.get('warehouse_id')
             move_date = logistics_data.get('date') or timezone.now().date()
+            delivery_type = logistics_data.get('delivery_type', 'IMMEDIATE')
             warehouse = Warehouse.objects.get(id=warehouse_id)
             is_sale = workflow.sale_order is not None
             
-            for item in validated_items:
-                if not item['creates_stock_move']: continue
+            # Determine quantities to move
+            items_to_move = []
+            
+            if delivery_type == 'PARTIAL':
+                # Use provided line_data
+                line_data = logistics_data.get('line_data', [])
+                for ld in line_data:
+                    line_id = ld.get('line_id') # Corresponds to item['line_id'] in selected_items
+                    # ...
                 
-                product = Product.objects.get(id=item['product_id'])
-                quantity = Decimal(str(item['quantity']))
+                # Re-iterate selected items to match with line_data
+                for item in selected_items:
+                    # We need a way to link line_data back to selected_items.
+                    # Frontend usually sends line_id.
+                    l_id = item.get('line_id')
+                    
+                    # Find matching data
+                    match = next((l for l in line_data if l.get('line_id') == l_id), None)
+                    if match:
+                        qty_to_move = Decimal(str(match.get('quantity', 0)))
+                        if qty_to_move > 0:
+                            items_to_move.append({
+                                'product_id': item['product_id'],
+                                'quantity': qty_to_move,
+                                'makes_move': item.get('creates_stock_move', False) # We need to re-verify if valid stockable
+                            })
+            
+            elif delivery_type == 'SCHEDULED':
+                # No movements now
+                pass
+                
+            else:
+                # IMMEDIATE: Move full quantity
+                for item in validated_items:
+                    items_to_move.append({
+                        'product_id': item['product_id'],
+                        'quantity': Decimal(str(item['quantity'])),
+                        'makes_move': item['creates_stock_move']
+                    })
+
+            # Create Stock Moves
+            for move_item in items_to_move:
+                # Re-verify stockable (in case logic above was loose)
+                # We can check the validated_items list to be sure
+                val_item = next((i for i in validated_items if i['product_id'] == move_item['product_id']), None)
+                if not val_item or not val_item['creates_stock_move']:
+                    continue
+
+                product = Product.objects.get(id=move_item['product_id'])
+                quantity = move_item['quantity']
+                
+                # Store for Accounting usage
+                # Aggregate if multiple lines for same product (rare but possible)
+                moved_quantities[product.id] = moved_quantities.get(product.id, Decimal(0)) + quantity
                 
                 # Logic: Sale NC (Return) -> IN. Sale ND -> OUT.
                 # Logic: Purchase NC (Return) -> OUT. Purchase ND -> IN.
@@ -858,14 +924,15 @@ class NoteCheckoutService:
         invoice.save()
         
         # Create Accounting Entry
-        entry = NoteCheckoutService._create_accounting_entry(workflow, AccountingSettings.objects.first())
+        # Pass moved_quantities so COGS is reversed only for what moved
+        entry = NoteCheckoutService._create_accounting_entry(workflow, AccountingSettings.objects.first(), moved_quantities=moved_quantities)
         
         if not val_is_pending:
             from accounting.services import JournalEntryService
             JournalEntryService.post_entry(entry)
             
         # 6.5 Link created stock moves to the accounting entry for Hub visibility
-        # If immediate return was selected, we search for the moves created in step 5
+        # If immediate/partial return was selected, we search for the moves created in step 5
         StockMove.objects.filter(description__contains=f"(REF: WF-{workflow.id})").update(journal_entry=entry)
         
         # 7. Process Payment
