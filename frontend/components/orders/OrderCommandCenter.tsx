@@ -1075,35 +1075,47 @@ function PhaseCard({
                 <div className="flex items-center gap-1.5">
                     {categorizedActions.secondary.filter((a: any) =>
                         ['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
-                    ).map((action: any, idx: number) => (
-                        <Tooltip key={idx}>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={cn(
-                                        "h-8 w-8 rounded-full transition-all active:scale-90 border border-white/10 shadow-sm",
-                                        "bg-white/5 hover:bg-white/10",
-                                        (action.id.includes('note')) && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
-                                        action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40"
-                                    )}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        console.log(`[PhaseCard] Header button clicked: ${action.id}`);
-                                        if (!actionEngineRef.current) {
-                                            console.error("[PhaseCard] ActionEngineRef is NULL!");
-                                        }
-                                        actionEngineRef.current?.handleActionClick(action.id);
-                                    }}
-                                >
-                                    <action.icon className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{action.label}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    ))}
+                    ).map((action: any, idx: number) => {
+                        const disabled = action.isDisabled?.(order) || false
+                        let tooltipText = action.label
+                        if (disabled && action.disabledTooltip) {
+                            tooltipText = typeof action.disabledTooltip === 'function'
+                                ? action.disabledTooltip(order)
+                                : action.disabledTooltip
+                        }
+
+                        return (
+                            <Tooltip key={idx}>
+                                <TooltipTrigger asChild>
+                                    <div className={disabled ? "cursor-not-allowed opacity-50" : ""}>
+                                        {/* Wrapped in div to allow tooltip on disabled button */}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            disabled={disabled}
+                                            className={cn(
+                                                "h-8 w-8 rounded-full transition-all active:scale-90 border border-white/10 shadow-sm",
+                                                "bg-white/5 hover:bg-white/10",
+                                                (action.id.includes('note')) && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
+                                                action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40",
+                                                disabled && "pointer-events-none"
+                                            )}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                console.log(`[PhaseCard] Header button clicked: ${action.id}`);
+                                                actionEngineRef.current?.handleActionClick(action.id);
+                                            }}
+                                        >
+                                            <action.icon className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{tooltipText}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )
+                    })}
                 </div>
             </div>
 

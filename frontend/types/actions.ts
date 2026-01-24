@@ -35,7 +35,7 @@ export interface Action {
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost'
     description?: string
     isDisabled?: (order: any) => boolean
-    disabledTooltip?: string
+    disabledTooltip?: string | ((order: any) => string)
 }
 
 /**

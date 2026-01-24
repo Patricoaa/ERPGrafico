@@ -86,6 +86,10 @@ export function ActionButton({
     )
 
     if (isDisabled && action.disabledTooltip) {
+        const tooltipText = typeof action.disabledTooltip === 'function'
+            ? action.disabledTooltip(order)
+            : action.disabledTooltip
+
         return (
             <TooltipProvider>
                 <Tooltip>
@@ -95,7 +99,7 @@ export function ActionButton({
                         </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>{action.disabledTooltip}</p>
+                        <p>{tooltipText}</p>
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
