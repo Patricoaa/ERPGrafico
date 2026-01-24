@@ -349,17 +349,19 @@ class BillingService:
                 line_data = []
                 for item in immediate_lines:
                     try:
-                        if isinstance(item, dict) and 'id' in item:
-                            line_id = item['id']
+                        if isinstance(item, dict):
+                            # Frontend sends lineId, but we might also support id
+                            line_id = item.get('line_id') or item.get('lineId') or item.get('id')
                             qty = Decimal(str(item.get('quantity', 0)))
-                            uom_id = item.get('uom')
+                            # Frontend sends uom, but backend partial_dispatch expects uom_id (or we adapt)
+                            uom_id = item.get('uom') or item.get('uom_id')
                         else:
                             line_id = item
                             line = order.lines.get(id=line_id)
                             qty = line.quantity_pending
                             uom_id = line.uom.id if line.uom else None
                         
-                        if qty > 0:
+                        if qty > 0 and line_id:
                             line_data.append({
                                 'line_id': line_id,
                                 'quantity': qty,

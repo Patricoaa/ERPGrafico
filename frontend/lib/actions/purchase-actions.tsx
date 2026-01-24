@@ -198,12 +198,15 @@ export const purchaseOrderActions: ActionRegistry = {
                     return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    const hasIssuedFactura = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.status !== 'DRAFT' && ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
+                    const hasIssuedFacturaWithFolio = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.status !== 'DRAFT' &&
+                        ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type) &&
+                        inv.number &&
+                        inv.number !== 'Draft'
                     )
-                    return !hasIssuedFactura
+                    return !hasIssuedFacturaWithFolio
                 },
-                disabledTooltip: "Debe registrar la factura antes de crear una nota de crédito"
+                disabledTooltip: "Debe registrar el folio de la factura antes de crear una nota de crédito"
             },
             {
                 id: 'create-debit-note',
@@ -224,12 +227,15 @@ export const purchaseOrderActions: ActionRegistry = {
                     return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    const hasIssuedFactura = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.status !== 'DRAFT' && ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
+                    const hasIssuedFacturaWithFolio = order.related_documents?.invoices?.some((inv: any) =>
+                        inv.status !== 'DRAFT' &&
+                        ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type) &&
+                        inv.number &&
+                        inv.number !== 'Draft'
                     )
-                    return !hasIssuedFactura
+                    return !hasIssuedFacturaWithFolio
                 },
-                disabledTooltip: "Debe registrar la factura antes de crear una nota de débito"
+                disabledTooltip: "Debe registrar el folio de la factura antes de crear una nota de débito"
             }
         ]
     },
