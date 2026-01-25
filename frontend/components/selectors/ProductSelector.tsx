@@ -1,10 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2 } from "lucide-react"
+import { Check, ChevronsUpDown, Search, Loader2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
     Popover,
     PopoverContent,
@@ -134,23 +140,28 @@ export function ProductSelector({
         return () => clearTimeout(timeoutId)
     }, [open, searchTerm, productType, context, allowedTypes, excludeIds, customFilter])
 
-    const isStockRestricted = (product: any) => {
-        if (!restrictStock) return false
+    const getStockRestrictionReason = (product: any) => {
+        if (!restrictStock) return null
 
         if (product.product_type === 'STORABLE') {
-            return (product.current_stock || 0) <= 0
+            const available = product.qty_available || 0
+            if (available <= 0) {
+                return `Sin stock disponible (Stock: ${product.current_stock || 0}, Reservado: ${(product.current_stock || 0) - available})`
+            }
         }
 
         if (product.product_type === 'MANUFACTURABLE') {
-            // Exception: If it has no BOM, it's always available for manufacturing (express)
-            if (!product.has_bom) return false
-            // If quantity is unknown (null/undefined), we assume it's available (or at least selectable)
-            if (product.manufacturable_quantity === null || product.manufacturable_quantity === undefined) return false
-            return (product.manufacturable_quantity || 0) <= 0
+            if (!product.has_bom) return null
+            const canMake = product.manufacturable_quantity ?? 0
+            if (canMake <= 0) {
+                return 'No se puede fabricar: componentes insuficientes'
+            }
         }
 
-        return false
+        return null
     }
+
+    const isStockRestricted = (product: any) => getStockRestrictionReason(product) !== null
 
     const isCustomDisabled = (product: any) => {
         if (customDisabled && customDisabled(product)) {
@@ -248,6 +259,18 @@ export function ProductSelector({
                                             )}
                                             onClick={() => handleSelect(product)}
                                         >
+                                            {isStockRestricted(product) ? (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="absolute inset-0 z-10" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p className="text-xs">{getStockRestrictionReason(product)}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            ) : null}
                                             <Check
                                                 className={cn(
                                                     "absolute left-2 top-3 h-4 w-4 opacity-0",
@@ -271,7 +294,7 @@ export function ProductSelector({
                                                                     Stock: {product.current_stock || 0}
                                                                 </Badge>
                                                                 <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                                    (product.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-amber-500 text-amber-600"
+                                                                    (product.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-500 text-white bg-red-500/10"
                                                                 )}>
                                                                     Disp: {product.qty_available || 0}
                                                                 </Badge>
@@ -280,7 +303,9 @@ export function ProductSelector({
 
                                                         {/* Manufacturable Badge */}
                                                         {product.product_type === 'MANUFACTURABLE' && product.has_bom && (
-                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-blue-400 text-blue-600">
+                                                            <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-blue-400 text-blue-600",
+                                                                (product.manufacturable_quantity ?? 0) <= 0 && "border-red-500 text-red-500 bg-red-50"
+                                                            )}>
                                                                 Fab: {product.manufacturable_quantity ?? 'N/A'}
                                                             </Badge>
                                                         )}

@@ -48,6 +48,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { PricingUtils } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
+import { useStockValidation } from "@/hooks/useStockValidation"
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
@@ -147,6 +148,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     const [loading, setLoading] = useState(false)
     const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoMs] = useState<any[]>([])
+    const { checkAvailability, validateLine, getStockMessage } = useStockValidation()
 
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema) as any,
@@ -249,6 +251,40 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
         if (invalidLines.length > 0) {
             toast.error("Hay líneas con precio dinámico sin asignar (precio 0). Por favor asigne un precio unitario.");
+            return;
+        }
+
+        // Stock validation before proceeding
+        try {
+            const stockCheck = await checkAvailability(
+                data.lines
+                    .filter(line => line.product) // Filter out lines without product
+                    .map(line => ({
+                        product_id: parseInt(line.product!),
+                        quantity: line.quantity,
+                        uom_id: parseInt(line.uom)
+                    }))
+            );
+
+            if (!stockCheck.available) {
+                const unavailableLines = stockCheck.details
+                    .filter(d => !d.is_available)
+                    .map(d => {
+                        if (d.missing_components && d.missing_components.length > 0) {
+                            const components = d.missing_components.map(c => c.component_name).join(', ');
+                            return `${d.product_name} (faltan componentes: ${components})`;
+                        }
+                        return d.product_name;
+                    });
+
+                toast.error('Stock insuficiente', {
+                    description: `Los siguientes productos no tienen stock disponible: ${unavailableLines.join(', ')}`
+                });
+                return;
+            }
+        } catch (error) {
+            console.error('Error validating stock:', error);
+            toast.error('Error al validar stock. Por favor, intente nuevamente.');
             return;
         }
         if (!initialData && onConfirmCheckout) {
@@ -465,11 +501,24 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                 {...field}
                                                                 onChange={async (e) => {
                                                                     const val = parseFloat(e.target.value) || 0
+
+                                                                    // Validate stock before allowing change
+                                                                    const productId = form.getValues(`lines.${index}.product`)
+                                                                    const product = products.find(p => p.id.toString() === productId)
+
+                                                                    if (product && !validateLine(product, val)) {
+                                                                        const message = getStockMessage(product, val)
+                                                                        if (message) {
+                                                                            toast.error('Stock insuficiente', {
+                                                                                description: message
+                                                                            })
+                                                                        }
+                                                                        return // Don't allow the change
+                                                                    }
+
                                                                     field.onChange(val)
 
                                                                     // Re-evaluate price
-                                                                    const productId = form.getValues(`lines.${index}.product`)
-                                                                    const product = products.find(p => p.id.toString() === productId)
                                                                     if (product) {
                                                                         const uomId = parseInt(form.getValues(`lines.${index}.uom`))
                                                                         const { net, gross } = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)

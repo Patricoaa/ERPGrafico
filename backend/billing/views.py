@@ -70,6 +70,69 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=False, methods=['get'])
+    def check_folio(self, request):
+        """
+        Validates folio uniqueness in real-time.
+        
+        Query params:
+        - number: Folio number to check
+        - dte_type: Document type (BOLETA, FACTURA, etc.)
+        - exclude_id (optional): Invoice ID to exclude from check (for editing)
+        
+        Response:
+        {
+            "is_unique": true/false,
+            "message": "...",
+            "existing_invoice": {...} (if not unique)
+        }
+        """
+        number = request.query_params.get('number')
+        dte_type = request.query_params.get('dte_type')
+        exclude_id = request.query_params.get('exclude_id')
+        
+        if not number or not dte_type:
+            return Response({
+                'error': 'Missing required parameters: number and dte_type'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Skip validation for empty or draft numbers
+        if not number or number == 'Draft' or number.strip() == '':
+            return Response({
+                'is_unique': True,
+                'message': 'OK'
+            })
+        
+        # Build query
+        query = Invoice.objects.filter(number=number, dte_type=dte_type)
+        
+        if exclude_id:
+            query = query.exclude(id=exclude_id)
+        
+        # For sales documents, check only sale orders
+        # For purchase documents, we would need supplier_id (not implemented here for simplicity)
+        query = query.filter(sale_order__isnull=False)
+        
+        existing = query.first()
+        
+        if existing:
+            return Response({
+                'is_unique': False,
+                'message': f'El folio {number} ya ha sido utilizado en otro documento de venta.',
+                'existing_invoice': {
+                    'id': existing.id,
+                    'number': existing.number,
+                    'date': existing.date.isoformat() if existing.date else None,
+                    'customer_name': existing.sale_order.customer.name if existing.sale_order else None,
+                    'total': float(existing.total)
+                }
+            })
+        
+        return Response({
+            'is_unique': True,
+            'message': 'Folio disponible'
+        })
+
     @action(detail=False, methods=['post'])
     def pos_checkout(self, request):
         print(f"DEBUG: pos_checkout request data: {request.data}")

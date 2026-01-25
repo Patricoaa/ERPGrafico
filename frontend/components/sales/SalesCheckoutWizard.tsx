@@ -202,7 +202,7 @@ export function SalesCheckoutWizard({
         return null;
     }
 
-    const validateCurrentStep = () => {
+    const validateCurrentStep = async () => {
         // Find which logical step we are in
         let currentStepNum = 1;
 
@@ -233,12 +233,34 @@ export function SalesCheckoutWizard({
             currentStepNum++;
         }
 
+
         // DTE validation
         if (step === currentStepNum) {
             if (dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
                 toast.error("Debe ingresar el número de folio para la factura.")
                 return false
             }
+
+            // Validate folio uniqueness
+            if (dteData.type === 'FACTURA' && dteData.number && !dteData.isPending) {
+                try {
+                    const response = await api.get('/billing/invoices/check_folio/', {
+                        params: { number: dteData.number, dte_type: dteData.type }
+                    })
+
+                    if (!response.data.is_unique) {
+                        toast.error("Folio duplicado", {
+                            description: response.data.message
+                        })
+                        return false
+                    }
+                } catch (error) {
+                    console.error('Error validating folio:', error)
+                    toast.error("Error al validar el folio. Por favor, intente nuevamente.")
+                    return false
+                }
+            }
+
             return true
         }
         currentStepNum++;
@@ -284,8 +306,8 @@ export function SalesCheckoutWizard({
         return true
     }
 
-    const handleNext = () => {
-        if (!validateCurrentStep()) return
+    const handleNext = async () => {
+        if (!(await validateCurrentStep())) return
         setStep(prev => prev + 1)
     }
 
@@ -293,7 +315,7 @@ export function SalesCheckoutWizard({
 
     const handleFinish = async () => {
         // Final validation
-        if (!validateCurrentStep()) return
+        if (!(await validateCurrentStep())) return
 
         setLoading(true)
         try {

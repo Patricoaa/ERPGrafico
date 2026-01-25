@@ -214,6 +214,127 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             'price_net': float(price_net)
         })
 
+    @action(detail=False, methods=['post'])
+    def check_availability(self, request):
+        """
+        Validates stock availability for multiple product lines.
+        Checks both storable products and manufacturable products (including components).
+        
+        Request body:
+        {
+            "lines": [
+                {"product_id": 123, "quantity": 10, "uom_id": 5},
+                ...
+            ]
+        }
+        
+        Response:
+        {
+            "available": true/false,
+            "details": [
+                {
+                    "product_id": 123,
+                    "product_name": "Product A",
+                    "requested_qty": 10,
+                    "available_qty": 15,
+                    "is_available": true,
+                    "product_type": "STORABLE",
+                    "missing_components": []
+                },
+                ...
+            ]
+        }
+        """
+        lines = request.data.get('lines', [])
+        if not lines:
+            return Response({'error': 'No lines provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        details = []
+        all_available = True
+        
+        for line in lines:
+            product_id = line.get('product_id')
+            requested_qty = Decimal(str(line.get('quantity', 0)))
+            uom_id = line.get('uom_id')
+            
+            try:
+                product = Product.objects.get(pk=product_id)
+            except Product.DoesNotExist:
+                continue
+            
+            # Convert quantity to base UoM if needed
+            if uom_id and product.uom_id != uom_id:
+                try:
+                    uom = UoM.objects.get(pk=uom_id)
+                    # Convert to base UoM
+                    requested_qty = requested_qty * uom.ratio
+                except UoM.DoesNotExist:
+                    pass
+            
+            line_detail = {
+                'product_id': product.id,
+                'product_name': product.name,
+                'requested_qty': float(requested_qty),
+                'product_type': product.product_type,
+                'missing_components': []
+            }
+            
+            # Check availability based on product type
+            if product.product_type == Product.Type.STORABLE:
+                available_qty = product.qty_available
+                line_detail['available_qty'] = float(available_qty)
+                line_detail['is_available'] = requested_qty <= available_qty
+                
+                if not line_detail['is_available']:
+                    all_available = False
+                    
+            elif product.product_type == Product.Type.MANUFACTURABLE:
+                if product.has_bom:
+                    # Check if we can manufacture the requested quantity
+                    manufacturable_qty = product.manufacturable_quantity or 0
+                    line_detail['manufacturable_qty'] = float(manufacturable_qty)
+                    line_detail['is_available'] = requested_qty <= manufacturable_qty
+                    
+                    if not line_detail['is_available']:
+                        all_available = False
+                        
+                        # Get missing components details
+                        from production.models import BillOfMaterials
+                        try:
+                            bom = BillOfMaterials.objects.get(product=product, active=True)
+                            for component in bom.components.all():
+                                comp_product = component.component
+                                required_qty = component.quantity * requested_qty
+                                available_qty = comp_product.qty_available
+                                
+                                if required_qty > available_qty:
+                                    line_detail['missing_components'].append({
+                                        'component_id': comp_product.id,
+                                        'component_name': comp_product.name,
+                                        'required_qty': float(required_qty),
+                                        'available_qty': float(available_qty),
+                                        'missing_qty': float(required_qty - available_qty)
+                                    })
+                        except BillOfMaterials.DoesNotExist:
+                            pass
+                else:
+                    # No BOM = Express manufacturing, always available
+                    line_detail['is_available'] = True
+                    line_detail['manufacturable_qty'] = float('inf')
+                    
+            else:
+                # SERVICE, CONSUMABLE, etc. - always available
+                line_detail['is_available'] = True
+                line_detail['available_qty'] = float('inf')
+            
+            details.append(line_detail)
+        
+        return Response({
+            'available': all_available,
+            'details': details
+        })
+
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = ProductCategory.objects.all()
