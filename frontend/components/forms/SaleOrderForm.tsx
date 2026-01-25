@@ -390,7 +390,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                     <TableBody>
                                         {fields.map((row, index) => (
                                             <TableRow key={row.id}>
-                                                <TableCell>
+                                                <TableCell className="align-top">
                                                     <FormField<SaleOrderFormValues>
                                                         control={form.control}
                                                         name={`lines.${index}.product`}
@@ -490,7 +490,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         )}
                                                     />
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="align-top">
                                                     <FormField<SaleOrderFormValues>
                                                         control={form.control}
                                                         name={`lines.${index}.quantity`}
@@ -568,7 +568,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         )}
                                                     />
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="align-top">
                                                     <FormField<SaleOrderFormValues>
                                                         control={form.control}
                                                         name={`lines.${index}.uom`}
@@ -599,7 +599,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell className="text-right text-xs">
+                                                <TableCell className="text-right text-xs align-top">
                                                     <FormField<SaleOrderFormValues>
                                                         control={form.control}
                                                         name={`lines.${index}.unit_price_gross`}
@@ -637,7 +637,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell className="text-right font-bold text-sm">
+                                                <TableCell className="text-right font-bold text-sm align-top">
                                                     {(() => {
                                                         const qty = Number(form.watch(`lines.${index}.quantity`)) || 0
                                                         const unitGross = Number(form.watch(`lines.${index}.unit_price_gross`)) || 0
@@ -657,7 +657,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         )
                                                     })()}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="align-top">
                                                     <div className="flex items-center gap-1">
                                                         <Button
                                                             type="button"

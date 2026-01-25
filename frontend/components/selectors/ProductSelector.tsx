@@ -311,7 +311,7 @@ export function ProductSelector({
                                                         )}
                                                         {product.product_type === 'MANUFACTURABLE' && !product.has_bom && (
                                                             <Badge variant="outline" className="text-[9px] px-1 h-4 border-blue-400 text-blue-600">
-                                                                Fab: Express
+                                                                Fab: Avanzada
                                                             </Badge>
                                                         )}
                                                     </div>

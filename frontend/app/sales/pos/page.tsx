@@ -213,6 +213,18 @@ export default function POSPage() {
         let newQty = typeof qty === 'string' ? parseFloat(qty) : qty
         if (isNaN(newQty) || newQty < 0.01) newQty = 1
 
+        const product = products.find(p => p.id === item.id)
+        if (product) {
+            let maxQty = Infinity
+            if (product.product_type === 'STORABLE') maxQty = product.current_stock || 0
+            if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
+
+            if (newQty > maxQty) {
+                newQty = maxQty
+                toast.info(`Stock máximo alcanzado: ${maxQty}`)
+            }
+        }
+
         const prices = await fetchEffectivePrice(item, newQty, item.uom)
 
         setItems(prevItems => prevItems.map(i => {
@@ -466,15 +478,43 @@ export default function POSPage() {
                                                             </div>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="py-2">
-                                                        <div className="flex justify-center">
+                                                    <TableCell className="py-2 align-top">
+                                                        <div className="flex flex-col items-center gap-1">
                                                             <Input
                                                                 type="number"
-                                                                className="h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0"
+                                                                className={cn(
+                                                                    "h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0",
+                                                                    (() => {
+                                                                        const product = products.find(p => p.id === item.id)
+                                                                        if (!product) return ""
+                                                                        let maxQty = Infinity
+                                                                        if (product.product_type === 'STORABLE') maxQty = product.current_stock || 0
+                                                                        if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
+
+                                                                        return item.qty >= maxQty && maxQty > 0 ? "text-amber-600 bg-amber-50 rounded" : ""
+                                                                    })()
+                                                                )}
                                                                 value={item.qty}
                                                                 onChange={(e) => updateQty(item.cartItemId, e.target.value)}
                                                                 min="1"
                                                             />
+                                                            {(() => {
+                                                                const product = products.find(p => p.id === item.id)
+                                                                if (!product) return null
+
+                                                                let maxQty = null
+                                                                if (product.product_type === 'STORABLE') maxQty = product.current_stock || 0
+                                                                if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity ?? 0
+
+                                                                if (maxQty !== null && maxQty !== Infinity) {
+                                                                    return (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 h-3.5 bg-muted text-muted-foreground hover:bg-muted font-normal border-0 whitespace-nowrap">
+                                                                            MAX: {maxQty}
+                                                                        </Badge>
+                                                                    )
+                                                                }
+                                                                return null
+                                                            })()}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-2">
