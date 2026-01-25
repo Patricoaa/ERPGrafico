@@ -337,7 +337,7 @@ export function SalesCheckoutWizard({
                         }
                     }
                     return {
-                        product: l.id || null,
+                        product: l.product || null,
                         description: l.name || l.product_name || l.description,
                         quantity: l.qty || l.quantity,
                         unit_price: l.unit_price_net || l.unit_price,

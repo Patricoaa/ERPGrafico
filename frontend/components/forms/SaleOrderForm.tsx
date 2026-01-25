@@ -495,38 +495,76 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         control={form.control}
                                                         name={`lines.${index}.quantity`}
                                                         render={({ field }) => (
-                                                            <Input
-                                                                type="number"
-                                                                step="0.01"
-                                                                {...field}
-                                                                onChange={async (e) => {
-                                                                    const val = parseFloat(e.target.value) || 0
+                                                            <div className="flex flex-col gap-1">
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    {...field}
+                                                                    className={cn(
+                                                                        "h-8",
+                                                                        (() => {
+                                                                            const productId = form.getValues(`lines.${index}.product`)
+                                                                            const product = products.find(p => p.id.toString() === productId)
+                                                                            if (!product) return ""
+                                                                            let maxQty = Infinity
+                                                                            if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
+                                                                            if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
 
-                                                                    // Validate stock before allowing change
+                                                                            // Highlight if at max
+                                                                            const currentVal = parseFloat(field.value.toString()) || 0
+                                                                            return currentVal >= maxQty && maxQty > 0 ? "border-amber-500 text-amber-600 bg-amber-50" : ""
+                                                                        })()
+                                                                    )}
+                                                                    onChange={async (e) => {
+                                                                        let val = parseFloat(e.target.value) || 0
+
+                                                                        // Strict MAX enforcement
+                                                                        const productId = form.getValues(`lines.${index}.product`)
+                                                                        const product = products.find(p => p.id.toString() === productId)
+
+                                                                        if (product) {
+                                                                            let maxQty = Infinity
+                                                                            if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
+                                                                            if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
+
+                                                                            if (val > maxQty) {
+                                                                                val = maxQty
+                                                                                toast.info(`Stock máximo alcanzado: ${maxQty}`)
+                                                                            }
+                                                                        }
+
+                                                                        field.onChange(val)
+
+                                                                        // Re-evaluate price
+                                                                        if (product) {
+                                                                            const uomId = parseInt(form.getValues(`lines.${index}.uom`))
+                                                                            const { net, gross } = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
+                                                                            form.setValue(`lines.${index}.unit_price`, net)
+                                                                            form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                {(() => {
                                                                     const productId = form.getValues(`lines.${index}.product`)
                                                                     const product = products.find(p => p.id.toString() === productId)
+                                                                    if (!product) return null
 
-                                                                    if (product && !validateLine(product, val)) {
-                                                                        const message = getStockMessage(product, val)
-                                                                        if (message) {
-                                                                            toast.error('Stock insuficiente', {
-                                                                                description: message
-                                                                            })
-                                                                        }
-                                                                        return // Don't allow the change
+                                                                    let maxQty = null
+                                                                    if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
+                                                                    if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity ?? 0
+
+                                                                    if (maxQty !== null && maxQty !== Infinity) {
+                                                                        return (
+                                                                            <div className="flex justify-end">
+                                                                                <Badge variant="secondary" className="text-[9px] px-1 h-4 bg-muted text-muted-foreground hover:bg-muted font-normal border-0">
+                                                                                    MAX: {maxQty}
+                                                                                </Badge>
+                                                                            </div>
+                                                                        )
                                                                     }
-
-                                                                    field.onChange(val)
-
-                                                                    // Re-evaluate price
-                                                                    if (product) {
-                                                                        const uomId = parseInt(form.getValues(`lines.${index}.uom`))
-                                                                        const { net, gross } = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
-                                                                        form.setValue(`lines.${index}.unit_price`, net)
-                                                                        form.setValue(`lines.${index}.unit_price_gross`, gross)
-                                                                    }
-                                                                }}
-                                                            />
+                                                                    return null
+                                                                })()}
+                                                            </div>
                                                         )}
                                                     />
                                                 </TableCell>
