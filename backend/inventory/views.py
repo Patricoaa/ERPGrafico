@@ -23,8 +23,9 @@ from .filters import ProductFilter, StockMoveFilter
 class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
+    search_fields = ['name', 'internal_code', 'code']
 
     def get_queryset(self):
         queryset = Product.objects.all()

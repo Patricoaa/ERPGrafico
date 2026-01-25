@@ -516,11 +516,13 @@ export default function SalesOrdersPage() {
                             toolbarAction={
                                 <div className="flex items-center gap-2">
                                     <DateRangeFilter onRangeChange={setDateRange} label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"} />
-                                    <TabsList>
-                                        <TabsTrigger value="orders">Notas de Venta</TabsTrigger>
-                                        <TabsTrigger value="notes">Notas Crédito/Débito</TabsTrigger>
-                                    </TabsList>
                                 </div>
+                            }
+                            rightAction={
+                                <TabsList>
+                                    <TabsTrigger value="orders">Notas de Venta</TabsTrigger>
+                                    <TabsTrigger value="notes">Notas Crédito/Débito</TabsTrigger>
+                                </TabsList>
                             }
                             defaultPageSize={20}
                         />
