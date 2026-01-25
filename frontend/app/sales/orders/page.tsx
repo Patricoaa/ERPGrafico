@@ -55,8 +55,12 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
     'CANCELLED': { label: 'Anulado', variant: 'destructive' },
 }
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 export default function SalesOrdersPage() {
+    const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
     const [orders, setOrders] = useState<SaleOrder[]>([])
+    const [notes, setNotes] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -194,6 +198,108 @@ export default function SalesOrdersPage() {
         fetchOrders()
     }, [])
 
+    const fetchNotes = async () => {
+        setLoading(true)
+        try {
+            // Fetch only sales-related notes (linked to a sale order)
+            // We assume backend filters or we filter client-side if needed.
+            // Using /billing/invoices/ with dte_type filter
+            const response = await api.get('/billing/invoices/', {
+                params: {
+                    dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
+                    sale_order__isnull: false
+                }
+            })
+            // Filter explicitly locally if API doesn't support list filter exactly as expected
+            const results = response.data.results || response.data
+            // Ensure they are strictly notes and related to sales
+            const salesNotes = results.filter((inv: any) =>
+                ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && inv.sale_order
+            )
+            setNotes(salesNotes)
+        } catch (error) {
+            console.error("Failed to fetch notes", error)
+            toast.error("Error al cargar las notas de crédito/débito.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        if (viewMode === 'orders') {
+            fetchOrders()
+        } else {
+            fetchNotes()
+        }
+    }, [viewMode])
+
+    const noteColumns: ColumnDef<any>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Documento" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="font-mono font-bold text-xs">{row.original.dte_type_display}</span>
+                    <span className="text-muted-foreground text-[10px]">{row.getValue("number") || '---'}</span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
+        },
+        {
+            accessorKey: "related_order",
+            header: "Referencia",
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="font-bold text-xs">NV-{row.original.sale_order_number}</span>
+                    <span className="text-[10px] text-muted-foreground">{row.original.partner_name}</span>
+                </div>
+            )
+        },
+        {
+            accessorKey: "total",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Total" />
+            ),
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.getValue("total")} />
+            ),
+        },
+        {
+            accessorKey: "status",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estado" />
+            ),
+            cell: ({ row }) => {
+                const status = row.getValue("status") as string
+                return (
+                    <Badge variant={status === 'PAID' ? 'success' : status === 'POSTED' ? 'default' : 'secondary'}>
+                        {row.original.status_display}
+                    </Badge>
+                )
+            }
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setViewingTransaction({ type: 'invoice', id: row.original.id, view: 'details' })}
+                >
+                    <Eye className="h-4 w-4" />
+                </Button>
+            ),
+        },
+    ]
+
     const columns: ColumnDef<SaleOrder>[] = [
         {
             accessorKey: "number",
@@ -304,6 +410,14 @@ export default function SalesOrdersPage() {
         },
     ]
 
+    const filteredNotes = notes.filter(note => {
+        if (!dateRange || !dateRange.from) return true
+        const noteDate = parseISO(note.date)
+        const start = startOfDay(dateRange.from)
+        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
+        return isWithinInterval(noteDate, { start, end })
+    })
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center gap-4 space-y-2">
@@ -338,71 +452,79 @@ export default function SalesOrdersPage() {
             </div>
             {loading ? (
                 <div className="flex items-center justify-between h-64 justify-center">
-                    <div className="text-muted-foreground">Cargando notas de venta...</div>
+                    <div className="text-muted-foreground">Cargando datos...</div>
                 </div>
             ) : (
                 <div className="">
-                    <DataTable
-                        columns={columns}
-                        data={filteredOrders}
-                        filterColumn="customer_name"
-                        searchPlaceholder="Buscar por cliente..."
-                        facetedFilters={[
-                            {
-                                column: "status",
-                                title: "Origen",
-                                options: [
-                                    { label: "Borrador", value: "DRAFT" },
-                                    { label: "Confirmado", value: "CONFIRMED" },
-                                    { label: "Facturado", value: "INVOICED" },
-                                    { label: "Pagado", value: "PAID" },
-                                    { label: "Anulado", value: "CANCELLED" },
-                                ],
-                            },
-                            {
-                                column: "production_status",
-                                title: "Producción",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "logistics_status",
-                                title: "Logística",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "billing_status",
-                                title: "Facturación",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "treasury_status",
-                                title: "Tesorería",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
+                    <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)} className="w-full">
+                        <DataTable
+                            columns={viewMode === 'orders' ? columns : noteColumns}
+                            data={viewMode === 'orders' ? filteredOrders : filteredNotes}
+                            filterColumn={viewMode === 'orders' ? "customer_name" : "number"} // Invoice number is a good fallback search, or partner_name if available in data
+                            searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
+                            facetedFilters={viewMode === 'orders' ? [
+                                {
+                                    column: "status",
+                                    title: "Origen",
+                                    options: [
+                                        { label: "Borrador", value: "DRAFT" },
+                                        { label: "Confirmado", value: "CONFIRMED" },
+                                        { label: "Facturado", value: "INVOICED" },
+                                        { label: "Pagado", value: "PAID" },
+                                        { label: "Anulado", value: "CANCELLED" },
+                                    ],
+                                },
+                                {
+                                    column: "production_status",
+                                    title: "Producción",
+                                    options: [
+                                        { label: "En Proceso", value: "active" },
+                                        { label: "Completado", value: "success" },
+                                        { label: "Pendiente", value: "neutral" },
+                                    ]
+                                },
+                                {
+                                    column: "logistics_status",
+                                    title: "Logística",
+                                    options: [
+                                        { label: "En Proceso", value: "active" },
+                                        { label: "Completado", value: "success" },
+                                        { label: "Pendiente", value: "neutral" },
+                                    ]
+                                },
+                                {
+                                    column: "billing_status",
+                                    title: "Facturación",
+                                    options: [
+                                        { label: "En Proceso", value: "active" },
+                                        { label: "Completado", value: "success" },
+                                        { label: "Pendiente", value: "neutral" },
+                                    ]
+                                },
+                                {
+                                    column: "treasury_status",
+                                    title: "Tesorería",
+                                    options: [
+                                        { label: "En Proceso", value: "active" },
+                                        { label: "Completado", value: "success" },
+                                        { label: "Pendiente", value: "neutral" },
+                                    ]
+                                }
+                            ] : undefined}
+                            useAdvancedFilter={viewMode === 'orders'}
+                            onReset={() => setDateRange(undefined)}
+                            toolbarAction={
+                                <div className="flex items-center gap-2">
+                                    <DateRangeFilter onRangeChange={setDateRange} label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"} />
+                                    <TabsList>
+                                        <TabsTrigger value="orders">Notas de Venta</TabsTrigger>
+                                        <TabsTrigger value="notes">Notas Crédito/Débito</TabsTrigger>
+                                    </TabsList>
+                                </div>
                             }
-                        ]}
-                        useAdvancedFilter={true}
-                        onReset={() => setDateRange(undefined)}
-                        toolbarAction={
-                            <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Venta" />
-                        }
-                        defaultPageSize={20}
-                    />
+                            defaultPageSize={20}
+                        />
+                    </Tabs>
                 </div>
             )}
 
