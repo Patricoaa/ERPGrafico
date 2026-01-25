@@ -517,7 +517,7 @@ export default function POSPage() {
                                                             })()}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="py-2">
+                                                    <TableCell className="py-2 align-top">
                                                         <div className="flex justify-center">
                                                             {allowedUoMs.length > 1 ? (
                                                                 <Select
@@ -556,7 +556,7 @@ export default function POSPage() {
                                                             )}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="py-2 text-right">
+                                                    <TableCell className="py-2 text-right align-top">
                                                         <div className="flex flex-col items-end gap-1">
                                                             {originalProduct?.is_dynamic_pricing ? (
                                                                 <>
@@ -594,7 +594,7 @@ export default function POSPage() {
                                                             )}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="py-2 text-right">
+                                                    <TableCell className="py-2 text-right align-top">
                                                         <div className="flex flex-col items-end">
                                                             <span className="font-black text-xs">
                                                                 {formatCurrency(item.total_gross)}
@@ -604,7 +604,7 @@ export default function POSPage() {
                                                             </span>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="py-2 text-center">
+                                                    <TableCell className="py-2 text-center align-top">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"

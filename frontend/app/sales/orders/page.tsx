@@ -23,6 +23,7 @@ import { OrderHubStatus } from "./components/OrderHubStatus"
 import { getHubStatuses } from "@/lib/order-status-utils"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { translateSalesChannel } from "@/lib/utils"
+import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
 
 
 interface SaleOrder {
@@ -242,7 +243,7 @@ export default function SalesOrdersPage() {
             cell: ({ row }) => (
                 <div className="flex flex-col">
                     <span className="font-mono font-bold text-xs">{row.original.dte_type_display}</span>
-                    <span className="text-muted-foreground text-[10px]">{row.getValue("number") || '---'}</span>
+                    <span className="text-muted-foreground text-[10px]">{row.getValue("number") ? (row.original.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-') + row.getValue("number") : '---'}</span>
                 </div>
             ),
         },
@@ -254,14 +255,11 @@ export default function SalesOrdersPage() {
             cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
         },
         {
-            accessorKey: "related_order",
-            header: "Referencia",
-            cell: ({ row }) => (
-                <div className="flex flex-col">
-                    <span className="font-bold text-xs">NV-{row.original.sale_order_number}</span>
-                    <span className="text-[10px] text-muted-foreground">{row.original.partner_name}</span>
-                </div>
-            )
+            accessorKey: "customer_name", // Try customer_name, fallback to partner_name if needed
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Cliente" />
+            ),
+            cell: ({ row }) => <DataCell.Text>{row.original.customer_name || row.original.partner_name}</DataCell.Text>,
         },
         {
             accessorKey: "total",
@@ -273,29 +271,36 @@ export default function SalesOrdersPage() {
             ),
         },
         {
-            accessorKey: "status",
+            id: "status_hub",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" />
+                <DataTableColumnHeader column={column} title="Estado Hub" />
             ),
-            cell: ({ row }) => {
-                const status = row.getValue("status") as string
-                return (
-                    <Badge variant={status === 'PAID' ? 'success' : status === 'POSTED' ? 'default' : 'secondary'}>
-                        {row.original.status_display}
-                    </Badge>
-                )
-            }
+            cell: ({ row }) => <NoteHubStatus note={row.original} />,
+        },
+        // Filters for Notes (Hidden)
+        {
+            id: "status",
+            accessorFn: (row) => row.status,
+            header: () => null,
+            cell: () => null,
+            enableHiding: false,
+            filterFn: (row, id, value) => value.includes(row.getValue(id))
         },
         {
             id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setViewingTransaction({ type: 'invoice', id: row.original.id, view: 'details' })}
-                >
-                    <Eye className="h-4 w-4" />
-                </Button>
+                <div className="flex flex-col gap-1">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setViewingTransaction({ type: 'invoice', id: row.original.id, view: 'details' })}
+                        className="h-8 px-3 w-full"
+                    >
+                        <LayoutDashboard className="h-4 w-4 mr-1" />
+                        Gestionar
+                    </Button>
+                </div>
             ),
         },
     ]
@@ -462,56 +467,63 @@ export default function SalesOrdersPage() {
                             data={viewMode === 'orders' ? filteredOrders : filteredNotes}
                             filterColumn={viewMode === 'orders' ? "customer_name" : "number"} // Invoice number is a good fallback search, or partner_name if available in data
                             searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
-                            facetedFilters={viewMode === 'orders' ? [
+                            facetedFilters={[
                                 {
                                     column: "status",
                                     title: "Origen",
-                                    options: [
+                                    options: viewMode === 'orders' ? [
                                         { label: "Borrador", value: "DRAFT" },
                                         { label: "Confirmado", value: "CONFIRMED" },
                                         { label: "Facturado", value: "INVOICED" },
                                         { label: "Pagado", value: "PAID" },
                                         { label: "Anulado", value: "CANCELLED" },
+                                    ] : [
+                                        { label: "Borrador", value: "DRAFT" },
+                                        { label: "Publicado", value: "POSTED" },
+                                        { label: "Pagado", value: "PAID" },
+                                        { label: "Anulado", value: "CANCELLED" },
                                     ],
                                 },
-                                {
-                                    column: "production_status",
-                                    title: "Producción",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                },
-                                {
-                                    column: "logistics_status",
-                                    title: "Logística",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                },
-                                {
-                                    column: "billing_status",
-                                    title: "Facturación",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                },
-                                {
-                                    column: "treasury_status",
-                                    title: "Tesorería",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                }
-                            ] : undefined}
-                            useAdvancedFilter={viewMode === 'orders'}
+                                ...(viewMode === 'orders' ? [
+                                    {
+                                        column: "production_status",
+                                        title: "Producción",
+                                        options: [
+                                            { label: "En Proceso", value: "active" },
+                                            { label: "Completado", value: "success" },
+                                            { label: "Pendiente", value: "neutral" },
+                                        ]
+                                    },
+                                    {
+                                        column: "logistics_status",
+                                        title: "Logística",
+                                        options: [
+                                            { label: "En Proceso", value: "active" },
+                                            { label: "Completado", value: "success" },
+                                            { label: "Pendiente", value: "neutral" },
+                                        ]
+                                    },
+                                    {
+                                        column: "billing_status",
+                                        title: "Facturación",
+                                        options: [
+                                            { label: "En Proceso", value: "active" },
+                                            { label: "Completado", value: "success" },
+                                            { label: "Pendiente", value: "neutral" },
+                                        ]
+                                    },
+                                    {
+                                        column: "treasury_status",
+                                        title: "Tesorería",
+                                        options: [
+                                            { label: "En Proceso", value: "active" },
+                                            { label: "Completado", value: "success" },
+                                            { label: "Pendiente", value: "neutral" },
+                                        ]
+                                    }
+                                ] : [])
+                            ]}
+                            useAdvancedFilter={true}
                             onReset={() => setDateRange(undefined)}
                             toolbarAction={
                                 <div className="flex items-center gap-2">
