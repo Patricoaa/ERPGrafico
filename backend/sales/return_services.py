@@ -93,6 +93,17 @@ class ReturnService:
             except Product.DoesNotExist:
                 continue
 
+            # TRY TO FIND ORIGINAL COST (from last successful delivery of this product in this order)
+            # This ensures accounting reversal uses the cost at sale time, not current WAC.
+            from sales.models import SaleDeliveryLine
+            original_delivery_line = SaleDeliveryLine.objects.filter(
+                delivery__sale_order=order,
+                product=product,
+                delivery__status='CONFIRMED'
+            ).order_by('-delivery__delivery_date', '-id').first()
+            
+            original_cost = original_delivery_line.unit_cost if original_delivery_line else product.cost_price
+
             # Create Line
             SaleReturnLine.objects.create(
                 return_doc=ret_doc,
@@ -100,7 +111,7 @@ class ReturnService:
                 quantity=quantity,
                 uom_id=item.get('uom_id'), # Optional UoM
                 unit_price=item.get('unit_price', 0), # Optional reference
-                unit_cost=product.cost_price # Snapshot cost
+                unit_cost=original_cost # Snapshot ORIGINAL cost
             )
             
         ret_doc.save() # Trigger totals calc
@@ -127,70 +138,72 @@ class ReturnService:
         for line in return_doc.lines.all():
             product = line.product
             if product.track_inventory:
-                 # Convert to base UoM
-                 qty_base = UoMService.convert_quantity(
-                     line.quantity, 
-                     from_uom=line.uom or product.uom, 
-                     to_uom=product.uom
-                 )
-                 
-                 # Create Stock Move (IN)
-                 move = StockMove.objects.create(
-                     date=return_doc.date,
-                     product=product,
-                     warehouse=return_doc.warehouse,
-                     uom=product.uom,
-                     quantity=qty_base,
-                     move_type=StockMove.Type.IN,
-                     description=f"Devolución NV-{return_doc.sale_order.number}",
-                     source_uom=line.uom or product.uom,
-                     source_quantity=line.quantity
-                 )
-                 line.stock_move = move
-                 line.save()
-                 created_moves.append(move)
-                 
-                 # COGS Reversal amount for this line
-                 line_cogs = qty_base * product.cost_price
-                 total_cogs_reversal += line_cogs
+                # Convert to base UoM
+                qty_base = UoMService.convert_quantity(
+                    line.quantity, 
+                    from_uom=line.uom or product.uom, 
+                    to_uom=product.uom
+                )
+                
+                # Create Stock Move (IN)
+                move = StockMove.objects.create(
+                    date=return_doc.date,
+                    product=product,
+                    warehouse=return_doc.warehouse,
+                    uom=product.uom,
+                    quantity=qty_base,
+                    move_type=StockMove.Type.IN,
+                    description=f"Devolución NV-{return_doc.sale_order.number}",
+                    source_uom=line.uom or product.uom,
+                    source_quantity=line.quantity
+                )
+                line.stock_move = move
+                line.save()
+                created_moves.append(move)
+                
+                # COGS Reversal amount for this line (Using original unit_cost from the return line)
+                line_cogs = qty_base * line.unit_cost
+                total_cogs_reversal += line_cogs
         
         # 2. Accounting Entry (COGS Reversal)
         if total_cogs_reversal > 0 and settings:
-             entry = JournalEntry.objects.create(
-                 date=return_doc.date,
-                 description=f"Reverso COGS - {return_doc.display_id}",
-                 reference=return_doc.display_id,
-                 state=JournalEntry.State.DRAFT
-             )
-             
-             inv_acc = settings.default_inventory_account
-             cogs_acc = settings.default_expense_account # Should be COGS account
-             
-             if inv_acc and cogs_acc:
-                 # Debit Inventory
-                 JournalItem.objects.create(
-                     entry=entry,
-                     account=inv_acc,
-                     debit=total_cogs_reversal,
-                     credit=0,
-                     label=f"Reingreso Stock - {return_doc.display_id}"
-                 )
-                 # Credit COGS
-                 JournalItem.objects.create(
-                     entry=entry,
-                     account=cogs_acc,
-                     debit=0,
-                     credit=total_cogs_reversal,
-                     label=f"Reverso Costo Venta"
-                 )
-                 
-                 JournalEntryService.post_entry(entry)
-                 return_doc.journal_entry = entry
-                 
-                 # Link moves
-                 for m in created_moves:
-                     m.journal_entry = entry
-                     m.save()
+            entry = JournalEntry.objects.create(
+                date=return_doc.date,
+                description=f"Reverso COGS - {return_doc.display_id}",
+                reference=return_doc.display_id,
+                state=JournalEntry.State.DRAFT
+            )
+            
+            inv_acc = settings.default_inventory_account
+            cogs_acc = (settings.stock_input_account or 
+                        settings.merchandise_cogs_account or 
+                        settings.default_expense_account)
+            
+            if inv_acc and cogs_acc:
+                # Debit Inventory (Asset increases)
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=inv_acc,
+                    debit=total_cogs_reversal,
+                    credit=0,
+                    label=f"Reingreso Stock - {return_doc.display_id}"
+                )
+                # Credit COGS (Expense decreases)
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=cogs_acc,
+                    debit=0,
+                    credit=total_cogs_reversal,
+                    label=f"Reverso Costo Venta"
+                )
+                
+                JournalEntryService.post_entry(entry)
+                return_doc.journal_entry = entry
+                
+                # Link moves
+                for m in created_moves:
+                    m.journal_entry = entry
+                    m.save()
 
         return_doc.status = SaleReturn.Status.CONFIRMED
         return_doc.save()

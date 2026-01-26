@@ -23,10 +23,11 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
     const stockMoves = note.related_stock_moves || []
     let logStatus = 'neutral'
     if (stockMoves.length === 0) {
-        logStatus = 'not_applicable' // Or 'neutral' if we want to show it as "No movement needed"
+        logStatus = 'not_applicable'
     } else {
-        const allDone = stockMoves.every((m: any) => m.state === 'DONE' || m.state === 'CANCELLED')
-        logStatus = allDone ? 'success' : 'active'
+        // Any stock move associated with a Note implies it has been performed (DONE)
+        // Similar to OrderCommandCenter: isComplete = stock_moves.length > 0
+        logStatus = 'success'
     }
 
     // 4. Billing (The Note is the billing document)

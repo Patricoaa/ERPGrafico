@@ -88,7 +88,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'product': m.product.name,
             'quantity': m.quantity,
             'warehouse': m.warehouse.name,
-            'move_type_display': m.get_move_type_display()
+            'move_type_display': m.get_move_type_display(),
+            'state': 'DONE' # Instantaneous moves are always DONE
         } for m in moves]
 
     def get_related_returns(self, obj):
