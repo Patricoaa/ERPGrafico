@@ -217,6 +217,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
+        # ... (keep existing)
         invoice = self.get_object()
         force = request.data.get('force', False)
         if isinstance(force, str):
@@ -225,6 +226,38 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         try:
             BillingService.annul_invoice(invoice, force=force)
             return Response(InvoiceSerializer(invoice).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def process_logistics(self, request, pk=None):
+        """
+        Executes logistics (returns or supplemental dispatches) for an invoice.
+        """
+        from .note_checkout_service import NoteCheckoutService
+        warehouse_id = request.data.get('warehouse_id')
+        date = request.data.get('date')
+        line_data = request.data.get('line_data')
+        notes = request.data.get('notes', '')
+
+        if not all([warehouse_id, date, line_data]):
+            return Response({'error': 'Faltan datos requeridos (bodega, fecha o líneas)'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            doc = NoteCheckoutService.process_logistics_from_invoice(
+                invoice_id=pk,
+                warehouse_id=warehouse_id,
+                date=date,
+                line_data=line_data,
+                notes=notes
+            )
+            return Response({
+                'message': 'Logística procesada correctamente',
+                'document_id': doc.id,
+                'display_id': doc.display_id
+            })
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

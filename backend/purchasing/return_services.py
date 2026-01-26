@@ -52,7 +52,8 @@ class PurchaseReturnService:
         items: list, # [{'product_id': 1, 'quantity': 10, 'uom_id': 2}, ...]
         warehouse_id: int,
         date: str = None,
-        notes: str = ""
+        notes: str = "",
+        credit_note: 'Invoice' = None
     ) -> PurchaseReturn:
         """
         Creates a DRAFT PurchaseReturn from a Credit Note request.
@@ -71,7 +72,8 @@ class PurchaseReturnService:
             warehouse=warehouse,
             date=date,
             status=PurchaseReturn.Status.DRAFT,
-            notes=notes
+            notes=notes,
+            credit_note=credit_note
         )
         
         # Create Return Lines

@@ -730,9 +730,8 @@ export function OrderCommandCenter({
                                         })()}
                                         icon={Package}
                                         variant={
-                                            isNoteMode ? (activeInvoice.related_stock_moves?.length > 0 ? 'success' : 'neutral') :
-                                                (logisticsProgress === 100 ? 'success' :
-                                                    logisticsProgress > 0 ? 'active' : 'neutral')
+                                            logisticsProgress === 100 ? 'success' :
+                                                logisticsProgress > 0 ? 'active' : 'neutral'
                                         }
                                         documents={isNoteMode ? (activeInvoice.related_stock_moves || []).map((m: any) => ({
                                             type: m.move_type_display || 'Movimiento',
@@ -751,7 +750,7 @@ export function OrderCommandCenter({
                                         onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                         actionEngineRef={actionEngineRef}
                                         stageId="logistics"
-                                        isComplete={isNoteMode ? activeInvoice.related_stock_moves?.length > 0 : logisticsProgress >= 100}
+                                        isComplete={logisticsProgress >= 100}
                                     >
                                         {!isNoteMode ? (
                                             <div className="space-y-1.5 py-1">

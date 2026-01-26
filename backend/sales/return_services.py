@@ -57,7 +57,8 @@ class ReturnService:
         items: list, # [{'product_id': 1, 'quantity': 10, 'uom_id': 2}, ...]
         warehouse_id: int,
         date: str = None,
-        notes: str = ""
+        notes: str = "",
+        credit_note: 'Invoice' = None
     ) -> SaleReturn:
         """
         Creates a DRAFT SaleReturn from a Credit Note request (or standalone return).
@@ -76,7 +77,8 @@ class ReturnService:
             warehouse=warehouse,
             date=date,
             status=SaleReturn.Status.DRAFT,
-            notes=notes
+            notes=notes,
+            credit_note=credit_note
         )
         
         # Create Return Lines

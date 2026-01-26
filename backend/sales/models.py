@@ -196,6 +196,14 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
         null=True, blank=True,
         related_name='sale_delivery'
     )
+
+    # Optional link to the Credit/Debit Note if issued
+    related_note = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='sale_deliveries'
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

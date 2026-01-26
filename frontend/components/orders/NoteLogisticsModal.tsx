@@ -1,0 +1,236 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import api from "@/lib/api"
+import { toast } from "sonner"
+import { Loader2, Package, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-react"
+
+interface InvoiceLine {
+    product_id: number
+    product_name: string
+    quantity: number
+    quantity_delivered?: number
+    quantity_received?: number
+    uom_id?: number
+    uom_name?: string
+}
+
+interface NoteLogisticsModalProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    invoice: any
+    onSuccess?: () => void
+}
+
+export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: NoteLogisticsModalProps) {
+    const [warehouses, setWarehouses] = useState<any[]>([])
+    const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
+    const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [notes, setNotes] = useState("")
+    const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
+
+    const isSale = !!invoice?.sale_order || !!invoice?.sale_order_number
+    const isCredit = invoice?.dte_type === 'NOTA_CREDITO'
+    const lines = invoice?.lines || []
+
+    useEffect(() => {
+        if (open && invoice) {
+            fetchData()
+        }
+    }, [open, invoice])
+
+    const fetchData = async () => {
+        setLoading(true)
+        try {
+            // Fetch warehouses
+            const warehousesResponse = await api.get('/inventory/warehouses/')
+            const warehousesList = warehousesResponse.data.results || warehousesResponse.data
+            setWarehouses(warehousesList)
+
+            if (warehousesList.length > 0) {
+                setSelectedWarehouse(warehousesList[0].id)
+            }
+
+            // Initialize quantities with pending
+            const initial: { [pId: number]: number } = {}
+            lines.forEach((line: InvoiceLine) => {
+                const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
+                const pending = Math.max(0, line.quantity - processed)
+                initial[line.product_id] = pending
+            })
+            setProcessQuantities(initial)
+        } catch (error) {
+            console.error("Error fetching warehouses:", error)
+            toast.error("Error al cargar datos iniciales")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleQuantityChange = (pId: number, value: string, max: number) => {
+        const num = parseFloat(value) || 0
+        setProcessQuantities(prev => ({ ...prev, [pId]: Math.min(num, max) }))
+    }
+
+    const handleSubmit = async () => {
+        if (!selectedWarehouse) {
+            toast.error("Seleccione una bodega")
+            return
+        }
+
+        const lineData = Object.entries(processQuantities)
+            .filter(([_, qty]) => qty > 0)
+            .map(([pId, qty]) => ({
+                product_id: parseInt(pId),
+                quantity: qty
+            }))
+
+        if (lineData.length === 0) {
+            toast.error("Ingrese al menos una cantidad a procesar")
+            return
+        }
+
+        setSubmitting(true)
+        try {
+            await api.post(`/billing/invoices/${invoice.id}/process_logistics/`, {
+                warehouse_id: selectedWarehouse,
+                date: date,
+                line_data: lineData,
+                notes: notes
+            })
+
+            toast.success("Logística procesada correctamente")
+            onOpenChange(false)
+            onSuccess?.()
+        } catch (error: any) {
+            console.error("Error processing logistics:", error)
+            toast.error(error.response?.data?.error || "Error al procesar logística")
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const title = isCredit
+        ? (isSale ? "Registrar Devolución de Venta" : "Registrar Devolución a Proveedor")
+        : (isSale ? "Registrar Despacho Suplementario" : "Registrar Recepción Suplementaria")
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[900px] w-[95vw] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <ArrowLeftRight className="h-5 w-5 text-primary" />
+                        {title}
+                    </DialogTitle>
+                    <DialogDescription>
+                        Documento: {invoice?.display_id} | {isSale ? "Cliente" : "Proveedor"}: {invoice?.partner_name}
+                    </DialogDescription>
+                </DialogHeader>
+
+                {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Bodega</Label>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={selectedWarehouse || ''}
+                                    onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
+                                >
+                                    {warehouses.map(w => (
+                                        <option key={w.id} value={w.id}>{w.name} ({w.code})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Fecha</Label>
+                                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Producto</TableHead>
+                                        <TableHead className="text-center">Cant. Nota</TableHead>
+                                        <TableHead className="text-center">Procesado</TableHead>
+                                        <TableHead className="text-center">Pendiente</TableHead>
+                                        <TableHead className="text-center w-32">A Procesar</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {lines.map((line: any) => {
+                                        const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
+                                        const pending = Math.max(0, line.quantity - processed)
+
+                                        return (
+                                            <TableRow key={line.product_id}>
+                                                <TableCell className="font-medium">{line.product_name}</TableCell>
+                                                <TableCell className="text-center">{line.quantity}</TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant={processed > 0 ? "success" : "outline"}>{processed}</Badge>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant={pending > 0 ? "warning" : "outline"}>{pending}</Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="number"
+                                                        value={processQuantities[line.product_id] || 0}
+                                                        onChange={(e) => handleQuantityChange(line.product_id, e.target.value, pending)}
+                                                        disabled={pending <= 0}
+                                                        className="text-center"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Notas</Label>
+                            <Input placeholder="Ej: Devolución parcial por daño..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+                        </div>
+                    </div>
+                )}
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleSubmit} disabled={submitting || loading}>
+                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Confirmar Movimiento
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}

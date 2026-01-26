@@ -16,6 +16,7 @@ import { NoteCheckoutWizard } from "../billing/NoteCheckoutWizard"
 import { toast } from "sonner"
 import { DocumentListModal } from './DocumentListModal'
 import { TransactionViewModal } from "../shared/TransactionViewModal"
+import { NoteLogisticsModal } from "./NoteLogisticsModal"
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
@@ -218,13 +219,23 @@ export const ActionCategory = forwardRef(({
     const handlePaymentConfirm = async (data: any) => {
         setIsProcessing(true)
         try {
-            await api.post('/treasury/payments/', {
+            const isInvoice = !!order?.dte_type
+            const payload = {
                 ...data,
-                payment_type: isSale ? 'INBOUND' : 'OUTBOUND',
-                [isSale ? 'sale_order' : 'purchase_order']: order?.id,
+                payment_type: isSale ?
+                    (isInvoice && order.dte_type === 'NOTA_CREDITO' ? 'OUTBOUND' : 'INBOUND') :
+                    (isInvoice && order.dte_type === 'NOTA_CREDITO' ? 'INBOUND' : 'OUTBOUND'),
                 partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id)
-            })
-            toast.success("Pago registrado correctamente")
+            }
+
+            if (isInvoice) {
+                (payload as any).invoice = order.id
+            } else {
+                (payload as any)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
+            }
+
+            await api.post('/treasury/payments/', payload)
+            toast.success("Operación de tesorería registrada")
             closeModal()
             onActionSuccess?.()
         } catch (error: any) {
@@ -303,22 +314,31 @@ export const ActionCategory = forwardRef(({
                 />
             )}
 
-            {(activeModal === 'register-delivery' || activeModal === 'register-reception' || activeModal === 'confirm-service-delivery') && (
-                isSale ? (
-                    <DeliveryModal
+            {(activeModal === 'register-delivery' || activeModal === 'register-reception' || activeModal === 'confirm-service-delivery' || activeModal === 'register-merchandise-return') && (
+                order?.dte_type ? (
+                    <NoteLogisticsModal
                         open={true}
                         onOpenChange={closeModal}
-                        orderId={order?.id}
+                        invoice={order}
                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
                     />
                 ) : (
-                    <ReceiptModal
-                        open={true}
-                        onOpenChange={closeModal}
-                        orderId={order?.id}
-                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                        filterType={activeModal === 'confirm-service-delivery' ? 'SERVICE' : (activeModal === 'register-reception' ? 'PRODUCT' : 'ALL')}
-                    />
+                    isSale ? (
+                        <DeliveryModal
+                            open={true}
+                            onOpenChange={closeModal}
+                            orderId={order?.id}
+                            onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                        />
+                    ) : (
+                        <ReceiptModal
+                            open={true}
+                            onOpenChange={closeModal}
+                            orderId={order?.id}
+                            onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                            filterType={activeModal === 'confirm-service-delivery' ? 'SERVICE' : (activeModal === 'register-reception' ? 'PRODUCT' : 'ALL')}
+                        />
+                    )
                 )
             )}
 
@@ -330,7 +350,7 @@ export const ActionCategory = forwardRef(({
                 />
             )}
 
-            {activeModal === 'register-payment' && (
+            {(activeModal === 'register-payment' || activeModal === 'register-payment-return') && (
                 <PaymentModal
                     open={true}
                     onOpenChange={closeModal}
@@ -338,6 +358,7 @@ export const ActionCategory = forwardRef(({
                     pendingAmount={order?.pending_amount ?? order?.total}
                     onConfirm={handlePaymentConfirm}
                     isPurchase={isPurchase}
+                    title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Devolución de Pago" : "Registrar Reembolso de Proveedor") : undefined}
                 />
             )}
 

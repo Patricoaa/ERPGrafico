@@ -41,8 +41,51 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if obj.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
             try:
                 if hasattr(obj, 'workflow') and obj.workflow and obj.workflow.selected_items:
-                    return obj.workflow.selected_items
-            except:
+                    items = obj.workflow.selected_items
+                    
+                    # Augment items with processed quantity
+                    is_sale = obj.sale_order is not None
+                    is_credit = obj.dte_type == Invoice.DTEType.NOTA_CREDITO
+
+                    processed_map = {} # product_id -> quantity
+                    
+                    if is_credit:
+                        # Sum from returns
+                        if is_sale:
+                            from sales.models import SaleReturnLine
+                            qs = SaleReturnLine.objects.filter(return_doc__credit_note=obj, return_doc__status='CONFIRMED')
+                            for line in qs:
+                                processed_map[line.product_id] = processed_map.get(line.product_id, 0) + float(line.quantity)
+                        else:
+                            from purchasing.models import PurchaseReturnLine
+                            qs = PurchaseReturnLine.objects.filter(return_doc__credit_note=obj, return_doc__status='CONFIRMED')
+                            for line in qs:
+                                processed_map[line.product_id] = processed_map.get(line.product_id, 0) + float(line.quantity)
+                    else:
+                        # Sum from supplemental deliveries/receipts
+                        if is_sale:
+                            from sales.models import SaleDeliveryLine
+                            qs = SaleDeliveryLine.objects.filter(delivery__related_note=obj, delivery__status='CONFIRMED')
+                            for line in qs:
+                                processed_map[line.product_id] = processed_map.get(line.product_id, 0) + float(line.quantity)
+                        else:
+                            from purchasing.models import PurchaseReceiptLine
+                            qs = PurchaseReceiptLine.objects.filter(receipt__related_note=obj, receipt__status='CONFIRMED')
+                            for line in qs:
+                                processed_map[line.product_id] = processed_map.get(line.product_id, 0) + float(line.quantity_received)
+
+                    # Update items
+                    for item in items:
+                        p_id = item.get('product_id')
+                        processed_qty = processed_map.get(p_id, 0)
+                        if is_sale:
+                            item['quantity_delivered'] = processed_qty
+                        else:
+                            item['quantity_received'] = processed_qty
+                    
+                    return items
+            except Exception as e:
+                print(f"DEBUG: Error augmenting NC lines: {e}")
                 pass
 
         # 2. Fallback to order lines

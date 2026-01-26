@@ -169,7 +169,7 @@ class SalesService:
     
     @staticmethod
     @transaction.atomic
-    def create_delivery_from_note(order: SaleOrder, warehouse: Warehouse, line_data: list, delivery_date=None, notes=None):
+    def create_delivery_from_note(order: SaleOrder, warehouse: Warehouse, line_data: list, delivery_date=None, notes=None, related_note: 'Invoice' = None):
         """
         Creates a delivery specifically for a Debit Note (Supplemental Dispatch).
         Differs from partial_dispatch:
@@ -186,7 +186,8 @@ class SalesService:
             warehouse=warehouse,
             delivery_date=delivery_date,
             status=SaleDelivery.Status.DRAFT,
-            notes=f"Nota de Débito: {notes or ''}"
+            notes=f"Nota de Débito: {notes or ''}",
+            related_note=related_note
         )
         
         for item in line_data:

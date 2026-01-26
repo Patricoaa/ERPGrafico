@@ -59,7 +59,7 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def create_receipt_from_note(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None, notes=None):
+    def create_receipt_from_note(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None, notes=None, related_note: 'Invoice' = None):
         """
         Creates a receipt specifically for a Debit Note (Supplemental Receipt).
         Differs from partial_receive:
@@ -76,7 +76,8 @@ class PurchasingService:
             receipt_date=receipt_date,
             delivery_reference=f"Nota Débito",
             notes=f"Nota de Débito: {notes or ''}",
-            status=PurchaseReceipt.Status.DRAFT
+            status=PurchaseReceipt.Status.DRAFT,
+            related_note=related_note
         )
         
         for item in line_data:

@@ -14,7 +14,82 @@ from purchasing.return_services import PurchaseReturnService
 from sales.services import SalesService
 from purchasing.services import PurchasingService
 
-class NoteCheckoutService:
+    @staticmethod
+    @transaction.atomic
+    def process_logistics_from_invoice(
+        invoice_id: int,
+        warehouse_id: int,
+        date: str,
+        line_data: list,
+        notes: str = ""
+    ):
+        """
+        Processes logistics for a POSTED Credit/Debit Note.
+        Used by the HUB to handle partial returns/deliveries after initial Note creation.
+        """
+        invoice = Invoice.objects.get(id=invoice_id)
+        is_sale = invoice.sale_order is not None
+        is_credit = invoice.dte_type == Invoice.DTEType.NOTA_CREDITO
+        
+        # Determine items for logistics
+        items_for_logistics = []
+        for ld in line_data:
+            product_id = ld.get('product_id')
+            quantity = Decimal(str(ld.get('quantity', 0)))
+            if quantity <= 0: continue
+            
+            # Find item details from previous workflow if possible (to get unit_price/cost)
+            # Or just fetch product
+            product = Product.objects.get(id=product_id)
+            items_for_logistics.append({
+                'product_id': product.id,
+                'quantity': quantity,
+                'uom_id': ld.get('uom_id') or product.uom_id,
+                'unit_cost': float(product.cost_price) # Fallback or look up original
+            })
+
+        if is_credit:
+            if is_sale:
+                doc = SalesReturnService.create_return_from_note_request(
+                    order=invoice.sale_order,
+                    items=items_for_logistics,
+                    warehouse_id=warehouse_id,
+                    date=date,
+                    notes=notes,
+                    credit_note=invoice
+                )
+                SalesReturnService.confirm_return(doc)
+            else:
+                doc = PurchaseReturnService.create_return_from_note_request(
+                    order=invoice.purchase_order,
+                    items=items_for_logistics,
+                    warehouse_id=warehouse_id,
+                    date=date,
+                    notes=notes,
+                    credit_note=invoice
+                )
+                PurchaseReturnService.confirm_return(doc)
+        else:
+            # Debit Note
+            if is_sale:
+                doc = SalesService.create_delivery_from_note(
+                    order=invoice.sale_order,
+                    warehouse=Warehouse.objects.get(id=warehouse_id),
+                    line_data=items_for_logistics,
+                    delivery_date=date,
+                    notes=notes,
+                    related_note=invoice
+                )
+            else:
+                doc = PurchasingService.create_receipt_from_note(
+                    order=invoice.purchase_order,
+                    warehouse=Warehouse.objects.get(id=warehouse_id),
+                    line_data=items_for_logistics,
+                    receipt_date=date,
+                    notes=notes,
+                    related_note=invoice
+                )
+        return doc
     """
     Service for handling multi-stage checkout of Credit/Debit Notes.
     Replaces atomic create_note with a staged workflow similar to SalesCheckoutWizard.
@@ -300,7 +375,8 @@ class NoteCheckoutService:
                     items=items_for_return,
                     warehouse_id=warehouse_id,
                     date=date,
-                    notes=notes
+                    notes=notes,
+                    credit_note=workflow.invoice
                 )
                 if delivery_type == 'IMMEDIATE':
                     SalesReturnService.confirm_return(logistics_doc)
@@ -311,7 +387,8 @@ class NoteCheckoutService:
                         items=items_for_return,
                         warehouse_id=warehouse_id,
                         date=date,
-                        notes=notes
+                        notes=notes,
+                        credit_note=workflow.invoice
                     )
                     if delivery_type == 'IMMEDIATE':
                         PurchaseReturnService.confirm_return(logistics_doc)
@@ -324,7 +401,8 @@ class NoteCheckoutService:
                     warehouse=warehouse,
                     line_data=items_for_return, # Note: ReturnService format is same as create_delivery_from_note format
                     delivery_date=date,
-                    notes=f"Nota Débito: {notes or ''}"
+                    notes=f"Nota Débito: {notes or ''}",
+                    related_note=workflow.invoice
                 )
             else:
                 # Supplemental Reception
@@ -334,7 +412,8 @@ class NoteCheckoutService:
                         warehouse=warehouse,
                         line_data=items_for_return,
                         receipt_date=date,
-                        notes=f"Nota Débito: {notes or ''}"
+                        notes=f"Nota Débito: {notes or ''}",
+                        related_note=workflow.invoice
                     )
 
         # Advance workflow logic

@@ -39,6 +39,7 @@ interface PaymentDialogProps {
         number: string
         document_attachment: string | null
     } | null
+    title?: string
 }
 
 export function PaymentDialog({
@@ -51,7 +52,8 @@ export function PaymentDialog({
     hideDteFields = false,
     isPurchase = false,
     isRefund = false,
-    existingInvoice = null
+    existingInvoice = null,
+    title
 }: PaymentDialogProps) {
     const [dteType, setDteType] = useState("NONE")
     const [paymentMethod, setPaymentMethod] = useState("CASH")
@@ -128,7 +130,7 @@ export function PaymentDialog({
                 <DialogHeader className="border-b pb-4">
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                         <Banknote className="h-5 w-5" />
-                        {isRefund ? "Registrar Reembolso / Devolución" : "Registrar Pago"}
+                        {title || (isRefund ? "Registrar Reembolso / Devolución" : "Registrar Pago")}
                     </DialogTitle>
                 </DialogHeader>
 
