@@ -67,6 +67,7 @@ export default function PurchaseOrdersPage() {
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+    const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
@@ -190,14 +191,24 @@ export default function PurchaseOrdersPage() {
 
     const noteColumns: ColumnDef<any>[] = [
         {
-            accessorKey: "number",
+            accessorKey: "dte_type_display",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Documento" />
             ),
             cell: ({ row }) => (
+                <span className="font-mono font-bold text-xs">{row.original.dte_type_display}</span>
+            ),
+        },
+        {
+            accessorKey: "number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Número" />
+            ),
+            cell: ({ row }) => (
                 <div className="flex flex-col">
-                    <span className="font-mono font-bold text-xs">{row.original.dte_type_display}</span>
-                    <span className="text-muted-foreground text-[10px]">{row.getValue("number") ? (row.original.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-') + row.getValue("number") : '---'}</span>
+                    <span className="text-muted-foreground text-[10px] sm:text-xs">
+                        {row.getValue("number") ? (row.original.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-') + row.getValue("number") : '---'}
+                    </span>
                 </div>
             ),
         },
@@ -248,7 +259,7 @@ export default function PurchaseOrdersPage() {
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => setViewingTransaction({ type: 'invoice', id: row.original.id, view: 'details' })}
+                        onClick={() => setSelectedInvoiceId(row.original.id)}
                         className="h-8 px-3 w-full"
                     >
                         <LayoutDashboard className="h-4 w-4 mr-1" />
@@ -523,9 +534,15 @@ export default function PurchaseOrdersPage() {
 
             <OrderCommandCenter
                 orderId={selectedOrderId}
+                invoiceId={selectedInvoiceId}
                 type="purchase"
-                open={selectedOrderId !== null}
-                onOpenChange={(open) => !open && setSelectedOrderId(null)}
+                open={selectedOrderId !== null || selectedInvoiceId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setSelectedOrderId(null)
+                        setSelectedInvoiceId(null)
+                    }
+                }}
                 onActionSuccess={fetchOrders}
                 onEdit={(id) => {
                     setSelectedOrderId(null)
