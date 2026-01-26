@@ -394,10 +394,15 @@ export function OrderCommandCenter({
 
     // Calculate if there are issues with invoices (drafts or missing folio)
     // MUST be declared before logisticsDocs since it's used there
-    const invoices = activeDoc.related_documents?.invoices || []
-    const billingIsComplete = invoices.length > 0 && !invoices.some((inv: any) =>
-        inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
-    )
+    const billingIsComplete = (() => {
+        if (isNoteMode) {
+            return activeInvoice.status !== 'DRAFT' && activeInvoice.number && activeInvoice.number !== 'Draft'
+        }
+        const invoices = activeDoc.related_documents?.invoices || []
+        return invoices.length > 0 && !invoices.some((inv: any) =>
+            inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
+        )
+    })()
 
     // Resolve Logistics Documents with Nomenclature and individual progress if applicable
     const logisticsDocs = (() => {
@@ -458,9 +463,11 @@ export function OrderCommandCenter({
         if (totalOrdered === 0) return 100
 
         const totalProcessed = lines.reduce((acc: number, line: any) => {
-            const processed = isSale
-                ? (line.quantity_delivered || 0)
-                : (line.quantity_received || 0)
+            const processedField = isSale
+                ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
+                : (line.quantity_received !== undefined ? 'quantity_received' : 'received_quantity')
+
+            const processed = line[processedField] || 0
             return acc + (parseFloat(processed) || 0)
         }, 0)
 
@@ -482,8 +489,20 @@ export function OrderCommandCenter({
         if (docToEvaluate.status === 'CANCELLED') return { label: 'Anulado', variant: 'destructive', icon: XCircle }
 
         if (isNoteMode) {
-            if (activeInvoice.status === 'PAID') return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
-            if (activeInvoice.status === 'POSTED') return { label: 'Publicado', variant: 'active', icon: PlayCircle }
+            // For Notes, status depends on: Logistics + Billing (Folio) + Treasury
+            const stages = []
+            stages.push(logisticsProgress === 100)
+            stages.push(activeInvoice.status !== 'DRAFT' && activeInvoice.number && activeInvoice.number !== 'Draft')
+            stages.push(activeInvoice.status === 'PAID' || parseFloat(activeInvoice.pending_amount || '0') <= 0)
+
+            if (stages.every(s => s)) return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
+            if (stages.some(s => s)) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
+
+            // If it's a draft but might have progress
+            if (activeInvoice.status === 'DRAFT' && (logisticsProgress > 0 || (activeInvoice.serialized_payments || []).length > 0)) {
+                return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
+            }
+
             return { label: 'Borrador', variant: 'neutral', icon: AlertCircle }
         }
 
@@ -585,7 +604,8 @@ export function OrderCommandCenter({
                                 <PhaseCard
                                     title="Origen"
                                     icon={TrendingUp}
-                                    variant={activeDoc.status !== 'DRAFT' ? 'success' : 'neutral'}
+                                    variant={isNoteMode ? 'success' : (activeDoc.status !== 'DRAFT' ? 'success' : 'neutral')}
+                                    isComplete={isNoteMode}
                                     documents={isNoteMode ? [
                                         {
                                             type: 'Documento Rectificado',
@@ -798,7 +818,7 @@ export function OrderCommandCenter({
                                 <PhaseCard
                                     title="Facturación"
                                     icon={Receipt}
-                                    variant={isNoteMode ? (activeInvoice.status !== 'DRAFT' ? 'success' : 'neutral') : (billingIsComplete ? 'success' : 'neutral')}
+                                    variant={isNoteMode ? (activeInvoice.status !== 'DRAFT' && activeInvoice.number && activeInvoice.number !== 'Draft' ? 'success' : 'neutral') : (billingIsComplete ? 'success' : 'neutral')}
                                     documents={isNoteMode ? [
                                         {
                                             type: activeInvoice.dte_type_display,

@@ -87,19 +87,22 @@ class TreasuryService:
             total_paid = sum(p.amount for p in invoice.payments.all())
             
             if total_paid >= invoice.total:
-                invoice.status = Invoice.Status.PAID
-                invoice.save()
-                
-                if invoice.sale_order:
-                    from sales.models import SaleOrder
-                    invoice.sale_order.status = SaleOrder.Status.PAID
-                    invoice.sale_order.save()
-                elif invoice.purchase_order:
-                    from purchasing.models import PurchaseOrder
-                    # Only mark as PAID if already RECEIVED or INVOICED to allow reception flow
-                    if invoice.purchase_order.status in [PurchaseOrder.Status.RECEIVED, PurchaseOrder.Status.INVOICED]:
-                        invoice.purchase_order.status = PurchaseOrder.Status.PAID
-                        invoice.purchase_order.save()
+                # IMPORTANT: Only mark as PAID if the invoice is already POSTED (has a folio).
+                # If it's still DRAFT, we keep it as DRAFT so the user is forced to register the folio.
+                if invoice.status == Invoice.Status.POSTED:
+                    invoice.status = Invoice.Status.PAID
+                    invoice.save()
+                    
+                    if invoice.sale_order:
+                        from sales.models import SaleOrder
+                        invoice.sale_order.status = SaleOrder.Status.PAID
+                        invoice.sale_order.save()
+                    elif invoice.purchase_order:
+                        from purchasing.models import PurchaseOrder
+                        # Only mark as PAID if already RECEIVED or INVOICED to allow reception flow
+                        if invoice.purchase_order.status in [PurchaseOrder.Status.RECEIVED, PurchaseOrder.Status.INVOICED]:
+                            invoice.purchase_order.status = PurchaseOrder.Status.PAID
+                            invoice.purchase_order.save()
         
         # If no invoice but associated with order directly (Partial payments without invoice yet)
         target_order = sale_order or purchase_order

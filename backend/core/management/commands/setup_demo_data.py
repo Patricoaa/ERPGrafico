@@ -9,8 +9,8 @@ from accounting.models import Account, AccountType, AccountingSettings, JournalE
 from accounting.services import AccountingService
 from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, PricingRule, Subscription
 from contacts.models import Contact
-from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
-from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
+from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine
+from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
 from treasury.models import TreasuryAccount, Payment
 from billing.models import Invoice, NoteWorkflow
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
@@ -252,12 +252,16 @@ class Command(BaseCommand):
         _safe_delete(Invoice, "Invoice")
         
         # Purchasing
+        _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
+        _safe_delete(PurchaseReturn, "PurchaseReturn")
         _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
         _safe_delete(PurchaseReceipt, "PurchaseReceipt")
         _safe_delete(PurchaseLine, "PurchaseLine")
         _safe_delete(PurchaseOrder, "PurchaseOrder")
         
         # Sales
+        _safe_delete(SaleReturnLine, "SaleReturnLine")
+        _safe_delete(SaleReturn, "SaleReturn")
         _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
         _safe_delete(SaleDelivery, "SaleDelivery")
         _safe_delete(SaleLine, "SaleLine")

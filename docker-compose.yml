@@ -97,7 +97,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2048M
+          memory: 4096M
 
 volumes:
   postgres_data:
