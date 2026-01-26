@@ -41,6 +41,14 @@ class WorkOrder(models.Model):
         related_name='work_orders',
         help_text="Línea de venta asociada"
     )
+
+    origin_note = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='originating_work_orders',
+        help_text="Nota (Débito) que originó esta producción"
+    )
     
     # New fields for manual OT
     is_manual = models.BooleanField(_("Es Manual"), default=False)

@@ -14,7 +14,7 @@ from decimal import Decimal
 class WorkOrderService:
     @staticmethod
     @transaction.atomic
-    def create_from_sale_line(sale_line, files=None):
+    def create_from_sale_line(sale_line, files=None, origin_note=None):
         """
         Creates a Work Order from a sale line.
         Automatically assigns materials if an active BOM exists.
@@ -35,6 +35,7 @@ class WorkOrderService:
             description=f"{product.name} - NV-{sale_line.order.number}",
             sale_order=sale_line.order,
             sale_line=sale_line,
+            origin_note=origin_note,
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.filter(warehouse__isnull=False).exists() else Warehouse.objects.first(),

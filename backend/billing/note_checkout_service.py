@@ -578,7 +578,7 @@ class NoteCheckoutService:
                 )
                 
                 # Create OT
-                WorkOrderService.create_from_sale_line(sale_line)
+                WorkOrderService.create_from_sale_line(sale_line, origin_note=workflow.invoice)
     
     @staticmethod
     def _create_accounting_entry(workflow: NoteWorkflow, settings: AccountingSettings, moved_quantities: Dict[int, Decimal] = None) -> JournalEntry:
@@ -841,52 +841,6 @@ class NoteCheckoutService:
         
         return workflow
 
-    @staticmethod
-    def _trigger_production_for_debit_note(workflow: NoteWorkflow):
-        """
-        Triggers Work Order creation for fabricable products in a Debit Note.
-        """
-        if workflow.is_credit_note or not workflow.sale_order:
-            return
-
-        from production.services import WorkOrderService
-        from sales.models import SaleLine
-        
-        # Ensure we have SaleLines for any "new" products in the Debit Note
-        # so they can anchor a Work Order.
-        for item in workflow.selected_items:
-            product = Product.objects.get(id=item['product_id'])
-            if product.product_type == Product.Type.MANUFACTURABLE:
-                qty = Decimal(str(item.get('quantity', 0)))
-                if qty <= 0: continue
-                
-                # Find or create SaleLine
-                sale_line = workflow.sale_order.lines.filter(product=product).first()
-                if not sale_line:
-                    sale_line = SaleLine.objects.create(
-                        order=workflow.sale_order,
-                        product=product,
-                        quantity=qty,
-                        unit_price=Decimal(str(item.get('unit_price', 0))),
-                        uom=product.uom,
-                        description=f"Adicional Nota Débito: {product.name}"
-                    )
-                else:
-                    # If it exists, we might want to increase its quantity if this is supplemental
-                    # or just create a new OT for the additional quantity.
-                    # Business choice: We'll create a new SaleLine for clarity if it's a "Supplemental" addition
-                    # to keep the OT linked 1:1 to a line.
-                    sale_line = SaleLine.objects.create(
-                        order=workflow.sale_order,
-                        product=product,
-                        quantity=qty,
-                        unit_price=Decimal(str(item.get('unit_price', 0))),
-                        uom=product.uom,
-                        description=f"Adicional Nota Débito: {product.name}"
-                    )
-                
-                # Create OT
-                WorkOrderService.create_from_sale_line(sale_line)
 
     @staticmethod
     @transaction.atomic

@@ -155,7 +155,8 @@ class SaleOrderSerializer(serializers.ModelSerializer):
                 'display_id': deliv.display_id,
                 'status': deliv.status,
                 'date': deliv.delivery_date,
-                'docType': 'sale_delivery'
+                'docType': 'sale_delivery',
+                'related_note': deliv.related_note_id
             })
 
         for pay in obj.payments.all():
