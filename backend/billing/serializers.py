@@ -17,6 +17,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     partner_name = serializers.SerializerMethodField()
     related_documents = serializers.SerializerMethodField()
     related_stock_moves = serializers.SerializerMethodField()
+    related_returns = serializers.SerializerMethodField()
     lines = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = serializers.SerializerMethodField()
@@ -89,6 +90,33 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'warehouse': m.warehouse.name,
             'move_type_display': m.get_move_type_display()
         } for m in moves]
+
+    def get_related_returns(self, obj):
+        data = []
+        # Check for linked Sale Returns
+        if hasattr(obj, 'sale_returns'):
+             for ret in obj.sale_returns.all():
+                 data.append({
+                     'id': ret.id,
+                     'number': ret.number,
+                     'display_id': ret.display_id,
+                     'status': ret.status,
+                     'type': 'Devolución Venta',
+                     'docType': 'sale_return'
+                 })
+        
+        # Check for linked Purchase Returns
+        if hasattr(obj, 'purchase_returns'):
+             for ret in obj.purchase_returns.all():
+                 data.append({
+                     'id': ret.id,
+                     'number': ret.number,
+                     'display_id': ret.display_id,
+                     'status': ret.status,
+                     'type': 'Devolución Compra',
+                     'docType': 'purchase_return'
+                 })
+        return data
 
     def get_adjustments(self, obj):
         # Only Facturas/Boletas usually have adjustments (Notes correcting them)

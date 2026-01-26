@@ -337,7 +337,10 @@ export function OrderCommandCenter({
 
     const handleAnnulLogistics = async (id: number, docType: string) => {
         const isDelivery = docType === 'sale_delivery'
-        const label = isDelivery ? 'Despacho' : 'Recepción'
+        let label = 'Documento'
+        if (docType === 'sale_delivery') label = 'Despacho'
+        else if (docType === 'purchase_receipt') label = 'Recepción'
+        else if (docType === 'sale_return' || docType === 'purchase_return') label = 'Devolución'
 
         setConfirmModal({
             open: true,
@@ -346,9 +349,11 @@ export function OrderCommandCenter({
             confirmText: `Anular ${label}`,
             onConfirm: async () => {
                 try {
-                    const endpoint = isDelivery
-                        ? `/sales/deliveries/${id}/annul/`
-                        : `/purchasing/receipts/${id}/annul/`
+                    let endpoint = ''
+                    if (docType === 'sale_delivery') endpoint = `/sales/deliveries/${id}/annul/`
+                    else if (docType === 'purchase_receipt') endpoint = `/purchasing/receipts/${id}/annul/`
+                    else if (docType === 'sale_return') endpoint = `/sales/returns/${id}/annul/`
+                    else if (docType === 'purchase_return') endpoint = `/purchasing/returns/${id}/annul/`
 
                     await api.post(endpoint)
                     toast.success(`${label} anulado correctamente`)
@@ -396,6 +401,24 @@ export function OrderCommandCenter({
 
     // Resolve Logistics Documents with Nomenclature and individual progress if applicable
     const logisticsDocs = (() => {
+        // [NEW] Returns for Notes
+        if (activeDoc.related_returns?.length > 0) return activeDoc.related_returns.map((doc: any) => ({
+            type: doc.type,
+            number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),
+            icon: Package,
+            id: doc.id,
+            docType: doc.docType,
+            status: doc.status,
+            actions: [
+                ...((doc.status !== 'CANCELLED') ? [{
+                    icon: Ban,
+                    title: 'Anular Devolución',
+                    color: 'text-orange-500 hover:bg-orange-500/10',
+                    onClick: () => handleAnnulLogistics(doc.id, doc.docType)
+                }] : [])
+            ]
+        }))
+
         if (activeDoc.related_stock_moves?.length > 0) return activeDoc.related_stock_moves.map((m: any) => ({
             type: m.move_type_display || 'Movimiento',
             number: formatDocumentId('MOV', m.id, m.display_id),

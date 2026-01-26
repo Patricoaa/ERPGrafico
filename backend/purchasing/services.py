@@ -59,6 +59,77 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
+    def create_receipt_from_note(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None, notes=None):
+        """
+        Creates a receipt specifically for a Debit Note (Supplemental Receipt).
+        Differs from partial_receive:
+        1. Bypasses 'quantity_pending' check.
+        2. Creates receipt and marks it as CONFIRMED.
+        """
+        if not receipt_date:
+            receipt_date = timezone.now().date()
+            
+        # Create Receipt
+        receipt = PurchaseReceipt.objects.create(
+            purchase_order=order,
+            warehouse=warehouse,
+            receipt_date=receipt_date,
+            delivery_reference=f"Nota Débito",
+            notes=f"Nota de Débito: {notes or ''}",
+            status=PurchaseReceipt.Status.DRAFT
+        )
+        
+        for item in line_data:
+            line_id = item.get('line_id')
+            quantity = Decimal(str(item.get('quantity', 0)))
+            unit_cost = Decimal(str(item.get('unit_cost', 0)))
+            uom_id = item.get('uom_id')
+            
+            if quantity <= 0: continue
+            
+            purchase_line = None
+            if line_id:
+                purchase_line = order.lines.filter(id=line_id).first()
+            elif item.get('product_id'):
+                product_id = item['product_id']
+                from inventory.models import Product
+                product = Product.objects.get(id=product_id)
+                purchase_line = order.lines.filter(product=product).first()
+                
+                if not purchase_line:
+                    # CREATE NEW LINE on the fly for Supplemental Reception
+                    from .models import PurchaseLine
+                    purchase_line = PurchaseLine.objects.create(
+                        order=order,
+                        product=product,
+                        quantity=0, # Note: Actual receipt qty is in ReceiptLine
+                        unit_cost=unit_cost if unit_cost > 0 else product.cost_price,
+                        uom=uom_id if uom_id else product.uom
+                    )
+                    order.recalculate_totals()
+                
+            if not purchase_line: continue
+
+            # Resolve UoM if provided as ID
+            uom = None
+            if uom_id:
+                 from inventory.models import UoM
+                 uom = UoM.objects.filter(id=uom_id).first()
+
+            PurchasingService._create_receipt_line(
+                receipt=receipt,
+                purchase_line=purchase_line,
+                quantity=quantity,
+                unit_cost=unit_cost if unit_cost > 0 else purchase_line.unit_cost,
+                uom=uom or purchase_line.uom
+            )
+            
+        # Confirm receipt
+        PurchasingService.confirm_receipt(receipt)
+        return receipt
+
+    @staticmethod
+    @transaction.atomic
     def partial_receive(order: PurchaseOrder, warehouse: Warehouse, line_data: list, receipt_date=None, delivery_reference='', notes='', subscription_dates=None):
         """
         Receives specific quantities and potentially adjusted costs.

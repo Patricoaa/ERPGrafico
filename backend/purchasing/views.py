@@ -1,9 +1,10 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import PurchaseOrder, PurchaseReceipt
-from .serializers import PurchaseOrderSerializer, WritePurchaseOrderSerializer, PurchaseReceiptSerializer
+from .models import PurchaseOrder, PurchaseReceipt, PurchaseReturn
+from .serializers import PurchaseOrderSerializer, WritePurchaseOrderSerializer, PurchaseReceiptSerializer, PurchaseReturnSerializer
 from .services import PurchasingService
+from .return_services import PurchaseReturnService
 from inventory.models import Warehouse
 from django.core.exceptions import ValidationError
 from decimal import Decimal
@@ -257,5 +258,22 @@ class PurchaseReceiptViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class PurchaseReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    queryset = PurchaseReturn.objects.all()
+    serializer_class = PurchaseReturnSerializer
+
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        doc = self.get_object()
+        try:
+            PurchaseReturnService.annul_return(doc.id)
+            return Response(PurchaseReturnSerializer(doc).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

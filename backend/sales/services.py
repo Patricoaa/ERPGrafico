@@ -166,6 +166,83 @@ class SalesService:
     
     @staticmethod
     @transaction.atomic
+    def create_delivery_from_note(order: SaleOrder, warehouse: Warehouse, line_data: list, delivery_date=None, notes=None):
+        """
+        Creates a delivery specifically for a Debit Note (Supplemental Dispatch).
+        Differs from partial_dispatch:
+        1. Bypasses 'quantity_pending' check.
+        2. Validates availability.
+        3. Creates delivery and marks it as CONFIRMED.
+        """
+        if not delivery_date:
+            delivery_date = timezone.now().date()
+        
+        # Create delivery
+        delivery = SaleDelivery.objects.create(
+            sale_order=order,
+            warehouse=warehouse,
+            delivery_date=delivery_date,
+            status=SaleDelivery.Status.DRAFT,
+            notes=f"Nota de Débito: {notes or ''}"
+        )
+        
+        for item in line_data:
+            line_id = item.get('line_id')
+            quantity = Decimal(str(item.get('quantity', 0)))
+            uom_id = item.get('uom_id')
+            
+            if quantity <= 0: continue
+
+            # If line_id exists, use it. If not, we might need to fetch product directly.
+            product_id = item.get('product_id')
+            from inventory.models import Product, UoM
+            
+            sale_line = None
+            if line_id:
+                sale_line = order.lines.get(id=line_id)
+                product = sale_line.product
+            elif product_id:
+                 product = Product.objects.get(id=product_id)
+                 # Try to find existing line for same product
+                 sale_line = order.lines.filter(product=product).first()
+                 
+                 if not sale_line:
+                     # CREATE NEW LINE on the fly for Supplemental Dispatch
+                     from .models import SaleLine
+                     sale_line = SaleLine.objects.create(
+                         order=order,
+                         product=product,
+                         quantity=0, # Note: Actual dispatch qty is in the DeliveryLine
+                         unit_price=item.get('unit_price', product.cost_price * Decimal('1.2')), # Fallback markup or provided price
+                         uom=uom_id if uom_id else product.uom
+                     )
+                     order.recalculate_totals()
+            
+            if not sale_line:
+                # If still no line, skip
+                continue
+
+            # Check Availability
+            if product.product_type == 'STORABLE' and product.track_inventory:
+                # Simplified check: assumes base UoM for now
+                if product.qty_available < quantity:
+                    raise ValidationError(f"Stock insuficiente para {product.name} (Nota Débito).")
+
+            uom = UoM.objects.filter(id=uom_id).first() if uom_id else sale_line.uom
+
+            SalesService._create_delivery_line(
+                delivery=delivery,
+                sale_line=sale_line,
+                quantity=quantity,
+                warehouse=warehouse,
+                uom=uom
+            )
+        
+        SalesService.confirm_delivery(delivery)
+        return delivery
+    
+    @staticmethod
+    @transaction.atomic
     def partial_dispatch(order: SaleOrder, warehouse: Warehouse, line_data: list, delivery_date=None):
         """
         Dispatches specific quantities of products.

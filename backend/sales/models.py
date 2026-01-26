@@ -268,3 +268,111 @@ class SaleDeliveryLine(models.Model):
     def save(self, *args, **kwargs):
         self.calculate_subtotal()
         super().save(*args, **kwargs)
+
+class SaleReturn(models.Model, TotalsCalculationMixin):
+    """
+    Represents a return of goods from a customer (linked to a Sale Order).
+    Used to process logistics before or after a Credit Note.
+    """
+    class Status(models.TextChoices):
+        DRAFT = 'DRAFT', _('Borrador')
+        CONFIRMED = 'CONFIRMED', _('Confirmado') # Stock moves created
+        CANCELLED = 'CANCELLED', _('Anulado')
+    
+    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
+    sale_order = models.ForeignKey(SaleOrder, on_delete=models.PROTECT, related_name='returns')
+    warehouse = models.ForeignKey(
+        'inventory.Warehouse', 
+        on_delete=models.PROTECT, 
+        related_name='sale_returns',
+        help_text="Bodega de recepción"
+    )
+    
+    date = models.DateField(_("Fecha de Devolución"))
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    # Financial Totals (Reference value of returned goods)
+    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
+    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
+    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
+    total_cost = models.DecimalField(_("Costo Total (COGS Reverso)"), max_digits=12, decimal_places=0, default=0)
+
+    # Link to Accounting (for COGS reversal entry)
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='sale_return'
+    )
+    
+    # Optional link to the Credit Note if issued
+    credit_note = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='sale_returns'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = _("Devolución de Venta")
+        verbose_name_plural = _("Devoluciones de Venta")
+        ordering = ['-id']
+    
+    def __str__(self):
+        return f"{self.display_id} (NV-{self.sale_order.number})"
+    
+    @property
+    def display_id(self):
+        return f"DEV-{self.number}"
+    
+    def save(self, *args, **kwargs):
+        if not self.number:
+            self.number = SequenceService.get_next_number(SaleReturn)
+        super().save(*args, **kwargs)
+
+class SaleReturnLine(models.Model):
+    return_doc = models.ForeignKey(SaleReturn, on_delete=models.CASCADE, related_name='lines')
+    product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT, related_name='return_lines')
+    uom = models.ForeignKey('inventory.UoM', on_delete=models.PROTECT, related_name='return_lines', null=True, blank=True)
+    
+    quantity = models.DecimalField(
+        _("Cantidad"), 
+        max_digits=10, 
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)]
+    )
+    
+    # Value reference
+    unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0, default=0)
+    subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False, default=0)
+    
+    # Cost reference for COGS reversal
+    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=0, default=0)
+    total_cost = models.DecimalField(_("Costo Total"), max_digits=12, decimal_places=0, editable=False, default=0)
+    
+    # Link to Stock Move
+    stock_move = models.OneToOneField(
+        'inventory.StockMove',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='sale_return_line'
+    )
+    
+    class Meta:
+        verbose_name = _("Línea de Devolución")
+        verbose_name_plural = _("Líneas de Devolución")
+    
+    def calculate_subtotal(self):
+        self.subtotal = self.quantity * self.unit_price
+        self.total_cost = self.quantity * self.unit_cost
+
+    def save(self, *args, **kwargs):
+        self.calculate_subtotal()
+        super().save(*args, **kwargs)

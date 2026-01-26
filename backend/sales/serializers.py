@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SaleOrder, SaleLine, SalesSettings, SaleDelivery, SaleDeliveryLine
+from .models import SaleOrder, SaleLine, SalesSettings, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine
 from treasury.serializers import PaymentSerializer
 from production.serializers import WorkOrderSerializer
 from inventory.models import Product
@@ -247,4 +247,23 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SaleDelivery
+        fields = '__all__'
+
+class SaleReturnLineSerializer(serializers.ModelSerializer):
+    product_code = serializers.CharField(source='product.code', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    
+    class Meta:
+        model = SaleReturnLine
+        fields = '__all__'
+
+class SaleReturnSerializer(serializers.ModelSerializer):
+    lines = SaleReturnLineSerializer(many=True, read_only=True)
+    sale_order_number = serializers.CharField(source='sale_order.number', read_only=True)
+    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = SaleReturn
         fields = '__all__'

@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import SaleOrder, SalesSettings, SaleDelivery
+from .models import SaleOrder, SalesSettings, SaleDelivery, SaleReturn
 from .serializers import (
     SaleOrderSerializer, 
     CreateSaleOrderSerializer, 
@@ -270,4 +270,22 @@ class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    queryset = SaleReturn.objects.all()
+    serializer_class = SaleReturnSerializer
+
+    @action(detail=True, methods=['post'])
+    def annul(self, request, pk=None):
+        doc = self.get_object()
+        try:
+            from sales.return_services import ReturnService
+            ReturnService.annul_return(doc.id)
+            return Response(SaleReturnSerializer(doc).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

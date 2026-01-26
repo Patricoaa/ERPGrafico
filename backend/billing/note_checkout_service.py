@@ -9,7 +9,10 @@ from billing.note_workflow import NoteWorkflow
 from accounting.models import JournalEntry, JournalItem, AccountingSettings, AccountType
 from inventory.models import StockMove, Product, Warehouse, UoM
 from core.services import SequenceService
-
+from sales.return_services import ReturnService as SalesReturnService
+from purchasing.return_services import PurchaseReturnService
+from sales.services import SalesService
+from purchasing.services import PurchasingService
 
 class NoteCheckoutService:
     """
@@ -212,7 +215,7 @@ class NoteCheckoutService:
         notes: str = ""
     ) -> NoteWorkflow:
         """
-        Stage 3: Process logistics (stock movements)
+        Stage 3: Process logistics (stock movements via Return Documents)
         Only called if requires_logistics=True
         
         Args:
@@ -225,9 +228,6 @@ class NoteCheckoutService:
         
         Returns:
             Updated workflow in LOGISTICS_COMPLETED stage
-        
-        Raises:
-            ValidationError: If logistics not required or invalid warehouse
         """
         workflow = NoteWorkflow.objects.select_related('invoice').get(id=workflow_id)
         
@@ -239,12 +239,12 @@ class NoteCheckoutService:
         if not workflow.requires_logistics:
             raise ValidationError("Este workflow no requiere procesamiento de logística.")
         
+        # Save logistics data
         try:
             warehouse = Warehouse.objects.get(id=warehouse_id)
         except Warehouse.DoesNotExist:
             raise ValidationError(f"Bodega con ID {warehouse_id} no existe.")
-        
-        # Save logistics data
+
         workflow.logistics_data = {
             'warehouse_id': warehouse_id,
             'warehouse_name': warehouse.name,
@@ -254,16 +254,8 @@ class NoteCheckoutService:
             'line_data': line_data
         }
         
-        # If scheduled, we don't create stock moves now
-        if delivery_type == 'SCHEDULED':
-            workflow.current_stage = NoteWorkflow.Stage.LOGISTICS_COMPLETED
-            workflow.save()
-            return workflow
-            
-        is_sale = workflow.sale_order is not None
-        
         # Determine items to process
-        items_to_move = []
+        items_for_return = []
         if delivery_type == 'PARTIAL' and line_data:
             for ld in line_data:
                 line_id = ld.get('line_id')
@@ -275,54 +267,82 @@ class NoteCheckoutService:
                 # Find matching item in selected_items
                 item = next((i for i in workflow.selected_items if i['line_id'] == line_id), None)
                 if item and item.get('creates_stock_move', False):
-                    items_to_move.append({
+                    items_for_return.append({
                         'product_id': item['product_id'],
                         'quantity': quantity,
-                        'uom_id': ld.get('uom_id')
+                        'uom_id': ld.get('uom_id'),
+                         # Pass price/cost references if available in item
+                        'unit_price': item.get('unit_price', 0),
+                        'unit_cost': item.get('unit_cost', 0)
                     })
         else:
-            # IMMEDIATE (Full)
+            # IMMEDIATE (Full) - or SCHEDULED (plan full)
             for item in workflow.selected_items:
                 if item.get('creates_stock_move', False):
-                    items_to_move.append({
+                    items_for_return.append({
                         'product_id': item['product_id'],
                         'quantity': Decimal(str(item['quantity'])),
-                        'uom_id': None
+                        'uom_id': None,
+                        'unit_price': item.get('unit_price', 0),
+                        'unit_cost': item.get('unit_cost', 0)
                     })
 
-        # Create stock movements
-        for move_item in items_to_move:
-            product = Product.objects.get(id=move_item['product_id'])
-            quantity = move_item['quantity']
-            uom_id = move_item.get('uom_id')
-            
-            # Determine move type correctly based on context
+        # Process via appropriate Service
+        is_sale = workflow.sale_order is not None
+        logistics_doc = None
+        is_credit_note = workflow.is_credit_note
+
+        if is_credit_note:
+            # CREDIT NOTE -> RETURNS (Decoupled Documents)
             if is_sale:
-                # Sales: Credit Note (Return) -> IN; Debit Note (Extra) -> OUT
-                move_type = StockMove.Type.IN if workflow.is_credit_note else StockMove.Type.OUT
+                logistics_doc = SalesReturnService.create_return_from_note_request(
+                    order=workflow.sale_order,
+                    items=items_for_return,
+                    warehouse_id=warehouse_id,
+                    date=date,
+                    notes=notes
+                )
+                if delivery_type == 'IMMEDIATE':
+                    SalesReturnService.confirm_return(logistics_doc)
             else:
-                # Purchases: Credit Note (Return) -> OUT; Debit Note (Extra) -> IN
-                move_type = StockMove.Type.OUT if workflow.is_credit_note else StockMove.Type.IN
-            
-            # Apply sign correctly (Pos for Add/IN, Neg for Remove/OUT)
-            signed_qty = quantity if move_type == StockMove.Type.IN else -quantity
-            
-            uom = UoM.objects.filter(id=uom_id).first() if uom_id else product.uom
+                if workflow.purchase_order:
+                    logistics_doc = PurchaseReturnService.create_return_from_note_request(
+                        order=workflow.purchase_order,
+                        items=items_for_return,
+                        warehouse_id=warehouse_id,
+                        date=date,
+                        notes=notes
+                    )
+                    if delivery_type == 'IMMEDIATE':
+                        PurchaseReturnService.confirm_return(logistics_doc)
+        else:
+            # DEBIT NOTE -> SUPPLEMENTAL LOGISTICS (Reuse standard Delivery/Receipt)
+            if is_sale:
+                # Supplemental Dispatch
+                logistics_doc = SalesService.create_delivery_from_note(
+                    order=workflow.sale_order,
+                    warehouse=warehouse,
+                    line_data=items_for_return, # Note: ReturnService format is same as create_delivery_from_note format
+                    delivery_date=date,
+                    notes=f"Nota Débito: {notes or ''}"
+                )
+            else:
+                # Supplemental Reception
+                if workflow.purchase_order:
+                    logistics_doc = PurchasingService.create_receipt_from_note(
+                        order=workflow.purchase_order,
+                        warehouse=warehouse,
+                        line_data=items_for_return,
+                        receipt_date=date,
+                        notes=f"Nota Débito: {notes or ''}"
+                    )
 
-            print(f"DEBUG: NoteProcessLogistics - Workflow {workflow.id}, Product {product.internal_code}, Move {move_type}, Qty {signed_qty}")
-
-            StockMove.objects.create(
-                date=date,
-                product=product,
-                warehouse=warehouse,
-                uom=uom,
-                quantity=signed_qty,
-                move_type=move_type,
-                description=f"{workflow.invoice.get_dte_type_display()} - {workflow.invoice.display_id} (REF: WORKFLOW-{workflow.id})"
-            )
-        
-        # Advance workflow
+        # Advance workflow logic
         workflow.current_stage = NoteWorkflow.Stage.LOGISTICS_COMPLETED
+        if logistics_doc:
+             doc_type_label = "Devolución" if is_credit_note else ("Despacho" if is_sale else "Recepción")
+             workflow.notes = f"{workflow.notes or ''}\nGenerado Documento {doc_type_label}: {logistics_doc.display_id}"
+             
         workflow.save()
         return workflow
     
@@ -534,48 +554,8 @@ class NoteCheckoutService:
                 debit=debit_amount,
                 credit=credit_amount,
                 label=f"{product.name} - {item['reason']}" if item.get('reason') else product.name
+                label=f"{product.name} - {item['reason']}" if item.get('reason') else product.name
             )
-
-            # 2. STOCK VALUATION REVERSAL (Only for sales of stockable items)
-            # If Customer NC (Return): Debit Inventory, Credit COGS (at current cost)
-            # THIS DEPENDS ON ACTUAL STOCK MOVEMENTS
-            if is_sale and workflow.is_credit_note and item.get('creates_stock_move'):
-                
-                # Determine quantity for COGS reversal
-                if moved_quantities is not None:
-                    # Use actual moved quantity (Partial Support)
-                    qty_for_cogs = moved_quantities.get(product.id, Decimal(0))
-                else:
-                    # Fallback to full invoice quantity
-                    qty_for_cogs = Decimal(str(item['quantity']))
-                
-                # Valuation amount = qty * current_cost
-                valuation_amount = (qty_for_cogs * product.cost_price).quantize(Decimal('1'))
-                
-                if valuation_amount > 0:
-                    inv_account = settings.storable_inventory_account or settings.default_inventory_account
-                    cogs_account = settings.merchandise_cogs_account or settings.default_expense_account
-                    
-                    if product.product_type == Product.Type.MANUFACTURABLE:
-                        inv_account = settings.manufacturable_inventory_account or inv_account
-                        cogs_account = settings.manufactured_cogs_account or cogs_account
-
-                    if inv_account and cogs_account:
-                        # Entry: Inventory (Debit) and COGS (Credit)
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=inv_account,
-                            debit=valuation_amount,
-                            credit=0,
-                            label=f"Devolución Stock: {product.name}"
-                        )
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=cogs_account,
-                            debit=0,
-                            credit=valuation_amount,
-                            label=f"Reverso Costo Venta: {product.name}"
-                        )
         
         # Tax entry
         if invoice.total_tax > 0:

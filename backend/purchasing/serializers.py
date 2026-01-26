@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
+from .models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
 from treasury.serializers import PaymentSerializer
 import math
 from decimal import Decimal
@@ -251,6 +251,25 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PurchaseReceipt
+        fields = '__all__'
+
+class PurchaseReturnLineSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_code = serializers.CharField(source='product.code', read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    
+    class Meta:
+        model = PurchaseReturnLine
+        fields = '__all__'
+
+class PurchaseReturnSerializer(serializers.ModelSerializer):
+    lines = PurchaseReturnLineSerializer(many=True, read_only=True)
+    purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True)
+    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = PurchaseReturn
         fields = '__all__'
 
 class NoteCreationSerializer(serializers.Serializer):
