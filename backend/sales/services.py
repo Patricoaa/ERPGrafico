@@ -492,23 +492,25 @@ class SalesService:
         
         if delivery.total_cost > 0:
             description, reference, items = AccountingMapper.get_entries_for_delivery(delivery, settings)
-            entry = JournalEntryService.create_entry(
-                {
-                    'date': delivery.delivery_date,
-                    'description': description,
-                    'reference': reference,
-                    'state': JournalEntry.State.DRAFT
-                },
-                items
-            )
             
-            JournalEntryService.post_entry(entry)
-            delivery.journal_entry = entry
-            
-            # Link all created stock moves to this entry
-            for move in created_moves:
-                move.journal_entry = entry
-                move.save()
+            if items:
+                entry = JournalEntryService.create_entry(
+                    {
+                        'date': delivery.delivery_date,
+                        'description': description,
+                        'reference': reference,
+                        'state': JournalEntry.State.DRAFT
+                    },
+                    items
+                )
+                
+                JournalEntryService.post_entry(entry)
+                delivery.journal_entry = entry
+                
+                # Link all created stock moves to this entry
+                for move in created_moves:
+                    move.journal_entry = entry
+                    move.save()
         
         # Confirm delivery
         delivery.status = SaleDelivery.Status.CONFIRMED

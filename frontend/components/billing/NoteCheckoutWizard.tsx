@@ -62,7 +62,11 @@ export function NoteCheckoutWizard({
     })
 
     // Computed Properties
-    const requiresLogistics = selectedItems.some(item => item.creates_stock_move)
+    const requiresLogistics = selectedItems.some(item =>
+        item.creates_stock_move ||
+        item.product_type === 'MANUFACTURABLE' ||
+        item.has_bom
+    )
 
     const totalNet = selectedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0)
     const totalTax = selectedItems.reduce((acc, item) => acc + (item.quantity * item.tax_amount), 0)
@@ -267,7 +271,7 @@ export function NoteCheckoutWizard({
     }
 
     const title = initialType === 'NOTA_CREDITO' ? 'Emitir Nota de Crédito' : 'Emitir Nota de Débito'
-    const totalSteps = requiresLogistics ? 4 : 3
+    const totalSteps = 4 // Always 4 steps: Items, Logistics (maybe skipped), Registration, Payment
     const isLastStep = step === 4
     const isStepLoading = loading || initializing
 

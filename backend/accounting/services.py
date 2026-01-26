@@ -330,14 +330,7 @@ class AccountingMapper:
                 continue
                 
             product = line.product
-            # COGS Account (always from finished product)
-            cogs_account = product.get_expense_account or settings.default_expense_account
-            if not cogs_account:
-                raise ValidationError(f"Falta configuración de cuenta de costo/gasto para el producto {product.internal_code}.")
             
-            # Add to groupings (Debits)
-            debits[cogs_account] = debits.get(cogs_account, Decimal('0.00')) + line.total_cost
-
             # Inventory Account Credit
             # If it's a manufacturable product without direct inventory tracking, we credit the components used.
             if not product.track_inventory and product.product_type == 'MANUFACTURABLE':
@@ -348,6 +341,16 @@ class AccountingMapper:
                     # Skip accounting entry creation to avoid duplication
                     print(f"DEBUG: Skipping COGS entry for {product.internal_code} - already expensed in OT")
                     continue
+            
+            # COGS Account (always from finished product)
+            cogs_account = product.get_expense_account or settings.default_expense_account
+            if not cogs_account:
+                raise ValidationError(f"Falta configuración de cuenta de costo/gasto para el producto {product.internal_code}.")
+            
+            # Add to groupings (Debits)
+            debits[cogs_account] = debits.get(cogs_account, Decimal('0.00')) + line.total_cost
+
+            if not product.track_inventory and product.product_type == 'MANUFACTURABLE':
                 
                 # Continue with existing BOM explosion logic for express manufacturing
                 from production.models import BillOfMaterials

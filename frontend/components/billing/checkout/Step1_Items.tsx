@@ -40,7 +40,7 @@ export function Step1_Items({
                     track_inventory: line.track_inventory,
                     has_bom: line.has_bom,
                     requires_advanced_manufacturing: line.requires_advanced_manufacturing,
-                    creates_stock_move: line.track_inventory && (line.product_type !== 'MANUFACTURABLE' || (!line.requires_advanced_manufacturing && line.has_bom)),
+                    creates_stock_move: line.track_inventory && (line.product_type !== 'MANUFACTURABLE' || line.requires_advanced_manufacturing === false),
                     quantity: line.quantity_delivered || line.quantity,
                     uom_name: line.uom_name,
                     uom_id: line.uom,

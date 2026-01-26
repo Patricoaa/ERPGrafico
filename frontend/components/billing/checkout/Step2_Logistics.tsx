@@ -75,11 +75,11 @@ export function Step2_Logistics({
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [fetchingWarehouses, setFetchingWarehouses] = useState(true)
 
-    // Check for "Manufacturable" products or those that don't control stock
-    const manufacturableItems = selectedItems.filter(item =>
-        (item.product_type === 'MANUFACTURABLE' || item.has_bom) && !item.creates_stock_move
+    // Check for "Advanced Manufacturable" products - ONLY block for Debit Notes
+    const advancedManufacturableItems = selectedItems.filter(item =>
+        item.product_type === 'MANUFACTURABLE' && item.requires_advanced_manufacturing === true
     );
-    const hasRestrictedItems = manufacturableItems.length > 0;
+    const hasRestrictedItems = !isCreditNote && advancedManufacturableItems.length > 0;
 
     // Initialize data if null or missing fields
     useEffect(() => {
@@ -150,7 +150,7 @@ export function Step2_Logistics({
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider tabular-nums leading-none">Producción Requerida</p>
-                            <p className="text-xs font-medium">Hay {manufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
+                            <p className="text-xs font-medium">Hay {advancedManufacturableItems.length} productos que requieren fabricación avanzada. El despacho inmediato está deshabilitado para estos ítems.</p>
                         </div>
                     </div>
                 )}

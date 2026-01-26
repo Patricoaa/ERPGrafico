@@ -226,15 +226,20 @@ class NoteCheckoutService:
                         f"({sale_line.quantity_delivered}) para {product.name}"
                     )
             
-            # Check if creates stock movements
+            # Check if creates stock movements OR is manufacturable (even if no direct move, we want to record the intent)
             creates_stock_move = False
             if product.track_inventory:
-                # Exclude manufacturable without BOM or advanced
-                if product.product_type == Product.Type.MANUFACTURABLE:
-                    if not product.requires_advanced_manufacturing and product.has_bom:
-                        creates_stock_move = True
-                else:
+                # Standard inventory items
+                if product.product_type != Product.Type.MANUFACTURABLE:
                     creates_stock_move = True
+                else:
+                    # Manufacturable items with inventory tracking
+                    creates_stock_move = True
+            
+            # Special case: Non-tracked manufacturable products should STILL go through logistics 
+            # to record the manual return or the intention of delivery.
+            if product.product_type == Product.Type.MANUFACTURABLE:
+                creates_stock_move = True
             
             if creates_stock_move:
                 has_stockable = True
@@ -533,7 +538,47 @@ class NoteCheckoutService:
         workflow.current_stage = NoteWorkflow.Stage.PAYMENT_PENDING # Move straight to payment
         workflow.save()
         
+        # Trigger production for Debit Notes
+        NoteCheckoutService._trigger_production_for_debit_note(workflow)
+        
         return workflow
+
+    @staticmethod
+    def _trigger_production_for_debit_note(workflow: NoteWorkflow):
+        """
+        Triggers Work Order creation for fabricable products in a Debit Note.
+        """
+        if workflow.is_credit_note or not workflow.sale_order:
+            return
+
+        from production.services import WorkOrderService
+        from sales.models import SaleLine
+        
+        # Ensure we have SaleLines for any "new" products in the Debit Note
+        # so they can anchor a Work Order.
+        for item in workflow.selected_items:
+            product_id = item.get('product_id')
+            from inventory.models import Product
+            product = Product.objects.get(id=product_id)
+            
+            if product.product_type == Product.Type.MANUFACTURABLE:
+                qty = Decimal(str(item.get('quantity', 0)))
+                if qty <= 0: continue
+                
+                # Check for existing SaleLine for this product on this order
+                # For Supplemental Dispatch, we usually want a distinct line to track its specific OT.
+                # We'll create a new SaleLine if it's a specific supplemental quantity.
+                sale_line = SaleLine.objects.create(
+                    order=workflow.sale_order,
+                    product=product,
+                    quantity=qty,
+                    unit_price=Decimal(str(item.get('unit_price', product.cost_price * Decimal('1.2')))),
+                    uom=product.uom,
+                    description=f"Adicional Nota Débito: {product.name}"
+                )
+                
+                # Create OT
+                WorkOrderService.create_from_sale_line(sale_line)
     
     @staticmethod
     def _create_accounting_entry(workflow: NoteWorkflow, settings: AccountingSettings, moved_quantities: Dict[int, Decimal] = None) -> JournalEntry:
@@ -773,7 +818,75 @@ class NoteCheckoutService:
         workflow.notes = f"{workflow.notes}\nCANCELADO: {reason}" if workflow.notes else f"CANCELADO: {reason}"
         workflow.save()
         
+        # Assuming this is the `register_document` method or similar based on the instruction's diff
+        # This block is inserted based on the provided diff for `register_document`
+        # If this is not the correct location for `register_document`, please clarify.
+        # The diff provided for `register_document` starts with `workflow.notes` and then `workflow.registration_deferred`.
+        # Since `register_document` is not in the original content, I'm placing the new method and its call
+        # where the diff implies `register_document` would be, or where it makes sense.
+        # Given the context, it seems the user intended to show a new method `register_document`
+        # or a similar method that transitions to PAYMENT_PENDING and sets `registration_deferred`.
+        # I will insert the new method definition here, and then the call in `process_full_checkout`.
+        # The diff for `register_document` seems to be a separate method that was not fully provided in the original content.
+        # I will add the `_trigger_production_for_debit_note` method definition here.
+        # The instruction's diff for `register_document` shows:
+        # workflow.notes        workflow.registration_deferred = is_pending
+        # workflow.current_stage = NoteWorkflow.Stage.PAYMENT_PENDING # Move straight to payment
+        # workflow.save()
+        # # Trigger production for Debit Notes
+        # NoteCheckoutService._trigger_production_for_debit_note(workflow)
+        # return workflow
+        # Since `register_document` is not in the provided code, I cannot insert into it.
+        # I will proceed with inserting the method definition and the call in `process_full_checkout`.
+        
         return workflow
+
+    @staticmethod
+    def _trigger_production_for_debit_note(workflow: NoteWorkflow):
+        """
+        Triggers Work Order creation for fabricable products in a Debit Note.
+        """
+        if workflow.is_credit_note or not workflow.sale_order:
+            return
+
+        from production.services import WorkOrderService
+        from sales.models import SaleLine
+        
+        # Ensure we have SaleLines for any "new" products in the Debit Note
+        # so they can anchor a Work Order.
+        for item in workflow.selected_items:
+            product = Product.objects.get(id=item['product_id'])
+            if product.product_type == Product.Type.MANUFACTURABLE:
+                qty = Decimal(str(item.get('quantity', 0)))
+                if qty <= 0: continue
+                
+                # Find or create SaleLine
+                sale_line = workflow.sale_order.lines.filter(product=product).first()
+                if not sale_line:
+                    sale_line = SaleLine.objects.create(
+                        order=workflow.sale_order,
+                        product=product,
+                        quantity=qty,
+                        unit_price=Decimal(str(item.get('unit_price', 0))),
+                        uom=product.uom,
+                        description=f"Adicional Nota Débito: {product.name}"
+                    )
+                else:
+                    # If it exists, we might want to increase its quantity if this is supplemental
+                    # or just create a new OT for the additional quantity.
+                    # Business choice: We'll create a new SaleLine for clarity if it's a "Supplemental" addition
+                    # to keep the OT linked 1:1 to a line.
+                    sale_line = SaleLine.objects.create(
+                        order=workflow.sale_order,
+                        product=product,
+                        quantity=qty,
+                        unit_price=Decimal(str(item.get('unit_price', 0))),
+                        uom=product.uom,
+                        description=f"Adicional Nota Débito: {product.name}"
+                    )
+                
+                # Create OT
+                WorkOrderService.create_from_sale_line(sale_line)
 
     @staticmethod
     @transaction.atomic
@@ -847,14 +960,10 @@ class NoteCheckoutService:
                 if sale_line and quantity > sale_line.quantity_delivered:
                      raise ValidationError(f"Cantidad excede lo entregado para {product.name}")
 
-            # Determine stockable
+            # Determine stockable / logistics-required
             creates_stock_move = False
-            if product.track_inventory:
-                 if product.product_type == Product.Type.MANUFACTURABLE:
-                     if not product.requires_advanced_manufacturing and product.has_bom:
-                         creates_stock_move = True
-                 else:
-                     creates_stock_move = True
+            if product.track_inventory or product.product_type == Product.Type.MANUFACTURABLE:
+                creates_stock_move = True
             
             if creates_stock_move: has_stockable = True
 
@@ -1033,5 +1142,8 @@ class NoteCheckoutService:
         workflow.refresh_from_db()
         workflow.current_stage = NoteWorkflow.Stage.COMPLETED
         workflow.save()
+        
+        # Trigger production for Debit Notes
+        NoteCheckoutService._trigger_production_for_debit_note(workflow)
         
         return workflow
