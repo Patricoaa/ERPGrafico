@@ -575,12 +575,15 @@ export function OrderCommandCenter({
                                         </div>
                                         <DialogDescription className="flex items-center gap-4">
                                             <span className="flex items-center gap-1.5 text-xs font-medium">
-                                                <span className="text-muted-foreground/30 ml-2">{type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV'}-{activeDoc.number || activeDoc.id}</span>
+                                                <span className="text-muted-foreground/30 ml-2">
+                                                    {isNoteMode ? (activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND') : (type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV')}
+                                                    -{activeDoc.number || activeDoc.id}
+                                                </span>
                                                 <span className="text-muted-foreground/30">|</span>
                                                 {new Date(activeDoc.created_at || activeDoc.date).toLocaleDateString()}
                                                 <span className="text-muted-foreground/30 ml-2">|</span>
                                                 <span className="text-foreground tracking-tight font-semibold ml-1">
-                                                    {type === 'purchase' ? activeDoc.supplier_name : activeDoc.customer_name}
+                                                    {isNoteMode ? (activeDoc.contact_name || activeDoc.contact?.name) : (type === 'purchase' ? activeDoc.supplier_name : activeDoc.customer_name)}
                                                 </span>
                                             </span>
                                         </DialogDescription>
