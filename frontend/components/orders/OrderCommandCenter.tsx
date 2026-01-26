@@ -371,6 +371,7 @@ export function OrderCommandCenter({
     if (!order && !activeInvoice) return null
 
     const isNoteMode = activeInvoice && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(activeInvoice.dte_type)
+    const isCreditNote = activeInvoice?.dte_type === 'NOTA_CREDITO'
     const activeDoc = activeInvoice || order
     if (!activeDoc) return null
 
@@ -515,7 +516,7 @@ export function OrderCommandCenter({
     const StatusIcon = globalStatus.icon
 
     // Calculate visible columns for dynamic width
-    const showProduction = isSale && ((order?.work_orders?.length || 0) > 0 || (activeDoc.lines || activeDoc.items || []).some((l: any) => l.is_manufacturable))
+    const showProduction = isSale && !isCreditNote && ((order?.work_orders?.length || 0) > 0 || (activeDoc.lines || activeDoc.items || []).some((l: any) => l.is_manufacturable))
     const showLogistics = (activeDoc.lines || activeDoc.items || []).length > 0 && !(activeDoc.lines || activeDoc.items || []).every((l: any) => l.product_type === 'SUBSCRIPTION')
 
     let visibleCols = 3 // Origen, Facturación, Tesorería
@@ -678,7 +679,7 @@ export function OrderCommandCenter({
                                 </PhaseCard>
 
                                 {/* 2. Producción */}
-                                {showProduction && !isNoteMode && (
+                                {showProduction && (
                                     <PhaseCard
                                         title="Producción"
                                         icon={ClipboardList}

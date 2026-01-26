@@ -249,7 +249,9 @@ export function Step2_Logistics({
                                 </TableHeader>
                                 <TableBody>
                                     {selectedItems.map((item) => {
-                                        const isEligible = item.creates_stock_move;
+                                        const isEligible = item.creates_stock_move ||
+                                            item.product_type === 'MANUFACTURABLE' ||
+                                            item.has_bom;
                                         const currentVal = (formData.line_data || [])
                                             .find((ld: any) => ld.line_id === item.line_id)?.quantity ?? 0;
 
