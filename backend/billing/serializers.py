@@ -118,11 +118,49 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return ""
 
     def get_related_stock_moves(self, obj):
-        if not obj.journal_entry:
-            return []
+        moves = []
         
-        from inventory.models import StockMove
-        moves = StockMove.objects.filter(journal_entry=obj.journal_entry)
+        # 1. Moves linked to the Note's JE (Direct)
+        if obj.journal_entry:
+            from inventory.models import StockMove
+            moves.extend(list(StockMove.objects.filter(journal_entry=obj.journal_entry)))
+            
+        # 2. Moves linked to related Logistics Documents (Indirect)
+        # Credit Notes -> Returns
+        if hasattr(obj, 'sale_returns'):
+            for ret in obj.sale_returns.all():
+                for line in ret.lines.all():
+                    if line.stock_move:
+                        moves.append(line.stock_move)
+        
+        if hasattr(obj, 'purchase_returns'):
+            for ret in obj.purchase_returns.all():
+                for line in ret.lines.all():
+                    if line.stock_move:
+                        moves.append(line.stock_move)
+                        
+        # Debit Notes -> Supplemental Deliveries/Receipts
+        if hasattr(obj, 'sale_deliveries'): # related_name='sale_deliveries' on SaleDelivery.related_note
+            for dele in obj.sale_deliveries.all():
+                 for line in dele.lines.all():
+                     if line.stock_move:
+                         moves.append(line.stock_move)
+        
+        if hasattr(obj, 'purchase_receipts'): # Check if PurchaseReceipt has related_note logic implemented
+             # Assuming related_name='purchase_receipts' or similar if implemented
+             # If not explicitly on model, we might skip or need to check model def.
+             # Based on previous file reads, PurchasingService.create_receipt_from_note was mentioned.
+             # Let's check if PurchaseReceipt has 'related_note'.
+             # For safety, use getattr or filter if possible, but object iteration is safer if attribute exists.
+             if hasattr(obj, 'purchase_receipts'):
+                 for rec in obj.purchase_receipts.all():
+                     for line in rec.lines.all():
+                         if line.stock_move:
+                             moves.append(line.stock_move)
+
+        # Build response
+        # Eliminate duplicates just in case
+        unique_moves = {m.id: m for m in moves}.values()
         
         return [{
             'id': m.id,
@@ -132,8 +170,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'quantity': m.quantity,
             'warehouse': m.warehouse.name,
             'move_type_display': m.get_move_type_display(),
-            'state': 'DONE' # Instantaneous moves are always DONE
-        } for m in moves]
+            'state': 'DONE'
+        } for m in unique_moves]
 
     def get_related_returns(self, obj):
         data = []

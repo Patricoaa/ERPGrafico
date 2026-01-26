@@ -259,7 +259,8 @@ class NoteCheckoutService:
                 'line_net': float(line_net),
                 'line_tax': float(line_tax),
                 'reason': item.get('reason', ''),
-                'creates_stock_move': creates_stock_move
+                'creates_stock_move': creates_stock_move,
+                'line_id': item.get('line_id')
             })
         
         # Update workflow
@@ -380,7 +381,8 @@ class NoteCheckoutService:
                     notes=notes,
                     credit_note=workflow.invoice
                 )
-                if delivery_type == 'IMMEDIATE':
+                # Confirm if IMMEDIATE or PARTIAL (since PARTIAL here means "Process this partial amount NOW")
+                if delivery_type in ['IMMEDIATE', 'PARTIAL']:
                     SalesReturnService.confirm_return(logistics_doc)
             else:
                 if workflow.purchase_order:
@@ -392,7 +394,7 @@ class NoteCheckoutService:
                         notes=notes,
                         credit_note=workflow.invoice
                     )
-                    if delivery_type == 'IMMEDIATE':
+                    if delivery_type in ['IMMEDIATE', 'PARTIAL']:
                         PurchaseReturnService.confirm_return(logistics_doc)
         else:
             # DEBIT NOTE -> SUPPLEMENTAL LOGISTICS (Reuse standard Delivery/Receipt)
@@ -889,17 +891,10 @@ class NoteCheckoutService:
         invoice.total = total_net + total_tax
         invoice.save()
 
-        # Update Sale Line quantities (Revert Delivered Qty if Credit Note)
-        if workflow.is_credit_note and workflow.sale_order:
-             for item in validated_items:
-                 product_id = item['product_id']
-                 qty = Decimal(str(item['quantity']))
-                 sale_line = workflow.sale_order.lines.filter(product_id=product_id).first()
-                 if sale_line:
-                     sale_line.quantity_delivered -= qty
-                     if sale_line.quantity_delivered < 0: sale_line.quantity_delivered = 0
-                     sale_line.save()
-                     print(f"DEBUG: Workflow - Reverted delivered qty for product {product_id} to {sale_line.quantity_delivered}")
+        # Update Sale Line quantities (REMOVED: Do not revert delivered qty from origin)
+        # Reason: The original delivery physically happened. Returns are tracked in SaleReturn documents.
+        # This keeps the original Order/Invoice Hub in 'Delivered' state correctly.
+        pass
 
         # 5. Process Logistics (Stock Moves)
         # Parse logistics data to determine what actually moves
@@ -911,6 +906,7 @@ class NoteCheckoutService:
             delivery_type = logistics_data.get('delivery_type', 'IMMEDIATE')
             warehouse = Warehouse.objects.get(id=warehouse_id)
             is_sale = workflow.sale_order is not None
+            is_credit_note = workflow.is_credit_note
             
             # Determine quantities to move
             items_to_move = []
@@ -952,39 +948,53 @@ class NoteCheckoutService:
                         'makes_move': item['creates_stock_move']
                     })
 
-            # Create Stock Moves
-            for move_item in items_to_move:
-                # Re-verify stockable (in case logic above was loose)
-                # We can check the validated_items list to be sure
-                val_item = next((i for i in validated_items if i['product_id'] == move_item['product_id']), None)
-                if not val_item or not val_item['creates_stock_move']:
-                    continue
-
-                product = Product.objects.get(id=move_item['product_id'])
-                quantity = move_item['quantity']
-                
-                # Store for Accounting usage
-                # Aggregate if multiple lines for same product (rare but possible)
-                moved_quantities[product.id] = moved_quantities.get(product.id, Decimal(0)) + quantity
-                
-                # Logic: Sale NC (Return) -> IN. Sale ND -> OUT.
-                # Logic: Purchase NC (Return) -> OUT. Purchase ND -> IN.
+            # Create Logistics via Services for consistency and document tracking
+            if is_credit_note:
                 if is_sale:
-                    move_type = StockMove.Type.IN if workflow.is_credit_note else StockMove.Type.OUT
+                    logistics_doc = SalesReturnService.create_return_from_note_request(
+                        order=workflow.sale_order,
+                        items=items_to_move,
+                        warehouse_id=warehouse_id,
+                        date=move_date,
+                        notes=logistics_data.get('notes', ''),
+                        credit_note=workflow.invoice
+                    )
+                    SalesReturnService.confirm_return(logistics_doc)
                 else:
-                    move_type = StockMove.Type.OUT if workflow.is_credit_note else StockMove.Type.IN
-                
-                signed_qty = quantity if move_type == StockMove.Type.IN else -quantity
-                
-                StockMove.objects.create(
-                    date=move_date,
-                    product=product,
-                    warehouse=warehouse,
-                    uom=product.uom,
-                    quantity=signed_qty,
-                    move_type=move_type,
-                    description=f"{invoice.get_dte_type_display()} {registration_data.get('document_number')} (REF: WF-{workflow.id})"
-                )
+                    logistics_doc = PurchaseReturnService.create_return_from_note_request(
+                        order=workflow.purchase_order,
+                        items=items_to_move,
+                        warehouse_id=warehouse_id,
+                        date=move_date,
+                        notes=logistics_data.get('notes', ''),
+                        credit_note=workflow.invoice
+                    )
+                    PurchaseReturnService.confirm_return(logistics_doc)
+            else:
+                # Debit Note logic
+                if is_sale:
+                        logistics_doc = SalesService.create_delivery_from_note(
+                        order=workflow.sale_order,
+                        warehouse=warehouse,
+                        line_data=items_to_move,
+                        delivery_date=move_date,
+                        notes=logistics_data.get('notes', ''),
+                        related_note=workflow.invoice
+                    )
+                else:
+                    logistics_doc = PurchasingService.create_receipt_from_note(
+                        order=workflow.purchase_order,
+                        warehouse=warehouse,
+                        line_data=items_to_move,
+                        receipt_date=move_date,
+                        notes=logistics_data.get('notes', ''),
+                        related_note=workflow.invoice
+                    )
+
+            if logistics_doc and logistics_doc.journal_entry:
+                entry_to_link = logistics_doc.journal_entry
+            else:
+                entry_to_link = None # Fallback
 
         # 6. document Registration (DTE & Accounting)
         doc_number = registration_data.get('document_number')
@@ -1008,8 +1018,10 @@ class NoteCheckoutService:
             JournalEntryService.post_entry(entry)
             
         # 6.5 Link created stock moves to the accounting entry for Hub visibility
-        # If immediate/partial return was selected, we search for the moves created in step 5
-        StockMove.objects.filter(description__contains=f"(REF: WF-{workflow.id})").update(journal_entry=entry)
+        # The movements are already linked to the Return/Delivery doc.
+        # If we want the NOTE's Hub to show them, they should be reachable.
+        # Our updated Serializer already looks into linked documents, so direct linking to 'entry' is optional but helpful.
+        pass
         
         # 7. Process Payment
         if payment_data:

@@ -743,7 +743,7 @@ export function OrderCommandCenter({
                                             actions: []
                                         })) : logisticsDocs}
                                         onViewDetail={openDetails}
-                                        actions={(isNoteMode ? (registry.returns?.actions || registry[isSale ? 'deliveries' : 'receptions']?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: any) => !a.id.includes('view-'))}
+                                        actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: any) => !a.id.includes('view-'))}
                                         emptyMessage={isNoteMode ? "Sin movimientos asociados" : "Sin movimientos"}
                                         order={activeDoc}
                                         userPermissions={userPermissions}
@@ -752,38 +752,45 @@ export function OrderCommandCenter({
                                         stageId="logistics"
                                         isComplete={logisticsProgress >= 100}
                                     >
-                                        {!isNoteMode ? (
-                                            <div className="space-y-1.5 py-1">
-                                                {(activeDoc?.lines || activeDoc?.items || []).map((line: any, idx: number) => {
-                                                    const total = parseFloat(line.quantity) || 1
-                                                    const current = parseFloat(isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0))
-                                                    const pct = Math.min(100, Math.round((current / total) * 100))
+                                        <div className="space-y-1.5 py-1">
+                                            {(activeDoc?.lines || activeDoc?.items || []).map((line: any, idx: number) => {
+                                                const total = parseFloat(line.quantity) || 1
+                                                const processedField = isSale
+                                                    ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
+                                                    : (line.quantity_received !== undefined ? 'quantity_received' : 'received_quantity')
 
-                                                    return (
-                                                        <div key={idx} className="space-y-0.5">
-                                                            <div className="flex items-center justify-between text-[10px] gap-2">
-                                                                <span className="text-foreground/70 line-clamp-1 flex-1">
-                                                                    {line.product_name || line.description}
-                                                                </span>
-                                                                <span className="shrink-0 font-bold text-primary/80">
-                                                                    {Math.round(showAnimations ? current : 0)}/{Math.round(total)}
-                                                                </span>
-                                                            </div>
-                                                            <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/30" : "bg-primary/30")}
-                                                                    style={{ width: `${showAnimations ? pct : 0}%` }}
-                                                                />
-                                                            </div>
+                                                const current = parseFloat(line[processedField] || 0)
+                                                const pct = Math.min(100, Math.round((current / total) * 100))
+
+                                                return (
+                                                    <div key={idx} className="space-y-0.5">
+                                                        <div className="flex items-center justify-between text-[10px] gap-2">
+                                                            <span className="text-foreground/70 line-clamp-1 flex-1">
+                                                                {line.product_name || line.description}
+                                                            </span>
+                                                            <span className="shrink-0 font-bold text-primary/80">
+                                                                {Math.round(showAnimations ? current : 0)}/{Math.round(total)}
+                                                            </span>
                                                         </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">
-                                                {activeInvoice.related_stock_moves?.length > 0 ? "Movimientos registrados" : "No se requieren movimientos"}
-                                            </div>
-                                        )}
+                                                        <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/30" : "bg-primary/30")}
+                                                                style={{ width: `${showAnimations ? pct : 0}%` }}
+                                                                role="progressbar"
+                                                                aria-valuenow={pct}
+                                                                aria-valuemin={0}
+                                                                aria-valuemax={100}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                            {isNoteMode && (activeDoc?.lines || []).length === 0 && (
+                                                <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">
+                                                    {activeInvoice.related_stock_moves?.length > 0 ? "Movimientos registrados" : "No se requieren movimientos"}
+                                                </div>
+                                            )}
+                                        </div>
                                     </PhaseCard>
                                 )}
 
@@ -939,7 +946,7 @@ export function OrderCommandCenter({
                                         ]
                                     }))}
                                     onViewDetail={openDetails}
-                                    actions={(isNoteMode ? (registry.returns?.actions || registry.payments?.actions || []) : (registry.payments?.actions || [])).filter((a: any) =>
+                                    actions={(isNoteMode ? (registry.payments?.actions || registry.returns?.actions || []) : (registry.payments?.actions || [])).filter((a: any) =>
                                         !a.id.includes('view-') &&
                                         (a.id.includes('history') ? (activeDoc?.related_documents?.payments?.length > 0 || activeDoc?.serialized_payments?.length > 0) : true)
                                     )}

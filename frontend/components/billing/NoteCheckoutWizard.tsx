@@ -170,6 +170,7 @@ export function NoteCheckoutWizard({
 
             // Items
             formData.append('selected_items', JSON.stringify(selectedItems.map(i => ({
+                line_id: i.line_id,
                 product_id: i.product_id,
                 quantity: i.quantity,
                 unit_price: i.unit_price,
