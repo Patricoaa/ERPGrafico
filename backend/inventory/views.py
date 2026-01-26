@@ -11,7 +11,8 @@ from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
     CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal, Subscription
 )
-from .services import StockService, ProcurementService
+from django.shortcuts import get_object_or_404
+from .services import StockService, ProcurementService, UoMService
 from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
@@ -349,6 +350,30 @@ class UoMViewSet(viewsets.ModelViewSet):
     serializer_class = UoMSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['category', 'active']
+
+    @action(detail=False, methods=['get'])
+    def allowed(self, request):
+        """
+        Returns allowed UoMs for a specific product and context.
+        Query params: product_id (required), context (optional, default 'sale')
+        """
+        product_id = request.query_params.get('product_id')
+        context = request.query_params.get('context', 'sale')
+
+        if not product_id:
+            return Response(
+                {"error": "product_id is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        product = get_object_or_404(Product, id=product_id)
+        
+        try:
+            queryset = UoMService.get_allowed_uoms_for_context(product, context)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class UoMCategoryViewSet(viewsets.ModelViewSet):
     queryset = UoMCategory.objects.all()

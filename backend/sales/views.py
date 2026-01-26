@@ -171,8 +171,12 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             import json
             try:
                 data['return_items'] = json.loads(data['return_items'])
-            except:
+            except Exception as e:
+                print(f"DEBUG: Error parsing return_items: {e}")
                 pass
+        
+        print(f"DEBUG: data['return_items'] type: {type(data.get('return_items'))}")
+        print(f"DEBUG: data['return_items'] value: {data.get('return_items')}")
                 
         from purchasing.serializers import NoteCreationSerializer
         serializer = NoteCreationSerializer(data=data)

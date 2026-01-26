@@ -68,8 +68,9 @@ class Command(BaseCommand):
         self.stdout.write('Creating Opening Balance...')
         self._create_opening_balance(accounts)
         
-        # Add initial stock for raw materials
+        # Add initial stock for all storable products
         self.stdout.write('Adding Initial Stock...')
+        self._add_initial_stock(accounts)
 
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
@@ -546,4 +547,82 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"  User 'admin' created with password 'admin123'"))
         else:
             self.stdout.write(f"  User 'admin' already exists")
+
+    def _add_initial_stock(self, accounts):
+        """
+        Creates initial inventory moves and accounting entries for all storable products.
+        """
+        warehouse = Warehouse.objects.first()
+        if not warehouse:
+            self.stdout.write(self.style.ERROR("  No warehouse found to add initial stock."))
+            return
+
+        settings = AccountingSettings.objects.first()
+        initial_inv_account = settings.initial_inventory_account if settings else accounts['capital']
+        
+        if not initial_inv_account:
+            self.stdout.write(self.style.ERROR("  No initial inventory account found."))
+            return
+
+        entry = JournalEntry.objects.create(
+            date=timezone.now().date(),
+            description="Carga Inicial de Inventario (Demo Data)",
+            reference="INIT-STOCK",
+            state=JournalEntry.State.POSTED,
+        )
+
+        products = Product.objects.filter(track_inventory=True)
+        total_value = Decimal('0')
+        count = 0
+
+        for product in products:
+            # Random initial quantity between 50 and 500
+            qty = Decimal(str(random.randint(50, 500)))
+            
+            # Determine a realistic cost based on sale price (approx 40-70% of sale price)
+            if product.sale_price > 0:
+                cost = (product.sale_price * Decimal(str(random.uniform(0.4, 0.7)))).quantize(Decimal('1'))
+            else:
+                # Default material costs
+                cost = Decimal(str(random.randint(500, 5000)))
+
+            # 1. Create Stock Move
+            StockMove.objects.create(
+                date=timezone.now().date(),
+                product=product,
+                warehouse=warehouse,
+                quantity=qty,
+                move_type=StockMove.Type.IN,
+                description="Carga Inicial Demo Data"
+            )
+
+            # Update product cost PMP
+            product.cost_price = cost
+            product.save()
+
+            # 2. Create Journal Item (Debit Inventory)
+            inv_account = product.get_asset_account or accounts['inventory_raw']
+            line_val = qty * cost
+            total_value += line_val
+
+            JournalItem.objects.create(
+                entry=entry,
+                account=inv_account,
+                debit=line_val,
+                credit=0,
+                label=f"Carga Inicial: {product.name}"
+            )
+            count += 1
+
+        # 3. Create Balanced Equity Entry (Credit)
+        if total_value > 0:
+            JournalItem.objects.create(
+                entry=entry,
+                account=initial_inv_account,
+                debit=0,
+                credit=total_value,
+                label="Contrapartida Carga Inicial Inventario"
+            )
+
+        self.stdout.write(f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}")
 

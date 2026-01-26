@@ -107,14 +107,9 @@ export const saleOrderActions: ActionRegistry = {
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
-                        // For Debit Note, we want to register a supplemental dispatch
-                        if (activeDoc.dte_type === 'NOTA_DEBITO') {
-                            const lines = activeDoc.lines || []
-                            const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
-                            const totalDelivered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_delivered || 0) || 0), 0)
-                            return totalDelivered < totalOrdered
-                        }
-                        return false
+                        // For Debit Note or Invoice, we want to allow registering delivery if the order is pending
+                        // Use order_delivery_status from the invoice serializer
+                        return activeDoc.order_delivery_status !== 'DELIVERED'
                     }
 
                     // Show if not fully delivered
@@ -184,12 +179,9 @@ export const saleOrderActions: ActionRegistry = {
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
-                        // For Debit Note, it works like a normal invoice (needs payment registration)
-                        // For Credit Note, we might want "Devolver Pago" instead.
-                        if (activeDoc.dte_type !== 'NOTA_DEBITO') return false
-
+                        // Allow registration for any posted document with pending balance
                         const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
-                        return hasPendingAmount && activeDoc.status !== 'CANCELLED'
+                        return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.status !== 'DRAFT'
                     }
 
                     // Show if there's a pending amount or order is not paid
@@ -270,20 +262,7 @@ export const saleOrderActions: ActionRegistry = {
                     return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    // Logic: Disabled IF:
-                    // 1. Invoice is DRAFT (Must be POSTED or PAID)
-                    // 2. Order NOT PAID (Must be fully paid)
-                    // 3. Order NOT DELIVERED (Must be fully delivered)
-                    // 4. Missing folio (Must have folio)
-
                     const invoices = order.related_documents?.invoices || []
-
-                    // Allow if ANY invoice is valid for NC, but usually we block if the order isn't fully ready.
-                    // Strict rules as per user request:
-                    // "Hasta que las facturas no esten en estado borrador, no se encuentren pagos pendientes, se encuentra completamente finalizao la logistica"
-
-                    const isOrderPaid = order.status === 'PAID'
-                    const isOrderDelivered = order.delivery_status === 'DELIVERED'
 
                     const hasIssuedFacturaWithFolio = invoices.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
@@ -292,7 +271,8 @@ export const saleOrderActions: ActionRegistry = {
                         inv.number !== 'Draft'
                     )
 
-                    return !isOrderPaid || !isOrderDelivered || !hasIssuedFacturaWithFolio
+                    // Relaxed rules: Only require a posted invoice with folio
+                    return !hasIssuedFacturaWithFolio
                 },
                 disabledTooltip: (order) => {
                     if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
@@ -319,11 +299,7 @@ export const saleOrderActions: ActionRegistry = {
                     return hasFactura && !hasBoleta
                 },
                 isDisabled: (order) => {
-                    // Same logic as Credit Note
                     const invoices = order.related_documents?.invoices || []
-
-                    const isOrderPaid = order.status === 'PAID'
-                    const isOrderDelivered = order.delivery_status === 'DELIVERED'
 
                     const hasIssuedFacturaWithFolio = invoices.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
@@ -332,7 +308,7 @@ export const saleOrderActions: ActionRegistry = {
                         inv.number !== 'Draft'
                     )
 
-                    return !isOrderPaid || !isOrderDelivered || !hasIssuedFacturaWithFolio
+                    return !hasIssuedFacturaWithFolio
                 },
                 disabledTooltip: (order) => {
                     if (order.status !== 'PAID') return "La orden debe estar completamente pagada"

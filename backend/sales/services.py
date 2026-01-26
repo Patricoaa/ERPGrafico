@@ -683,6 +683,7 @@ class SalesService:
     def create_note(order: SaleOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
                     document_number: str, document_attachment=None, return_items=None, original_invoice_id=None):
         print(f"DEBUG: create_note service started for order {order.number}")
+        print(f"DEBUG: note_type: {note_type}, return_items: {return_items}")
         """
         Creation of a Credit or Debit Note linked to a Sale Order.
         - note_type: NOTA_CREDITO or NOTA_DEBITO
@@ -825,59 +826,108 @@ class SalesService:
                     label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} IVA Global"
                 )
 
-        # 4. Inventory Moves (Credit Note Returns)
+        # 4. Inventory Moves & COGS Reversal (Credit Note Returns)
         if note_type == Invoice.DTEType.NOTA_CREDITO and return_items:
-            default_warehouse = Warehouse.objects.first()
+            # Determine target warehouse: Try last delivery warehouse, then first available
+            last_delivery = order.deliveries.filter(status='CONFIRMED').order_by('-id').first()
+            default_warehouse = last_delivery.warehouse if last_delivery else Warehouse.objects.first()
+            
+            if not default_warehouse:
+                print("WARNING: No warehouse found for return moves")
             
             for item in return_items:
-                product = Product.objects.get(id=item['product_id'])
-                quantity = Decimal(str(item['quantity']))
+                product_id = item.get('product_id')
+                if not product_id:
+                     print(f"DEBUG: item missing product_id: {item}")
+                     continue
+                     
+                product = Product.objects.get(id=product_id)
+                quantity = Decimal(str(item.get('quantity', 0)))
+                print(f"DEBUG: Processing return for product {product.name}, quantity {quantity}")
                 
                 if quantity <= 0: continue
                 
-                # Stock Move (IN) - Only if it's storable or we want to track the defect unit
-                # User specified: Manufacturable non-storable should return item but NOT components.
-                # So we ALWAYS create the move for the product itself, but skip component logic.
-                StockMove.objects.create(
-                    date=timezone.now().date(),
-                    product=product,
-                    warehouse=default_warehouse,
-                    quantity=quantity,
-                    move_type=StockMove.Type.IN,
-                    description=f"Devolución NC {document_number} - NV {order.number} (Defectuoso)",
-                    journal_entry=entry
-                )
+                # Update Sale Line quantities (Revert Delivered Qty)
+                sale_line = order.lines.filter(product=product).first()
+                if sale_line:
+                    sale_line.quantity_delivered -= quantity
+                    if sale_line.quantity_delivered < 0: sale_line.quantity_delivered = 0
+                    sale_line.save()
+                    print(f"DEBUG: Reverted delivered qty for line {sale_line.id} to {sale_line.quantity_delivered}")
                 
-                # Reverse COGS if applicable
-                unit_cost = product.cost_price 
+                # Check if we should track inventory for this move
+                if product.track_inventory:
+                    # Create Stock Move (IN) - Returning to stock
+                    StockMove.objects.create(
+                        date=timezone.now().date(),
+                        product=product,
+                        warehouse=default_warehouse,
+                        uom=product.uom,
+                        quantity=quantity,
+                        move_type=StockMove.Type.IN,
+                        description=f"Devolución NC {document_number} - NV {order.number}",
+                        journal_entry=entry
+                    )
+                    print(f"DEBUG: Created StockMove (IN) for {product.internal_code}")
+                
+                # REVERSE COGS
+                # Logic: We use the Original Unit Cost from deliveries if possible, then product.cost_price
+                original_delivery_line = None
+                if sale_line:
+                    original_delivery_line = SaleDeliveryLine.objects.filter(
+                        sale_line=sale_line,
+                        delivery__status='CONFIRMED'
+                    ).order_by('-id').first()
+                
+                unit_cost = original_delivery_line.unit_cost if original_delivery_line else product.cost_price
                 line_cogs = (quantity * unit_cost).quantize(Decimal('0.01'), rounding='ROUND_HALF_UP')
                 
+                print(f"DEBUG: Calculated Reversal COGS for {product.name}: {line_cogs} (Unit Cost: {unit_cost})")
+                
                 if line_cogs > 0:
-                    cogs_account = Account.objects.filter(code='5.1.01').first() or \
-                                   Account.objects.filter(account_type=AccountType.EXPENSE).first()
+                    # Get correct COGS and Inventory accounts from settings
+                    # Priority: Product Override -> Settings Type-based -> Settings Global Fallback
                     inventory_account = product.get_asset_account or settings.default_inventory_account
                     
+                    # COGS Account selection
+                    cogs_account = product.get_expense_account
+                    if not cogs_account:
+                        if product.product_type == Product.Type.STORABLE:
+                            cogs_account = settings.merchandise_cogs_account
+                        elif product.product_type == Product.Type.MANUFACTURABLE:
+                            cogs_account = settings.manufactured_cogs_account
+                        
+                    if not cogs_account:
+                        cogs_account = Account.objects.filter(code='5.1.01').first() or \
+                                       settings.default_expense_account
+                    
                     if cogs_account and inventory_account:
-                        # Debit: Inventory (Asset)
+                        # Reversal Entries:
+                        # Original Sale: Dr COGS, Cr Inventory
+                        # RETURN Reversal: Dr Inventory, Cr COGS
+                        
+                        # Debit: Inventory (Asset increases)
                         JournalItem.objects.create(
                             entry=entry,
                             account=inventory_account,
                             debit=line_cogs,
                             credit=0,
-                            label=f"Reincorporación Stock - {product.code}"
+                            label=f"Reingreso Stock - {product.code or product.id}"
                         )
-                        # Credit: COGS (Expense)
+                        # Credit: COGS (Expense decreases)
                         JournalItem.objects.create(
                             entry=entry,
                             account=cogs_account,
                             debit=0,
                             credit=line_cogs,
-                            label=f"Reverso COGS - {product.code}"
+                            label=f"Reverso COGS - NV {order.number}"
                         )
+                        print(f"DEBUG: Created JournalItems for COGS reversal (Inv: {inventory_account.code}, COGS: {cogs_account.code})")
+                    else:
+                        print(f"DEBUG: Skipping accounting items - missing accounts (Inv: {inventory_account}, COGS: {cogs_account})")
 
         JournalEntryService.post_entry(entry)
         invoice.journal_entry = entry
         invoice.save()
         
         return invoice
-

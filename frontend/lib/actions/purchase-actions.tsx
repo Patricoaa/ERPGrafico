@@ -66,12 +66,16 @@ export const purchaseOrderActions: ActionRegistry = {
                 icon: Package,
                 requiredPermissions: ['inventory.add_stockmove'],
                 excludedStatus: ['CANCELLED'],
-                checkAvailability: (order) => {
-                    if (!order) return false
-                    // Show if not fully received and has physical products
-                    const lines = order.lines || order.items || []
-                    const hasProducts = lines.some((l: any) => l.product_type !== 'SERVICE' && (parseFloat(l.quantity_pending) || 0) > 0)
-                    return order.receiving_status !== 'RECEIVED' && hasProducts
+                checkAvailability: (activeDoc) => {
+                    if (!activeDoc) return false
+                    const isInvoiced = !!activeDoc.dte_type
+
+                    if (isInvoiced) {
+                        return activeDoc.po_receiving_status !== 'RECEIVED'
+                    }
+
+                    // Default logic
+                    return activeDoc.receiving_status !== 'RECEIVED'
                 },
                 badge: { type: 'pending' }
             },
@@ -152,11 +156,9 @@ export const purchaseOrderActions: ActionRegistry = {
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
-                        // For Purchase Debit Note, we need to register a payment TO supplier
-                        if (activeDoc.dte_type !== 'NOTA_DEBITO') return false
-
+                        // Allow registration for any posted document with pending balance
                         const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
-                        return hasPendingAmount && activeDoc.status !== 'CANCELLED'
+                        return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.status !== 'DRAFT'
                     }
 
                     // Show if there's a pending amount or order is not paid
