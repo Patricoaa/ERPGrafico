@@ -117,7 +117,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     pending_amount = serializers.SerializerMethodField()
     serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
     related_documents = serializers.SerializerMethodField()
-    work_orders = WorkOrderSerializer(many=True, read_only=True)
+    work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
     has_pending_work_orders = serializers.SerializerMethodField()
 
@@ -148,15 +148,15 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             else:
                 docs['invoices'].append(doc_info)
 
-        for deliv in obj.deliveries.all():
+        # Only include deliveries NOT linked to a note (original order deliveries)
+        for deliv in obj.deliveries.filter(related_note__isnull=True):
             docs['deliveries'].append({
                 'id': deliv.id,
                 'number': deliv.number,
                 'display_id': deliv.display_id,
                 'status': deliv.status,
                 'date': deliv.delivery_date,
-                'docType': 'sale_delivery',
-                'related_note': deliv.related_note_id
+                'docType': 'sale_delivery'
             })
 
         for pay in obj.payments.all():
@@ -177,9 +177,14 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             })
 
         return docs
+    
+    def get_work_orders(self, obj):
+        # Only include OTs NOT linked to a note (original order OTs)
+        ots = obj.work_orders.filter(related_note__isnull=True)
+        return WorkOrderSerializer(ots, many=True).data
 
     def get_has_pending_work_orders(self, obj):
-        return obj.work_orders.exclude(status='FINISHED').exists()
+        return obj.work_orders.filter(related_note__isnull=True).exclude(status='FINISHED').exists()
 
     def get_total_paid(self, obj):
         return sum(p.amount for p in obj.payments.all())
@@ -188,7 +193,8 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return obj.total - self.get_total_paid(obj)
 
     def get_production_progress(self, obj):
-        wos = obj.work_orders.all()
+        # Only calculate progress for OTs NOT linked to notes
+        wos = obj.work_orders.filter(related_note__isnull=True)
         if not wos.exists():
             return 0
         total_progress = sum(WorkOrderSerializer(wo).data.get('production_progress', 0) for wo in wos)

@@ -391,15 +391,8 @@ export function OrderCommandCenter({
         return translateStatus(status).toUpperCase()
     }
 
-    const filteredWorkOrders = (order?.work_orders || []).filter((ot: any) => {
-        if (isNoteMode) return ot.origin_note === activeInvoice?.id;
-        return !ot.origin_note;
-    });
-
-    const totalOTs = filteredWorkOrders.length
-    const totalOTProgress = totalOTs > 0
-        ? filteredWorkOrders.reduce((acc: number, ot: any) => acc + (ot.production_progress || 0), 0) / totalOTs
-        : 0
+    const totalOTs = order?.work_orders?.length || 0
+    const totalOTProgress = order?.production_progress || 0
 
     // Calculate if there are issues with invoices (drafts or missing folio)
     // MUST be declared before logisticsDocs since it's used there
@@ -444,16 +437,7 @@ export function OrderCommandCenter({
         }))
 
         const specificDocs = isSale ? activeDoc.related_documents?.deliveries : (activeDoc.related_documents?.receipts || activeDoc.related_documents?.receptions)
-
-        // Filter deliveries: 
-        // - If in Note Hub, show only those linked to this note.
-        // - If in Main Hub, show only those NOT linked to any note.
-        const filteredDocs = (specificDocs || []).filter((doc: any) => {
-            if (isNoteMode) return doc.related_note === activeInvoice?.id;
-            return !doc.related_note;
-        });
-
-        return filteredDocs.map((doc: any) => ({
+        return (specificDocs || []).map((doc: any) => ({
             type: isSale ? 'Despacho' : 'Recepción',
             number: formatDocumentId(isSale ? 'DES' : 'REC', doc.number || doc.id, doc.display_id),
             icon: Package,
@@ -703,7 +687,7 @@ export function OrderCommandCenter({
                                         title="Producción"
                                         icon={ClipboardList}
                                         variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
-                                        documents={filteredWorkOrders.map((ot: any) => ({
+                                        documents={order?.work_orders?.map((ot: any) => ({
                                             type: 'Orden de Trabajo',
                                             number: ot.display_id || `OT-${ot.code || ot.id}`,
                                             icon: ClipboardList,

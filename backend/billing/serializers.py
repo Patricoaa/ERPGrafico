@@ -24,6 +24,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     adjustments = serializers.SerializerMethodField()
     corrected_invoice = serializers.SerializerMethodField()
     order_delivery_status = serializers.SerializerMethodField()
+    work_orders = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -230,6 +231,14 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if obj.purchase_order:
             return obj.purchase_order.receiving_status
         return None
+    
+    def get_work_orders(self, obj):
+        # Only include Work Orders for Debit Notes
+        if obj.dte_type == Invoice.DTEType.NOTA_DEBITO:
+            from production.serializers import WorkOrderSerializer
+            ots = obj.work_orders.all()
+            return WorkOrderSerializer(ots, many=True).data
+        return []
 
 class CreateInvoiceSerializer(serializers.Serializer):
     order_id = serializers.IntegerField()
