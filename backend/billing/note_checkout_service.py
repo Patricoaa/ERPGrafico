@@ -14,6 +14,12 @@ from purchasing.return_services import PurchaseReturnService
 from sales.services import SalesService
 from purchasing.services import PurchasingService
 
+class NoteCheckoutService:
+    """
+    Service for handling multi-stage checkout of Credit/Debit Notes.
+    Replaces atomic create_note with a staged workflow similar to SalesCheckoutWizard.
+    """
+
     @staticmethod
     @transaction.atomic
     def process_logistics_from_invoice(
@@ -90,10 +96,6 @@ from purchasing.services import PurchasingService
                     related_note=invoice
                 )
         return doc
-    """
-    Service for handling multi-stage checkout of Credit/Debit Notes.
-    Replaces atomic create_note with a staged workflow similar to SalesCheckoutWizard.
-    """
     
     @staticmethod
     @transaction.atomic
