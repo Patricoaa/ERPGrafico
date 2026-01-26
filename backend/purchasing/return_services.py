@@ -98,6 +98,35 @@ class PurchaseReturnService:
                 uom_id=item.get('uom_id'), # Optional UoM
                 unit_cost=item.get('unit_cost', product.cost_price) # Snapshot cost
             )
+
+        # VALIDATION: Check total returned quantity against Credit Note limits (Purchase Side)
+        if credit_note:
+            for item in items:
+                p_id = item['product_id']
+                
+                # 1. Get allocated qty in NC
+                nc_qty = Decimal(0)
+                if hasattr(credit_note, 'workflow') and credit_note.workflow and credit_note.workflow.selected_items:
+                    for nc_item in credit_note.workflow.selected_items:
+                        if nc_item['product_id'] == p_id:
+                            nc_qty += Decimal(str(nc_item['quantity']))
+                
+                if nc_qty > 0:
+                    # 2. Get total already returned
+                    total_returned = Decimal(0)
+                    linked_returns = PurchaseReturn.objects.filter(
+                        credit_note=credit_note
+                    ).exclude(status=PurchaseReturn.Status.CANCELLED)
+                    
+                    for ret in linked_returns:
+                        for line in ret.lines.all():
+                            if line.product_id == p_id:
+                                total_returned += line.quantity
+                    
+                    if total_returned > nc_qty:
+                         raise ValidationError(
+                            f"La cantidad total a devolver ({total_returned}) excede la cantidad autorizada en la Nota de Crédito ({nc_qty}) para el producto ID {p_id}."
+                        )
             
         ret_doc.save() # Trigger totals calc
         return ret_doc

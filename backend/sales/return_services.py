@@ -115,6 +115,51 @@ class ReturnService:
                 unit_price=item.get('unit_price', 0), # Optional reference
                 unit_cost=original_cost # Snapshot ORIGINAL cost
             )
+
+        # VALIDATION: Check total returned quantity against Credit Note limits
+        if credit_note:
+            # Re-fetch lines to include the newly created ones (or calculate manually)
+            # We want to ensure Sum(Returns linked to this NC) <= NC Quantity
+            
+            for item in items:
+                p_id = item['product_id']
+                qty_attempted = Decimal(str(item['quantity']))
+                
+                # Get NC line quantity
+                # NC lines are stored in workflow.selected_items (JSON) or we might need to rely on the fact 
+                # that 'credit_note' model usually doesn't store lines in a related table if it was created via workflow,
+                # BUT the Invoice serializer creates a 'lines' representation.
+                # However, for robustness, we look at the Workflow data if available, or just assume the user knows.
+                # BETTER APPROACH: The NC itself doesn't track "remaining". 
+                # But we can check if Sum(All Returns for this NC) > NC Total Qty for that product.
+                
+                # 1. Get allocated qty in NC
+                nc_qty = Decimal(0)
+                if hasattr(credit_note, 'workflow') and credit_note.workflow and credit_note.workflow.selected_items:
+                    for nc_item in credit_note.workflow.selected_items:
+                        if nc_item['product_id'] == p_id:
+                            nc_qty += Decimal(str(nc_item['quantity']))
+                
+                if nc_qty > 0:
+                    # 2. Get total already returned (including this new doc's lines)
+                    # We filter returns linked to this credit_note, EXCLUDING cancelled ones
+                    total_returned = Decimal(0)
+                    linked_returns = SaleReturn.objects.filter(
+                        credit_note=credit_note
+                    ).exclude(status=SaleReturn.Status.CANCELLED)
+                    
+                    for ret in linked_returns:
+                        for line in ret.lines.all():
+                            if line.product_id == p_id:
+                                total_returned += line.quantity
+                    
+                    if total_returned > nc_qty:
+                        # Rollback!
+                        # Since we are in atomic block, raising error will rollback everything including ret_doc creation
+                        raise ValidationError(
+                            f"La cantidad total a devolver ({total_returned}) excede la cantidad autorizada en la Nota de Crédito ({nc_qty}) para el producto ID {p_id}."
+                        )
+            
             
         ret_doc.save() # Trigger totals calc
         return ret_doc

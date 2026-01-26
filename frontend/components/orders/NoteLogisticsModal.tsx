@@ -46,6 +46,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
+    const [displayLines, setDisplayLines] = useState<InvoiceLine[]>(invoice?.lines || [])
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [notes, setNotes] = useState("")
     const [loading, setLoading] = useState(true)
@@ -53,10 +54,12 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
 
     const isSale = !!invoice?.sale_order || !!invoice?.sale_order_number
     const isCredit = invoice?.dte_type === 'NOTA_CREDITO'
-    const lines = invoice?.lines || []
+    // const lines = invoice?.lines || [] // REMOVED: Use displayLines instead
 
     useEffect(() => {
         if (open && invoice) {
+            // Reset display lines to props initially while loading fresh data
+            setDisplayLines(invoice.lines || [])
             fetchData()
         }
     }, [open, invoice])
@@ -73,17 +76,28 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                 setSelectedWarehouse(warehousesList[0].id)
             }
 
-            // Initialize quantities with pending
+            // Fetch FRESH invoice data to ensure we have latest 'quantity_delivered'/'quantity_received'
+            // The serializer logic augments these fields with (Sum of Returns)
+            const invoiceResponse = await api.get(`/billing/invoices/${invoice.id}/`)
+            const freshInvoice = invoiceResponse.data
+            const freshLines = freshInvoice.lines || []
+
+            setDisplayLines(freshLines)
+
+            // Initialize quantities with pending based on FRESH data
             const initial: { [pId: number]: number } = {}
-            lines.forEach((line: InvoiceLine) => {
+            freshLines.forEach((line: InvoiceLine) => {
+                // Determine processed qty based on type
+                // Note: The serializer returns 'quantity_delivered' for Sales (even if it's returns for NC)
+                // and 'quantity_received' for Purchases.
                 const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
                 const pending = Math.max(0, line.quantity - processed)
                 initial[line.product_id] = pending
             })
             setProcessQuantities(initial)
         } catch (error) {
-            console.error("Error fetching warehouses:", error)
-            toast.error("Error al cargar datos iniciales")
+            console.error("Error fetching data:", error)
+            toast.error("Error al cargar datos actualizados del documento")
         } finally {
             setLoading(false)
         }
@@ -186,7 +200,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {lines.map((line: any) => {
+                                    {displayLines.map((line: any) => {
                                         const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
                                         const pending = Math.max(0, line.quantity - processed)
 

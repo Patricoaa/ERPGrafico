@@ -637,45 +637,10 @@ class NoteCheckoutService:
                 label=f"{product.name} - {item['reason']}" if item.get('reason') else product.name
             )
             
-            # 2. COGS Reversal (If quantity moved and it's a sale order)
-            # Logic: Sale NC -> Dr Inventory, Cr COGS
-            # Logic: Purchase NC -> Dr Stock Bridge, Cr Inventory (Handled via normal Return Document usually, but here too)
-            product_qty_moved = moved_quantities.get(product.id, Decimal(0)) if moved_quantities else Decimal(0)
-            
-            if is_sale and workflow.is_credit_note and product_qty_moved > 0:
-                # Find ORIGINAL cost from deliveries
-                from sales.models import SaleDeliveryLine
-                original_delivery_line = SaleDeliveryLine.objects.filter(
-                    sale_line__order=workflow.sale_order,
-                    product=product,
-                    delivery__status='CONFIRMED'
-                ).order_by('-id').first()
-                
-                unit_cost = original_delivery_line.unit_cost if original_delivery_line else product.cost_price
-                line_cogs = (product_qty_moved * unit_cost).quantize(Decimal('0.01'), rounding='ROUND_HALF_UP')
-                
-                if line_cogs > 0:
-                    # Accounts from settings
-                    inventory_account = product.get_asset_account or settings.default_inventory_account
-                    cogs_account = product.get_expense_account or settings.merchandise_cogs_account or settings.default_expense_account
-                    
-                    if inventory_account and cogs_account:
-                        # Dr Inventory
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=inventory_account,
-                            debit=line_cogs,
-                            credit=0,
-                            label=f"Reingreso Stock - {product.code or product.id}"
-                        )
-                        # Cr COGS
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=cogs_account,
-                            debit=0,
-                            credit=line_cogs,
-                            label=f"Reverso COGS - NV {workflow.sale_order.number}"
-                        )
+            # 2. COGS Reversal: REMOVED
+            # Responsability moved to Logistics Documents (Returns/deliveries)
+            # The Note only handles Revenue/Expense Reversal + AR/AP + Tax.
+            pass
         
         # Tax entry
         if invoice.total_tax > 0:
