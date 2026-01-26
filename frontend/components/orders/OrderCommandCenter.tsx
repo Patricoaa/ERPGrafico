@@ -391,8 +391,11 @@ export function OrderCommandCenter({
         return translateStatus(status).toUpperCase()
     }
 
-    const totalOTs = order?.work_orders?.length || 0
-    const totalOTProgress = order?.production_progress || 0
+    // Production Progress
+    const totalOTs = activeDoc.work_orders?.length || 0
+    const totalOTProgress = totalOTs > 0
+        ? (activeDoc.work_orders || []).reduce((sum: number, ot: any) => sum + (ot.production_progress || 0), 0) / totalOTs
+        : 0
 
     // Calculate if there are issues with invoices (drafts or missing folio)
     // MUST be declared before logisticsDocs since it's used there
@@ -687,7 +690,7 @@ export function OrderCommandCenter({
                                         title="Producción"
                                         icon={ClipboardList}
                                         variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
-                                        documents={order?.work_orders?.map((ot: any) => ({
+                                        documents={activeDoc.work_orders?.map((ot: any) => ({
                                             type: 'Orden de Trabajo',
                                             number: ot.display_id || `OT-${ot.code || ot.id}`,
                                             icon: ClipboardList,
