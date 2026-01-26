@@ -34,10 +34,13 @@ export const saleOrderActions: ActionRegistry = {
                 label: 'Registrar Folio',
                 icon: FileEdit,
                 requiredPermissions: ['billing.change_invoice'],
-                checkAvailability: (order) => {
-                    if (!order) return false
-                    // Show if there's any invoice without a real folio number
-                    const invoices = order.related_documents?.invoices || order.invoices || []
+                checkAvailability: (activeDoc) => {
+                    if (!activeDoc) return false
+                    const isInvoiced = !!activeDoc.dte_type
+                    if (isInvoiced) {
+                        return activeDoc.status === 'DRAFT' || activeDoc.number === 'Draft' || !activeDoc.number
+                    }
+                    const invoices = activeDoc.related_documents?.invoices || activeDoc.invoices || []
                     return invoices.some((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
                 },
                 badge: { type: 'warning', label: 'Pendiente' },
@@ -99,10 +102,23 @@ export const saleOrderActions: ActionRegistry = {
                 icon: Package,
                 requiredPermissions: ['inventory.add_stockmove'],
                 excludedStatus: ['CANCELLED'],
-                checkAvailability: (order) => {
-                    if (!order) return false
+                checkAvailability: (activeDoc) => {
+                    if (!activeDoc) return false
+                    const isInvoiced = !!activeDoc.dte_type
+
+                    if (isInvoiced) {
+                        // For Debit Note, we want to register a supplemental dispatch
+                        if (activeDoc.dte_type === 'NOTA_DEBITO') {
+                            const lines = activeDoc.lines || []
+                            const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+                            const totalDelivered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_delivered || 0) || 0), 0)
+                            return totalDelivered < totalOrdered
+                        }
+                        return false
+                    }
+
                     // Show if not fully delivered
-                    return order.delivery_status !== 'DELIVERED'
+                    return activeDoc.delivery_status !== 'DELIVERED'
                 },
                 badge: { type: 'pending' }
             },
@@ -111,14 +127,28 @@ export const saleOrderActions: ActionRegistry = {
                 label: 'Devolver Mercadería',
                 icon: PackageMinus,
                 requiredPermissions: ['inventory.add_stockmove'],
-                checkAvailability: (order) => {
+                checkAvailability: (activeDoc) => {
+                    if (!activeDoc) return false
+                    const isInvoiced = !!activeDoc.dte_type
+
+                    if (isInvoiced) {
+                        // For Credit Note, "Deolver Mercadería" is a primary action if pending
+                        if (activeDoc.dte_type === 'NOTA_CREDITO') {
+                            const lines = activeDoc.lines || []
+                            const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+                            const totalDelivered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_delivered || 0) || 0), 0)
+                            return totalDelivered < totalOrdered
+                        }
+                        return false
+                    }
+
                     // Only if invoice is DRAFT
-                    const hasDraftInvoice = order.related_documents?.invoices?.some(
+                    const hasDraftInvoice = activeDoc.related_documents?.invoices?.some(
                         (inv: any) => inv.status === 'DRAFT'
                     )
 
                     // Only if has delivered stockable products
-                    const lines = order.lines || order.items || []
+                    const lines = activeDoc.lines || activeDoc.items || []
                     const hasStockableDelivered = lines.some((line: any) =>
                         (line.quantity_delivered || 0) > 0 && line.product?.track_inventory
                     )
@@ -149,11 +179,22 @@ export const saleOrderActions: ActionRegistry = {
                 label: 'Registrar Pago',
                 icon: Banknote,
                 requiredPermissions: ['treasury.add_payment'],
-                checkAvailability: (order) => {
-                    if (!order) return false
+                checkAvailability: (activeDoc) => {
+                    if (!activeDoc) return false
+                    const isInvoiced = !!activeDoc.dte_type
+
+                    if (isInvoiced) {
+                        // For Debit Note, it works like a normal invoice (needs payment registration)
+                        // For Credit Note, we might want "Devolver Pago" instead.
+                        if (activeDoc.dte_type !== 'NOTA_DEBITO') return false
+
+                        const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
+                        return hasPendingAmount && activeDoc.status !== 'CANCELLED'
+                    }
+
                     // Show if there's a pending amount or order is not paid
-                    const hasPendingAmount = (order.pending_amount ?? 0) > 0
-                    return hasPendingAmount || (order.status !== 'PAID' && order.status !== 'CANCELLED')
+                    const hasPendingAmount = (activeDoc.pending_amount ?? 0) > 0
+                    return hasPendingAmount || (activeDoc.status !== 'PAID' && activeDoc.status !== 'CANCELLED')
                 },
                 badge: { type: 'pending' },
                 excludedStatus: ['CANCELLED']
@@ -163,14 +204,26 @@ export const saleOrderActions: ActionRegistry = {
                 label: 'Devolver Pago',
                 icon: DollarSign,
                 requiredPermissions: ['treasury.add_payment'],
-                checkAvailability: (order) => {
+                checkAvailability: (activeDoc) => {
+                    if (!activeDoc) return false
+                    const isInvoiced = !!activeDoc.dte_type
+
+                    if (isInvoiced) {
+                        // For Credit Note, this IS the primary treasury action
+                        if (activeDoc.dte_type === 'NOTA_CREDITO') {
+                            const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
+                            return hasPendingAmount && activeDoc.status !== 'CANCELLED'
+                        }
+                        return false
+                    }
+
                     // Only if invoice is DRAFT
-                    const hasDraftInvoice = order.related_documents?.invoices?.some(
+                    const hasDraftInvoice = activeDoc.related_documents?.invoices?.some(
                         (inv: any) => inv.status === 'DRAFT'
                     )
 
                     // Only if has posted payments
-                    const payments = order.related_documents?.payments || []
+                    const payments = activeDoc.related_documents?.payments || []
                     const hasPostedPayments = payments.some(
                         (pay: any) => pay.journal_entry?.state === 'POSTED'
                     )

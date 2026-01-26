@@ -886,8 +886,30 @@ export function OrderCommandCenter({
                                         id: pay.id,
                                         docType: 'payment',
                                         status: pay.payment_method,
-                                        actions: []
+                                        actions: [
+                                            ...(((
+                                                (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
+                                                (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
+                                            ) && !pay.transaction_number) ? [{
+                                                icon: Hash,
+                                                title: 'Registrar N° Transacción',
+                                                color: 'text-orange-600 hover:bg-orange-600/10',
+                                                onClick: () => setTrForm({
+                                                    open: true,
+                                                    id: pay.id,
+                                                    initialValue: pay.transaction_number || ""
+                                                })
+                                            }] : []),
+                                            // Only show payment annulment if invoice is DRAFT
+                                            ...((activeInvoice.status === 'DRAFT') ? [{
+                                                icon: Ban,
+                                                title: 'Anular Pago',
+                                                color: 'text-red-600 hover:bg-red-600/10',
+                                                onClick: () => handleDeletePayment(pay.id)
+                                            }] : [])
+                                        ]
                                     })) : (activeDoc?.serialized_payments || activeDoc?.payments_detail || activeDoc?.related_documents?.payments || []).map((pay: any) => ({
+                                        // ...
                                         type: pay.payment_type === 'INBOUND' ? 'Ingreso' : 'Egreso',
                                         number: formatDocumentId(pay.payment_type === 'INBOUND' ? 'ING' : 'EGR', pay.id, pay.display_id),
                                         icon: Banknote,
@@ -965,6 +987,8 @@ export function OrderCommandCenter({
                                 ref={actionEngineRef}
                                 category={{
                                     actions: [
+                                        ...(isNoteMode ? (registry.documents?.actions || []) : []),
+                                        ...(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || []) : []),
                                         ...(registry.notes?.actions || []),
                                         ...(registry.payments?.actions || [])
                                     ]
