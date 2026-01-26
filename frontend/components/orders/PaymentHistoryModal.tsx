@@ -41,7 +41,7 @@ export function PaymentHistoryModal({
     onOpenChange,
     order
 }: PaymentHistoryModalProps) {
-    const payments = order.related_documents?.payments || order.serialized_payments || []
+    const payments = order.serialized_payments || order.related_documents?.payments || []
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,7 +49,7 @@ export function PaymentHistoryModal({
                 <DialogHeader className="border-b pb-4">
                     <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                         <Landmark className="h-6 w-6 text-primary" />
-                        Historial de Pagos y Referencias - Orden {order.number}
+                        Historial de Pagos y Referencias - {order.number ? ((order.dte_type === 'NOTA_CREDITO' ? 'NC-' : order.dte_type === 'NOTA_DEBITO' ? 'ND-' : '') + order.number) : 'Borrador'}
                     </DialogTitle>
                 </DialogHeader>
 

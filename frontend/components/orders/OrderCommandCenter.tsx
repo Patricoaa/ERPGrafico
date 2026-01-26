@@ -551,7 +551,7 @@ export function OrderCommandCenter({
                                                 <LayoutDashboard className="h-6 w-6 text-primary" />
                                                 {isNoteMode ? (
                                                     <span className="flex items-center gap-2">
-                                                        HUB de {activeInvoice.dte_type_display}
+                                                        HUB de {activeInvoice.dte_type_display} {(activeInvoice.number && activeInvoice.number !== 'Draft') ? `${activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-'}${activeInvoice.number}` : '(BORRADOR)'}
                                                     </span>
                                                 ) : "HUB de mando"}
                                                 <span className="text-muted-foreground font-light mx-2">|</span>
@@ -957,7 +957,7 @@ export function OrderCommandCenter({
                                     onViewDetail={openDetails}
                                     actions={(isNoteMode ? (registry.payments?.actions || registry.returns?.actions || []) : (registry.payments?.actions || [])).filter((a: any) =>
                                         !a.id.includes('view-') &&
-                                        (a.id.includes('history') ? (activeDoc?.related_documents?.payments?.length > 0 || activeDoc?.serialized_payments?.length > 0) : true)
+                                        (a.id.includes('history') ? (isNoteMode ? (activeInvoice?.serialized_payments?.length > 0) : (activeDoc?.related_documents?.payments?.length > 0 || activeDoc?.serialized_payments?.length > 0)) : true)
                                     )}
                                     emptyMessage={isNoteMode ? "Sin devoluciones registradas" : "Sin pagos registrados"}
                                     order={activeDoc}
@@ -967,7 +967,7 @@ export function OrderCommandCenter({
                                 >
                                     <div className="space-y-1 py-1">
                                         <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
-                                            <span>{isNoteMode ? 'DEVUELTO' : 'PAGADO'}</span>
+                                            <span>{isNoteMode ? (activeInvoice.dte_type === 'NOTA_CREDITO' ? 'DEVUELTO' : 'PAGADO') : 'PAGADO'}</span>
                                             <span className="text-primary">
                                                 {isNoteMode ?
                                                     Math.round(showAnimations ? (1 - ((parseFloat(activeInvoice?.pending_amount || '0')) / (parseFloat(activeInvoice?.total) || 1))) * 100 : 0) + '%' :
@@ -987,8 +987,12 @@ export function OrderCommandCenter({
                                         )}
                                         {isNoteMode && parseFloat(activeInvoice?.pending_amount || '0') > 0 && (
                                             <div className="flex justify-between items-center text-[10px] mt-1 border-t border-white/5 pt-1">
-                                                <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">POR DEVOLVER</span>
-                                                <span className="font-bold text-orange-500/80">${Math.round(parseFloat(activeInvoice?.pending_amount || '0')).toLocaleString()}</span>
+                                                <span className="text-muted-foreground/60 font-black uppercase tracking-widest text-[8px]">
+                                                    {activeInvoice.dte_type === 'NOTA_CREDITO' ? 'POR DEVOLVER' : 'POR COBRAR'}
+                                                </span>
+                                                <span className={cn("font-bold tracking-tighter", activeInvoice.dte_type === 'NOTA_CREDITO' ? "text-orange-500/80" : "text-emerald-500/80")}>
+                                                    ${Math.round(parseFloat(activeInvoice?.pending_amount || '0')).toLocaleString()}
+                                                </span>
                                             </div>
                                         )}
                                     </div>

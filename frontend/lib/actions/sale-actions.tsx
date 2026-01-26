@@ -107,12 +107,18 @@ export const saleOrderActions: ActionRegistry = {
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
-                        // For Debit Note or Invoice, we want to allow registering delivery if the order is pending
-                        // Use order_delivery_status from the invoice serializer
+                        // For Debit Note, allow if its own lines are not fully delivered
+                        if (activeDoc.dte_type === 'NOTA_DEBITO') {
+                            const lines = activeDoc.lines || []
+                            const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+                            const totalDelivered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_delivered || 0) || 0), 0)
+                            return totalDelivered < totalOrdered
+                        }
+                        // Fallback for regular invoices linked to orders
                         return activeDoc.order_delivery_status !== 'DELIVERED'
                     }
 
-                    // Show if not fully delivered
+                    // Show if not fully delivered for orders
                     return activeDoc.delivery_status !== 'DELIVERED'
                 },
                 badge: { type: 'pending' }
@@ -181,7 +187,8 @@ export const saleOrderActions: ActionRegistry = {
                     if (isInvoiced) {
                         // Allow registration for any posted document with pending balance
                         const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
-                        return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.status !== 'DRAFT'
+                        // For ND, also allow in DRAFT if it corrections/additions are being paid early
+                        return hasPendingAmount && activeDoc.status !== 'CANCELLED'
                     }
 
                     // Show if there's a pending amount or order is not paid
