@@ -554,7 +554,6 @@ class NoteCheckoutService:
                 debit=debit_amount,
                 credit=credit_amount,
                 label=f"{product.name} - {item['reason']}" if item.get('reason') else product.name
-                label=f"{product.name} - {item['reason']}" if item.get('reason') else product.name
             )
         
         # Tax entry
@@ -686,7 +685,6 @@ class NoteCheckoutService:
         workflow.notes = f"{workflow.notes}\nCANCELADO: {reason}" if workflow.notes else f"CANCELADO: {reason}"
         workflow.save()
         
-        return workflow
         return workflow
 
     @staticmethod

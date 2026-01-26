@@ -308,7 +308,6 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'], url_path='checkout')
     def checkout(self, request):

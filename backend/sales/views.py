@@ -6,7 +6,8 @@ from .serializers import (
     SaleOrderSerializer, 
     CreateSaleOrderSerializer, 
     SalesSettingsSerializer,
-    SaleDeliverySerializer
+    SaleDeliverySerializer,
+    SaleReturnSerializer
 )
 from .services import SalesService
 from inventory.models import Warehouse

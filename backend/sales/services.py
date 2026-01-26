@@ -131,10 +131,13 @@ class SalesService:
                 
                 # Case 3: Storable Product (Needs physical stock)
                 elif product.product_type == 'STORABLE' and product.track_inventory:
-                    if product.qty_available < requested_qty:
+                    # Logic: We must have enough stock, but we ignore what THIS order has already reserved
+                    # because the reservation already lowered qty_available.
+                    available_for_this_order = product.qty_available + sale_line.quantity_pending
+                    if available_for_this_order < requested_qty:
                          raise ValidationError(
                             f"Stock insuficiente para '{product.name}'. "
-                            f"Disponible: {product.qty_available}, Solicitado: {requested_qty}"
+                            f"Disponible real: {available_for_this_order}, Solicitado: {requested_qty}"
                         )
         
         # Create delivery
@@ -296,10 +299,13 @@ class SalesService:
                 
                 # Case 3: Storable Product (Needs physical stock)
                 elif product.product_type == 'STORABLE' and product.track_inventory:
-                    if product.qty_available < quantity:
+                    # Logic: qty_available already reflects the reservation of the whole order.
+                    # We add back the pending quantity of THIS line to see if we can dispatch it.
+                    available_for_this_order = product.qty_available + sale_line.quantity_pending
+                    if available_for_this_order < quantity:
                          raise ValidationError(
                             f"Stock insuficiente para '{product.name}'. "
-                            f"Disponible: {product.qty_available}, Solicitado: {quantity}"
+                            f"Disponible real: {available_for_this_order}, Solicitado: {quantity}"
                         )
 
             if quantity > sale_line.quantity_pending:

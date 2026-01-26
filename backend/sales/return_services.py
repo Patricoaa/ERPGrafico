@@ -8,6 +8,7 @@ from inventory.models import StockMove, Warehouse
 from decimal import Decimal
 from inventory.services import UoMService
 
+class ReturnService:
     @staticmethod
     @transaction.atomic
     def annul_return(return_doc_id: int):
@@ -48,6 +49,10 @@ from inventory.services import UoMService
         doc.status = SaleReturn.Status.CANCELLED
         doc.save()
         return doc
+
+    @staticmethod
+    @transaction.atomic
+    def create_return_from_note_request(
         order: SaleOrder,
         items: list, # [{'product_id': 1, 'quantity': 10, 'uom_id': 2}, ...]
         warehouse_id: int,
