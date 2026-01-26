@@ -188,7 +188,7 @@ export const saleOrderActions: ActionRegistry = {
                         // Allow registration for any posted document with pending balance
                         const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
                         // For ND, also allow in DRAFT if it corrections/additions are being paid early
-                        return hasPendingAmount && activeDoc.status !== 'CANCELLED'
+                        return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.dte_type !== 'NOTA_CREDITO'
                     }
 
                     // Show if there's a pending amount or order is not paid

@@ -158,7 +158,7 @@ export const purchaseOrderActions: ActionRegistry = {
                     if (isInvoiced) {
                         // Allow registration for any posted document with pending balance
                         const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
-                        return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.status !== 'DRAFT'
+                        return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.status !== 'DRAFT' && activeDoc.dte_type !== 'NOTA_CREDITO'
                     }
 
                     // Show if there's a pending amount or order is not paid
