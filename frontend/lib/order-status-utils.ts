@@ -74,3 +74,64 @@ export const getHubStatuses = (order: any) => {
         hasPendingTransactions: hasPendingTransactions
     }
 }
+
+export const getNoteHubStatuses = (note: any) => {
+    // Determine type
+    const isSale = !!note.sale_order
+
+    // 1. Origin (For Notes in Hub, it's always success)
+    let originStatus = 'success'
+    if (note.status === 'CANCELLED') originStatus = 'destructive'
+
+    // 2. Logistics
+    const lines = note.lines || note.items || []
+    const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+
+    let logisticsProgress = 0
+    if (totalOrdered > 0) {
+        const totalProcessed = lines.reduce((acc: number, line: any) => {
+            const processedField = isSale
+                ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
+                : (line.quantity_received !== undefined ? 'quantity_received' : 'received_quantity')
+
+            const processed = line[processedField] || 0
+            return acc + (parseFloat(processed) || 0)
+        }, 0)
+        logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
+    } else if (lines.length > 0 || (note.related_stock_moves?.length > 0)) {
+        logisticsProgress = 100
+    }
+
+    let logStatus = 'neutral'
+    if (logisticsProgress === 100) logStatus = 'success'
+    else if (logisticsProgress > 0) logStatus = 'active'
+
+    // 3. Billing
+    const hasFolio = note.status !== 'DRAFT' && note.number && note.number !== 'Draft'
+    const billingStatus = hasFolio ? 'success' : 'neutral'
+
+    // 4. Treasury
+    const payments = note.serialized_payments || note.payments_detail || note.related_documents?.payments || []
+    const hasPendingTransactions = payments.some((pay: any) => {
+        const requiresTR = (
+            (pay.payment_type === 'OUTBOUND' && pay.payment_method === 'TRANSFER') ||
+            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
+        )
+        return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
+    })
+
+    const isPaid = (note.status === 'PAID' || (parseFloat(note.pending_amount) <= 0)) && !hasPendingTransactions
+    let treasuryStatus = 'neutral'
+    if (isPaid) treasuryStatus = 'success'
+    else if (parseFloat(note.pending_amount) < parseFloat(note.total) || hasPendingTransactions) treasuryStatus = 'active'
+
+    return {
+        origin: originStatus,
+        logistics: logStatus,
+        billing: billingStatus,
+        treasury: treasuryStatus,
+        logisticsProgress,
+        hasPendingTransactions,
+        isComplete: logStatus === 'success' && billingStatus === 'success' && treasuryStatus === 'success'
+    }
+}

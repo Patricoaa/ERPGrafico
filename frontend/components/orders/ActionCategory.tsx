@@ -51,9 +51,9 @@ export const ActionCategory = forwardRef(({
         handleActionClick
     }))
 
-    // Detemine order type helper
-    const isSale = !!order?.customer_name || !!order?.customer
-    const isPurchase = !!order?.supplier_name || !!order?.supplier
+    // Determine order type helper - supporting both Order and Note models
+    const isSale = !!order?.customer_name || !!order?.customer || !!order?.sale_order
+    const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
 
     const resolvedInvoices = (order?.dte_type ? [order] : (order?.related_documents?.invoices || order?.invoices)) || []
     const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
@@ -358,7 +358,7 @@ export const ActionCategory = forwardRef(({
                     pendingAmount={order?.pending_amount ?? order?.total}
                     onConfirm={handlePaymentConfirm}
                     isPurchase={isPurchase}
-                    title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Devolución de Pago" : "Registrar Reembolso de Proveedor") : undefined}
+                    title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
                 />
             )}
 

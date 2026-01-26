@@ -1,49 +1,15 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ClipboardList, Package, Receipt, Banknote, FileText } from "lucide-react"
 import { cn, translateStatus } from "@/lib/utils"
+import { getNoteHubStatuses } from "@/lib/order-status-utils"
 
 interface NoteHubStatusProps {
     note: any
 }
 
 export function NoteHubStatus({ note }: NoteHubStatusProps) {
-    // Logic for Note Statuses
-
-    // 1. Origin (The Note itself)
-    let originStatus = 'neutral'
-    if (note.status === 'CANCELLED') originStatus = 'destructive'
-    else if (note.status !== 'DRAFT') originStatus = 'success'
-
-    // 2. Production (Usually N/A for Notes, unless we link to OT, but let's keep it simple or hidden)
-    // For now, hidden as Notes usually rectify quantity/amount, not production directly.
-    const showProduction = false // Or check if note.related_production_orders exists if added later
-
-    // 3. Logistics (Returns/Receptions)
-    // Check related stock moves
+    const statuses = getNoteHubStatuses(note)
     const stockMoves = note.related_stock_moves || []
-    let logStatus = 'neutral'
-    if (stockMoves.length === 0) {
-        logStatus = 'not_applicable'
-    } else {
-        // Any stock move associated with a Note implies it has been performed (DONE)
-        // Similar to OrderCommandCenter: isComplete = stock_moves.length > 0
-        logStatus = 'success'
-    }
-
-    // 4. Billing (The Note is the billing document)
-    // If it's posted/paid, it's success.
-    let billingStatus = 'neutral'
-    if (note.status === 'POSTED' || note.status === 'PAID') billingStatus = 'success'
-    else if (note.status === 'DRAFT') billingStatus = 'neutral'
-
-
-    // 5. Treasury (Payment of the Note)
-    // If it's a Credit Note, it might be applied to an Invoice (paid) or refunded.
-    // If it's a Debit Note, it needs to be paid.
-    let treasuryStatus = 'neutral'
-    if (note.status === 'PAID') treasuryStatus = 'success'
-    else if (note.payment_status === 'PAID') treasuryStatus = 'success'
-    else if (parseFloat(note.pending_amount) < parseFloat(note.total)) treasuryStatus = 'active'
 
 
     // Helper for rendering badges - copied from OrderHubStatus for consistency
@@ -78,37 +44,28 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                 {/* Origin */}
                 <StatusBadge
                     icon={FileText}
-                    status={originStatus}
+                    status={statuses.origin}
                     tooltip={`Documento: ${translateStatus(note.status)}`}
                 />
-
-                {/* Production - Hidden for now */}
-                {showProduction && (
-                    <StatusBadge
-                        icon={ClipboardList}
-                        status={'neutral'}
-                        tooltip="Producción"
-                    />
-                )}
 
                 {/* Logistics */}
                 <StatusBadge
                     icon={Package}
-                    status={logStatus}
+                    status={statuses.logistics}
                     tooltip={stockMoves.length > 0 ? `Logística (${stockMoves.length} movimientos)` : "Sin movimientos"}
                 />
 
                 {/* Billing */}
                 <StatusBadge
                     icon={Receipt}
-                    status={billingStatus}
+                    status={statuses.billing}
                     tooltip={`Facturación: ${translateStatus(note.status)}`}
                 />
 
                 {/* Treasury */}
                 <StatusBadge
                     icon={Banknote}
-                    status={treasuryStatus}
+                    status={statuses.treasury}
                     tooltip={`Tesorería: ${translateStatus(note.payment_status || note.status)}`}
                 />
             </TooltipProvider>

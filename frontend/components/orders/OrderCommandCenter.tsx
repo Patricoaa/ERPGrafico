@@ -50,6 +50,7 @@ import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
 import { cn, translateStatus } from "@/lib/utils"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { getHubStatuses, getNoteHubStatuses } from "@/lib/order-status-utils"
 
 interface OrderCommandCenterProps {
     orderId: number | null
@@ -394,11 +395,11 @@ export function OrderCommandCenter({
 
     // Calculate if there are issues with invoices (drafts or missing folio)
     // MUST be declared before logisticsDocs since it's used there
+    const invoices = activeDoc.related_documents?.invoices || []
+    // Unified Note Status Logic
+    const noteStatuses = getNoteHubStatuses(activeInvoice || {})
     const billingIsComplete = (() => {
-        if (isNoteMode) {
-            return activeInvoice.status !== 'DRAFT' && activeInvoice.number && activeInvoice.number !== 'Draft'
-        }
-        const invoices = activeDoc.related_documents?.invoices || []
+        if (isNoteMode) return noteStatuses.billing === 'success'
         return invoices.length > 0 && !invoices.some((inv: any) =>
             inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
         )
@@ -455,7 +456,7 @@ export function OrderCommandCenter({
     })()
 
     // Calculate dynamic logistics progress - Always use frontend logic to sync with docs
-    const logisticsProgress = (() => {
+    const logisticsProgress = isNoteMode ? noteStatuses.logisticsProgress : (() => {
         const lines = activeDoc.lines || activeDoc.items || []
         if (lines.length === 0) return 0
 
@@ -489,19 +490,10 @@ export function OrderCommandCenter({
         if (docToEvaluate.status === 'CANCELLED') return { label: 'Anulado', variant: 'destructive', icon: XCircle }
 
         if (isNoteMode) {
-            // For Notes, status depends on: Logistics + Billing (Folio) + Treasury
-            const stages = []
-            stages.push(logisticsProgress === 100)
-            stages.push(activeInvoice.status !== 'DRAFT' && activeInvoice.number && activeInvoice.number !== 'Draft')
-            stages.push(activeInvoice.status === 'PAID' || parseFloat(activeInvoice.pending_amount || '0') <= 0)
+            if (noteStatuses.isComplete) return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
 
-            if (stages.every(s => s)) return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
-            if (stages.some(s => s)) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
-
-            // If it's a draft but might have progress
-            if (activeInvoice.status === 'DRAFT' && (logisticsProgress > 0 || (activeInvoice.serialized_payments || []).length > 0)) {
-                return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
-            }
+            const hasProgress = noteStatuses.logistics !== 'neutral' || noteStatuses.treasury !== 'neutral'
+            if (hasProgress) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
 
             return { label: 'Borrador', variant: 'neutral', icon: AlertCircle }
         }
@@ -604,8 +596,8 @@ export function OrderCommandCenter({
                                 <PhaseCard
                                     title="Origen"
                                     icon={TrendingUp}
-                                    variant={isNoteMode ? 'success' : (activeDoc.status !== 'DRAFT' ? 'success' : 'neutral')}
-                                    isComplete={isNoteMode}
+                                    variant={isNoteMode ? noteStatuses.origin : (activeDoc.status !== 'DRAFT' ? 'success' : 'neutral')}
+                                    isComplete={isNoteMode && noteStatuses.origin === 'success'}
                                     documents={isNoteMode ? [
                                         {
                                             type: 'Documento Rectificado',
@@ -749,10 +741,7 @@ export function OrderCommandCenter({
                                             return allServices ? 'Cumplimiento' : (hasServices ? 'Logística/Cumplimiento' : 'Logística')
                                         })()}
                                         icon={Package}
-                                        variant={
-                                            logisticsProgress === 100 ? 'success' :
-                                                logisticsProgress > 0 ? 'active' : 'neutral'
-                                        }
+                                        variant={isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')}
                                         documents={isNoteMode ? (activeInvoice.related_stock_moves || []).map((m: any) => ({
                                             type: m.move_type_display || 'Movimiento',
                                             number: m.display_id || `MOV-${m.id}`,
@@ -818,7 +807,7 @@ export function OrderCommandCenter({
                                 <PhaseCard
                                     title="Facturación"
                                     icon={Receipt}
-                                    variant={isNoteMode ? (activeInvoice.status !== 'DRAFT' && activeInvoice.number && activeInvoice.number !== 'Draft' ? 'success' : 'neutral') : (billingIsComplete ? 'success' : 'neutral')}
+                                    variant={isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : 'neutral')}
                                     documents={isNoteMode ? [
                                         {
                                             type: activeInvoice.dte_type_display,
@@ -901,7 +890,7 @@ export function OrderCommandCenter({
                                     title="Tesorería"
                                     icon={Banknote}
                                     variant={
-                                        isNoteMode ? (activeInvoice?.status === 'PAID' ? 'success' : activeInvoice?.status === 'POSTED' ? 'active' : 'neutral') :
+                                        isNoteMode ? noteStatuses.treasury :
                                             ((activeDoc?.status === 'PAID' || activeDoc?.payment_status === 'PAID' || parseFloat(activeDoc?.pending_amount || '0') <= 0) && !hasPendingTransactions ? 'success' :
                                                 (parseFloat(activeDoc?.pending_amount || '0') < parseFloat(activeDoc?.total || '1') || hasPendingTransactions) ? 'active' : 'neutral')
                                     }
