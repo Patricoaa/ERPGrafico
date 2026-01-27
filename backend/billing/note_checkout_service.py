@@ -74,8 +74,8 @@ class NoteCheckoutService:
                 'line_id': line_id,
                 'quantity': quantity,
                 'uom_id': ld.get('uom_id') or product.uom_id,
-                'unit_price': float(unit_val),
-                'unit_cost': float(unit_val)
+                'unit_price': Decimal(str(unit_val)),
+                'unit_cost': Decimal(str(unit_val))
             })
 
         if is_credit:
@@ -282,11 +282,11 @@ class NoteCheckoutService:
                 'product_id': product.id,
                 'product_name': product.name,
                 'product_type': product.product_type,
-                'quantity': float(quantity),
-                'unit_price': float(unit_price),
-                'tax_amount': float(tax_amount),
-                'line_net': float(line_net),
-                'line_tax': float(line_tax),
+                'quantity': str(quantity),
+                'unit_price': str(unit_price),
+                'tax_amount': str(tax_amount),
+                'line_net': str(line_net),
+                'line_tax': str(line_tax),
                 'reason': item.get('reason', ''),
                 'creates_stock_move': creates_stock_move,
                 'line_id': item.get('line_id')
@@ -379,8 +379,8 @@ class NoteCheckoutService:
                         'quantity': quantity,
                         'uom_id': ld.get('uom_id'),
                          # Pass price/cost references if available in item
-                        'unit_price': item.get('unit_price', 0),
-                        'unit_cost': item.get('unit_cost', 0)
+                        'unit_price': Decimal(str(item.get('unit_price', 0))),
+                        'unit_cost': Decimal(str(item.get('unit_cost', 0)))
                     })
         else:
             # IMMEDIATE (Full) - or SCHEDULED (plan full)
@@ -390,8 +390,8 @@ class NoteCheckoutService:
                         'product_id': item['product_id'],
                         'quantity': Decimal(str(item['quantity'])),
                         'uom_id': None,
-                        'unit_price': item.get('unit_price', 0),
-                        'unit_cost': item.get('unit_cost', 0)
+                        'unit_price': Decimal(str(item.get('unit_price', 0))),
+                        'unit_cost': Decimal(str(item.get('unit_cost', 0)))
                     })
 
         # Process via appropriate Service
@@ -983,11 +983,11 @@ class NoteCheckoutService:
                 'product': product.id,
                 'product_id': product.id,
                 'product_name': product.name,
-                'quantity': float(quantity),
-                'unit_price': float(unit_price),
-                'tax_amount': float(tax_amount),
-                'line_net': float(line_net),
-                'line_tax': float(line_tax),
+                'quantity': str(quantity),
+                'unit_price': str(unit_price),
+                'tax_amount': str(tax_amount),
+                'line_net': str(line_net),
+                'line_tax': str(line_tax),
                 'creates_stock_move': creates_stock_move,
                 'reason': item.get('reason', ''),
                 'line_id': item_line_id # Replaced with persistent ID if supplemental
@@ -1060,8 +1060,8 @@ class NoteCheckoutService:
                             'quantity': qty_to_move,
                             'makes_move': match.get('creates_stock_move', False),
                             'line_id': match.get('line_id'), # Real persistent ID
-                            'unit_price': match.get('unit_price'),
-                            'unit_cost': match.get('unit_price') # Supplemental items use it for purchase cost
+                            'unit_price': Decimal(str(match.get('unit_price', 0))),
+                            'unit_cost': Decimal(str(match.get('unit_price', 0))) # Supplemental items use it for purchase cost
                         })
             
             elif delivery_type == 'SCHEDULED':
@@ -1077,8 +1077,8 @@ class NoteCheckoutService:
                             'quantity': Decimal(str(v_item['quantity'])),
                             'makes_move': True,
                             'line_id': v_item.get('line_id'),
-                            'unit_price': v_item.get('unit_price'),
-                            'unit_cost': v_item.get('unit_price')
+                            'unit_price': Decimal(str(v_item.get('unit_price', 0))),
+                            'unit_cost': Decimal(str(v_item.get('unit_price', 0)))
                         })
 
             # Create Logistics via Services for consistency and document tracking

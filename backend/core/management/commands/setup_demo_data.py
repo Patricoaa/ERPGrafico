@@ -575,7 +575,18 @@ class Command(BaseCommand):
             state=JournalEntry.State.POSTED,
         )
 
-        products = Product.objects.filter(track_inventory=True)
+        # Filter products that should receive initial stock
+        # Exclude: advanced manufacturing, services, subscriptions, and express manufacturing
+        products = Product.objects.filter(
+            track_inventory=True
+        ).exclude(
+            requires_advanced_manufacturing=True
+        ).exclude(
+            product_type__in=[Product.Type.SERVICE, Product.Type.SUBSCRIPTION]
+        ).exclude(
+            mfg_auto_finalize=True  # Exclude express manufacturing products
+        )
+        
         total_value = Decimal('0')
         count = 0
 

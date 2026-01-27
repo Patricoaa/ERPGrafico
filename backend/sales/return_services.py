@@ -184,7 +184,7 @@ class ReturnService:
         # 1. Stock Moves
         for line in return_doc.lines.all():
             product = line.product
-            if product.track_inventory:
+            if product.track_inventory and not product.requires_advanced_manufacturing:
                 # Convert to base UoM
                 qty_base = UoMService.convert_quantity(
                     line.quantity, 
