@@ -73,7 +73,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_total_paid(self, obj):
-        return sum(p.amount for p in obj.payments.all())
+        # Exclude payments specific to Notes (NC/ND)
+        payments = obj.payments.all()
+        valid_payments = [
+            p for p in payments 
+            if not (p.invoice and p.invoice.dte_type in ['NOTA_CREDITO', 'NOTA_DEBITO'])
+        ]
+        return sum(p.amount for p in valid_payments)
 
     def get_pending_amount(self, obj):
         return obj.effective_total - self.get_total_paid(obj)
@@ -131,7 +137,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             else:
                 docs['invoices'].append(doc_info)
 
-        for rec in obj.receipts.all():
+        # Filter out receipts linked to Notes (e.g. supplemental receipts from Debit Notes)
+        # We assume they are shown in the Note's Hub, not here.
+        receipts = obj.receipts.filter(related_note__isnull=True)
+        for rec in receipts:
             processed_moves = set()
             for line in rec.lines.all():
                 if line.stock_move and line.stock_move_id not in processed_moves:
@@ -162,6 +171,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 })
 
         for pay in obj.payments.all():
+            # Exclude payments explicitly linked to NC/ND
+            if pay.invoice and pay.invoice.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
+                continue
+
             prefix = 'ING' if pay.payment_type == 'INBOUND' else 'EGR'
             code = f"{prefix}-{str(pay.id).zfill(5)}"
             docs['payments'].append({
@@ -175,7 +188,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 'invoice_id': pay.invoice_id,
                 'code': code
             })
-
+        
         return docs
     
     def get_lines(self, obj):

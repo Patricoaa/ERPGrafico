@@ -71,10 +71,20 @@ export const purchaseOrderActions: ActionRegistry = {
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
+                        // [FIX] For Debit Note: Check if items are fully received based on Note lines
+                        if (activeDoc.dte_type === 'NOTA_DEBITO') {
+                            const lines = activeDoc.lines || []
+                            const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+                            // quantity_received is populated by InvoiceSerializer based on linked receipts
+                            const totalReceived = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_received || 0) || 0), 0)
+                            return totalReceived < totalOrdered
+                        }
+
+                        // For generic invoices on order, fallback (though usually redundant in Note Hub)
                         return activeDoc.po_receiving_status !== 'RECEIVED'
                     }
 
-                    // Default logic
+                    // Default logic for Purchase Order
                     return activeDoc.receiving_status !== 'RECEIVED'
                 },
                 badge: { type: 'pending' }
