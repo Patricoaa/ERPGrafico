@@ -111,4 +111,4 @@ def generate_subscription_orders():
             print(f"Failed to generate order for Subscription {sub.id}: {serializer.errors}")
 
 
-    return f"Generated {generated_count} subscription orders."
+    return f"Se han creado {generated_count} órdenes de compra asociadas a suscripciones."

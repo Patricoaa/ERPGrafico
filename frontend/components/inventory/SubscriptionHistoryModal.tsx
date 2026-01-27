@@ -136,7 +136,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden">
                     <DialogHeader className="p-6 pb-2">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -186,11 +186,11 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                             <div className="flex-1 overflow-auto p-6">
                                 {/* HISTORIAL TAB */}
                                 <TabsContent value="historial" className="mt-0 space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 mr-6">
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <Card className="bg-blue-50/30 border-blue-100 shadow-none">
                                                 <CardContent className="p-4">
-                                                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Último Costo</p>
+                                                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Último Precio</p>
                                                     <DataCell.Currency value={data.price_history[0]?.unit_cost || 0} className="text-2xl font-black text-blue-900 text-left" />
                                                 </CardContent>
                                             </Card>
@@ -210,7 +210,8 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 </CardContent>
                                             </Card>
                                         </div>
-                                        <div className="shrink-0 self-start">
+
+                                        <div className="flex justify-end">
                                             <DateRangeFilter onRangeChange={setDateRange} label="Periodo para el gráfico" />
                                         </div>
                                     </div>
@@ -234,7 +235,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 />
                                                 <Bar
                                                     dataKey="unit_cost"
-                                                    name="Costo Unitario"
+                                                    name="Precio"
                                                     fill="#3b82f6"
                                                     radius={[6, 6, 0, 0]}
                                                     barSize={40}
