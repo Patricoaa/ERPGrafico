@@ -124,3 +124,20 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             'total_monthly_cost': float(total_monthly_cost),
             'upcoming_renewals_30_days': upcoming_renewals,
         })
+
+    @action(detail=False, methods=['post'])
+    def trigger_inspection(self, request):
+        """
+        Manually trigger the daily subscription inspection task.
+        """
+        from purchasing.tasks import generate_subscription_orders
+        
+        # Run synchronously to give immediate feedback
+        try:
+            result = generate_subscription_orders()
+            return Response({'message': result})
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

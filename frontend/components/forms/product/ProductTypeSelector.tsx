@@ -8,7 +8,7 @@ interface ProductTypeSelectorProps {
     disabled?: boolean
 }
 
-export function ProductTypeSelector({ form, disabled }: ProductTypeSelectorProps) {
+export function ProductTypeSelector({ form, disabled, lockedType }: ProductTypeSelectorProps & { lockedType?: string }) {
     return (
         <FormField<ProductFormValues>
             control={form.control}
@@ -36,16 +36,21 @@ export function ProductTypeSelector({ form, disabled }: ProductTypeSelectorProps
                                 { id: 'MANUFACTURABLE', label: 'Fabricable' },
                                 { id: 'SERVICE', label: 'Servicio (Único)' },
                                 { id: 'SUBSCRIPTION', label: 'Suscripción (Recurrente)' }
-                            ].map((t) => (
-                                <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-                                    <FormControl>
-                                        <RadioGroupItem value={t.id} disabled={disabled} />
-                                    </FormControl>
-                                    <FormLabel className={`font-medium flex-1 text-sm ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                                        {t.label}
-                                    </FormLabel>
-                                </FormItem>
-                            ))}
+                            ].map((t) => {
+                                const isLocked = lockedType && lockedType !== t.id;
+                                const isDisabled = disabled || isLocked;
+
+                                return (
+                                    <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <FormControl>
+                                            <RadioGroupItem value={t.id} disabled={isDisabled} />
+                                        </FormControl>
+                                        <FormLabel className={`font-medium flex-1 text-sm ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                            {t.label}
+                                        </FormLabel>
+                                    </FormItem>
+                                )
+                            })}
                         </RadioGroup>
                     </FormControl>
                     <FormMessage />

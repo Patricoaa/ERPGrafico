@@ -40,9 +40,10 @@ interface ProductFormProps {
     onOpenChange: (open: boolean) => void
     initialData?: any
     onSuccess: () => void
+    lockedType?: string
 }
 
-export function ProductForm({ open, onOpenChange, initialData, onSuccess }: ProductFormProps) {
+export function ProductForm({ open, onOpenChange, initialData, onSuccess, lockedType }: ProductFormProps) {
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
     const [uoms, setUoms] = useState<any[]>([])
@@ -65,7 +66,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
             internal_code: "",
             name: "",
             category: "",
-            product_type: "STORABLE",
+            product_type: lockedType || "STORABLE",
             sale_price: 0,
             is_dynamic_pricing: false,
             uom: "",
@@ -296,7 +297,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                     internal_code: "",
                     name: "",
                     category: "",
-                    product_type: "STORABLE",
+                    product_type: lockedType || "STORABLE",
                     sale_price: 0,
                     uom: "",
                     sale_uom: "",
@@ -547,7 +548,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess }: Prod
                                     <TabsContent value="general" className="mt-0 space-y-8">
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                             <div className="md:col-span-3 space-y-6 border-r pr-8">
-                                                <ProductTypeSelector form={form as any} disabled={!!initialData} />
+                                                <ProductTypeSelector form={form as any} disabled={!!initialData} lockedType={lockedType} />
                                                 <ProductImageUpload
                                                     form={form as any}
                                                     imagePreview={imagePreview}

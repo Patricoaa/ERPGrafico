@@ -14,17 +14,24 @@ import {
     Play,
     X,
     TrendingUp,
-    AlertCircle
+    AlertCircle,
+    Plus,
+    Pencil,
+    Archive,
+    RefreshCw
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { ProductForm } from "@/components/forms/ProductForm"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
 
 interface Subscription {
     id: number
+    product: number // Added product ID from serializer
     product_name: string
     product_code: string
     product_internal_code?: string
@@ -58,6 +65,12 @@ export default function SubscriptionsPage() {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
+
+    // Form & Actions state
+    const [isFormOpen, setIsFormOpen] = useState(false)
+    const [editingProduct, setEditingProduct] = useState<any>(null) // We'll fetch full product data
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+    const [currentArchivingProduct, setCurrentArchivingProduct] = useState<{ id: number, name: string } | null>(null)
 
     const fetchSubscriptions = async () => {
         try {
@@ -97,6 +110,43 @@ export default function SubscriptionsPage() {
         }
     }
 
+    const handleArchive = async () => {
+        if (!currentArchivingProduct) return
+        try {
+            await api.patch(`/inventory/products/${currentArchivingProduct.id}/`, { active: false })
+            toast.success("Producto archivado correctamente")
+            fetchSubscriptions()
+            setIsConfirmModalOpen(false)
+        } catch (error) {
+            console.error("Error archiving product:", error)
+            toast.error("Error al archivar producto")
+        }
+    }
+
+    const openEditForm = async (productId: number) => {
+        try {
+            const response = await api.get(`/inventory/products/${productId}/`)
+            setEditingProduct(response.data)
+            setIsFormOpen(true)
+        } catch (error) {
+            console.error("Error fetching product details:", error)
+            toast.error("Error al cargar detalles del producto")
+        }
+    }
+
+    const handleTriggerInspection = async () => {
+        try {
+            const response = await api.post('/inventory/subscriptions/trigger_inspection/')
+            toast.success(response.data.message || "Inspección ejecutada correctamente")
+            fetchSubscriptions()
+            fetchStats()
+        } catch (error: any) {
+            console.error("Error triggering inspection:", error)
+            toast.error(error.response?.data?.error || "Error al ejecutar inspección")
+        }
+    }
+
+    // Original pause/resume handlers... (kept as is, just commenting for context)
     const handleResume = async (id: number) => {
         try {
             await api.post(`/inventory/subscriptions/${id}/resume/`)
@@ -218,24 +268,51 @@ export default function SubscriptionsPage() {
                 const sub = row.original
                 return (
                     <div className="flex gap-2 justify-end">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => openEditForm(sub.product)}
+                            title="Editar Producto"
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+
                         {sub.status === "ACTIVE" && (
                             <Button
-                                size="sm"
-                                variant="outline"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
                                 onClick={() => handlePause(sub.id)}
+                                title="Pausar Suscripción"
                             >
                                 <Pause className="h-4 w-4" />
                             </Button>
                         )}
                         {sub.status === "PAUSED" && (
                             <Button
-                                size="sm"
-                                variant="default"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                                 onClick={() => handleResume(sub.id)}
+                                title="Reanudar Suscripción"
                             >
                                 <Play className="h-4 w-4" />
                             </Button>
                         )}
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                                setCurrentArchivingProduct({ id: sub.product, name: sub.product_name })
+                                setIsConfirmModalOpen(true)
+                            }}
+                            title="Archivar Producto"
+                        >
+                            <Archive className="h-4 w-4" />
+                        </Button>
                     </div>
                 )
             },
@@ -244,66 +321,30 @@ export default function SubscriptionsPage() {
 
     return (
         <div className="container mx-auto p-6 space-y-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold">Gestión de Suscripciones</h1>
-            </div>
-            {/* If a creation button is added later, it should go here with triggerVariant="circular" */}
-
-            {/* Stats Cards */}
-            {stats && (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Activas</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.active_subscriptions}</div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pausadas</CardTitle>
-                            <Pause className="h-4 w-4 text-yellow-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.paused_subscriptions}</div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Canceladas</CardTitle>
-                            <X className="h-4 w-4 text-red-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.cancelled_subscriptions}</div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Costo Mensual</CardTitle>
-                            <DollarSign className="h-4 w-4 text-blue-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.total_monthly_cost)}</div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Próximas (30d)</CardTitle>
-                            <AlertCircle className="h-4 w-4 text-orange-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.upcoming_renewals_30_days}</div>
-                        </CardContent>
-                    </Card>
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-full h-12 w-12 shadow-sm"
+                        onClick={handleTriggerInspection}
+                        title="Ejecutar Inspección Diaria"
+                    >
+                        <RefreshCw className="h-5 w-5" />
+                    </Button>
+                    <Button
+                        className="rounded-full h-12 w-12 shadow-lg"
+                        size="icon"
+                        onClick={() => {
+                            setEditingProduct(null)
+                            setIsFormOpen(true)
+                        }}
+                    >
+                        <Plus className="h-6 w-6" />
+                    </Button>
                 </div>
-            )}
-
+            </div>
 
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Suscripciones</h3>
@@ -335,6 +376,42 @@ export default function SubscriptionsPage() {
                     </div>
                 )}
             </div>
+
+            <ProductForm
+                open={isFormOpen}
+                onOpenChange={(open) => {
+                    setIsFormOpen(open)
+                    if (!open) setEditingProduct(null)
+                }}
+                initialData={editingProduct}
+                onSuccess={() => {
+                    fetchSubscriptions()
+                }}
+                lockedType="SUBSCRIPTION"
+            />
+
+            <ActionConfirmModal
+                open={isConfirmModalOpen}
+                onOpenChange={setIsConfirmModalOpen}
+                title="Archivar Producto"
+                variant="destructive"
+                onConfirm={handleArchive}
+                confirmText="Archivar"
+                description={
+                    <div className="space-y-3">
+                        <p>
+                            ¿Está seguro de que desea archivar el producto <strong>{currentArchivingProduct?.name}</strong>?
+                        </p>
+                        <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg flex gap-3 text-amber-800">
+                            <AlertCircle className="h-5 w-5 shrink-0" />
+                            <div className="text-xs">
+                                <p className="font-bold mb-1">Impacto en Suscripciones</p>
+                                <p>Al archivar este producto, esta suscripción se ocultará de la lista.</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            />
         </div>
     )
 }
