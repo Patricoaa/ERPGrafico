@@ -82,7 +82,19 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         return sum(p.amount for p in valid_payments)
 
     def get_pending_amount(self, obj):
-        return obj.effective_total - self.get_total_paid(obj)
+        # Calculate base total from Primary Invoices (Factura/Boleta) OR PO Total
+        # We exclude Notes (NC/ND) to keep the PO Hub status pure.
+        # Use string literals to avoid importing Invoice model and potential circular deps
+        primary_invoices = obj.invoices.filter(
+            dte_type__in=['FACTURA', 'BOLETA', 'PURCHASE_INV']
+        ).exclude(status='CANCELLED')
+        
+        if primary_invoices.exists():
+            base_total = sum(inv.total for inv in primary_invoices)
+        else:
+            base_total = obj.total
+            
+        return base_total - self.get_total_paid(obj)
 
     def get_is_invoiced(self, obj):
         from billing.models import Invoice

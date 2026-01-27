@@ -275,7 +275,7 @@ export default function PurchaseInvoicesPage() {
                                 className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                             >
                                 <span className="font-semibold uppercase text-[8px] text-muted-foreground">Orden de Compra</span>
-                                OC-{doc.purchase_order_number || doc.purchase_order}
+                                OCS-{doc.purchase_order_number || doc.purchase_order}
                             </button>
                         )}
 

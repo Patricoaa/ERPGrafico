@@ -54,7 +54,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             info['type'] = 'purchase_order'
             info['id'] = obj.purchase_order.id
             info['number'] = obj.purchase_order.number
-            info['label'] = f"OC-{obj.purchase_order.number}"
+            info['label'] = f"OCS-{obj.purchase_order.number}"
         elif obj.sale_order:
             info['type'] = 'sale_order'
             info['id'] = obj.sale_order.id

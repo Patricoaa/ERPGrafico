@@ -217,7 +217,7 @@ export function ReceiptModal({
                     <DialogTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5" />
                         {isRefund ? "Devolver Productos" :
-                            (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OC-{order?.number}
+                            (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OCS-{order?.number}
                     </DialogTitle>
                     <DialogDescription>
                         Proveedor: {order?.supplier_name}

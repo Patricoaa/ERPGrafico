@@ -280,7 +280,7 @@ export default function PurchaseOrdersPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Número" />
             ),
-            cell: ({ row }) => <DataCell.Code>OC-{row.getValue("number")}</DataCell.Code>,
+            cell: ({ row }) => <DataCell.Code>OCS-{row.getValue("number")}</DataCell.Code>,
         },
         {
             accessorKey: "date",

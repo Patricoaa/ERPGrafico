@@ -106,7 +106,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             case 'sale_order':
                 return { main: "Comprobante de Venta", sub: `NV-${data.number || data.id}` }
             case 'purchase_order':
-                return { main: "Comprobante de Compra", sub: `OC-${data.number || data.id}` }
+                return { main: "Comprobante de Compra", sub: `OCS-${data.number || data.id}` }
             case 'invoice':
                 const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
                     data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :

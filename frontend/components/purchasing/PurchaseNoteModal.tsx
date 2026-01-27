@@ -143,7 +143,7 @@ export function PurchaseNoteModal({
                 <DialogHeader className="border-b pb-4">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                         <FileBadge className="h-6 w-6 text-amber-500" />
-                        Registrar Nota Crédito/Débito - OC-{orderNumber}
+                        Registrar Nota Crédito/Débito - OCS-{orderNumber}
                     </DialogTitle>
                 </DialogHeader>
 

@@ -178,7 +178,7 @@ export default function PaymentsPage() {
                     )
                 }
 
-                const docName = doc.type === 'purchase_order' ? `OC-${doc.number}` :
+                const docName = doc.type === 'purchase_order' ? `OCS-${doc.number}` :
                     doc.type === 'sale_order' ? `NV-${doc.number}` :
                         doc.label.includes('Crédito') ? `NC-${doc.number}` :
                             doc.label.includes('Débito') ? `ND-${doc.number}` :

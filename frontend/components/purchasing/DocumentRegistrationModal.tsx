@@ -94,7 +94,7 @@ export function DocumentRegistrationModal({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5" />
-                        Registrar Factura/Boleta - OC-{orderNumber}
+                        Registrar Factura/Boleta - OCS-{orderNumber}
                     </DialogTitle>
                     <DialogDescription>
                         Ingrese los datos del documento tributario recibido del proveedor.

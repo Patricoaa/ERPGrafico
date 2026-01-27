@@ -314,7 +314,7 @@ class AccountingMapper:
             tax_acc = settings.default_tax_receivable_account # For Purchases it is Usually Receivable (IVA Crédito)
             items.append({'account': tax_acc, 'debit': order.total_tax, 'credit': Decimal('0.00')})
 
-        return f"Compra OC-{order.number}", f"PO-{order.id}", items
+        return f"Compra OCS-{order.number}", f"PO-{order.id}", items
 
     @staticmethod
     def get_entries_for_delivery(delivery, settings):
@@ -572,7 +572,7 @@ class AccountingMapper:
                 'account': stock_input_account,
                 'debit': Decimal('0.00'),
                 'credit': total_amount,
-                'label': f"Contrapartida Recepción OC-{order.number}"
+                'label': f"Contrapartida Recepción OCS-{order.number}"
             })
             
         return f"Recepción OC-{order.number}", f"REC-{receipt.id}", items
