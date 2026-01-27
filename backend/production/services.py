@@ -35,6 +35,7 @@ class WorkOrderService:
             description=f"{product.name} - NV-{sale_line.order.number}",
             sale_order=sale_line.order,
             sale_line=sale_line,
+            related_note=getattr(sale_line, 'related_note', None),
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.filter(warehouse__isnull=False).exists() else Warehouse.objects.first(),
@@ -171,6 +172,97 @@ class WorkOrderService:
 
         return work_order
 
+    @staticmethod
+    @transaction.atomic
+    def create_ot_for_delivery_line(delivery_line, related_note=None):
+        """
+        Creates a Work Order for a delivery line if product is express manufacturable.
+        This method is called during delivery confirmation to create OTs for products
+        with mfg_auto_finalize = True.
+        
+        Args:
+            delivery_line: SaleDeliveryLine instance
+            related_note: Optional Invoice (for debit note deliveries)
+        
+        Returns:
+            WorkOrder instance or None if not applicable
+        """
+        product = delivery_line.product
+        sale_line = delivery_line.sale_line
+        
+        # Only for express manufacturable products
+        if not (product and product.product_type == Product.Type.MANUFACTURABLE and product.mfg_auto_finalize):
+            return None
+        
+        # Determine number
+        last_order = WorkOrder.objects.all().order_by('id').last()
+        if last_order and last_order.number.isdigit():
+            number = str(int(last_order.number) + 1).zfill(6)
+        else:
+            number = '000001'
+        
+        # Create OT with delivered quantity
+        work_order = WorkOrder.objects.create(
+            number=number,
+            description=f"{product.name} - Despacho {delivery_line.delivery.number}",
+            sale_order=sale_line.order,
+            sale_line=sale_line,
+            related_note=related_note,
+            status=WorkOrder.Status.DRAFT,
+            current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
+            warehouse=delivery_line.delivery.warehouse,
+            stage_data={'quantity': float(delivery_line.quantity)}
+        )
+        
+        # Auto-assign materials from BOM if active
+        active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
+        if active_bom:
+            from inventory.services import UoMService
+            
+            # Convert delivered quantity to product base UoM for BOM calculation
+            qty_base = UoMService.convert_quantity(
+                delivery_line.quantity,
+                from_uom=delivery_line.uom or sale_line.uom,
+                to_uom=product.uom
+            )
+            
+            for bom_line in active_bom.lines.all():
+                WorkOrderMaterial.objects.create(
+                    work_order=work_order,
+                    component=bom_line.component,
+                    quantity_planned=bom_line.quantity * qty_base,
+                    uom=bom_line.uom or bom_line.component.uom,
+                    source='BOM'
+                )
+        
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage=work_order.current_stage,
+            status=work_order.status,
+            notes="OT generada desde despacho (Producto Express)"
+        )
+        
+        # Express Flow: Auto-finalize
+        try:
+            with transaction.atomic():
+                WorkOrderService.transition_to(
+                    work_order, 
+                    WorkOrder.Stage.FINISHED, 
+                    notes="Finalización automática (Flujo Express - Despacho)"
+                )
+        except Exception as e:
+            # Log error but keep OT created
+            print(f"Warning: Auto-finalize failed for OT-{work_order.number}: {str(e)}")
+            WorkOrderHistory.objects.create(
+                work_order=work_order,
+                stage=work_order.current_stage,
+                status=work_order.status,
+                notes=f"Fallo en finalización automática: {str(e)}",
+                user=None
+            )
+        
+        return work_order
+    
     @staticmethod
     @transaction.atomic
     def annul_work_order(work_order, user=None, notes=""):

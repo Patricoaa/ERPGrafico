@@ -267,6 +267,15 @@ class SaleDeliveryLine(models.Model):
         related_name='sale_delivery_line'
     )
     
+    # Link to Work Order (for express manufacturable products)
+    work_order = models.ForeignKey(
+        'production.WorkOrder',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='delivery_lines',
+        help_text="OT generada para este despacho (productos fabricables express)"
+    )
+    
     class Meta:
         verbose_name = _("Línea de Despacho")
         verbose_name_plural = _("Líneas de Despacho")

@@ -546,7 +546,8 @@ class NoteCheckoutService:
     @staticmethod
     def _trigger_production_for_debit_note(workflow: NoteWorkflow):
         """
-        Triggers Work Order creation for fabricable products in a Debit Note.
+        Triggers Work Order creation for ADVANCED manufacturable products in a Debit Note.
+        EXPRESS products (mfg_auto_finalize=True) are handled at dispatch time in confirm_delivery.
         """
         if workflow.is_credit_note or not workflow.sale_order:
             return
@@ -554,34 +555,26 @@ class NoteCheckoutService:
         from production.services import WorkOrderService
         from sales.models import SaleLine
         
-        # Ensure we have SaleLines for any "new" products in the Debit Note
-        # so they can anchor a Work Order.
         for item in workflow.selected_items:
-            product_id = item.get('product_id')
-            from inventory.models import Product
-            product = Product.objects.get(id=product_id)
+            line_id = item.get('line_id')
+            if not line_id: continue
             
-            if product.product_type == Product.Type.MANUFACTURABLE:
-                qty = Decimal(str(item.get('quantity', 0)))
-                if qty <= 0: continue
+            try:
+                sale_line = SaleLine.objects.get(id=line_id)
+                product = sale_line.product
                 
-                # Check for existing SaleLine for this product on this order
-                # For Supplemental Dispatch, we usually want a distinct line to track its specific OT.
-                # We'll create a new SaleLine if it's a specific supplemental quantity.
-                sale_line = SaleLine.objects.create(
-                    order=workflow.sale_order,
-                    product=product,
-                    quantity=qty,
-                    unit_price=Decimal(str(item.get('unit_price', product.cost_price * Decimal('1.2')))),
-                    uom=product.uom,
-                    description=f"Adicional Nota Débito: {product.name}",
-                    related_note=workflow.invoice
-                )
-                
-                # Create OT and link to this Note
-                work_order = WorkOrderService.create_from_sale_line(sale_line)
-                work_order.related_note = workflow.invoice
-                work_order.save()
+                # Only for ADVANCED manufacturing (Express are created at dispatch)
+                if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
+                    work_order = WorkOrderService.create_from_sale_line(sale_line)
+                    if work_order:
+                        work_order.related_note = workflow.invoice
+                        work_order.save()
+                        print(f"DEBUG: Created ADVANCED OT-{work_order.number} for debit note {workflow.invoice.number}")
+                elif product.product_type == 'MANUFACTURABLE' and product.mfg_auto_finalize:
+                    # Express product - OT will be created during dispatch
+                    print(f"DEBUG: Skipping EXPRESS product {product.internal_code} - OT will be created at dispatch")
+            except SaleLine.DoesNotExist:
+                continue
     
     @staticmethod
     def _create_accounting_entry(workflow: NoteWorkflow, settings: AccountingSettings, moved_quantities: Dict[int, Decimal] = None) -> JournalEntry:
@@ -944,11 +937,14 @@ class NoteCheckoutService:
             payment_data=payment_data
         )
 
-        # 4. Process Items (Calculate Totals & Validation)
-        # Reuse logic from select_items but without extra DB saves
+        # 4. Process Items (Calculate Totals & Validation) & Create Supplemental Lines
         total_net = Decimal('0')
         total_tax = Decimal('0')
         has_stockable = False
+        is_sale = workflow.sale_order is not None
+        
+        from sales.models import SaleLine
+        from purchasing.models import PurchaseLine
         
         validated_items = []
         for item in selected_items:
@@ -957,7 +953,7 @@ class NoteCheckoutService:
             
             if quantity <= 0: continue
             
-            # Validation against delivered
+            # Validation against delivered (for returns)
             if workflow.is_credit_note and workflow.sale_order:
                 sale_line = workflow.sale_order.lines.filter(product=product).first()
                 if sale_line and quantity > sale_line.quantity_delivered:
@@ -972,8 +968,6 @@ class NoteCheckoutService:
 
             # Calculate Line Totals
             unit_price = Decimal(str(item.get('unit_price', 0)))
-            # If price not provided, could fallback to invoice price, but frontend should send it.
-            
             tax_amount = Decimal(str(item.get('tax_amount', 0)))
             line_net = quantity * unit_price
             line_tax = quantity * tax_amount
@@ -981,6 +975,33 @@ class NoteCheckoutService:
             total_net += line_net
             total_tax += line_tax
             
+            # Create Persistent Line if it's a Debit Note (Supplemental)
+            item_line_id = item.get('line_id')
+            
+            if not workflow.is_credit_note:
+                # DEBIT NOTE: Always create a persistent isolated line for supplemental items
+                if is_sale:
+                    persistent_line = SaleLine.objects.create(
+                        order=workflow.sale_order,
+                        product=product,
+                        quantity=quantity,
+                        unit_price=unit_price,
+                        uom=product.uom,
+                        description=f"Adicional Nota Débito: {product.name}",
+                        related_note=workflow.invoice
+                    )
+                    item_line_id = persistent_line.id
+                else:
+                    persistent_line = PurchaseLine.objects.create(
+                        order=workflow.purchase_order,
+                        product=product,
+                        quantity=quantity,
+                        unit_cost=unit_price,
+                        uom=product.uom,
+                        related_note=workflow.invoice
+                    )
+                    item_line_id = persistent_line.id
+
             validated_items.append({
                 'product_id': product.id,
                 'product_name': product.name,
@@ -991,7 +1012,7 @@ class NoteCheckoutService:
                 'line_tax': float(line_tax),
                 'creates_stock_move': creates_stock_move,
                 'reason': item.get('reason', ''),
-                'line_id': item.get('line_id')
+                'line_id': item_line_id # Replaced with persistent ID if supplemental
             })
 
         workflow.selected_items = validated_items
@@ -1044,7 +1065,8 @@ class NoteCheckoutService:
                             items_to_move.append({
                                 'product_id': item['product_id'],
                                 'quantity': qty_to_move,
-                                'makes_move': item.get('creates_stock_move', False) # We need to re-verify if valid stockable
+                                'makes_move': item.get('creates_stock_move', False),
+                                'line_id': item.get('line_id')
                             })
             
             elif delivery_type == 'SCHEDULED':
@@ -1053,11 +1075,11 @@ class NoteCheckoutService:
                 
             else:
                 # IMMEDIATE: Move full quantity
-                for item in validated_items:
                     items_to_move.append({
                         'product_id': item['product_id'],
                         'quantity': Decimal(str(item['quantity'])),
-                        'makes_move': item['creates_stock_move']
+                        'makes_move': item['creates_stock_move'],
+                        'line_id': item.get('line_id')
                     })
 
             # Create Logistics via Services for consistency and document tracking

@@ -536,8 +536,12 @@ class PurchasingService:
 
     @staticmethod
     def _update_order_receiving_status(order):
-        total_qty = sum(l.quantity for l in order.lines.all())
-        received_qty = sum(l.quantity_received for l in order.lines.all())
+        """Updates the receiving status of a purchase order based on received quantities"""
+        # Only consider original lines for order status
+        original_lines = order.lines.filter(related_note__isnull=True)
+        
+        total_qty = sum(l.quantity for l in original_lines)
+        received_qty = sum(l.quantity_received for l in original_lines)
         
         if received_qty == 0:
             order.receiving_status = PurchaseOrder.ReceivingStatus.PENDING

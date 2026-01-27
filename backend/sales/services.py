@@ -50,29 +50,33 @@ class SalesService:
         order.status = SaleOrder.Status.CONFIRMED
         order.save()
 
-        # 3. Trigger Work Order creation for manufacturable products
+        # 3. Trigger Work Order creation ONLY for ADVANCED manufacturable products
+        # Express products (mfg_auto_finalize=True) will have OTs created at dispatch time
         from production.services import WorkOrderService
         from inventory.models import Product
         
         for i, line in enumerate(order.lines.all()):
             if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
-                # Check if an OT already exists for this line to avoid duplicates
-                if not line.work_orders.exists():
-                    print(f"DEBUG: Triggering auto-OT for product {line.product.internal_code} on SaleOrder {order.number}")
-                    try:
-                        # Extract files for this specific line if provided
-                        current_line_files = line_files.get(i) if line_files else None
-                        ot = WorkOrderService.create_from_sale_line(line, files=current_line_files)
-                        if ot:
-                            print(f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}")
-                        else:
-                            print(f"DEBUG: WorkOrderService.create_from_sale_line returned None for {line.product.internal_code}")
-                    except Exception as e:
-                        print(f"ERROR creating OT for {line.product.internal_code}: {str(e)}")
-                        # We don't necessarily want to block the sale if OT creation fails, 
-                        # but it's important to know why.
+                # IMPORTANT: Only create OT if requires advanced manufacturing
+                # Express products: OT will be created during delivery confirmation
+                if line.product.requires_advanced_manufacturing:
+                    # Check if an OT already exists for this line to avoid duplicates
+                    if not line.work_orders.exists():
+                        print(f"DEBUG: Triggering auto-OT for ADVANCED product {line.product.internal_code} on SaleOrder {order.number}")
+                        try:
+                            # Extract files for this specific line if provided
+                            current_line_files = line_files.get(i) if line_files else None
+                            ot = WorkOrderService.create_from_sale_line(line, files=current_line_files)
+                            if ot:
+                                print(f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}")
+                            else:
+                                print(f"DEBUG: WorkOrderService.create_from_sale_line returned None for {line.product.internal_code}")
+                        except Exception as e:
+                            print(f"ERROR creating OT for {line.product.internal_code}: {str(e)}")
+                    else:
+                        print(f"DEBUG: OT already exists for line {line.id} ({line.product.internal_code})")
                 else:
-                    print(f"DEBUG: OT already exists for line {line.id} ({line.product.internal_code})")
+                    print(f"DEBUG: Skipping OT creation for EXPRESS product {line.product.internal_code} - will be created at dispatch")
 
         # NOTE: Accounting entry moved to BillingService.create_sale_invoice
         
@@ -369,8 +373,11 @@ class SalesService:
         2. Creates COGS accounting entry
         3. Updates sale line quantities
         """
+        if delivery.status != SaleDelivery.Status.DRAFT:
+            return delivery
+            
         from inventory.services import UoMService
-        from inventory.models import StockMove
+        from inventory.models import StockMove, Product
         from production.models import BillOfMaterials
 
         # 0. Collect moves to link them later to the journal entry
@@ -512,7 +519,34 @@ class SalesService:
                     move.journal_entry = entry
                     move.save()
         
-        # Confirm delivery
+        # 3. Create Work Orders for EXPRESS manufacturable products
+        # This happens AFTER stock moves but BEFORE final confirmation
+        from production.services import WorkOrderService
+        
+        for line in delivery.lines.all():
+            product = line.product
+            
+            # Skip if advanced manufacturing (OT was created at sale confirmation)
+            if product and product.product_type == Product.Type.MANUFACTURABLE:
+                if product.requires_advanced_manufacturing:
+                    continue
+                
+                # Create OT for express products
+                if product.mfg_auto_finalize:
+                    print(f"DEBUG: Creating OT for EXPRESS product {product.internal_code} in delivery {delivery.number}")
+                    work_order = WorkOrderService.create_ot_for_delivery_line(
+                        delivery_line=line,
+                        related_note=delivery.related_note  # Will be set for debit note deliveries
+                    )
+                    if work_order:
+                        # Link to delivery for traceability
+                        line.work_order = work_order
+                        line.save()
+                        print(f"DEBUG: Created OT-{work_order.number} for {product.internal_code}")
+                    else:
+                        print(f"DEBUG: No OT created for {product.internal_code} (not express)")
+        
+        # 4. Confirm delivery
         delivery.status = SaleDelivery.Status.CONFIRMED
         delivery.save()
         
@@ -521,8 +555,11 @@ class SalesService:
     @staticmethod
     def _update_order_delivery_status(order: SaleOrder):
         """Updates the delivery status of a sale order based on delivered quantities"""
-        total_quantity = sum(line.quantity for line in order.lines.all())
-        total_delivered = sum(line.quantity_delivered for line in order.lines.all())
+        # Only consider original lines for order status
+        original_lines = order.lines.filter(related_note__isnull=True)
+        
+        total_quantity = sum(line.quantity for line in original_lines)
+        total_delivered = sum(line.quantity_delivered for line in original_lines)
         
         if total_delivered == 0:
             order.delivery_status = SaleOrder.DeliveryStatus.PENDING
