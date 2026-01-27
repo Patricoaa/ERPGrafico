@@ -100,15 +100,20 @@ export function Step1_Items({
                         {lines.map((line: any) => {
                             const selected = isSelected(line.id)
                             const itemData = getItem(line.id)
+
+                            const isPurchase = !!originalInvoice?.purchase_order || originalInvoice?.dte_type === 'PURCHASE_INV';
+
                             const maxQty = isCreditNote
                                 ? Math.floor(line.quantity_delivered || line.quantity)
-                                : (line.product_type === 'STORABLE'
-                                    ? Math.floor(line.available_stock || 0)
-                                    : (line.product_type === 'MANUFACTURABLE' && line.mfg_auto_finalize ? Math.floor(line.manufacturable_quantity || 0) : 999999));
+                                : (isPurchase
+                                    ? 999999
+                                    : (line.product_type === 'STORABLE'
+                                        ? Math.floor(line.available_stock || 0)
+                                        : (line.product_type === 'MANUFACTURABLE' && line.mfg_auto_finalize ? Math.floor(line.manufacturable_quantity || 0) : 999999)));
 
-                            const showMaxBadge = isCreditNote ||
+                            const showMaxBadge = (isCreditNote ||
                                 (line.product_type === 'STORABLE') ||
-                                (line.product_type === 'MANUFACTURABLE' && line.mfg_auto_finalize);
+                                (line.product_type === 'MANUFACTURABLE' && line.mfg_auto_finalize)) && !(isPurchase && !isCreditNote);
 
                             return (
                                 <TableRow key={line.id} className={cn(
@@ -191,7 +196,7 @@ export function Step1_Items({
                                         <div className="max-w-[120px] mx-auto">
                                             <Input
                                                 type="number"
-                                                disabled={!selected}
+                                                disabled={!selected || isCreditNote}
                                                 value={itemData?.unit_price ?? ""}
                                                 onChange={(e) => {
                                                     const val = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
@@ -199,7 +204,7 @@ export function Step1_Items({
                                                 }}
                                                 className={cn(
                                                     "h-10 text-center font-bold transition-all tabular-nums",
-                                                    !selected && "opacity-50"
+                                                    (!selected || isCreditNote) && "opacity-50"
                                                 )}
                                                 min={0}
                                             />

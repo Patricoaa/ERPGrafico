@@ -172,7 +172,11 @@ export default function PurchaseOrdersPage() {
                 }
             })
             const results = response.data.results || response.data
-            setNotes(results)
+            // Ensure they are strictly notes and related to purchases
+            const purchaseNotes = results.filter((inv: any) =>
+                ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && inv.purchase_order
+            )
+            setNotes(purchaseNotes)
         } catch (error) {
             console.error("Failed to fetch notes", error)
             toast.error("Error al cargar las notas.")

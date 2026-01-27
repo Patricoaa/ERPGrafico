@@ -12,6 +12,7 @@ from core.views import AuditHistoryMixin
 class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Invoice.objects.all().order_by('-date', '-id')
     serializer_class = InvoiceSerializer
+    filterset_fields = ['dte_type', 'sale_order', 'purchase_order', 'status', 'contact']
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

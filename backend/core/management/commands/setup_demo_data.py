@@ -334,7 +334,7 @@ class Command(BaseCommand):
         # Graphic specifics
         uom_hoja, _ = UoM.objects.get_or_create(name="Hoja", defaults={'category': cat_graphic, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
         uom_millar, _ = UoM.objects.get_or_create(name="Millar (1000u)", defaults={'category': cat_units, 'ratio': 1000.0, 'uom_type': UoM.Type.BIGGER})
-        uom_resma, _ = UoM.objects.get_or_create(name="Resma (500 pliegos)", defaults={'category': cat_graphic, 'ratio': 500.0, 'uom_type': UoM.Type.BIGGER})
+        uom_resma, _ = UoM.objects.get_or_create(name="Resma (500 pl)", defaults={'category': cat_graphic, 'ratio': 500.0, 'uom_type': UoM.Type.BIGGER})
         uom_paquete, _ = UoM.objects.get_or_create(name="Paquete (100u)", defaults={'category': cat_units, 'ratio': 100.0, 'uom_type': UoM.Type.BIGGER})
 
         return {
