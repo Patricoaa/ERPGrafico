@@ -289,7 +289,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <YAxis fontSize={10} />
                                             <RechartsTooltip
                                                 labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                formatter={(val: number) => [new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val), '']}
+                                                formatter={(val: any) => [new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(val || 0)), '']}
                                             />
                                             <Legend verticalAlign="top" height={36} />
                                             <Area type="monotone" name="Precio Venta" dataKey="sale_price" stroke="#3b82f6" fillOpacity={1} fill="url(#colorSale)" strokeWidth={2} />

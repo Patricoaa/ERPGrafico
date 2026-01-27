@@ -176,7 +176,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         price_history_qs = PurchaseLine.objects.filter(
             product=product,
             order__supplier=supplier,
-            order__status=PurchaseOrder.Status.CONFIRMED # Or RECEIVED? Confirmed is usually when price is "set"
+            order__status__in=[PurchaseOrder.Status.CONFIRMED, PurchaseOrder.Status.RECEIVED]
         ).order_by('-order__date')[:20]
 
         price_history = []
@@ -187,9 +187,30 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                 'order_number': line.order.number,
             })
 
+        # Get Credit/Debit Notes associated with these Purchase Orders
+        from billing.models import Invoice
+        notes_qs = Invoice.objects.filter(
+            purchase_order__in=orders_qs,
+            dte_type__in=[Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]
+        ).order_by('-date')
+
+        notes_data = []
+        for note in notes_qs:
+            notes_data.append({
+                'id': note.id,
+                'number': note.number,
+                'display_id': note.display_id,
+                'date': note.date,
+                'status': note.status,
+                'dte_type': note.dte_type,
+                'total': float(note.total),
+                'purchase_order_number': note.purchase_order.number if note.purchase_order else None
+            })
+
         return Response({
             'orders': orders_data,
             'price_history': price_history,
+            'notes': notes_data,
             'product_name': product.name,
             'supplier_name': supplier.name
         })
