@@ -47,9 +47,9 @@ export function Step1_Items({
                     quantity: line.quantity_delivered || line.quantity,
                     uom_name: line.uom_name,
                     uom_id: line.uom,
-                    unit_price: line.unit_price,
-                    unit_price_gross: line.unit_price_gross,
-                    tax_amount: (line.unit_price_gross - line.unit_price),
+                    unit_price: line.unit_price || line.unit_cost || 0,
+                    unit_price_gross: line.unit_price_gross || line.unit_price || line.unit_cost || 0,
+                    tax_amount: line.unit_price_gross ? (line.unit_price_gross - (line.unit_price || line.unit_cost || 0)) : 0,
                     reason: ""
                 }
             ])
@@ -91,7 +91,8 @@ export function Step1_Items({
                             <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Producto/Servicio</TableHead>
                             <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground">Original</TableHead>
                             <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground">Entregado</TableHead>
-                            <TableHead className="w-40 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground">Cant. Corregir</TableHead>
+                            <TableHead className="w-28 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground">Cant. Corregir</TableHead>
+                            <TableHead className="w-32 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground">Precio</TableHead>
                             <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Motivo / Razón</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -151,7 +152,7 @@ export function Step1_Items({
                                         </div>
                                     </TableCell>
                                     <TableCell className="px-4">
-                                        <div className="relative group max-w-[120px] mx-auto">
+                                        <div className="relative group max-w-[100px] mx-auto">
                                             <Input
                                                 type="number"
                                                 step="1"
@@ -181,13 +182,30 @@ export function Step1_Items({
                                             )}
                                         </div>
                                     </TableCell>
+                                    <TableCell className="px-4">
+                                        <div className="max-w-[120px] mx-auto">
+                                            <Input
+                                                type="number"
+                                                disabled={!selected}
+                                                value={itemData?.unit_price ?? ""}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
+                                                    updateItem(line.id, 'unit_price', val);
+                                                }}
+                                                className={cn(
+                                                    "h-10 text-center font-bold transition-all tabular-nums",
+                                                    !selected && "opacity-50"
+                                                )}
+                                                min={0}
+                                            />
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         <Input
                                             placeholder="Indique motivo..."
                                             disabled={!selected}
                                             value={itemData?.reason || ""}
                                             onChange={(e) => updateItem(line.id, 'reason', e.target.value)}
-                                            // Fixing the function name below
                                             className={cn(
                                                 "h-10 text-xs font-medium placeholder:italic transition-all",
                                                 !selected && "opacity-50"
