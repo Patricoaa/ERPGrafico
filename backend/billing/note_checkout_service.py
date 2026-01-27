@@ -574,7 +574,8 @@ class NoteCheckoutService:
                     quantity=qty,
                     unit_price=Decimal(str(item.get('unit_price', product.cost_price * Decimal('1.2')))),
                     uom=product.uom,
-                    description=f"Adicional Nota Débito: {product.name}"
+                    description=f"Adicional Nota Débito: {product.name}",
+                    related_note=workflow.invoice
                 )
                 
                 # Create OT and link to this Note

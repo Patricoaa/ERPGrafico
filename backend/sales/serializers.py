@@ -110,7 +110,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
         return data
 
 class SaleOrderSerializer(serializers.ModelSerializer):
-    lines = SaleLineSerializer(many=True, read_only=True)
+    lines = serializers.SerializerMethodField()
     customer_name = serializers.CharField(source='customer.name', read_only=True)
     channel_display = serializers.CharField(source='get_channel_display', read_only=True)
     total_paid = serializers.SerializerMethodField()
@@ -177,6 +177,10 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             })
 
         return docs
+    
+    def get_lines(self, obj):
+        # Only include original lines (not those from notes)
+        return SaleLineSerializer(obj.lines.filter(related_note__isnull=True), many=True).data
     
     def get_work_orders(self, obj):
         # Only include OTs NOT linked to a note (original order OTs)

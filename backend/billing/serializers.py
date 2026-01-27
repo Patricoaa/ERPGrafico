@@ -38,7 +38,20 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return obj.total - total_paid
 
     def get_lines(self, obj):
-        # 1. Prioritize NoteWorkflow items for NC/ND
+        # 1. Check for persistent lines linked to this Note
+        is_sale = obj.sale_order is not None
+        if is_sale:
+            note_lines = obj.note_sale_lines.all()
+            if note_lines.exists():
+                from sales.serializers import SaleLineSerializer
+                return SaleLineSerializer(note_lines, many=True).data
+        else:
+            note_lines = obj.note_purchase_lines.all()
+            if note_lines.exists():
+                from purchasing.serializers import PurchaseLineSerializer
+                return PurchaseLineSerializer(note_lines, many=True).data
+
+        # 2. Prioritize NoteWorkflow items for NC/ND (Legacy/No-anchor lines)
         if obj.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
             try:
                 if hasattr(obj, 'workflow') and obj.workflow and obj.workflow.selected_items:

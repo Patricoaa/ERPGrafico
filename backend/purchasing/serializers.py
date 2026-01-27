@@ -56,7 +56,7 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
         return data
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
-    lines = PurchaseLineSerializer(many=True, read_only=True)
+    lines = serializers.SerializerMethodField()
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     total_paid = serializers.SerializerMethodField()
@@ -176,6 +176,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             })
 
         return docs
+    
+    def get_lines(self, obj):
+        # Only include original lines (not those from notes)
+        return PurchaseLineSerializer(obj.lines.filter(related_note__isnull=True), many=True).data
 
 class WritePurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseLineSerializer(many=True)

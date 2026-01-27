@@ -118,6 +118,14 @@ class SaleLine(models.Model):
         null=True, blank=True,
         help_text=_("Metadatos capturados para fabricación avanzada (diseño, fechas, contactos, etc.)")
     )
+    
+    related_note = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='note_sale_lines',
+        help_text="Nota que originó esta línea adicional"
+    )
 
 
     def calculate_subtotal(self):

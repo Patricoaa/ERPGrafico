@@ -143,6 +143,14 @@ class PurchaseLine(models.Model):
         help_text="Cantidad total recibida de esta línea"
     )
 
+    related_note = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='note_purchase_lines',
+        help_text="Nota que originó esta línea adicional"
+    )
+
     def calculate_subtotal(self):
         self.subtotal = self.quantity * self.unit_cost
 
