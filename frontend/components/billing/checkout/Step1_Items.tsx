@@ -159,8 +159,13 @@ export function Step1_Items({
                                                 disabled={!selected}
                                                 value={itemData?.quantity ?? ""}
                                                 onChange={(e) => {
-                                                    let val = e.target.value === "" ? "" : parseInt(e.target.value) || 0;
-                                                    if (val !== "" && val > maxQty) val = maxQty;
+                                                    const rawValue = e.target.value;
+                                                    if (rawValue === "") {
+                                                        updateItem(line.id, 'quantity', "");
+                                                        return;
+                                                    }
+                                                    let val = parseInt(rawValue) || 0;
+                                                    if (val > maxQty) val = maxQty;
                                                     updateItem(line.id, 'quantity', val);
                                                 }}
                                                 className={cn(
