@@ -69,7 +69,7 @@ export function NoteCheckoutWizard({
         item.has_bom
     )
 
-    const hasManufacturing = selectedItems.some((item: any) =>
+    const hasManufacturing = initialType === 'NOTA_DEBITO' && selectedItems.some((item: any) =>
         (item.product_type === 'MANUFACTURABLE' && item.requires_advanced_manufacturing) ||
         (item.product_type === 'MANUFACTURABLE' && !item.has_bom)
     );
