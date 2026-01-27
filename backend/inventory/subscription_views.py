@@ -141,3 +141,55 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    @action(detail=True, methods=['get'])
+    def history(self, request, pk=None):
+        """
+        Get history of Purchase Orders and unit costs for this subscription.
+        """
+        subscription = self.get_object()
+        product = subscription.product
+        supplier = subscription.supplier
+
+        # Get Purchase Orders linked to this product and supplier
+        from purchasing.models import PurchaseOrder, PurchaseLine
+        
+        orders_qs = PurchaseOrder.objects.filter(
+            supplier=supplier,
+            lines__product=product
+        ).distinct().order_by('-date')
+
+        # Since we might not have a specialized serializer for this summary, 
+        # we'll build a simplified response.
+        orders_data = []
+        for order in orders_qs:
+            orders_data.append({
+                'id': order.id,
+                'number': order.number,
+                'display_id': order.display_id,
+                'date': order.date,
+                'status': order.status,
+                'total': float(order.total),
+                'receiving_status': order.receiving_status,
+            })
+
+        # Get Unit Cost history from Purchase Lines
+        price_history_qs = PurchaseLine.objects.filter(
+            product=product,
+            order__supplier=supplier,
+            order__status=PurchaseOrder.Status.CONFIRMED # Or RECEIVED? Confirmed is usually when price is "set"
+        ).order_by('-order__date')[:20]
+
+        price_history = []
+        for line in price_history_qs:
+            price_history.append({
+                'date': line.order.date,
+                'unit_cost': float(line.unit_cost),
+                'order_number': line.order.number,
+            })
+
+        return Response({
+            'orders': orders_data,
+            'price_history': price_history,
+            'product_name': product.name,
+            'supplier_name': supplier.name
+        })

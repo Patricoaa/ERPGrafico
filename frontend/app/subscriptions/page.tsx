@@ -16,15 +16,16 @@ import {
     TrendingUp,
     AlertCircle,
     Plus,
-    Pencil,
     Archive,
-    RefreshCw
+    RefreshCw,
+    History
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ProductForm } from "@/components/forms/ProductForm"
+import { SubscriptionHistoryModal } from "@/components/inventory/SubscriptionHistoryModal"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -71,6 +72,8 @@ export default function SubscriptionsPage() {
     const [editingProduct, setEditingProduct] = useState<any>(null) // We'll fetch full product data
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<{ id: number, name: string } | null>(null)
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+    const [currentHistorySubscriptionId, setCurrentHistorySubscriptionId] = useState<number | null>(null)
 
     const fetchSubscriptions = async () => {
         try {
@@ -304,6 +307,19 @@ export default function SubscriptionsPage() {
                         <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => {
+                                setCurrentHistorySubscriptionId(sub.id)
+                                setIsHistoryOpen(true)
+                            }}
+                            title="Ver Historial"
+                        >
+                            <History className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
                                 setCurrentArchivingProduct({ id: sub.product, name: sub.product_name })
@@ -412,6 +428,12 @@ export default function SubscriptionsPage() {
                         </div>
                     </div>
                 }
+            />
+
+            <SubscriptionHistoryModal
+                open={isHistoryOpen}
+                onOpenChange={setIsHistoryOpen}
+                subscriptionId={currentHistorySubscriptionId}
             />
         </div>
     )
