@@ -88,9 +88,11 @@ interface WorkOrderWizardProps {
 const BASE_STAGES = [
     { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', icon: Package, alwaysShow: true },
     { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Stock', icon: CheckCircle2, alwaysShow: true },
+    { id: 'OUTSOURCING_ASSIGNMENT', label: 'Asignación de Tercerizados', icon: Plus, alwaysShow: true },
     { id: 'PREPRESS', label: 'Pre-Impresión', icon: FileText, alwaysShow: false },
     { id: 'PRESS', label: 'Impresión', icon: Printer, alwaysShow: false },
     { id: 'POSTPRESS', label: 'Post-Impresión', icon: Layers, alwaysShow: false },
+    { id: 'OUTSOURCING_VERIFICATION', label: 'Verificación de Tercerizados', icon: LayoutDashboard, alwaysShow: false },
     { id: 'FINISHED', label: 'Finalizada', icon: CheckCircle2, alwaysShow: true },
 ]
 
@@ -133,9 +135,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
         return BASE_STAGES.filter(stage => {
             if (stage.alwaysShow) return true
-            if (stage.id === 'PREPRESS') return orderData.requires_prepress
-            if (stage.id === 'PRESS') return orderData.requires_press
-            if (stage.id === 'POSTPRESS') return orderData.requires_postpress
+            if (stage.id === 'PREPRESS') return orderData.current_stage === 'PREPRESS' || orderData.requires_prepress
+            if (stage.id === 'PRESS') return orderData.current_stage === 'PRESS' || orderData.requires_press
+            if (stage.id === 'POSTPRESS') return orderData.current_stage === 'POSTPRESS' || orderData.requires_postpress
+            if (stage.id === 'OUTSOURCING_VERIFICATION') return orderData.current_stage === 'OUTSOURCING_VERIFICATION' || (orderData.materials || []).some((m: any) => m.is_outsourced)
             return false
         })
     }
@@ -235,7 +238,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 toast.error(`Stock insuficiente para ${missingStock.length} componentes. Reponga stock para continuar.`)
                 return
             }
+        }
 
+        if (order.current_stage === 'OUTSOURCING_ASSIGNMENT' && isMovingForward) {
             const pending = order.materials?.filter((m: any) => m.is_outsourced && !m.purchase_order_number) || []
             if (pending.length > 0 && !showPOPreview) {
                 setOutsourcedPending(pending)
@@ -674,10 +679,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             }}
                                                             disabled={!!editingMaterialId} // Disable product change when editing
                                                             customFilter={(p: any) => {
-                                                                if (isOutsourced) {
-                                                                    return p.product_type === 'SERVICE' && p.can_be_purchased;
-                                                                }
-
                                                                 // 1. Exclude the product being manufactured
                                                                 if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
 
@@ -783,20 +784,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     <Plus className="mr-2 h-4 w-4" />
                                                     Agregar Material
                                                 </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="flex-1 border-dashed text-primary border-primary/20 bg-primary/5 hover:bg-primary/10"
-                                                    onClick={() => {
-                                                        resetMaterialForm()
-                                                        setIsOutsourced(true)
-                                                        setIsAddMaterialOpen(true)
-                                                    }}
-                                                    disabled={order?.status === 'FINISHED'}
-                                                >
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    Agregar Servicio Tercerizado
-                                                </Button>
                                             </div>
                                         )}
                                     </div>
@@ -835,7 +822,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     <div className="space-y-4">
                                         <p className="text-sm text-muted-foreground">Verifique la disponibilidad de stock en {order?.warehouse_name || 'la bodega seleccionada'}.</p>
                                         <div className="grid gap-4">
-                                            {order?.materials?.map((m: any) => (
+                                            {order?.materials?.filter((m: any) => !m.is_outsourced).map((m: any) => (
                                                 <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg">
                                                     <div className="space-y-1">
                                                         <p className="text-sm font-medium">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></p>
@@ -857,8 +844,234 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     </div>
                                                 </div>
                                             ))}
+                                            {order?.materials?.filter((m: any) => !m.is_outsourced).length === 0 && (
+                                                <div className="text-center py-4 text-muted-foreground text-sm italic border rounded-lg border-dashed">
+                                                    Sin materiales de stock requeridos.
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
+                                </div>
+                            )}
+
+                            {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_ASSIGNMENT' && (
+                                <div className="space-y-6">
+                                    <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg flex gap-3">
+                                        <Plus className="h-5 w-5 text-indigo-600 shrink-0" />
+                                        <div className="text-sm text-indigo-800">
+                                            <p className="font-bold">Asignación de Servicios Tercerizados</p>
+                                            <p className="text-xs">Si el trabajo requiere servicios externos (ej: laminado, troquelado externo), agréguelos aquí. Se generará una Orden de Compra automáticamente.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {/* List of current outsourced services */}
+                                        <div className="grid gap-3">
+                                            {order?.materials?.filter((m: any) => m.is_outsourced).map((m: any) => (
+                                                <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="bg-primary/10 p-2 rounded-full">
+                                                            <Package className="h-4 w-4 text-primary" />
+                                                        </div>
+                                                        <div className="space-y-0.5">
+                                                            <p className="text-sm font-bold">{m.component_name}</p>
+                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
+                                                                <span>{m.supplier_name}</span>
+                                                                <span>•</span>
+                                                                <span>{formatCurrency(m.unit_price)} / {m.uom_name}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="text-right mr-2">
+                                                            <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
+                                                            <p className="text-sm font-bold text-primary">
+                                                                {formatCurrency(m.quantity_planned * m.unit_price)}
+                                                            </p>
+                                                        </div>
+                                                        {isViewingCurrentStage && !m.purchase_order_number && (
+                                                            <div className="flex gap-1">
+                                                                <Button variant="ghost" size="icon" onClick={() => handleEditMaterial(m)} className="h-8 w-8">
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteMaterial(m.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                        {m.purchase_order_number && (
+                                                            <Badge variant="outline" className="gap-1 border-blue-200 text-blue-700 bg-blue-50">
+                                                                <FileText className="h-3 w-3" />
+                                                                {m.purchase_order_number}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {isViewingCurrentStage && (
+                                            <div className="pt-2">
+                                                {isAddMaterialOpen && isOutsourced ? (
+                                                    <div className="p-4 border-2 border-primary/20 rounded-lg bg-primary/5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                                                        <div className="flex flex-col md:flex-row gap-4 items-end">
+                                                            <div className="flex-1 space-y-2">
+                                                                <label className="text-xs font-bold uppercase">Servicio</label>
+                                                                <ProductSelector
+                                                                    value={newMaterialProduct}
+                                                                    onChange={(val, obj) => {
+                                                                        setNewMaterialProduct(val)
+                                                                        setSelectedProductObj(obj)
+                                                                        if (obj?.uom_id) setNewMaterialUoM(obj.uom_id.toString())
+                                                                    }}
+                                                                    disabled={!!editingMaterialId}
+                                                                    customFilter={(p: any) => p.product_type === 'SERVICE' && p.can_be_purchased}
+                                                                />
+                                                            </div>
+                                                            <div className="w-full md:w-32 space-y-2">
+                                                                <label className="text-xs font-bold uppercase">Cantidad</label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={newMaterialQty}
+                                                                    onChange={(e) => setNewMaterialQty(e.target.value)}
+                                                                />
+                                                            </div>
+                                                            <div className="w-full md:w-40 space-y-2">
+                                                                <label className="text-xs font-bold uppercase">Unidad</label>
+                                                                <UoMSelector
+                                                                    product={selectedProductObj}
+                                                                    context="bom"
+                                                                    value={newMaterialUoM}
+                                                                    onChange={setNewMaterialUoM}
+                                                                    uoms={uoms}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t border-primary/10 mt-2">
+                                                            <div className="flex-1 space-y-2">
+                                                                <label className="text-xs font-bold uppercase text-primary">Proveedor</label>
+                                                                <AdvancedContactSelector
+                                                                    value={selectedSupplierId}
+                                                                    onChange={setSelectedSupplierId}
+                                                                    contactType="SUPPLIER"
+                                                                />
+                                                            </div>
+                                                            <div className="w-full md:w-32 space-y-2">
+                                                                <label className="text-xs font-bold uppercase text-primary">Precio Bruto</label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={grossUnitPrice}
+                                                                    onChange={(e) => {
+                                                                        const gross = e.target.value
+                                                                        setGrossUnitPrice(gross)
+                                                                        setUnitPrice(gross ? (parseFloat(gross) / 1.19).toFixed(2) : "0")
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 space-y-2">
+                                                                <label className="text-xs font-bold uppercase text-primary">Documento</label>
+                                                                <select
+                                                                    className="w-full rounded-md border border-primary/30 bg-background px-3 py-2 text-sm ring-offset-background focus:ring-2 focus:ring-primary"
+                                                                    value={selectedDocumentType}
+                                                                    onChange={(e) => setSelectedDocumentType(e.target.value)}
+                                                                >
+                                                                    <option value="FACTURA">Factura</option>
+                                                                    <option value="BOLETA">Boleta</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex justify-end gap-2 pt-2">
+                                                            <Button variant="ghost" size="sm" onClick={() => { setIsAddMaterialOpen(false); resetMaterialForm(); }}>Cancelar</Button>
+                                                            <Button size="sm" onClick={handleAddMaterial} disabled={addingMaterial}>
+                                                                {editingMaterialId ? "Guardar" : "Añadir Servicio"}
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="w-full border-dashed text-primary border-primary/20 bg-primary/5 hover:bg-primary/10"
+                                                        onClick={() => {
+                                                            resetMaterialForm()
+                                                            setIsOutsourced(true)
+                                                            setIsAddMaterialOpen(true)
+                                                        }}
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Agregar Servicio Tercerizado
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_VERIFICATION' && (
+                                <div className="space-y-6">
+                                    <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex gap-3">
+                                        <LayoutDashboard className="h-5 w-5 text-amber-600 shrink-0" />
+                                        <div className="text-sm text-amber-800">
+                                            <p className="font-bold">Verificación de Servicios Tercerizados</p>
+                                            <p className="text-xs">Valide que todos los servicios externos hayan sido recibidos correctamente en el sistema.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-4">
+                                        {order?.materials?.filter((m: any) => m.is_outsourced).map((m: any) => {
+                                            const isReceived = m.purchase_order_receiving_status === 'RECEIVED'
+                                            const statusLabel = isReceived ? 'Recibido' : (m.purchase_order_receiving_status === 'PARTIAL' ? 'Parcial' : 'Pendiente')
+
+                                            return (
+                                                <div key={m.id} className="flex items-center justify-between p-4 border rounded-lg bg-background">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={cn(
+                                                            "h-3 w-3 rounded-full animate-pulse",
+                                                            isReceived ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-none" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+                                                        )} />
+                                                        <div className="space-y-0.5">
+                                                            <p className="text-sm font-bold">{m.component_name}</p>
+                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
+                                                                <span className={cn(isReceived ? "text-green-600" : "text-amber-600")}>{statusLabel}</span>
+                                                                <span>•</span>
+                                                                <span>{m.supplier_name}</span>
+                                                                <span>•</span>
+                                                                <span>OC: {m.purchase_order_number || '---'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        {m.purchase_order_id && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="gap-2 h-8"
+                                                                onClick={() => openCommandCenter(m.purchase_order_id, 'purchase')}
+                                                            >
+                                                                <LayoutDashboard className="h-4 w-4" />
+                                                                Abrir HUB de OC
+                                                            </Button>
+                                                        )}
+                                                        <Badge variant={isReceived ? "default" : "secondary"} className={cn(isReceived ? "bg-green-500" : "")}>
+                                                            {isReceived ? <Check className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
+                                                            {isReceived ? "OK" : "Pendiente"}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+
+                                    {order?.materials?.filter((m: any) => m.is_outsourced && m.purchase_order_receiving_status !== 'RECEIVED').length > 0 && (
+                                        <div className="p-4 bg-muted/30 border border-dashed rounded-lg text-center">
+                                            <p className="text-xs text-muted-foreground italic">
+                                                Aviso: La OT no podrá ser finalizada hasta que todos los servicios tercerizados figuren como RECIBIDOS.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -1407,7 +1620,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             </div>
                             <div className="text-xs text-blue-700 leading-relaxed">
                                 <p className="font-bold mb-1">Nota importante:</p>
-                                <p>Las órdenes de compra se crearán en estado <span className="font-bold">Borrador</span>. Deberá confirmarlas manualmente desde el módulo de Compras para procesar el pago y la recepción.</p>
+                                <p>Las órdenes de compra se crearán en estado <span className="font-bold">Confirmado</span>. Deberá procesar la recepción desde el Hub de la OC para poder finalizar la OT posteriormente.</p>
                             </div>
                         </div>
                     </div>

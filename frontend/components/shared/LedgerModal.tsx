@@ -87,32 +87,10 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
             ),
             cell: ({ row }) => {
                 const mov = row.original
+                const glosa = mov.label || mov.description
                 return (
-                    <div className="flex flex-col gap-0.5 max-w-[300px]">
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-blue-600">
-                                {mov.reference || `AS-${mov.entry_id}`}
-                            </span>
-                            {mov.partner && (
-                                <span className="text-[10px] text-muted-foreground font-medium uppercase truncate">
-                                    • {mov.partner}
-                                </span>
-                            )}
-                        </div>
-                        <span className="text-xs truncate italic" title={mov.description}>
-                            {mov.description}
-                        </span>
-                        {mov.source_document && (
-                            <a
-                                href={mov.source_document.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[9px] text-primary/70 hover:text-primary transition-colors flex items-center gap-1"
-                            >
-                                <Scale className="h-2.5 w-2.5" />
-                                {mov.source_document.type}: {mov.source_document.name}
-                            </a>
-                        )}
+                    <div className="max-w-[400px] text-xs leading-relaxed" title={glosa}>
+                        {glosa}
                     </div>
                 )
             },
@@ -200,7 +178,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                                 Libro Mayor
                             </DialogTitle>
                             <p className="text-sm text-muted-foreground font-mono">
-                                {accountCode} — <span className="text-foreground font-sans font-semibold">{accountName}</span>
+                                {accountCode} | <span className="text-foreground font-sans font-semibold">{accountName}</span>
                             </p>
                         </div>
                         <div className="flex items-center gap-2 pr-8">

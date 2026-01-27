@@ -34,6 +34,8 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
     component_cost = serializers.DecimalField(source='component.cost_price', read_only=True, max_digits=12, decimal_places=2)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     purchase_order_number = serializers.CharField(source='purchase_line.order.number', read_only=True)
+    purchase_order_receiving_status = serializers.CharField(source='purchase_line.order.receiving_status', read_only=True)
+    purchase_order_id = serializers.IntegerField(source='purchase_line.order.id', read_only=True)
     total_cost = serializers.SerializerMethodField()
     
     class Meta:
@@ -182,10 +184,12 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         # Progression based on stages
         weights = {
             WorkOrder.Stage.MATERIAL_ASSIGNMENT.value: 0,
-            WorkOrder.Stage.MATERIAL_APPROVAL.value: 20,
-            WorkOrder.Stage.PREPRESS.value: 40,
+            WorkOrder.Stage.MATERIAL_APPROVAL.value: 15,
+            WorkOrder.Stage.OUTSOURCING_ASSIGNMENT.value: 30,
+            WorkOrder.Stage.PREPRESS.value: 45,
             WorkOrder.Stage.PRESS.value: 60,
-            WorkOrder.Stage.POSTPRESS.value: 80,
+            WorkOrder.Stage.POSTPRESS.value: 75,
+            WorkOrder.Stage.OUTSOURCING_VERIFICATION.value: 90,
             WorkOrder.Stage.FINISHED.value: 100,
             WorkOrder.Stage.CANCELLED.value: 0
         }

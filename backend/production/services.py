@@ -279,9 +279,11 @@ class WorkOrderService:
         STAGES_SEQUENCE = [
             WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             WorkOrder.Stage.MATERIAL_APPROVAL,
+            WorkOrder.Stage.OUTSOURCING_ASSIGNMENT,
             WorkOrder.Stage.PREPRESS,
             WorkOrder.Stage.PRESS,
             WorkOrder.Stage.POSTPRESS,
+            WorkOrder.Stage.OUTSOURCING_VERIFICATION,
             WorkOrder.Stage.FINISHED
         ]
         
@@ -432,11 +434,35 @@ class WorkOrderService:
                     # We allow proceeding but maybe log a warning or require explicit approval
                     pass
         
-        # When moving forward from MATERIAL_APPROVAL, create POs for outsourced services
-        if old_stage == WorkOrder.Stage.MATERIAL_APPROVAL and next_stage not in [WorkOrder.Stage.CANCELLED, WorkOrder.Stage.MATERIAL_ASSIGNMENT]:
+        # When moving forward from OUTSOURCING_ASSIGNMENT, create POs for outsourced services
+        if old_stage == WorkOrder.Stage.OUTSOURCING_ASSIGNMENT and next_stage not in [WorkOrder.Stage.CANCELLED, WorkOrder.Stage.MATERIAL_ASSIGNMENT, WorkOrder.Stage.MATERIAL_APPROVAL]:
             WorkOrderService._create_outsourcing_purchase_orders(work_order)
         
+        # Validation for OUTSOURCING_VERIFICATION
+        if next_stage == WorkOrder.Stage.OUTSOURCING_VERIFICATION:
+            outsourced_mats = work_order.materials.filter(is_outsourced=True)
+            if not outsourced_mats.exists():
+                # If no outsourced services, we can skip or just move through
+                pass
+        
+        # When moving forward FROM OUTSOURCING_VERIFICATION to FINISHED
+        if old_stage == WorkOrder.Stage.OUTSOURCING_VERIFICATION and next_stage == WorkOrder.Stage.FINISHED:
+            pass # Validation will happen in next_stage == FINISHED
+        
         elif next_stage == WorkOrder.Stage.FINISHED:
+            # Final validation for outsourced services if any
+            from purchasing.models import PurchaseOrder
+            pending_pos = work_order.purchase_orders.exclude(
+                receiving_status=PurchaseOrder.ReceivingStatus.RECEIVED
+            ).exclude(status=PurchaseOrder.Status.CANCELLED)
+            
+            if pending_pos.exists():
+                pos_str = ", ".join([po.display_id for po in pending_pos])
+                raise ValidationError(
+                    f"No se puede finalizar la OT: las siguientes Órdenes de Compra aún no han sido recibidas completamente: {pos_str}. "
+                    "Asegúrese de registrar la recepción del servicio en el Hub de la OC."
+                )
+
             # Finalize: stock movements
             WorkOrderService.finalize_production(work_order, user)
             work_order.status = WorkOrder.Status.FINISHED

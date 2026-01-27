@@ -16,10 +16,12 @@ class WorkOrder(models.Model):
 
     class Stage(models.TextChoices):
         MATERIAL_ASSIGNMENT = 'MATERIAL_ASSIGNMENT', _('Asignación de Materiales')
-        MATERIAL_APPROVAL = 'MATERIAL_APPROVAL', _('Aprobación de Materiales')
+        MATERIAL_APPROVAL = 'MATERIAL_APPROVAL', _('Aprobación de Stock')
+        OUTSOURCING_ASSIGNMENT = 'OUTSOURCING_ASSIGNMENT', _('Asignación de Tercerizados')
         PREPRESS = 'PREPRESS', _('Pre-Impresión')
         PRESS = 'PRESS', _('Impresión')
         POSTPRESS = 'POSTPRESS', _('Post-Impresión')
+        OUTSOURCING_VERIFICATION = 'OUTSOURCING_VERIFICATION', _('Verificación de Tercerizados')
         FINISHED = 'FINISHED', _('Finalizada')
         CANCELLED = 'CANCELLED', _('Cancelada')
 
@@ -182,9 +184,11 @@ class WorkOrder(models.Model):
         STAGES_SEQUENCE = [
             self.Stage.MATERIAL_ASSIGNMENT,
             self.Stage.MATERIAL_APPROVAL,
+            self.Stage.OUTSOURCING_ASSIGNMENT,
             self.Stage.PREPRESS,
             self.Stage.PRESS,
             self.Stage.POSTPRESS,
+            self.Stage.OUTSOURCING_VERIFICATION,
             self.Stage.FINISHED
         ]
         
