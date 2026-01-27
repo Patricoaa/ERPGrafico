@@ -152,7 +152,7 @@ export function StockReport() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-primary"
                         onClick={() => setInsightsProduct(row.original)}
-                        title="Ver Panel de Insights (Precios, Kardex, Margen)"
+                        title="Ver Panel de Insights"
                     >
                         <History className="h-4 w-4" />
                     </Button>

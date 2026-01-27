@@ -16,6 +16,7 @@ import {
     TrendingUp,
     AlertCircle,
     Plus,
+    Pencil,
     Archive,
     RefreshCw,
     History

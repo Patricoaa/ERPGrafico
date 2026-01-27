@@ -67,6 +67,8 @@ interface KardexEntry {
     date: string
     type: string
     quantity: number
+    unit_price?: number
+    total_price?: number
     warehouse: string
     description: string
     uom: string
@@ -339,6 +341,8 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                 <TableHead>Fecha</TableHead>
                                                 <TableHead>Tipo</TableHead>
                                                 <TableHead>Cantidad</TableHead>
+                                                <TableHead>P. Unitario</TableHead>
+                                                <TableHead>Total</TableHead>
                                                 <TableHead>Bodega</TableHead>
                                                 <TableHead>Motivo / Doc</TableHead>
                                             </TableRow>
@@ -360,15 +364,21 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                     <TableCell>
                                                         <DataCell.Number value={move.quantity} className="text-left" suffix={move.uom} decimals={2} />
                                                     </TableCell>
+                                                    <TableCell>
+                                                        <DataCell.Currency value={move.unit_price || 0} className="text-left" />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <DataCell.Currency value={move.total_price || 0} className="text-left" />
+                                                    </TableCell>
                                                     <TableCell className="text-xs">{move.warehouse}</TableCell>
-                                                    <TableCell className="text-xs text-muted-foreground truncate max-w-[200px]" title={move.description}>
+                                                    <TableCell className="text-xs text-muted-foreground truncate max-w-[150px]" title={move.description}>
                                                         {move.description || "-"}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
                                             {data.kardex.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
+                                                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground italic">
                                                         Sin movimientos registrados
                                                     </TableCell>
                                                 </TableRow>

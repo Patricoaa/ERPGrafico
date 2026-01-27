@@ -194,7 +194,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 <YAxis fontSize={10} stroke="#94a3b8" tickFormatter={(val) => `$${val.toLocaleString()}`} />
                                                 <RechartsTooltip
                                                     labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                    formatter={(val: number) => [new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val), 'Costo Unitario']}
+                                                    formatter={(val: number | undefined) => [val !== undefined ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val) : '---', 'Costo Unitario']}
                                                     contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                                 />
                                                 <Area type="monotone" name="Costo Unitario" dataKey="unit_cost" stroke="#3b82f6" fillOpacity={1} fill="url(#colorCost)" strokeWidth={3} />

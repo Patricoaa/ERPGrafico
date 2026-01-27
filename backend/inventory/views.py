@@ -143,15 +143,42 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
 
         # 2. Kardex (Recent Stock Moves)
         from inventory.models import StockMove
-        moves = StockMove.objects.filter(product=instance).select_related('warehouse', 'uom').all().order_by('-date', '-id')[:50]
-        kardex = [{
-            'date': m.date,
-            'type': m.move_type,
-            'quantity': float(m.quantity),
-            'warehouse': m.warehouse.name,
-            'description': m.description,
-            'uom': m.uom.name if m.uom else ""
-        } for m in moves]
+        moves = StockMove.objects.filter(product=instance).select_related(
+            'warehouse', 'uom'
+        ).prefetch_related(
+            'sale_delivery_line',
+            'purchase_receipt_line',
+            'sale_return_line',
+            'purchase_return_line'
+        ).all().order_by('-date', '-id')[:50]
+        
+        kardex = []
+        for m in moves:
+            unit_price = 0
+            # Try to get price/cost from related lines
+            if hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
+                unit_price = float(m.sale_delivery_line.unit_price)
+            elif hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
+                unit_price = float(m.purchase_receipt_line.unit_cost)
+            elif hasattr(m, 'sale_return_line') and m.sale_return_line:
+                unit_price = float(m.sale_return_line.unit_price)
+            elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
+                unit_price = float(m.purchase_return_line.unit_cost)
+            
+            # If it's an adjustment, we don't have a direct line link in these relations,
+            # but we might have it in the source_quantity if it was manual (handled by StockService)
+            # However, for now, we rely on these mapped relations which cover 95% of cases.
+
+            kardex.append({
+                'date': m.date,
+                'type': m.move_type,
+                'quantity': float(m.quantity),
+                'unit_price': unit_price,
+                'total_price': abs(float(m.quantity) * unit_price),
+                'warehouse': m.warehouse.name,
+                'description': m.description,
+                'uom': m.uom.name if m.uom else ""
+            })
 
         # 3. Sales Analysis (from CONFIRMED deliveries)
         from sales.models import SaleDeliveryLine
