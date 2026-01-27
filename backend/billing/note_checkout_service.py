@@ -556,25 +556,46 @@ class NoteCheckoutService:
         from sales.models import SaleLine
         
         for item in workflow.selected_items:
-            line_id = item.get('line_id')
-            if not line_id: continue
+            product_id = item.get('product_id')
+            if not product_id: continue
             
-            try:
-                sale_line = SaleLine.objects.get(id=line_id)
-                product = sale_line.product
-                
-                # Only for ADVANCED manufacturing (Express are created at dispatch)
-                if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
-                    work_order = WorkOrderService.create_from_sale_line(sale_line)
-                    if work_order:
-                        work_order.related_note = workflow.invoice
-                        work_order.save()
-                        print(f"DEBUG: Created ADVANCED OT-{work_order.number} for debit note {workflow.invoice.number}")
-                elif product.product_type == 'MANUFACTURABLE' and product.mfg_auto_finalize:
-                    # Express product - OT will be created during dispatch
-                    print(f"DEBUG: Skipping EXPRESS product {product.internal_code} - OT will be created at dispatch")
-            except SaleLine.DoesNotExist:
+            product = Product.objects.get(id=product_id)
+            if product.product_type != Product.Type.MANUFACTURABLE:
                 continue
+
+            # Only for ADVANCED manufacturing (Express are created at dispatch)
+            if product.requires_advanced_manufacturing:
+                qty = Decimal(str(item.get('quantity', 0)))
+                if qty <= 0: continue
+                
+                # Find or create SaleLine to anchor the OT
+                line_id = item.get('line_id')
+                sale_line = None
+                if line_id:
+                    sale_line = SaleLine.objects.filter(id=line_id).first()
+                
+                if not sale_line:
+                    # Search by product or create new for supplemental
+                    sale_line = workflow.sale_order.lines.filter(product=product).first()
+                    
+                if not sale_line:
+                    sale_line = SaleLine.objects.create(
+                        order=workflow.sale_order,
+                        product=product,
+                        quantity=qty,
+                        unit_price=Decimal(str(item.get('unit_price', 0))),
+                        uom=product.uom,
+                        description=f"Adicional Nota Débito: {product.name}"
+                    )
+                
+                work_order = WorkOrderService.create_from_sale_line(sale_line)
+                if work_order:
+                    work_order.related_note = workflow.invoice
+                    work_order.save()
+                    print(f"DEBUG: Created ADVANCED OT-{work_order.number} for debit note {workflow.invoice.number}")
+            elif product.mfg_auto_finalize:
+                # Express product - OT will be created during dispatch
+                print(f"DEBUG: Skipping EXPRESS product {product.internal_code} - OT will be created at dispatch")
     
     @staticmethod
     def _create_accounting_entry(workflow: NoteWorkflow, settings: AccountingSettings, moved_quantities: Dict[int, Decimal] = None) -> JournalEntry:
@@ -814,75 +835,7 @@ class NoteCheckoutService:
         workflow.notes = f"{workflow.notes}\nCANCELADO: {reason}" if workflow.notes else f"CANCELADO: {reason}"
         workflow.save()
         
-        # Assuming this is the `register_document` method or similar based on the instruction's diff
-        # This block is inserted based on the provided diff for `register_document`
-        # If this is not the correct location for `register_document`, please clarify.
-        # The diff provided for `register_document` starts with `workflow.notes` and then `workflow.registration_deferred`.
-        # Since `register_document` is not in the original content, I'm placing the new method and its call
-        # where the diff implies `register_document` would be, or where it makes sense.
-        # Given the context, it seems the user intended to show a new method `register_document`
-        # or a similar method that transitions to PAYMENT_PENDING and sets `registration_deferred`.
-        # I will insert the new method definition here, and then the call in `process_full_checkout`.
-        # The diff for `register_document` seems to be a separate method that was not fully provided in the original content.
-        # I will add the `_trigger_production_for_debit_note` method definition here.
-        # The instruction's diff for `register_document` shows:
-        # workflow.notes        workflow.registration_deferred = is_pending
-        # workflow.current_stage = NoteWorkflow.Stage.PAYMENT_PENDING # Move straight to payment
-        # workflow.save()
-        # # Trigger production for Debit Notes
-        # NoteCheckoutService._trigger_production_for_debit_note(workflow)
-        # return workflow
-        # Since `register_document` is not in the provided code, I cannot insert into it.
-        # I will proceed with inserting the method definition and the call in `process_full_checkout`.
-        
         return workflow
-
-    @staticmethod
-    def _trigger_production_for_debit_note(workflow: NoteWorkflow):
-        """
-        Triggers Work Order creation for fabricable products in a Debit Note.
-        """
-        if workflow.is_credit_note or not workflow.sale_order:
-            return
-
-        from production.services import WorkOrderService
-        from sales.models import SaleLine
-        
-        # Ensure we have SaleLines for any "new" products in the Debit Note
-        # so they can anchor a Work Order.
-        for item in workflow.selected_items:
-            product = Product.objects.get(id=item['product_id'])
-            if product.product_type == Product.Type.MANUFACTURABLE:
-                qty = Decimal(str(item.get('quantity', 0)))
-                if qty <= 0: continue
-                
-                # Find or create SaleLine
-                sale_line = workflow.sale_order.lines.filter(product=product).first()
-                if not sale_line:
-                    sale_line = SaleLine.objects.create(
-                        order=workflow.sale_order,
-                        product=product,
-                        quantity=qty,
-                        unit_price=Decimal(str(item.get('unit_price', 0))),
-                        uom=product.uom,
-                        description=f"Adicional Nota Débito: {product.name}"
-                    )
-                else:
-                    # If it exists, we might want to increase its quantity if this is supplemental
-                    # or just create a new OT for the additional quantity.
-                    # Business choice: We'll create a new SaleLine for clarity if it's a "Supplemental" addition
-                    # to keep the OT linked 1:1 to a line.
-                    sale_line = SaleLine.objects.create(
-                        order=workflow.sale_order,
-                        product=product,
-                        quantity=qty,
-                        unit_price=Decimal(str(item.get('unit_price', 0))),
-                        uom=product.uom,
-                        description=f"Adicional Nota Débito: {product.name}"
-                    )
-                
-                # Create OT
-                WorkOrderService.create_from_sale_line(sale_line)
 
     @staticmethod
     @transaction.atomic
