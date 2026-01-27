@@ -66,24 +66,68 @@ class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
     def ledger(self, request, pk=None):
         """
         Returns the ledger (libro mayor) for a specific account.
-        Shows all posted journal items with running balance.
+        Shows all posted journal items with running balance and period summary.
         """
         account = self.get_object()
-        items = account.journal_items.filter(entry__state='POSTED').select_related('entry').order_by('entry__date', 'entry__id')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        # Base queryset for posted items
+        base_items = account.journal_items.filter(entry__state='POSTED').select_related('entry')
+
+        # Calculate opening balance (all history before start_date)
+        opening_balance = 0
+        if start_date:
+            opening_items = base_items.filter(entry__date__lt=start_date)
+            totals = opening_items.aggregate(
+                total_debit=Sum('debit'),
+                total_credit=Sum('credit')
+            )
+            
+            debit = totals.get('total_debit') or 0
+            credit = totals.get('total_credit') or 0
+            
+            # Simple balance logic: Assets/Expenses (+) Debit, Others (+) Credit
+            # BUT for ledger display, we usually want relative to account type
+            # Or we can just return absolute debit/credit totals and let frontend handle it
+            # Let's follow the model's balance logic but for the opening balance specifically
+            if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                opening_balance = debit - credit
+            else:
+                opening_balance = credit - debit
+
+        # Filter items for the requested period
+        items = base_items.order_by('entry__date', 'entry__id')
+        if start_date:
+            items = items.filter(entry__date__gte=start_date)
+        if end_date:
+            items = items.filter(entry__date__lte=end_date)
         
-        balance = 0
+        balance = float(opening_balance)
         ledger_data = []
         
+        period_debit = 0
+        period_credit = 0
+
         for item in items:
-            balance += (item.debit - item.credit)
+            d = float(item.debit)
+            c = float(item.credit)
+            period_debit += d
+            period_credit += c
+            
+            if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                balance += (d - c)
+            else:
+                balance += (c - d)
+
             ledger_data.append({
                 'id': item.id,
                 'date': item.entry.date,
                 'entry_id': item.entry.id,
                 'reference': item.entry.reference,
                 'description': item.entry.description,
-                'debit': float(item.debit),
-                'credit': float(item.credit),
+                'debit': d,
+                'credit': c,
                 'balance': float(balance),
                 'partner': item.partner or '',
                 'label': item.label or '',
@@ -92,6 +136,10 @@ class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
         
         return Response({
             'account': AccountSerializer(account).data,
+            'opening_balance': float(opening_balance),
+            'period_debit': float(period_debit),
+            'period_credit': float(period_credit),
+            'closing_balance': float(balance),
             'movements': ledger_data
         })
 

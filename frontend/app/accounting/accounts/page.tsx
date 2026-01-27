@@ -15,6 +15,8 @@ import { toast } from "sonner"
 import { AccountForm } from "@/components/forms/AccountForm"
 import { DataManagement } from "@/components/shared/DataManagement"
 
+import { LedgerModal } from "@/components/shared/LedgerModal"
+
 interface Account {
     id: number
     code: string
@@ -25,6 +27,7 @@ interface Account {
     debit_total: string
     credit_total: string
     balance: string
+    is_selectable: boolean
 }
 
 const typeOrder = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE']
@@ -129,11 +132,13 @@ export default function AccountsPage() {
                 const account = row.original
                 return (
                     <div className="flex justify-end items-center gap-1">
-                        <Link href={`/accounting/accounts/${account.id}/ledger`}>
-                            <Button variant="ghost" size="sm" title="Libro Mayor">
-                                <Book className="h-4 w-4 mr-1" />
-                            </Button>
-                        </Link>
+                        {account.is_selectable && (
+                            <LedgerModal
+                                accountId={account.id}
+                                accountName={account.name}
+                                accountCode={account.code}
+                            />
+                        )}
                         <AccountForm
                             accounts={accounts}
                             initialData={account as any}

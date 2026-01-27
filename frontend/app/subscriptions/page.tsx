@@ -365,7 +365,6 @@ export default function SubscriptionsPage() {
             </div>
 
             <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Suscripciones</h3>
                 {loading ? (
                     <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
                         Cargando...

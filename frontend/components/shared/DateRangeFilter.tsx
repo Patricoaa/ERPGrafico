@@ -17,16 +17,18 @@ import {
 
 interface DateRangeFilterProps {
     className?: string
-    onRangeChange: (range: { from?: Date; to?: Date } | undefined) => void
+    onRangeChange: (range: DateRange | undefined) => void
     label?: string
+    defaultRange?: DateRange
 }
 
 export function DateRangeFilter({
     className,
     onRangeChange,
     label = "Filtrar por fecha",
+    defaultRange,
 }: DateRangeFilterProps) {
-    const [date, setDate] = React.useState<DateRange | undefined>()
+    const [date, setDate] = React.useState<DateRange | undefined>(defaultRange)
 
     const handleSelect = (newDate: DateRange | undefined) => {
         setDate(newDate)
