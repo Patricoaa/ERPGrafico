@@ -321,27 +321,28 @@ export default function SubscriptionsPage() {
 
     return (
         <div className="container mx-auto p-6 space-y-6">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
                 <h1 className="text-3xl font-bold">Gestión de Suscripciones</h1>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                     <Button
-                        variant="outline"
                         size="icon"
-                        className="rounded-full h-12 w-12 shadow-sm"
-                        onClick={handleTriggerInspection}
-                        title="Ejecutar Inspección Diaria"
-                    >
-                        <RefreshCw className="h-5 w-5" />
-                    </Button>
-                    <Button
-                        className="rounded-full h-12 w-12 shadow-lg"
-                        size="icon"
+                        className="rounded-full h-8 w-8"
                         onClick={() => {
                             setEditingProduct(null)
                             setIsFormOpen(true)
                         }}
+                        title="Nueva Suscripción"
                     >
-                        <Plus className="h-6 w-6" />
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-full"
+                        onClick={handleTriggerInspection}
+                    >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Ejecutar Inspección
                     </Button>
                 </div>
             </div>
