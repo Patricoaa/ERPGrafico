@@ -997,30 +997,47 @@ class NoteCheckoutService:
             # Determine quantities to move
             items_to_move = []
             
+            # Helper to find real line_id from temp id/product
+            # workflow.selected_items already has the updated 'line_id' from step 4
+            def get_real_item_data(temp_id, prod_id):
+                for v_item in workflow.selected_items:
+                    # Match by temp id (if provided) or product_id
+                    # If it's a Debit Note, the frontend sent temp id in 'line_id'
+                    # which we saved in Step 4 before replacing it. 
+                    # Wait, we replaced it in Step 4. 
+                    # Let's check how we built validated_items.
+                    if v_item['product_id'] == prod_id:
+                        return v_item
+                return None
+
             if delivery_type == 'PARTIAL':
                 # Use provided line_data
                 line_data = logistics_data.get('line_data', [])
                 for ld in line_data:
-                    line_id = ld.get('line_id') # Corresponds to item['line_id'] in selected_items
-                    # ...
-                
-                # Re-iterate selected items to match with line_data
-                for item in selected_items:
-                    # We need a way to link line_data back to selected_items.
-                    # Frontend usually sends line_id.
-                    l_id = item.get('line_id')
+                    temp_l_id = ld.get('line_id')
+                    p_id = ld.get('product_id')
+                    qty_to_move = Decimal(str(ld.get('quantity', 0)))
                     
-                    # Find matching data
-                    match = next((l for l in line_data if l.get('line_id') == l_id), None)
+                    if qty_to_move <= 0: continue
+                    
+                    # Find corresponding validated item
+                    match = None
+                    for v_item in workflow.selected_items:
+                         # For Debit Notes, we matched by product_id or temp ID earlier.
+                         # Let's assume product_id is unique enough for this note's scope.
+                         if v_item['product_id'] == p_id:
+                             match = v_item
+                             break
+                    
                     if match:
-                        qty_to_move = Decimal(str(match.get('quantity', 0)))
-                        if qty_to_move > 0:
-                            items_to_move.append({
-                                'product_id': item['product_id'],
-                                'quantity': qty_to_move,
-                                'makes_move': item.get('creates_stock_move', False),
-                                'line_id': item.get('line_id')
-                            })
+                        items_to_move.append({
+                            'product_id': match['product_id'],
+                            'quantity': qty_to_move,
+                            'makes_move': match.get('creates_stock_move', False),
+                            'line_id': match.get('line_id'), # Real persistent ID
+                            'unit_price': match.get('unit_price'),
+                            'unit_cost': match.get('unit_price') # Supplemental items use it for purchase cost
+                        })
             
             elif delivery_type == 'SCHEDULED':
                 # No movements now
@@ -1028,12 +1045,16 @@ class NoteCheckoutService:
                 
             else:
                 # IMMEDIATE: Move full quantity
-                    items_to_move.append({
-                        'product_id': item['product_id'],
-                        'quantity': Decimal(str(item['quantity'])),
-                        'makes_move': item['creates_stock_move'],
-                        'line_id': item.get('line_id')
-                    })
+                for v_item in workflow.selected_items:
+                    if v_item.get('creates_stock_move'):
+                        items_to_move.append({
+                            'product_id': v_item['product_id'],
+                            'quantity': Decimal(str(v_item['quantity'])),
+                            'makes_move': True,
+                            'line_id': v_item.get('line_id'),
+                            'unit_price': v_item.get('unit_price'),
+                            'unit_cost': v_item.get('unit_price')
+                        })
 
             # Create Logistics via Services for consistency and document tracking
             if is_credit_note:

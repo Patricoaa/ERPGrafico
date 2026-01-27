@@ -112,15 +112,44 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return []
 
     def get_related_documents(self, obj):
+        docs = None
         if obj.purchase_order:
-            # We reuse the logic from PurchaseOrderSerializer efficiently
-            # Note: Importing inside method to avoid circular imports
             from purchasing.serializers import PurchaseOrderSerializer
-            return PurchaseOrderSerializer().get_related_documents(obj.purchase_order)
-        if obj.sale_order:
+            docs = PurchaseOrderSerializer().get_related_documents(obj.purchase_order)
+        elif obj.sale_order:
             from sales.serializers import SaleOrderSerializer
-            return SaleOrderSerializer().get_related_documents(obj.sale_order)
-        return None
+            docs = SaleOrderSerializer().get_related_documents(obj.sale_order)
+        
+        # If it's a Note, augment with THIS note's specific logistics 
+        # (Since OrderSerializer might exclude them to avoid duplicates in the main order view)
+        if docs and obj.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
+            if obj.dte_type == Invoice.DTEType.NOTA_DEBITO:
+                # Add supplemental deliveries
+                for dele in obj.sale_deliveries.all():
+                    # Check if already in list to avoid duplicates
+                    if not any(d['id'] == dele.id and d['docType'] == 'sale_delivery' for d in docs.get('deliveries', [])):
+                        docs.setdefault('deliveries', []).append({
+                            'id': dele.id,
+                            'number': dele.number,
+                            'display_id': dele.display_id,
+                            'status': dele.status,
+                            'date': dele.delivery_date,
+                            'docType': 'sale_delivery'
+                        })
+                # Add supplemental receipts (purchase)
+                if hasattr(obj, 'purchase_receipts'):
+                    for rec in obj.purchase_receipts.all():
+                         if not any(d['id'] == rec.id and d['docType'] == 'purchase_receipt' for d in docs.get('receipts', [])):
+                            docs.setdefault('receipts', []).append({
+                                'id': rec.id,
+                                'number': rec.number,
+                                'display_id': rec.display_id,
+                                'status': rec.status,
+                                'date': rec.receipt_date,
+                                'docType': 'purchase_receipt'
+                            })
+        
+        return docs
 
     def get_partner_name(self, obj):
         if obj.sale_order:
