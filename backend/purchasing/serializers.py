@@ -8,6 +8,7 @@ from decimal import Decimal
 class PurchaseLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_type = serializers.CharField(source='product.product_type', read_only=True)
+    product_id = serializers.ReadOnlyField(source='product.id')
     quantity_pending = serializers.ReadOnlyField()
     uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     
@@ -18,7 +19,7 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseLine
         fields = [
-            'id', 'product', 'product_name', 'product_type', 'quantity', 'uom', 'uom_name', 
+            'id', 'product', 'product_id', 'product_name', 'product_type', 'quantity', 'uom', 'uom_name', 
             'unit_cost', 'tax_rate', 'subtotal', 'quantity_received', 'quantity_pending',
             'track_inventory', 'has_bom', 'requires_advanced_manufacturing'
         ]

@@ -234,32 +234,32 @@ class WorkOrderService:
                     uom=bom_line.uom or bom_line.component.uom,
                     source='BOM'
                 )
-        
+
         WorkOrderHistory.objects.create(
             work_order=work_order,
             stage=work_order.current_stage,
             status=work_order.status,
             notes="OT generada desde despacho (Producto Express)"
         )
-        
+
         # Express Flow: Auto-finalize
-        try:
-            with transaction.atomic():
-                WorkOrderService.transition_to(
-                    work_order, 
-                    WorkOrder.Stage.FINISHED, 
-                    notes="Finalización automática (Flujo Express - Despacho)"
+        if product.mfg_auto_finalize:
+            try:
+                with transaction.atomic():
+                    WorkOrderService.transition_to(
+                        work_order, 
+                        WorkOrder.Stage.FINISHED, 
+                        notes="Finalización automática (Flujo Express - Despacho)"
+                    )
+            except Exception as e:
+                print(f"Warning: Auto-finalize failed for OT-{work_order.number} during delivery: {str(e)}")
+                WorkOrderHistory.objects.create(
+                    work_order=work_order,
+                    stage=work_order.current_stage,
+                    status=work_order.status,
+                    notes=f"Fallo en finalización automática: {str(e)}",
+                    user=None
                 )
-        except Exception as e:
-            # Log error but keep OT created
-            print(f"Warning: Auto-finalize failed for OT-{work_order.number}: {str(e)}")
-            WorkOrderHistory.objects.create(
-                work_order=work_order,
-                stage=work_order.current_stage,
-                status=work_order.status,
-                notes=f"Fallo en finalización automática: {str(e)}",
-                user=None
-            )
         
         return work_order
     

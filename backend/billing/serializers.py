@@ -123,31 +123,41 @@ class InvoiceSerializer(serializers.ModelSerializer):
         # If it's a Note, augment with THIS note's specific logistics 
         # (Since OrderSerializer might exclude them to avoid duplicates in the main order view)
         if docs and obj.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
+            # IMPORTANT: For Notes, we ONLY want to see logistics related to the note itself,
+            # not the original order's logistics (which are handled in the Order HUB).
+            docs['deliveries'] = [] 
+            docs['receipts'] = []
+
             if obj.dte_type == Invoice.DTEType.NOTA_DEBITO:
                 # Add supplemental deliveries
                 for dele in obj.sale_deliveries.all():
-                    # Check if already in list to avoid duplicates
-                    if not any(d['id'] == dele.id and d['docType'] == 'sale_delivery' for d in docs.get('deliveries', [])):
-                        docs.setdefault('deliveries', []).append({
-                            'id': dele.id,
-                            'number': dele.number,
-                            'display_id': dele.display_id,
-                            'status': dele.status,
-                            'date': dele.delivery_date,
-                            'docType': 'sale_delivery'
-                        })
+                    docs.setdefault('deliveries', []).append({
+                        'id': dele.id,
+                        'number': dele.number,
+                        'display_id': dele.display_id,
+                        'status': dele.status,
+                        'date': dele.delivery_date,
+                        'docType': 'sale_delivery'
+                    })
                 # Add supplemental receipts (purchase)
                 if hasattr(obj, 'purchase_receipts'):
                     for rec in obj.purchase_receipts.all():
-                         if not any(d['id'] == rec.id and d['docType'] == 'purchase_receipt' for d in docs.get('receipts', [])):
-                            docs.setdefault('receipts', []).append({
-                                'id': rec.id,
-                                'number': rec.number,
-                                'display_id': rec.display_id,
-                                'status': rec.status,
-                                'date': rec.receipt_date,
-                                'docType': 'purchase_receipt'
-                            })
+                        docs.setdefault('receipts', []).append({
+                            'id': rec.id,
+                            'number': rec.number,
+                            'display_id': rec.display_id,
+                            'status': rec.status,
+                            'date': rec.receipt_date,
+                            'docType': 'purchase_receipt'
+                        })
+            
+            # Add supplemental work orders
+            from production.serializers import WorkOrderSerializer
+            note_ots = obj.work_orders.all()
+            if note_ots.exists():
+                for ot in note_ots:
+                    if not any(d['id'] == ot.id and d['docType'] == 'work_order' for d in docs.get('work_orders', [])):
+                         docs.setdefault('work_orders', []).append(WorkOrderSerializer(ot).data)
         
         return docs
 

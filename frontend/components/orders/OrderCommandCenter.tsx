@@ -411,52 +411,63 @@ export function OrderCommandCenter({
 
     // Resolve Logistics Documents with Nomenclature and individual progress if applicable
     const logisticsDocs = (() => {
-        // [NEW] Returns for Notes
-        if (activeDoc.related_returns?.length > 0) return activeDoc.related_returns.map((doc: any) => ({
-            type: doc.type,
-            number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),
-            icon: Package,
-            id: doc.id,
-            docType: doc.docType,
-            status: doc.status,
-            actions: [
-                ...((doc.status !== 'CANCELLED') ? [{
-                    icon: Ban,
-                    title: 'Anular Devolución',
-                    color: 'text-orange-500 hover:bg-orange-500/10',
-                    onClick: () => handleAnnulLogistics(doc.id, doc.docType)
-                }] : [])
-            ]
-        }))
+        const docs: any[] = []
 
-        if (activeDoc.related_stock_moves?.length > 0) return activeDoc.related_stock_moves.map((m: any) => ({
-            type: m.move_type_display || 'Movimiento',
-            number: formatDocumentId('MOV', m.id, m.display_id),
-            icon: Package,
-            id: m.id,
-            docType: 'inventory',
-            status: m.state || 'Realizado',
-            actions: [] // Stock moves usually don't have direct annulment here yet
-        }))
+        // 1. [NEW] Returns for Notes/Orders
+        if (activeDoc.related_returns?.length > 0) {
+            docs.push(...activeDoc.related_returns.map((doc: any) => ({
+                type: doc.type,
+                number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),
+                icon: Package,
+                id: doc.id,
+                docType: doc.docType,
+                status: doc.status,
+                actions: [
+                    ...((doc.status !== 'CANCELLED') ? [{
+                        icon: Ban,
+                        title: 'Anular Devolución',
+                        color: 'text-orange-500 hover:bg-orange-500/10',
+                        onClick: () => handleAnnulLogistics(doc.id, doc.docType)
+                    }] : [])
+                ]
+            })))
+        }
 
+        // 2. High-level Deliveries/Receipts
         const specificDocs = isSale ? activeDoc.related_documents?.deliveries : (activeDoc.related_documents?.receipts || activeDoc.related_documents?.receptions)
-        return (specificDocs || []).map((doc: any) => ({
-            type: isSale ? 'Despacho' : 'Recepción',
-            number: formatDocumentId(isSale ? 'DES' : 'REC', doc.number || doc.id, doc.display_id),
-            icon: Package,
-            id: doc.id,
-            docType: doc.docType || (isSale ? 'sale_delivery' : 'inventory'),
-            status: doc.status,
-            actions: [
-                // Only show annulment if there's a DRAFT invoice
-                ...((doc.status !== 'CANCELLED' && invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
-                    icon: Ban,
-                    title: isSale ? 'Anular Despacho' : 'Anular Recepción',
-                    color: 'text-orange-500 hover:bg-orange-500/10',
-                    onClick: () => handleAnnulLogistics(doc.id, isSale ? 'sale_delivery' : 'purchase_receipt')
-                }] : [])
-            ]
-        }))
+        if (specificDocs?.length > 0) {
+            docs.push(...specificDocs.map((doc: any) => ({
+                type: isSale ? 'Despacho' : 'Recepción',
+                number: formatDocumentId(isSale ? 'DES' : 'REC', doc.number || doc.id, doc.display_id),
+                icon: Package,
+                id: doc.id,
+                docType: doc.docType || (isSale ? 'sale_delivery' : 'inventory'),
+                status: doc.status,
+                actions: [
+                    ...((doc.status !== 'CANCELLED' && invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
+                        icon: Ban,
+                        title: isSale ? 'Anular Despacho' : 'Anular Recepción',
+                        color: 'text-orange-500 hover:bg-orange-500/10',
+                        onClick: () => handleAnnulLogistics(doc.id, isSale ? 'sale_delivery' : 'purchase_receipt')
+                    }] : [])
+                ]
+            })))
+        }
+
+        // 3. Low-level Stock Moves (only if no high-level docs found to avoid clutter)
+        if (docs.length === 0 && activeDoc.related_stock_moves?.length > 0) {
+            docs.push(...activeDoc.related_stock_moves.map((m: any) => ({
+                type: m.move_type_display || 'Movimiento',
+                number: formatDocumentId('MOV', m.id, m.display_id),
+                icon: Package,
+                id: m.id,
+                docType: 'inventory',
+                status: m.state || 'Realizado',
+                actions: []
+            })))
+        }
+
+        return docs
     })()
 
     // Calculate dynamic logistics progress - Always use frontend logic to sync with docs
@@ -749,15 +760,7 @@ export function OrderCommandCenter({
                                         })()}
                                         icon={Package}
                                         variant={isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')}
-                                        documents={isNoteMode ? (activeInvoice.related_stock_moves || []).map((m: any) => ({
-                                            type: m.move_type_display || 'Movimiento',
-                                            number: m.display_id || `MOV-${m.id}`,
-                                            icon: Package,
-                                            id: m.id,
-                                            docType: 'inventory',
-                                            status: m.state || 'Realizado',
-                                            actions: []
-                                        })) : logisticsDocs}
+                                        documents={logisticsDocs}
                                         onViewDetail={openDetails}
                                         actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: any) => !a.id.includes('view-'))}
                                         emptyMessage={isNoteMode ? "Sin movimientos asociados" : "Sin movimientos"}

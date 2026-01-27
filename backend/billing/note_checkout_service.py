@@ -39,19 +39,43 @@ class NoteCheckoutService:
         
         # Determine items for logistics
         items_for_logistics = []
+        
+        # Build a lookup map from invoice lines for unit_price/cost
+        from sales.models import SaleLine
+        from purchasing.models import PurchaseLine
+        
+        price_map = {} # product_id -> (unit_price, line_id)
+        if is_sale:
+             lines = invoice.note_sale_lines.all()
+             for l in lines:
+                 price_map[l.product_id] = (l.unit_price, l.id)
+        else:
+             lines = invoice.note_purchase_lines.all()
+             for l in lines:
+                 price_map[l.product_id] = (l.unit_cost, l.id)
+
         for ld in line_data:
             product_id = ld.get('product_id')
             quantity = Decimal(str(ld.get('quantity', 0)))
             if quantity <= 0: continue
             
-            # Find item details from previous workflow if possible (to get unit_price/cost)
-            # Or just fetch product
             product = Product.objects.get(id=product_id)
+            
+            # Use price/line from note if available
+            mapping = price_map.get(product.id)
+            if mapping:
+                unit_val, line_id = mapping
+            else:
+                unit_val = product.cost_price if not is_sale else product.cost_price * Decimal('1.2')
+                line_id = None
+
             items_for_logistics.append({
                 'product_id': product.id,
+                'line_id': line_id,
                 'quantity': quantity,
                 'uom_id': ld.get('uom_id') or product.uom_id,
-                'unit_cost': float(product.cost_price) # Fallback or look up original
+                'unit_price': float(unit_val),
+                'unit_cost': float(unit_val)
             })
 
         if is_credit:
@@ -956,6 +980,7 @@ class NoteCheckoutService:
                     item_line_id = persistent_line.id
 
             validated_items.append({
+                'product': product.id,
                 'product_id': product.id,
                 'product_name': product.name,
                 'quantity': float(quantity),

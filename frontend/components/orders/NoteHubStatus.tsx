@@ -52,7 +52,16 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                 <StatusBadge
                     icon={Package}
                     status={statuses.logistics}
-                    tooltip={stockMoves.length > 0 ? `Logística (${stockMoves.length} movimientos)` : "Sin movimientos"}
+                    tooltip={(() => {
+                        const deliveries = note.related_documents?.deliveries || []
+                        const receipts = note.related_documents?.receipts || []
+                        const moves = note.related_stock_moves || []
+
+                        if (deliveries.length > 0) return `Logística (${deliveries.length} despachos)`
+                        if (receipts.length > 0) return `Logística (${receipts.length} recepciones)`
+                        if (moves.length > 0) return `Logística (${moves.length} movimientos)`
+                        return "Sin movimientos"
+                    })()}
                 />
 
                 {/* Billing */}

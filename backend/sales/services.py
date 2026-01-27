@@ -383,7 +383,35 @@ class SalesService:
         # 0. Collect moves to link them later to the journal entry
         created_moves = []
 
-        # 1. Process lines for stock moves and quantity updates
+        # 1. Create Work Orders for EXPRESS manufacturable products FIRST
+        # This ensures that for express products, the Work Order exists before processing BOM explosion below,
+        # preventing duplicate stock movements.
+        from production.services import WorkOrderService
+        
+        for line in delivery.lines.all():
+            product = line.product
+            
+            # Skip if advanced manufacturing (OT was created at sale confirmation)
+            if product and product.product_type == Product.Type.MANUFACTURABLE:
+                if product.requires_advanced_manufacturing:
+                    continue
+                
+                # Create OT for express products
+                if product.mfg_auto_finalize:
+                    print(f"DEBUG: Creating OT for EXPRESS product {product.internal_code} in delivery {delivery.number}")
+                    work_order = WorkOrderService.create_ot_for_delivery_line(
+                        delivery_line=line,
+                        related_note=delivery.related_note  # Will be set for debit note deliveries
+                    )
+                    if work_order:
+                        # Link to delivery for traceability
+                        line.work_order = work_order
+                        line.save()
+                        print(f"DEBUG: Created OT-{work_order.number} for {product.internal_code}")
+                    else:
+                        print(f"DEBUG: No OT created for {product.internal_code} (not express)")
+
+        # 2. Process lines for stock moves and quantity updates
         for line in delivery.lines.all():
             product = line.product
             
@@ -489,7 +517,7 @@ class SalesService:
             line.sale_line.quantity_delivered += line.quantity
             line.sale_line.save()
 
-        # 2. Accounting Entry via Mapper (using total_cost for COGS)
+        # 3. Accounting Entry via Mapper (using total_cost for COGS)
         # Recalculate totals after updating line costs
         delivery.total_cost = sum(line.total_cost for line in delivery.lines.all())
         delivery.recalculate_totals()
@@ -518,33 +546,6 @@ class SalesService:
                 for move in created_moves:
                     move.journal_entry = entry
                     move.save()
-        
-        # 3. Create Work Orders for EXPRESS manufacturable products
-        # This happens AFTER stock moves but BEFORE final confirmation
-        from production.services import WorkOrderService
-        
-        for line in delivery.lines.all():
-            product = line.product
-            
-            # Skip if advanced manufacturing (OT was created at sale confirmation)
-            if product and product.product_type == Product.Type.MANUFACTURABLE:
-                if product.requires_advanced_manufacturing:
-                    continue
-                
-                # Create OT for express products
-                if product.mfg_auto_finalize:
-                    print(f"DEBUG: Creating OT for EXPRESS product {product.internal_code} in delivery {delivery.number}")
-                    work_order = WorkOrderService.create_ot_for_delivery_line(
-                        delivery_line=line,
-                        related_note=delivery.related_note  # Will be set for debit note deliveries
-                    )
-                    if work_order:
-                        # Link to delivery for traceability
-                        line.work_order = work_order
-                        line.save()
-                        print(f"DEBUG: Created OT-{work_order.number} for {product.internal_code}")
-                    else:
-                        print(f"DEBUG: No OT created for {product.internal_code} (not express)")
         
         # 4. Confirm delivery
         delivery.status = SaleDelivery.Status.CONFIRMED
