@@ -345,16 +345,31 @@ export function NoteCheckoutWizard({
     }
 
     const title = initialType === 'NOTA_CREDITO' ? 'Emitir Nota de Crédito' : 'Emitir Nota de Débito'
-    const totalSteps = 4 // Always 4 steps: Items, Logistics (maybe skipped), Registration, Payment
-    const isLastStep = step === 4
+
+    // Dynamic Step Sequence
+    const stepsSequence = ['items']
+    if (hasManufacturing) stepsSequence.push('manufacturing')
+    if (requiresLogistics) stepsSequence.push('logistics')
+    stepsSequence.push('dte', 'payment')
+
+    const stepToId: any = {
+        1: 'items',
+        5: 'manufacturing',
+        2: 'logistics',
+        3: 'dte',
+        4: 'payment'
+    }
+
+    const currentStepId = stepToId[step]
+    const currentStepIndex = stepsSequence.indexOf(currentStepId) + 1
+    const totalStepsCount = stepsSequence.length
+
+    const isLastStep = currentStepId === 'payment'
     const isStepLoading = loading || initializing
 
     const getNextButtonLabel = () => {
         if (isStepLoading) return "Procesando..."
         if (isLastStep) return "Finalizar Proceso"
-        if (step === 1) return requiresLogistics ? "Siguiente" : "Siguiente"
-        if (step === 2) return "Siguiente"
-        if (step === 3) return "Siguiente"
         return "Siguiente"
     }
 
@@ -383,15 +398,11 @@ export function NoteCheckoutWizard({
                     {/* Left Sidebar */}
                     {!initializing && (
                         <NoteProcessSidebar
-                            currentStep={
-                                step === 5 ? 2 :
-                                    (hasManufacturing ?
-                                        (step === 2 ? 3 : (step >= 3 ? step + 1 : step)) :
-                                        (step > 2 && !requiresLogistics ? step - 1 : step))
-                            }
-                            totalSteps={totalSteps + (hasManufacturing ? 1 : 0)}
+                            currentStep={currentStepIndex}
+                            totalSteps={totalStepsCount}
                             noteType={initialType}
                             requiresLogistics={requiresLogistics}
+                            hasManufacturing={hasManufacturing}
                             itemsCount={selectedItems.length}
                             dteNumber={registrationData.document_number}
                             paymentData={paymentData}
@@ -418,7 +429,7 @@ export function NoteCheckoutWizard({
                                 Atrás
                             </Button>
 
-                            {step < totalSteps ? (
+                            {!isLastStep ? (
                                 <Button onClick={handleNext} className="w-40 h-12 font-bold" disabled={isStepLoading}>
                                     Siguiente
                                     <ChevronRight className="ml-2 h-4 w-4" />

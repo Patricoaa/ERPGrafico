@@ -8,6 +8,7 @@ interface NoteProcessSidebarProps {
     totalSteps: number
     noteType: 'NOTA_CREDITO' | 'NOTA_DEBITO'
     requiresLogistics: boolean
+    hasManufacturing: boolean
     itemsCount: number
     dteNumber?: string
     paymentData?: {
@@ -28,6 +29,7 @@ export function NoteProcessSidebar({
     totalSteps,
     noteType,
     requiresLogistics,
+    hasManufacturing,
     itemsCount,
     dteNumber,
     paymentData
@@ -35,6 +37,10 @@ export function NoteProcessSidebar({
     const steps = [
         { id: 'items', label: 'Productos', icon: Package },
     ]
+
+    if (hasManufacturing) {
+        steps.push({ id: 'manufacturing', label: 'Producción', icon: ShoppingBag })
+    }
 
     if (requiresLogistics) {
         steps.push({ id: 'logistics', label: 'Logística', icon: Truck })
@@ -79,6 +85,9 @@ export function NoteProcessSidebar({
                             <div className="px-3 pb-3 pt-1 space-y-1 animate-in fade-in duration-300">
                                 {step.id === 'items' && itemsCount > 0 && (
                                     <p className="text-xs font-semibold">{itemsCount} productos seleccionados</p>
+                                )}
+                                {step.id === 'manufacturing' && (
+                                    <p className="text-xs font-semibold">Producción configurada</p>
                                 )}
                                 {step.id === 'logistics' && (
                                     <p className="text-xs font-semibold">Movimiento registrado</p>
