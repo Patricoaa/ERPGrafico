@@ -12,12 +12,14 @@ interface Step1_ItemsProps {
     originalInvoice: any
     selectedItems: any[]
     setSelectedItems: (items: any[]) => void
+    isCreditNote: boolean
 }
 
 export function Step1_Items({
     originalInvoice,
     selectedItems,
-    setSelectedItems
+    setSelectedItems,
+    isCreditNote
 }: Step1_ItemsProps) {
     const lines = originalInvoice?.lines || []
 
@@ -40,6 +42,7 @@ export function Step1_Items({
                     track_inventory: line.track_inventory,
                     has_bom: line.has_bom,
                     requires_advanced_manufacturing: line.requires_advanced_manufacturing,
+                    mfg_auto_finalize: line.mfg_auto_finalize,
                     creates_stock_move: line.track_inventory && (line.product_type !== 'MANUFACTURABLE' || line.requires_advanced_manufacturing === false),
                     quantity: line.quantity_delivered || line.quantity,
                     uom_name: line.uom_name,
@@ -96,7 +99,15 @@ export function Step1_Items({
                         {lines.map((line: any) => {
                             const selected = isSelected(line.id)
                             const itemData = getItem(line.id)
-                            const maxQty = Math.floor(line.quantity_delivered || line.quantity)
+                            const maxQty = isCreditNote
+                                ? Math.floor(line.quantity_delivered || line.quantity)
+                                : (line.product_type === 'STORABLE'
+                                    ? Math.floor(line.available_stock || 0)
+                                    : (line.product_type === 'MANUFACTURABLE' && line.mfg_auto_finalize ? Math.floor(line.manufacturable_quantity || 0) : 999999));
+
+                            const showMaxBadge = isCreditNote ||
+                                (line.product_type === 'STORABLE') ||
+                                (line.product_type === 'MANUFACTURABLE' && line.mfg_auto_finalize);
 
                             return (
                                 <TableRow key={line.id} className={cn(
@@ -147,7 +158,8 @@ export function Step1_Items({
                                                 disabled={!selected}
                                                 value={itemData?.quantity ?? ""}
                                                 onChange={(e) => {
-                                                    const val = e.target.value === "" ? "" : parseInt(e.target.value) || 0;
+                                                    let val = e.target.value === "" ? "" : parseInt(e.target.value) || 0;
+                                                    if (val !== "" && val > maxQty) val = maxQty;
                                                     updateItem(line.id, 'quantity', val);
                                                 }}
                                                 className={cn(
@@ -157,9 +169,12 @@ export function Step1_Items({
                                                 max={maxQty}
                                                 min={1}
                                             />
-                                            {selected && (
+                                            {selected && showMaxBadge && (
                                                 <div className="absolute -top-3 -right-3">
-                                                    <Badge className="h-5 min-w-5 flex items-center justify-center bg-primary text-[8px] font-black border-2 border-background shadow-sm">
+                                                    <Badge className={cn(
+                                                        "h-5 min-w-5 flex items-center justify-center text-[8px] font-black border-2 border-background shadow-sm",
+                                                        isCreditNote ? "bg-primary" : "bg-orange-500"
+                                                    )}>
                                                         MAX {maxQty}
                                                     </Badge>
                                                 </div>

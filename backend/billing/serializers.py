@@ -105,10 +105,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
         # 2. Fallback to order lines
         if obj.sale_order:
             from sales.serializers import SaleLineSerializer
-            return SaleLineSerializer(obj.sale_order.lines.all(), many=True).data
+            return SaleLineSerializer(obj.sale_order.lines.filter(related_note__isnull=True), many=True).data
         if obj.purchase_order:
             from purchasing.serializers import PurchaseLineSerializer
-            return PurchaseLineSerializer(obj.purchase_order.lines.all(), many=True).data
+            return PurchaseLineSerializer(obj.purchase_order.lines.filter(related_note__isnull=True), many=True).data
         return []
 
     def get_related_documents(self, obj):

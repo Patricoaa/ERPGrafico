@@ -94,10 +94,8 @@ export function Step3_Registration({
                             <div className="col-span-2 space-y-2 pt-2 border-t mt-2">
                                 <Label className="text-xs font-bold uppercase flex items-center gap-2">
                                     <Upload className="h-3 w-3" />
-                                    Archivo Adjunto (Opcional)
-                                    {isCreditNote && (
-                                        <span className="text-rose-500 font-black ml-1 text-[10px]">OBLIGATORIO</span>
-                                    )}
+                                    Archivo Adjunto
+                                    <span className="text-rose-500 font-black ml-1 text-[10px]">OBLIGATORIO</span>
                                 </Label>
 
                                 {!formData.attachment ? (

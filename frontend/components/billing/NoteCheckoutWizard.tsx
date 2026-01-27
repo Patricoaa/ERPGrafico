@@ -17,6 +17,7 @@ import { Step1_Items } from "@/components/billing/checkout/Step1_Items"
 import { Step2_Logistics } from "@/components/billing/checkout/Step2_Logistics"
 import { Step3_Registration } from "@/components/billing/checkout/Step3_Registration"
 import { Step4_Payment } from "@/components/billing/checkout/Step4_Payment"
+import { Step2_ManufacturingDetails } from "@/components/sales/checkout/Step2_ManufacturingDetails"
 import { NoteProcessSidebar } from "@/components/billing/checkout/NoteProcessSidebar"
 import { NoteItemsSummary } from "@/components/billing/checkout/NoteItemsSummary"
 
@@ -67,6 +68,11 @@ export function NoteCheckoutWizard({
         item.product_type === 'MANUFACTURABLE' ||
         item.has_bom
     )
+
+    const hasManufacturing = selectedItems.some((item: any) =>
+        (item.product_type === 'MANUFACTURABLE' && item.requires_advanced_manufacturing) ||
+        (item.product_type === 'MANUFACTURABLE' && !item.has_bom)
+    );
 
     const totalNet = selectedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0)
     const totalTax = selectedItems.reduce((acc, item) => acc + (item.quantity * item.tax_amount), 0)
@@ -129,6 +135,24 @@ export function NoteCheckoutWizard({
                 toast.error("Seleccione al menos un ítem.")
                 return
             }
+            if (hasManufacturing) {
+                setStep(5) // Step 5: Manufacturing
+            } else if (requiresLogistics) {
+                setStep(2)
+            } else {
+                setStep(3)
+            }
+        }
+        else if (step === 5) {
+            // Check if all mfg items have data
+            const pendingItems = selectedItems.filter((line: any) =>
+                (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data) ||
+                (line.product_type === 'MANUFACTURABLE' && !line.has_bom && !line.manufacturing_data)
+            )
+            if (pendingItems.length > 0) {
+                toast.error(`Tiene ${pendingItems.length} productos sin configurar detalles de fabricación.`)
+                return
+            }
             if (requiresLogistics) {
                 setStep(2)
             } else {
@@ -143,8 +167,8 @@ export function NoteCheckoutWizard({
             setStep(3)
         }
         else if (step === 3) {
-            if (!registrationData.is_pending && initialType === 'NOTA_CREDITO' && !registrationData.attachment) {
-                toast.error("El adjunto es obligatorio para NC.")
+            if (!registrationData.is_pending && !registrationData.attachment) {
+                toast.error("El archivo adjunto es obligatorio para registrar el documento.")
                 return
             }
             if (!registrationData.document_number && !registrationData.is_pending) {
@@ -156,8 +180,22 @@ export function NoteCheckoutWizard({
     }
 
     const handleBack = () => {
-        if (step === 3 && !requiresLogistics) {
+        if (step === 5) {
             setStep(1)
+        } else if (step === 2) {
+            if (hasManufacturing) {
+                setStep(5)
+            } else {
+                setStep(1)
+            }
+        } else if (step === 3) {
+            if (requiresLogistics) {
+                setStep(2)
+            } else if (hasManufacturing) {
+                setStep(5)
+            } else {
+                setStep(1)
+            }
         } else {
             setStep(prev => prev - 1)
         }
@@ -173,14 +211,42 @@ export function NoteCheckoutWizard({
             formData.append('note_type', initialType)
 
             // Items
-            formData.append('selected_items', JSON.stringify(selectedItems.map(i => ({
-                line_id: i.line_id,
-                product_id: i.product_id,
-                quantity: i.quantity,
-                unit_price: i.unit_price,
-                tax_amount: i.tax_amount,
-                reason: i.reason
-            }))))
+            formData.append('selected_items', JSON.stringify(selectedItems.map(i => {
+                // Clean up manufacturing_data for JSON (File objects can't be stringified)
+                let cleanMfgData = null
+                if (i.manufacturing_data) {
+                    const { design_files, approval_file, ...rest } = i.manufacturing_data
+                    cleanMfgData = {
+                        ...rest,
+                        design_filenames: (design_files || []).map((f: any) => f.name),
+                        approval_filename: approval_file ? approval_file.name : null
+                    }
+                }
+
+                return {
+                    line_id: i.line_id,
+                    product_id: i.product_id,
+                    quantity: i.quantity,
+                    unit_price: i.unit_price,
+                    tax_amount: i.tax_amount,
+                    reason: i.reason,
+                    manufacturing_data: cleanMfgData
+                }
+            })))
+
+            // Append manufacturing files per item
+            selectedItems.forEach((item: any, itemIdx: number) => {
+                if (item.manufacturing_data) {
+                    if (item.manufacturing_data.design_files) {
+                        item.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
+                            formData.append(`line_${itemIdx}_design_${fileIdx}`, file)
+                        })
+                    }
+                    if (item.manufacturing_data.approval_file) {
+                        formData.append(`line_${itemIdx}_approval`, item.manufacturing_data.approval_file)
+                    }
+                }
+            })
 
             // Logistics
             if (requiresLogistics && logisticsData) {
@@ -236,6 +302,14 @@ export function NoteCheckoutWizard({
                         originalInvoice={originalInvoice}
                         selectedItems={selectedItems}
                         setSelectedItems={setSelectedItems}
+                        isCreditNote={initialType === 'NOTA_CREDITO'}
+                    />
+                )
+            case 5:
+                return (
+                    <Step2_ManufacturingDetails
+                        orderLines={selectedItems}
+                        setOrderLines={setSelectedItems}
                     />
                 )
             case 2:
@@ -309,8 +383,13 @@ export function NoteCheckoutWizard({
                     {/* Left Sidebar */}
                     {!initializing && (
                         <NoteProcessSidebar
-                            currentStep={step > 2 && !requiresLogistics ? step - 1 : step}
-                            totalSteps={totalSteps}
+                            currentStep={
+                                step === 5 ? 2 :
+                                    (hasManufacturing ?
+                                        (step === 2 ? 3 : (step >= 3 ? step + 1 : step)) :
+                                        (step > 2 && !requiresLogistics ? step - 1 : step))
+                            }
+                            totalSteps={totalSteps + (hasManufacturing ? 1 : 0)}
                             noteType={initialType}
                             requiresLogistics={requiresLogistics}
                             itemsCount={selectedItems.length}

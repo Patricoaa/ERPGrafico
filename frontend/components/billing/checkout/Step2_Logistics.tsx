@@ -75,11 +75,12 @@ export function Step2_Logistics({
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [fetchingWarehouses, setFetchingWarehouses] = useState(true)
 
-    // Check for "Advanced Manufacturable" products - ONLY block for Debit Notes
-    const advancedManufacturableItems = selectedItems.filter(item =>
-        item.product_type === 'MANUFACTURABLE' && item.requires_advanced_manufacturing === true
+    // Check for "Manufacturable" products (Simple or Advanced) - ONLY block for Debit Notes
+    const restrictedItems = selectedItems.filter(item =>
+        (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
+        !item.mfg_auto_finalize
     );
-    const hasRestrictedItems = !isCreditNote && advancedManufacturableItems.length > 0;
+    const hasRestrictedItems = !isCreditNote && restrictedItems.length > 0;
 
     // Initialize data if null or missing fields
     useEffect(() => {
@@ -150,7 +151,7 @@ export function Step2_Logistics({
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider tabular-nums leading-none">Producción Requerida</p>
-                            <p className="text-xs font-medium">Hay {advancedManufacturableItems.length} productos que requieren fabricación avanzada. El despacho inmediato está deshabilitado para estos ítems.</p>
+                            <p className="text-xs font-medium">Hay {restrictedItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
                         </div>
                     </div>
                 )}
@@ -160,7 +161,12 @@ export function Step2_Logistics({
                     onValueChange={(val) => {
                         if (val === 'PARTIAL') {
                             const initialLineData = selectedItems
-                                .filter(item => item.creates_stock_move)
+                                .filter(item => {
+                                    const isRestricted = !isCreditNote &&
+                                        (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
+                                        !item.mfg_auto_finalize;
+                                    return item.creates_stock_move && !isRestricted;
+                                })
                                 .map(item => ({
                                     line_id: item.line_id,
                                     product_id: item.product_id,
@@ -249,9 +255,14 @@ export function Step2_Logistics({
                                 </TableHeader>
                                 <TableBody>
                                     {selectedItems.map((item) => {
-                                        const isEligible = item.creates_stock_move ||
+                                        const isRestricted = !isCreditNote &&
+                                            (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
+                                            !item.mfg_auto_finalize;
+
+                                        const isEligible = (item.creates_stock_move ||
                                             item.product_type === 'MANUFACTURABLE' ||
-                                            item.has_bom;
+                                            item.has_bom) && !isRestricted;
+
                                         const currentVal = (formData.line_data || [])
                                             .find((ld: any) => ld.line_id === item.line_id)?.quantity ?? 0;
 
@@ -261,7 +272,9 @@ export function Step2_Logistics({
                                                     <div className="flex flex-col gap-1 py-1">
                                                         <span className="font-medium text-xs leading-tight">{item.product_name}</span>
                                                         {!isEligible && (
-                                                            <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Sin control de stock</span>
+                                                            <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">
+                                                                {isRestricted ? "Requiere Producción" : "Sin control de stock"}
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </TableCell>

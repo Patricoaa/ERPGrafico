@@ -34,7 +34,8 @@ class SaleLineSerializer(serializers.ModelSerializer):
             'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
             'unit_price', 'unit_price_gross', 'tax_rate', 'subtotal', 'quantity_delivered', 
             'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',
-            'is_production_finished', 'work_order_summary', 'mfg_auto_finalize', 'has_bom'
+            'is_production_finished', 'work_order_summary', 'mfg_auto_finalize', 'has_bom',
+            'related_note', 'available_stock'
         ]
 
     def get_product_type(self, obj):
@@ -59,6 +60,14 @@ class SaleLineSerializer(serializers.ModelSerializer):
 
     def get_has_bom(self, obj):
         return obj.product.has_bom if obj.product else False
+
+    available_stock = serializers.SerializerMethodField()
+    
+    def get_available_stock(self, obj):
+        if obj.product and obj.product.product_type == 'STORABLE':
+            qty = obj.product.qty_available
+            return float(qty) if qty is not None else 0.0
+        return None
 
     is_production_finished = serializers.SerializerMethodField()
     work_order_summary = serializers.SerializerMethodField()
