@@ -31,7 +31,7 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
     uom_name = serializers.CharField(source='uom.name', read_only=True)
     stock_available = serializers.SerializerMethodField()
     is_available = serializers.SerializerMethodField()
-    component_cost = serializers.DecimalField(source='component.cost_price', read_only=True, max_digits=12, decimal_places=2)
+    component_cost = serializers.SerializerMethodField()
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     purchase_order_number = serializers.CharField(source='purchase_line.order.number', read_only=True)
     purchase_order_receiving_status = serializers.CharField(source='purchase_line.order.receiving_status', read_only=True)
@@ -77,6 +77,11 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
         stock_available = self.get_stock_available(obj)
         return stock_available >= quantity_planned
 
+    def get_component_cost(self, obj):
+        if obj.is_outsourced and obj.unit_price > 0:
+            return float(obj.unit_price)
+        return float(obj.component.cost_price)
+
     def get_total_cost(self, obj):
         from decimal import Decimal
         from inventory.services import UoMService
@@ -92,7 +97,11 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
             except:
                 pass
                 
-        total = qty * component.cost_price
+        cost = obj.component.cost_price
+        if obj.is_outsourced and obj.unit_price > 0:
+            cost = obj.unit_price
+            
+        total = qty * cost
         return float(total)
 
 class WorkOrderSerializer(serializers.ModelSerializer):

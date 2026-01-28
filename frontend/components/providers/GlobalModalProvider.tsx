@@ -31,7 +31,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }
 
     const openCommandCenter = (id: number, type: 'purchase' | 'sale' | 'obligation') => {
-        setWoId(null)
         setOccId(id)
         setOccType(type)
     }

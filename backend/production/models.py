@@ -96,6 +96,8 @@ class WorkOrder(models.Model):
     attachments = GenericRelation('core.Attachment')
     history = HistoricalRecords()
 
+    no_materials_required = models.BooleanField(_("Sin materiales de stock"), default=False, help_text="Si se marca, se omite el paso de aprobación de materiales")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

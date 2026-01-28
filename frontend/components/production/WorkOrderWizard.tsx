@@ -87,7 +87,7 @@ interface WorkOrderWizardProps {
 
 const BASE_STAGES = [
     { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', icon: Package, alwaysShow: true },
-    { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Stock', icon: CheckCircle2, alwaysShow: true },
+    { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Stock', icon: CheckCircle2, alwaysShow: false },
     { id: 'OUTSOURCING_ASSIGNMENT', label: 'Asignación de Tercerizados', icon: Plus, alwaysShow: true },
     { id: 'PREPRESS', label: 'Pre-Impresión', icon: FileText, alwaysShow: false },
     { id: 'PRESS', label: 'Impresión', icon: Printer, alwaysShow: false },
@@ -134,6 +134,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         if (!orderData) return BASE_STAGES.filter(s => s.alwaysShow)
 
         return BASE_STAGES.filter(stage => {
+            if (stage.id === 'MATERIAL_APPROVAL') {
+                if (orderData.no_materials_required) return false
+                const hasStockMaterials = (orderData.materials || []).some((m: any) => !m.is_outsourced)
+                return hasStockMaterials || orderData.current_stage === 'MATERIAL_APPROVAL'
+            }
             if (stage.alwaysShow) return true
             if (stage.id === 'PREPRESS') return orderData.current_stage === 'PREPRESS' || orderData.requires_prepress
             if (stage.id === 'PRESS') return orderData.current_stage === 'PRESS' || orderData.requires_press
@@ -184,8 +189,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
     const handleTransition = async (nextStageId: string, data: any = {}) => {
         // Validation: Materials
-        if (order.current_stage === 'MATERIAL_ASSIGNMENT' && (!order.materials || order.materials.length === 0)) {
-            toast.error("Debe asignar al menos un componente antes de continuar.")
+        if (order.current_stage === 'MATERIAL_ASSIGNMENT' && !order.no_materials_required && (!order.materials || order.materials.length === 0)) {
+            toast.error("Debe asignar al menos un componente o marcar la opción 'Sin materiales' antes de continuar.")
             return
         }
 
@@ -603,188 +608,194 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     )}
 
                                     <div className="space-y-4">
-                                        <p className="text-sm text-muted-foreground">Revise y asigne los materiales necesarios para esta pieza gráfica.</p>
-                                        <div className="border rounded-md overflow-hidden">
-                                            <table className="w-full text-sm">
-                                                <thead className="bg-muted/50">
-                                                    <tr>
-                                                        <th className="p-2 text-right">Cant. Planificada</th>
-                                                        <th className="p-2 text-left">UoM</th>
-                                                        <th className="p-2 text-right">Costo Unit.</th>
-                                                        <th className="p-2 text-right">Costo Total</th>
-                                                        <th className="p-2 text-left">Origen</th>
-                                                        <th className="p-2 w-10"></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {order?.materials?.map((m: any) => (
-                                                        <tr key={m.id} className="border-t">
-                                                            <td className="p-2">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></td>
-                                                            <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
-                                                            <td className="p-2">{m.uom_name}</td>
-                                                            <td className="p-2 text-right text-muted-foreground">{formatCurrency(m.component_cost)}</td>
-                                                            <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
-                                                            <td className="p-2 flex flex-col gap-1">
-                                                                <Badge variant="outline" className="text-[10px] w-fit">{m.source}</Badge>
-                                                                {m.is_outsourced && (
-                                                                    <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200 w-fit">
-                                                                        Tercerizado: {m.supplier_name || 'Sin prov.'}
-                                                                    </Badge>
-                                                                )}
-                                                            </td>
-                                                            <td className="p-2">
-                                                                {m.source === 'MANUAL' && (
-                                                                    <div className="flex gap-1">
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 text-primary"
-                                                                            onClick={() => handleEditMaterial(m)}
-                                                                        >
-                                                                            <Pencil className="h-3 w-3" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 text-destructive"
-                                                                            onClick={() => handleDeleteMaterial(m.id)}
-                                                                        >
-                                                                            <Trash2 className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                    {(!order?.materials || order.materials.length === 0) && (
-                                                        <tr>
-                                                            <td colSpan={7} className="p-4 text-center text-muted-foreground italic">No hay materiales asignados.</td>
-                                                        </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        {isAddMaterialOpen ? (
-                                            <div className="p-4 border rounded-md bg-muted/20 space-y-4">
-                                                <div className="flex flex-col md:flex-row gap-4 items-end">
-                                                    <div className="flex-1 space-y-2">
-                                                        <label className="text-xs font-bold uppercase">Producto / Componente</label>
-                                                        <ProductSelector
-                                                            value={newMaterialProduct}
-                                                            onChange={setNewMaterialProduct}
-                                                            onSelect={(p: any) => {
-                                                                setSelectedProductObj(p)
-                                                                // Auto-select base UoM
-                                                                if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
-                                                            }}
-                                                            disabled={!!editingMaterialId} // Disable product change when editing
-                                                            customFilter={(p: any) => {
-                                                                // 1. Exclude the product being manufactured
-                                                                if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
-
-                                                                // 2. Exclude Consumable products
-                                                                if (p.product_type === 'CONSUMABLE') return false;
-
-                                                                // 3. Exclude Simple Manufacturable products
-                                                                if (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing) return false;
-
-                                                                // 4. Exclude Advanced Manufacturable WITHOUT stock control
-                                                                if (p.requires_advanced_manufacturing && !p.track_inventory) return false;
-
-                                                                return true;
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="w-full md:w-32 space-y-2">
-                                                        <label className="text-xs font-bold uppercase">Cantidad</label>
-                                                        <Input
-                                                            type="number"
-                                                            value={newMaterialQty}
-                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMaterialQty(e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <div className="w-full md:w-40 space-y-2">
-                                                        <label className="text-xs font-bold uppercase">Unidad</label>
-                                                        <UoMSelector
-                                                            product={selectedProductObj}
-                                                            context="bom" // Flexible category selection
-                                                            value={newMaterialUoM}
-                                                            onChange={setNewMaterialUoM}
-                                                            uoms={uoms}
-                                                        />
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => {
-                                                            setIsAddMaterialOpen(false)
-                                                            resetMaterialForm()
-                                                        }}>Cancelar</Button>
-                                                        <Button size="sm" onClick={handleAddMaterial} disabled={addingMaterial}>
-                                                            {addingMaterial ? (editingMaterialId ? "Guardando..." : "Añadiendo...") : (editingMaterialId ? "Guardar" : "Añadir")}
-                                                        </Button>
-                                                    </div>
+                                        {(!order?.materials || order.materials.filter((m: any) => !m.is_outsourced).length === 0) && !order?.no_materials_required && (
+                                            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg flex gap-3 animate-in fade-in slide-in-from-top-2">
+                                                <Plus className="h-5 w-5 text-indigo-600 shrink-0" />
+                                                <div className="text-sm text-indigo-800">
+                                                    <p className="font-bold">Asignación de Materiales de Stock</p>
+                                                    <p className="text-xs">
+                                                        Si el trabajo requiere materiales de bodega (papel, tinta, sustratos), agréguelos aquí.
+                                                        En caso de no requerir materiales de stock, puede marcar la opción para omitir la etapa de aprobación de inventario.
+                                                    </p>
+                                                    <Button
+                                                        variant="link"
+                                                        size="sm"
+                                                        className="h-auto p-0 text-indigo-700 font-bold mt-1"
+                                                        onClick={async () => {
+                                                            try {
+                                                                await api.patch(`/production/orders/${orderId}/`, { no_materials_required: true })
+                                                                fetchOrder()
+                                                                toast.success("OT marcada como sin materiales de stock.")
+                                                            } catch (error) {
+                                                                toast.error("Error al actualizar OT")
+                                                            }
+                                                        }}
+                                                    >
+                                                        Continuar sin materiales de stock (Omitir aprobación) →
+                                                    </Button>
                                                 </div>
-
-                                                {isOutsourced && (
-                                                    <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t mt-2">
-                                                        <div className="flex-1 space-y-2">
-                                                            <label className="text-xs font-bold uppercase text-primary flex items-center gap-1">
-                                                                Proveedor del Servicio
-                                                                <span className="text-destructive">*</span>
-                                                            </label>
-                                                            <AdvancedContactSelector
-                                                                value={selectedSupplierId}
-                                                                onChange={setSelectedSupplierId}
-                                                                contactType="SUPPLIER"
-                                                            />
-                                                        </div>
-                                                        <div className="w-full md:w-32 space-y-2">
-                                                            <label className="text-xs font-bold uppercase text-primary">Precio Bruto</label>
-                                                            <Input
-                                                                type="number"
-                                                                value={grossUnitPrice}
-                                                                onChange={(e) => {
-                                                                    const gross = e.target.value
-                                                                    setGrossUnitPrice(gross)
-                                                                    // Always calculate and store Net for the backend
-                                                                    setUnitPrice(gross ? (parseFloat(gross) / 1.19).toFixed(2) : "0")
-                                                                }}
-                                                                className="border-primary/30 focus-visible:ring-primary"
-                                                            />
-                                                        </div>
-                                                        <div className="flex-1 space-y-2">
-                                                            <label className="text-xs font-bold uppercase text-primary flex items-center gap-1">
-                                                                Tipo de Documento
-                                                                <span className="text-destructive">*</span>
-                                                            </label>
-                                                            <select
-                                                                className="w-full rounded-md border border-primary/30 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                                                                value={selectedDocumentType}
-                                                                onChange={(e) => setSelectedDocumentType(e.target.value)}
-                                                            >
-                                                                <option value="">Seleccione...</option>
-                                                                <option value="FACTURA">Factura</option>
-                                                                <option value="BOLETA">Boleta</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                )}
                                             </div>
-                                        ) : (
-                                            <div className="flex gap-4">
+                                        )}
+
+                                        {order?.no_materials_required ? (
+                                            <div className="p-8 border-2 border-dashed rounded-xl bg-muted/5 flex flex-col items-center justify-center text-center space-y-4 animate-in zoom-in-95 duration-300">
+                                                <div className="bg-background p-4 rounded-full shadow-sm border">
+                                                    <Package className="h-10 w-10 text-muted-foreground opacity-20" />
+                                                </div>
+                                                <div className="space-y-1 max-w-sm">
+                                                    <p className="text-base font-bold text-muted-foreground">Materiales de Stock Desactivados</p>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                        Esta OT ha sido marcada como "Sin materiales de stock". El paso de aprobación de stock será omitido automáticamente.
+                                                    </p>
+                                                </div>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="flex-1 border-dashed"
-                                                    onClick={() => {
-                                                        resetMaterialForm()
-                                                        setIsAddMaterialOpen(true)
+                                                    className="mt-2"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await api.patch(`/production/orders/${orderId}/`, { no_materials_required: false })
+                                                            fetchOrder()
+                                                        } catch (error) {
+                                                            toast.error("Error al habilitar materiales")
+                                                        }
                                                     }}
-                                                    disabled={order?.status === 'FINISHED'}
                                                 >
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    Agregar Material
+                                                    Habilitar materiales de stock
                                                 </Button>
                                             </div>
+                                        ) : (
+                                            <>
+                                                <p className="text-sm text-muted-foreground">Revise y asigne los materiales necesarios para esta pieza gráfica.</p>
+                                                <div className="border rounded-md overflow-x-auto">
+                                                    <table className="w-full text-sm">
+                                                        <thead className="bg-muted/50">
+                                                            <tr>
+                                                                <th className="p-2 text-left">Componente</th>
+                                                                <th className="p-2 text-right">Cant. Planificada</th>
+                                                                <th className="p-2 text-left">UoM</th>
+                                                                <th className="p-2 text-right">Costo Unit.</th>
+                                                                <th className="p-2 text-right">Costo Total</th>
+                                                                <th className="p-2 text-left">Origen</th>
+                                                                <th className="p-2 w-10"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {order?.materials?.filter((m: any) => !m.is_outsourced).map((m: any) => (
+                                                                <tr key={m.id} className="border-t">
+                                                                    <td className="p-2">
+                                                                        <p className="font-medium">{m.component_name}</p>
+                                                                        <p className="text-[10px] text-muted-foreground uppercase">{m.component_code}</p>
+                                                                    </td>
+                                                                    <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
+                                                                    <td className="p-2">{m.uom_name}</td>
+                                                                    <td className="p-2 text-right text-muted-foreground">{formatCurrency(m.component_cost)}</td>
+                                                                    <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
+                                                                    <td className="p-2">
+                                                                        <Badge variant="outline" className="text-[10px] whitespace-nowrap">{m.source}</Badge>
+                                                                    </td>
+                                                                    <td className="p-2">
+                                                                        {m.source === 'MANUAL' && (
+                                                                            <div className="flex gap-1">
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6 text-primary"
+                                                                                    onClick={() => handleEditMaterial(m)}
+                                                                                >
+                                                                                    <Pencil className="h-3 w-3" />
+                                                                                </Button>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6 text-destructive"
+                                                                                    onClick={() => handleDeleteMaterial(m.id)}
+                                                                                >
+                                                                                    <Trash2 className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                            {(!order?.materials || order.materials.filter((m: any) => !m.is_outsourced).length === 0) && (
+                                                                <tr>
+                                                                    <td colSpan={7} className="p-8 text-center text-muted-foreground italic">No hay materiales de stock asignados.</td>
+                                                                </tr>
+                                                            )}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                {isAddMaterialOpen ? (
+                                                    <div className="p-4 border rounded-md bg-muted/20 space-y-4 animate-in slide-in-from-top-2">
+                                                        <div className="flex flex-col md:flex-row gap-4 items-end">
+                                                            <div className="flex-1 space-y-2">
+                                                                <label className="text-xs font-bold uppercase">Producto / Componente</label>
+                                                                <ProductSelector
+                                                                    value={newMaterialProduct}
+                                                                    onChange={setNewMaterialProduct}
+                                                                    onSelect={(p: any) => {
+                                                                        setSelectedProductObj(p)
+                                                                        if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
+                                                                    }}
+                                                                    disabled={!!editingMaterialId}
+                                                                    customFilter={(p: any) => {
+                                                                        if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
+                                                                        if (p.product_type === 'CONSUMABLE') return false;
+                                                                        if (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing) return false;
+                                                                        if (p.requires_advanced_manufacturing && !p.track_inventory) return false;
+                                                                        return p.product_type !== 'SERVICE'
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <div className="w-full md:w-32 space-y-2">
+                                                                <label className="text-xs font-bold uppercase">Cantidad</label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={newMaterialQty}
+                                                                    onChange={(e) => setNewMaterialQty(e.target.value)}
+                                                                />
+                                                            </div>
+                                                            <div className="w-full md:w-40 space-y-2">
+                                                                <label className="text-xs font-bold uppercase">Unidad</label>
+                                                                <UoMSelector
+                                                                    product={selectedProductObj}
+                                                                    context="bom"
+                                                                    value={newMaterialUoM}
+                                                                    onChange={setNewMaterialUoM}
+                                                                    uoms={uoms}
+                                                                />
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <Button variant="outline" size="sm" onClick={() => {
+                                                                    setIsAddMaterialOpen(false)
+                                                                    resetMaterialForm()
+                                                                }}>Cancelar</Button>
+                                                                <Button size="sm" onClick={handleAddMaterial} disabled={addingMaterial}>
+                                                                    {addingMaterial ? (editingMaterialId ? "Guardando..." : "Añadiendo...") : (editingMaterialId ? "Guardar" : "Añadir")}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex gap-4">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="flex-1 border-dashed"
+                                                            onClick={() => {
+                                                                resetMaterialForm()
+                                                                setIsAddMaterialOpen(true)
+                                                            }}
+                                                            disabled={order?.status === 'FINISHED'}
+                                                        >
+                                                            <Plus className="mr-2 h-4 w-4" />
+                                                            Agregar Material de Stock
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -860,7 +871,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         <Plus className="h-5 w-5 text-indigo-600 shrink-0" />
                                         <div className="text-sm text-indigo-800">
                                             <p className="font-bold">Asignación de Servicios Tercerizados</p>
-                                            <p className="text-xs">Si el trabajo requiere servicios externos (ej: laminado, troquelado externo), agréguelos aquí. Se generará una Orden de Compra automáticamente.</p>
+                                            <p className="text-xs">Si el trabajo requiere servicios externos de un proveedoor, agréguelos aquí. Se generará una Orden de Compra automáticamente. En caso contrario </p>
                                         </div>
                                     </div>
 
@@ -878,7 +889,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
                                                                 <span>{m.supplier_name}</span>
                                                                 <span>•</span>
-                                                                <span>{formatCurrency(m.unit_price)} / {m.uom_name}</span>
+                                                                <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) / {m.uom_name}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -886,7 +897,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         <div className="text-right mr-2">
                                                             <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
                                                             <p className="text-sm font-bold text-primary">
-                                                                {formatCurrency(m.quantity_planned * m.unit_price)}
+                                                                {formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}
                                                             </p>
                                                         </div>
                                                         {isViewingCurrentStage && !m.purchase_order_number && (
@@ -919,8 +930,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 <label className="text-xs font-bold uppercase">Servicio</label>
                                                                 <ProductSelector
                                                                     value={newMaterialProduct}
-                                                                    onChange={(val, obj) => {
-                                                                        setNewMaterialProduct(val)
+                                                                    onChange={setNewMaterialProduct}
+                                                                    onSelect={(obj: any) => {
                                                                         setSelectedProductObj(obj)
                                                                         if (obj?.uom_id) setNewMaterialUoM(obj.uom_id.toString())
                                                                     }}
@@ -1597,8 +1608,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         <th className="p-2 text-left">Proveedor</th>
                                         <th className="p-2 text-left">Servicio</th>
                                         <th className="p-2 text-right">Cant.</th>
-                                        <th className="p-2 text-right">Precio Un.</th>
-                                        <th className="p-2 text-right">Total</th>
+                                        <th className="p-2 text-right">P. Bruto</th>
+                                        <th className="p-2 text-right">Total Bruto</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1607,8 +1618,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             <td className="p-2 font-medium">{m.supplier_name}</td>
                                             <td className="p-2">{m.component_name}</td>
                                             <td className="p-2 text-right">{m.quantity_planned}</td>
-                                            <td className="p-2 text-right">{formatCurrency(m.unit_price)}</td>
-                                            <td className="p-2 text-right font-bold">{formatCurrency((m.quantity_planned * m.unit_price))}</td>
+                                            <td className="p-2 text-right">{formatCurrency(parseFloat(m.unit_price) * 1.19)}</td>
+                                            <td className="p-2 text-right font-bold">{formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
