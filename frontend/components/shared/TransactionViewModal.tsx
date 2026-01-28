@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -191,41 +191,45 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[1400px] max-h-[90vh] overflow-hidden flex flex-col">
-                <DialogHeader className="border-b pb-4 flex-shrink-0">
-                    <div className="flex items-center justify-between w-full">
+        <>
+            <BaseModal
+                open={open}
+                onOpenChange={onOpenChange}
+                size="2xl"
+                hideScrollArea={true}
+                className="h-[90vh] lg:h-[80vh]"
+                title={
+                    <div className="flex items-center gap-2">
+                        {history.length > 0 && (
+                            <Button variant="ghost" size="icon" onClick={goBack} className="mr-2 h-8 w-8">
+                                <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                        )}
                         <div className="flex items-center gap-2">
-                            {history.length > 0 && (
-                                <Button variant="ghost" size="icon" onClick={goBack} className="mr-2">
-                                    <ArrowLeft className="h-5 w-5" />
-                                </Button>
+                            {getIcon()}
+                            <span className="uppercase truncate max-w-[300px] lg:max-w-none">{mainTitle}</span>
+                            {data?.document_attachment && view !== 'history' && (
+                                <a
+                                    href={data.document_attachment}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ml-2 text-muted-foreground hover:text-primary transition-colors"
+                                    title="Ver adjunto"
+                                >
+                                    <Paperclip className="h-5 w-5" />
+                                </a>
                             )}
-                            <div className="flex flex-col">
-                                <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tight text-primary">
-                                    {getIcon()}
-                                    <span className="uppercase">{mainTitle}</span>
-                                    {data?.document_attachment && view !== 'history' && (
-                                        <a
-                                            href={data.document_attachment}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="ml-2 text-muted-foreground hover:text-primary transition-colors"
-                                            title="Ver adjunto"
-                                        >
-                                            <Paperclip className="h-5 w-5" />
-                                        </a>
-                                    )}
-                                </DialogTitle>
-                                {subTitle && (
-                                    <span className="text-sm font-bold text-muted-foreground font-mono mt-0.5">
-                                        {subTitle}
-                                    </span>
-                                )}
-                            </div>
                         </div>
                     </div>
-                </DialogHeader>
+                }
+                description={
+                    subTitle && (
+                        <span className="text-sm font-bold text-muted-foreground font-mono block mt-1">
+                            {subTitle}
+                        </span>
+                    )
+                }
+            >
 
                 <div className="flex-1 flex overflow-hidden">
                     {/* Main content area */}
@@ -845,19 +849,21 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                         </div>
                     )}
                 </div>
-            </DialogContent>
+            </BaseModal>
 
-            {editingPayment && (
-                <PaymentForm
-                    open={!!editingPayment}
-                    onOpenChange={(open) => !open && setEditingPayment(null)}
-                    initialData={editingPayment}
-                    onSuccess={() => {
-                        setEditingPayment(null)
-                        fetchData()
-                    }}
-                />
-            )}
-        </Dialog>
+            {
+                editingPayment && (
+                    <PaymentForm
+                        open={!!editingPayment}
+                        onOpenChange={(open) => !open && setEditingPayment(null)}
+                        initialData={editingPayment}
+                        onSuccess={() => {
+                            setEditingPayment(null)
+                            fetchData()
+                        }}
+                    />
+                )
+            }
+        </>
     )
 }
