@@ -25,6 +25,13 @@ import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { Separator } from "@/components/ui/separator"
+import { DataTable } from "@/components/ui/data-table"
+import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
+import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { ColumnDef } from "@tanstack/react-table"
+import { LayoutDashboard, Wand2 } from "lucide-react"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -191,367 +198,432 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
             <BaseModal
                 open={open}
                 onOpenChange={onOpenChange}
-                title={contact ? "Editar Contacto" : "Nuevo Contacto"}
-                description="Complete la información del contacto"
-                size="2xl"
-                hideScrollArea={true}
-            >
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                    <TabsList className="px-6 border-b rounded-none bg-transparent h-12 justify-start gap-4">
-                        <TabsTrigger
-                            value="profile"
-                            className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-2 pb-2 mt-2 font-bold"
-                        >
-                            <User className="h-4 w-4 mr-2" />
-                            Perfil
-                        </TabsTrigger>
-
-                        {insightsData?.sales?.orders?.length > 0 && (
-                            <TabsTrigger
-                                value="sales"
-                                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-2 pb-2 mt-2 font-bold"
-                            >
-                                <ShoppingCart className="h-4 w-4 mr-2" />
-                                Cliente
-                                <Badge variant="secondary" className="ml-2 py-0 h-4 text-[10px]">
-                                    {insightsData.sales.orders.length}
-                                </Badge>
-                            </TabsTrigger>
-                        )}
-
-                        {insightsData?.purchases?.orders?.length > 0 && (
-                            <TabsTrigger
-                                value="purchases"
-                                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-2 pb-2 mt-2 font-bold"
-                            >
-                                <Package className="h-4 w-4 mr-2" />
-                                Proveedor
-                                <Badge variant="secondary" className="ml-2 py-0 h-4 text-[10px]">
-                                    {insightsData.purchases.orders.length}
-                                </Badge>
-                            </TabsTrigger>
-                        )}
-
-                        {insightsData?.work_orders?.orders?.length > 0 && (
-                            <TabsTrigger
-                                value="work_orders"
-                                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-2 pb-2 mt-2 font-bold"
-                            >
-                                <Factory className="h-4 w-4 mr-2" />
-                                Relacionado
-                                <Badge variant="secondary" className="ml-2 py-0 h-4 text-[10px]">
-                                    {insightsData.work_orders.orders.length}
-                                </Badge>
-                            </TabsTrigger>
-                        )}
-                    </TabsList>
-
-                    <TabsContent value="profile" className="flex-1 overflow-hidden m-0 p-0 border-0 outline-none focus-visible:ring-0">
-                        <div className="flex h-full overflow-hidden">
-                            <div className="flex-1 overflow-y-auto p-6">
-                                <Form {...form}>
-                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                        {contact?.display_id && (
-                                            <div className="bg-muted/50 p-2 rounded-md mb-2 flex items-center justify-between">
-                                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ID de Contacto</span>
-                                                <span className="font-mono font-bold text-primary">{contact.display_id}</span>
-                                            </div>
-                                        )}
-
-                                        <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Nombre *</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Ej: Empresa Ltda" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="tax_id"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>RUT / Identificación *</FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            placeholder="Ej: 12.345.678-9"
-                                                            {...field}
-                                                            onChange={(e) => field.onChange(formatRUT(e.target.value))}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="email"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Email</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="contacto@empresa.com" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={form.control}
-                                                name="phone"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Teléfono</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="+56 9 1234 5678" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-
-                                        <FormField
-                                            control={form.control}
-                                            name="address"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Dirección</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Av. Principal 123" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <div className="flex gap-6 p-1">
-                                            <FormField
-                                                control={form.control}
-                                                name="is_default_customer"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <div className="space-y-1 leading-none">
-                                                            <FormLabel>
-                                                                Cliente por defecto
-                                                            </FormLabel>
-                                                        </div>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="is_default_vendor"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <div className="space-y-1 leading-none">
-                                                            <FormLabel>
-                                                                Proveedor por defecto
-                                                            </FormLabel>
-                                                        </div>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-
-                                        <div className="flex justify-end pt-4 gap-2">
-                                            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                                                Cancelar
-                                            </Button>
-                                            <Button type="submit">
-                                                {contact ? "Guardar Cambios" : "Crear Contacto"}
-                                            </Button>
-                                        </div>
-                                    </form>
-                                </Form>
-                            </div>
-
-                            {contact && (
-                                <div className="w-80 border-l bg-muted/5">
-                                    <div className="h-full">
-                                        <ActivitySidebar
-                                            entityId={contact.id}
-                                            entityType="contact"
-                                        />
-                                    </div>
-                                </div>
-                            )}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <User className="h-5 w-5 text-primary" />
                         </div>
-                    </TabsContent>
-
-                    <TabsContent value="sales" className="flex-1 overflow-y-auto m-0 p-6 border-0 outline-none">
-                        <div className="space-y-6">
-                            <h4 className="text-sm font-bold flex items-center gap-2">
-                                <ShoppingCart className="h-4 w-4 text-primary" />
-                                Historial de Ventas (NV)
-                            </h4>
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-muted/50">
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead>Número</TableHead>
-                                            <TableHead>Total</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {insightsData?.sales?.orders?.map((order: any) => (
-                                            <TableRow key={order.id}>
-                                                <TableCell className="text-xs">
-                                                    {format(new Date(order.date), "dd/MM/yyyy", { locale: es })}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="indigo" className="font-bold">
-                                                        {order.display_id}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <DataCell.Currency value={order.total} className="text-left font-bold" />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant={order.status === 'PAID' ? 'success' : 'outline'} className="text-[10px]">
-                                                        {order.status}
-                                                    </Badge>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="purchases" className="flex-1 overflow-y-auto m-0 p-6 border-0 outline-none">
-                        <div className="space-y-6">
-                            <h4 className="text-sm font-bold flex items-center gap-2">
-                                <Package className="h-4 w-4 text-primary" />
-                                Historial de Compras
-                            </h4>
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-muted/50">
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead>Número</TableHead>
-                                            <TableHead>Total</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {insightsData?.purchases?.orders?.map((order: any) => (
-                                            <TableRow key={order.id}>
-                                                <TableCell className="text-xs">
-                                                    {format(new Date(order.date), "dd/MM/yyyy", { locale: es })}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="warning" className="font-bold">
-                                                        {order.display_id}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <DataCell.Currency value={order.total} className="text-left font-bold" />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant={order.status === 'RECEIVED' ? 'success' : 'outline'} className="text-[10px]">
-                                                        {order.status}
-                                                    </Badge>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="work_orders" className="flex-1 overflow-y-auto m-0 p-6 border-0 outline-none">
-                        <div className="space-y-6">
-                            <h4 className="text-sm font-bold flex items-center gap-2">
-                                <Factory className="h-4 w-4 text-primary" />
-                                Órdenes de Trabajo (OT)
-                            </h4>
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-muted/50">
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead>Número</TableHead>
-                                            <TableHead>Cliente NV</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {insightsData?.work_orders?.orders?.map((ot: any) => (
-                                            <TableRow key={ot.id}>
-                                                <TableCell className="text-xs">
-                                                    {format(new Date(ot.created_at), "dd/MM/yyyy", { locale: es })}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="indigo" className="font-bold">
-                                                        {ot.display_id}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-xs">
-                                                    {ot.sale_customer_name}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant={ot.status === 'COMPLETED' ? 'success' : 'outline'} className="text-[10px]">
-                                                        {ot.status}
-                                                    </Badge>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </BaseModal>
-
-            <ActionConfirmModal
-                open={isConfirmModalOpen}
-                onOpenChange={setIsConfirmModalOpen}
-                title="Cambiar contacto por defecto"
-                variant="warning"
-                onConfirm={() => {
-                    if (pendingValues) saveContact(pendingValues)
-                    setIsConfirmModalOpen(false)
-                }}
-                confirmText="Confirmar cambio"
-                description={
-                    <div className="space-y-2">
-                        <p>
-                            El contacto <strong>{confirmReplacement.name}</strong> es actualmente el {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} por defecto.
-                        </p>
-                        <p>
-                            Si continúa, el nuevo contacto pasará a ser el predeterminado y el anterior dejará de serlo.
-                        </p>
+                        <span>Ficha de Contacto</span>
                     </div>
                 }
-            />
+                description={
+                    contact ? (
+                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                            <span>{contact.display_id}</span>
+                            <span className="opacity-30">|</span>
+                            <span>{contact.name}</span>
+                            {contact.tax_id && (
+                                <>
+                                    <span className="opacity-30">|</span>
+                                    <span>{formatRUT(contact.tax_id)}</span>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        "Complete la información del contacto"
+                    )
+                }
+                size="full"
+                hideScrollArea={true}
+                footer={activeTab === "profile" && (
+                    <div className="flex justify-end gap-3 w-full px-6 py-4 border-t bg-white">
+                        <Button variant="outline" onClick={() => onOpenChange(false)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
+                            {contact ? "Guardar Cambios" : "Crear Contacto"}
+                        </Button>
+                    </div>
+                )}
+            >
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+                    <div className="px-6 border-b bg-muted/5">
+                        <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
+                            <TabsTrigger
+                                value="profile"
+                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2"
+                            >
+                                <User className="h-4 w-4" />
+                                Perfil
+                            </TabsTrigger>
+
+                            {insightsData?.sales?.count > 0 && (
+                                <TabsTrigger
+                                    value="sales"
+                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <ShoppingCart className="h-4 w-4" />
+                                        Cliente
+                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                            {insightsData.sales.count}
+                                        </Badge>
+                                    </div>
+                                </TabsTrigger>
+                            )}
+
+                            {insightsData?.purchases?.count > 0 && (
+                                <TabsTrigger
+                                    value="purchases"
+                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Package className="h-4 w-4" />
+                                        Proveedor
+                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                            {insightsData.purchases.count}
+                                        </Badge>
+                                    </div>
+                                </TabsTrigger>
+                            )}
+
+                            {insightsData?.work_orders?.count > 0 && (
+                                <TabsTrigger
+                                    value="work_orders"
+                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Wand2 className="h-4 w-4" />
+                                        Relacionado
+                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                            {insightsData.work_orders.count}
+                                        </Badge>
+                                    </div>
+                                </TabsTrigger>
+                            )}
+                        </TabsList>
+                    </div>
+
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* Main Content Area */}
+                        <div className="flex-1 flex flex-col min-w-0 border-r">
+                            <div className="flex-1 overflow-hidden relative">
+                                <TabsContent value="profile" className="h-full m-0 p-0 overflow-y-auto border-0 outline-none">
+                                    <div className="p-8 pb-32">
+                                        <Form {...form.form}>
+                                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="md:col-span-2 flex items-center gap-8 p-4 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20">
+                                                        <FormField
+                                                            control={form.form.control}
+                                                            name="is_default_customer"
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                                    <FormControl>
+                                                                        <Checkbox
+                                                                            checked={field.value}
+                                                                            onCheckedChange={field.onChange}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <div className="space-y-0.5">
+                                                                        <FormLabel className="text-sm font-semibold text-primary/80">
+                                                                            Cliente por defecto
+                                                                        </FormLabel>
+                                                                    </div>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <Separator orientation="vertical" className="h-8" />
+                                                        <FormField
+                                                            control={form.form.control}
+                                                            name="is_default_vendor"
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                                    <FormControl>
+                                                                        <Checkbox
+                                                                            checked={field.value}
+                                                                            onCheckedChange={field.onChange}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <div className="space-y-0.5">
+                                                                        <FormLabel className="text-sm font-semibold text-primary/80">
+                                                                            Proveedor por defecto
+                                                                        </FormLabel>
+                                                                    </div>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+
+                                                    <FormField
+                                                        control={form.form.control}
+                                                        name="name"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Nombre / Razón Social</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Ej: Juan Pérez o Empresa SpA" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.form.control}
+                                                        name="tax_id"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>RUT / Tax ID</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        placeholder="12.345.678-9"
+                                                                        {...field}
+                                                                        onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.form.control}
+                                                        name="email"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Email</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="ejemplo@correo.com" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.form.control}
+                                                        name="phone"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Teléfono</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="+56 9 ..." {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <div className="md:col-span-2">
+                                                        <FormField
+                                                            control={form.form.control}
+                                                            name="address"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Dirección</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input placeholder="Calle, Número, Depto" {...field} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+
+                                                    <FormField
+                                                        control={form.form.control}
+                                                        name="city"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Ciudad / Comuna</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Santiago" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.form.control}
+                                                        name="payment_terms"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Condiciones de Pago</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Ej: 30 días" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </form>
+                                        </Form>
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col">
+                                    <InsightsTable
+                                        data={insightsData?.sales?.orders || []}
+                                        type="sale"
+                                        title="Historial de Ventas (NV)"
+                                        icon={ShoppingCart}
+                                    />
+                                </TabsContent>
+
+                                <TabsContent value="purchases" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col">
+                                    <InsightsTable
+                                        data={insightsData?.purchases?.orders || []}
+                                        type="purchase"
+                                        title="Historial de Compras (OC)"
+                                        icon={Package}
+                                    />
+                                </TabsContent>
+
+                                <TabsContent value="work_orders" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col">
+                                    <InsightsTable
+                                        data={insightsData?.work_orders?.orders || []}
+                                        type="work_order"
+                                        title="Historial de OTs"
+                                        icon={Wand2}
+                                    />
+                                </TabsContent>
+                            </div>
+                        </div>
+
+                        {/* Always Visible Sidebar */}
+                        <div className="w-96 flex flex-col bg-muted/5 border-l overflow-hidden">
+                            <div className="p-4 border-b bg-white/50 backdrop-blur-sm">
+                                <h3 className="text-sm font-bold flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-primary" />
+                                    Registro de Actividad
+                                </h3>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 pt-1">
+                                {contact ? (
+                                    <ActivitySidebar contentId={contact.id} contentType="contacts.contact" showTitle={false} />
+                                ) : (
+                                    <div className="h-full flex items-center justify-center p-8 text-center bg-muted/10 rounded-xl border border-dashed">
+                                        <p className="text-xs text-muted-foreground italic">
+                                            El historial de actividad estará disponible una vez que se cree el contacto.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </Tabs>
+
+                <ActionConfirmModal
+                    open={isConfirmModalOpen}
+                    onOpenChange={setIsConfirmModalOpen}
+                    title="Cambiar contacto por defecto"
+                    variant="warning"
+                    onConfirm={() => {
+                        if (pendingValues) saveContact(pendingValues)
+                        setIsConfirmModalOpen(false)
+                    }}
+                    confirmText="Confirmar cambio"
+                    description={
+                        <div className="space-y-2">
+                            <p>
+                                El contacto <strong>{confirmReplacement.name}</strong> es actualmente el {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} por defecto.
+                            </p>
+                            <p>
+                                Si continúa, el nuevo contacto pasará a ser el predeterminado y el anterior dejará de serlo.
+                            </p>
+                        </div>
+                    }
+                />
+            </BaseModal>
         </>
+    )
+}
+
+interface InsightsTableProps {
+    data: any[]
+    type: 'sale' | 'purchase' | 'work_order'
+    title: string
+    icon: any
+}
+
+function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
+    const { openCommandCenter, openWorkOrder } = useGlobalModals()
+
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "date",
+            header: "Fecha",
+            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
+        },
+        {
+            accessorKey: "display_id",
+            header: "Número",
+            cell: ({ row }) => {
+                let prefix = ""
+                let variant: any = "outline"
+                if (type === 'sale') { prefix = "NV-"; variant = "indigo" }
+                else if (type === 'purchase') { prefix = "OC-"; variant = "warning" }
+                else if (type === 'work_order') { prefix = "OT-"; variant = "purple" }
+
+                return (
+                    <Badge variant={variant} className="font-bold">
+                        {row.original.display_id || `${prefix}${row.original.number?.toString().padStart(6, '0')}`}
+                    </Badge>
+                )
+            },
+        },
+        ...(type !== 'work_order' ? [
+            {
+                accessorKey: "total",
+                header: "Total",
+                cell: ({ row }: any) => <DataCell.Currency value={row.original.total} className="text-left font-bold" />,
+            }
+        ] : []),
+        {
+            id: "status",
+            header: "Estado Hub",
+            cell: ({ row }) => {
+                if (type === 'work_order') {
+                    return (
+                        <Badge variant={row.original.status === 'COMPLETED' ? 'success' : 'outline'} className="text-[10px]">
+                            {row.original.status}
+                        </Badge>
+                    )
+                }
+                return <OrderHubStatus order={row.original} />
+            }
+        },
+        {
+            id: "actions",
+            header: "Acciones",
+            cell: ({ row }) => (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={() => {
+                        if (type === 'work_order') {
+                            openWorkOrder(row.original.id)
+                        } else {
+                            openCommandCenter(row.original.id, type === 'purchase' ? 'purchase' : 'sale')
+                        }
+                    }}
+                >
+                    <LayoutDashboard className="h-4 w-4 mr-1" />
+                    Gestionar
+                </Button>
+            )
+        }
+    ]
+
+    return (
+        <div className="flex flex-col h-full overflow-hidden">
+            <div className="p-4 border-b flex items-center justify-between bg-white/50">
+                <h4 className="text-sm font-bold flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-primary" />
+                    {title}
+                </h4>
+            </div>
+            <div className="flex-1 overflow-hidden p-0">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    defaultPageSize={10}
+                />
+            </div>
+        </div>
     )
 }

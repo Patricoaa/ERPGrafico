@@ -24,7 +24,7 @@ export const getHubStatuses = (order: any) => {
         let logisticsProgress = 0
         if (totalOrdered > 0) {
             const totalProcessed = lines.reduce((acc: number, line: any) => {
-                const processed = (line.quantity_delivered || 0)
+                const processed = (line.quantity_delivered || line.quantity_received || 0)
                 return acc + (parseFloat(processed) || 0)
             }, 0)
             logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
