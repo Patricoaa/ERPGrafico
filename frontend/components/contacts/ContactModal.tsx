@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -19,7 +19,7 @@ import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ShoppingCart, Package, Factory, User, BarChart3, Clock } from "lucide-react"
+import { ShoppingCart, Package, Factory, User, BarChart3, Clock, Scale, Banknote, Truck, Receipt, ClipboardList } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
@@ -32,6 +32,8 @@ import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { ColumnDef } from "@tanstack/react-table"
 import { LayoutDashboard, Wand2 } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { Card, CardContent } from "@/components/ui/card"
+import { getHubStatuses } from "@/lib/order-status-utils"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -535,6 +537,64 @@ interface InsightsTableProps {
 
 function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     const { openCommandCenter, openWorkOrder } = useGlobalModals()
+    const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
+
+    // Metrics Calculation
+    const metrics = useMemo(() => {
+        const total = data.length
+
+        // Financial (Pending Payment)
+        const pendingPaymentItems = data.filter(item => parseFloat(item.pending_amount) > 0)
+        const totalPendingMoney = pendingPaymentItems.reduce((acc, item) => acc + parseFloat(item.pending_amount), 0)
+
+        // Logistics (Pending Delivery/Receipt)
+        // Uses simplified check: not fully delivered/received if items exist
+        const pendingLogisticsItems = data.filter(item => {
+            const status = getHubStatuses(item)
+            return status.logistics === 'active' || status.logistics === 'neutral'
+        })
+
+        // Billing (Pending Invoice)
+        const pendingBillingItems = data.filter(item => {
+            const status = getHubStatuses(item)
+            return status.billing !== 'success'
+        })
+
+        // Work Orders (Pending Completion)
+        const pendingWorkOrders = data.filter(item => item.status !== 'COMPLETED')
+
+        return {
+            total,
+            pendingPaymentCount: pendingPaymentItems.length,
+            totalPendingMoney,
+            pendingLogisticsCount: pendingLogisticsItems.length,
+            pendingBillingCount: pendingBillingItems.length,
+            pendingWOCount: pendingWorkOrders.length
+        }
+    }, [data])
+
+    // Filter Data
+    const filteredData = useMemo(() => {
+        switch (activeFilter) {
+            case 'financial':
+                return data.filter(item => parseFloat(item.pending_amount) > 0)
+            case 'logistics':
+                return data.filter(item => {
+                    const status = getHubStatuses(item)
+                    return status.logistics === 'active' || status.logistics === 'neutral'
+                })
+            case 'billing':
+                return data.filter(item => {
+                    const status = getHubStatuses(item)
+                    return status.billing !== 'success'
+                })
+            case 'pending': // For Work Orders
+                return data.filter(item => item.status !== 'COMPLETED')
+            case 'all':
+            default:
+                return data
+        }
+    }, [data, activeFilter])
 
     const columns: ColumnDef<any>[] = [
         {
@@ -604,17 +664,131 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     ]
 
     return (
-        <div className="flex flex-col h-full overflow-hidden border rounded-xl bg-white shadow-sm">
-            <div className="p-4 border-b flex items-center justify-between bg-white/50">
+        <div className="flex flex-col h-full overflow-hidden">
+            {/* Summary Cards Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                {/* 1. Total Card (Available for all types) */}
+                <Card
+                    className={`cursor-pointer transition-all hover:bg-muted/50 border-none shadow-sm ${activeFilter === 'all' ? 'ring-2 ring-primary ring-offset-2' : 'bg-white'}`}
+                    onClick={() => setActiveFilter('all')}
+                >
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider mb-1">Total</p>
+                            <p className="text-2xl font-bold">{metrics.total}</p>
+                        </div>
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Sales/Purchase Specific Cards */}
+                {type !== 'work_order' && (
+                    <>
+                        {/* 2. Financial Card (Accounts Receivable/Payable) */}
+                        <Card
+                            className={`cursor-pointer transition-all hover:bg-red-50/50 border-none shadow-sm ${activeFilter === 'financial' ? 'ring-2 ring-red-500 ring-offset-2' : 'bg-red-50/20'}`}
+                            onClick={() => setActiveFilter('financial')}
+                        >
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase text-red-600/70 tracking-wider mb-1">
+                                        {type === 'sale' ? 'Por Cobrar' : 'Por Pagar'}
+                                    </p>
+                                    <p className="text-lg font-bold text-red-700">
+                                        ${metrics.totalPendingMoney.toLocaleString()}
+                                    </p>
+                                    <p className="text-[9px] text-red-600/60 font-medium">
+                                        {metrics.pendingPaymentCount} documentos
+                                    </p>
+                                </div>
+                                <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                                    <Banknote className="h-4 w-4 text-red-600" />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* 3. Logistics Card */}
+                        <Card
+                            className={`cursor-pointer transition-all hover:bg-amber-50/50 border-none shadow-sm ${activeFilter === 'logistics' ? 'ring-2 ring-amber-500 ring-offset-2' : 'bg-amber-50/20'}`}
+                            onClick={() => setActiveFilter('logistics')}
+                        >
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase text-amber-600/70 tracking-wider mb-1">
+                                        {type === 'sale' ? 'Despacho Pdte.' : 'Recepción Pdte.'}
+                                    </p>
+                                    <p className="text-2xl font-bold text-amber-700">
+                                        {metrics.pendingLogisticsCount}
+                                    </p>
+                                </div>
+                                <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                                    <Truck className="h-4 w-4 text-amber-600" />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* 4. Billing Card */}
+                        <Card
+                            className={`cursor-pointer transition-all hover:bg-blue-50/50 border-none shadow-sm ${activeFilter === 'billing' ? 'ring-2 ring-blue-500 ring-offset-2' : 'bg-blue-50/20'}`}
+                            onClick={() => setActiveFilter('billing')}
+                        >
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase text-blue-600/70 tracking-wider mb-1">
+                                        Facturación Pdte.
+                                    </p>
+                                    <p className="text-2xl font-bold text-blue-700">
+                                        {metrics.pendingBillingCount}
+                                    </p>
+                                </div>
+                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <Receipt className="h-4 w-4 text-blue-600" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
+
+                {/* Work Order Specific Card */}
+                {type === 'work_order' && (
+                    <Card
+                        className={`cursor-pointer transition-all hover:bg-purple-50/50 border-none shadow-sm ${activeFilter === 'pending' ? 'ring-2 ring-purple-500 ring-offset-2' : 'bg-purple-50/20'}`}
+                        onClick={() => setActiveFilter('pending')}
+                    >
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-[10px] font-bold uppercase text-purple-600/70 tracking-wider mb-1">
+                                    En Proceso / Pdte
+                                </p>
+                                <p className="text-2xl font-bold text-purple-700">
+                                    {metrics.pendingWOCount}
+                                </p>
+                            </div>
+                            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                                <ClipboardList className="h-4 w-4 text-purple-600" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+
+            <div className="pb-4 flex items-center justify-between">
                 <h4 className="text-sm font-bold flex items-center gap-2">
                     <Icon className="h-4 w-4 text-primary" />
                     {title}
+                    {activeFilter !== 'all' && (
+                        <Badge variant="secondary" className="ml-2 text-[10px]">
+                            Filtrado
+                        </Badge>
+                    )}
                 </h4>
             </div>
             <div className="flex-1 overflow-hidden p-0">
                 <DataTable
                     columns={columns}
-                    data={data}
+                    data={filteredData}
                     defaultPageSize={10}
                 />
             </div>
