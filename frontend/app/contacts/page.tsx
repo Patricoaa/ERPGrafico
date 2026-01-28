@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2, Plus, Building2, User as UserIcon, BarChart3 } from "lucide-react"
 import api from "@/lib/api"
 import { ContactModal } from "@/components/contacts/ContactModal"
-import { ContactInsightsDialog } from "@/components/contacts/ContactInsightsDialog"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { formatRUT } from "@/lib/utils/format"
@@ -37,8 +36,6 @@ export default function ContactsPage() {
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [contactToDelete, setContactToDelete] = useState<any>(null)
-    const [insightsOpen, setInsightsOpen] = useState(false)
-    const [insightsContact, setInsightsContact] = useState<Contact | null>(null)
 
     const fetchContacts = async () => {
         setLoading(true)
@@ -176,16 +173,6 @@ export default function ContactsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                                setInsightsContact(contact)
-                                setInsightsOpen(true)
-                            }}
-                        >
-                            <BarChart3 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
                                 setSelectedContact(contact)
                                 setModalOpen(true)
                             }}
@@ -271,14 +258,6 @@ export default function ContactsPage() {
                     </p>
                 }
             />
-
-            <ContactInsightsDialog
-                open={insightsOpen}
-                onOpenChange={setInsightsOpen}
-                contactId={insightsContact?.id || null}
-                contactName={insightsContact?.name || null}
-            />
         </div>
     )
 }
-

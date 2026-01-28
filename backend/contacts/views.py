@@ -87,48 +87,35 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         contact = self.get_object()
         
-        # Sales data (invoices related to this contact)
-        from billing.models import Invoice
-        sales_invoices = Invoice.objects.filter(
-            customer=contact,
-            invoice_type__in=['FACTURA', 'BOLETA', 'NC', 'ND']
-        ).order_by('-date')
+        # Sales data (NV)
+        sale_orders = contact.sale_orders.all().order_by('-date')
         
-        # Purchase data
+        # Purchase data (PO)
         purchase_orders = contact.purchase_orders.all().order_by('-date')
         
-        # Work orders (as sale customer or related contact)
-        from production.models import WorkOrder
-        work_orders_as_customer = WorkOrder.objects.filter(
+        # Work orders Strictly as related contact (NOT as sale customer)
+        # These are the ones for the "Contacto Relacionado" tab
+        work_orders_as_related = contact.related_work_orders.exclude(
             sale_order__customer=contact
         ).order_by('-created_at')
         
-        work_orders_as_related = contact.related_work_orders.all().order_by('-created_at')
-        
-        # Combine and deduplicate work orders
-        all_work_order_ids = set(
-            list(work_orders_as_customer.values_list('id', flat=True)) +
-            list(work_orders_as_related.values_list('id', flat=True))
-        )
-        all_work_orders = WorkOrder.objects.filter(id__in=all_work_order_ids).order_by('-created_at')
-        
         # Serialize data
-        from billing.serializers import InvoiceSerializer
         from purchasing.serializers import PurchaseOrderSerializer
         from production.serializers import WorkOrderSerializer
+        from sales.serializers import SaleOrderSerializer
         
         return Response({
             'contact': ContactSerializer(contact).data,
             'sales': {
-                'count': sales_invoices.count(),
-                'invoices': InvoiceSerializer(sales_invoices[:50], many=True).data  # Limit to 50 most recent
+                'count': sale_orders.count(),
+                'orders': SaleOrderSerializer(sale_orders[:50], many=True).data
             },
             'purchases': {
                 'count': purchase_orders.count(),
                 'orders': PurchaseOrderSerializer(purchase_orders[:50], many=True).data
             },
             'work_orders': {
-                'count': all_work_orders.count(),
-                'orders': WorkOrderSerializer(all_work_orders[:50], many=True).data
+                'count': work_orders_as_related.count(),
+                'orders': WorkOrderSerializer(work_orders_as_related[:50], many=True).data
             }
         })
