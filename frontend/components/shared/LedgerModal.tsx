@@ -192,18 +192,18 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                         <span>{data?.movements.length || 0} Registros</span>
                     </div>
                 }
+                headerActions={
+                    <DateRangeFilter
+                        onRangeChange={(range) => {
+                            if (range?.from && range?.to) {
+                                setDateRange({ from: range.from, to: range.to })
+                            }
+                        }}
+                        defaultRange={dateRange}
+                    />
+                }
             >
                 <div className="flex flex-col gap-6">
-                    <div className="flex items-center justify-end">
-                        <DateRangeFilter
-                            onRangeChange={(range) => {
-                                if (range?.from && range?.to) {
-                                    setDateRange({ from: range.from, to: range.to })
-                                }
-                            }}
-                            defaultRange={dateRange}
-                        />
-                    </div>
 
                     {loading && <div className="text-center py-10 text-muted-foreground">Cargando datos...</div>}
                     {!loading && data && (
@@ -272,13 +272,6 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                             searchPlaceholder="Filtrar movimientos..."
                             defaultPageSize={100}
                         />
-                    )}
-
-                    {!loading && data?.movements.length === 0 && (
-                        <div className="text-center py-20 bg-muted/20 rounded-lg">
-                            <Book className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                            <p className="text-muted-foreground">No hay movimientos en este periodo</p>
-                        </div>
                     )}
                 </div>
             </BaseModal>

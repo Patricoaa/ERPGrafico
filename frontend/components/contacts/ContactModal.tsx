@@ -24,7 +24,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { DataCell } from "@/components/shared/DataCell"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),

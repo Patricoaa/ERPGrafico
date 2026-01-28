@@ -21,6 +21,7 @@ interface BaseModalProps extends VariantProps<typeof dialogContentVariants> {
     description?: string | React.ReactNode
     children: React.ReactNode
     footer?: React.ReactNode
+    headerActions?: React.ReactNode
     className?: string
     contentClassName?: string
     hideScrollArea?: boolean
@@ -33,6 +34,7 @@ export function BaseModal({
     description,
     children,
     footer,
+    headerActions,
     size = "md",
     className,
     contentClassName,
@@ -42,14 +44,23 @@ export function BaseModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent size={size} className={cn("p-0 overflow-hidden flex flex-col", className)}>
                 <DialogHeader className="px-6 py-4 border-b">
-                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                        {title}
-                    </DialogTitle>
-                    {description && (
-                        <DialogDescription asChild={typeof description !== "string"}>
-                            {description}
-                        </DialogDescription>
-                    )}
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex flex-col gap-1">
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                {title}
+                            </DialogTitle>
+                            {description && (
+                                <DialogDescription asChild={typeof description !== "string"}>
+                                    {description}
+                                </DialogDescription>
+                            )}
+                        </div>
+                        {headerActions && (
+                            <div className="flex items-center gap-2 pr-6">
+                                {headerActions}
+                            </div>
+                        )}
+                    </div>
                 </DialogHeader>
 
                 {hideScrollArea ? (
