@@ -844,7 +844,7 @@ export function OrderCommandCenter({
                                 }
                                 documents={payments.map((p: any) => ({
                                     type: p.payment_method_display || 'Pago',
-                                    number: `REF: ${p.reference || p.id}`,
+                                    number: formatDocumentId(p.payment_type === 'INBOUND' ? 'ING' : 'EGR', p.id, p.display_id),
                                     icon: Banknote,
                                     id: p.id,
                                     docType: 'payment',
