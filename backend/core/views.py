@@ -87,6 +87,28 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Prevent hard deletion of users to maintain traceability.
+        Instead, the user is deactivated.
+        """
+        instance = self.get_object()
+        instance.is_active = False
+        instance.save()
+        
+        ActionLoggingService.log_action(
+            user=request.user,
+            action_type=ActionLog.Type.SECURITY,
+            description=f"Usuario {instance.username} fue desactivado (Baja de sistema) en lugar de eliminado para trazabilidad.",
+            request=request,
+            metadata={'target_user_id': instance.id, 'target_username': instance.username}
+        )
+        
+        return Response(
+            {"detail": "Los usuarios no pueden ser eliminados físicamente para mantener la trazabilidad. El usuario ha sido desactivado."},
+            status=status.HTTP_200_OK
+        )
+
     @action(detail=False, methods=['get'])
     def roles(self, request):
         from .permissions import Roles

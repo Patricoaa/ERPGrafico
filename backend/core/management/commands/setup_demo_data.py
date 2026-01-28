@@ -227,7 +227,8 @@ class Command(BaseCommand):
         def _safe_delete(model_class, name):
             self.stdout.write(f"  Deleting {name}...")
             try:
-                model_class.objects.all().delete()
+                with transaction.atomic():
+                    model_class.objects.all().delete()
             except Exception as e:
                 # If the table doesn't exist, it's effectively "purged"
                 error_str = str(e).lower()

@@ -10,7 +10,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Loader2, UserPlus, ChevronLeft } from "lucide-react"
+import { Plus, Edit, Loader2, UserPlus, ChevronLeft } from "lucide-react"
 import { UserForm } from "@/components/forms/UserForm"
 
 export default function UsersSettingsPage() {
@@ -33,16 +33,6 @@ export default function UsersSettingsPage() {
         fetchUsers()
     }, [])
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este usuario?")) return
-        try {
-            await api.delete(`/core/users/${id}/`)
-            toast.success("Usuario eliminado")
-            fetchUsers()
-        } catch (error) {
-            toast.error("Error al eliminar")
-        }
-    }
 
     const columns: ColumnDef<any>[] = [
         {
@@ -106,9 +96,6 @@ export default function UsersSettingsPage() {
                             </Button>
                         }
                     />
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(row.original.id)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
                 </div>
             ),
         },
