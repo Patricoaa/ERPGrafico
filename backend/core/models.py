@@ -8,6 +8,14 @@ import os
 import uuid
 
 class User(AbstractUser):
+    contact = models.OneToOneField(
+        'contacts.Contact', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='system_user',
+        help_text=_("Vínculo con la entidad física de Contacto")
+    )
     history = HistoricalRecords()
 
 class CompanySettings(models.Model):

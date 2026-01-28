@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import api from "@/lib/api";
 
 interface User {
     id: number;
@@ -40,15 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-            const res = await fetch(`${apiUrl}/core/auth/me/`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const res = await api.get('/core/auth/me/');
 
-            if (res.ok) {
-                const userData = await res.json();
+            if (res.status === 200) {
+                const userData = res.data;
                 setUser(userData);
                 setIsAuthenticated(true);
             } else {

@@ -4,7 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
-from .models import User, CompanySettings, ActionLog
+from django.contrib.auth.models import Group
+from .models import User, CompanySettings, ActionLog, Attachment
 from .serializers import (
     UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer,
     ActionLogSerializer, HistoricalRecordSerializer
@@ -85,6 +86,11 @@ class AuditHistoryMixin:
 class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    @action(detail=False, methods=['get'])
+    def roles(self, request):
+        from .permissions import Roles
+        return Response(Roles.get_choices())
 
 class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = CompanySettings.objects.all()

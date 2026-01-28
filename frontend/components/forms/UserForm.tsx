@@ -19,14 +19,14 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Loader2, Plus } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
-    email: z.string().email("Email inválido"),
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    role: z.enum(["ADMIN", "ACCOUNTANT", "OPERATOR"]),
-    password: z.string().min(6, "Mínimo 6 caracteres").optional().or(z.literal("")),
+    groups_list: z.array(z.string()).min(1, "Debe seleccionar al menos un rol"),
+    contact: z.number().min(1, "Debe seleccionar un contacto"),
+    password: z.string().optional(),
 })
 
 type UserFormValues = z.infer<typeof userSchema>
@@ -40,27 +40,44 @@ interface UserFormProps {
 export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
+    const [contacts, setContacts] = useState<any[]>([])
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userSchema),
         defaultValues: {
             username: initialData?.username || "",
-            email: initialData?.email || "",
-            first_name: initialData?.first_name || "",
-            last_name: initialData?.last_name || "",
-            role: initialData?.role || "OPERATOR",
+            groups_list: initialData?.groups_list || ["OPERATOR"],
+            contact: Number(initialData?.contact || 0),
             password: "",
         }
     })
 
     useEffect(() => {
         if (open) {
+            const fetchRoles = async () => {
+                try {
+                    const res = await api.get('/core/users/roles/')
+                    setAvailableRoles(res.data)
+                } catch (error) {
+                    console.error("Error fetching roles", error)
+                }
+            }
+            const fetchContacts = async () => {
+                try {
+                    const res = await api.get('/contacts/')
+                    setContacts(res.data.results || res.data)
+                } catch (error) {
+                    console.error("Error fetching contacts", error)
+                }
+            }
+            fetchRoles()
+            fetchContacts()
+
             form.reset({
                 username: initialData?.username || "",
-                email: initialData?.email || "",
-                first_name: initialData?.first_name || "",
-                last_name: initialData?.last_name || "",
-                role: initialData?.role || "OPERATOR",
+                groups_list: initialData?.groups_list || ["OPERATOR"],
+                contact: Number(initialData?.contact || 0),
                 password: "",
             })
         }
@@ -98,50 +115,52 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent size="xs">
+            <DialogContent size={initialData ? "md" : "xs"}>
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Usuario" : "Crear Usuario"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los detalles del usuario y asigne un rol de acceso.
+                        Seleccione un contacto y asigne las credenciales de acceso.
                     </DialogDescription>
                 </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="username"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nombre de Usuario</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} disabled={!!initialData} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} type="email" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
+
+                <div className={cn("grid gap-6", initialData ? "md:grid-cols-[1fr,280px]" : "grid-cols-1")}>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             <FormField
                                 control={form.control}
-                                name="first_name"
+                                name="contact"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Nombre</FormLabel>
+                                        <FormLabel>Contacto Vinculado</FormLabel>
+                                        <Select
+                                            onValueChange={(val) => field.onChange(parseInt(val))}
+                                            value={field.value?.toString()}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione la persona" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {contacts.map((contact) => (
+                                                    <SelectItem key={contact.id} value={contact.id.toString()}>
+                                                        {contact.name} ({contact.tax_id})
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="username"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Nombre de Usuario (Para Login)</FormLabel>
                                         <FormControl>
-                                            <Input {...field} />
+                                            <Input {...field} disabled={!!initialData} placeholder="ej: pmartinez" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -149,61 +168,71 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                             />
                             <FormField
                                 control={form.control}
-                                name="last_name"
+                                name="groups_list"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Apellido</FormLabel>
+                                        <FormLabel>Rol (Grupo)</FormLabel>
+                                        <Select
+                                            onValueChange={(val) => field.onChange([val])}
+                                            defaultValue={field.value?.[0]}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione un rol" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {availableRoles.map(([val, label]) => (
+                                                    <SelectItem key={val} value={val}>
+                                                        {label}
+                                                    </SelectItem>
+                                                ))}
+                                                {availableRoles.length === 0 && (
+                                                    <>
+                                                        <SelectItem value="ADMIN">Administrador</SelectItem>
+                                                        <SelectItem value="MANAGER">Gerente/Contador</SelectItem>
+                                                        <SelectItem value="OPERATOR">Operador</SelectItem>
+                                                        <SelectItem value="READ_ONLY">Lectura</SelectItem>
+                                                    </>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Contraseña {initialData && "(opcional)"}</FormLabel>
                                         <FormControl>
-                                            <Input {...field} />
+                                            <Input {...field} type="password" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+                            <div className="flex justify-end pt-4">
+                                <Button type="submit" disabled={loading}>
+                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {initialData ? "Actualizar" : "Crear"}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+
+                    {initialData && (
+                        <div className="border-l pl-6 hidden md:block">
+                            <ActivitySidebar
+                                entityId={initialData.id}
+                                entityType="user"
+                                className="h-[400px]"
+                            />
                         </div>
-                        <FormField
-                            control={form.control}
-                            name="role"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Rol</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione un rol" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="ADMIN">Administrador</SelectItem>
-                                            <SelectItem value="ACCOUNTANT">Contador</SelectItem>
-                                            <SelectItem value="OPERATOR">Operador</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Contraseña {initialData && "(opcional)"}</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} type="password" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="flex justify-end pt-4">
-                            <Button type="submit" disabled={loading}>
-                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {initialData ? "Actualizar" : "Crear"}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     )

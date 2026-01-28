@@ -547,17 +547,32 @@ class Command(BaseCommand):
         # We rely on sync_permissions being run, but for safety in demo setup, let's get or create
         admin_group, _ = Group.objects.get_or_create(name=Roles.ADMIN)
 
+        # Create system contact for admin
+        admin_contact, _ = Contact.objects.get_or_create(
+            tax_id="00.000.000-0",
+            defaults={
+                'name': 'Admin del Sistema',
+                'email': 'admin@erpgrafico.com',
+                'contact_name': 'Admin User'
+            }
+        )
+
         admin_user, created = User.objects.get_or_create(
             username='admin',
             defaults={
                 'email': 'admin@erpgrafico.com',
                 'first_name': 'Admin',
                 'last_name': 'User',
-                # 'role' field removed
+                'contact': admin_contact,
                 'is_staff': True,
                 'is_superuser': True
             }
         )
+
+        # Ensure contact linkage if it didn't exist
+        if not admin_user.contact:
+            admin_user.contact = admin_contact
+            admin_user.save()
         
         # Ensure group assignment
         if not admin_user.groups.filter(name=Roles.ADMIN).exists():

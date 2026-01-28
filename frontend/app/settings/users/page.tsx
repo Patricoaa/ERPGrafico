@@ -66,16 +66,20 @@ export default function UsersSettingsPage() {
             ),
         },
         {
-            accessorKey: "role",
+            accessorKey: "groups_list",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Rol" />
             ),
             cell: ({ row }) => {
-                const role = row.getValue("role") as string
-                switch (role) {
+                const groups = row.getValue("groups_list") as string[]
+                const primaryRole = groups?.[0] || 'Sin Rol'
+
+                switch (primaryRole) {
                     case 'ADMIN': return <Badge variant="default">Admin</Badge>
-                    case 'ACCOUNTANT': return <Badge variant="secondary">Contador</Badge>
-                    default: return <Badge variant="outline">Operador</Badge>
+                    case 'MANAGER': return <Badge variant="secondary">Gerente/Contador</Badge>
+                    case 'OPERATOR': return <Badge variant="outline">Operador</Badge>
+                    case 'READ_ONLY': return <Badge variant="outline">Lectura</Badge>
+                    default: return <Badge variant="outline">{primaryRole}</Badge>
                 }
             },
         },
@@ -142,12 +146,13 @@ export default function UsersSettingsPage() {
                         searchPlaceholder="Buscar usuario por nombre, email o username..."
                         facetedFilters={[
                             {
-                                column: "role",
+                                column: "groups_list",
                                 title: "Rol",
                                 options: [
                                     { label: "Admin", value: "ADMIN" },
-                                    { label: "Contador", value: "ACCOUNTANT" },
+                                    { label: "Gerente/Contador", value: "MANAGER" },
                                     { label: "Operador", value: "OPERATOR" },
+                                    { label: "Lectura", value: "READ_ONLY" },
                                 ],
                             },
                         ]}

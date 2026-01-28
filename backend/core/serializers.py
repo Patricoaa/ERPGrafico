@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.exceptions import InvalidToken
@@ -12,18 +13,83 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     permissions = serializers.SerializerMethodField()
-    groups = serializers.SerializerMethodField()
+    groups_list = serializers.SlugRelatedField(
+        many=True,
+        slug_field='name',
+        queryset=Group.objects.all(),
+        source='groups',
+        required=False
+    )
+    email = serializers.EmailField(required=False, allow_blank=True)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    contact = serializers.PrimaryKeyRelatedField(
+        queryset=Group.objects.none(), # Set in __init__
+        required=True, 
+        allow_null=False
+    )
+    password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'is_superuser', 'permissions', 'groups']
-        read_only_fields = ['id']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 
+            'is_active', 'is_superuser', 'permissions', 'groups_list', 'password',
+            'contact'
+        ]
+        read_only_fields = ['id', 'is_superuser']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from contacts.models import Contact
+        self.fields['contact'].queryset = Contact.objects.all()
 
     def get_permissions(self, obj):
         return list(obj.get_all_permissions())
 
-    def get_groups(self, obj):
-        return list(obj.groups.values_list('name', flat=True))
+    def _sync_contact_data(self, validated_data):
+        contact = validated_data.get('contact')
+        if contact:
+            # Sync personal info from contact
+            validated_data['email'] = contact.email
+            # Split contact_name or name if needed, or just use as is
+            # Contact model has 'name' (Razon Social) and 'contact_name' (Persona)
+            # We'll use contact_name for first_name if available, otherwise name
+            full_name = contact.contact_name or contact.name
+            parts = full_name.split(' ', 1)
+            validated_data['first_name'] = parts[0]
+            validated_data['last_name'] = parts[1] if len(parts) > 1 else ""
+        return validated_data
+
+    def create(self, validated_data):
+        groups_data = validated_data.pop('groups', [])
+        password = validated_data.pop('password', None)
+        validated_data = self._sync_contact_data(validated_data)
+        
+        user = User.objects.create(**validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+        user.groups.set(groups_data)
+        return user
+
+    def update(self, instance, validated_data):
+        groups_data = validated_data.pop('groups', None)
+        password = validated_data.pop('password', None)
+        validated_data = self._sync_contact_data(validated_data)
+        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+            
+        if password:
+            instance.set_password(password)
+            
+        instance.save()
+        
+        if groups_data is not None:
+            instance.groups.set(groups_data)
+            
+        return instance
 
 class AttachmentSerializer(serializers.ModelSerializer):
     uploaded_at = serializers.DateTimeField(read_only=True)
