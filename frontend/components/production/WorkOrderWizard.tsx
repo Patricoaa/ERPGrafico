@@ -1393,7 +1393,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     className="w-full gap-2 border-primary/20 hover:bg-primary/5"
                                     onClick={() => setViewingStepIndex(actualStepIndex)}
                                 >
-                                    <LayoutDashboard className="h-4 w-4" />
+
                                     Volver a la Etapa Actual
                                 </Button>
                             ) : (

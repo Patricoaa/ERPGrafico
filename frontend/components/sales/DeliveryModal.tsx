@@ -390,41 +390,45 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                     <Badge variant="outline">{line.quantity_pending}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    {line.track_inventory ? (
-                                                        <Badge variant={availableStock >= line.quantity_pending ? "success" : "destructive"}>
-                                                            {availableStock}
-                                                        </Badge>
-                                                    ) : (
-                                                        <div className="flex flex-col items-center gap-1">
-                                                            {line.product_type === 'MANUFACTURABLE' ? (
-                                                                <>
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        {line.track_inventory && (
+                                                            <Badge variant={availableStock >= line.quantity_pending ? "success" : "destructive"}>
+                                                                {availableStock}
+                                                            </Badge>
+                                                        )}
+
+                                                        {line.product_type === 'MANUFACTURABLE' && (
+                                                            <>
+                                                                {!line.track_inventory && (
                                                                     <Badge variant="outline" className="text-[9px] border-blue-200 bg-blue-50 text-blue-700">
                                                                         {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
                                                                     </Badge>
+                                                                )}
 
-                                                                    {line.requires_advanced_manufacturing && (line as any).work_order_summary ? (
-                                                                        <div className="flex flex-col items-center mt-1">
-                                                                            <Badge
-                                                                                variant={(line as any).work_order_summary.status === 'FINISHED' ? "success" : "outline"}
-                                                                                className={cn("text-[9px] px-1.5 py-0", (line as any).work_order_summary.status === 'FINISHED' ? "" : "bg-orange-50 text-orange-700 border-orange-200")}
-                                                                            >
-                                                                                OT: {(line as any).work_order_summary.status_display}
-                                                                            </Badge>
-                                                                            <span className="text-[8px] text-muted-foreground mt-0.5">{(line as any).work_order_summary.number}</span>
-                                                                        </div>
-                                                                    ) : !line.requires_advanced_manufacturing ? (
-                                                                        <Badge variant={(line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "success" : "destructive"} className="text-[10px]">
-                                                                            {line.manufacturable_quantity ?? 0}
+                                                                {(line as any).work_order_summary ? (
+                                                                    <div className="flex flex-col items-center mt-1">
+                                                                        <Badge
+                                                                            variant={(line as any).work_order_summary.status === 'FINISHED' ? "success" : "outline"}
+                                                                            className={cn("text-[9px] px-1.5 py-0", (line as any).work_order_summary.status === 'FINISHED' ? "" : "bg-orange-50 text-orange-700 border-orange-200")}
+                                                                        >
+                                                                            OT: {(line as any).work_order_summary.status_display}
                                                                         </Badge>
-                                                                    ) : (
-                                                                        <span className="text-[8px] text-destructive">Sin OT registrada</span>
-                                                                    )}
-                                                                </>
-                                                            ) : (
-                                                                <Badge variant="outline" className="text-[9px] border-emerald-200 bg-emerald-50 text-emerald-700">Disponible</Badge>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                                        <span className="text-[8px] text-muted-foreground mt-0.5">{(line as any).work_order_summary.number}</span>
+                                                                    </div>
+                                                                ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
+                                                                    <Badge variant={(line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "success" : "destructive"} className="text-[10px]">
+                                                                        {line.manufacturable_quantity ?? 0}
+                                                                    </Badge>
+                                                                ) : line.requires_advanced_manufacturing ? (
+                                                                    <span className="text-[8px] text-destructive">Sin OT registrada</span>
+                                                                ) : null}
+                                                            </>
+                                                        )}
+
+                                                        {!line.track_inventory && line.product_type !== 'MANUFACTURABLE' && (
+                                                            <Badge variant="outline" className="text-[9px] border-emerald-200 bg-emerald-50 text-emerald-700">Disponible</Badge>
+                                                        )}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Input

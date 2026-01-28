@@ -734,7 +734,7 @@ class WorkOrderService:
 
             # 1. Create Purchase Order in CONFIRMED status
             po = PurchaseOrder.objects.create(
-                number=f"OCS-{SequenceService.get_next_number(PurchaseOrder)}",
+                number=SequenceService.get_next_number(PurchaseOrder),
                 supplier_id=supplier_id,
                 work_order=work_order,
                 warehouse=work_order.warehouse or Warehouse.objects.first(),

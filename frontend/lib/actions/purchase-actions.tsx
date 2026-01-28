@@ -68,23 +68,29 @@ export const purchaseOrderActions: ActionRegistry = {
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
+
+                    // Must have storable products (exclude orders that are purely services)
+                    const lines = activeDoc.lines || activeDoc.items || []
+                    const hasStorable = lines.some((l: any) =>
+                        l.product_type === 'STORABLE' ||
+                        (l.product && l.product.track_inventory) ||
+                        l.track_inventory
+                    )
+                    if (!hasStorable) return false
+
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
                         // [FIX] For Debit Note: Check if items are fully received based on Note lines
                         if (activeDoc.dte_type === 'NOTA_DEBITO') {
-                            const lines = activeDoc.lines || []
                             const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
-                            // quantity_received is populated by InvoiceSerializer based on linked receipts
                             const totalReceived = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_received || 0) || 0), 0)
                             return totalReceived < totalOrdered
                         }
 
-                        // For generic invoices on order, fallback (though usually redundant in Note Hub)
                         return activeDoc.po_receiving_status !== 'RECEIVED'
                     }
 
-                    // Default logic for Purchase Order
                     return activeDoc.receiving_status !== 'RECEIVED'
                 },
                 badge: { type: 'pending' }
@@ -96,10 +102,14 @@ export const purchaseOrderActions: ActionRegistry = {
                 requiredPermissions: ['inventory.add_stockmove'],
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
-                    // Show if not fully received and has service products
+                    // Show ONLY if it has services and is not fully received
                     const lines = order.lines || order.items || []
-                    const hasServices = lines.some((l: any) => l.product_type === 'SERVICE' && (parseFloat(l.quantity_pending) || 0) > 0)
-                    return order.receiving_status !== 'RECEIVED' && hasServices
+                    const hasServices = lines.some((l: any) => l.product_type === 'SERVICE')
+                    if (!hasServices) return false
+
+                    const hasPending = lines.some((l: any) => (parseFloat(l.quantity_pending || 0) > 0))
+
+                    return order.receiving_status !== 'RECEIVED' && hasPending
                 },
                 badge: { type: 'pending' }
             },

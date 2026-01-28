@@ -80,19 +80,19 @@ class SaleLineSerializer(serializers.ModelSerializer):
         # If it's express manufacturing (mfg_auto_finalize), it's considered finished
         # but we also need to check if an OT actually exists and is finished
         # because even express items generate an OT that might be manually handled.
-        ots = obj.work_orders.all()
+        ots = obj.work_orders.exclude(status='CANCELLED')
         if not ots.exists():
-            # If no OT yet, but it's manufacturable, it's not finished
+            # If no OT yet (or all cancelled), but it's manufacturable, it's not finished
             return False
             
         return all(ot.status == 'FINISHED' for ot in ots)
 
     def get_work_order_summary(self, obj):
-        ots = obj.work_orders.all()
+        ots = obj.work_orders.exclude(status='CANCELLED')
         if not ots.exists():
             return None
         
-        # Return summary of first OT for simple UI display
+        # Return summary of first active OT for simple UI display
         ot = ots.first()
         return {
             'number': ot.number,
