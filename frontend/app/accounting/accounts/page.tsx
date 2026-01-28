@@ -132,13 +132,11 @@ export default function AccountsPage() {
                 const account = row.original
                 return (
                     <div className="flex justify-end items-center gap-1">
-                        {account.is_selectable && (
-                            <LedgerModal
-                                accountId={account.id}
-                                accountName={account.name}
-                                accountCode={account.code}
-                            />
-                        )}
+                        <LedgerModal
+                            accountId={account.id}
+                            accountName={account.name}
+                            accountCode={account.code}
+                        />
                         <AccountForm
                             accounts={accounts}
                             initialData={account as any}

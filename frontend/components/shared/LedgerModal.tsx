@@ -156,10 +156,20 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
 
     return (
         <>
-            {trigger && (
+            {trigger ? (
                 <div onClick={() => setOpen(true)} className="inline-block cursor-pointer">
                     {trigger}
                 </div>
+            ) : (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Ver Libro Mayor"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setOpen(true)}
+                >
+                    <Book className="h-4 w-4 text-primary" />
+                </Button>
             )}
             <BaseModal
                 open={open}
