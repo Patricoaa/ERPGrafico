@@ -93,7 +93,7 @@ export const ActionCategory = forwardRef(({
                 // If only one, open directly. If multiple, eventually we might need a list, 
                 // but user wants TransactionViewModal. We'll open the latest one.
                 const targetDoc = docs[0]
-                const viewType = actionId === 'view-documents' ? 'invoice' : 'inventory'
+                const viewType = targetDoc.docType || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
                 const viewId = actionId === 'view-documents' ? targetDoc.id : (targetDoc.id || targetDoc.stock_move_id)
 
                 if (!viewId) {

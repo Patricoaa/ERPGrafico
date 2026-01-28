@@ -503,7 +503,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     </div>
                 }
                 description={
-                    <div className="flex items-center gap-4 mt-1">
+                    <span className="flex items-center gap-4 mt-1">
                         <span className="text-muted-foreground truncate max-w-[300px]">
                             {order?.description}
                         </span>
@@ -518,7 +518,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 new Date(order.start_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) :
                                 "Sin fecha de inicio"}
                         </span>
-                    </div>
+                    </span>
                 }
             >
                 <div className="flex flex-1 overflow-hidden h-full">

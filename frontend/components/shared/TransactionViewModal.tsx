@@ -34,39 +34,57 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
     useEffect(() => {
         if (open) {
-            setCurrentType(initialType)
+            console.log(`[TransactionViewModal] Initializing with type: ${initialType}, id: ${initialId}`)
+            setCurrentType(initialType?.toLowerCase())
             setCurrentId(initialId)
             setHistory([])
+            setData(null)
         }
     }, [open, initialType, initialId])
 
     useEffect(() => {
-        if (open && currentId) {
+        if (open && currentId && currentId !== 0) {
             fetchData()
         }
     }, [open, currentId, currentType])
 
     const fetchData = async () => {
+        if (!currentId || currentId === 0) return
+
         try {
             setLoading(true)
+            setData(null)
 
             let endpoint = ""
-            if (currentType === 'sale_order') endpoint = `/sales/orders/${currentId}/`
-            else if (currentType === 'purchase_order') endpoint = `/purchasing/orders/${currentId}/`
-            else if (currentType === 'invoice') endpoint = `/billing/invoices/${currentId}/`
-            else if (currentType === 'payment') endpoint = `/treasury/payments/${currentId}/`
-            else if (currentType === 'journal_entry') endpoint = `/accounting/entries/${currentId}/`
-            else if (currentType === 'inventory') endpoint = `/inventory/moves/${currentId}/`
-            else if (currentType === 'service_obligation') endpoint = `/services/obligations/${currentId}/`
-            else if (currentType === 'work_order') endpoint = `/manufacturing/work-orders/${currentId}/`
-            else if (currentType === 'sale_delivery') endpoint = `/sales/deliveries/${currentId}/`
-            else if (currentType === 'purchase_receipt') endpoint = `/purchasing/receipts/${currentId}/`
+            const type = currentType?.toLowerCase()
 
+            if (type === 'sale_order') endpoint = `/sales/orders/${currentId}/`
+            else if (type === 'purchase_order') endpoint = `/purchasing/orders/${currentId}/`
+            else if (type === 'invoice') endpoint = `/billing/invoices/${currentId}/`
+            else if (type === 'payment') endpoint = `/treasury/payments/${currentId}/`
+            else if (type === 'journal_entry') endpoint = `/accounting/entries/${currentId}/`
+            else if (type === 'inventory' || type === 'stock_move') endpoint = `/inventory/moves/${currentId}/`
+            else if (type === 'service_obligation') endpoint = `/services/obligations/${currentId}/`
+            else if (type === 'work_order') endpoint = `/production/orders/${currentId}/`
+            else if (type === 'sale_delivery') endpoint = `/sales/deliveries/${currentId}/`
+            else if (type === 'purchase_receipt') endpoint = `/purchasing/receipts/${currentId}/`
+            else if (type === 'sale_return') endpoint = `/sales/returns/${currentId}/`
+            else if (type === 'purchase_return') endpoint = `/purchasing/returns/${currentId}/`
+
+            if (!endpoint) {
+                console.error(`[TransactionViewModal] No endpoint mapping for type: ${type}`)
+                setLoading(false)
+                return
+            }
+
+            console.log(`[TransactionViewModal] Fetching from: ${endpoint}`)
             const response = await api.get(endpoint)
             setData(response.data)
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching transaction details:", error)
+            const msg = error.response?.data?.error || error.message || "Error desconocido"
+            toast.error(`Error al cargar: ${msg}`)
         } finally {
             setLoading(false)
         }
@@ -132,6 +150,9 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             case 'purchase_receipt':
                 const isService = (data.lines || []).some((l: any) => l.product_type === 'SERVICE')
                 return { main: isService ? "Entrega de Servicio" : "Recepción de Compra", sub: `REC-${data.id}` }
+            case 'sale_return':
+            case 'purchase_return':
+                return { main: "Devolución de Mercadería", sub: data.display_id || `DEV-${data.number || data.id}` }
             default:
                 return { main: "Detalles de Transacción", sub: "" }
         }

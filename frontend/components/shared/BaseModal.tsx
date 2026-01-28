@@ -46,7 +46,7 @@ export function BaseModal({
                         {title}
                     </DialogTitle>
                     {description && (
-                        <DialogDescription>
+                        <DialogDescription asChild={typeof description !== "string"}>
                             {description}
                         </DialogDescription>
                     )}

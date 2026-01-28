@@ -618,7 +618,7 @@ export function OrderCommandCenter({
                                         number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
                                         icon: FileText,
                                         id: order?.id,
-                                        docType: type === 'sale' ? 'sale_order' : 'purchase_order',
+                                        docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
                                         actions: [
                                             ...(order?.status === 'DRAFT' ? [{
                                                 icon: Trash2,
@@ -929,7 +929,7 @@ export function OrderCommandCenter({
             <TransactionViewModal
                 open={detailsModal.open}
                 onOpenChange={(open) => setDetailsModal({ ...detailsModal, open })}
-                transactionId={detailsModal.id}
+                id={detailsModal.id}
                 type={detailsModal.type}
             />
 
