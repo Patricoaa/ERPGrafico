@@ -8,18 +8,6 @@ import os
 import uuid
 
 class User(AbstractUser):
-    class Role(models.TextChoices):
-        ADMIN = 'ADMIN', _('Administrador')
-        ACCOUNTANT = 'ACCOUNTANT', _('Contador')
-        OPERATOR = 'OPERATOR', _('Operador')
-
-    role = models.CharField(
-        max_length=20,
-        choices=Role.choices,
-        default=Role.OPERATOR,
-        help_text=_("Rol del usuario en el sistema")
-    )
-    
     history = HistoricalRecords()
 
 class CompanySettings(models.Model):

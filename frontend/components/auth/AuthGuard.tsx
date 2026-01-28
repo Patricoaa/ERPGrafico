@@ -7,10 +7,12 @@ import { TopBar } from "@/components/layout/TopBar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { QuickActionsMenu } from "@/components/layout/QuickActionsMenu"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
+    const { isAuthenticated, isLoading } = useAuth()
     const [authorized, setAuthorized] = useState(false)
 
     useEffect(() => {
@@ -20,14 +22,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             return
         }
 
-        const token = localStorage.getItem("access_token")
-        if (!token) {
-            setAuthorized(false)
-            router.push("/login")
-        } else {
-            setAuthorized(true)
+        if (!isLoading) {
+            if (!isAuthenticated) {
+                setAuthorized(false)
+                router.push("/login")
+            } else {
+                setAuthorized(true)
+            }
         }
-    }, [pathname, router])
+    }, [pathname, isAuthenticated, isLoading, router])
 
     const [activeCategory, setActiveCategory] = useState<string | null>("dashboard")
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)

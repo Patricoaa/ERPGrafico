@@ -12,14 +12,18 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     permissions = serializers.SerializerMethodField()
+    groups = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_superuser', 'permissions']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'is_superuser', 'permissions', 'groups']
         read_only_fields = ['id']
 
     def get_permissions(self, obj):
         return list(obj.get_all_permissions())
+
+    def get_groups(self, obj):
+        return list(obj.groups.values_list('name', flat=True))
 
 class AttachmentSerializer(serializers.ModelSerializer):
     uploaded_at = serializers.DateTimeField(read_only=True)

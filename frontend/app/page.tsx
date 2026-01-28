@@ -10,23 +10,13 @@ interface UserProfile {
   last_name: string
 }
 
-export default function DashboardPage() {
-  const [user, setUser] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+import { useAuth } from "@/contexts/AuthContext"
 
-  const fetchUser = async () => {
-    try {
-      const res = await api.get('/core/auth/me/')
-      setUser(res.data)
-    } catch (error) {
-      console.error("Error fetching user profile", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+export default function DashboardPage() {
+  const { user, isLoading: loading } = useAuth()
 
   useEffect(() => {
-    fetchUser()
+    // No longer need local fetch, AuthProvider handles it
   }, [])
 
   if (loading) {

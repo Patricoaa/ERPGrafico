@@ -14,13 +14,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 
+import { useAuth } from "@/contexts/AuthContext"
+import { PermissionGuard } from "@/components/auth/PermissionGuard"
+
 export function TopBar() {
     const router = useRouter()
+    const { logout, user } = useAuth()
 
     const handleLogout = () => {
-        localStorage.removeItem("access_token")
-        localStorage.removeItem("refresh_token")
-        router.push("/login")
+        logout()
     }
 
     return (
@@ -58,9 +60,9 @@ export function TopBar() {
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">Administrador</p>
+                                <p className="text-sm font-medium leading-none">{user?.username || 'Usuario'}</p>
                                 <p className="text-xs leading-none text-muted-foreground">
-                                    admin@erpgrafico.com
+                                    {user?.groups?.[0] || 'Sin Rol'}
                                 </p>
                             </div>
                         </DropdownMenuLabel>
@@ -69,10 +71,12 @@ export function TopBar() {
                             <User className="mr-2 h-4 w-4" />
                             <span>Mi Perfil</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push("/settings")}>
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Configuración</span>
-                        </DropdownMenuItem>
+                        <PermissionGuard permission="core.change_companysettings">
+                            <DropdownMenuItem onClick={() => router.push("/settings")}>
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Configuración</span>
+                            </DropdownMenuItem>
+                        </PermissionGuard>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                             <LogOut className="mr-2 h-4 w-4" />

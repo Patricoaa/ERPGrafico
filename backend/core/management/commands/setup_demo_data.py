@@ -229,8 +229,14 @@ class Command(BaseCommand):
             try:
                 model_class.objects.all().delete()
             except Exception as e:
+                # If the table doesn't exist, it's effectively "purged"
+                error_str = str(e).lower()
+                if "does not exist" in error_str or "unrecognized configuration parameter" in error_str:
+                    self.stdout.write(f"    - Table for {name} does not exist, skipping.")
+                    return
                 self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e)}"))
-                raise e
+                # We don't raise here to allow the rest of the purge to continue
+                # if we are in a fresh system state.
 
         # Production child records
         _safe_delete(ProductionConsumption, "ProductionConsumption")
@@ -534,17 +540,30 @@ class Command(BaseCommand):
         JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social", debit=0, credit=50000000)
 
     def _create_admin_user(self):
+        # Ensure groups exist first (in case sync wasn't run)
+        from django.contrib.auth.models import Group
+        from core.permissions import Roles
+        
+        # We rely on sync_permissions being run, but for safety in demo setup, let's get or create
+        admin_group, _ = Group.objects.get_or_create(name=Roles.ADMIN)
+
         admin_user, created = User.objects.get_or_create(
             username='admin',
             defaults={
                 'email': 'admin@erpgrafico.com',
                 'first_name': 'Admin',
                 'last_name': 'User',
-                'role': User.Role.ADMIN,
+                # 'role' field removed
                 'is_staff': True,
                 'is_superuser': True
             }
         )
+        
+        # Ensure group assignment
+        if not admin_user.groups.filter(name=Roles.ADMIN).exists():
+            admin_user.groups.add(admin_group)
+            self.stdout.write("  Assigned 'ADMIN' Group to user 'admin'")
+
         if created:
             admin_user.set_password('admin123')
             admin_user.save()

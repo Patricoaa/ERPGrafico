@@ -28,8 +28,11 @@ const formSchema = z.object({
     }),
 })
 
+import { useAuth } from "@/contexts/AuthContext"
+
 export default function LoginPage() {
     const router = useRouter()
+    const { login } = useAuth()
     const [error, setError] = useState("")
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -51,8 +54,11 @@ export default function LoginPage() {
 
             if (response.ok) {
                 const data = await response.json()
-                localStorage.setItem('access_token', data.access)
-                localStorage.setItem('refresh_token', data.refresh)
+                // Use the context login to fetch user data and update global state
+                await login(data.access)
+                if (data.refresh) {
+                    localStorage.setItem('refresh_token', data.refresh)
+                }
                 router.push('/')
             } else {
                 setError("Credenciales inválidas")

@@ -40,8 +40,11 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer.save()
         return Response(serializer.data)
 
+from core.api.permissions import StandardizedModelPermissions
+
 class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SaleOrder.objects.all()
+    permission_classes = [StandardizedModelPermissions]
     
     def get_serializer_class(self):
         if self.action == 'create':
