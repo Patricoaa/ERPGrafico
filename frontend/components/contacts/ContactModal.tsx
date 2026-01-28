@@ -42,7 +42,7 @@ const contactSchema = z.object({
     phone: z.string().optional(),
     address: z.string().optional(),
     city: z.string().optional(),
-    payment_terms: z.string().optional(),
+
     is_default_customer: z.boolean(),
     is_default_vendor: z.boolean(),
 })
@@ -83,7 +83,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
             phone: "",
             address: "",
             city: "",
-            payment_terms: "CONTADO",
+
             is_default_customer: false,
             is_default_vendor: false,
         },
@@ -140,7 +140,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                 phone: contact.phone || "",
                 address: contact.address || "",
                 city: contact.city || "",
-                payment_terms: contact.payment_terms || "CONTADO",
+
                 is_default_customer: !!contact.is_default_customer,
                 is_default_vendor: !!contact.is_default_vendor
             })
@@ -437,19 +437,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                         )}
                                                     />
 
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="payment_terms"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Condiciones de Pago</FormLabel>
-                                                                <FormControl>
-                                                                    <Input placeholder="Ej: 30 días" {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
+
                                                 </div>
                                             </form>
                                         </Form>
@@ -664,7 +652,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     ]
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col h-full">
             {/* Summary Cards Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 {/* 1. Total Card (Available for all types) */}
