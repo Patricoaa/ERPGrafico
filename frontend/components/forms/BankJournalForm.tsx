@@ -125,7 +125,7 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                     <Button>Nueva Caja/Banco</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent size="sm">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Caja o Banco" : "Crear Caja o Banco"}</DialogTitle>
                     <DialogDescription>

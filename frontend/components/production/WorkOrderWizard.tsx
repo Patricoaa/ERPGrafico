@@ -9,6 +9,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import api from "@/lib/api"
@@ -480,43 +481,47 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const productName = order?.product_name || order?.sale_line?.product?.name || "Producto"
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
-                <div className="p-6 border-b flex justify-between items-center bg-muted/30">
-                    <div>
-                        <DialogTitle className="text-2xl flex items-center gap-3">
-                            Gestión de Orden de Trabajo OT-{order?.number}
-                            {order?.outsourcing_status === 'partial' && (
-                                <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                    Parcialmente Tercerizado
-                                </Badge>
-                            )}
-                            {order?.outsourcing_status === 'full' && (
-                                <Badge variant="secondary" className="text-xs bg-indigo-50 text-indigo-700 border-indigo-200 font-bold">
-                                    Totalmente Tercerizado
-                                </Badge>
-                            )}
-                        </DialogTitle>
-                        <DialogDescription className="flex items-center gap-4 mt-1">
-                            <span className="text-muted-foreground truncate">
-                                {order?.description}
-                            </span>
-                            <span className="text-muted-foreground">|</span>
-                            <span className="flex items-center gap-1.5 text-muted-foreground">
-                                Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
-                            </span>
-                            <span className="text-muted-foreground">|</span>
-                            <span className="flex items-center gap-1.5 text-primary font-medium">
-                                <CalendarIcon className="h-3.5 w-3.5" />
-                                {order?.start_date ?
-                                    new Date(order.start_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) :
-                                    "Sin fecha de inicio"}
-                            </span>
-                        </DialogDescription>
+        <>
+            <BaseModal
+                open={open}
+                onOpenChange={onOpenChange}
+                size="2xl"
+                hideScrollArea
+                title={
+                    <div className="flex items-center gap-3">
+                        Gestión de Orden de Trabajo OT-{order?.number}
+                        {order?.outsourcing_status === 'partial' && (
+                            <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                Parcialmente Tercerizado
+                            </Badge>
+                        )}
+                        {order?.outsourcing_status === 'full' && (
+                            <Badge variant="secondary" className="text-xs bg-indigo-50 text-indigo-700 border-indigo-200 font-bold">
+                                Totalmente Tercerizado
+                            </Badge>
+                        )}
                     </div>
-                </div>
-
-                <div className="flex flex-1 overflow-hidden">
+                }
+                description={
+                    <div className="flex items-center gap-4 mt-1">
+                        <span className="text-muted-foreground truncate max-w-[300px]">
+                            {order?.description}
+                        </span>
+                        <span className="text-muted-foreground">|</span>
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                            Cliente: {order?.sale_order_client_name || order?.sale_customer_name || 'Manual'}
+                        </span>
+                        <span className="text-muted-foreground">|</span>
+                        <span className="flex items-center gap-1.5 text-primary font-medium">
+                            <CalendarIcon className="h-3.5 w-3.5" />
+                            {order?.start_date ?
+                                new Date(order.start_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) :
+                                "Sin fecha de inicio"}
+                        </span>
+                    </div>
+                }
+            >
+                <div className="flex flex-1 overflow-hidden h-full">
                     {/* Left Sidebar - Steps */}
                     <div className="w-56 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">
                         {STAGES.map((stage, index) => {
@@ -1571,7 +1576,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         )}
                     </div>
                 </div>
-            </DialogContent >
+            </BaseModal>
+
             {/* Modals for Edit and Command Center */}
             {
                 isEditOpen && order && (
@@ -1699,6 +1705,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     </div>
                 }
             />
-        </Dialog >
+        </>
     )
 }

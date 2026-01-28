@@ -8,6 +8,7 @@ import {
     DialogTitle,
     DialogFooter
 } from "@/components/ui/dialog";
+import { BaseModal } from "@/components/shared/BaseModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -231,16 +232,26 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
     );
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[98vw] h-[95vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-4 bg-muted/10 border-b">
-                    <DialogTitle className="flex items-center gap-2">
-                        <BarChart2 className="h-5 w-5 text-primary" />
-                        Editar Presupuesto: {budget?.name}
-                    </DialogTitle>
-                </DialogHeader>
-
-                <div className="px-4 py-2 border-b flex items-center justify-between bg-accent/30">
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="full"
+            hideScrollArea
+            title={
+                <div className="flex items-center gap-2">
+                    <BarChart2 className="h-5 w-5 text-primary" />
+                    Editar Presupuesto: {budget?.name}
+                </div>
+            }
+            footer={
+                <>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleSave} className="px-8 font-bold">Guardar Presupuesto</Button>
+                </>
+            }
+        >
+            <div className="flex flex-col h-full bg-background overflow-hidden">
+                <div className="px-4 py-3 border-b flex items-center justify-between bg-accent/30 shrink-0">
                     <div className="flex items-center gap-4 flex-1 max-w-xl">
                         <Input
                             placeholder="Buscar cuenta por nombre o código..."
@@ -274,42 +285,45 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             size="sm"
                             onClick={handleCopyPreviousYear}
                             disabled={loading}
+                            className="h-9 px-4"
                         >
-                            <History className="h-4 w-4 mr-2" />
+                            <History className="h-4 w-4 mr-2 text-primary" />
                             Cargar Real Año Anterior
                         </Button>
                     </div>
                 </div>
 
-                <ScrollArea className="flex-1 border rounded-md">
-                    <div className="min-w-[1200px]">
-                        <div className="flex bg-muted border-b sticky top-0 z-10 font-medium">
-                            <div className="w-[300px] p-2 border-r">Cuenta</div>
-                            {monthNames.map(m => (
-                                <div key={m} className="flex-1 p-2 text-center text-xs border-r">{m}</div>
+                <div className="flex-1 overflow-hidden p-4">
+                    <ScrollArea className="h-full border rounded-xl overflow-hidden shadow-sm">
+                        <div className="min-w-[1200px]">
+                            <div className="flex bg-muted/50 border-b sticky top-0 z-10 font-bold text-[11px] uppercase tracking-wider text-muted-foreground">
+                                <div className="w-[300px] p-3 border-r bg-muted/50">Cuenta Contable</div>
+                                {monthNames.map(m => (
+                                    <div key={m} className="flex-1 p-3 text-center border-r bg-muted/50">{m}</div>
+                                ))}
+                                <div className="w-[100px] p-3 text-center bg-muted/50">Total Anual</div>
+                            </div>
+
+                            {loading && (
+                                <div className="flex flex-col items-center justify-center p-12 space-y-4">
+                                    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                                    <p className="text-sm text-muted-foreground animate-pulse">Cargando cuentas...</p>
+                                </div>
+                            )}
+
+                            {!loading && filteredAccounts.map(acc => (
+                                <BudgetAccountRow
+                                    key={acc.id}
+                                    account={acc}
+                                    monthlyData={items[acc.id]}
+                                    onAmountChange={handleAmountChange}
+                                    onAutoDistribute={handleAutoDistribute}
+                                />
                             ))}
-                            <div className="w-[100px] p-2 text-center text-xs">Total</div>
                         </div>
-
-                        {loading && <div className="text-center p-8">Cargando cuentas...</div>}
-
-                        {!loading && filteredAccounts.map(acc => (
-                            <BudgetAccountRow
-                                key={acc.id}
-                                account={acc}
-                                monthlyData={items[acc.id]}
-                                onAmountChange={handleAmountChange}
-                                onAutoDistribute={handleAutoDistribute}
-                            />
-                        ))}
-                    </div>
-                </ScrollArea>
-
-                <DialogFooter className="p-4 border-t bg-muted/10">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSave} className="px-8">Guardar Presupuesto</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
+                    </ScrollArea>
+                </div>
+            </div>
+        </BaseModal>
+    )
 }

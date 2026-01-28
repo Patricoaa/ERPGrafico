@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -61,101 +61,100 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className={`sm:max-w-[700px] flex flex-col p-0 overflow-hidden ${initialData ? 'h-[500px]' : ''}`}>
-                <DialogHeader className="px-6 py-4 border-b shrink-0 bg-muted/20">
-                    <DialogTitle>{initialData ? "Editar Regla" : "Nueva Regla de Reabastecimiento"}</DialogTitle>
-                </DialogHeader>
-
-                <div className="flex-1 flex overflow-hidden">
-                    <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="replenishment-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                <FormField
-                                    control={form.control}
-                                    name="warehouse"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Almacén</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Seleccione almacén" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {warehouses.map((w) => (
-                                                        <SelectItem key={w.id} value={w.id.toString()}>
-                                                            {w.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="min_quantity"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Cantidad Mínima</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.0001"
-                                                        {...field}
-                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="max_quantity"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Cantidad Máxima</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.0001"
-                                                        {...field}
-                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </form>
-                        </Form>
-                    </div>
-
-                    {initialData?.id && (
-                        <div className="w-80 border-l bg-muted/5">
-                            <div className="h-full p-6">
-                                <ActivitySidebar
-                                    entityId={initialData.id}
-                                    entityType="reordering_rule"
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <DialogFooter className="px-6 py-4 border-t bg-muted/20 shrink-0">
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="md"
+            title={initialData ? "Editar Regla" : "Nueva Regla de Reabastecimiento"}
+            className={initialData ? 'h-[500px]' : ''}
+            footer={
+                <>
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                         Cancelar
                     </Button>
                     <Button type="submit" form="replenishment-rule-form">Guardar</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </>
+            }
+        >
+            <div className="flex shrink-0 overflow-hidden">
+                <div className="flex-1 space-y-4">
+                    <Form {...form}>
+                        <form id="replenishment-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="warehouse"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Almacén</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione almacén" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {warehouses.map((w) => (
+                                                    <SelectItem key={w.id} value={w.id.toString()}>
+                                                        {w.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="min_quantity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Cantidad Mínima</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    step="0.0001"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="max_quantity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Cantidad Máxima</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    step="0.0001"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </form>
+                    </Form>
+                </div>
+
+                {initialData?.id && (
+                    <div className="w-80 border-l bg-muted/5 ml-6 -my-6 py-6 px-6">
+                        <ActivitySidebar
+                            entityId={initialData.id}
+                            entityType="reordering_rule"
+                        />
+                    </div>
+                )}
+            </div>
+        </BaseModal>
     )
 }

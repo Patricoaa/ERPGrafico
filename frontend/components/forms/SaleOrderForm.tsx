@@ -15,6 +15,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormControl,
@@ -337,9 +338,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <>
             {!initialData && (
-                <DialogTrigger asChild>
+                <div onClick={() => setOpen(true)}>
                     {triggerVariant === "circular" ? (
                         <Button size="icon" className="rounded-full h-8 w-8" title="Nueva Nota de Venta">
                             <Plus className="h-4 w-4" />
@@ -347,20 +348,31 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     ) : (
                         <Button>Nueva Nota de Venta</Button>
                     )}
-                </DialogTrigger>
+                </div>
             )}
-            <DialogContent className="sm:max-w-[1200px] w-[95vw] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Nota de Venta" : "Cerrar Venta"}</DialogTitle>
-                    <DialogDescription>
-                        {initialData ? "Modifique los datos de la nota de venta." : "Ingrese los productos la venta e ir al checkout."}
-                    </DialogDescription>
-                </DialogHeader>
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="xl"
+                title={initialData ? "Editar Nota de Venta" : "Cerrar Venta"}
+                description={initialData ? "Modifique los datos de la nota de venta." : "Ingrese los productos la venta e ir al checkout."}
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button type="submit" form="sale-order-form" disabled={loading}>
+                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Confirmar Venta"}
+                        </Button>
+                    </>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        </div>
-
+                    <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-medium">Líneas de Venta</h3>
@@ -683,22 +695,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                 <OrderTotals control={form.control} />
                             </div>
                         </div>
-
-                        <div className="flex justify-end space-x-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setOpen(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Confirmar Venta"}
-                            </Button>
-                        </div>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog >
+            </BaseModal>
+        </>
     )
 }

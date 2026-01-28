@@ -1,14 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -151,100 +144,95 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
         : (isSale ? "Registrar Despacho Suplementario" : "Registrar Recepción Suplementaria")
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[900px] w-[95vw] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <ArrowLeftRight className="h-5 w-5 text-primary" />
-                        {title}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Documento: {invoice?.display_id} | {isSale ? "Cliente" : "Proveedor"}: {invoice?.partner_name}
-                    </DialogDescription>
-                </DialogHeader>
-
-                {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Bodega</Label>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    value={selectedWarehouse || ''}
-                                    onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
-                                >
-                                    {warehouses.map(w => (
-                                        <option key={w.id} value={w.id}>{w.name} ({w.code})</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Fecha</Label>
-                                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                            </div>
-                        </div>
-
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Producto</TableHead>
-                                        <TableHead className="text-center">Cant. Nota</TableHead>
-                                        <TableHead className="text-center">Procesado</TableHead>
-                                        <TableHead className="text-center">Pendiente</TableHead>
-                                        <TableHead className="text-center w-32">A Procesar</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {displayLines.map((line: any) => {
-                                        const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
-                                        const pending = Math.max(0, line.quantity - processed)
-
-                                        return (
-                                            <TableRow key={line.product_id}>
-                                                <TableCell className="font-medium">{line.product_name}</TableCell>
-                                                <TableCell className="text-center">{line.quantity}</TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant={processed > 0 ? "success" : "outline"}>{processed}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant={pending > 0 ? "warning" : "outline"}>{pending}</Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Input
-                                                        type="number"
-                                                        value={processQuantities[line.product_id] || 0}
-                                                        onChange={(e) => handleQuantityChange(line.product_id, e.target.value, pending)}
-                                                        disabled={pending <= 0}
-                                                        className="text-center"
-                                                    />
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Notas</Label>
-                            <Input placeholder="Ej: Devolución parcial por daño..." value={notes} onChange={(e) => setNotes(e.target.value)} />
-                        </div>
-                    </div>
-                )}
-
-                <DialogFooter>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="lg"
+            title={title}
+            description={`Documento: ${invoice?.display_id} | ${isSale ? "Cliente" : "Proveedor"}: ${invoice?.partner_name}`}
+            footer={
+                <>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button onClick={handleSubmit} disabled={submitting || loading}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirmar Movimiento
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </>
+            }
+        >
+            {loading ? (
+                <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Bodega</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={selectedWarehouse || ''}
+                                onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
+                            >
+                                {warehouses.map(w => (
+                                    <option key={w.id} value={w.id}>{w.name} ({w.code})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Fecha</Label>
+                            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div className="rounded-md border overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Producto</TableHead>
+                                    <TableHead className="text-center">Cant. Nota</TableHead>
+                                    <TableHead className="text-center">Procesado</TableHead>
+                                    <TableHead className="text-center">Pendiente</TableHead>
+                                    <TableHead className="text-center w-32">A Procesar</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {displayLines.map((line: any) => {
+                                    const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
+                                    const pending = Math.max(0, line.quantity - processed)
+
+                                    return (
+                                        <TableRow key={line.product_id}>
+                                            <TableCell className="font-medium">{line.product_name}</TableCell>
+                                            <TableCell className="text-center">{line.quantity}</TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant={processed > 0 ? "success" : "outline"}>{processed}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant={pending > 0 ? "warning" : "outline"}>{pending}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Input
+                                                    type="number"
+                                                    value={processQuantities[line.product_id] || 0}
+                                                    onChange={(e) => handleQuantityChange(line.product_id, e.target.value, pending)}
+                                                    disabled={pending <= 0}
+                                                    className="text-center"
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Notas</Label>
+                        <Input placeholder="Ej: Devolución parcial por daño..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+                    </div>
+                </div>
+            )}
+        </BaseModal>
     )
 }

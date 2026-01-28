@@ -79,7 +79,7 @@ export function TransactionNumberForm({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[400px]">
+            <DialogContent size="xs">
                 <DialogHeader>
                     <DialogTitle>Registrar N° de Transacción</DialogTitle>
                     <DialogDescription>

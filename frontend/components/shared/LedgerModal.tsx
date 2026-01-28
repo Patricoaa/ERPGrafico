@@ -1,13 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Book, Calendar, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
@@ -161,40 +155,46 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
     ]
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {trigger || (
-                    <Button variant="ghost" size="sm" title="Libro Mayor">
-                        <Book className="h-4 w-4 mr-1" />
-                    </Button>
-                )}
-            </DialogTrigger>
-            <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="px-6 py-4 border-b">
-                    <div className="flex justify-between items-center">
-                        <div className="space-y-1">
-                            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                                <Book className="h-6 w-6 text-primary" />
-                                Libro Mayor
-                            </DialogTitle>
-                            <p className="text-sm text-muted-foreground font-mono">
-                                {accountCode} | <span className="text-foreground font-sans font-semibold">{accountName}</span>
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 pr-8">
-                            <DateRangeFilter
-                                onRangeChange={(range) => {
-                                    if (range?.from && range?.to) {
-                                        setDateRange({ from: range.from, to: range.to })
-                                    }
-                                }}
-                                defaultRange={dateRange}
-                            />
-                        </div>
+        <>
+            {trigger && (
+                <div onClick={() => setOpen(true)} className="inline-block cursor-pointer">
+                    {trigger}
+                </div>
+            )}
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="2xl"
+                title={
+                    <>
+                        <Book className="h-6 w-6 text-primary" />
+                        Libro Mayor
+                    </>
+                }
+                description={
+                    <span className="text-sm text-muted-foreground font-mono">
+                        {accountCode} | <span className="text-foreground font-sans font-semibold">{accountName}</span>
+                    </span>
+                }
+                footer={
+                    <div className="w-full flex justify-between items-center text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+                        <span>Libro Mayor • {accountName}</span>
+                        <span>{data?.movements.length || 0} Registros</span>
                     </div>
-                </DialogHeader>
+                }
+            >
+                <div className="flex flex-col gap-6">
+                    <div className="flex items-center justify-end">
+                        <DateRangeFilter
+                            onRangeChange={(range) => {
+                                if (range?.from && range?.to) {
+                                    setDateRange({ from: range.from, to: range.to })
+                                }
+                            }}
+                            defaultRange={dateRange}
+                        />
+                    </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {loading && <div className="text-center py-10 text-muted-foreground">Cargando datos...</div>}
                     {!loading && data && (
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -254,7 +254,6 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     )}
 
                     {!loading && (
-
                         <DataTable
                             columns={columns}
                             data={data?.movements || []}
@@ -263,7 +262,6 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                             searchPlaceholder="Filtrar movimientos..."
                             defaultPageSize={100}
                         />
-
                     )}
 
                     {!loading && data?.movements.length === 0 && (
@@ -273,12 +271,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                         </div>
                     )}
                 </div>
-
-                <div className="px-6 py-4 border-t bg-muted/10 flex justify-between items-center text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-                    <span>Libro Mayor • {accountName}</span>
-                    <span>{data?.movements.length || 0} Registros</span>
-                </div>
-            </DialogContent>
+            </BaseModal>
 
             {viewingEntry && (
                 <TransactionViewModal
@@ -288,6 +281,6 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     id={viewingEntry.id}
                 />
             )}
-        </Dialog>
+        </>
     )
 }

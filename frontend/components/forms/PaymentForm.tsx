@@ -151,7 +151,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                     <Button>Registrar Pago</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent size="sm">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Pago" : "Registrar Pago"}</DialogTitle>
                     <DialogDescription>

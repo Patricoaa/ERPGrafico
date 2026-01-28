@@ -14,7 +14,7 @@ import { Plus, Eye, BarChart2, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import api from '@/lib/api';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { BaseModal } from '@/components/shared/BaseModal';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -99,53 +99,53 @@ export const BudgetManager = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h3 className="text-2xl font-bold">Gestión de Presupuestos</h3>
-                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                    <DialogTrigger asChild>
-                        <Button><Plus className="mr-2 h-4 w-4" /> Nuevo Presupuesto</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[800px]">
-                        <DialogHeader>
-                            <DialogTitle>Crear Nuevo Presupuesto</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label>Nombre o Referencia</Label>
-                                <Input
-                                    value={newBudget.name}
-                                    onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
-                                    placeholder="Ej: Presupuesto Operativo"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Año del Presupuesto</Label>
-                                <Input
-                                    type="number"
-                                    min={2020}
-                                    max={2100}
-                                    defaultValue={new Date().getFullYear()}
-                                    onChange={e => {
-                                        const year = e.target.value;
-                                        setNewBudget({
-                                            ...newBudget,
-                                            name: newBudget.name || `Presupuesto ${year}`,
-                                            start_date: `${year}-01-01`,
-                                            end_date: `${year}-12-31`
-                                        })
-                                    }}
-                                />
-                                <p className="text-[10px] text-muted-foreground">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Descripción</Label>
-                                <Input
-                                    value={newBudget.description}
-                                    onChange={e => setNewBudget({ ...newBudget, description: e.target.value })}
-                                />
-                            </div>
-                            <Button onClick={handleCreate} className="w-full">Crear Presupuesto Anual</Button>
+                <Button onClick={() => setIsCreateOpen(true)}><Plus className="mr-2 h-4 w-4" /> Nuevo Presupuesto</Button>
+                <BaseModal
+                    open={isCreateOpen}
+                    onOpenChange={setIsCreateOpen}
+                    size="md"
+                    title="Crear Nuevo Presupuesto"
+                    footer={
+                        <Button onClick={handleCreate} className="w-full">Crear Presupuesto Anual</Button>
+                    }
+                >
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Nombre o Referencia</Label>
+                            <Input
+                                value={newBudget.name}
+                                onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
+                                placeholder="Ej: Presupuesto Operativo"
+                            />
                         </div>
-                    </DialogContent>
-                </Dialog>
+                        <div className="space-y-2">
+                            <Label>Año del Presupuesto</Label>
+                            <Input
+                                type="number"
+                                min={2020}
+                                max={2100}
+                                defaultValue={new Date().getFullYear()}
+                                onChange={e => {
+                                    const year = e.target.value;
+                                    setNewBudget({
+                                        ...newBudget,
+                                        name: newBudget.name || `Presupuesto ${year}`,
+                                        start_date: `${year}-01-01`,
+                                        end_date: `${year}-12-31`
+                                    })
+                                }}
+                            />
+                            <p className="text-[10px] text-muted-foreground">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Descripción</Label>
+                            <Input
+                                value={newBudget.description}
+                                onChange={e => setNewBudget({ ...newBudget, description: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                </BaseModal>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">

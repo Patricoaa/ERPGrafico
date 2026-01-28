@@ -98,7 +98,7 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent size="xs">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Usuario" : "Crear Usuario"}</DialogTitle>
                     <DialogDescription>

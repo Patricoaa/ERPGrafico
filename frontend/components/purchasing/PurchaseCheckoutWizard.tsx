@@ -8,6 +8,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Step2_PurchaseDTE } from "./checkout/Step2_PurchaseDTE"
 import { Step3_PurchasePayment } from "./checkout/Step3_PurchasePayment"
@@ -349,115 +350,120 @@ export function PurchaseCheckoutWizard({
     // const totalSteps = 5 -- calculated dynamically now
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1400px] w-[95vw] h-[90vh] overflow-hidden flex flex-col p-0 text-foreground">
-                <div className="p-6 border-b flex justify-between items-center bg-background shrink-0">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-2xl">
-                            <ShoppingCart className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                            <DialogTitle className="font-black tracking-tighter uppercase">Procesar Compra</DialogTitle>
-                        </div>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="full"
+            hideScrollArea
+            className="h-[90vh]"
+            contentClassName="p-0"
+            title={
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-primary/10 rounded-2xl">
+                        <ShoppingCart className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                        <span className="font-black tracking-tighter uppercase block">Procesar Compra</span>
                     </div>
                 </div>
+            }
+            footer={
+                <div className="w-full flex justify-between">
+                    <Button
+                        variant="outline"
+                        onClick={handleBack}
+                        disabled={step === 1 || loading}
+                        className="h-12 px-6 font-bold"
+                    >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Atrás
+                    </Button>
 
-                <div className="flex flex-1 overflow-hidden">
-                    {/* Left Sidebar - Process Summary */}
-                    <PurchaseProcessSummarySidebar
-                        currentStep={step}
-                        totalSteps={totalSteps}
-                        supplierName={selectedSupplierName}
-                        warehouseName={selectedWarehouseName}
-                        dteType={step > 2 ? dteData.type : undefined}
-                        paymentData={step > 3 ? {
-                            method: paymentData.method as any,
-                            amount: paymentData.amount,
-                            pendingDebt: currentTotal - paymentData.amount
-                        } : undefined}
-                        receiptData={step > 4 ? receiptData : undefined}
-                    />
-
-                    {/* Center - Content Area Wrapper */}
-                    <div className="flex-1 flex flex-col min-w-0">
-                        {/* Scrollable Content */}
-                        <div className="flex-1 p-6 overflow-y-auto">
-                            {step === 1 && (
-                                <Step0_Supplier
-                                    selectedSupplierId={selectedSupplierId}
-                                    setSelectedSupplierId={setSelectedSupplierId}
-                                    setSelectedSupplierName={setSelectedSupplierName}
-                                    selectedWorkOrderId={selectedWorkOrderId}
-                                    setSelectedWorkOrderId={setSelectedWorkOrderId}
-                                />
-                            )}
-                            {step === 2 && (
-                                <Step1_ProductSelection
-                                    orderLines={currentOrderLines}
-                                    setOrderLines={setCurrentOrderLines}
-                                    selectedWarehouseId={selectedWarehouseId}
-                                    onWarehouseChange={setSelectedWarehouseId}
-                                    selectedSupplierId={selectedSupplierId}
-                                />
-                            )}
-                            {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
-                            {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
-                            {step === 5 && (
-                                <Step4_Receipt
-                                    receiptData={receiptData}
-                                    setReceiptData={(data) => {
-                                        setReceiptData(data)
-                                        if (data.warehouseId) {
-                                            setSelectedWarehouseId(data.warehouseId)
-                                        }
-                                    }}
-                                    orderLines={currentOrderLines}
-                                />
-                            )}
-                        </div>
-
-                        <div className="p-6 border-t bg-background flex justify-between z-10 shrink-0">
-                            <Button
-                                variant="outline"
-                                onClick={handleBack}
-                                disabled={step === 1 || loading}
-                                className="h-12 px-6 font-bold"
-                            >
-                                <ChevronLeft className="mr-2 h-4 w-4" />
-                                Atrás
-                            </Button>
-
-                            {step < totalSteps ? (
-                                <Button onClick={handleNext} className="w-40 h-12 font-bold">
-                                    Siguiente
-                                    <ChevronRight className="ml-2 h-4 w-4" />
-                                </Button>
+                    {step < totalSteps ? (
+                        <Button onClick={handleNext} className="w-40 h-12 font-bold">
+                            Siguiente
+                            <ChevronRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleFinish}
+                            className="w-48 h-12 bg-emerald-600 hover:bg-emerald-700 font-bold"
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
-                                <Button
-                                    onClick={handleFinish}
-                                    className="w-48 h-12 bg-emerald-600 hover:bg-emerald-700 font-bold"
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Check className="mr-2 h-4 w-4" />
-                                    )}
-                                    Finalizar Compra
-                                </Button>
+                                <Check className="mr-2 h-4 w-4" />
                             )}
-                        </div>
-                    </div>
+                            Finalizar Compra
+                        </Button>
+                    )}
+                </div>
+            }
+        >
+            <div className="flex flex-1 overflow-hidden h-full">
+                {/* Left Sidebar - Process Summary */}
+                <PurchaseProcessSummarySidebar
+                    currentStep={step}
+                    totalSteps={totalSteps}
+                    supplierName={selectedSupplierName}
+                    warehouseName={selectedWarehouseName}
+                    dteType={step > 2 ? dteData.type : undefined}
+                    paymentData={step > 3 ? {
+                        method: paymentData.method as any,
+                        amount: paymentData.amount,
+                        pendingDebt: currentTotal - paymentData.amount
+                    } : undefined}
+                    receiptData={step > 4 ? receiptData : undefined}
+                />
 
-                    {/* Right Sidebar - Product Summary */}
-                    <div className="w-80 hidden lg:block">
-                        <PurchaseOrderSummaryCard
-                            orderLines={currentOrderLines}
-                            total={currentTotal}
-                        />
+                {/* Center - Content Area Wrapper */}
+                <div className="flex-1 flex flex-col min-w-0">
+                    {/* Scrollable Content */}
+                    <div className="flex-1 p-6 overflow-y-auto">
+                        {step === 1 && (
+                            <Step0_Supplier
+                                selectedSupplierId={selectedSupplierId}
+                                setSelectedSupplierId={setSelectedSupplierId}
+                                setSelectedSupplierName={setSelectedSupplierName}
+                                selectedWorkOrderId={selectedWorkOrderId}
+                                setSelectedWorkOrderId={setSelectedWorkOrderId}
+                            />
+                        )}
+                        {step === 2 && (
+                            <Step1_ProductSelection
+                                orderLines={currentOrderLines}
+                                setOrderLines={setCurrentOrderLines}
+                                selectedWarehouseId={selectedWarehouseId}
+                                onWarehouseChange={setSelectedWarehouseId}
+                                selectedSupplierId={selectedSupplierId}
+                            />
+                        )}
+                        {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
+                        {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
+                        {step === 5 && (
+                            <Step4_Receipt
+                                receiptData={receiptData}
+                                setReceiptData={(data) => {
+                                    setReceiptData(data)
+                                    if (data.warehouseId) {
+                                        setSelectedWarehouseId(data.warehouseId)
+                                    }
+                                }}
+                                orderLines={currentOrderLines}
+                            />
+                        )}
                     </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+
+                {/* Right Sidebar - Product Summary */}
+                <div className="w-80 hidden lg:block border-l">
+                    <PurchaseOrderSummaryCard
+                        orderLines={currentOrderLines}
+                        total={currentTotal}
+                    />
+                </div>
+            </div>
+        </BaseModal>
     )
 }

@@ -8,13 +8,7 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { productSchema, type ProductFormValues } from "./product/schema"
 
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Form } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -480,155 +474,20 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1600px] max-h-[95vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="px-6 py-4 border-b shrink-0 bg-muted/20">
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                        <Package className="h-6 w-6 text-primary" />
-                        {initialData ? 'Editar Producto' : 'Nuevo Producto'}
-                    </DialogTitle>
-                </DialogHeader>
-
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Main content area */}
-                    <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-6">
-                                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                    <TabsList className="mb-4 bg-muted/50 p-1">
-                                        <TabsTrigger value="general" className="px-8 flex gap-2 relative">
-                                            Información General
-                                            {tabErrors['general'] && (
-                                                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                                                    <AlertCircle className="h-3 w-3" />
-                                                </span>
-                                            )}
-                                        </TabsTrigger>
-                                        {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
-                                            <TabsTrigger value="manufacturing" className="px-8 flex gap-2 relative">
-                                                Fabricación
-                                                {tabErrors['manufacturing'] && (
-                                                    <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                                                        <AlertCircle className="h-3 w-3" />
-                                                    </span>
-                                                )}
-                                            </TabsTrigger>
-                                        )}
-                                        {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
-                                            <TabsTrigger value="inventory" className="px-8 flex gap-2">
-                                                Inventario
-                                            </TabsTrigger>
-                                        )}
-                                        <TabsTrigger value="uoms" className="px-8 flex gap-2 relative">
-                                            Und. de Medida
-                                            {tabErrors['uoms'] && (
-                                                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                                                    <AlertCircle className="h-3 w-3" />
-                                                </span>
-                                            )}
-                                        </TabsTrigger>
-                                        {form.watch("product_type") === 'SUBSCRIPTION' && (
-                                            <TabsTrigger value="subscription" className="px-8 flex gap-2 relative">
-                                                Suscripción
-                                                {tabErrors['subscription'] && (
-                                                    <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                                                        <AlertCircle className="h-3 w-3" />
-                                                    </span>
-                                                )}
-                                            </TabsTrigger>
-                                        )}
-                                        {form.watch("can_be_sold") && (
-                                            <TabsTrigger value="pricing" className="px-8 flex gap-2">
-                                                Reglas de Precios
-                                            </TabsTrigger>
-                                        )}
-
-                                    </TabsList>
-
-                                    <TabsContent value="general" className="mt-0 space-y-8">
-                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                            <div className="md:col-span-3 space-y-6 border-r pr-8">
-                                                <ProductTypeSelector form={form as any} disabled={!!initialData} lockedType={lockedType} />
-                                                <ProductImageUpload
-                                                    form={form as any}
-                                                    imagePreview={imagePreview}
-                                                    setImagePreview={setImagePreview}
-                                                />
-                                            </div>
-
-                                            <div className="md:col-span-9 space-y-8">
-                                                <ProductBasicInfo
-                                                    form={form as any}
-                                                    categories={categories}
-                                                    isEditing={!!initialData}
-                                                    onAddCategory={() => setIsCategoryFormOpen(true)}
-                                                />
-                                                <ProductPricingSection
-                                                    form={form as any}
-                                                    initialData={initialData}
-                                                    canBeSold={form.watch("can_be_sold")}
-                                                    uoms={uoms}
-                                                />
-
-                                            </div>
-                                        </div>
-                                    </TabsContent>
-
-                                    <ProductManufacturingTab
-                                        form={form as any}
-                                        initialData={initialData}
-                                        products={products}
-                                        uoms={uoms}
-                                    />
-
-                                    <ProductInventoryTab
-                                        form={form as any}
-                                        initialData={initialData}
-                                        reorderingRules={reorderingRules}
-                                        setReorderingRules={setReorderingRules}
-                                        warehouses={warehouses}
-                                    />
-
-                                    <ProductUoMTab
-                                        form={form as any}
-                                        uoms={uoms}
-                                        canBeSold={form.watch("can_be_sold")}
-                                        canBePurchased={form.watch("can_be_purchased")}
-                                    />
-
-                                    <TabsContent value="subscription" className="mt-0">
-                                        <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                    </TabsContent>
-
-                                    <ProductPricingTab
-                                        initialData={initialData}
-                                        pricingRules={pricingRules}
-                                        fetchPricingRules={fetchPricingRules}
-                                        onOpenRuleDialog={(rule) => {
-                                            setSelectedPricingRule(rule || null)
-                                            setPricingRuleDialogOpen(true)
-                                        }}
-                                    />
-
-                                </Tabs>
-                            </form>
-                        </Form>
-                    </div>
-
-                    {/* Activity Sidebar */}
-                    {initialData && (
-                        <div className="w-80 border-l bg-muted/5">
-                            <div className="h-full p-6">
-                                <ActivitySidebar
-                                    entityId={initialData.id}
-                                    entityType="product"
-                                />
-                            </div>
-                        </div>
-                    )}
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="full"
+            hideScrollArea
+            contentClassName="p-0"
+            title={
+                <div className="flex items-center gap-2">
+                    <Package className="h-6 w-6 text-primary" />
+                    {initialData ? 'Editar Producto' : 'Nuevo Producto'}
                 </div>
-
-                <DialogFooter className="px-6 py-4 border-t bg-muted/20 shrink-0">
+            }
+            footer={
+                <>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Cancelar
                     </Button>
@@ -636,8 +495,145 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
+                </>
+            }
+        >
+            <div className="flex flex-1 overflow-hidden h-full">
+                {/* Main content area */}
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+                    <Form {...form}>
+                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-6">
+                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                                <TabsList className="mb-4 bg-muted/50 p-1">
+                                    <TabsTrigger value="general" className="px-8 flex gap-2 relative">
+                                        Información General
+                                        {tabErrors['general'] && (
+                                            <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                                                <AlertCircle className="h-3 w-3" />
+                                            </span>
+                                        )}
+                                    </TabsTrigger>
+                                    {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
+                                        <TabsTrigger value="manufacturing" className="px-8 flex gap-2 relative">
+                                            Fabricación
+                                            {tabErrors['manufacturing'] && (
+                                                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                                                    <AlertCircle className="h-3 w-3" />
+                                                </span>
+                                            )}
+                                        </TabsTrigger>
+                                    )}
+                                    {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
+                                        <TabsTrigger value="inventory" className="px-8 flex gap-2">
+                                            Inventario
+                                        </TabsTrigger>
+                                    )}
+                                    <TabsTrigger value="uoms" className="px-8 flex gap-2 relative">
+                                        Und. de Medida
+                                        {tabErrors['uoms'] && (
+                                            <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                                                <AlertCircle className="h-3 w-3" />
+                                            </span>
+                                        )}
+                                    </TabsTrigger>
+                                    {form.watch("product_type") === 'SUBSCRIPTION' && (
+                                        <TabsTrigger value="subscription" className="px-8 flex gap-2 relative">
+                                            Suscripción
+                                            {tabErrors['subscription'] && (
+                                                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
+                                                    <AlertCircle className="h-3 w-3" />
+                                                </span>
+                                            )}
+                                        </TabsTrigger>
+                                    )}
+                                    {form.watch("can_be_sold") && (
+                                        <TabsTrigger value="pricing" className="px-8 flex gap-2">
+                                            Reglas de Precios
+                                        </TabsTrigger>
+                                    )}
+
+                                </TabsList>
+
+                                <TabsContent value="general" className="mt-0 space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                                        <div className="md:col-span-3 space-y-6 border-r pr-8">
+                                            <ProductTypeSelector form={form as any} disabled={!!initialData} lockedType={lockedType} />
+                                            <ProductImageUpload
+                                                form={form as any}
+                                                imagePreview={imagePreview}
+                                                setImagePreview={setImagePreview}
+                                            />
+                                        </div>
+
+                                        <div className="md:col-span-9 space-y-8">
+                                            <ProductBasicInfo
+                                                form={form as any}
+                                                categories={categories}
+                                                isEditing={!!initialData}
+                                                onAddCategory={() => setIsCategoryFormOpen(true)}
+                                            />
+                                            <ProductPricingSection
+                                                form={form as any}
+                                                initialData={initialData}
+                                                canBeSold={form.watch("can_be_sold")}
+                                                uoms={uoms}
+                                            />
+
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                <ProductManufacturingTab
+                                    form={form as any}
+                                    initialData={initialData}
+                                    products={products}
+                                    uoms={uoms}
+                                />
+
+                                <ProductInventoryTab
+                                    form={form as any}
+                                    initialData={initialData}
+                                    reorderingRules={reorderingRules}
+                                    setReorderingRules={setReorderingRules}
+                                    warehouses={warehouses}
+                                />
+
+                                <ProductUoMTab
+                                    form={form as any}
+                                    uoms={uoms}
+                                    canBeSold={form.watch("can_be_sold")}
+                                    canBePurchased={form.watch("can_be_purchased")}
+                                />
+
+                                <TabsContent value="subscription" className="mt-0">
+                                    <ProductSubscriptionTab form={form} isEditing={!!initialData} />
+                                </TabsContent>
+
+                                <ProductPricingTab
+                                    initialData={initialData}
+                                    pricingRules={pricingRules}
+                                    fetchPricingRules={fetchPricingRules}
+                                    onOpenRuleDialog={(rule) => {
+                                        setSelectedPricingRule(rule || null)
+                                        setPricingRuleDialogOpen(true)
+                                    }}
+                                />
+
+                            </Tabs>
+                        </form>
+                    </Form>
+                </div>
+
+                {/* Activity Sidebar */}
+                {initialData && (
+                    <div className="w-80 border-l bg-muted/5 h-full">
+                        <ActivitySidebar
+                            entityId={initialData.id}
+                            entityType="product"
+                        />
+                    </div>
+                )}
+            </div>
 
             <PricingRuleForm
                 open={pricingRuleDialogOpen}
@@ -659,6 +655,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     form.setValue("category", newCat.id.toString())
                 }}
             />
-        </Dialog>
+        </BaseModal>
     )
 }

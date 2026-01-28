@@ -139,7 +139,7 @@ export function PurchaseNoteModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[900px]">
+            <DialogContent size="lg">
                 <DialogHeader className="border-b pb-4">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                         <FileBadge className="h-6 w-6 text-amber-500" />

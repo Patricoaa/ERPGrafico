@@ -116,7 +116,8 @@ class SalesService:
                 if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
                     # Check if all associated OTs are finished (unless auto-finalize/express)
                     if not product.mfg_auto_finalize:
-                        if not sale_line.work_orders.exists() or not all(ot.status == 'FINISHED' for ot in sale_line.work_orders.all()):
+                        ots = sale_line.work_orders.exclude(status='CANCELLED')
+                        if not ots.exists() or not all(ot.current_stage == 'FINISHED' for ot in ots):
                              raise ValidationError(
                                 f"No se puede despachar '{product.name}' porque requiere fabricación avanzada "
                                 "y su Orden de Trabajo aún no está finalizada."
@@ -286,7 +287,8 @@ class SalesService:
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
                     if not product.mfg_auto_finalize:
-                        if not sale_line.work_orders.exists() or not all(ot.status == 'FINISHED' for ot in sale_line.work_orders.all()):
+                        ots = sale_line.work_orders.exclude(status='CANCELLED')
+                        if not ots.exists() or not all(ot.current_stage == 'FINISHED' for ot in ots):
                              raise ValidationError(
                                 f"No se puede despachar '{product.name}' porque requiere fabricación avanzada "
                                 "y su Orden de Trabajo aún no está finalizada."

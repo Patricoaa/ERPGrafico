@@ -101,7 +101,7 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-width-[500px]">
+            <DialogContent size="sm">
                 <DialogHeader>
                     <DialogTitle>Nueva Plantilla de Campo Personalizado</DialogTitle>
                 </DialogHeader>

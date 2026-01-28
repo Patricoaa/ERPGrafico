@@ -256,7 +256,7 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                     <Button>Nueva Categoría</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent size="sm">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Categoría" : "Crear Categoría"}</DialogTitle>
                     <DialogDescription>

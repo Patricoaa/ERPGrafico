@@ -103,7 +103,7 @@ export function EditProposalDialog({ proposal, open, onOpenChange, onSuccess }: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent size="xs">
                 <DialogHeader>
                     <DialogTitle>Editar Propuesta de Reabastecimiento</DialogTitle>
                 </DialogHeader>

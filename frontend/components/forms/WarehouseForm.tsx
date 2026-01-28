@@ -96,7 +96,7 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                     <Button>Nuevo Almacén</Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent size="sm">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Almacén" : "Crear Almacén"}</DialogTitle>
                     <DialogDescription>

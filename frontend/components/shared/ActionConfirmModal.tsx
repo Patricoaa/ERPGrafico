@@ -91,7 +91,7 @@ export function ActionConfirmModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] overflow-hidden">
+            <DialogContent size="xs">
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-4">
                         <div className={cn("p-2 rounded-full", config.iconClassName)}>

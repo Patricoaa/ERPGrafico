@@ -165,7 +165,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent size="sm">
                 <DialogHeader>
                     <DialogTitle>{initialData ? "Editar Cuenta" : "Crear Cuenta Contable"}</DialogTitle>
                     <DialogDescription>

@@ -9,14 +9,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import api from "@/lib/api"
@@ -153,59 +146,52 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                 </PopoverContent>
             </Popover>
 
-            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="icon" title="Búsqueda Avanzada">
-                        <Search className="h-4 w-4" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle>Búsqueda Avanzada de Cuentas</DialogTitle>
-                        <DialogDescription>
-                            Seleccione una cuenta del plan contable.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4 flex-1 overflow-hidden flex flex-col">
-                        <Input
-                            placeholder="Filtrar por código o nombre..."
-                            value={searchTerm}
-                            onChange={(e) => searchAccounts(e.target.value)}
-                        />
-                        <div className="border rounded-md flex-1 overflow-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-1/3">Código</TableHead>
-                                        <TableHead>Nombre</TableHead>
-                                        <TableHead>Tipo</TableHead>
+            <BaseModal
+                open={modalOpen}
+                onOpenChange={setModalOpen}
+                size="md"
+                title="Búsqueda Avanzada de Cuentas"
+                description="Seleccione una cuenta del plan contable."
+            >
+                <div className="space-y-4 pt-4">
+                    <Input
+                        placeholder="Filtrar por código o nombre..."
+                        value={searchTerm}
+                        onChange={(e) => searchAccounts(e.target.value)}
+                    />
+                    <div className="border rounded-md overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-1/3">Código</TableHead>
+                                    <TableHead>Nombre</TableHead>
+                                    <TableHead>Tipo</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredAccounts.map((account) => (
+                                    <TableRow
+                                        key={account.id}
+                                        className="cursor-pointer hover:bg-accent"
+                                        onClick={() => handleSelect(account)}
+                                    >
+                                        <TableCell className="font-mono">{account.code}</TableCell>
+                                        <TableCell>{account.name}</TableCell>
+                                        <TableCell>{account.account_type}</TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredAccounts.map((account) => (
-                                        <TableRow
-                                            key={account.id}
-                                            className="cursor-pointer hover:bg-accent"
-                                            onClick={() => handleSelect(account)}
-                                        >
-                                            <TableCell className="font-mono">{account.code}</TableCell>
-                                            <TableCell>{account.name}</TableCell>
-                                            <TableCell>{account.account_type}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {filteredAccounts.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
-                                                No se encontraron resultados.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                ))}
+                                {filteredAccounts.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                                            No se encontraron resultados.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
                     </div>
-                </DialogContent>
-            </Dialog>
+                </div>
+            </BaseModal>
         </div>
     )
 }

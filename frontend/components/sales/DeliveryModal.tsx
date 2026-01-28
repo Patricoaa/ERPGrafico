@@ -1,14 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -309,186 +302,14 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1200px] w-[90vw] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Package className="h-5 w-5" />
-                        Despachar Orden NV-{order?.number}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Cliente: {order?.customer_name}
-                    </DialogDescription>
-                </DialogHeader>
-
-                {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {/* Warehouse and Date Selection */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="warehouse">Bodega de Despacho</Label>
-                                <select
-                                    id="warehouse"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    value={selectedWarehouse || ''}
-                                    onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
-                                >
-                                    {warehouses.map(warehouse => (
-                                        <option key={warehouse.id} value={warehouse.id}>
-                                            {warehouse.name} ({warehouse.code})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="delivery-date">Fecha de Despacho</Label>
-                                <Input
-                                    id="delivery-date"
-                                    type="date"
-                                    value={deliveryDate}
-                                    onChange={(e) => setDeliveryDate(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Delivery Status */}
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Estado de Despacho:</span>
-                            <Badge variant={
-                                order?.delivery_status === 'DELIVERED' ? 'success' :
-                                    order?.delivery_status === 'PARTIAL' ? 'secondary' :
-                                        'outline'
-                            }>
-                                {order?.delivery_status === 'DELIVERED' ? 'Entregado' :
-                                    order?.delivery_status === 'PARTIAL' ? 'Parcial' :
-                                        'Pendiente'}
-                            </Badge>
-                        </div>
-
-                        {/* Products Table */}
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Producto</TableHead>
-                                        <TableHead className="text-center">Unidad</TableHead>
-                                        <TableHead className="text-center">Pendiente</TableHead>
-                                        <TableHead className="text-center">Stock</TableHead>
-                                        <TableHead className="text-center">A Despachar</TableHead>
-                                        <TableHead>Estado</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {order?.lines.map(line => {
-                                        const stockStatus = getStockStatus(line)
-                                        const availableStock = stockLevels[line.product] || 0
-
-                                        return (
-                                            <TableRow key={line.id}>
-                                                <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">{line.product_name}</div>
-                                                        <div className="text-xs text-muted-foreground">{line.description}</div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant="outline">{line.quantity_pending}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <div className="flex flex-col items-center gap-1">
-                                                        {line.track_inventory && (
-                                                            <Badge variant={availableStock >= line.quantity_pending ? "success" : "destructive"}>
-                                                                {availableStock}
-                                                            </Badge>
-                                                        )}
-
-                                                        {line.product_type === 'MANUFACTURABLE' && (
-                                                            <>
-                                                                {!line.track_inventory && (
-                                                                    <Badge variant="outline" className="text-[9px] border-blue-200 bg-blue-50 text-blue-700">
-                                                                        {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
-                                                                    </Badge>
-                                                                )}
-
-                                                                {(line as any).work_order_summary ? (
-                                                                    <div className="flex flex-col items-center mt-1">
-                                                                        <Badge
-                                                                            variant={(line as any).work_order_summary.status === 'FINISHED' ? "success" : "outline"}
-                                                                            className={cn("text-[9px] px-1.5 py-0", (line as any).work_order_summary.status === 'FINISHED' ? "" : "bg-orange-50 text-orange-700 border-orange-200")}
-                                                                        >
-                                                                            OT: {(line as any).work_order_summary.status_display}
-                                                                        </Badge>
-                                                                        <span className="text-[8px] text-muted-foreground mt-0.5">{(line as any).work_order_summary.number}</span>
-                                                                    </div>
-                                                                ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
-                                                                    <Badge variant={(line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "success" : "destructive"} className="text-[10px]">
-                                                                        {line.manufacturable_quantity ?? 0}
-                                                                    </Badge>
-                                                                ) : line.requires_advanced_manufacturing ? (
-                                                                    <span className="text-[8px] text-destructive">Sin OT registrada</span>
-                                                                ) : null}
-                                                            </>
-                                                        )}
-
-                                                        {!line.track_inventory && line.product_type !== 'MANUFACTURABLE' && (
-                                                            <Badge variant="outline" className="text-[9px] border-emerald-200 bg-emerald-50 text-emerald-700">Disponible</Badge>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Input
-                                                        type="number"
-                                                        min="0"
-                                                        max={line.quantity_pending}
-                                                        step="0.01"
-                                                        value={deliveryQuantities[line.id] || 0}
-                                                        onChange={(e) => handleQuantityChange(line.id, e.target.value)}
-                                                        className="w-24 text-center"
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    {stockStatus && (
-                                                        <div className="flex items-center gap-1 text-xs">
-                                                            {stockStatus.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
-                                                            {stockStatus.type === 'success' && <CheckCircle2 className="h-3 w-3 text-green-600" />}
-                                                            {stockStatus.type === 'warning' && <AlertTriangle className="h-3 w-3 text-yellow-600" />}
-                                                            <span className={
-                                                                stockStatus.type === 'error' ? 'text-destructive' :
-                                                                    stockStatus.type === 'success' ? 'text-green-600' :
-                                                                        'text-yellow-600'
-                                                            }>
-                                                                {stockStatus.message}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        {/* Warning if partial dispatch */}
-                        {isPartialDispatch && (
-                            <Alert>
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertDescription>
-                                    Se realizará un despacho parcial. Podrás crear despachos adicionales para las cantidades restantes.
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                    </div>
-                )}
-
-                <DialogFooter>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title={`Despachar Orden NV-${order?.number}`}
+            description={`Cliente: ${order?.customer_name}`}
+            footer={
+                <>
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
@@ -509,8 +330,175 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirmar Despacho
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </>
+            }
+        >
+            {loading ? (
+                <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {/* Warehouse and Date Selection */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="warehouse">Bodega de Despacho</Label>
+                            <select
+                                id="warehouse"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                value={selectedWarehouse || ''}
+                                onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
+                            >
+                                {warehouses.map(warehouse => (
+                                    <option key={warehouse.id} value={warehouse.id}>
+                                        {warehouse.name} ({warehouse.code})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="delivery-date">Fecha de Despacho</Label>
+                            <Input
+                                id="delivery-date"
+                                type="date"
+                                value={deliveryDate}
+                                onChange={(e) => setDeliveryDate(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Delivery Status */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Estado de Despacho:</span>
+                        <Badge variant={
+                            order?.delivery_status === 'DELIVERED' ? 'success' :
+                                order?.delivery_status === 'PARTIAL' ? 'secondary' :
+                                    'outline'
+                        }>
+                            {order?.delivery_status === 'DELIVERED' ? 'Entregado' :
+                                order?.delivery_status === 'PARTIAL' ? 'Parcial' :
+                                    'Pendiente'}
+                        </Badge>
+                    </div>
+
+                    {/* Products Table */}
+                    <div className="rounded-md border overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Producto</TableHead>
+                                    <TableHead className="text-center">Unidad</TableHead>
+                                    <TableHead className="text-center">Pendiente</TableHead>
+                                    <TableHead className="text-center">Stock</TableHead>
+                                    <TableHead className="text-center">A Despachar</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {order?.lines.map(line => {
+                                    const stockStatus = getStockStatus(line)
+                                    const availableStock = stockLevels[line.product] || 0
+
+                                    return (
+                                        <TableRow key={line.id}>
+                                            <TableCell>
+                                                <div>
+                                                    <div className="font-medium">{line.product_name}</div>
+                                                    <div className="text-xs text-muted-foreground">{line.description}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant="outline">{line.quantity_pending}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    {line.track_inventory && (
+                                                        <Badge variant={availableStock >= line.quantity_pending ? "success" : "destructive"}>
+                                                            {availableStock}
+                                                        </Badge>
+                                                    )}
+
+                                                    {line.product_type === 'MANUFACTURABLE' && (
+                                                        <>
+                                                            {!line.track_inventory && (
+                                                                <Badge variant="outline" className="text-[9px] border-blue-200 bg-blue-50 text-blue-700">
+                                                                    {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
+                                                                </Badge>
+                                                            )}
+
+                                                            {(line as any).work_order_summary ? (
+                                                                <div className="flex flex-col items-center mt-1">
+                                                                    <Badge
+                                                                        variant={(line as any).work_order_summary.status === 'FINISHED' ? "success" : "outline"}
+                                                                        className={cn("text-[9px] px-1.5 py-0", (line as any).work_order_summary.status === 'FINISHED' ? "" : "bg-orange-50 text-orange-700 border-orange-200")}
+                                                                    >
+                                                                        OT: {(line as any).work_order_summary.status_display}
+                                                                    </Badge>
+                                                                    <span className="text-[8px] text-muted-foreground mt-0.5">{(line as any).work_order_summary.number}</span>
+                                                                </div>
+                                                            ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
+                                                                <Badge variant={(line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "success" : "destructive"} className="text-[10px]">
+                                                                    {line.manufacturable_quantity ?? 0}
+                                                                </Badge>
+                                                            ) : line.requires_advanced_manufacturing ? (
+                                                                <span className="text-[8px] text-destructive">Sin OT registrada</span>
+                                                            ) : null}
+                                                        </>
+                                                    )}
+
+                                                    {!line.track_inventory && line.product_type !== 'MANUFACTURABLE' && (
+                                                        <Badge variant="outline" className="text-[9px] border-emerald-200 bg-emerald-50 text-emerald-700">Disponible</Badge>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    max={line.quantity_pending}
+                                                    step="0.01"
+                                                    value={deliveryQuantities[line.id] || 0}
+                                                    onChange={(e) => handleQuantityChange(line.id, e.target.value)}
+                                                    className="w-24 text-center mx-auto"
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                {stockStatus && (
+                                                    <div className="flex items-center gap-1 text-xs">
+                                                        {stockStatus.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
+                                                        {stockStatus.type === 'success' && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+                                                        {stockStatus.type === 'warning' && <AlertTriangle className="h-3 w-3 text-yellow-600" />}
+                                                        <span className={
+                                                            stockStatus.type === 'error' ? 'text-destructive' :
+                                                                stockStatus.type === 'success' ? 'text-green-600' :
+                                                                    'text-yellow-600'
+                                                        }>
+                                                            {stockStatus.message}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Warning if partial dispatch */}
+                    {isPartialDispatch && (
+                        <Alert>
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                                Se realizará un despacho parcial. Podrás crear despachos adicionales para las cantidades restantes.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </div>
+            )}
+        </BaseModal>
     )
 }

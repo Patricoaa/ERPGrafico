@@ -1,14 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -72,63 +65,19 @@ export function DocumentCompletionModal({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <FileEdit className="h-5 w-5" />
-                        Completar Datos del Documento
-                    </DialogTitle>
-                    <DialogDescription>
-                        Ingrese el folio, fecha y adjunte el documento legal para finalizar el registro.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="comp-reference">
-                            N° de Folio / Referencia <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                            id="comp-reference"
-                            placeholder="Ej: 12345"
-                            value={reference}
-                            onChange={(e) => setReference(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="comp-date">
-                            Fecha de Emisión <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                            id="comp-date"
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>
-                            Adjuntar Documento {invoiceType === 'FACTURA' ? <span className="text-destructive">*</span> : "(Opcional)"}
-                        </Label>
-                        <div className="flex items-center gap-2">
-                            <Input
-                                type="file"
-                                onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                                className="cursor-pointer"
-                            />
-                        </div>
-                        {attachment && (
-                            <div className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
-                                <CheckCircle2 className="h-3 w-3" /> {attachment.name}
-                            </div>
-                        )}
-                    </div>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="sm"
+            title={
+                <div className="flex items-center gap-2">
+                    <FileEdit className="h-5 w-5" />
+                    Completar Datos del Documento
                 </div>
-
-                <DialogFooter>
+            }
+            description="Ingrese el folio, fecha y adjunte el documento legal para finalizar el registro."
+            footer={
+                <>
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
@@ -136,8 +85,52 @@ export function DocumentCompletionModal({
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Finalizar Documento
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </>
+            }
+        >
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="comp-reference">
+                        N° de Folio / Referencia <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                        id="comp-reference"
+                        placeholder="Ej: 12345"
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value)}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="comp-date">
+                        Fecha de Emisión <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                        id="comp-date"
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label>
+                        Adjuntar Documento {invoiceType === 'FACTURA' ? <span className="text-destructive">*</span> : "(Opcional)"}
+                    </Label>
+                    <div className="flex items-center gap-2">
+                        <Input
+                            type="file"
+                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                            className="cursor-pointer"
+                        />
+                    </div>
+                    {attachment && (
+                        <div className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
+                            <CheckCircle2 className="h-3 w-3" /> {attachment.name}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </BaseModal>
     )
 }
