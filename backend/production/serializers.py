@@ -121,12 +121,16 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     attachments = AttachmentSerializer(many=True, read_only=True)
     is_cancellable = serializers.ReadOnlyField()
     cancellation_limit_stage = serializers.ReadOnlyField()
+    display_id = serializers.SerializerMethodField()
     
     # Metadata helpers
     requires_prepress = serializers.SerializerMethodField()
     requires_press = serializers.SerializerMethodField()
     requires_postpress = serializers.SerializerMethodField()
     checkout_files = serializers.SerializerMethodField()
+    
+    def get_display_id(self, obj):
+        return obj.display_id
 
     def get_product_description(self, obj):
         if obj.stage_data and obj.stage_data.get('product_description'):

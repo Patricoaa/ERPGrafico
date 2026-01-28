@@ -174,6 +174,18 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
         // Validate stock
         const insufficientStock = order?.lines.some(line => {
             const requestedQty = deliveryQuantities[line.id] || 0
+            if (requestedQty <= 0) return false
+
+            // Skip stock validation for advanced manufacturing if production is finished
+            // The stock was already created when the OT was finalized
+            if (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) {
+                const isFinished = (line as any).is_production_finished
+                if (isFinished) {
+                    return false // Skip stock check, production is complete
+                }
+                // If not finished, will be caught by the production validation below
+                return false
+            }
 
             let availableStock = stockLevels[line.product] || 0
             if (!line.track_inventory) {
@@ -184,7 +196,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                 }
             }
 
-            return requestedQty > 0 && requestedQty > availableStock
+            return requestedQty > availableStock
         })
 
         if (insufficientStock) {

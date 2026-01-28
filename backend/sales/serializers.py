@@ -85,7 +85,8 @@ class SaleLineSerializer(serializers.ModelSerializer):
             # If no OT yet (or all cancelled), but it's manufacturable, it's not finished
             return False
             
-        return all(ot.status == 'FINISHED' for ot in ots)
+        # Check if all OTs have reached the FINISHED stage (not just status)
+        return all(ot.current_stage == 'FINISHED' for ot in ots)
 
     def get_work_order_summary(self, obj):
         ots = obj.work_orders.exclude(status='CANCELLED')

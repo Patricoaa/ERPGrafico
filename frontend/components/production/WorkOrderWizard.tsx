@@ -573,7 +573,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         )}
                         <div className="mb-6 flex items-center justify-between">
                             <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
-                            <Badge variant="outline">{translateStatus(order?.status)}</Badge>
+                            <Badge variant="outline">{order?.current_stage_display || translateStatus(order?.current_stage)}</Badge>
                         </div>
 
                         {/* Stage Content */}
