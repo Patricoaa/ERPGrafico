@@ -687,145 +687,145 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                     )}
                                                 </div>
                                             )}
+                                        </div>
+                                    )}
 
-                                            {/* Section 3: Attachments */}
-                                            {data.attachments?.length > 0 && (currentType === 'invoice' || currentType === 'work_order') && (
-                                                <div className="pt-6 border-t">
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">Archivos Adjuntos</h4>
-                                                    <AttachmentList attachments={data.attachments} />
+                                    {/* Section 3: Attachments */}
+                                    {(view === 'all' || view === 'details') && data.attachments?.length > 0 && (currentType === 'invoice' || currentType === 'work_order') && (
+                                        <div className="pt-6 border-t">
+                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">Archivos Adjuntos</h4>
+                                            <AttachmentList attachments={data.attachments} />
+                                        </div>
+                                    )}
+
+                                    {/* Section 4: Stock Movements / Receipts */}
+                                    {(view === 'all' || view === 'details') && currentType === 'invoice' && data.related_stock_moves?.length > 0 &&
+                                        !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type) && (
+                                            <div className="space-y-4 pt-6 border-t">
+                                                <h3 className="font-bold text-lg flex items-center gap-2">
+                                                    <Package className="h-5 w-5 text-orange-600" />
+                                                    Movimientos de Stock
+                                                </h3>
+                                                <div className="border rounded-md">
+                                                    <Table>
+                                                        <TableHeader className="bg-muted/50">
+                                                            <TableRow>
+                                                                <TableHead>Fecha</TableHead>
+                                                                <TableHead>Almacén</TableHead>
+                                                                <TableHead>Producto</TableHead>
+                                                                <TableHead className="text-center">Tipo</TableHead>
+                                                                <TableHead className="text-right">Cantidad</TableHead>
+                                                                <TableHead className="text-right">Acción</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {data.related_stock_moves.map((move: any) => (
+                                                                <TableRow key={move.id}>
+                                                                    <TableCell>{new Date(move.date).toLocaleDateString()}</TableCell>
+                                                                    <TableCell className="text-xs">{move.warehouse}</TableCell>
+                                                                    <TableCell className="font-medium">{move.product}</TableCell>
+                                                                    <TableCell className="text-center">
+                                                                        <Badge variant="outline" className="text-[10px]">
+                                                                            {move.move_type_display}
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right font-bold">
+                                                                        <span className={move.quantity > 0 ? "text-green-600" : "text-red-600"}>
+                                                                            {move.quantity}
+                                                                        </span>
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-6 w-6"
+                                                                            onClick={() => navigateTo('inventory', move.id)}
+                                                                        >
+                                                                            <Eye className="h-3 w-3 text-blue-600" />
+                                                                        </Button>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
                                                 </div>
-                                            )}
+                                            </div>
+                                        )}
 
-                                            {/* Section 4: Stock Movements / Receipts */}
-                                            {(view === 'all' || view === 'details') && currentType === 'invoice' && data.related_stock_moves?.length > 0 &&
-                                                !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type) && (
-                                                    <div className="space-y-4 pt-6 border-t">
-                                                        <h3 className="font-bold text-lg flex items-center gap-2">
-                                                            <Package className="h-5 w-5 text-orange-600" />
-                                                            Movimientos de Stock
-                                                        </h3>
-                                                        <div className="border rounded-md">
-                                                            <Table>
-                                                                <TableHeader className="bg-muted/50">
-                                                                    <TableRow>
-                                                                        <TableHead>Fecha</TableHead>
-                                                                        <TableHead>Almacén</TableHead>
-                                                                        <TableHead>Producto</TableHead>
-                                                                        <TableHead className="text-center">Tipo</TableHead>
-                                                                        <TableHead className="text-right">Cantidad</TableHead>
-                                                                        <TableHead className="text-right">Acción</TableHead>
-                                                                    </TableRow>
-                                                                </TableHeader>
-                                                                <TableBody>
-                                                                    {data.related_stock_moves.map((move: any) => (
-                                                                        <TableRow key={move.id}>
-                                                                            <TableCell>{new Date(move.date).toLocaleDateString()}</TableCell>
-                                                                            <TableCell className="text-xs">{move.warehouse}</TableCell>
-                                                                            <TableCell className="font-medium">{move.product}</TableCell>
-                                                                            <TableCell className="text-center">
-                                                                                <Badge variant="outline" className="text-[10px]">
-                                                                                    {move.move_type_display}
-                                                                                </Badge>
-                                                                            </TableCell>
-                                                                            <TableCell className="text-right font-bold">
-                                                                                <span className={move.quantity > 0 ? "text-green-600" : "text-red-600"}>
-                                                                                    {move.quantity}
-                                                                                </span>
-                                                                            </TableCell>
-                                                                            <TableCell className="text-right">
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={() => navigateTo('inventory', move.id)}
-                                                                                >
-                                                                                    <Eye className="h-3 w-3 text-blue-600" />
+                                    {/* Section 5: Payment History */}
+                                    {(view === 'all' || view === 'history') &&
+                                        (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (
+                                            <div className="space-y-4 pt-6 border-t">
+                                                <h3 className="font-bold text-lg flex items-center gap-2 text-emerald-600">
+                                                    <Banknote className="h-5 w-5" />
+                                                    Historial de Pagos
+                                                </h3>
+                                                {(data.serialized_payments || data.payments_detail)?.length > 0 ? (
+                                                    <div className="border rounded-md">
+                                                        <Table>
+                                                            <TableHeader className="bg-muted/50">
+                                                                <TableRow>
+                                                                    <TableHead>Fecha</TableHead>
+                                                                    <TableHead>Método</TableHead>
+                                                                    <TableHead>Referencia / Transacción</TableHead>
+                                                                    <TableHead className="text-right">Monto</TableHead>
+                                                                    <TableHead className="text-right">Acción</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
+                                                                    <TableRow key={pay.id}>
+                                                                        <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
+                                                                        <TableCell>
+                                                                            <Badge variant="outline" className="uppercase text-[10px]">
+                                                                                {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({translatePaymentMethod(pay.payment_method || pay.journal_name)})
+                                                                            </Badge>
+                                                                        </TableCell>
+                                                                        <TableCell className="text-sm font-mono">
+                                                                            {pay.transaction_number ? (
+                                                                                <div className="flex flex-col">
+                                                                                    <span>{pay.transaction_number}</span>
+                                                                                    {pay.is_pending_registration && <span className="text-[9px] text-orange-500 font-bold uppercase">(Pendiente Registro)</span>}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="text-muted-foreground">{pay.reference || '-'}</span>
+                                                                            )}
+                                                                        </TableCell>
+                                                                        <TableCell className="text-right font-bold text-emerald-600">
+                                                                            ${Number(pay.amount).toLocaleString()}
+                                                                        </TableCell>
+                                                                        <TableCell className="text-right">
+                                                                            <div className="flex justify-end gap-1">
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateTo('payment', pay.id)} title="Ver Detalle">
+                                                                                    <Eye className="h-4 w-4 text-blue-600" />
                                                                                 </Button>
-                                                                            </TableCell>
-                                                                        </TableRow>
-                                                                    ))}
-                                                                </TableBody>
-                                                            </Table>
-                                                        </div>
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingPayment(pay)} title="Editar">
+                                                                                    <Edit className="h-4 w-4 text-amber-600" />
+                                                                                </Button>
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeletePayment(pay.id)} title="Eliminar">
+                                                                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                ) : (
+                                                    <div className="border border-dashed p-10 text-center rounded-2xl bg-muted/20">
+                                                        <Banknote className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
+                                                        <p className="text-muted-foreground text-sm italic">No se registran pagos para este documento</p>
                                                     </div>
                                                 )}
+                                            </div>
+                                        )}
 
-                                            {/* Section 5: Payment History */}
-                                            {(view === 'all' || view === 'history') &&
-                                                (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (
-                                                    <div className="space-y-4 pt-6 border-t">
-                                                        <h3 className="font-bold text-lg flex items-center gap-2 text-emerald-600">
-                                                            <Banknote className="h-5 w-5" />
-                                                            Historial de Pagos
-                                                        </h3>
-                                                        {(data.serialized_payments || data.payments_detail)?.length > 0 ? (
-                                                            <div className="border rounded-md">
-                                                                <Table>
-                                                                    <TableHeader className="bg-muted/50">
-                                                                        <TableRow>
-                                                                            <TableHead>Fecha</TableHead>
-                                                                            <TableHead>Método</TableHead>
-                                                                            <TableHead>Referencia / Transacción</TableHead>
-                                                                            <TableHead className="text-right">Monto</TableHead>
-                                                                            <TableHead className="text-right">Acción</TableHead>
-                                                                        </TableRow>
-                                                                    </TableHeader>
-                                                                    <TableBody>
-                                                                        {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
-                                                                            <TableRow key={pay.id}>
-                                                                                <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
-                                                                                <TableCell>
-                                                                                    <Badge variant="outline" className="uppercase text-[10px]">
-                                                                                        {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({translatePaymentMethod(pay.payment_method || pay.journal_name)})
-                                                                                    </Badge>
-                                                                                </TableCell>
-                                                                                <TableCell className="text-sm font-mono">
-                                                                                    {pay.transaction_number ? (
-                                                                                        <div className="flex flex-col">
-                                                                                            <span>{pay.transaction_number}</span>
-                                                                                            {pay.is_pending_registration && <span className="text-[9px] text-orange-500 font-bold uppercase">(Pendiente Registro)</span>}
-                                                                                        </div>
-                                                                                    ) : (
-                                                                                        <span className="text-muted-foreground">{pay.reference || '-'}</span>
-                                                                                    )}
-                                                                                </TableCell>
-                                                                                <TableCell className="text-right font-bold text-emerald-600">
-                                                                                    ${Number(pay.amount).toLocaleString()}
-                                                                                </TableCell>
-                                                                                <TableCell className="text-right">
-                                                                                    <div className="flex justify-end gap-1">
-                                                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateTo('payment', pay.id)} title="Ver Detalle">
-                                                                                            <Eye className="h-4 w-4 text-blue-600" />
-                                                                                        </Button>
-                                                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingPayment(pay)} title="Editar">
-                                                                                            <Edit className="h-4 w-4 text-amber-600" />
-                                                                                        </Button>
-                                                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeletePayment(pay.id)} title="Eliminar">
-                                                                                            <Trash2 className="h-4 w-4 text-red-600" />
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                </TableCell>
-                                                                            </TableRow>
-                                                                        ))}
-                                                                    </TableBody>
-                                                                </Table>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="border border-dashed p-10 text-center rounded-2xl bg-muted/20">
-                                                                <Banknote className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                                                <p className="text-muted-foreground text-sm italic">No se registran pagos para este documento</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                            {/* Section 6: Notes */}
-                                            {(view === 'all' || view === 'details') && data.notes && currentType !== 'payment' && (
-                                                <div className="pt-4 border-t">
-                                                    <h4 className="text-sm font-semibold text-muted-foreground mb-1 uppercase">Notas</h4>
-                                                    <p className="text-sm bg-muted p-4 rounded-md">{data.notes}</p>
-                                                </div>
-                                            )}
+                                    {/* Section 6: Notes */}
+                                    {(view === 'all' || view === 'details') && data.notes && currentType !== 'payment' && (
+                                        <div className="pt-4 border-t">
+                                            <h4 className="text-sm font-semibold text-muted-foreground mb-1 uppercase">Notas</h4>
+                                            <p className="text-sm bg-muted p-4 rounded-md">{data.notes}</p>
                                         </div>
                                     )}
                                 </div>
