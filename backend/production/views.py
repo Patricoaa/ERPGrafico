@@ -66,11 +66,18 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     # Apply updates from form (dates, description override, stage_data)
                     serializer = WorkOrderSerializer(work_order, data=data, partial=True)
                     if serializer.is_valid():
-                        serializer.save()
+                        work_order = serializer.save()
+                        # Sync related_contact from stage_data if present
+                        self._sync_related_contact(work_order)
                     return Response(WorkOrderSerializer(work_order).data, status=status.HTTP_201_CREATED)
             
             # 3. Fallback to standard (e.g. if sending nothing special)
-            return super().create(request, *args, **kwargs)
+            response = super().create(request, *args, **kwargs)
+            if response.status_code == 201:
+                # Sync related_contact for standard creation
+                work_order = WorkOrder.objects.get(pk=response.data['id'])
+                self._sync_related_contact(work_order)
+            return response
             
         except Exception as e:
             import traceback
@@ -122,8 +129,29 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             except Exception as e:
                 print(f"Error attaching files in update: {e}")
                 # We don't fail the request if just attachment failed, but good to know
+            
+            # Sync related_contact from stage_data
+            instance = self.get_object()
+            self._sync_related_contact(instance)
                 
         return response
+
+    def _sync_related_contact(self, work_order):
+        """
+        Sync related_contact field from stage_data['contact_id'].
+        This ensures backward compatibility with the checkout flow.
+        """
+        if work_order.stage_data and isinstance(work_order.stage_data, dict):
+            contact_id = work_order.stage_data.get('contact_id')
+            if contact_id:
+                from contacts.models import Contact
+                try:
+                    contact = Contact.objects.get(id=contact_id)
+                    if work_order.related_contact != contact:
+                        work_order.related_contact = contact
+                        work_order.save(update_fields=['related_contact'])
+                except Contact.DoesNotExist:
+                    pass
 
     def destroy(self, request, *args, **kwargs):
         """

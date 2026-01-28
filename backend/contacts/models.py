@@ -96,10 +96,12 @@ class Contact(models.Model):
         - 'CUSTOMER': has sale orders only
         - 'SUPPLIER': has purchase orders only
         - 'BOTH': has both sale and purchase orders
+        - 'RELATED': has related work orders but no sales/purchases
         - 'NONE': has no orders yet
         """
         has_sales = self.is_customer
         has_purchases = self.is_supplier
+        has_related_work_orders = self.related_work_orders.exists()
         
         if has_sales and has_purchases:
             return 'BOTH'
@@ -107,5 +109,7 @@ class Contact(models.Model):
             return 'CUSTOMER'
         elif has_purchases:
             return 'SUPPLIER'
+        elif has_related_work_orders:
+            return 'RELATED'
         else:
             return 'NONE'

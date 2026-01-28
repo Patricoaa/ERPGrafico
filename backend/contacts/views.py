@@ -76,3 +76,59 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         contacts = Contact.objects.filter(purchase_orders__isnull=False).distinct()
         serializer = self.get_serializer(contacts, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def insights(self, request, pk=None):
+        """
+        Get insights for a specific contact including:
+        - Sales summary (invoices, sale orders)
+        - Purchases summary (purchase orders)
+        - Work orders summary (as customer or related contact)
+        """
+        contact = self.get_object()
+        
+        # Sales data (invoices related to this contact)
+        from billing.models import Invoice
+        sales_invoices = Invoice.objects.filter(
+            customer=contact,
+            invoice_type__in=['FACTURA', 'BOLETA', 'NC', 'ND']
+        ).order_by('-date')
+        
+        # Purchase data
+        purchase_orders = contact.purchase_orders.all().order_by('-date')
+        
+        # Work orders (as sale customer or related contact)
+        from production.models import WorkOrder
+        work_orders_as_customer = WorkOrder.objects.filter(
+            sale_order__customer=contact
+        ).order_by('-created_at')
+        
+        work_orders_as_related = contact.related_work_orders.all().order_by('-created_at')
+        
+        # Combine and deduplicate work orders
+        all_work_order_ids = set(
+            list(work_orders_as_customer.values_list('id', flat=True)) +
+            list(work_orders_as_related.values_list('id', flat=True))
+        )
+        all_work_orders = WorkOrder.objects.filter(id__in=all_work_order_ids).order_by('-created_at')
+        
+        # Serialize data
+        from billing.serializers import InvoiceSerializer
+        from purchasing.serializers import PurchaseOrderSerializer
+        from production.serializers import WorkOrderSerializer
+        
+        return Response({
+            'contact': ContactSerializer(contact).data,
+            'sales': {
+                'count': sales_invoices.count(),
+                'invoices': InvoiceSerializer(sales_invoices[:50], many=True).data  # Limit to 50 most recent
+            },
+            'purchases': {
+                'count': purchase_orders.count(),
+                'orders': PurchaseOrderSerializer(purchase_orders[:50], many=True).data
+            },
+            'work_orders': {
+                'count': all_work_orders.count(),
+                'orders': WorkOrderSerializer(all_work_orders[:50], many=True).data
+            }
+        })

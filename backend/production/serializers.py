@@ -114,6 +114,8 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     product_description = serializers.SerializerMethodField()
     sale_customer_name = serializers.SerializerMethodField()
     sale_customer_rut = serializers.SerializerMethodField()
+    related_contact_id = serializers.IntegerField(source='related_contact.id', read_only=True, allow_null=True)
+    related_contact_name = serializers.CharField(source='related_contact.name', read_only=True, allow_null=True)
     product_info = serializers.ReadOnlyField()
     main_product_id = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
@@ -144,6 +146,9 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         # 2. Fallback to Sale Order customer
         if obj.sale_order and obj.sale_order.customer:
             return obj.sale_order.customer.name
+        # 3. Fallback to related_contact
+        if obj.related_contact:
+            return obj.related_contact.name
         return "Manual / Interno"
 
     def get_sale_order_client_name(self, obj):

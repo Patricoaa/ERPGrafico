@@ -341,6 +341,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         if (data.uom_id) {
             formData.append('uom_id', data.uom_id)
         }
+        if (selectedContact?.id) {
+            formData.append('related_contact', selectedContact.id.toString())
+        }
 
         formData.append('stage_data', JSON.stringify(stage_data))
 

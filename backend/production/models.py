@@ -52,6 +52,15 @@ class WorkOrder(models.Model):
         help_text="Nota de Débito/Crédito que originó esta OT"
     )
     
+    related_contact = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='related_work_orders',
+        verbose_name=_("Contacto Relacionado"),
+        help_text="Contacto relacionado con esta OT (ej: cliente del cliente, dato de facturación)"
+    )
+    
     # New fields for manual OT
     is_manual = models.BooleanField(_("Es Manual"), default=False)
     product = models.ForeignKey(
