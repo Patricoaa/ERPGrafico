@@ -300,12 +300,12 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                             <div className="flex-1 overflow-hidden relative">
                                 <TabsContent value="profile" className="h-full m-0 p-0 overflow-y-auto border-0 outline-none">
                                     <div className="p-8 pb-32">
-                                        <Form {...form.form}>
+                                        <Form {...form}>
                                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="md:col-span-2 flex items-center gap-8 p-4 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20">
                                                         <FormField
-                                                            control={form.form.control}
+                                                            control={form.control}
                                                             name="is_default_customer"
                                                             render={({ field }) => (
                                                                 <FormItem className="flex flex-row items-center space-x-3 space-y-0">
@@ -325,7 +325,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                         />
                                                         <Separator orientation="vertical" className="h-8" />
                                                         <FormField
-                                                            control={form.form.control}
+                                                            control={form.control}
                                                             name="is_default_vendor"
                                                             render={({ field }) => (
                                                                 <FormItem className="flex flex-row items-center space-x-3 space-y-0">
@@ -346,7 +346,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                     </div>
 
                                                     <FormField
-                                                        control={form.form.control}
+                                                        control={form.control}
                                                         name="name"
                                                         render={({ field }) => (
                                                             <FormItem>
@@ -360,7 +360,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                     />
 
                                                     <FormField
-                                                        control={form.form.control}
+                                                        control={form.control}
                                                         name="tax_id"
                                                         render={({ field }) => (
                                                             <FormItem>
@@ -378,7 +378,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                     />
 
                                                     <FormField
-                                                        control={form.form.control}
+                                                        control={form.control}
                                                         name="email"
                                                         render={({ field }) => (
                                                             <FormItem>
@@ -392,7 +392,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                     />
 
                                                     <FormField
-                                                        control={form.form.control}
+                                                        control={form.control}
                                                         name="phone"
                                                         render={({ field }) => (
                                                             <FormItem>
@@ -407,7 +407,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
 
                                                     <div className="md:col-span-2">
                                                         <FormField
-                                                            control={form.form.control}
+                                                            control={form.control}
                                                             name="address"
                                                             render={({ field }) => (
                                                                 <FormItem>
@@ -422,7 +422,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                     </div>
 
                                                     <FormField
-                                                        control={form.form.control}
+                                                        control={form.control}
                                                         name="city"
                                                         render={({ field }) => (
                                                             <FormItem>
@@ -436,7 +436,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                     />
 
                                                     <FormField
-                                                        control={form.form.control}
+                                                        control={form.control}
                                                         name="payment_terms"
                                                         render={({ field }) => (
                                                             <FormItem>
@@ -454,7 +454,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                     </div>
                                 </TabsContent>
 
-                                <TabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col">
+                                <TabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.sales?.orders || []}
                                         type="sale"
@@ -463,7 +463,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                     />
                                 </TabsContent>
 
-                                <TabsContent value="purchases" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col">
+                                <TabsContent value="purchases" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.purchases?.orders || []}
                                         type="purchase"
@@ -472,7 +472,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                     />
                                 </TabsContent>
 
-                                <TabsContent value="work_orders" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col">
+                                <TabsContent value="work_orders" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.work_orders?.orders || []}
                                         type="work_order"
@@ -484,16 +484,10 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                         </div>
 
                         {/* Always Visible Sidebar */}
-                        <div className="w-96 flex flex-col bg-muted/5 border-l overflow-hidden">
-                            <div className="p-4 border-b bg-white/50 backdrop-blur-sm">
-                                <h3 className="text-sm font-bold flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-primary" />
-                                    Registro de Actividad
-                                </h3>
-                            </div>
+                        <div className="w-80 flex flex-col bg-muted/5 border-l overflow-hidden">
                             <div className="flex-1 overflow-y-auto p-4 pt-1">
                                 {contact ? (
-                                    <ActivitySidebar contentId={contact.id} contentType="contacts.contact" showTitle={false} />
+                                    <ActivitySidebar entityId={contact.id} entityType="contact" />
                                 ) : (
                                     <div className="h-full flex items-center justify-center p-8 text-center bg-muted/10 rounded-xl border border-dashed">
                                         <p className="text-xs text-muted-foreground italic">
@@ -610,7 +604,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     ]
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col h-full overflow-hidden border rounded-xl bg-white shadow-sm">
             <div className="p-4 border-b flex items-center justify-between bg-white/50">
                 <h4 className="text-sm font-bold flex items-center gap-2">
                     <Icon className="h-4 w-4 text-primary" />

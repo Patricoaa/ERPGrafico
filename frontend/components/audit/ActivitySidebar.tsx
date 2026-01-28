@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Loader2, Plus, Edit, Trash2, User } from "lucide-react"
+import { Loader2, Plus, Edit, Trash2, User, Clock } from "lucide-react"
 import api from "@/lib/api"
 import { HistoricalRecord } from "@/types/audit"
 import { formatDistanceToNow } from "date-fns"
@@ -107,7 +107,8 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
     return (
         <div className={`flex flex-col ${className}`}>
             <div className="border-b pb-3 mb-4">
-                <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
                     {title}
                 </h3>
             </div>
