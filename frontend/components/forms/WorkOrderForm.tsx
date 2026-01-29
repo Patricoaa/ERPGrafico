@@ -102,9 +102,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [folioEnabled, setFolioEnabled] = useState(false)
     const [folioStart, setFolioStart] = useState("")
     const [printType, setPrintType] = useState<string | null>(null)
-    const [designApproved, setDesignApproved] = useState(false)
-    const [approvalFile, setApprovalFile] = useState<File | null>(null)
-    const [existingApprovalFile, setExistingApprovalFile] = useState<string | null>(null)
 
     const [selectedContact, setSelectedContact] = useState<any>(null)
     const [selectedManualProduct, setSelectedManualProduct] = useState<any>(null)
@@ -211,9 +208,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 // Files
                 setExistingDesignFiles(mfgData.design_attachments || [])
                 setDesignFiles([])
-                setDesignApproved(mfgData.design_approved || false)
-                setExistingApprovalFile(mfgData.approval_attachment || null)
-                setApprovalFile(null)
 
             } else {
                 setExistingDesignFiles([])
@@ -310,12 +304,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             press_specs: pressSpecs,
             postpress_specs: postpressSpecs,
             design_needed: designNeeded,
-            design_approved: designApproved,
             folio_enabled: folioEnabled,
-            folio_start: folioStart,
-            print_type: printType,
-            design_attachments: [...existingDesignFiles, ...designFiles.map(f => f.name)],
-            approval_attachment: existingApprovalFile
         }
 
         const formData = new FormData()
@@ -341,6 +330,10 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         if (data.uom_id) {
             formData.append('uom_id', data.uom_id)
         }
+        // ... folio and print type from stage_data variables if needed
+        stage_data.folio_start = folioStart
+        stage_data.print_type = printType
+        stage_data.design_attachments = [...existingDesignFiles, ...designFiles.map(f => f.name)]
         if (selectedContact?.id) {
             formData.append('related_contact', selectedContact.id.toString())
         }
@@ -351,11 +344,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         designFiles.forEach((file, index) => {
             formData.append(`design_file_${index}`, file)
         })
-
-        // Append approval file
-        if (approvalFile) {
-            formData.append('approval_file', approvalFile)
-        }
 
         try {
             if (initialData) {
@@ -930,38 +918,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                 </div>
                                             )}
 
-                                            {designNeeded && (
-                                                <div className="flex items-center justify-between p-2 rounded bg-background border">
-                                                    <Label className="text-xs">Diseño aprobado por el cliente</Label>
-                                                    <Switch checked={designApproved} onCheckedChange={setDesignApproved} className="scale-75" />
-                                                </div>
-                                            )}
-
-                                            {designNeeded && designApproved && (
-                                                <div className="space-y-2 p-2 rounded bg-green-50/50 border border-green-100">
-                                                    <Label className="text-[10px] uppercase text-green-700 font-bold">Evidencia de Aprobación</Label>
-                                                    {existingApprovalFile && (
-                                                        <div className="flex items-center justify-between p-1.5 bg-white rounded text-xs border border-green-100 mb-2">
-                                                            <div className="flex items-center gap-2 truncate text-green-700">
-                                                                <CheckCircle2 className="h-3 w-3 shrink-0" />
-                                                                <span className="truncate font-medium">{existingApprovalFile}</span>
-                                                            </div>
-                                                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 hover:text-destructive" onClick={() => setExistingApprovalFile(null)}>
-                                                                <X className="h-3 w-3" />
-                                                            </Button>
-                                                        </div>
-                                                    )}
-                                                    <label className="flex items-center gap-2 p-2 border border-dashed border-green-200 rounded cursor-pointer hover:bg-green-50 transition-colors">
-                                                        <Upload className="h-3 w-3 text-green-600" />
-                                                        <span className="text-[10px] text-green-700">{approvalFile ? approvalFile.name : "Cargar evidencia"}</span>
-                                                        <input
-                                                            type="file"
-                                                            className="hidden"
-                                                            onChange={(e) => setApprovalFile(e.target.files?.[0] || null)}
-                                                        />
-                                                    </label>
-                                                </div>
-                                            )}
                                             <div className="flex items-center justify-between p-2 rounded bg-background border">
                                                 <Label className="text-xs">Folio</Label>
                                                 <Switch checked={folioEnabled} onCheckedChange={setFolioEnabled} className="scale-75" />

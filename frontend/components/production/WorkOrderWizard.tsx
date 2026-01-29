@@ -47,6 +47,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import dynamic from "next/dynamic"
 
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { TaskActionCard } from "@/components/workflow/TaskActionCard"
 
 const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
     ssr: false,
@@ -112,11 +113,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [addingMaterial, setAddingMaterial] = useState(false)
     const [designUrl, setDesignUrl] = useState("")
     const [designFile, setDesignFile] = useState<File | null>(null)
-    const [clientApprovalFile, setClientApprovalFile] = useState<File | null>(null)
-    const [clientApproved, setClientApproved] = useState(false)
-    const [supervisorApproved, setSupervisorApproved] = useState(false)
-    const [pressSupervisorApproved, setPressSupervisorApproved] = useState(false)
-    const [postpressSupervisorApproved, setPostpressSupervisorApproved] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isOutsourced, setIsOutsourced] = useState(false)
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
@@ -168,11 +164,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             if (response.data.stage_data) {
                 const sData = response.data.stage_data
                 setDesignUrl(sData.design_url || "")
-                setClientApproved(!!sData.design_approved)
-                // supervisorApproved is usually fresh per transition, but we could sync it if stored
-                if (sData.prepress) {
-                    setSupervisorApproved(!!sData.prepress.supervisor_approved)
-                }
             }
         } catch (error) {
             console.error("Error fetching order details:", error)
@@ -195,47 +186,20 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             return
         }
 
-        // Validation: Approvals (Prepress)
-        if (order.current_stage === 'PREPRESS' && nextStageId !== 'PREPRESS') {
-            // Only enforced when moving forward (not backward)
-            const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
-            const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
-            if (nextIndex > currentIndex) {
-                if (!clientApproved || !supervisorApproved) {
-                    toast.error("Debe completar todas las aprobaciones requeridas.")
-                    return
-                }
-            }
-        }
-
-        // Validation: Press Approval
-        if (order.current_stage === 'PRESS' && nextStageId !== 'PRESS') {
-            const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
-            const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
-            if (nextIndex > currentIndex) {
-                if (!pressSupervisorApproved) {
-                    toast.error("Debe completar la aprobación del supervisor para continuar.")
-                    return
-                }
-            }
-        }
-
-        // Validation: Post-Press Approval
-        if (order.current_stage === 'POSTPRESS' && nextStageId !== 'POSTPRESS') {
-            const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
-            const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
-            if (nextIndex > currentIndex) {
-                if (!postpressSupervisorApproved) {
-                    toast.error("Debe completar la aprobación del supervisor para finalizar.")
-                    return
-                }
-            }
-        }
-
-        // PO Preview Logic
+        // Transition Analysis
         const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
         const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
         const isMovingForward = nextIndex > currentIndex
+
+        // Validation: Workflow Tasks (New Modular System)
+        const pendingTasks = order.workflow_tasks?.filter((t: any) => t.status === 'PENDING' || t.status === 'IN_PROGRESS') || []
+
+        if (isMovingForward && pendingTasks.length > 0) {
+            // Check if any pending task blocks this transition
+            // For now, any pending task blocks moving forward
+            toast.error("Existen tareas de aprobación pendientes que bloquean el avance de la OT.")
+            return
+        }
 
         if (order.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
             // Validation: Check for insufficient stock items (that are not outsourced)
@@ -263,19 +227,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
             // If data is empty and we are moving forward, collect current stage state
             let payloadData = data
-            if (Object.keys(data).length === 0 && isMovingForward) {
-                if (order.current_stage === 'PREPRESS') {
-                    payloadData = {
-                        design_url: designUrl,
-                        client_approved: clientApproved,
-                        supervisor_approved: supervisorApproved
-                    }
-                } else if (order.current_stage === 'PRESS') {
-                    payloadData = { supervisor_approved: pressSupervisorApproved }
-                } else if (order.current_stage === 'POSTPRESS') {
-                    payloadData = { supervisor_approved: postpressSupervisorApproved }
-                }
-            }
             formData.append('data', JSON.stringify(payloadData))
 
             // Append files if they exist (with validation)
@@ -288,15 +239,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 }
                 formData.append('design_attachment', designFile)
             }
-            if (clientApprovalFile) {
-                const validation = validateFile(clientApprovalFile)
-                if (!validation.valid) {
-                    toast.error(validation.error!)
-                    setTransitioning(false)
-                    return
-                }
-                formData.append('approval_attachment', clientApprovalFile)
-            }
 
             await api.post(`/production/orders/${orderId}/transition/`, formData, {
                 headers: {
@@ -308,7 +250,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
             // Clear files after successful transition
             setDesignFile(null)
-            setClientApprovalFile(null)
 
             fetchOrder()
             if (onSuccess) onSuccess()
@@ -1093,6 +1034,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
                                 <div className="space-y-6">
+                                    {/* Workflow Tasks Section */}
+                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PREPRESS_APPROVAL').map((task: any) => (
+                                        <TaskActionCard key={task.id} task={task} onCompleted={fetchOrder} />
+                                    ))}
+
                                     {/* Specifications Section */}
                                     {(stageData.prepress_specs || (order?.attachments && stageData.design_attachments && stageData.design_attachments.length > 0)) && (
                                         <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-3">
@@ -1166,118 +1112,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         </div>
                                     )}
 
-                                    {/* Upload New Design & Approval */}
-                                    <div className="border-t pt-4">
-                                        <Label className="text-sm font-semibold mb-3 block">Aprobación del Diseño</Label>
-                                        <div className="space-y-3">
-                                            <div className="p-4 border rounded-lg space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="text-sm">Diseño aprobado por el cliente</Label>
-                                                    <Button
-                                                        size="sm"
-                                                        variant={clientApproved ? "default" : "outline"}
-                                                        className={cn("transition-all duration-300", clientApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                        onClick={() => setClientApproved(!clientApproved)}
-                                                    >
-                                                        {clientApproved ? <CheckCircle2 className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                        {clientApproved ? "Aprobado" : "Aprobar"}
-                                                    </Button>
-                                                </div>
 
-                                                <div className="pt-3 border-t space-y-3">
-                                                    <Label className="text-xs text-muted-foreground block">Evidencia de Aprobación</Label>
-
-                                                    {/* Historical Approvals: Check both OT attachments AND Checkout files */}
-                                                    {(() => {
-                                                        const allFiles = [...(order?.attachments || []), ...(order?.checkout_files || [])]
-                                                        const approvalFile = allFiles.find((a: any) => a.original_filename === stageData.approval_attachment)
-
-                                                        if (approvalFile) {
-                                                            return (
-                                                                <div className="space-y-1">
-                                                                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Evidencia Actual:</p>
-                                                                    <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100 text-xs">
-                                                                        <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-                                                                        <div className="flex-1 truncate font-medium text-green-700">{approvalFile.original_filename}</div>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 hover:bg-green-100 text-green-700"
-                                                                            onClick={() => window.open(approvalFile.file, '_blank')}
-                                                                            title="Descargar"
-                                                                        >
-                                                                            <Download className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        }
-                                                        return null
-                                                    })()}
-                                                </div>
-                                            </div>
-
-                                            {/* Upload Input */}
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] font-bold uppercase text-muted-foreground">
-                                                    {order?.attachments?.some((a: any) => a.original_filename === stageData.approval_attachment)
-                                                        ? "Subir Nueva Evidencia (Opcional):"
-                                                        : "Subir Evidencia:"}
-                                                </p>
-                                                <div className="flex gap-2 items-center">
-                                                    <Input
-                                                        type="file"
-                                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar"
-                                                        className="h-8 text-xs cursor-pointer file:text-xs file:font-semibold"
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0]
-                                                            if (file) {
-                                                                const validation = validateFile(file)
-                                                                if (validation.valid) {
-                                                                    setClientApprovalFile(file)
-                                                                } else {
-                                                                    toast.error(validation.error)
-                                                                    e.target.value = ''
-                                                                }
-                                                            } else {
-                                                                setClientApprovalFile(null)
-                                                            }
-                                                        }}
-                                                    />
-                                                    {clientApprovalFile && (
-                                                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 animate-in fade-in zoom-in spin-in-3">
-                                                            <Check className="h-3 w-3 mr-1" />
-                                                            Listo
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                <p className="text-[10px] text-muted-foreground">
-                                                    Puede adjuntar correos, órdenes de compra del cliente o capturas de pantalla.
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                    </div>
-
-                                    <div className="p-4 border rounded-lg">
-                                        <div className="flex items-center justify-between">
-                                            <Label className="text-sm">Aprobación del Supervisor</Label>
-                                            <Button
-                                                size="sm"
-                                                variant={supervisorApproved ? "default" : "outline"}
-                                                className={cn("transition-all duration-300", supervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                onClick={() => setSupervisorApproved(!supervisorApproved)}
-                                            >
-                                                {supervisorApproved ? <Check className="h-4 w-4 mr-2 animate-bounce" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                {supervisorApproved ? "Aprobado" : "Aprobar"}
-                                            </Button>
-                                        </div>
-                                    </div>
                                 </div>
                             )}
 
                             {STAGES[viewingStepIndex]?.id === 'PRESS' && (
                                 <div className="space-y-6">
+                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PRESS_APPROVAL').map((task: any) => (
+                                        <TaskActionCard key={task.id} task={task} onCompleted={fetchOrder} />
+                                    ))}
+
                                     {/* Specifications Section */}
                                     {(stageData.press_specs || (stageData.folio_enabled && stageData.folio_start)) && (
                                         <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-3">
@@ -1308,31 +1152,15 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <Label className="text-sm font-semibold block">Aprobación de la Impresión</Label>
-                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-0.5">
-                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
-                                                    <p className="text-[10px] text-muted-foreground">Confirmación técnica de la calidad de impresión</p>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant={pressSupervisorApproved ? "default" : "outline"}
-                                                    className={cn("transition-all duration-300 min-w-[100px]", pressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                    onClick={() => setPressSupervisorApproved(!pressSupervisorApproved)}
-                                                >
-                                                    {pressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                    {pressSupervisorApproved ? "Aprobado" : "Aprobar"}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             )}
 
                             {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
                                 <div className="space-y-6">
+                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_POSTPRESS_APPROVAL').map((task: any) => (
+                                        <TaskActionCard key={task.id} task={task} onCompleted={fetchOrder} />
+                                    ))}
+
                                     {/* Specifications Section */}
                                     {stageData.postpress_specs && (
                                         <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-1">
@@ -1351,26 +1179,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <Label className="text-sm font-semibold block">Aprobación de Post-Impresión</Label>
-                                        <div className="p-4 border rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-0.5">
-                                                    <Label className="text-sm">Aprobación del Supervisor</Label>
-                                                    <p className="text-[10px] text-muted-foreground">Visto bueno final antes de entrega</p>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant={postpressSupervisorApproved ? "default" : "outline"}
-                                                    className={cn("transition-all duration-300 min-w-[100px]", postpressSupervisorApproved && "bg-green-600 hover:bg-green-700 text-white border-green-600")}
-                                                    onClick={() => setPostpressSupervisorApproved(!postpressSupervisorApproved)}
-                                                >
-                                                    {postpressSupervisorApproved ? <Check className="h-4 w-4 mr-2" /> : <Circle className="h-4 w-4 mr-2" />}
-                                                    {postpressSupervisorApproved ? "Aprobado" : "Aprobar"}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             )}
 

@@ -4,6 +4,8 @@ from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from .models import WorkOrder, ProductionConsumption, BillOfMaterials, WorkOrderMaterial, WorkOrderHistory
 from core.models import Attachment
+from workflow.services import WorkflowService
+from workflow.models import Task
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from inventory.models import StockMove, Product, UoM, Warehouse
@@ -434,6 +436,57 @@ class WorkOrderService:
                     # We allow proceeding but maybe log a warning or require explicit approval
                     pass
         
+        # --- NEW WORKFLOW INTEGRATION ---
+        # 1. Validation: Check for pending tasks of the OLD stage before allowing transition forward
+        # (This prevents skipping approvals if someone tries to bypass the UI)
+        if next_stage != WorkOrder.Stage.CANCELLED:
+             # Basic check: are there non-completed tasks for this WorkOrder of relevant type?
+             # We can define which types block which transitions.
+             blocking_tasks = Task.objects.filter(
+                 content_type=ContentType.objects.get_for_model(work_order),
+                 object_id=work_order.id,
+                 status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
+             )
+             
+             # Specific logic: PREPRESS blocks if client/supervisor tasks are pending
+             # (Only if moving forward)
+             if old_stage == WorkOrder.Stage.PREPRESS:
+                 if blocking_tasks.filter(task_type__in=['OT_PREPRESS_APPROVAL']).exists():
+                     raise ValidationError("No se puede avanzar: Existen tareas de aprobación de Pre-Impresión pendientes.")
+
+             if old_stage == WorkOrder.Stage.PRESS:
+                 if blocking_tasks.filter(task_type__in=['OT_PRESS_APPROVAL']).exists():
+                     raise ValidationError("No se puede avanzar: Existe una tarea de supervisión de Impresión pendiente.")
+        
+        # 2. Automation: Create tasks upon ENTERING a new stage
+        if next_stage == WorkOrder.Stage.PREPRESS:
+            WorkflowService.create_task(
+                task_type='OT_PREPRESS_APPROVAL',
+                title=f"Aprobación Pre-Impresión: OT-{work_order.number}",
+                description=f"Valide el diseño y especificaciones para la OT-{work_order.number}.",
+                content_object=work_order,
+                created_by=user
+            )
+
+        if next_stage == WorkOrder.Stage.PRESS:
+            WorkflowService.create_task(
+                task_type='OT_PRESS_APPROVAL',
+                title=f"Supervisión Impresión: OT-{work_order.number}",
+                description=f"Supervise el inicio de tiraje de la OT-{work_order.number}.",
+                content_object=work_order,
+                created_by=user
+            )
+
+        if next_stage == WorkOrder.Stage.POSTPRESS:
+             WorkflowService.create_task(
+                task_type='OT_POSTPRESS_APPROVAL',
+                title=f"Supervisión Post-Impresión: OT-{work_order.number}",
+                description=f"Valide terminaciones y empaque de la OT-{work_order.number}.",
+                content_object=work_order,
+                created_by=user
+            )
+        # --- END WORKFLOW INTEGRATION ---
+
         # When moving forward from OUTSOURCING_ASSIGNMENT, create POs for outsourced services
         if old_stage == WorkOrder.Stage.OUTSOURCING_ASSIGNMENT and next_stage not in [WorkOrder.Stage.CANCELLED, WorkOrder.Stage.MATERIAL_ASSIGNMENT, WorkOrder.Stage.MATERIAL_APPROVAL]:
             WorkOrderService._create_outsourcing_purchase_orders(work_order)

@@ -130,6 +130,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     requires_press = serializers.SerializerMethodField()
     requires_postpress = serializers.SerializerMethodField()
     checkout_files = serializers.SerializerMethodField()
+    pending_tasks = serializers.SerializerMethodField()
     
     def get_display_id(self, obj):
         return obj.display_id
@@ -252,6 +253,18 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             )))
 
         return AttachmentSerializer(files, many=True).data
+    
+    def get_workflow_tasks(self, obj):
+        from workflow.models import Task
+        from workflow.serializers import TaskSerializer
+        from django.contrib.contenttypes.models import ContentType
+        
+        ct = ContentType.objects.get_for_model(obj)
+        tasks = Task.objects.filter(
+            content_type=ct,
+            object_id=obj.id
+        ).order_by('created_at')
+        return TaskSerializer(tasks, many=True).data
     
     class Meta:
         model = WorkOrder

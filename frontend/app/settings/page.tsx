@@ -60,6 +60,18 @@ export default function SettingsPage() {
                         </CardHeader>
                     </Card>
                 </Link>
+
+                <Link href="/settings/workflow">
+                    <Card className="cursor-pointer hover:border-primary">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <Settings className="h-8 w-8 text-primary" />
+                            <div>
+                                <CardTitle>Workflow</CardTitle>
+                                <CardDescription>Configuración de tareas y asignaciones automáticas.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
             </div>
 
             <Card>

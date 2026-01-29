@@ -15,6 +15,14 @@ class Command(BaseCommand):
                 'description': 'Aprobación de diseño y pre-impresión',
             },
             {
+                'task_type': 'OT_PRESS_APPROVAL',
+                'description': 'Supervisión de inicio de impresión',
+            },
+            {
+                'task_type': 'OT_POSTPRESS_APPROVAL',
+                'description': 'Supervisión de terminaciones y empaque',
+            },
+            {
                 'task_type': 'OT_MATERIAL_REQUISITION',
                 'description': 'Aprobación de compra/salida de materiales',
             },
