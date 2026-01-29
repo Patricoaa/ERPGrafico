@@ -130,7 +130,7 @@ export function NotificationBell() {
                     )}
                 </ScrollArea>
                 <div className="p-2 border-t text-center">
-                    <Link href="/settings/workflow" className="text-xs text-muted-foreground hover:text-primary block w-full py-1">
+                    <Link href="/tasks" className="text-xs text-muted-foreground hover:text-primary block w-full py-1">
                         Ver Bandeja Completa
                     </Link>
                 </div>

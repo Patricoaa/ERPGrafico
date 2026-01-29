@@ -62,6 +62,19 @@ class WorkflowService:
         return task
 
     @staticmethod
+    def _get_link_for_task(task):
+        """
+        Generate smart links based on content object.
+        """
+        if task.content_type and task.content_object:
+            model_name = task.content_type.model
+            if model_name == 'workorder':
+                return f"/production/orders/{task.object_id}"
+            # Add other models here (e.g. saleorder, purchaseorder)
+            
+        return f"/workflow/tasks/{task.id}"
+
+    @staticmethod
     def notify_group_assignment(task, group_name):
         """
         Notify all users in the specific group about a new unassigned task (Pool).
@@ -71,13 +84,13 @@ class WorkflowService:
             group = Group.objects.get(name=group_name)
             users = group.user_set.all()
             
-            link = f"/workflow/tasks/{task.id}"
+            link = WorkflowService._get_link_for_task(task)
             
             for user in users:
                 Notification.objects.create(
                     user=user,
-                    title=f"Nueva Tarea de Grupo: {task.title}",
-                    message=f"Tarea disponible para {group_name}: {task.description or task.task_type}",
+                    title=f"Disponible: {task.title}",
+                    message=f"Nueva tarea para {group_name}. Estado: Pendiente",
                     type=Notification.Type.INFO,
                     link=link,
                     content_object=task
@@ -93,18 +106,12 @@ class WorkflowService:
         if not task.assigned_to:
             return
 
-        link = f"/workflow/tasks/{task.id}" # Simplified link, frontend to handle redirection
-        
-        # Smart link generation based on content object could happen here
-        if task.content_type and task.content_object:
-            # Example: /production/orders/123
-            # This logic might need to be extensible
-            pass
+        link = WorkflowService._get_link_for_task(task)
 
         Notification.objects.create(
             user=task.assigned_to,
-            title=f"Nueva Tarea: {task.title}",
-            message=f"Se te ha asignado la tarea: {task.description or task.task_type}",
+            title=f"Asignación: {task.title}",
+            message=f"{task.description or task.task_type}. Estado: Pendiente",
             type=Notification.Type.INFO,
             link=link,
             content_object=task
