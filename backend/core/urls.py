@@ -1,10 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserViewSet, CompanySettingsViewSet, ActionLogViewSet, GlobalAuditLogView, CurrentUserView
+from .views import UserViewSet, CompanySettingsViewSet, ActionLogViewSet, GlobalAuditLogView, CurrentUserView, GroupViewSet
 # from .dashboard_view import DashboardMetricsView  # Deleted
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
+router.register(r'groups', GroupViewSet)
+router.register(r'company', CompanySettingsViewSet)
 router.register(r'company', CompanySettingsViewSet)
 router.register(r'action-logs', ActionLogViewSet)
 

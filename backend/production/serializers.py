@@ -130,7 +130,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     requires_press = serializers.SerializerMethodField()
     requires_postpress = serializers.SerializerMethodField()
     checkout_files = serializers.SerializerMethodField()
-    pending_tasks = serializers.SerializerMethodField()
+    workflow_tasks = serializers.SerializerMethodField()
     
     def get_display_id(self, obj):
         return obj.display_id

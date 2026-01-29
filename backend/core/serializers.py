@@ -91,6 +91,11 @@ class UserSerializer(serializers.ModelSerializer):
             
         return instance
 
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ['id', 'name']
+
 class AttachmentSerializer(serializers.ModelSerializer):
     uploaded_at = serializers.DateTimeField(read_only=True)
     file_size_formatted = serializers.SerializerMethodField()

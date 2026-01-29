@@ -29,8 +29,26 @@ class TaskViewSet(viewsets.ModelViewSet):
         if user.is_superuser:
             return qs
             
-        # Otherwise filter by assignment or creation
-        return qs.filter(models.Q(assigned_to=user) | models.Q(created_by=user))
+        # Get user's groups
+        user_groups = user.groups.values_list('name', flat=True)
+        
+        # Filter:
+        # 1. Assigned directly to user
+        # 2. Key 'candidate_group' in data matches one of user's groups
+        # 3. Created by user
+        
+        from django.db.models import Q
+        
+        # JSONField query for candidate_group
+        # We need to filter where data__candidate_group__in = user_groups
+        # But Django's JSONField filtering can be tricky with lists and exact matches.
+        # Ideally: Q(data__candidate_group__in=user_groups)
+        
+        return qs.filter(
+            Q(assigned_to=user) | 
+            Q(created_by=user) |
+            Q(data__candidate_group__in=user_groups)
+        )
 
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):

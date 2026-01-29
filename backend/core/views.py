@@ -8,7 +8,7 @@ from django.contrib.auth.models import Group
 from .models import User, CompanySettings, ActionLog, Attachment
 from .serializers import (
     UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer,
-    ActionLogSerializer, HistoricalRecordSerializer
+    ActionLogSerializer, HistoricalRecordSerializer, GroupSerializer
 )
 from .services import ActionLoggingService
 from inventory.models import Product, StockMove
@@ -113,6 +113,14 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def roles(self, request):
         from .permissions import Roles
         return Response(Roles.get_choices())
+
+class GroupViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Expose user groups (roles).
+    """
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+    permission_classes = [IsAuthenticated]
 
 class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = CompanySettings.objects.all()

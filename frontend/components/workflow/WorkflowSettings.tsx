@@ -5,10 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { UserSelector } from "../selectors/UserSelector"
-import { Settings, Save, AlertCircle, CheckCircle2, User } from "lucide-react"
+import { GroupSelector } from "../selectors/GroupSelector"
+import { Settings, Save, AlertCircle, CheckCircle2, User, Users } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+
+import { cn } from "@/lib/utils"
 
 const TASK_TYPES = [
     { id: 'OT_PREPRESS_APPROVAL', name: 'Aprobación Pre-Prensa (Diseño)', description: 'Validación de diseño y archivos para OT avanzada.' },
@@ -36,19 +39,20 @@ export function WorkflowSettings() {
         fetchRules()
     }, [])
 
-    const handleUpdateRule = async (taskType: string, userId: any) => {
+    const handleUpdateRule = async (taskType: string, value: any, isGroup: boolean) => {
         setSaving(taskType)
         try {
             const existingRule = rules.find(r => r.task_type === taskType)
+            const payload = {
+                task_type: taskType,
+                assigned_user: isGroup ? null : value,
+                assigned_group: isGroup ? value : ""
+            }
+
             if (existingRule) {
-                await api.patch(`/workflow/assignment-rules/${existingRule.id}/`, {
-                    assigned_user: userId
-                })
+                await api.patch(`/workflow/assignment-rules/${existingRule.id}/`, payload)
             } else {
-                await api.post('/workflow/assignment-rules/', {
-                    task_type: taskType,
-                    assigned_user: userId
-                })
+                await api.post('/workflow/assignment-rules/', payload)
             }
             toast.success("Regla actualizada correctamente")
             fetchRules()
@@ -77,6 +81,11 @@ export function WorkflowSettings() {
             <div className="grid gap-6">
                 {TASK_TYPES.map((type) => {
                     const rule = rules.find(r => r.task_type === type.id)
+                    const isGroupAssigned = !!rule?.assigned_group
+                    // Local state for toggle could be tricky if we want to default to what's saved
+                    // We can derive "mode" from the rule data
+                    const currentMode = isGroupAssigned ? 'group' : 'user'
+
                     return (
                         <Card key={type.id} className="overflow-hidden border-primary/10 hover:border-primary/20 transition-colors">
                             <CardHeader className="bg-muted/30 pb-4">
@@ -97,27 +106,72 @@ export function WorkflowSettings() {
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="flex flex-col md:flex-row md:items-end gap-6">
-                                    <div className="flex-1 space-y-2">
-                                        <Label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2">
-                                            <User className="h-3.5 w-3.5" /> Usuario Responsable por Defecto
-                                        </Label>
-                                        <UserSelector
-                                            value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
-                                            onChange={(val: any) => handleUpdateRule(type.id, val)}
-                                            disabled={saving === type.id}
-                                            placeholder="Seleccionar usuario para asignación automática..."
-                                        />
+                                    <div className="flex-1 space-y-4">
+                                        <div className="flex items-center gap-4 text-sm">
+                                            <span className="text-muted-foreground">Asignar a:</span>
+                                            <div className="flex items-center border rounded-lg p-1 bg-background">
+                                                <button
+                                                    className={cn(
+                                                        "px-3 py-1 rounded-md text-xs font-medium transition-colors",
+                                                        !isGroupAssigned ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"
+                                                    )}
+                                                    onClick={() => handleUpdateRule(type.id, null, false)} // Reset to User mode (clears group)
+                                                    disabled={saving === type.id}
+                                                >
+                                                    Usuario
+                                                </button>
+                                                <button
+                                                    className={cn(
+                                                        "px-3 py-1 rounded-md text-xs font-medium transition-colors",
+                                                        isGroupAssigned ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"
+                                                    )}
+                                                    onClick={() => handleUpdateRule(type.id, "", true)} // Reset to Group mode (clears user)
+                                                    disabled={saving === type.id}
+                                                >
+                                                    Grupo / Rol
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2">
+                                                {isGroupAssigned ? <Users className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
+                                                {isGroupAssigned ? "Grupo Responsable" : "Usuario Responsable"}
+                                            </Label>
+
+                                            {isGroupAssigned ? (
+                                                <GroupSelector
+                                                    value={rule?.assigned_group}
+                                                    onChange={(val) => handleUpdateRule(type.id, val, true)}
+                                                    disabled={saving === type.id}
+                                                    placeholder="Seleccionar grupo o rol..."
+                                                />
+                                            ) : (
+                                                <UserSelector
+                                                    value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
+                                                    onChange={(val: any) => handleUpdateRule(type.id, val, false)}
+                                                    disabled={saving === type.id}
+                                                    placeholder="Seleccionar usuario..."
+                                                />
+                                            )}
+                                        </div>
                                     </div>
+
                                     <div className="shrink-0">
                                         {rule?.assigned_user ? (
                                             <div className="flex items-center gap-2 text-green-600 text-sm font-medium bg-green-50 px-3 py-2 rounded-lg border border-green-100">
                                                 <CheckCircle2 className="h-4 w-4" />
-                                                Configurado: {rule.assigned_user_data?.username}
+                                                Usuario: {rule.assigned_user_data?.username}
+                                            </div>
+                                        ) : rule?.assigned_group ? (
+                                            <div className="flex items-center gap-2 text-blue-600 text-sm font-medium bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                                                <Users className="h-4 w-4" />
+                                                Grupo: {rule.assigned_group}
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2 text-amber-600 text-sm font-medium bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
                                                 <AlertCircle className="h-4 w-4" />
-                                                Sin asignar (Manual)
+                                                Sin asignar
                                             </div>
                                         )}
                                     </div>
@@ -132,7 +186,9 @@ export function WorkflowSettings() {
                 <CardHeader>
                     <CardTitle className="text-sm">Nota sobre Asignaciones</CardTitle>
                     <CardDescription className="text-xs">
-                        Si no se configura un usuario por defecto, la tarea se creará sin responsable y deberá ser asignada manualmente desde el panel de tareas o la propia OT.
+                        Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
+                        <br />
+                        Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un "Pool" visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
                     </CardDescription>
                 </CardHeader>
             </Card>
