@@ -13,6 +13,10 @@ export interface Task {
     created_by_data?: any
     created_at: string
     due_date?: string
+    object_id?: number
+    completed_by?: number | null
+    completed_by_data?: any
+    completed_at?: string
 }
 
 export interface Notification {

@@ -31,11 +31,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <AuthGuard>
-            <GlobalModalProvider>
+          <GlobalModalProvider>
+            <AuthGuard>
               {children}
-            </GlobalModalProvider>
-          </AuthGuard>
+            </AuthGuard>
+          </GlobalModalProvider>
         </AuthProvider>
       </body>
     </html>

@@ -5,9 +5,11 @@ import { useRouter, usePathname } from "next/navigation"
 import { MiniSidebar } from "@/components/layout/MiniSidebar"
 import { TopBar } from "@/components/layout/TopBar"
 import { AppSidebar } from "@/components/app-sidebar"
+import { TaskInboxSidebar } from "@/components/layout/TaskInboxSidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { QuickActionsMenu } from "@/components/layout/QuickActionsMenu"
 import { useAuth } from "@/contexts/AuthContext"
+import { cn } from "@/lib/utils"
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
@@ -35,6 +37,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const [activeCategory, setActiveCategory] = useState<string | null>("dashboard")
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
     const [isSidebarVisible, setIsSidebarVisible] = useState(false)
+    const [isInboxOpen, setIsInboxOpen] = useState(false)
 
     useEffect(() => {
         // Sync active category with URL
@@ -49,13 +52,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         } else {
             timeout = setTimeout(() => {
                 setIsSidebarVisible(false)
-            }, 300) // Small delay before hiding
+            }, 300)
         }
         return () => clearTimeout(timeout)
     }, [hoveredCategory])
 
     if (!authorized) {
-        // Can show a loading spinner here
         return null;
     }
 
@@ -81,12 +83,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         "finances": "/finances/statements",
     }
 
-    // Determine which category to show in the detailed sidebar
     const displayCategory = hoveredCategory || activeCategory
 
     return (
         <div className="flex h-screen bg-background overflow-hidden font-sans border-t border-sidebar-border/10">
-            {/* First Level: Mini Sidebar */}
+            {/* Mini Sidebar (Left) */}
             <MiniSidebar
                 activeCategory={activeCategory}
                 onCategoryChange={(cat: string) => {
@@ -97,7 +98,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 onHoverCategory={setHoveredCategory}
             />
 
-            {/* Second Level: Detailed Sidebar (Floating Glass Effect) */}
+            {/* Detailed Sidebar (Floating Glass Effect) */}
             <AppSidebar
                 activeCategory={displayCategory}
                 isVisible={isSidebarVisible}
@@ -105,15 +106,31 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 onMouseLeave={() => setHoveredCategory(null)}
             />
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 relative">
+            {/* Main Content Area (Shifts left when inbox is open) */}
+            <div
+                className={cn(
+                    "flex-1 flex flex-col min-w-0 relative transition-all duration-300",
+                    isInboxOpen && "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]"
+                )}
+            >
                 <TopBar />
                 <main className="flex-1 overflow-y-auto pb-24">
                     <div className="p-6 w-full">
                         {children}
                     </div>
                 </main>
-                <QuickActionsMenu />
+                <QuickActionsMenu
+                    isInboxOpen={isInboxOpen}
+                    onInboxToggle={() => setIsInboxOpen(!isInboxOpen)}
+                />
+            </div>
+
+            {/* Task Inbox Sidebar (Right) - Fixed position */}
+            <div className="fixed right-0 top-0 h-screen z-40">
+                <TaskInboxSidebar
+                    isOpen={isInboxOpen}
+                    onClose={() => setIsInboxOpen(false)}
+                />
             </div>
 
             <Toaster />
