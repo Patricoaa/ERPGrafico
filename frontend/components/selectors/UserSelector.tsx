@@ -23,9 +23,10 @@ interface UserSelectorProps {
     value?: number | null
     onChange: (value: number | null) => void
     placeholder?: string
+    disabled?: boolean
 }
 
-export function UserSelector({ value, onChange, placeholder = "Seleccionar usuario..." }: UserSelectorProps) {
+export function UserSelector({ value, onChange, placeholder = "Seleccionar usuario...", disabled = false }: UserSelectorProps) {
     const [open, setOpen] = useState(false)
     const [users, setUsers] = useState<User[]>([])
     const [loading, setLoading] = useState(false)
@@ -88,6 +89,7 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                     role="combobox"
                     aria-expanded={open}
                     className="w-full justify-between h-10"
+                    disabled={disabled}
                 >
                     {selectedUser ? (
                         <span className="truncate">{selectedUser.username}</span>

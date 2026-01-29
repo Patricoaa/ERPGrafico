@@ -67,16 +67,16 @@ export const markAllNotificationsRead = async () => {
 
 // Rules (Admin)
 export const getAssignmentRules = async () => {
-    const response = await api.get('/workflow/rules/')
+    const response = await api.get('/workflow/assignment-rules/')
     return response.data
 }
 
 export const updateAssignmentRule = async (id: number, data: any) => {
-    const response = await api.patch(`/workflow/rules/${id}/`, data)
+    const response = await api.patch(`/workflow/assignment-rules/${id}/`, data)
     return response.data
 }
 
 export const createAssignmentRule = async (data: any) => {
-    const response = await api.post(`/workflow/rules/`, data)
+    const response = await api.post(`/workflow/assignment-rules/`, data)
     return response.data
 }

@@ -1,42 +1,32 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getAssignmentRules, updateAssignmentRule, createAssignmentRule, TaskAssignmentRule } from "@/lib/workflow/api"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector" // Could reuse this selector style logic or build a UserSelector
-// Note: We need a UserSelector. Usually we have one, if not I'll just use a simple mock/select or query users.
-// For now, let's assume we can fetch users list for a dropdown or similar.
+import { Label } from "@/components/ui/label"
+import { UserSelector } from "../selectors/UserSelector"
+import { Settings, Save, AlertCircle, CheckCircle2, User } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Plus, Save, Trash2, Edit } from "lucide-react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import { UserSelector } from "@/components/selectors/UserSelector" // Assuming this exists or I will create it
+import { Badge } from "@/components/ui/badge"
+
+const TASK_TYPES = [
+    { id: 'OT_PREPRESS_APPROVAL', name: 'Aprobación Pre-Prensa (Diseño)', description: 'Validación de diseño y archivos para OT avanzada.' },
+    { id: 'OT_PRESS_APPROVAL', name: 'Aprobación Prensa (Impresión)', description: 'Validación de salida de prensa y calidad de color.' },
+    { id: 'OT_POSTPRESS_APPROVAL', name: 'Aprobación Post-Prensa', description: 'Validación de acabados y empaque final.' },
+]
 
 export function WorkflowSettings() {
-    const [rules, setRules] = useState<TaskAssignmentRule[]>([])
+    const [rules, setRules] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-
-    // Edit state
-    const [isEditOpen, setIsEditOpen] = useState(false)
-    const [editingRule, setEditingRule] = useState<Partial<TaskAssignmentRule>>({})
+    const [saving, setSaving] = useState<string | null>(null)
 
     const fetchRules = async () => {
-        setLoading(true)
         try {
-            const res = await getAssignmentRules()
-            const list = Array.isArray(res) ? res : (res.results || [])
-            setRules(list)
+            const res = await api.get('/workflow/assignment-rules/')
+            setRules(res.data.results || res.data)
         } catch (e) {
-            toast.error("Error cargando reglas")
+            toast.error("No se pudieron cargar las reglas de asignación")
         } finally {
             setLoading(false)
         }
@@ -46,111 +36,106 @@ export function WorkflowSettings() {
         fetchRules()
     }, [])
 
-    const handleSave = async () => {
+    const handleUpdateRule = async (taskType: string, userId: any) => {
+        setSaving(taskType)
         try {
-            if (editingRule.id) {
-                await updateAssignmentRule(editingRule.id, {
-                    assigned_user: editingRule.assigned_user,
-                    description: editingRule.description
+            const existingRule = rules.find(r => r.task_type === taskType)
+            if (existingRule) {
+                await api.patch(`/workflow/assignment-rules/${existingRule.id}/`, {
+                    assigned_user: userId
                 })
-                toast.success("Regla actualizada")
             } else {
-                await createAssignmentRule(editingRule)
-                toast.success("Regla creada")
+                await api.post('/workflow/assignment-rules/', {
+                    task_type: taskType,
+                    assigned_user: userId
+                })
             }
-            setIsEditOpen(false)
+            toast.success("Regla actualizada correctamente")
             fetchRules()
-        } catch (error) {
-            toast.error("Error al guardar regla")
+        } catch (e) {
+            toast.error("Error al actualizar la regla")
+        } finally {
+            setSaving(null)
         }
+    }
+
+    if (loading) {
+        return <div className="p-8 text-center text-muted-foreground italic">Cargando configuración...</div>
     }
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-medium">Asignación de Tareas</h3>
-                    <p className="text-sm text-muted-foreground">Configura quién es responsable de cada tipo de tarea automática.</p>
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-bold tracking-tight">Configuración de Workflow</h2>
+                    <p className="text-muted-foreground text-sm">
+                        Configure quién debe aprobar cada etapa de la producción por defecto.
+                    </p>
                 </div>
-                <Button onClick={() => { setEditingRule({}); setIsEditOpen(true) }}>
-                    <Plus className="mr-2 h-4 w-4" />Nueva Regla
-                </Button>
             </div>
 
-            <Card>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Tipo de Tarea (Código)</TableHead>
-                            <TableHead>Descripción</TableHead>
-                            <TableHead>Usuario Asignado</TableHead>
-                            <TableHead className="w-[100px]">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {rules.map((rule) => (
-                            <TableRow key={rule.id}>
-                                <TableCell className="font-medium font-mono text-xs">{rule.task_type}</TableCell>
-                                <TableCell>{rule.description}</TableCell>
-                                <TableCell>
-                                    {rule.assigned_user_data ? (
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold">{rule.assigned_user_data.username}</span>
-                                            <span className="text-xs text-muted-foreground">{rule.assigned_user_data.email}</span>
+            <div className="grid gap-6">
+                {TASK_TYPES.map((type) => {
+                    const rule = rules.find(r => r.task_type === type.id)
+                    return (
+                        <Card key={type.id} className="overflow-hidden border-primary/10 hover:border-primary/20 transition-colors">
+                            <CardHeader className="bg-muted/30 pb-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-primary/10 rounded-lg">
+                                            <Settings className="h-5 w-5 text-primary" />
                                         </div>
-                                    ) : (
-                                        <span className="text-muted-foreground italic">Sin asignar</span>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    <Button variant="ghost" size="icon" onClick={() => { setEditingRule(rule); setIsEditOpen(true) }}>
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </Card>
+                                        <div>
+                                            <CardTitle className="text-lg">{type.name}</CardTitle>
+                                            <CardDescription className="text-xs">{type.description}</CardDescription>
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline" className="font-mono text-[10px]">
+                                        {type.id}
+                                    </Badge>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                                <div className="flex flex-col md:flex-row md:items-end gap-6">
+                                    <div className="flex-1 space-y-2">
+                                        <Label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2">
+                                            <User className="h-3.5 w-3.5" /> Usuario Responsable por Defecto
+                                        </Label>
+                                        <UserSelector
+                                            value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
+                                            onChange={(val: any) => handleUpdateRule(type.id, val)}
+                                            disabled={saving === type.id}
+                                            placeholder="Seleccionar usuario para asignación automática..."
+                                        />
+                                    </div>
+                                    <div className="shrink-0">
+                                        {rule?.assigned_user ? (
+                                            <div className="flex items-center gap-2 text-green-600 text-sm font-medium bg-green-50 px-3 py-2 rounded-lg border border-green-100">
+                                                <CheckCircle2 className="h-4 w-4" />
+                                                Configurado: {rule.assigned_user_data?.username}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 text-amber-600 text-sm font-medium bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
+                                                <AlertCircle className="h-4 w-4" />
+                                                Sin asignar (Manual)
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )
+                })}
+            </div>
 
-            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingRule.id ? 'Editar Regla' : 'Nueva Regla'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Tipo de Tarea (Código único)</label>
-                            <Input
-                                value={editingRule.task_type || ''}
-                                onChange={e => setEditingRule(prev => ({ ...prev, task_type: e.target.value }))}
-                                disabled={!!editingRule.id} // Cannot change type ID once created to avoid breaking logic
-                                placeholder="EJ_OT_APPROVAL"
-                            />
-                            <p className="text-[10px] text-muted-foreground">Debe coincidir con el código usado en el backend.</p>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Descripción</label>
-                            <Input
-                                value={editingRule.description || ''}
-                                onChange={e => setEditingRule(prev => ({ ...prev, description: e.target.value }))}
-                                placeholder="Aprobación de OTs de Imprenta"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Usuario Responsable</label>
-                            {/* Ideally use a proper UserSelector here. Using simple Input for ID or logic for now if component missing */}
-                            <UserSelector
-                                value={editingRule.assigned_user}
-                                onChange={(userId) => setEditingRule(prev => ({ ...prev, assigned_user: userId }))}
-                            />
-                        </div>
-                        <Button className="w-full" onClick={handleSave}>
-                            <Save className="mr-2 h-4 w-4" /> Guardar
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <Card className="border-dashed border-2 bg-muted/5">
+                <CardHeader>
+                    <CardTitle className="text-sm">Nota sobre Asignaciones</CardTitle>
+                    <CardDescription className="text-xs">
+                        Si no se configura un usuario por defecto, la tarea se creará sin responsable y deberá ser asignada manualmente desde el panel de tareas o la propia OT.
+                    </CardDescription>
+                </CardHeader>
+            </Card>
         </div>
     )
 }
