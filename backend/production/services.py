@@ -538,6 +538,12 @@ class WorkOrderService:
             user=user
         )
 
+        # Auto-complete pending approval tasks for the OLD stage
+        # This happens AFTER successful transition, completing tasks that were blocking the previous stage
+        if user:
+            from workflow.services import WorkflowService
+            WorkflowService.auto_complete_approval_tasks(work_order, user)
+
         return work_order
 
     @staticmethod

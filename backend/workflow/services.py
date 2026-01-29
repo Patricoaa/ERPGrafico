@@ -22,11 +22,13 @@ class WorkflowService:
             return None
 
     @staticmethod
-    def create_task(task_type, title, description, content_object=None, priority=Task.Priority.MEDIUM, created_by=None, data=None):
+    def create_task(task_type, title, description, content_object=None, priority=Task.Priority.MEDIUM, created_by=None, data=None, category=Task.Category.APPROVAL):
         """
         Creates a new task.
         If rule specifies a user, assigned_to is set.
         If rule specifies a group, assigned_to is None, but data['candidate_group'] is set (Pool Assignment).
+        
+        category: APPROVAL (default) for workflow approvals, TASK for operational tasks
         """
         assignee_info = WorkflowService.get_assignee_for_task_type(task_type)
         assigned_user = None
@@ -51,7 +53,8 @@ class WorkflowService:
             created_by=created_by,
             assigned_to=assigned_user,
             content_object=content_object,
-            data=task_data
+            data=task_data,
+            category=category
         )
         
         if assigned_user:
@@ -116,3 +119,43 @@ class WorkflowService:
             link=link,
             content_object=task
         )
+
+    @staticmethod
+    def auto_complete_approval_tasks(content_object, user):
+        """
+        Auto-completes all pending approval tasks for a given object.
+        Called during state transitions (e.g., WorkOrder advances to next stage).
+        
+        Args:
+            content_object: The object (WorkOrder, SaleOrder, etc.) being transitioned
+            user: The user performing the transition (for audit trail)
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from django.utils import timezone
+        
+        content_type = ContentType.objects.get_for_model(content_object)
+        
+        # Find all pending approval tasks for this object
+        pending_approvals = Task.objects.filter(
+            content_type=content_type,
+            object_id=content_object.pk,
+            category=Task.Category.APPROVAL,
+            status=Task.Status.PENDING
+        )
+        
+        for task in pending_approvals:
+            task.status = Task.Status.COMPLETED
+            task.completed_at = timezone.now()
+            task.completed_by = user
+            task.save()
+            
+            # Notify the assignee (if any) that the task was completed
+            if task.assigned_to:
+                Notification.objects.create(
+                    user=task.assigned_to,
+                    title=f"Aprobación Completada: {task.title}",
+                    message=f"Aprobada por {user.username}",
+                    type=Notification.Type.SUCCESS,
+                    link=WorkflowService._get_link_for_task(task),
+                    content_object=task
+                )

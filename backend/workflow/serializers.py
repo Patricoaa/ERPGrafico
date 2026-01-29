@@ -5,6 +5,7 @@ from core.serializers import UserSerializer
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to_data = UserSerializer(source='assigned_to', read_only=True)
     created_by_data = UserSerializer(source='created_by', read_only=True)
+    completed_by_data = UserSerializer(source='completed_by', read_only=True)
     
     class Meta:
         model = Task

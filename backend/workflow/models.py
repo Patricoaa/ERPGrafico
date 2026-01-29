@@ -52,6 +52,10 @@ class Task(models.Model):
         HIGH = 'HIGH', _('Alta')
         CRITICAL = 'CRITICAL', _('Crítica')
 
+    class Category(models.TextChoices):
+        APPROVAL = 'APPROVAL', _('Aprobación de Flujo')
+        TASK = 'TASK', _('Tarea Operativa')
+
     title = models.CharField(_("Título"), max_length=255)
     description = models.TextField(_("Descripción"), blank=True)
     
@@ -62,6 +66,25 @@ class Task(models.Model):
     # Assignment
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_tasks')
+    completed_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='completed_tasks',
+        verbose_name=_("Completada por"),
+        help_text="Usuario que completó/aprobó esta tarea"
+    )
+    
+    # Category
+    category = models.CharField(
+        _("Categoría"), 
+        max_length=20, 
+        choices=Category.choices, 
+        default=Category.APPROVAL,
+        db_index=True,
+        help_text="APPROVAL: Aprobación de flujo | TASK: Tarea operativa"
+    )
     
     # Generic Link to any object (OT, OC, Invoice, etc)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
