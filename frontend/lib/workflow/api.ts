@@ -17,6 +17,7 @@ export interface Task {
     completed_by?: number | null
     completed_by_data?: any
     completed_at?: string
+    data?: any
 }
 
 export interface Notification {

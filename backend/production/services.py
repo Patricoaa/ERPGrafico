@@ -437,28 +437,21 @@ class WorkOrderService:
                     pass
         
         # --- NEW WORKFLOW INTEGRATION ---
-        # 1. Validation: Check for pending tasks of the OLD stage before allowing transition forward
-        # (This prevents skipping approvals if someone tries to bypass the UI)
+        # 1. Automation: Auto-complete tasks of the OLD stage when moving forward
+        # In a fluid workflow, advancing stage implies approval.
         if next_stage != WorkOrder.Stage.CANCELLED:
-             # Basic check: are there non-completed tasks for this WorkOrder of relevant type?
-             # We can define which types block which transitions.
-             blocking_tasks = Task.objects.filter(
-                 content_type=ContentType.objects.get_for_model(work_order),
-                 object_id=work_order.id,
-                 status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
-             )
-             
-             # Specific logic: PREPRESS blocks if client/supervisor tasks are pending
-             # (Only if moving forward)
-             if old_stage == WorkOrder.Stage.PREPRESS:
-                 if blocking_tasks.filter(task_type__in=['OT_PREPRESS_APPROVAL']).exists():
-                     raise ValidationError("No se puede avanzar: Existen tareas de aprobación de Pre-Impresión pendientes.")
-
-             if old_stage == WorkOrder.Stage.PRESS:
-                 if blocking_tasks.filter(task_type__in=['OT_PRESS_APPROVAL']).exists():
-                     raise ValidationError("No se puede avanzar: Existe una tarea de supervisión de Impresión pendiente.")
+             WorkflowService.auto_complete_approval_tasks(work_order, user)
         
         # 2. Automation: Create tasks upon ENTERING a new stage
+        if next_stage == WorkOrder.Stage.MATERIAL_APPROVAL:
+            WorkflowService.create_task(
+                task_type='OT_MATERIAL_APPROVAL',
+                title=f"Aprobación Stock: OT-{work_order.number}",
+                description=f"Valide la disponibilidad de stock para procesar la OT-{work_order.number}.",
+                content_object=work_order,
+                created_by=user
+            )
+
         if next_stage == WorkOrder.Stage.PREPRESS:
             WorkflowService.create_task(
                 task_type='OT_PREPRESS_APPROVAL',
@@ -482,6 +475,15 @@ class WorkOrderService:
                 task_type='OT_POSTPRESS_APPROVAL',
                 title=f"Supervisión Post-Impresión: OT-{work_order.number}",
                 description=f"Valide terminaciones y empaque de la OT-{work_order.number}.",
+                content_object=work_order,
+                created_by=user
+            )
+
+        if next_stage == WorkOrder.Stage.OUTSOURCING_VERIFICATION:
+             WorkflowService.create_task(
+                task_type='OT_OUTSOURCING_VERIFICATION_APPROVAL',
+                title=f"Verificación Tercerizados: OT-{work_order.number}",
+                description=f"Valide la recepción de servicios externos para la OT-{work_order.number}.",
                 content_object=work_order,
                 created_by=user
             )
@@ -541,7 +543,7 @@ class WorkOrderService:
         ]
         
         try:
-            old_idx = STAGES_SEQUENCE.index(current_stage)
+            old_idx = STAGES_SEQUENCE.index(old_stage)
             next_idx = STAGES_SEQUENCE.index(next_stage)
         except ValueError:
             # If stage not in sequence (e.g. CANCELLED), allow transition without sequence logic
@@ -553,7 +555,7 @@ class WorkOrderService:
             content_type = ContentType.objects.get_for_model(work_order)
             
             # The pattern is OT_{STAGE}_APPROVAL
-            current_stage_task_type = f"OT_{current_stage}_APPROVAL"
+            current_stage_task_type = f"OT_{old_stage}_APPROVAL"
             
             pending_tasks = Task.objects.filter(
                 content_type=content_type,

@@ -47,6 +47,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import dynamic from "next/dynamic"
 
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useAuth } from "@/contexts/AuthContext"
 import { TaskActionCard } from "@/components/workflow/TaskActionCard"
 
 const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
@@ -127,7 +128,15 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isBackwardModalOpen, setIsBackwardModalOpen] = useState(false)
     const [pendingPrevStage, setPendingPrevStage] = useState<string | null>(null)
+    const { user } = useAuth()
     const { openCommandCenter } = useGlobalModals()
+
+    const pendingTasks = order?.workflow_tasks?.filter((t: any) => t.status === 'PENDING' || t.status === 'IN_PROGRESS') || []
+    const canApproveAll = pendingTasks.every((task: any) => {
+        const isAssignedToMe = user && task.assigned_to === user.id
+        const isInCandidateGroup = user && task.data?.candidate_group && (user as any).groups?.includes(task.data.candidate_group)
+        return isAssignedToMe || isInCandidateGroup || user?.is_superuser
+    })
 
     const getFilteredStages = (orderData: any) => {
         if (!orderData) return BASE_STAGES.filter(s => s.alwaysShow)
@@ -193,14 +202,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
         const isMovingForward = nextIndex > currentIndex
 
-        // Validation: Workflow Tasks (New Modular System)
-        const pendingTasks = order.workflow_tasks?.filter((t: any) => t.status === 'PENDING' || t.status === 'IN_PROGRESS') || []
-
         if (isMovingForward && pendingTasks.length > 0) {
-            // Check if any pending task blocks this transition
-            // For now, any pending task blocks moving forward
-            toast.error("Existen tareas de aprobación pendientes que bloquean el avance de la OT.")
-            return
+            if (!canApproveAll) {
+                toast.error("Existen tareas de aprobación pendientes que deben ser autorizadas por otro responsable.")
+                return
+            }
         }
 
         if (order.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
@@ -751,6 +757,18 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && (
                                 <div className="space-y-6">
+                                    {isViewingCurrentStage && pendingTasks.length > 0 && (
+                                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 text-amber-800">
+                                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                                            <div className="text-sm">
+                                                <p className="font-bold">Aprobación de Stock Requerida</p>
+                                                <p>Al avanzar a la siguiente etapa está aprobando la disponibilidad de materiales y no podrá volver atrás.</p>
+                                                {!canApproveAll && (
+                                                    <p className="mt-1 font-bold text-destructive">Solo responsables de bodega pueden aprobar esta etapa.</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                     {/* Consolidated Specs Section */}
                                     {(stageData.prepress_specs || stageData.press_specs || stageData.postpress_specs) && (
                                         <div className="p-4 bg-muted/5 border rounded-lg space-y-3">
@@ -971,6 +989,19 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_VERIFICATION' && (
                                 <div className="space-y-6">
+                                    {isViewingCurrentStage && pendingTasks.length > 0 && (
+                                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 text-amber-800">
+                                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                                            <div className="text-sm">
+                                                <p className="font-bold">Aprobación de Servicios Requerida</p>
+                                                <p>Al avanzar a la siguiente etapa está confirmando la recepción de servicios tercerizados y no podrá volver atrás.</p>
+                                                {!canApproveAll && (
+                                                    <p className="mt-1 font-bold text-destructive">Solo responsables de producción pueden aprobar esta etapa.</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex gap-3">
                                         <LayoutDashboard className="h-5 w-5 text-amber-600 shrink-0" />
                                         <div className="text-sm text-amber-800">
@@ -1030,10 +1061,22 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
                                 <div className="space-y-6">
-                                    {/* Workflow Tasks Section */}
-                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PREPRESS_APPROVAL').map((task: any) => (
-                                        <TaskActionCard key={task.id} task={task} onCompleted={fetchOrder} />
-                                    ))}
+                                    {/* Informative Approval Message */}
+                                    {order?.workflow_tasks?.some((t: any) => t.task_type === 'OT_PREPRESS_APPROVAL' && t.status === 'PENDING') && (
+                                        <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center justify-between group shadow-sm">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-primary/10 rounded-full text-primary">
+                                                    <CheckCircle2 className="h-6 w-6" />
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="font-bold text-sm">Validación de Etapa Requerida</p>
+                                                    <p className="text-xs text-muted-foreground max-w-md">
+                                                        Al avanzar a la siguiente etapa está <span className="font-bold text-primary">aprobando explícitamente</span> esta etapa y no podrá volver atrás.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Specifications Section */}
                                     {(stageData.prepress_specs || (order?.attachments && stageData.design_attachments && stageData.design_attachments.length > 0)) && (
@@ -1114,9 +1157,22 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'PRESS' && (
                                 <div className="space-y-6">
-                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PRESS_APPROVAL').map((task: any) => (
-                                        <TaskActionCard key={task.id} task={task} onCompleted={fetchOrder} />
-                                    ))}
+                                    {/* Informative Approval Message */}
+                                    {order?.workflow_tasks?.some((t: any) => t.task_type === 'OT_PRESS_APPROVAL' && t.status === 'PENDING') && (
+                                        <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center justify-between group shadow-sm">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-primary/10 rounded-full text-primary">
+                                                    <CheckCircle2 className="h-6 w-6" />
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="font-bold text-sm">Validación de Etapa Requerida</p>
+                                                    <p className="text-xs text-muted-foreground max-w-md">
+                                                        Al avanzar a la siguiente etapa está <span className="font-bold text-primary">aprobando explícitamente</span> esta etapa y no podrá volver atrás.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Specifications Section */}
                                     {(stageData.press_specs || (stageData.folio_enabled && stageData.folio_start)) && (
@@ -1153,9 +1209,22 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
                                 <div className="space-y-6">
-                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_POSTPRESS_APPROVAL').map((task: any) => (
-                                        <TaskActionCard key={task.id} task={task} onCompleted={fetchOrder} />
-                                    ))}
+                                    {/* Informative Approval Message */}
+                                    {order?.workflow_tasks?.some((t: any) => t.task_type === 'OT_POSTPRESS_APPROVAL' && t.status === 'PENDING') && (
+                                        <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center justify-between group shadow-sm">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-primary/10 rounded-full text-primary">
+                                                    <CheckCircle2 className="h-6 w-6" />
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="font-bold text-sm">Validación de Etapa Requerida</p>
+                                                    <p className="text-xs text-muted-foreground max-w-md">
+                                                        Al avanzar a la siguiente etapa está <span className="font-bold text-primary">aprobando explícitamente</span> esta etapa y no podrá volver atrás.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Specifications Section */}
                                     {stageData.postpress_specs && (
@@ -1211,9 +1280,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         variant="ghost"
                                         disabled={viewingStepIndex === 0 || transitioning || order?.status === 'FINISHED'}
                                         onClick={() => {
-                                            const prevStage = STAGES[viewingStepIndex - 1]
-                                            setPendingPrevStage(prevStage.id)
-                                            setIsBackwardModalOpen(true)
+                                            const prevStageIndex = viewingStepIndex - 1
+                                            if (prevStageIndex >= 0) {
+                                                setViewingStepIndex(prevStageIndex)
+                                            }
                                         }}
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -1224,7 +1294,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         <Button
                                             disabled={
                                                 transitioning ||
-                                                (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available))
+                                                (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: any) => !m.is_available)) ||
+                                                (pendingTasks.length > 0 && !canApproveAll)
                                             }
                                             onClick={() => {
                                                 const nextStage = STAGES[viewingStepIndex + 1]

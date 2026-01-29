@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { MiniSidebar } from "@/components/layout/MiniSidebar"
-import { TopBar } from "@/components/layout/TopBar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { TaskInboxSidebar } from "@/components/layout/TaskInboxSidebar"
 import { Toaster } from "@/components/ui/sonner"
@@ -113,7 +112,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     isInboxOpen && "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]"
                 )}
             >
-                <TopBar />
                 <main className="flex-1 overflow-y-auto pb-24">
                     <div className="p-6 w-full">
                         {children}

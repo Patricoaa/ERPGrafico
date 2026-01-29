@@ -47,8 +47,8 @@ class Command(BaseCommand):
         self.stdout.write('Configuring Inventory Accounting Mappings...')
         self._configure_inventory_accounting()
 
-        self.stdout.write('Creating Default Admin User...')
-        self._create_admin_user()
+        self.stdout.write('Creating Demo Users...')
+        self._create_all_users()
         
         # Get references to key accounts for further seeding
         accounts = self._get_account_references()
@@ -396,6 +396,7 @@ class Command(BaseCommand):
             'uom': uoms['un'], 
             'sale_uom': uoms['un'], 
             'sale_price': 150,
+            'is_dynamic_pricing': True,
             'track_inventory': True,
             'receiving_warehouse': wh,
             'requires_advanced_manufacturing': True
@@ -540,52 +541,79 @@ class Command(BaseCommand):
         JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Aporte Inicial", debit=50000000, credit=0)
         JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social", debit=0, credit=50000000)
 
-    def _create_admin_user(self):
-        # Ensure groups exist first (in case sync wasn't run)
+    def _create_all_users(self):
+        """Creates a set of common users for the graphic industry demo."""
         from django.contrib.auth.models import Group
         from core.permissions import Roles
         
-        # We rely on sync_permissions being run, but for safety in demo setup, let's get or create
-        admin_group, _ = Group.objects.get_or_create(name=Roles.ADMIN)
+        # User definitions: (username, role, first_name, last_name, email)
+        user_definitions = [
+            ('admin', Roles.ADMIN, 'Admin', 'Sistema', 'admin@erpgrafico.com'),
+            ('gerente', Roles.MANAGER, 'Gerente', 'General', 'gerente@erpgrafico.com'),
+            ('operador', Roles.OPERATOR, 'Operador', 'Producción', 'operador@erpgrafico.com'),
+            ('bodega', Roles.OPERATOR, 'Encargado', 'Bodega', 'bodega@erpgrafico.com'),
+            ('ventas', Roles.OPERATOR, 'Ejecutivo', 'Ventas', 'ventas@erpgrafico.com'),
+        ]
 
-        # Create system contact for admin
-        admin_contact, _ = Contact.objects.get_or_create(
-            tax_id="00.000.000-0",
-            defaults={
-                'name': 'Admin del Sistema',
-                'email': 'admin@erpgrafico.com',
-                'contact_name': 'Admin User'
-            }
-        )
+        # Create specific groups if they don't exist for fine-grained workflow demo
+        # (These are referenced in Task routing rules)
+        Group.objects.get_or_create(name='Supervisor')
+        Group.objects.get_or_create(name='Bodega')
+        Group.objects.get_or_create(name='Ventas')
+        Group.objects.get_or_create(name='Pre-Prensa')
+        Group.objects.get_or_create(name='Taller')
 
-        admin_user, created = User.objects.get_or_create(
-            username='admin',
-            defaults={
-                'email': 'admin@erpgrafico.com',
-                'first_name': 'Admin',
-                'last_name': 'User',
-                'contact': admin_contact,
-                'is_staff': True,
-                'is_superuser': True
-            }
-        )
+        for username, role_name, first, last, email in user_definitions:
+            # Create system contact for the user
+            contact, _ = Contact.objects.get_or_create(
+                tax_id=f"USER-{username.upper()}",
+                defaults={
+                    'name': f"{first} {last}",
+                    'email': email,
+                    'contact_name': f"{first} {last}"
+                }
+            )
 
-        # Ensure contact linkage if it didn't exist
-        if not admin_user.contact:
-            admin_user.contact = admin_contact
-            admin_user.save()
-        
-        # Ensure group assignment
-        if not admin_user.groups.filter(name=Roles.ADMIN).exists():
-            admin_user.groups.add(admin_group)
-            self.stdout.write("  Assigned 'ADMIN' Group to user 'admin'")
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'email': email,
+                    'first_name': first,
+                    'last_name': last,
+                    'contact': contact,
+                    'is_staff': True,
+                    'is_superuser': (role_name == Roles.ADMIN)
+                }
+            )
 
-        if created:
-            admin_user.set_password('admin123')
-            admin_user.save()
-            self.stdout.write(self.style.SUCCESS(f"  User 'admin' created with password 'admin123'"))
-        else:
-            self.stdout.write(f"  User 'admin' already exists")
+            # Ensure contact linkage
+            if not user.contact:
+                user.contact = contact
+                user.save()
+
+            # Assign Role Group
+            role_group, _ = Group.objects.get_or_create(name=role_name)
+            if not user.groups.filter(name=role_name).exists():
+                user.groups.add(role_group)
+
+            # Assign specific groups for workflow testing
+            if username == 'operador':
+                user.groups.add(Group.objects.get(name='Taller'))
+            elif username == 'bodega':
+                user.groups.add(Group.objects.get(name='Bodega'))
+            elif username == 'ventas':
+                user.groups.add(Group.objects.get(name='Ventas'))
+            elif username == 'admin':
+                # Admin belongs to everyone for demo purposes
+                for gname in ['Supervisor', 'Bodega', 'Ventas', 'Pre-Prensa', 'Taller']:
+                    user.groups.add(Group.objects.get(name=gname))
+
+            # Set static password
+            user.set_password('111111')
+            user.save()
+            
+            status = "created" if created else "updated"
+            self.stdout.write(f"  User '{username}' {status} with password '111111' (Role: {role_name})")
 
     def _add_initial_stock(self, accounts):
         """
