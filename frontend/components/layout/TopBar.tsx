@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation"
 
 import { useAuth } from "@/contexts/AuthContext"
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
+import { NotificationBell } from "@/components/workflow/NotificationBell"
 
 export function TopBar() {
     const router = useRouter()
@@ -43,10 +44,7 @@ export function TopBar() {
 
             {/* Right: Notifications & User Profile */}
             <div className="flex items-center gap-6 flex-1 justify-end">
-                <Button variant="ghost" size="icon" className="relative text-muted-foreground/60 hover:text-primary transition-colors">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-primary ring-2 ring-background" />
-                </Button>
+                <NotificationBell />
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

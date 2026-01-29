@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Calculator, Users, ShoppingCart, FileText, Package, Printer, Banknote, ShoppingBag, Calendar, PieChart } from "lucide-react"
+import { Home, Calculator, Users, ShoppingCart, FileText, Package, Printer, Banknote, ShoppingBag, Calendar, PieChart, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
     Tooltip,
@@ -26,6 +26,7 @@ const mainItems = [
     { id: "treasury", icon: Banknote, label: "Tesorería" },
     { id: "purchasing", icon: ShoppingBag, label: "Compras" },
     { id: "finances", icon: PieChart, label: "Finanzas" },
+    { id: "tasks", icon: CheckCircle2, label: "Tareas" },
 ]
 
 export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory }: MiniSidebarProps) {

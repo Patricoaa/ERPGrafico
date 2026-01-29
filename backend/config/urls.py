@@ -37,6 +37,7 @@ urlpatterns = [
     path('api/finances/', include('finances.urls')),
     path('api/core/', include('core.urls')),
     path('api/billing/', include('billing.urls')),
+    path('api/workflow/', include('workflow.urls')),
     
     # Auth endpoints
     path('api/auth/user/', CurrentUserView.as_view(), name='current-user'),
