@@ -114,9 +114,9 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from .permissions import Roles
         return Response(Roles.get_choices())
 
-class GroupViewSet(viewsets.ReadOnlyModelViewSet):
+class GroupViewSet(viewsets.ModelViewSet):
     """
-    Expose user groups (roles).
+    Expose user groups (roles) with full CRUD.
     """
     queryset = Group.objects.all()
     serializer_class = GroupSerializer

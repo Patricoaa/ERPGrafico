@@ -92,9 +92,11 @@ class UserSerializer(serializers.ModelSerializer):
         return instance
 
 class GroupSerializer(serializers.ModelSerializer):
+    user_count = serializers.IntegerField(source='user_set.count', read_only=True)
+
     class Meta:
         model = Group
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'user_count']
 
 class AttachmentSerializer(serializers.ModelSerializer):
     uploaded_at = serializers.DateTimeField(read_only=True)

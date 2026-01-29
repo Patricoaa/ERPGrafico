@@ -10,17 +10,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
-import { Loader2, Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
+import { Loader2, Plus, User, ShieldCheck, ShieldAlert, Check } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
-    groups_list: z.array(z.string()).min(1, "Debe seleccionar al menos un rol"),
+    primary_role: z.string().min(1, "Debe seleccionar un rol principal"),
+    functional_groups: z.array(z.string()),
     contact: z.number().min(1, "Debe seleccionar un contacto"),
     password: z.string().optional(),
-    is_active: z.boolean().default(true),
+    is_active: z.boolean(),
 })
 
 type UserFormValues = z.infer<typeof userSchema>
@@ -35,13 +37,28 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
+    const [availableGroups, setAvailableGroups] = useState<any[]>([])
     const [contacts, setContacts] = useState<any[]>([])
+
+    // Helper to parse groups from initialData
+    const parseInitialGroups = () => {
+        const groups = initialData?.groups_list || []
+        const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
+
+        const primaryRole = groups.find((g: string) => systemRoles.includes(g)) || "OPERATOR"
+        const functionalGroups = groups.filter((g: string) => !systemRoles.includes(g))
+
+        return { primaryRole, functionalGroups }
+    }
+
+    const { primaryRole: initRole, functionalGroups: initGroups } = parseInitialGroups()
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userSchema),
         defaultValues: {
             username: initialData?.username || "",
-            groups_list: initialData?.groups_list || ["OPERATOR"],
+            primary_role: initRole,
+            functional_groups: initGroups,
             contact: Number(initialData?.contact || 0),
             password: "",
             is_active: initialData?.is_active ?? true,
@@ -50,39 +67,59 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
 
     useEffect(() => {
         if (open) {
-            const fetchRoles = async () => {
+            const fetchDisplayData = async () => {
                 try {
-                    const res = await api.get('/core/users/roles/')
-                    setAvailableRoles(res.data)
-                } catch (error) {
-                    console.error("Error fetching roles", error)
-                }
-            }
-            const fetchContacts = async () => {
-                try {
-                    const res = await api.get('/contacts/')
-                    setContacts(res.data.results || res.data)
-                } catch (error) {
-                    console.error("Error fetching contacts", error)
-                }
-            }
-            fetchRoles()
-            fetchContacts()
+                    const [rolesRes, groupsRes, contactsRes] = await Promise.all([
+                        api.get('/core/users/roles/'),
+                        api.get('/core/groups/'),
+                        api.get('/contacts/')
+                    ])
 
+                    setAvailableRoles(rolesRes.data)
+
+                    // Filter out system roles from the groups list so they don't appear in the "Teams" checklist
+                    const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
+                    const functionalGroupsData = (groupsRes.data.results || groupsRes.data).filter(
+                        (g: any) => !systemRoles.includes(g.name)
+                    )
+                    setAvailableGroups(functionalGroupsData)
+
+                    setContacts(contactsRes.data.results || contactsRes.data)
+
+                } catch (error) {
+                    console.error("Error fetching form data", error)
+                }
+            }
+
+            fetchDisplayData()
+
+            const { primaryRole, functionalGroups } = parseInitialGroups()
             form.reset({
                 username: initialData?.username || "",
-                groups_list: initialData?.groups_list || ["OPERATOR"],
+                primary_role: primaryRole,
+                functional_groups: functionalGroups,
                 contact: Number(initialData?.contact || 0),
                 password: "",
                 is_active: initialData?.is_active ?? true,
             })
         }
-    }, [open, initialData, form])
+    }, [open, initialData, form]) // Removed specific init props to avoid loops, relying on open + initialData
 
     async function onSubmit(data: UserFormValues) {
         setLoading(true)
         try {
-            const payload = { ...data }
+            // Merge primary role and functional groups into the backend expected format
+            const groups_list = [data.primary_role, ...data.functional_groups]
+
+            const payload: any = {
+                ...data,
+                groups_list
+            }
+
+            // Cleanup generic form fields not in backend serializer
+            delete payload.primary_role
+            delete payload.functional_groups
+
             if (!payload.password) delete payload.password
 
             if (initialData?.id) {
@@ -127,8 +164,6 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                     initialData ? (
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                             <span>{initialData.username}</span>
-                            <span className="opacity-30">|</span>
-                            <span>{initialData.groups_list?.[0] || "Sin Rol"}</span>
                         </div>
                     ) : (
                         "Complete la información para crear el acceso al sistema"
@@ -225,47 +260,101 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                         )}
                                     />
 
-                                    <FormField
-                                        control={form.control}
-                                        name="groups_list"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Rol (Grupo)</FormLabel>
-                                                <Select
-                                                    onValueChange={(val) => field.onChange([val])}
-                                                    defaultValue={field.value?.[0]}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger className="h-11">
-                                                            <SelectValue placeholder="Seleccione un rol" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {availableRoles.map(([val, label]) => (
-                                                            <SelectItem key={val} value={val}>
-                                                                {label}
-                                                            </SelectItem>
+                                    <div className="md:col-span-2 border-t pt-4">
+                                        <h3 className="text-sm font-semibold mb-3">Permisos de Sistema (Rol)</h3>
+                                        <FormField
+                                            control={form.control}
+                                            name="primary_role"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <Select
+                                                        onValueChange={field.onChange}
+                                                        defaultValue={field.value}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger className="h-11">
+                                                                <SelectValue placeholder="Seleccione un rol de sistema" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {availableRoles.map(([val, label]) => (
+                                                                <SelectItem key={val} value={val}>
+                                                                    {label}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormDescription className="text-xs">
+                                                        Define los permisos técnicos de seguridad (Qué módulos puede ver).
+                                                    </FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2 border-t pt-4">
+                                        <h3 className="text-sm font-semibold mb-3">Equipos Funcionales</h3>
+                                        <p className="text-xs text-muted-foreground mb-4">
+                                            Asigne los equipos donde colabora este usuario. Esto define qué tareas recibirá.
+                                        </p>
+                                        <FormField
+                                            control={form.control}
+                                            name="functional_groups"
+                                            render={() => (
+                                                <FormItem>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        {availableGroups.map((group) => (
+                                                            <FormField
+                                                                key={group.id}
+                                                                control={form.control}
+                                                                name="functional_groups"
+                                                                render={({ field }) => {
+                                                                    return (
+                                                                        <FormItem
+                                                                            key={group.id}
+                                                                            className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-md"
+                                                                        >
+                                                                            <FormControl>
+                                                                                <Checkbox
+                                                                                    checked={field.value?.includes(group.name)}
+                                                                                    onCheckedChange={(checked) => {
+                                                                                        return checked
+                                                                                            ? field.onChange([...field.value, group.name])
+                                                                                            : field.onChange(
+                                                                                                field.value?.filter(
+                                                                                                    (value) => value !== group.name
+                                                                                                )
+                                                                                            )
+                                                                                    }}
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormLabel className="text-sm font-normal cursor-pointer w-full">
+                                                                                {group.name}
+                                                                            </FormLabel>
+                                                                        </FormItem>
+                                                                    )
+                                                                }}
+                                                            />
                                                         ))}
-                                                        {availableRoles.length === 0 && (
-                                                            <>
-                                                                <SelectItem value="ADMIN">Administrador</SelectItem>
-                                                                <SelectItem value="MANAGER">Gerente/Contador</SelectItem>
-                                                                <SelectItem value="OPERATOR">Operador</SelectItem>
-                                                                <SelectItem value="READ_ONLY">Lectura</SelectItem>
-                                                            </>
+
+                                                        {availableGroups.length === 0 && (
+                                                            <div className="col-span-2 text-center py-4 text-xs text-muted-foreground">
+                                                                No hay grupos funcionales creados. Vaya a "Grupos y Equipos" para crear uno.
+                                                            </div>
                                                         )}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                                    </div>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
 
                                     <FormField
                                         control={form.control}
                                         name="password"
                                         render={({ field }) => (
-                                            <FormItem className="md:col-span-2">
+                                            <FormItem className="md:col-span-2 border-t pt-4">
                                                 <FormLabel>Contraseña {initialData && "(opcional)"}</FormLabel>
                                                 <FormControl>
                                                     <Input {...field} type="password" placeholder="••••••••" className="h-11" />

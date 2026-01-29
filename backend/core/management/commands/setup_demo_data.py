@@ -541,10 +541,38 @@ class Command(BaseCommand):
         JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Aporte Inicial", debit=50000000, credit=0)
         JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social", debit=0, credit=50000000)
 
+    def _create_groups(self):
+        """Creates standard functional groups (departments)."""
+        from django.contrib.auth.models import Group
+        
+        groups = [
+            'Supervisor',
+            'Administración',
+            'Bodega', 
+            'Ventas', 
+            'Diseño',
+            'Pre-Prensa', 
+            'Taller',
+            'Terminaciones',
+            'Despacho'
+        ]
+        
+        created_groups = []
+        for name in groups:
+            group, created = Group.objects.get_or_create(name=name)
+            if created:
+                created_groups.append(name)
+        
+        if created_groups:
+            self.stdout.write(f"  Created groups: {', '.join(created_groups)}")
+
     def _create_all_users(self):
         """Creates a set of common users for the graphic industry demo."""
         from django.contrib.auth.models import Group
         from core.permissions import Roles
+        
+        # Ensure functional groups exist
+        self._create_groups()
         
         # User definitions: (username, role, first_name, last_name, email)
         user_definitions = [
@@ -553,15 +581,8 @@ class Command(BaseCommand):
             ('operador', Roles.OPERATOR, 'Operador', 'Producción', 'operador@erpgrafico.com'),
             ('bodega', Roles.OPERATOR, 'Encargado', 'Bodega', 'bodega@erpgrafico.com'),
             ('ventas', Roles.OPERATOR, 'Ejecutivo', 'Ventas', 'ventas@erpgrafico.com'),
+            ('diseno', Roles.OPERATOR, 'Diseñador', 'Gráfico', 'diseno@erpgrafico.com'), 
         ]
-
-        # Create specific groups if they don't exist for fine-grained workflow demo
-        # (These are referenced in Task routing rules)
-        Group.objects.get_or_create(name='Supervisor')
-        Group.objects.get_or_create(name='Bodega')
-        Group.objects.get_or_create(name='Ventas')
-        Group.objects.get_or_create(name='Pre-Prensa')
-        Group.objects.get_or_create(name='Taller')
 
         for username, role_name, first, last, email in user_definitions:
             # Create system contact for the user
@@ -591,21 +612,28 @@ class Command(BaseCommand):
                 user.contact = contact
                 user.save()
 
-            # Assign Role Group
+            # Assign Role Group (Security Role)
             role_group, _ = Group.objects.get_or_create(name=role_name)
             if not user.groups.filter(name=role_name).exists():
                 user.groups.add(role_group)
 
-            # Assign specific groups for workflow testing
+            # Assign specific groups for workflow testing (Functional Teams)
             if username == 'operador':
                 user.groups.add(Group.objects.get(name='Taller'))
+                user.groups.add(Group.objects.get(name='Terminaciones'))
             elif username == 'bodega':
                 user.groups.add(Group.objects.get(name='Bodega'))
+                user.groups.add(Group.objects.get(name='Despacho'))
             elif username == 'ventas':
                 user.groups.add(Group.objects.get(name='Ventas'))
+            elif username == 'diseno':
+                user.groups.add(Group.objects.get(name='Diseño'))
+                user.groups.add(Group.objects.get(name='Pre-Prensa'))
+            elif username == 'gerente':
+                user.groups.add(Group.objects.get(name='Administración'))
             elif username == 'admin':
                 # Admin belongs to everyone for demo purposes
-                for gname in ['Supervisor', 'Bodega', 'Ventas', 'Pre-Prensa', 'Taller']:
+                for gname in ['Supervisor', 'Bodega', 'Ventas', 'Pre-Prensa', 'Taller', 'Terminaciones', 'Despacho', 'Diseño', 'Administración']:
                     user.groups.add(Group.objects.get(name=gname))
 
             # Set static password
