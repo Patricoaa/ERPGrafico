@@ -527,6 +527,55 @@ class WorkOrderService:
             # If moving past initial stages (Assignment/Approval), status becomes IN_PROGRESS
             work_order.status = WorkOrder.Status.IN_PROGRESS
 
+        
+        # Define stage sequence to detect forward/backward moves
+        STAGES_SEQUENCE = [
+            WorkOrder.Stage.MATERIAL_ASSIGNMENT,
+            WorkOrder.Stage.MATERIAL_APPROVAL,
+            WorkOrder.Stage.OUTSOURCING_ASSIGNMENT,
+            WorkOrder.Stage.PREPRESS,
+            WorkOrder.Stage.PRESS,
+            WorkOrder.Stage.POSTPRESS,
+            WorkOrder.Stage.OUTSOURCING_VERIFICATION,
+            WorkOrder.Stage.FINISHED
+        ]
+        
+        try:
+            old_idx = STAGES_SEQUENCE.index(current_stage)
+            next_idx = STAGES_SEQUENCE.index(next_stage)
+        except ValueError:
+            # If stage not in sequence (e.g. CANCELLED), allow transition without sequence logic
+            old_idx = next_idx = 0
+
+        # Moving Forward: Validate required approval tasks are completed
+        if next_idx > old_idx:
+            # Check for pending approval tasks for the CURRENT stage
+            content_type = ContentType.objects.get_for_model(work_order)
+            
+            # The pattern is OT_{STAGE}_APPROVAL
+            current_stage_task_type = f"OT_{current_stage}_APPROVAL"
+            
+            pending_tasks = Task.objects.filter(
+                content_type=content_type,
+                object_id=work_order.pk,
+                task_type=current_stage_task_type,
+                category=Task.Category.APPROVAL,
+                status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
+            )
+            
+            if pending_tasks.exists():
+                raise ValidationError(f"Existen aprobaciones pendientes para la etapa {work_order.get_current_stage_display()}. Por favor, complételas antes de continuar.")
+
+        # Moving Backward: Reset tasks for the stages being "un-done"
+        if next_idx < old_idx:
+            # Stages to reset: from the next_stage up to (and including) the current_stage
+            # Wait, if I go back to MATERIAL_ASSIGNMENT from PREPRESS, 
+            # I should reset MATERIAL_APPROVAL, OUTSOURCING_ASSIGNMENT, PREPRESS?
+            # User said: "si se devuelve a la etapa anterior debe existir una advertencia que las aprobaciones realizadas se reinciaran"
+            # It makes sense to reset any approval that happens AFTER the new stage.
+            stages_to_reset = STAGES_SEQUENCE[next_idx:] 
+            WorkflowService.reset_tasks_for_object(work_order, stages_to_reset)
+
         work_order.current_stage = next_stage
         work_order.save()
 
@@ -537,12 +586,6 @@ class WorkOrderService:
             notes=notes,
             user=user
         )
-
-        # Auto-complete pending approval tasks for the OLD stage
-        # This happens AFTER successful transition, completing tasks that were blocking the previous stage
-        if user:
-            from workflow.services import WorkflowService
-            WorkflowService.auto_complete_approval_tasks(work_order, user)
 
         return work_order
 

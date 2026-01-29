@@ -125,6 +125,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [outsourcedPending, setOutsourcedPending] = useState<any[]>([])
     const [isAnnulModalOpen, setIsAnnulModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [isBackwardModalOpen, setIsBackwardModalOpen] = useState(false)
+    const [pendingPrevStage, setPendingPrevStage] = useState<string | null>(null)
     const { openCommandCenter } = useGlobalModals()
 
     const getFilteredStages = (orderData: any) => {
@@ -1022,13 +1024,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         })}
                                     </div>
 
-                                    {order?.materials?.filter((m: any) => m.is_outsourced && m.purchase_order_receiving_status !== 'RECEIVED').length > 0 && (
-                                        <div className="p-4 bg-muted/30 border border-dashed rounded-lg text-center">
-                                            <p className="text-xs text-muted-foreground italic">
-                                                Aviso: La OT no podrá ser finalizada hasta que todos los servicios tercerizados figuren como RECIBIDOS.
-                                            </p>
-                                        </div>
-                                    )}
+
                                 </div>
                             )}
 
@@ -1216,7 +1212,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         disabled={viewingStepIndex === 0 || transitioning || order?.status === 'FINISHED'}
                                         onClick={() => {
                                             const prevStage = STAGES[viewingStepIndex - 1]
-                                            handleTransition(prevStage.id)
+                                            setPendingPrevStage(prevStage.id)
+                                            setIsBackwardModalOpen(true)
                                         }}
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -1510,6 +1507,36 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <p className="text-destructive font-semibold bg-destructive/10 p-2 rounded text-xs">
                             Esta acción es irreversible y borrará todos los registros históricos de esta orden.
                         </p>
+                    </div>
+                }
+            />
+
+            <ActionConfirmModal
+                open={isBackwardModalOpen}
+                onOpenChange={setIsBackwardModalOpen}
+                title="Retroceder Etapa"
+                variant="warning"
+                onConfirm={() => {
+                    if (pendingPrevStage) {
+                        handleTransition(pendingPrevStage)
+                    }
+                    setIsBackwardModalOpen(false)
+                }}
+                confirmText="Retroceder"
+                description={
+                    <div className="space-y-3">
+                        <p>
+                            ¿Está seguro de que desea retroceder a la etapa <strong>{STAGES.find(s => s.id === pendingPrevStage)?.label}</strong>?
+                        </p>
+                        <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs flex gap-3">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <div className="space-y-1">
+                                <p className="font-bold">Aviso de Reinicio de Aprobaciones:</p>
+                                <p>
+                                    Si retrocede, todas las aprobaciones y tareas completadas en las etapas posteriores se reiniciarán y deberán realizarse nuevamente.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 }
             />

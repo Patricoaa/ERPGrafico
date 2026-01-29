@@ -171,6 +171,14 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'error': 'No se puede eliminar una orden con Órdenes de Compra generadas. Anule la OT en su lugar.'
             }, status=status.HTTP_400_BAD_REQUEST)
             
+        # 3. Cleanup: Delete associated Tasks and Notifications
+        # Since these are GenericForeignKey, CASCADE doesn't happen automatically
+        from workflow.models import Task, Notification
+        content_type = ContentType.objects.get_for_model(instance)
+        
+        Task.objects.filter(content_type=content_type, object_id=instance.id).delete()
+        Notification.objects.filter(content_type=content_type, object_id=instance.id).delete()
+            
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'])

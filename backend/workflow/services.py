@@ -159,3 +159,33 @@ class WorkflowService:
                     link=WorkflowService._get_link_for_task(task),
                     content_object=task
                 )
+
+    @staticmethod
+    def reset_tasks_for_object(content_object, stage_ids=None):
+        """
+        Resets completed approval tasks for a given object to PENDING.
+        If stage_ids is provided, only tasks matching those stages (via task_type) are reset.
+        """
+        from django.contrib.contenttypes.models import ContentType
+        
+        content_type = ContentType.objects.get_for_model(content_object)
+        
+        query = Task.objects.filter(
+            content_type=content_type,
+            object_id=content_object.pk,
+            category=Task.Category.APPROVAL,
+            status=Task.Status.COMPLETED
+        )
+        
+        # We assume OT_STAGE_ID_APPROVAL is the task type pattern
+        if stage_ids:
+            # Create a list of task types to match
+            task_types = [f"OT_{stage}_APPROVAL" for stage in stage_ids]
+            query = query.filter(task_type__in=task_types)
+            
+        reset_count = query.update(
+            status=Task.Status.PENDING,
+            completed_at=None,
+            completed_by=None
+        )
+        return reset_count
