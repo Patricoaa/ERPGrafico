@@ -90,9 +90,9 @@ export function TaskInbox() {
         // Extract document ID from task metadata
         if (task.object_id) {
             // Try to infer document type from task_type
-            if (task.task_type?.includes('OT_')) return `OT-${task.object_id}`
-            if (task.task_type?.includes('OC_')) return `OC-${task.object_id}`
-            if (task.task_type?.includes('OV_')) return `OV-${task.object_id}`
+            if (task.task_type?.includes('OT_') || task.title?.includes('OT-')) return `OT-${task.object_id}`
+            if (task.task_type?.includes('OC_') || task.title?.includes('OC-')) return `OC-${task.object_id}`
+            if (task.task_type?.includes('OV_') || task.title?.includes('OV-')) return `OV-${task.object_id}`
             if (task.task_type?.includes('NC_')) return `NC-${task.object_id}`
             if (task.task_type?.includes('ND_')) return `ND-${task.object_id}`
 

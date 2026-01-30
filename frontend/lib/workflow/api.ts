@@ -9,6 +9,8 @@ export interface Task {
     priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
     assigned_to: number | null
     assigned_to_data?: any
+    assigned_group?: number | null
+    assigned_group_name?: string
     created_by: number | null
     created_by_data?: any
     created_at: string
@@ -17,6 +19,8 @@ export interface Task {
     completed_by?: number | null
     completed_by_data?: any
     completed_at?: string
+    notes?: string
+    attachments_data?: any[]
     data?: any
 }
 
@@ -44,8 +48,17 @@ export const getTasks = async (params: any = {}) => {
     return response.data
 }
 
-export const completeTask = async (id: number) => {
-    const response = await api.post(`/workflow/tasks/${id}/complete/`)
+export const completeTask = async (id: number, notes?: string, attachments?: File[]) => {
+    const formData = new FormData()
+    if (notes) formData.append('notes', notes)
+    if (attachments) {
+        attachments.forEach(file => formData.append('attachments', file))
+    }
+    const response = await api.post(`/workflow/tasks/${id}/complete/`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
     return response.data
 }
 

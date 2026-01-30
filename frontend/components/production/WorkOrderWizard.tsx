@@ -134,7 +134,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const pendingTasks = order?.workflow_tasks?.filter((t: any) => t.status === 'PENDING' || t.status === 'IN_PROGRESS') || []
     const canApproveAll = pendingTasks.every((task: any) => {
         const isAssignedToMe = user && task.assigned_to === user.id
-        const isInCandidateGroup = user && task.data?.candidate_group && (user as any).groups?.includes(task.data.candidate_group)
+        const isInCandidateGroup = (user as any)?.groups?.some((g: any) =>
+            (task.assigned_group && g === task.assigned_group) ||
+            (task.data?.candidate_group && g === task.data.candidate_group)
+        )
         return isAssignedToMe || isInCandidateGroup || user?.is_superuser
     })
 
@@ -757,18 +760,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && (
                                 <div className="space-y-6">
-                                    {isViewingCurrentStage && pendingTasks.length > 0 && (
-                                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 text-amber-800">
-                                            <AlertTriangle className="h-5 w-5 shrink-0" />
-                                            <div className="text-sm">
-                                                <p className="font-bold">Aprobación de Stock Requerida</p>
-                                                <p>Al avanzar a la siguiente etapa está aprobando la disponibilidad de materiales y no podrá volver atrás.</p>
-                                                {!canApproveAll && (
-                                                    <p className="mt-1 font-bold text-destructive">Solo responsables de bodega pueden aprobar esta etapa.</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
+                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_STOCK_APPROVAL').map((task: any) => (
+                                        <TaskActionCard
+                                            key={task.id}
+                                            task={task}
+                                            onCompleted={fetchOrder}
+                                        />
+                                    ))}
                                     {/* Consolidated Specs Section */}
                                     {(stageData.prepress_specs || stageData.press_specs || stageData.postpress_specs) && (
                                         <div className="p-4 bg-muted/5 border rounded-lg space-y-3">
@@ -989,18 +987,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_VERIFICATION' && (
                                 <div className="space-y-6">
-                                    {isViewingCurrentStage && pendingTasks.length > 0 && (
-                                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 text-amber-800">
-                                            <AlertTriangle className="h-5 w-5 shrink-0" />
-                                            <div className="text-sm">
-                                                <p className="font-bold">Aprobación de Servicios Requerida</p>
-                                                <p>Al avanzar a la siguiente etapa está confirmando la recepción de servicios tercerizados y no podrá volver atrás.</p>
-                                                {!canApproveAll && (
-                                                    <p className="mt-1 font-bold text-destructive">Solo responsables de producción pueden aprobar esta etapa.</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
+                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_OUTSOURCING_VERIFICATION').map((task: any) => (
+                                        <TaskActionCard
+                                            key={task.id}
+                                            task={task}
+                                            onCompleted={fetchOrder}
+                                        />
+                                    ))}
 
                                     <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex gap-3">
                                         <LayoutDashboard className="h-5 w-5 text-amber-600 shrink-0" />
@@ -1061,22 +1054,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
                                 <div className="space-y-6">
-                                    {/* Informative Approval Message */}
-                                    {order?.workflow_tasks?.some((t: any) => t.task_type === 'OT_PREPRESS_APPROVAL' && t.status === 'PENDING') && (
-                                        <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center justify-between group shadow-sm">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-primary/10 rounded-full text-primary">
-                                                    <CheckCircle2 className="h-6 w-6" />
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <p className="font-bold text-sm">Validación de Etapa Requerida</p>
-                                                    <p className="text-xs text-muted-foreground max-w-md">
-                                                        Al avanzar a la siguiente etapa está <span className="font-bold text-primary">aprobando explícitamente</span> esta etapa y no podrá volver atrás.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PREPRESS_APPROVAL').map((task: any) => (
+                                        <TaskActionCard
+                                            key={task.id}
+                                            task={task}
+                                            onCompleted={fetchOrder}
+                                        />
+                                    ))}
 
                                     {/* Specifications Section */}
                                     {(stageData.prepress_specs || (order?.attachments && stageData.design_attachments && stageData.design_attachments.length > 0)) && (
@@ -1157,22 +1141,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'PRESS' && (
                                 <div className="space-y-6">
-                                    {/* Informative Approval Message */}
-                                    {order?.workflow_tasks?.some((t: any) => t.task_type === 'OT_PRESS_APPROVAL' && t.status === 'PENDING') && (
-                                        <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center justify-between group shadow-sm">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-primary/10 rounded-full text-primary">
-                                                    <CheckCircle2 className="h-6 w-6" />
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <p className="font-bold text-sm">Validación de Etapa Requerida</p>
-                                                    <p className="text-xs text-muted-foreground max-w-md">
-                                                        Al avanzar a la siguiente etapa está <span className="font-bold text-primary">aprobando explícitamente</span> esta etapa y no podrá volver atrás.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PRESS_APPROVAL').map((task: any) => (
+                                        <TaskActionCard
+                                            key={task.id}
+                                            task={task}
+                                            onCompleted={fetchOrder}
+                                        />
+                                    ))}
 
                                     {/* Specifications Section */}
                                     {(stageData.press_specs || (stageData.folio_enabled && stageData.folio_start)) && (
@@ -1209,22 +1184,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
                                 <div className="space-y-6">
-                                    {/* Informative Approval Message */}
-                                    {order?.workflow_tasks?.some((t: any) => t.task_type === 'OT_POSTPRESS_APPROVAL' && t.status === 'PENDING') && (
-                                        <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center justify-between group shadow-sm">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-primary/10 rounded-full text-primary">
-                                                    <CheckCircle2 className="h-6 w-6" />
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <p className="font-bold text-sm">Validación de Etapa Requerida</p>
-                                                    <p className="text-xs text-muted-foreground max-w-md">
-                                                        Al avanzar a la siguiente etapa está <span className="font-bold text-primary">aprobando explícitamente</span> esta etapa y no podrá volver atrás.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_POSTPRESS_APPROVAL').map((task: any) => (
+                                        <TaskActionCard
+                                            key={task.id}
+                                            task={task}
+                                            onCompleted={fetchOrder}
+                                        />
+                                    ))}
 
                                     {/* Specifications Section */}
                                     {stageData.postpress_specs && (
@@ -1263,34 +1229,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             )}
                         </div>
 
-                        {/* Progress Buttons */}
-                        <div className="mt-8 pt-6 border-t flex justify-between">
-                            {!isViewingCurrentStage ? (
-                                <Button
-                                    variant="outline"
-                                    className="w-full gap-2 border-primary/20 hover:bg-primary/5"
-                                    onClick={() => setViewingStepIndex(actualStepIndex)}
-                                >
-
-                                    Volver a la Etapa Actual
-                                </Button>
-                            ) : (
+                        <div className="mt-8 pt-6 border-t flex justify-end">
+                            {isViewingCurrentStage ? (
                                 <>
-                                    <Button
-                                        variant="ghost"
-                                        disabled={viewingStepIndex === 0 || transitioning || order?.status === 'FINISHED'}
-                                        onClick={() => {
-                                            const prevStageIndex = viewingStepIndex - 1
-                                            if (prevStageIndex >= 0) {
-                                                setViewingStepIndex(prevStageIndex)
-                                            }
-                                        }}
-                                    >
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
-                                        Anterior
-                                    </Button>
-
-                                    {order?.status !== 'FINISHED' && (
+                                    {order?.status !== 'FINISHED' && STAGES[viewingStepIndex]?.id !== 'FINISHED' && (
                                         <Button
                                             disabled={
                                                 transitioning ||
@@ -1315,6 +1257,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         </Button>
                                     )}
                                 </>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    className="w-full gap-2 border-primary/20 hover:bg-primary/5"
+                                    onClick={() => setViewingStepIndex(actualStepIndex)}
+                                >
+                                    Volver a la Etapa Actual
+                                </Button>
                             )}
                         </div>
                     </div>

@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.auth.models import Group
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from core.models import User
 
@@ -65,6 +66,14 @@ class Task(models.Model):
     
     # Assignment
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
+    assigned_group = models.ForeignKey(
+        Group, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='assigned_tasks',
+        verbose_name=_("Grupo Asignado")
+    )
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_tasks')
     completed_by = models.ForeignKey(
         User, 
@@ -93,6 +102,9 @@ class Task(models.Model):
     
     # Extra data (JSON)
     data = models.JSONField(default=dict, blank=True)
+    
+    notes = models.TextField(_("Notas"), blank=True)
+    attachments = GenericRelation('core.Attachment')
 
     due_date = models.DateTimeField(_("Fecha Vencimiento"), null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)

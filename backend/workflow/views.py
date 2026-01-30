@@ -40,7 +40,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         
         return qs.filter(
             Q(assigned_to=user) | 
-            Q(data__candidate_group__in=list(user_groups))
+            Q(assigned_group__in=user.groups.all()) |
+            Q(data__candidate_group__in=list(user_groups)) # Keep legacy support
         ).distinct()
 
     @action(detail=True, methods=['post'])
@@ -48,7 +49,30 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         task.status = Task.Status.COMPLETED
         task.completed_at = timezone.now()
+        task.completed_by = request.user
+        
+        # Save notes if provided
+        notes = request.data.get('notes')
+        if notes:
+            task.notes = notes
+            
         task.save()
+        
+        # Handle attachments if provided
+        files = request.FILES.getlist('attachments')
+        if files:
+            from core.models import Attachment
+            from django.contrib.contenttypes.models import ContentType
+            task_ct = ContentType.objects.get_for_model(Task)
+            for f in files:
+                Attachment.objects.create(
+                    file=f,
+                    original_filename=f.name,
+                    content_type=task_ct,
+                    object_id=task.id,
+                    user=request.user
+                )
+        
         return Response({'status': 'completed'})
 
 class NotificationViewSet(viewsets.ModelViewSet):
