@@ -14,8 +14,8 @@ from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, Purc
 from treasury.models import TreasuryAccount, Payment
 from billing.models import Invoice, NoteWorkflow
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
-from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
 from core.models import User
+from workflow.models import Task, Notification, TaskAssignmentRule
 
 class Command(BaseCommand):
     help = 'Seeds database with comprehensive graphic industry data using IFRS CoA'
@@ -238,6 +238,11 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e)}"))
                 # We don't raise here to allow the rest of the purge to continue
                 # if we are in a fresh system state.
+
+        # Workflow models
+        _safe_delete(Task, "Task")
+        _safe_delete(Notification, "Notification")
+        _safe_delete(TaskAssignmentRule, "TaskAssignmentRule")
 
         # Production child records
         _safe_delete(ProductionConsumption, "ProductionConsumption")

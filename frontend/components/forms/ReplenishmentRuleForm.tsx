@@ -65,6 +65,8 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
             open={open}
             onOpenChange={onOpenChange}
             size="md"
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={initialData ? "Editar Regla" : "Nueva Regla de Reabastecimiento"}
             className={initialData ? 'h-[500px]' : ''}
             footer={
@@ -76,8 +78,8 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                 </>
             }
         >
-            <div className="flex shrink-0 overflow-hidden">
-                <div className="flex-1 space-y-4">
+            <div className="flex shrink-0 overflow-hidden h-full">
+                <div className="flex-1 space-y-4 p-6">
                     <Form {...form}>
                         <form id="replenishment-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             <FormField
@@ -147,7 +149,7 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                 </div>
 
                 {initialData?.id && (
-                    <div className="w-80 border-l bg-muted/5 ml-6 -my-6 py-6 px-6">
+                    <div className="w-80 border-l bg-muted/5 ml-6 -my-6 py-6 px-6 flex flex-col overflow-hidden">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="reordering_rule"

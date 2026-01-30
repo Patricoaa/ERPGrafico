@@ -57,24 +57,35 @@ export default function UsersSettingsPage() {
         },
         {
             accessorKey: "groups_list",
+            id: "role",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Roles y Grupos" />
+                <DataTableColumnHeader column={column} title="Rol" />
             ),
             cell: ({ row }) => {
-                const groups = row.getValue("groups_list") as string[]
-
-                // Identify system roles vs functional groups
+                const groups = row.getValue("role") as string[]
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                 const systemRole = groups?.find(g => roles.includes(g))
+
+                return systemRole ? (
+                    <Badge variant={systemRole === 'ADMIN' ? 'default' : 'secondary'}>
+                        {systemRole}
+                    </Badge>
+                ) : null
+            },
+        },
+        {
+            accessorKey: "groups_list",
+            id: "functional_groups",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Grupos" />
+            ),
+            cell: ({ row }) => {
+                const groups = row.getValue("functional_groups") as string[]
+                const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                 const functionalGroups = groups?.filter(g => !roles.includes(g)) || []
 
                 return (
                     <div className="flex flex-wrap gap-1">
-                        {systemRole && (
-                            <Badge variant={systemRole === 'ADMIN' ? 'default' : 'secondary'}>
-                                {systemRole}
-                            </Badge>
-                        )}
                         {functionalGroups.map(g => (
                             <Badge key={g} variant="outline" className="text-xs">
                                 {g}
@@ -114,10 +125,7 @@ export default function UsersSettingsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4 mb-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ChevronLeft className="h-4 w-4" />
-                </Button>
+            <div className="flex items-center justify-between space-y-2">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Usuarios y Permisos</h2>
                     <p className="text-muted-foreground">Gestione el acceso al sistema y los equipos de trabajo.</p>
@@ -125,58 +133,64 @@ export default function UsersSettingsPage() {
             </div>
 
             <Tabs defaultValue="users" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="users">Usuarios</TabsTrigger>
-                    <TabsTrigger value="groups">Grupos y Equipos</TabsTrigger>
-                </TabsList>
+                <div className="flex justify-center">
+                    <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/50 rounded-full h-12 p-1 border">
+                        <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                            Usuarios
+                        </TabsTrigger>
+                        <TabsTrigger value="groups" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                            Grupos y Equipos
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
-                <TabsContent value="users" className="space-y-4">
-                    <div className="flex justify-between items-center bg-card p-4 rounded-lg border shadow-sm">
-                        <div>
-                            <h3 className="text-lg font-medium">Lista de Usuarios</h3>
-                            <p className="text-sm text-muted-foreground">Administre las cuentas de acceso al ERP.</p>
-                        </div>
-                        <UserForm
-                            onSuccess={fetchUsers}
-                            trigger={
-                                <Button>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Nuevo Usuario
-                                </Button>
-                            }
-                        />
-                    </div>
-
-                    <div className="bg-card rounded-md border shadow-sm">
-                        {loading ? (
-                            <div className="flex h-[200px] items-center justify-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            </div>
-                        ) : (
-                            <DataTable
-                                columns={columns}
-                                data={users}
-                                globalFilterFields={["username", "email", "first_name", "last_name"]}
-                                searchPlaceholder="Buscar usuario por nombre, email o username..."
-                                facetedFilters={[
-                                    {
-                                        column: "groups_list",
-                                        title: "Rol",
-                                        options: [
-                                            { label: "Admin", value: "ADMIN" },
-                                            { label: "Gerente", value: "MANAGER" },
-                                            { label: "Operador", value: "OPERATOR" },
-                                        ],
-                                    },
-                                ]}
+                <div className="pt-4">
+                    <TabsContent value="users" className="mt-0 outline-none space-y-4">
+                        <div className="flex items-center gap-4">
+                            <h3 className="text-lg font-semibold">Lista de Usuarios</h3>
+                            <UserForm
+                                onSuccess={fetchUsers}
+                                trigger={
+                                    <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Usuario">
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                }
                             />
-                        )}
-                    </div>
-                </TabsContent>
+                        </div>
 
-                <TabsContent value="groups">
-                    <GroupManagement />
-                </TabsContent>
+                        <div className="">
+                            {loading ? (
+                                <div className="flex h-[200px] items-center justify-center">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                </div>
+                            ) : (
+                                <DataTable
+                                    columns={columns}
+                                    data={users}
+                                    globalFilterFields={["username", "email", "first_name", "last_name"]}
+                                    searchPlaceholder="Buscar usuario por nombre, email o username..."
+                                    useAdvancedFilter={true}
+                                    facetedFilters={[
+                                        {
+                                            column: "role",
+                                            title: "Rol",
+                                            options: [
+                                                { label: "Admin", value: "ADMIN" },
+                                                { label: "Gerente", value: "MANAGER" },
+                                                { label: "Operador", value: "OPERATOR" },
+                                                { label: "Lectura", value: "READ_ONLY" },
+                                            ],
+                                        },
+                                    ]}
+                                />
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="groups" className="mt-0 outline-none">
+                        <GroupManagement />
+                    </TabsContent>
+                </div>
             </Tabs>
         </div>
     )

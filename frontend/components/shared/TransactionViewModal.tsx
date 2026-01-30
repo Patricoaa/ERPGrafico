@@ -839,8 +839,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
                     {/* Activity Sidebar */}
                     {data && mapToEntityType(currentType) && (
-                        <div className="w-80 border-l bg-muted/5">
-                            <div className="h-full p-6">
+                        <div className="w-80 border-l bg-muted/5 flex flex-col">
+                            <div className="h-full p-6 flex flex-col overflow-hidden">
                                 <ActivitySidebar
                                     entityId={currentId}
                                     entityType={mapToEntityType(currentType)!}

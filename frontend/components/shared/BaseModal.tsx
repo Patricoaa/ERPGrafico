@@ -42,7 +42,7 @@ export function BaseModal({
 }: BaseModalProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size={size} className={cn("p-0 overflow-hidden flex flex-col", className)}>
+            <DialogContent size={size} className={cn("p-0 overflow-hidden flex flex-col max-h-[95vh]", className)}>
                 <DialogHeader className="px-6 py-4 border-b">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex flex-col gap-1">

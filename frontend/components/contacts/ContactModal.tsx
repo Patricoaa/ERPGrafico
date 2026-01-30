@@ -299,8 +299,8 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                     <div className="flex-1 flex overflow-hidden">
                         {/* Main Content Area */}
                         <div className="flex-1 flex flex-col min-w-0 border-r">
-                            <div className="flex-1 overflow-hidden relative">
-                                <TabsContent value="profile" className="h-full m-0 p-0 overflow-y-auto border-0 outline-none">
+                            <div className="flex-1 flex flex-col overflow-y-auto p-6 scrollbar-thin">
+                                <TabsContent value="profile" className="h-full m-0 p-0 border-0 outline-none">
                                     <div className="p-8 pb-32">
                                         <Form {...form}>
                                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -475,7 +475,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
 
                         {/* Always Visible Sidebar */}
                         <div className="w-80 flex flex-col bg-muted/5 border-l overflow-hidden">
-                            <div className="flex-1 overflow-y-auto p-4 pt-1">
+                            <div className="h-full p-4 flex flex-col overflow-hidden">
                                 {contact ? (
                                     <ActivitySidebar entityId={contact.id} entityType="contact" />
                                 ) : (

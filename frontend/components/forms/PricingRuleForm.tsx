@@ -179,7 +179,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                 </DialogHeader>
 
                 <div className="flex-1 flex overflow-hidden">
-                    <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+                    <div className="flex-1 flex flex-col overflow-y-auto p-6 scrollbar-thin">
                         <Form {...form}>
                             <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                                 <FormField
@@ -469,8 +469,8 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                     </div>
 
                     {initialData?.id && (
-                        <div className="w-80 border-l bg-muted/5">
-                            <div className="h-full p-6">
+                        <div className="w-80 border-l bg-muted/5 flex flex-col">
+                            <div className="h-full p-6 flex flex-col overflow-hidden">
                                 <ActivitySidebar
                                     entityId={initialData.id}
                                     entityType="pricing_rule"

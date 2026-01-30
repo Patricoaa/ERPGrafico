@@ -15,6 +15,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -170,6 +171,8 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                     )
                 }
                 size="xl"
+                hideScrollArea={true}
+                contentClassName="p-0"
                 footer={
                     <div className="flex justify-end gap-3 w-full">
                         <Button variant="outline" onClick={() => setOpen(false)}>
@@ -182,196 +185,217 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                     </div>
                 }
             >
-                <div className="flex flex-col lg:flex-row h-full overflow-hidden min-h-[500px]">
+                <div className="flex flex-col lg:flex-row h-full overflow-hidden min-h-[550px]">
                     {/* Main Content Area */}
-                    <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+                    <div className="flex-1 overflow-y-auto">
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl mx-auto">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="contact"
-                                        render={({ field }) => (
-                                            <FormItem className="md:col-span-2">
-                                                <FormLabel>Contacto Vinculado</FormLabel>
-                                                <Select
-                                                    onValueChange={(val) => field.onChange(parseInt(val))}
-                                                    value={field.value?.toString()}
-                                                    disabled={!!initialData}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger className="h-11">
-                                                            <SelectValue placeholder="Seleccione la persona" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {contacts.map((contact) => (
-                                                            <SelectItem key={contact.id} value={contact.id.toString()}>
-                                                                {contact.name} ({contact.tax_id})
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="username"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Nombre de Usuario (Para Login)</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        {...field}
-                                                        disabled={!!initialData}
-                                                        placeholder="ej: pmartinez"
-                                                        className="h-11"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="is_active"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/5">
-                                                <div className="space-y-0.5">
-                                                    <FormLabel className="flex items-center gap-2">
-                                                        {field.value ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
-                                                        Estado del Acceso
-                                                    </FormLabel>
-                                                    <FormDescription className="text-[10px]">
-                                                        {field.value ? "Acceso al sistema permitido" : "Acceso revocado (Usuario inactivo)"}
-                                                    </FormDescription>
-                                                </div>
-                                                <FormControl>
-                                                    <Switch
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <div className="md:col-span-2 border-t pt-4">
-                                        <h3 className="text-sm font-semibold mb-3">Permisos de Sistema (Rol)</h3>
-                                        <FormField
-                                            control={form.control}
-                                            name="primary_role"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <Select
-                                                        onValueChange={field.onChange}
-                                                        defaultValue={field.value}
-                                                    >
-                                                        <FormControl>
-                                                            <SelectTrigger className="h-11">
-                                                                <SelectValue placeholder="Seleccione un rol de sistema" />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            {availableRoles.map(([val, label]) => (
-                                                                <SelectItem key={val} value={val}>
-                                                                    {label}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormDescription className="text-xs">
-                                                        Define los permisos técnicos de seguridad (Qué módulos puede ver).
-                                                    </FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
+                                <Tabs defaultValue="general" className="flex-1 flex flex-col">
+                                    <div className="px-6 lg:px-8 pt-6">
+                                        <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/50 rounded-full h-10 p-1 border">
+                                            <TabsTrigger value="general" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs">
+                                                Información General
+                                            </TabsTrigger>
+                                            <TabsTrigger value="permissions" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs">
+                                                Permisos y Equipos
+                                            </TabsTrigger>
+                                        </TabsList>
                                     </div>
 
-                                    <div className="md:col-span-2 border-t pt-4">
-                                        <h3 className="text-sm font-semibold mb-3">Equipos Funcionales</h3>
-                                        <p className="text-xs text-muted-foreground mb-4">
-                                            Asigne los equipos donde colabora este usuario. Esto define qué tareas recibirá.
-                                        </p>
-                                        <FormField
-                                            control={form.control}
-                                            name="functional_groups"
-                                            render={() => (
-                                                <FormItem>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        {availableGroups.map((group) => (
-                                                            <FormField
-                                                                key={group.id}
-                                                                control={form.control}
-                                                                name="functional_groups"
-                                                                render={({ field }) => {
-                                                                    return (
-                                                                        <FormItem
-                                                                            key={group.id}
-                                                                            className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-md"
-                                                                        >
-                                                                            <FormControl>
-                                                                                <Checkbox
-                                                                                    checked={field.value?.includes(group.name)}
-                                                                                    onCheckedChange={(checked) => {
-                                                                                        return checked
-                                                                                            ? field.onChange([...field.value, group.name])
-                                                                                            : field.onChange(
-                                                                                                field.value?.filter(
-                                                                                                    (value) => value !== group.name
-                                                                                                )
-                                                                                            )
-                                                                                    }}
-                                                                                />
-                                                                            </FormControl>
-                                                                            <FormLabel className="text-sm font-normal cursor-pointer w-full">
-                                                                                {group.name}
-                                                                            </FormLabel>
-                                                                        </FormItem>
-                                                                    )
-                                                                }}
-                                                            />
-                                                        ))}
+                                    <div className="flex-1 p-6 lg:p-8">
+                                        <TabsContent value="general" className="mt-0 space-y-6 outline-none">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="contact"
+                                                    render={({ field }) => (
+                                                        <FormItem className="md:col-span-2">
+                                                            <FormLabel>Contacto Vinculado</FormLabel>
+                                                            <Select
+                                                                onValueChange={(val) => field.onChange(parseInt(val))}
+                                                                value={field.value?.toString()}
+                                                                disabled={!!initialData}
+                                                            >
+                                                                <FormControl>
+                                                                    <SelectTrigger className="h-11">
+                                                                        <SelectValue placeholder="Seleccione la persona" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {contacts.map((contact) => (
+                                                                        <SelectItem key={contact.id} value={contact.id.toString()}>
+                                                                            {contact.name} ({contact.tax_id})
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
 
-                                                        {availableGroups.length === 0 && (
-                                                            <div className="col-span-2 text-center py-4 text-xs text-muted-foreground">
-                                                                No hay grupos funcionales creados. Vaya a "Grupos y Equipos" para crear uno.
+                                                <FormField
+                                                    control={form.control}
+                                                    name="username"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Nombre de Usuario</FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    {...field}
+                                                                    disabled={!!initialData}
+                                                                    placeholder="ej: pmartinez"
+                                                                    className="h-11"
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control}
+                                                    name="is_active"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/5">
+                                                            <div className="space-y-0.5">
+                                                                <FormLabel className="flex items-center gap-2">
+                                                                    {field.value ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
+                                                                    Estado del Acceso
+                                                                </FormLabel>
+                                                                <FormDescription className="text-[10px]">
+                                                                    {field.value ? "Acceso al sistema permitido" : "Acceso revocado (Usuario inactivo)"}
+                                                                </FormDescription>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
+                                                            <FormControl>
+                                                                <Switch
+                                                                    checked={field.value}
+                                                                    onCheckedChange={field.onChange}
+                                                                />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
 
-                                    <FormField
-                                        control={form.control}
-                                        name="password"
-                                        render={({ field }) => (
-                                            <FormItem className="md:col-span-2 border-t pt-4">
-                                                <FormLabel>Contraseña {initialData && "(opcional)"}</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} type="password" placeholder="••••••••" className="h-11" />
-                                                </FormControl>
-                                                {!initialData && <p className="text-[11px] text-muted-foreground">Mínimo 6 caracteres</p>}
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
+                                                <FormField
+                                                    control={form.control}
+                                                    name="password"
+                                                    render={({ field }) => (
+                                                        <FormItem className="md:col-span-2">
+                                                            <FormLabel>Contraseña {initialData && "(opcional)"}</FormLabel>
+                                                            <FormControl>
+                                                                <Input {...field} type="password" placeholder="••••••••" className="h-11" />
+                                                            </FormControl>
+                                                            {!initialData && <p className="text-[11px] text-muted-foreground">Mínimo 6 caracteres</p>}
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </TabsContent>
+
+                                        <TabsContent value="permissions" className="mt-0 space-y-6 outline-none">
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <h3 className="text-sm font-semibold mb-3">Permisos de Sistema (Rol)</h3>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="primary_role"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <Select
+                                                                    onValueChange={field.onChange}
+                                                                    defaultValue={field.value}
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger className="h-11">
+                                                                            <SelectValue placeholder="Seleccione un rol de sistema" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        {availableRoles.map(([val, label]) => (
+                                                                            <SelectItem key={val} value={val}>
+                                                                                {label}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormDescription className="text-xs">
+                                                                    Define los permisos técnicos de seguridad (Qué módulos puede ver).
+                                                                </FormDescription>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+
+                                                <div className="border-t pt-6">
+                                                    <h3 className="text-sm font-semibold mb-3">Equipos Funcionales</h3>
+                                                    <p className="text-xs text-muted-foreground mb-4">
+                                                        Asigne los equipos donde colabora este usuario. Esto define qué tareas recibirá.
+                                                    </p>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="functional_groups"
+                                                        render={() => (
+                                                            <FormItem>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    {availableGroups.map((group) => (
+                                                                        <FormField
+                                                                            key={group.id}
+                                                                            control={form.control}
+                                                                            name="functional_groups"
+                                                                            render={({ field }) => {
+                                                                                return (
+                                                                                    <FormItem
+                                                                                        key={group.id}
+                                                                                        className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-md"
+                                                                                    >
+                                                                                        <FormControl>
+                                                                                            <Checkbox
+                                                                                                checked={field.value?.includes(group.name)}
+                                                                                                onCheckedChange={(checked) => {
+                                                                                                    return checked
+                                                                                                        ? field.onChange([...field.value, group.name])
+                                                                                                        : field.onChange(
+                                                                                                            field.value?.filter(
+                                                                                                                (value) => value !== group.name
+                                                                                                            )
+                                                                                                        )
+                                                                                                }}
+                                                                                            />
+                                                                                        </FormControl>
+                                                                                        <FormLabel className="text-sm font-normal cursor-pointer w-full">
+                                                                                            {group.name}
+                                                                                        </FormLabel>
+                                                                                    </FormItem>
+                                                                                )
+                                                                            }}
+                                                                        />
+                                                                    ))}
+
+                                                                    {availableGroups.length === 0 && (
+                                                                        <div className="col-span-2 text-center py-4 text-xs text-muted-foreground">
+                                                                            No hay grupos funcionales creados. Vaya a "Grupos y Equipos" para crear uno.
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </TabsContent>
+                                    </div>
+                                </Tabs>
                             </form>
                         </Form>
                     </div>
 
                     {/* Sidebar Area */}
                     <div className="w-full lg:w-80 bg-muted/5 border-t lg:border-t-0 lg:border-l flex flex-col overflow-hidden">
-                        <div className="flex-1 overflow-y-auto p-4">
+                        <div className="flex-1 flex flex-col p-4 overflow-hidden">
                             {initialData ? (
                                 <ActivitySidebar entityId={initialData.id} entityType="user" />
                             ) : (

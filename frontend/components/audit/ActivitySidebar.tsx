@@ -105,7 +105,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
     }
 
     return (
-        <div className={`flex flex-col ${className}`}>
+        <div className={`flex flex-col h-full ${className}`}>
             <div className="border-b pb-3 mb-4">
                 <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
                     <Clock className="h-4 w-4" />
@@ -113,7 +113,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                 </h3>
             </div>
 
-            <ScrollArea className="flex-1 pr-3">
+            <ScrollArea className="flex-1 min-h-0 pr-3">
                 {loading ? (
                     <div className="flex items-center justify-center h-32">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
