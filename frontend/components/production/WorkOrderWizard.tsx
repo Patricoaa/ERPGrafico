@@ -581,6 +581,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 onOpenChange={onOpenChange}
                 size="2xl"
                 hideScrollArea
+                className="h-[90vh]"
+                contentClassName="h-full"
                 title={
                     <WizardHeader
                         order={order}
@@ -594,7 +596,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     />
                 }
             >
-                <div className="flex flex-1 overflow-hidden min-h-[600px] h-[750px] max-h-[85vh]">
+                <div className="flex flex-1 overflow-hidden h-full min-h-0">
                     {/* Left Sidebar - Steps */}
                     <WizardProcessSidebar
                         stages={STAGES}

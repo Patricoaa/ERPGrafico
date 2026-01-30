@@ -50,8 +50,8 @@ export function WizardRightSidebar({
     ].filter(s => s.value)
 
     return (
-        <div className="w-80 border-l bg-muted/5 flex flex-col h-full max-h-full overflow-hidden hidden lg:flex shrink-0">
-            <ScrollArea className="flex-1 w-full h-full max-h-full">
+        <div className="w-80 border-l bg-muted/5 flex flex-col h-full min-h-0 overflow-hidden hidden lg:flex shrink-0">
+            <ScrollArea className="flex-1 w-full min-h-0">
                 <Accordion type="multiple" defaultValue={["info", "specs", "comments"]} className="w-full p-4 space-y-4">
                     {/* General Info */}
                     <AccordionItem value="info" className="border-none">
