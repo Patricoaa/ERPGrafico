@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 
 interface WizardHeaderProps {
     order: any
-    viewingStepIndex: number
-    stagesCount: number
+    currentStageLabel: string
     onEdit: () => void
     onOpenCommandCenter: (id: number, type: 'sale' | 'purchase') => void
     onAnnul: () => void
@@ -18,8 +17,7 @@ interface WizardHeaderProps {
 
 export function WizardHeader({
     order,
-    viewingStepIndex,
-    stagesCount,
+    currentStageLabel,
     onEdit,
     onOpenCommandCenter,
     onAnnul,
@@ -28,32 +26,42 @@ export function WizardHeader({
     isDeleting
 }: WizardHeaderProps) {
     const canEditOrDelete = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage)
+    const customerName = order?.sale_customer_name || "Manual"
+    const creationDate = order?.created_at ? new Date(order.created_at).toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }) : '-'
 
     return (
-        <div className="flex items-start justify-between border-b pb-4 mb-4">
-            <div className="space-y-1">
+        <div className="flex items-center justify-between w-full pr-8">
+            <div className="space-y-1 flex-1">
                 <div className="flex items-center gap-3">
-                    <span className="font-bold text-lg">Gestión de Orden de Trabajo OT-{order?.number}</span>
-                    <Badge variant={order?.status === 'FINISHED' ? 'success' : order?.status === 'CANCELLED' ? 'destructive' : 'default'}>
-                        {order?.status === 'FINISHED' ? 'Finalizada' : order?.status === 'CANCELLED' ? 'Anulada' : 'En Proceso'}
+                    <h2 className="text-xl font-bold tracking-tight">Gestión de orden de trabajo</h2>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
+                        {currentStageLabel}
                     </Badge>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                        <CalendarIcon className="h-3.5 w-3.5" />
-                        <span>Etapa {viewingStepIndex + 1} de {stagesCount}</span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                    <span>OT-{order?.number}</span>
+                    <span className="text-muted-foreground/30">|</span>
+                    <span>{customerName}</span>
+                    <span className="text-muted-foreground/30">|</span>
+                    <div className="flex items-center gap-1.5">
+                        <CalendarIcon className="h-3 w-3" />
+                        <span>{creationDate}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-muted/30 p-1 rounded-lg border border-border/50">
                 {canEditOrDelete && (
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={onEdit}
                         title="Editar OT"
-                        className="h-9 w-9 p-0 hover:bg-muted"
+                        className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
                     >
                         <Pencil className="h-4 w-4" />
                     </Button>
@@ -63,15 +71,16 @@ export function WizardHeader({
                     size="sm"
                     onClick={() => order?.sale_order && onOpenCommandCenter(order.sale_order, 'sale')}
                     title="Configuración de Venta"
-                    className="h-9 w-9 p-0 hover:bg-muted"
+                    className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
+                    disabled={!order?.sale_order}
                 >
                     <LayoutDashboard className="h-4 w-4" />
                 </Button>
-                <div className="w-[1px] h-6 bg-border mx-1" />
+                <div className="w-[1px] h-4 bg-border/60 mx-1" />
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 w-9 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                     onClick={onAnnul}
                     disabled={isAnnuling || order?.status === 'CANCELLED' || order?.is_cancellable === false}
                     title={order?.is_cancellable === false ? "Anulación no permitida en esta etapa" : "Anular OT"}
@@ -82,7 +91,7 @@ export function WizardHeader({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={onDelete}
                         disabled={isDeleting}
                         title="Eliminar OT"

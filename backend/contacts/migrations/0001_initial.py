@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('accounting', '0012_accountingsettings_default_advance_payment_account_and_more'),
+        ('accounting', '0011_accountingsettings_stock_input_account_and_more'),
     ]
 
     operations = [

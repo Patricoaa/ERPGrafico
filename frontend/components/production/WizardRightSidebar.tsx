@@ -16,8 +16,8 @@ import {
     Send,
     History
 } from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { CommentSystem } from "@/components/shared/CommentSystem"
 
 interface Comment {
     user: string
@@ -42,14 +42,6 @@ export function WizardRightSidebar({
     onAddComment,
     comments = []
 }: WizardRightSidebarProps) {
-    const [newComment, setNewComment] = useState("")
-
-    const handleSendComment = () => {
-        if (!newComment.trim()) return
-        onAddComment(newComment.trim())
-        setNewComment("")
-    }
-
     const techSpecs = [
         { label: "Pre-Impresión", value: stageData?.prepress_specs || order?.specifications_prepress },
         { label: "Impresión", value: stageData?.press_specs || order?.specifications_press },
@@ -58,9 +50,9 @@ export function WizardRightSidebar({
     ].filter(s => s.value)
 
     return (
-        <div className="w-80 border-l bg-muted/5 p-4 flex flex-col h-full space-y-4 hidden lg:flex">
-            <ScrollArea className="flex-1 -mr-4 pr-4">
-                <Accordion type="multiple" defaultValue={["info", "specs", "comments"]} className="w-full">
+        <div className="w-80 border-l bg-muted/5 flex flex-col h-full max-h-full overflow-hidden hidden lg:flex shrink-0">
+            <ScrollArea className="flex-1 w-full h-full max-h-full">
+                <Accordion type="multiple" defaultValue={["info", "specs", "comments"]} className="w-full p-4 space-y-4">
                     {/* General Info */}
                     <AccordionItem value="info" className="border-none">
                         <AccordionTrigger className="text-xs font-bold uppercase text-muted-foreground hover:no-underline py-2">
@@ -151,69 +143,17 @@ export function WizardRightSidebar({
                             Observaciones Internas
                         </AccordionTrigger>
                         <AccordionContent className="pt-2">
-                            <div className="space-y-4">
-                                {/* Comment Feed */}
-                                <div className="space-y-3">
-                                    {comments.length > 0 ? comments.map((comment, i) => (
-                                        <div key={i} className="flex gap-2">
-                                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-[10px] font-bold text-primary">
-                                                    {comment.user.substring(0, 2).toUpperCase()}
-                                                </span>
-                                            </div>
-                                            <div className="flex-1 bg-background rounded-lg border p-2 space-y-1">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <span className="text-[10px] font-bold truncate">{comment.user}</span>
-                                                    <span className="text-[9px] text-muted-foreground whitespace-nowrap">
-                                                        {new Date(comment.timestamp).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{comment.text}</p>
-                                            </div>
-                                        </div>
-                                    )) : (
-                                        <div className="text-center py-8 space-y-2">
-                                            <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto" />
-                                            <p className="text-[11px] text-muted-foreground">No hay comentarios aún</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            <CommentSystem
+                                comments={comments}
+                                onAddComment={onAddComment}
+                                placeholder="Agregar observación interna..."
+                                emptyMessage="No hay observaciones aún"
+                                maxHeight="none"
+                            />
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
             </ScrollArea>
-
-            {/* Comment Input (Fixed at bottom of sidebar) */}
-            <div className="pt-4 border-t mt-auto">
-                <div className="relative">
-                    <Textarea
-                        placeholder="Agregar comentario..."
-                        className="min-h-[80px] text-xs resize-none pr-10 bg-background"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault()
-                                handleSendComment()
-                            }
-                        }}
-                    />
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        className="absolute right-2 bottom-2 h-7 w-7"
-                        onClick={handleSendComment}
-                        disabled={!newComment.trim()}
-                    >
-                        <Send className="h-4 w-4 text-primary" />
-                    </Button>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-2 text-center flex items-center justify-center gap-1">
-                    <History className="h-3 w-3" />
-                    Se registra autor y hora automáticamente
-                </p>
-            </div>
         </div>
     )
 }

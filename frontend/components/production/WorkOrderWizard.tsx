@@ -584,8 +584,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 title={
                     <WizardHeader
                         order={order}
-                        viewingStepIndex={viewingStepIndex}
-                        stagesCount={STAGES.length}
+                        currentStageLabel={STAGES[viewingStepIndex]?.label}
                         onEdit={() => setIsEditOpen(true)}
                         onOpenCommandCenter={openCommandCenter}
                         onAnnul={() => handleAnnulOrder()}
@@ -595,7 +594,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     />
                 }
             >
-                <div className="flex flex-1 overflow-hidden h-full">
+                <div className="flex flex-1 overflow-hidden min-h-[600px] h-[750px] max-h-[85vh]">
                     {/* Left Sidebar - Steps */}
                     <WizardProcessSidebar
                         stages={STAGES}
@@ -606,10 +605,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     />
 
                     {/* Center - Content Area */}
-                    <div className="flex-1 flex flex-col p-6 overflow-y-auto relative">
-                        <div className="mb-6 flex items-center justify-between">
+                    <div className="flex-1 flex flex-col p-6 overflow-hidden relative">
+                        <div className="mb-6">
                             <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
-                            <Badge variant="outline">{order?.current_stage_display || translateStatus(order?.current_stage)}</Badge>
                         </div>
 
                         {/* Stage Content */}
