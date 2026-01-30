@@ -6,3 +6,10 @@ class ProductionConfig(AppConfig):
 
     def ready(self):
         import production.signals
+        try:
+            from core.permissions import PermissionRegistry
+            PermissionRegistry.register('production', [
+                ('view_dashboard_production', 'Can view production dashboard'),
+            ])
+        except ImportError:
+            pass

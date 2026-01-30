@@ -1,15 +1,14 @@
 from django.apps import AppConfig
 
-
-class ContactsConfig(AppConfig):
+class BillingConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'contacts'
+    name = 'billing'
 
     def ready(self):
         try:
             from core.permissions import PermissionRegistry
-            PermissionRegistry.register('contacts', [
-                ('view_dashboard_contacts', 'Can view contacts dashboard'),
+            PermissionRegistry.register('billing', [
+                ('view_dashboard_billing', 'Can view billing dashboard'),
             ])
         except ImportError:
             pass

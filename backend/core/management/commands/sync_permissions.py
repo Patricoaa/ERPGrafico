@@ -32,16 +32,43 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(f"Group exists: {role_name}")
 
-        # 4. Assign Default Permissions (Example logic - can be refined)
+        # 4. Assign Default Permissions
         admin_group = Group.objects.get(name=Roles.ADMIN)
-        # Admin gets everything
         all_perms = Permission.objects.all()
         admin_group.permissions.set(all_perms)
         
-        # Operator gets all 'view', 'add', 'change' provided by Django for key apps, but maybe restricted delete
+        # READ_ONLY: All 'view_' permissions
+        read_only_group = Group.objects.get(name=Roles.READ_ONLY)
+        view_perms = Permission.objects.filter(codename__startswith='view_')
+        read_only_group.permissions.set(view_perms)
+        
+        # MANAGER: Currently same as Admin, can refine later
+        manager_group = Group.objects.get(name=Roles.MANAGER)
+        manager_group.permissions.set(all_perms)
+
+        # OPERATOR: Focus on Production and Inventory
         operator_group = Group.objects.get(name=Roles.OPERATOR)
         
-        # This is a heuristic assignment; in production we might want this explicitly defined in the registry too
-        # For now, let's just ensure Admin has everything.
+        operator_codenames = [
+            # Dashboards
+            'view_dashboard_production',
+            'view_dashboard_inventory',
+            # Production
+            'view_workorder', 'add_workorder', 'change_workorder',
+            'view_productionconsumption', 'add_productionconsumption',
+            'view_billofmaterials',
+            # Inventory
+            'view_product', 'view_warehouse', 'view_uom',
+            # Inventory
+            'view_product', 'view_warehouse', 'view_uom',
+            # Contacts
+            'view_contact',
+            # Workflow
+            'view_task', 'add_task', 'change_task',
+        ]
+        
+        # We use __in for codenames
+        operator_perms = Permission.objects.filter(codename__in=operator_codenames)
+        operator_group.permissions.set(operator_perms)
         
         self.stdout.write(self.style.SUCCESS("Permission Sync Complete."))

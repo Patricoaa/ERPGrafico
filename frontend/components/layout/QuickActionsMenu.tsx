@@ -12,6 +12,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { getTasks } from "@/lib/workflow/api"
+import { PermissionGuard } from "@/components/auth/PermissionGuard"
 
 const actions = [
     {
@@ -19,24 +20,28 @@ const actions = [
         icon: Home,
         url: "/",
         color: "text-blue-500",
+        permission: null,
     },
     {
         title: "POS",
         icon: ShoppingCart,
         url: "/sales/pos",
         color: "text-emerald-500",
+        permission: "sales.view_dashboard_sales",
     },
     {
         title: "Órdenes de Compra",
         icon: ShoppingBag,
         url: "/purchasing/orders",
         color: "text-amber-500",
+        permission: "purchasing.view_dashboard_purchasing",
     },
     {
         title: "Órdenes de Trabajo",
         icon: Printer,
         url: "/production/orders",
         color: "text-purple-500",
+        permission: "production.view_dashboard_production",
     },
 ]
 
@@ -81,58 +86,62 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                         const Icon = action.icon
 
                         return (
-                            <Tooltip key={action.url}>
-                                <TooltipTrigger asChild>
-                                    <Link
-                                        href={action.url}
-                                        className={cn(
-                                            "relative flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 group hover:scale-110 active:scale-95",
-                                            isActive
-                                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                                : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                        )}
-                                    >
-                                        <Icon className={cn("h-5 w-5 transition-colors", !isActive && "group-hover:" + action.color)} />
-                                        {isActive && (
-                                            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
-                                        )}
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="bg-foreground text-background font-medium">
-                                    {action.title}
-                                </TooltipContent>
-                            </Tooltip>
+                            <PermissionGuard permission={action.permission || undefined} key={action.url}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link
+                                            href={action.url}
+                                            className={cn(
+                                                "relative flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 group hover:scale-110 active:scale-95",
+                                                isActive
+                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                                    : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-5 w-5 transition-colors", !isActive && "group-hover:" + action.color)} />
+                                            {isActive && (
+                                                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
+                                            )}
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                                        {action.title}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </PermissionGuard>
                         )
                     })}
 
                     {/* Inbox Toggle Button */}
                     <div className="w-px h-8 bg-sidebar-border/50 mx-1" />
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <button
-                                onClick={onInboxToggle}
-                                className={cn(
-                                    "relative flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 group hover:scale-110 active:scale-95",
-                                    isInboxOpen
-                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                        : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                )}
-                            >
-                                <Inbox className={cn("h-5 w-5 transition-colors", !isInboxOpen && "group-hover:text-blue-500")} />
-                                {isInboxOpen && (
-                                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
-                                )}
-                                {pendingCount > 0 && !isInboxOpen && (
-                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 shadow-sm border border-background">
-                                        {pendingCount > 99 ? '99+' : pendingCount}
-                                    </span>
-                                )}
-                            </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="bg-foreground text-background font-medium">
-                            Bandeja de Entrada {pendingCount > 0 && `(${pendingCount})`}
-                        </TooltipContent>
-                    </Tooltip>
+                    <PermissionGuard permission="workflow.view_task">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={onInboxToggle}
+                                    className={cn(
+                                        "relative flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 group hover:scale-110 active:scale-95",
+                                        isInboxOpen
+                                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                            : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                    )}
+                                >
+                                    <Inbox className={cn("h-5 w-5 transition-colors", !isInboxOpen && "group-hover:text-blue-500")} />
+                                    {isInboxOpen && (
+                                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
+                                    )}
+                                    {pendingCount > 0 && !isInboxOpen && (
+                                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 shadow-sm border border-background">
+                                            {pendingCount > 99 ? '99+' : pendingCount}
+                                        </span>
+                                    )}
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                                Bandeja de Entrada {pendingCount > 0 && `(${pendingCount})`}
+                            </TooltipContent>
+                        </Tooltip>
+                    </PermissionGuard>
                 </TooltipProvider>
             </div>
         </div>

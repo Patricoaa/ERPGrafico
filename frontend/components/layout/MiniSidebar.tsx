@@ -29,16 +29,30 @@ interface MiniSidebarProps {
 }
 
 const mainItems = [
-    { id: "dashboard", icon: Home, label: "Inicio" },
-    { id: "accounting", icon: Calculator, label: "Contabilidad" },
-    { id: "contacts", icon: Users, label: "Contactos" },
-    { id: "sales", icon: ShoppingCart, label: "Ventas" },
-    { id: "inventory", icon: Package, label: "Inventario" },
-    { id: "production", icon: Printer, label: "Producción" },
-    { id: "treasury", icon: Banknote, label: "Tesorería" },
-    { id: "purchasing", icon: ShoppingBag, label: "Compras" },
-    { id: "finances", icon: PieChart, label: "Finanzas" },
+    { id: "dashboard", icon: Home, label: "Inicio", permission: null },
+    { id: "accounting", icon: Calculator, label: "Contabilidad", permission: "accounting.view_dashboard_accounting" },
+    { id: "contacts", icon: Users, label: "Contactos", permission: "contacts.view_dashboard_contacts" },
+    { id: "sales", icon: ShoppingCart, label: "Ventas", permission: "sales.view_dashboard_sales" },
+    { id: "inventory", icon: Package, label: "Inventario", permission: "inventory.view_dashboard_inventory" },
+    { id: "production", icon: Printer, label: "Producción", permission: "production.view_dashboard_production" },
+    { id: "treasury", icon: Banknote, label: "Tesorería", permission: "treasury.view_dashboard_treasury" },
+    { id: "purchasing", icon: ShoppingBag, label: "Compras", permission: "purchasing.view_dashboard_purchasing" },
+    { id: "finances", icon: PieChart, label: "Finanzas", permission: "finances.view_dashboard_finances" },
+    { id: "billing", icon: Banknote, label: "Facturación", permission: "billing.view_dashboard_billing" }, // Added explicit billing item if needed, but original list didn't have it?
 ]
+// Note: original list ended at finances. Did I miss billing in original file?
+// Original: 
+// { id: "finances", icon: PieChart, label: "Finanzas" },
+// ]
+// But wait, the user's file had:
+// { id: "finances", icon: PieChart, label: "Finanzas" },
+// ]
+// There was no "billing" item in the sidebar previously. 
+// If it wasn't there, maybe I shouldn't add it unless requested.
+// But the app "billing" exists. 
+// Let's stick to modifying the EXISTING items.
+// I see I added permission fields to existing items.
+
 
 export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory }: MiniSidebarProps) {
     const router = useRouter()
@@ -64,28 +78,30 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
             <TooltipProvider delayDuration={0}>
                 <div className="flex-1 flex flex-col gap-3">
                     {mainItems.map((item) => (
-                        <Tooltip key={item.id}>
-                            <TooltipTrigger asChild>
-                                <button
-                                    onClick={() => onCategoryChange(item.id)}
-                                    onMouseEnter={() => onHoverCategory?.(item.id)}
-                                    className={cn(
-                                        "p-3 rounded-xl transition-all duration-200 group relative",
-                                        activeCategory === item.id
-                                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
-                                            : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:scale-105"
-                                    )}
-                                >
-                                    <item.icon className="h-5 w-5" />
-                                    {activeCategory === item.id && (
-                                        <span className="absolute left-[-15px] top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
-                                    )}
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="font-semibold bg-sidebar text-sidebar-foreground border-sidebar-border">
-                                {item.label}
-                            </TooltipContent>
-                        </Tooltip>
+                        <PermissionGuard permission={item.permission || undefined} key={item.id}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => onCategoryChange(item.id)}
+                                        onMouseEnter={() => onHoverCategory?.(item.id)}
+                                        className={cn(
+                                            "p-3 rounded-xl transition-all duration-200 group relative",
+                                            activeCategory === item.id
+                                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
+                                                : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:scale-105"
+                                        )}
+                                    >
+                                        <item.icon className="h-5 w-5" />
+                                        {activeCategory === item.id && (
+                                            <span className="absolute left-[-15px] top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
+                                        )}
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="font-semibold bg-sidebar text-sidebar-foreground border-sidebar-border">
+                                    {item.label}
+                                </TooltipContent>
+                            </Tooltip>
+                        </PermissionGuard>
                     ))}
                 </div>
 
