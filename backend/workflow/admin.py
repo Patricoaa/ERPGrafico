@@ -3,8 +3,8 @@ from .models import Task, Notification, TaskAssignmentRule
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ('title', 'task_type', 'status', 'priority', 'assigned_to', 'created_at')
-    list_filter = ('status', 'priority', 'task_type')
+    list_display = ('title', 'task_type', 'category', 'status', 'priority', 'assigned_to', 'created_at')
+    list_filter = ('status', 'priority', 'task_type', 'category')
     search_fields = ('title', 'description')
 
 @admin.register(Notification)

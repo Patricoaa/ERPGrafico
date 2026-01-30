@@ -16,7 +16,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'priority', 'task_type', 'assigned_to']
+    filterset_fields = ['status', 'priority', 'task_type', 'assigned_to', 'category']
     search_fields = ['title', 'description']
     ordering_fields = ['created_at', 'priority', 'due_date']
 
