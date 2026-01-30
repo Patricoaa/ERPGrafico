@@ -2,16 +2,26 @@
 
 import { Task } from "@/lib/workflow/api"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Clock, User, AlertCircle } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { CheckCircle2, Clock, User, Paperclip, MessageSquare, Download, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-import { Paperclip, MessageSquare, Download } from "lucide-react"
 
 interface TaskActionCardProps {
     task: Task
+    canComplete?: boolean
+    onNotesChange?: (val: string) => void
+    onFileChange?: (file: File | null) => void
+    notesValue?: string
 }
 
-export function TaskActionCard({ task }: TaskActionCardProps) {
+export function TaskActionCard({
+    task,
+    canComplete = false,
+    onNotesChange,
+    onFileChange,
+    notesValue = ""
+}: TaskActionCardProps) {
     const isPending = task.status === 'PENDING' || task.status === 'IN_PROGRESS'
 
     return (
@@ -91,13 +101,43 @@ export function TaskActionCard({ task }: TaskActionCardProps) {
                 </div>
             )}
 
-            {/* Pending tasks show who's responsible */}
+            {/* Action Area for Pending Tasks - Now just Inputs, no button */}
             {isPending && (
-                <div className="flex items-center gap-1.5 text-[10px] bg-amber-100/50 px-3 py-2 rounded text-amber-800 border-t border-amber-100">
-                    <AlertCircle className="h-3 w-3 shrink-0" />
-                    Esta aprobación debe ser completada por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group || 'el responsable asignado'}
+                <div className="space-y-3 pt-2">
+                    {canComplete ? (
+                        <div className="bg-white p-3 rounded-lg border border-amber-100 space-y-3 animate-in fade-in slide-in-from-top-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-muted-foreground">Comentarios (Opcional)</label>
+                                    <Textarea
+                                        placeholder="Agregar notas sobre esta aprobación..."
+                                        className="h-20 text-xs resize-none bg-background"
+                                        value={notesValue}
+                                        onChange={(e) => onNotesChange?.(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-muted-foreground">Adjuntar Archivo (Opcional)</label>
+                                    <Input
+                                        type="file"
+                                        className="text-xs h-8"
+                                        onChange={(e) => onFileChange?.(e.target.files ? e.target.files[0] : null)}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground italic">
+                                        * Al avanzar a la siguiente etapa, esta tarea se marcará como aprobada automáticamente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5 text-[10px] bg-red-100/50 px-3 py-2 rounded text-red-800 border-t border-red-100">
+                            <AlertCircle className="h-3 w-3 shrink-0" />
+                            No tienes permisos para aprobar esta tarea. Asignado a: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group || 'Otro usuario'}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
     )
 }
+
