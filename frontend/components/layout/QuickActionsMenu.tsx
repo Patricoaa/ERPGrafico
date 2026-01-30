@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ShoppingBag, ShoppingCart, Printer, Home, Inbox } from "lucide-react"
@@ -11,6 +11,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { getTasks } from "@/lib/workflow/api"
 
 const actions = [
     {
@@ -46,6 +47,30 @@ interface QuickActionsMenuProps {
 
 export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMenuProps) {
     const pathname = usePathname()
+    const [pendingCount, setPendingCount] = useState(0)
+
+    const fetchTaskCounts = async () => {
+        try {
+            // Fetch approval tasks (pending)
+            const approvalsRes = await getTasks({ category: 'APPROVAL', status: 'PENDING' })
+            const approvals = Array.isArray(approvalsRes) ? approvalsRes : (approvalsRes.results || [])
+
+            // Fetch operational tasks (pending)
+            const tasksRes = await getTasks({ category: 'TASK', status: 'PENDING' })
+            const tasks = Array.isArray(tasksRes) ? tasksRes : (tasksRes.results || [])
+
+            setPendingCount(approvals.length + tasks.length)
+        } catch (error) {
+            console.error("Error fetching task counts", error)
+        }
+    }
+
+    useEffect(() => {
+        fetchTaskCounts()
+        // Refresh every 60s
+        const interval = setInterval(fetchTaskCounts, 60000)
+        return () => clearInterval(interval)
+    }, [])
 
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
@@ -97,10 +122,15 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 {isInboxOpen && (
                                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
                                 )}
+                                {pendingCount > 0 && !isInboxOpen && (
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 shadow-sm border border-background">
+                                        {pendingCount > 99 ? '99+' : pendingCount}
+                                    </span>
+                                )}
                             </button>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="bg-foreground text-background font-medium">
-                            Bandeja de Entrada
+                            Bandeja de Entrada {pendingCount > 0 && `(${pendingCount})`}
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>

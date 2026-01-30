@@ -14,6 +14,7 @@ from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, Purc
 from treasury.models import TreasuryAccount, Payment
 from billing.models import Invoice, NoteWorkflow
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
+from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
 from core.models import User
 from workflow.models import Task, Notification, TaskAssignmentRule
 
