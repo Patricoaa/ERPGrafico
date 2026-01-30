@@ -40,8 +40,8 @@ export function TaskInbox() {
 
     useEffect(() => {
         fetchTasks()
-        // Refresh every 30s for new tasks
-        const interval = setInterval(fetchTasks, 30000)
+        // Refresh every 60s for new tasks
+        const interval = setInterval(fetchTasks, 60000)
         return () => clearInterval(interval)
     }, [])
 

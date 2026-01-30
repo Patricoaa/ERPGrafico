@@ -72,8 +72,8 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
 
     useEffect(() => {
         fetchTaskCounts()
-        // Refresh every 60s
-        const interval = setInterval(fetchTaskCounts, 60000)
+        // Refresh every 120s
+        const interval = setInterval(fetchTaskCounts, 120000)
         return () => clearInterval(interval)
     }, [])
 

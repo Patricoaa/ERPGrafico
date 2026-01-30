@@ -38,7 +38,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
 
             {/* Task Inbox Content */}
             <div className="flex-1 overflow-y-auto p-4">
-                <TaskInbox />
+                {isOpen && <TaskInbox />}
             </div>
         </aside>
     )
