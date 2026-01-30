@@ -1284,16 +1284,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                                     {STAGES[viewingStepIndex]?.id === 'PRESS' && (
                                         <div className="space-y-6">
-                                            {stageData.folio_enabled && stageData.folio_start && (
-                                                <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="flex-1">
-                                                            <Label className="text-[10px] font-bold uppercase text-primary">Folio Inicial</Label>
-                                                            <p className="text-sm font-semibold">{stageData.folio_start}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
 
                                             {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PRESS_APPROVAL').map((task: any) => (
                                                 <TaskActionCard

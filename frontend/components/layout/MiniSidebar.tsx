@@ -38,7 +38,6 @@ const mainItems = [
     { id: "treasury", icon: Banknote, label: "Tesorería", permission: "treasury.view_dashboard_treasury" },
     { id: "purchasing", icon: ShoppingBag, label: "Compras", permission: "purchasing.view_dashboard_purchasing" },
     { id: "finances", icon: PieChart, label: "Finanzas", permission: "finances.view_dashboard_finances" },
-    { id: "billing", icon: Banknote, label: "Facturación", permission: "billing.view_dashboard_billing" }, // Added explicit billing item if needed, but original list didn't have it?
 ]
 // Note: original list ended at finances. Did I miss billing in original file?
 // Original: 
