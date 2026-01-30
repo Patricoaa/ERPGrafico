@@ -737,4 +737,3 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}")
-

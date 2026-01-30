@@ -1,50 +1,18 @@
 "use client"
 
-import { useState } from "react"
-import { Task, completeTask } from "@/lib/workflow/api"
-import { Button } from "@/components/ui/button"
+import { Task } from "@/lib/workflow/api"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Clock, User, AlertCircle } from "lucide-react"
-import { useAuth } from "@/contexts/AuthContext"
 import { cn } from "@/lib/utils"
-import { toast } from "sonner"
 
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Paperclip, MessageSquare, Download } from "lucide-react"
 
 interface TaskActionCardProps {
     task: Task
-    onCompleted?: () => void
 }
 
-export function TaskActionCard({ task, onCompleted }: TaskActionCardProps) {
-    const { user } = useAuth()
-    const [loading, setLoading] = useState(false)
-    const [notes, setNotes] = useState("")
-    const [files, setFiles] = useState<File[]>([])
-
-    const handleComplete = async () => {
-        setLoading(true)
-        try {
-            await completeTask(task.id, notes, files)
-            toast.success("Tarea completada")
-            if (onCompleted) onCompleted()
-        } catch (e) {
-            toast.error("No se pudo completar la tarea")
-        } finally {
-            setLoading(false)
-        }
-    }
-
+export function TaskActionCard({ task }: TaskActionCardProps) {
     const isPending = task.status === 'PENDING' || task.status === 'IN_PROGRESS'
-    const isAssignedToMe = user && task.assigned_to === user.id
-    const isInCandidateGroup = (user as any)?.groups?.some((g: any) =>
-        (task.assigned_group_name && g === task.assigned_group_name) ||
-        (task.data?.candidate_group && g === task.data.candidate_group)
-    )
-    const isAuthorized = isAssignedToMe || isInCandidateGroup || user?.is_superuser
 
     return (
         <div className={cn(
@@ -123,47 +91,11 @@ export function TaskActionCard({ task, onCompleted }: TaskActionCardProps) {
                 </div>
             )}
 
+            {/* Pending tasks show who's responsible */}
             {isPending && (
-                <div className="space-y-3 pt-2 border-t border-amber-100">
-                    {isAuthorized ? (
-                        <>
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] uppercase font-bold text-amber-700">Notas de Aprobación (Opcional)</Label>
-                                <Textarea
-                                    placeholder="Agregue un comentario o registro de esta etapa..."
-                                    className="text-xs min-h-[60px] bg-white border-amber-200"
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] uppercase font-bold text-amber-700">Adjuntos (Opcional)</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        type="file"
-                                        multiple
-                                        className="text-xs h-8 bg-white border-amber-200 file:text-[10px] file:uppercase file:font-bold file:bg-amber-100 file:border-0 file:rounded-sm hover:file:bg-amber-200 transition-colors"
-                                        onChange={(e) => {
-                                            if (e.target.files) setFiles(Array.from(e.target.files))
-                                        }}
-                                    />
-                                    <Button
-                                        size="sm"
-                                        onClick={handleComplete}
-                                        disabled={loading}
-                                        className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm h-8"
-                                    >
-                                        {loading ? "..." : "Aprobar"}
-                                    </Button>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="flex items-center gap-1.5 text-[10px] bg-amber-100/50 px-2 py-2 rounded text-amber-800">
-                            <AlertCircle className="h-3 w-3" />
-                            Esta etapa debe ser aprobada por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group || 'el responsable'}
-                        </div>
-                    )}
+                <div className="flex items-center gap-1.5 text-[10px] bg-amber-100/50 px-3 py-2 rounded text-amber-800 border-t border-amber-100">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    Esta aprobación debe ser completada por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group || 'el responsable asignado'}
                 </div>
             )}
         </div>
