@@ -135,7 +135,7 @@ class BaseParser(ABC):
         if isinstance(value, (Decimal, int, float)):
             return Decimal(str(value))
         
-        if not value:
+        if not value or str(value).lower() == 'nan':
             return Decimal('0')
         
         value_str = str(value).strip()

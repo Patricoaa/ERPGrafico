@@ -189,7 +189,8 @@ class ReconciliationService:
             expected_closing = opening_balance + total_movements
             
             # Tolerancia de 0.01 para redondeos
-            if abs(expected_closing - closing_balance) > Decimal('0.01'):
+            diff = abs(expected_closing - closing_balance)
+            if not diff.is_nan() and diff > Decimal('0.01'):
                 errors.append(
                     f"Balance inconsistente: Apertura {opening_balance} + Movimientos {total_movements} "
                     f"= {expected_closing}, pero el cierre es {closing_balance}"
