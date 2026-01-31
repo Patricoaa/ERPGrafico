@@ -7,6 +7,52 @@ from simple_history.models import HistoricalRecords
 from django.conf import settings
 
 
+class ReconciliationMatch(models.Model):
+    """Agrupador para conciliaciones N:M"""
+    treasury_account = models.ForeignKey(
+        'TreasuryAccount',
+        on_delete=models.PROTECT,
+        related_name='reconciliation_matches',
+        verbose_name=_("Cuenta de Tesorería")
+    )
+    
+    # Estado del match
+    is_confirmed = models.BooleanField(_("Confirmado"), default=False)
+    confirmed_at = models.DateTimeField(_("Confirmado el"), null=True, blank=True)
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='confirmed_matches',
+        verbose_name=_("Confirmado Por")
+    )
+    
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='created_matches',
+        verbose_name=_("Creado Por")
+    )
+    
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = _("Grupo de Conciliación")
+        verbose_name_plural = _("Grupos de Conciliación")
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Match #{self.id} ({self.status_display})"
+
+    @property
+    def status_display(self):
+        return "Confirmado" if self.is_confirmed else "Borrador"
+
+
 class Payment(models.Model):
     class Type(models.TextChoices):
         INBOUND = 'INBOUND', _('Entrante (Cobro)')
@@ -76,7 +122,15 @@ class Payment(models.Model):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='payments',
-        verbose_name=_("Línea de Extracto Bancario")
+        verbose_name=_("Línea de Extracto Bancario"),
+        help_text=_("DEPRECATED: Use reconciliation_match instead")
+    )
+    reconciliation_match = models.ForeignKey(
+        'ReconciliationMatch',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payments',
+        verbose_name=_("Grupo de Conciliación")
     )
     is_reconciled = models.BooleanField(_("Reconciliado"), default=False)
     reconciled_at = models.DateTimeField(_("Fecha de Reconciliación"), null=True, blank=True)
@@ -96,6 +150,13 @@ class Payment(models.Model):
         verbose_name = _("Pago")
         verbose_name_plural = _("Pagos")
         ordering = ['-id']
+        indexes = [
+            models.Index(fields=['treasury_account', 'is_reconciled']),
+            models.Index(fields=['amount', 'date']),
+            models.Index(fields=['is_reconciled']),
+            models.Index(fields=['transaction_number']),
+            models.Index(fields=['reference']),
+        ]
 
     def __str__(self):
         return self.display_id
@@ -207,6 +268,9 @@ class BankStatement(models.Model):
         verbose_name = _("Extracto Bancario")
         verbose_name_plural = _("Extractos Bancarios")
         ordering = ['-statement_date', '-id']
+        indexes = [
+            models.Index(fields=['statement_date', 'treasury_account']),
+        ]
     
     def __str__(self):
         return f"{self.treasury_account.name} - {self.statement_date}"
@@ -284,7 +348,15 @@ class BankStatementLine(models.Model):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='matched_lines',
-        verbose_name=_("Pago Matched")
+        verbose_name=_("Pago Matched"),
+        help_text=_("DEPRECATED: Use reconciliation_match instead")
+    )
+    reconciliation_match = models.ForeignKey(
+        'ReconciliationMatch',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='lines',
+        verbose_name=_("Grupo de Conciliación")
     )
     reconciled_at = models.DateTimeField(_("Reconciliado el"), null=True, blank=True)
     reconciled_by = models.ForeignKey(
@@ -326,6 +398,12 @@ class BankStatementLine(models.Model):
         verbose_name_plural = _("Líneas de Extracto")
         ordering = ['statement', 'line_number']
         unique_together = [['statement', 'line_number']]
+        indexes = [
+            models.Index(fields=['reconciliation_state']),
+            models.Index(fields=['transaction_date']),
+            models.Index(fields=['statement', 'reconciliation_state']),
+            models.Index(fields=['transaction_id']),
+        ]
     
     def __str__(self):
         return f"{self.statement.display_id} - Línea {self.line_number}"

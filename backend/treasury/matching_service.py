@@ -190,7 +190,7 @@ class MatchingService:
             ValueError: Si la línea o pago no existe, o si ya están reconciliados
         """
         try:
-            line = BankStatementLine.objects.select_related('statement').get(
+            line = BankStatementLine.objects.select_for_update().select_related('statement').get(
                 id=statement_line_id
             )
         except BankStatementLine.DoesNotExist:
@@ -245,7 +245,7 @@ class MatchingService:
             BankStatementLine actualizado
         """
         try:
-            line = BankStatementLine.objects.select_related(
+            line = BankStatementLine.objects.select_for_update().select_related(
                 'matched_payment', 'statement'
             ).get(id=statement_line_id)
         except BankStatementLine.DoesNotExist:
@@ -292,7 +292,7 @@ class MatchingService:
             BankStatementLine actualizado
         """
         try:
-            line = BankStatementLine.objects.select_related(
+            line = BankStatementLine.objects.select_for_update().select_related(
                 'matched_payment', 'statement'
             ).get(id=statement_line_id)
         except BankStatementLine.DoesNotExist:
@@ -358,7 +358,7 @@ class MatchingService:
         # Obtener líneas no reconciliadas
         unreconciled_lines = statement.lines.filter(
             reconciliation_state='UNRECONCILED'
-        )
+        ).iterator()
         
         matched_count = 0
         matches = []

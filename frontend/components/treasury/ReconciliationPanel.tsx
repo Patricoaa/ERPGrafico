@@ -15,6 +15,16 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select"
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
     CheckCircle2, XCircle, Search, Loader2, TrendingUp, TrendingDown,
     ArrowRight, Ban, AlertCircle, ZapIcon
 } from "lucide-react"
@@ -67,6 +77,11 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     const [diffType, setDiffType] = useState<string>("COMMISSION")
     const [diffNotes, setDiffNotes] = useState<string>("")
     const [searchQuery, setSearchQuery] = useState("")
+    const [actionDialog, setActionDialog] = useState<{
+        open: boolean,
+        type: 'exclude' | 'automatch' | null,
+        lineId?: number
+    }>({ open: false, type: null })
 
     useEffect(() => {
         fetchUnreconciledLines()
@@ -215,23 +230,31 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
         handleMatch(diffDialog.lineId, diffDialog.paymentId, true)
     }
 
-    const handleExclude = async (lineId: number) => {
-        if (!confirm('¿Excluir esta línea de la reconciliación?')) return
+    const handleExclude = (lineId: number) => {
+        setActionDialog({ open: true, type: 'exclude', lineId })
+    }
+
+    const confirmExclude = async () => {
+        if (!actionDialog.lineId) return
 
         try {
-            await api.patch(`/treasury/statement-lines/${lineId}/`, {
+            await api.patch(`/treasury/statement-lines/${actionDialog.lineId}/`, {
                 reconciliation_state: 'EXCLUDED'
             })
 
             await fetchUnreconciledLines()
         } catch (error) {
             console.error('Error excluding line:', error)
+        } finally {
+            setActionDialog({ open: false, type: null })
         }
     }
 
-    const handleAutoMatch = async () => {
-        if (!confirm('¿Ejecutar matching automático para todas las líneas?')) return
+    const handleAutoMatch = () => {
+        setActionDialog({ open: true, type: 'automatch' })
+    }
 
+    const confirmAutoMatch = async () => {
         try {
             setAutoMatching(true)
             const response = await api.post(`/treasury/statements/${statementId}/auto_match/`, {
@@ -246,6 +269,7 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
             alert(error.response?.data?.error || 'Error en auto-match')
         } finally {
             setAutoMatching(false)
+            setActionDialog({ open: false, type: null })
         }
     }
 
@@ -539,6 +563,31 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={actionDialog.open} onOpenChange={(open) => !open && setActionDialog(prev => ({ ...prev, open: false }))}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {actionDialog.type === 'exclude' ? '¿Excluir línea?' : '¿Auto-match?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {actionDialog.type === 'exclude'
+                                ? 'Esta línea se moverá a excluidos y no aparecerá en pendientes. Podrás recuperarla desde el detalle del extracto.'
+                                : 'Se intentará reconciliar automáticamente todas las líneas con un score de confianza alto (90%+). Esta acción puede tomar unos momentos.'
+                            }
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            if (actionDialog.type === 'exclude') confirmExclude()
+                            if (actionDialog.type === 'automatch') confirmAutoMatch()
+                        }}>
+                            Confirmar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div >
     )
 }

@@ -5,7 +5,17 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown } from "lucide-react"
+import { ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown, Undo2 } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
@@ -51,6 +61,7 @@ export default function StatementDetailPage({ params }: { params: { id: string }
     const router = useRouter()
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
+    const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
 
     useEffect(() => {
         fetchStatement()
@@ -95,6 +106,20 @@ export default function StatementDetailPage({ params }: { params: { id: string }
                 return 'bg-gray-200 text-gray-600'
             default:
                 return 'bg-gray-100 text-gray-800'
+        }
+    }
+
+    const handleUnmatch = async () => {
+        if (!unmatchDialog.lineId) return
+
+        try {
+            await api.post(`/treasury/statement-lines/${unmatchDialog.lineId}/unmatch/`)
+            await fetchStatement() // Refresh data
+        } catch (error) {
+            console.error('Error unmatching line:', error)
+            alert('Error al deshacer la reconciliación')
+        } finally {
+            setUnmatchDialog({ open: false, lineId: null })
         }
     }
 
@@ -259,6 +284,7 @@ export default function StatementDetailPage({ params }: { params: { id: string }
                                     <th className="px-4 py-3 text-right">Saldo</th>
                                     <th className="px-4 py-3">Estado</th>
                                     <th className="px-4 py-3">Pago</th>
+                                    <th className="px-4 py-3 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -302,6 +328,20 @@ export default function StatementDetailPage({ params }: { params: { id: string }
                                                 : '-'
                                             }
                                         </td>
+                                        <td className="px-4 py-3 text-right">
+                                            {(line.reconciliation_state === 'MATCHED' || line.reconciliation_state === 'RECONCILED' || line.reconciliation_state === 'EXCLUDED') && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-gray-500 hover:text-red-600"
+                                                    title="Deshacer reconciliación"
+                                                    onClick={() => setUnmatchDialog({ open: true, lineId: line.id })}
+                                                    disabled={statement.state === 'CONFIRMED'}
+                                                >
+                                                    <Undo2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -309,6 +349,21 @@ export default function StatementDetailPage({ params }: { params: { id: string }
                     </div>
                 </CardContent>
             </Card>
+
+            <AlertDialog open={unmatchDialog.open} onOpenChange={(open) => !open && setUnmatchDialog(prev => ({ ...prev, open: false }))}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Deshacer reconciliación?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción desvinculará la línea del pago y la devolverá al estado "No Reconciliado".
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleUnmatch}>Confirmar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Metadata */}
             <Card>
