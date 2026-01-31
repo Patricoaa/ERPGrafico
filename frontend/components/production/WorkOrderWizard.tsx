@@ -167,11 +167,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
         // Group assignment
         if ((user as any)?.groups) {
-            return (user as any).groups.some((g: any) =>
-                (task.assigned_group && g === task.assigned_group) ||
-                (task.assigned_group_name && g === task.assigned_group_name) ||
-                (task.data?.candidate_group && g === task.data.candidate_group)
-            )
+            return (user as any).groups.some((g: any) => {
+                const groupName = typeof g === 'string' ? g.toLowerCase() : String(g).toLowerCase()
+
+                return (
+                    // Match by name (case-insensitive)
+                    (task.assigned_group_name && task.assigned_group_name.toLowerCase() === groupName) ||
+                    (task.data?.candidate_group && task.data.candidate_group.toLowerCase() === groupName) ||
+                    // Legacy match
+                    (g === task.assigned_group)
+                )
+            })
         }
 
         return false

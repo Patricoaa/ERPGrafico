@@ -56,7 +56,7 @@ export default function UsersSettingsPage() {
             ),
         },
         {
-            accessorKey: "groups_list",
+            accessorKey: "groups",
             id: "role",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Rol" />
@@ -74,7 +74,7 @@ export default function UsersSettingsPage() {
             },
         },
         {
-            accessorKey: "groups_list",
+            accessorKey: "groups",
             id: "functional_groups",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Grupos" />

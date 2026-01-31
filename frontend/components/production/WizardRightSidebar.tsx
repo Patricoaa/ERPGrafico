@@ -43,10 +43,9 @@ export function WizardRightSidebar({
     comments = []
 }: WizardRightSidebarProps) {
     const techSpecs = [
-        { label: "Diseño Requerido", value: stageData?.design_needed ? "SÍ" : "NO" },
-        { label: "Folio de Producción", value: stageData?.folio_start },
-        { label: "Referencia Venta", value: order?.sale_order_number ? `NV-${order.sale_order_number}` : null },
         { label: "Pre-Impresión", value: stageData?.prepress_specs || order?.specifications_prepress },
+        { label: "Diseño Requerido", value: stageData?.design_needed ? "SÍ" : "NO" },
+        { label: "Folio Inicial", value: stageData?.folio_start },
         { label: "Impresión", value: stageData?.press_specs || order?.specifications_press },
         { label: "Post-Impresión", value: stageData?.postpress_specs || order?.specifications_postpress },
         { label: "General", value: order?.specifications }

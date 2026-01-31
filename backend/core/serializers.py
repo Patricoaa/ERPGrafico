@@ -13,11 +13,10 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     permissions = serializers.SerializerMethodField()
-    groups_list = serializers.SlugRelatedField(
+    groups = serializers.SlugRelatedField(
         many=True,
         slug_field='name',
         queryset=Group.objects.all(),
-        source='groups',
         required=False
     )
     email = serializers.EmailField(required=False, allow_blank=True)
@@ -34,7 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 
-            'is_active', 'is_superuser', 'permissions', 'groups_list', 'password',
+            'is_active', 'is_superuser', 'permissions', 'groups', 'password',
             'contact'
         ]
         read_only_fields = ['id', 'is_superuser']

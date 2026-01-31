@@ -43,7 +43,7 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
 
     // Helper to parse groups from initialData
     const parseInitialGroups = () => {
-        const groups = initialData?.groups_list || []
+        const groups = initialData?.groups || []
         const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
 
         const primaryRole = groups.find((g: string) => systemRoles.includes(g)) || "OPERATOR"
@@ -110,11 +110,11 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
         setLoading(true)
         try {
             // Merge primary role and functional groups into the backend expected format
-            const groups_list = [data.primary_role, ...data.functional_groups]
+            const groups = [data.primary_role, ...data.functional_groups]
 
             const payload: any = {
                 ...data,
-                groups_list
+                groups
             }
 
             // Cleanup generic form fields not in backend serializer
