@@ -245,7 +245,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className={cn("transition-all duration-300", step === 'MAPPING' ? "sm:max-w-[900px]" : "sm:max-w-[500px]")}>
+            <DialogContent className={cn("transition-all duration-300", step === 'MAPPING' ? "sm:max-w-7xl max-w-[95vw] w-full" : "sm:max-w-[500px]")}>
                 <DialogHeader>
                     <DialogTitle>
                         {step === 'MAPPING' ? 'Configurar Columnas' : 'Importar Extracto Bancario'}
@@ -307,7 +307,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
 
                     {step === 'MAPPING' && previewData && (
                         <div className="space-y-4">
-                            <div className="rounded-md border max-h-[400px] overflow-auto">
+                            <div className="rounded-md border max-h-[500px] overflow-auto w-full">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>

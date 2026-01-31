@@ -45,36 +45,32 @@ class GenericExcelParser(BaseParser):
                 df = df.iloc[:-footer_rows]
             
             # Helper para resolver valor de columna
-            def get_col_val(row, col_config):
-                # col_config puede ser índice (0), letra ('A'), o nombre ('Fecha')
-                if col_config is None:
+            def get_col_val(column_row, col_conf):
+                if col_conf is None or pd.isna(col_conf):
                     return None
-                    
-                val = None
                 
-                # Nombre de columna exacto en DF
-                if isinstance(col_config, str) and col_config in df.columns:
-                    val = row[col_config]
+                # Try exact name match
+                if isinstance(col_conf, str) and col_conf in df.columns:
+                    return column_row[col_conf]
                 
-                # Índice entero
-                elif isinstance(col_config, int) and 0 <= col_config < len(row):
-                    val = row.iloc[col_config]
+                # Try index (int or numeric string)
+                try:
+                    idx = int(col_conf)
+                    if 0 <= idx < len(column_row):
+                        return column_row.iloc[idx]
+                except (ValueError, TypeError):
+                    pass
                 
-                # Letra 'A', 'B' -> índice 0, 1 (Solo si no macheó nombre)
-                elif isinstance(col_config, str) and len(col_config) <= 2 and col_config.isalpha():
-                    # Convertir A->0, B->1
+                # Try column letter (A, B...)
+                if isinstance(col_conf, str) and len(col_conf) <= 2 and col_conf.isalpha():
                     idx = 0
-                    for char in col_config.upper():
+                    for char in col_conf.upper():
                         idx = idx * 26 + (ord(char) - ord('A') + 1)
-                    idx -= 1 # 0-indexed
-                    
-                    if 0 <= idx < len(row):
-                         val = row.iloc[idx]
-
-                # Fallback: intentar buscar por nombre parcial si es string
-                if pd.isna(val) or val is None:
-                    return None
-                return val
+                    idx -= 1
+                    if 0 <= idx < len(column_row):
+                        return column_row.iloc[idx]
+                
+                return None
 
             lines = []
             col_map = self.config.get('columns', {})

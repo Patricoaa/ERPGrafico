@@ -230,6 +230,13 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         bank_format = request.data.get('bank_format', 'GENERIC_CSV')
         custom_config = request.data.get('custom_config')  # Optional JSON
         
+        if custom_config and isinstance(custom_config, str):
+            try:
+                import json
+                custom_config = json.loads(custom_config)
+            except Exception:
+                pass
+        
         if not file:
             return Response(
                 {'error': 'Archivo es requerido'},
