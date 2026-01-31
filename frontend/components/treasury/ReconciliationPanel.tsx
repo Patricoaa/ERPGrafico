@@ -66,6 +66,7 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     })
     const [diffType, setDiffType] = useState<string>("COMMISSION")
     const [diffNotes, setDiffNotes] = useState<string>("")
+    const [searchQuery, setSearchQuery] = useState("")
 
     useEffect(() => {
         fetchUnreconciledLines()
@@ -76,6 +77,32 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
             fetchSuggestions(selectedLine.id)
         }
     }, [selectedLine])
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if typing in input/textarea
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+            if (e.key === 'Escape') {
+                if (diffDialog.open) {
+                    setDiffDialog(prev => ({ ...prev, open: false }))
+                } else if (selectedLine) {
+                    handleExclude(selectedLine.id)
+                }
+            } else if (e.key === 'Enter') {
+                if (diffDialog.open) {
+                    confirmDifferenceMatch()
+                } else if (selectedLine && suggestions.length > 0) {
+                    // Confirm first suggestion if exists
+                    handleMatch(selectedLine.id, suggestions[0].payment_data.id)
+                }
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [selectedLine, suggestions, diffDialog.open])
 
     const fetchUnreconciledLines = async () => {
         try {
@@ -107,6 +134,17 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
             setSuggestions([])
         }
     }
+
+    const filteredLines = unreconciledLines.filter(line => {
+        if (!searchQuery) return true
+        const query = searchQuery.toLowerCase()
+        const amount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit))
+        return (
+            line.description.toLowerCase().includes(query) ||
+            line.reference?.toLowerCase().includes(query) ||
+            amount.toString().includes(query)
+        )
+    })
 
     const handleMatch = async (lineId: number, paymentId: number, force: boolean = false) => {
         // Check difference first
@@ -277,6 +315,22 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                 </Button>
             </div>
 
+            {/* Search and Filters */}
+            <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar por descripción, referencia o monto..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8"
+                    />
+                </div>
+                <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    {filteredLines.length} líneas visibles
+                </div>
+            </div>
+
             {/* Dual Panel */}
             <div className="grid grid-cols-2 gap-4">
                 {/* Left: Statement Lines */}
@@ -287,7 +341,7 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                     </CardHeader>
                     <CardContent className="p-0">
                         <div className="max-h-[500px] overflow-y-auto">
-                            {unreconciledLines.map((line) => {
+                            {filteredLines.map((line) => {
                                 const amount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit))
                                 const isCredit = parseFloat(line.credit) > parseFloat(line.debit)
                                 const isSelected = selectedLine?.id === line.id
@@ -485,6 +539,6 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     )
 }

@@ -128,10 +128,22 @@ class ReconciliationService:
         Raises:
             Exception: Si el parsing falla
         """
-        parser = GenericCSVParser(parser_config)
+        format_id = parser_config.get('format_id', 'GENERIC_CSV')
+        
+        if format_id == 'BANCO_CHILE_CSV':
+            from .parsers import BancoChileParser
+            parser = BancoChileParser(parser_config)
+        elif format_id == 'SANTANDER_XLS':
+            from .parsers import SantanderParser
+            parser = SantanderParser(parser_config)
+        elif format_id == 'GENERIC_EXCEL':
+            from .parsers import GenericExcelParser
+            parser = GenericExcelParser(parser_config)
+        else:
+            parser = GenericCSVParser(parser_config)
         
         if not parser.validate_format(file):
-            raise ValueError("El formato del archivo no es válido")
+            raise ValueError(f"El formato del archivo no es válido para {format_id}")
         
         parsed_data = parser.parse(file)
         
@@ -185,6 +197,37 @@ class ReconciliationService:
         statement_date = parsed_data.get('statement_date')
         if not statement_date:
             errors.append("Fecha del extracto es requerida")
+
+        # Validar consistencia línea por línea
+        if lines:
+            # Ordenar por fecha y luego por linea original para validar secuencia
+            # Asumimos que parsed_data['lines'] viene en orden cronológico o de archivo
+            # Si el archivo viene inverso (más reciente primero), habría que invertirlo
+            # Por ahora asumimos orden de lectura (que suele ser cronológico o inverso consistente)
+            
+            # Detectar dirección: ¿Fecha linea 0 < Fecha linea N? -> Cronológico
+            # Si es inverso, la lógica de saldo sería: Saldo[i] = Saldo[i+1] - Abono[i] + Cargo[i]
+            # Esto es complejo. Asumiremos que el parser devuelve líneas en orden cronológico (Oldest -> Newest)
+            # Los parsers deberían garantizar esto.
+            
+            current_balance = opening_balance
+            for i, line in enumerate(lines):
+                expected = current_balance + line['credit'] - line['debit']
+                actual = line['balance']
+                
+                # Tolerancia
+                if abs(expected - actual) > Decimal('0.05'): # Un poco más permisivo por acumulacion
+                    # Intentar detectar si es orden inverso
+                    # Si falla mucho, quizás el archivo está al revés.
+                    # Por ahora, solo warning si es inconsistencia leve, error si es grave
+                     warnings.append(
+                        f"Discontinuidad de saldo en línea {line['line_number']}: "
+                        f"Anterior {current_balance} + A{line['credit']} - C{line['debit']} "
+                        f"!= Actual {actual}"
+                    )
+                
+                current_balance = actual
+
         
         # Validar que no haya líneas duplicadas por transaction_id
         transaction_ids = [
@@ -259,3 +302,60 @@ class ReconciliationService:
             Dict {format_id: format_name}
         """
         return get_available_formats()
+
+    @staticmethod
+    def generate_preview(file) -> Dict[str, Any]:
+        """
+        Genera una vista previa del archivo para mapeo de columnas.
+        Soporta CSV y Excel.
+        """
+        import pandas as pd
+        import chardet
+        
+        filename = file.name.lower()
+        file.seek(0)
+        
+        preview_rows = []
+        columns = []
+        file_type = 'unknown'
+        
+        try:
+            if filename.endswith('.csv'):
+                file_type = 'csv'
+                # Detectar encoding
+                raw = file.read(4000)
+                file.seek(0)
+                encoding = chardet.detect(raw)['encoding'] or 'utf-8'
+                
+                # Leer con pandas, intentar deducir separador
+                try:
+                    df = pd.read_csv(file, encoding=encoding, sep=None, engine='python', nrows=10)
+                except:
+                    file.seek(0)
+                    df = pd.read_csv(file, encoding=encoding, nrows=10) # Coma default
+                    
+            elif filename.endswith('.xls') or filename.endswith('.xlsx'):
+                file_type = 'excel'
+                df = pd.read_excel(file, nrows=10, header=None) # Leer sin header para mostrar todo raw
+            else:
+                raise ValueError("Formato de archivo no soportado")
+            
+            # Convertir a lista de diccionarios/listas para JSON
+            # Reemplazar NaN con ""
+            df = df.fillna("")
+            
+            # Si leímos sin header (excel), las columnas son 0, 1, 2...
+            # Si leímos con header (csv), son los nombres
+            
+            columns = list(df.columns)
+            preview_rows = df.values.tolist()
+            
+            return {
+                'columns': columns,
+                'rows': preview_rows,
+                'file_type': file_type,
+                'filename': file.name
+            }
+            
+        except Exception as e:
+            raise ValueError(f"No se pudo generar vista previa: {str(e)}")

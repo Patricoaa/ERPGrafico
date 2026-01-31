@@ -265,6 +265,21 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             traceback.print_exc()
             return Response({'error': f'Error al importar extracto: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+    @action(detail=False, methods=['post'])
+    def preview(self, request):
+        """
+        Generate file preview for column mapping
+        """
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'Archivo es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            data = ReconciliationService.generate_preview(file)
+            return Response(data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
         """Get summary statistics for a statement"""
@@ -437,6 +452,20 @@ class ReconciliationRuleViewSet(viewsets.ModelViewSet):
             RuleService.create_default_rules(account, request.user)
             
             return Response({'message': 'Reglas predeterminadas creadas'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def simulate(self, request):
+        """Simulate rule execution"""
+        try:
+            rule_data = request.data
+            account_id = rule_data.get('treasury_account_id')
+            if account_id == 'global':
+                account_id = None
+            
+            results = RuleService.simulate_rule(rule_data, account_id)
+            return Response({'results': results})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

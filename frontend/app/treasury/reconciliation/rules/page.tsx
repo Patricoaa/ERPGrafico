@@ -16,6 +16,13 @@ import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import {
     Plus, Settings, Trash2, Edit, Save, X, ArrowLeft, Wand2,
@@ -23,6 +30,7 @@ import {
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { SimulationResults } from "./SimulationResults"
 
 interface ReconciliationRule {
     id: number
@@ -344,12 +352,34 @@ export default function RulesPage() {
 
                     </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
-                        <Button onClick={handleSaveRule}>Guardar Regla</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
+                </div>
+
+                <div className="flex justify-end pt-2 pb-4">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="secondary" className="mr-2">
+                                <Wand2 className="mr-2 h-4 w-4" />
+                                Probar Regla
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                                <DialogTitle>Simulación de Regla</DialogTitle>
+                                <DialogDescription>
+                                    Probando regla contra las últimas 50 líneas no reconciliadas.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <SimulationResults rule={editingRule} />
+                        </DialogContent>
+                    </Dialog>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
+                    <Button onClick={handleSaveRule}>Guardar Regla</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </div >
     )
 }

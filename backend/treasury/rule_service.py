@@ -338,3 +338,77 @@ class RuleService:
             rule.save()
         except ReconciliationRule.DoesNotExist:
             pass
+
+    @staticmethod
+    def simulate_rule(
+        rule_data: Dict[str, Any],
+        treasury_account_id: Optional[int] = None,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Simula la ejecución de una regla para ver qué matches encontraría.
+        
+        Args:
+            rule_data: Datos de configuración de la regla (match_config)
+            treasury_account_id: ID de cuenta (opcional)
+            limit: Límite de resultados
+            
+        Returns:
+            Lista de matches simulados
+        """
+        # Crear objeto regla temporal en memoria
+        temp_rule = ReconciliationRule(
+            match_config=rule_data.get('match_config', {}),
+            treasury_account_id=treasury_account_id,
+            name="Simulation"
+        )
+        
+        # Buscar líneas no reconciliadas recientes
+        lines_query = BankStatementLine.objects.filter(
+            reconciliation_state='UNRECONCILED'
+        ).select_related('statement', 'statement__treasury_account').order_by('-transaction_date')
+        
+        if treasury_account_id:
+            lines_query = lines_query.filter(statement__treasury_account_id=treasury_account_id)
+            
+        # Analizar un subconjunto de líneas para no demorar demasiado
+        sample_lines = lines_query[:50]
+        
+        results = []
+        min_score = temp_rule.match_config.get('min_score', 50)
+        
+        for line in sample_lines:
+            # Reutilizar lógica existente
+            candidates = RuleService._get_candidates_by_rule(line, temp_rule)
+            
+            best_match = None
+            best_score = 0
+            
+            for candidate in candidates:
+                score = RuleService._calculate_rule_score(line, candidate, temp_rule)
+                if score >= min_score and score > best_score:
+                    best_score = score
+                    best_match = candidate
+            
+            if best_match:
+                results.append({
+                    'line': {
+                        'id': line.id,
+                        'date': line.transaction_date,
+                        'description': line.description,
+                        'amount': line.credit - line.debit
+                    },
+                    'payment': {
+                        'id': best_match.id,
+                        'date': best_match.date,
+                        'reference': best_match.reference or str(best_match.transaction_number or ''),
+                        'amount': best_match.amount,
+                        'partner': str(best_match.contact) if best_match.contact else None
+                    },
+                    'score': best_score
+                })
+                
+                if len(results) >= limit:
+                    break
+        
+        return results

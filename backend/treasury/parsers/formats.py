@@ -96,7 +96,31 @@ BANCO_ESTADO_CSV = {
 # Mapeo de formatos
 FORMAT_MAP = {
     'GENERIC_CSV': GENERIC_CSV,
+    'GENERIC_EXCEL': {
+        "name": "Excel Genérico (Configurable)",
+        "delimiter": ";",
+        "decimal_separator": ".",
+        "date_format": "%d-%m-%Y",
+        "skip_rows": 0,
+        "skip_footer_rows": 0,
+        "encoding": "utf-8",
+        "has_header": True,
+        "columns": {},
+        "balance_info": {}
+    },
     'BANCO_CHILE_CSV': BANCO_CHILE_CSV,
+    'SANTANDER_XLS': {
+        "name": "Santander - Excel",
+        "delimiter": ";",  # Irrelevante para Excel pero requerido por schema
+        "decimal_separator": ",",
+        "date_format": "%d/%m/%Y",
+        "skip_rows": 0,
+        "skip_footer_rows": 0,
+        "encoding": "utf-8",
+        "has_header": True,
+        "columns": {},
+        "balance_info": {}
+    },
     'SCOTIABANK_CSV': SCOTIABANK_CSV,
     'BANCO_ESTADO_CSV': BANCO_ESTADO_CSV,
 }
@@ -118,7 +142,9 @@ def get_parser_config(format_name: str) -> dict:
     if format_name not in FORMAT_MAP:
         raise ValueError(f"Formato '{format_name}' no encontrado. Formatos disponibles: {list(FORMAT_MAP.keys())}")
     
-    return FORMAT_MAP[format_name].copy()
+    config = FORMAT_MAP[format_name].copy()
+    config['format_id'] = format_name
+    return config
 
 
 def get_available_formats() -> dict:
