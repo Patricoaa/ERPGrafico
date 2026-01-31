@@ -58,7 +58,9 @@ class ReconciliationService:
         
         # Obtener configuración del formato
         try:
-            parser_config = get_parser_config(bank_format) if not custom_config else custom_config
+            parser_config = get_parser_config(bank_format)
+            if custom_config:
+                parser_config.update(custom_config)
         except ValueError as e:
             raise ValueError(f"Formato inválido: {e}")
         

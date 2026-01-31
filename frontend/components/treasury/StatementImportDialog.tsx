@@ -219,7 +219,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
     }
 
     const validateMapping = () => {
-        return REQUIRED_FIELDS.every(field => mapping[field] !== null)
+        return REQUIRED_FIELDS.every(field => mapping[field] !== null && mapping[field] !== undefined)
     }
 
     const handleClose = () => {
@@ -368,8 +368,8 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                             <div className="flex gap-2 text-xs text-muted-foreground">
                                 <span>Campos:</span>
                                 {REQUIRED_FIELDS.map(f => (
-                                    <span key={f} className={cn(mapping[f] ? "text-green-600 font-medium" : "text-red-500")}>
-                                        {f} {mapping[f] ? '✓' : '✗'}
+                                    <span key={f} className={cn(mapping[f] !== null ? "text-green-600 font-medium" : "text-red-500")}>
+                                        {f} {mapping[f] !== null ? '✓' : '✗'}
                                     </span>
                                 ))}
                             </div>
