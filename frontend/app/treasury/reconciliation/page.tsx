@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Upload, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react"
+import { Upload, FileText, CheckCircle2, Clock, AlertCircle, BarChart3, Wand2 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
@@ -82,10 +82,20 @@ export default function ReconciliationPage() {
                         Gestiona extractos bancarios y reconcilia movimientos
                     </p>
                 </div>
-                <Button onClick={() => setImportDialogOpen(true)}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Importar Extracto
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => window.location.href = '/treasury/reconciliation/dashboard'}>
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Dashboard
+                    </Button>
+                    <Button variant="outline" onClick={() => window.location.href = '/treasury/reconciliation/rules'}>
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Reglas
+                    </Button>
+                    <Button onClick={() => setImportDialogOpen(true)}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Importar Extracto
+                    </Button>
+                </div>
             </div>
 
             {/* Stats Cards */}

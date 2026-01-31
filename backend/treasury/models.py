@@ -340,6 +340,11 @@ class ReconciliationRule(models.Model):
     """Reglas de matching automático configurables (para fase 3)"""
     
     name = models.CharField(_("Nombre"), max_length=100)
+    description = models.TextField(
+        _("Descripción"),
+        blank=True,
+        help_text=_("Descripción del propósito de esta regla")
+    )
     treasury_account = models.ForeignKey(
         'TreasuryAccount',
         on_delete=models.CASCADE,
@@ -361,9 +366,52 @@ class ReconciliationRule(models.Model):
         default=dict,
         help_text=_("Configuración en JSON con criterios de matching")
     )
+    # Ejemplo de match_config:
+    # {
+    #   'criteria': ['amount_exact', 'date_range'],
+    #   'amount_tolerance': 0,
+    #   'date_range_days': 3,
+    #   'min_score': 85,
+    #   'reference_keywords': ['TRANSFERENCIA'],
+    #   'weights': {'amount': 40, 'date': 30, 'reference': 20, 'contact': 10}
+    # }
+    
+    # Acciones automáticas
+    auto_confirm = models.BooleanField(
+        _("Auto-confirmar"),
+        default=False,
+        help_text=_("Si es True, confirma reconciliación automáticamente sin revisión")
+    )
+    create_payment_if_not_found = models.BooleanField(
+        _("Crear Pago si no existe"),
+        default=False,
+        help_text=_("Crear pago automático si no se encuentra match (casos especiales)")
+    )
+    
+    # Estadísticas de uso
+    times_applied = models.IntegerField(
+        _("Veces Aplicada"),
+        default=0,
+        help_text=_("Contador de veces que esta regla ha generado un match")
+    )
+    success_rate = models.DecimalField(
+        _("Tasa de Éxito"),
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        help_text=_("Porcentaje de matches confirmados vs sugeridos")
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='created_reconciliation_rules',
+        verbose_name=_("Creado Por")
+    )
+    
+    history = HistoricalRecords()
     
     class Meta:
         verbose_name = _("Regla de Reconciliación")
@@ -373,3 +421,4 @@ class ReconciliationRule(models.Model):
     def __str__(self):
         scope = self.treasury_account.name if self.treasury_account else "Global"
         return f"{self.name} ({scope})"
+

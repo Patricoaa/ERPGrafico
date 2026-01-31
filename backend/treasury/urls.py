@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PaymentViewSet, TreasuryAccountViewSet,
     BankStatementViewSet, BankStatementLineViewSet,
-    ReconciliationRuleViewSet
+    ReconciliationRuleViewSet, ReconciliationReportsViewSet
 )
 
 
@@ -13,6 +13,7 @@ router.register(r'accounts', TreasuryAccountViewSet)
 router.register(r'statements', BankStatementViewSet)
 router.register(r'statement-lines', BankStatementLineViewSet)
 router.register(r'reconciliation-rules', ReconciliationRuleViewSet)
+router.register(r'reconciliation-reports', ReconciliationReportsViewSet, basename='reconciliation-reports')
 
 urlpatterns = [
     path('', include(router.urls)),

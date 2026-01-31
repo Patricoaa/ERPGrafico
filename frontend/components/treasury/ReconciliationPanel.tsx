@@ -6,6 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from "@/components/ui/dialog"
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select"
 import {
     CheckCircle2, XCircle, Search, Loader2, TrendingUp, TrendingDown,
     ArrowRight, Ban, AlertCircle, ZapIcon
@@ -53,6 +61,11 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     const [loading, setLoading] = useState(true)
     const [matching, setMatching] = useState(false)
     const [autoMatching, setAutoMatching] = useState(false)
+    const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string }>({
+        open: false, lineId: 0, paymentId: 0, amount: '0'
+    })
+    const [diffType, setDiffType] = useState<string>("COMMISSION")
+    const [diffNotes, setDiffNotes] = useState<string>("")
 
     useEffect(() => {
         fetchUnreconciledLines()
@@ -95,7 +108,31 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
         }
     }
 
-    const handleMatch = async (lineId: number, paymentId: number) => {
+    const handleMatch = async (lineId: number, paymentId: number, force: boolean = false) => {
+        // Check difference first
+        if (!force) {
+            const suggestion = suggestions.find(s => s.payment_data.id === paymentId)
+            const diffAmount = suggestion ? parseFloat(suggestion.difference) : 0
+
+            if (diffAmount !== 0) {
+                // Open difference dialog
+                setDiffDialog({
+                    open: true,
+                    lineId,
+                    paymentId,
+                    amount: diffAmount.toString()
+                })
+                // Suggest diff type
+                try {
+                    const res = await api.get(`/treasury/statement-lines/${lineId}/suggested_difference/`)
+                    setDiffType(res.data.suggestion)
+                } catch {
+                    // ignore
+                }
+                return
+            }
+        }
+
         try {
             setMatching(true)
 
@@ -104,11 +141,21 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                 payment_id: paymentId
             })
 
-            // Confirm immediately
-            await api.post(`/treasury/statement-lines/${lineId}/confirm/`)
+            // Confirm immediately (with difference info if applicable)
+            const confirmData: any = {}
+            if (force) {
+                confirmData.difference_type = diffType
+                confirmData.notes = diffNotes
+            }
+
+            await api.post(`/treasury/statement-lines/${lineId}/confirm/`, confirmData)
 
             // Refresh list
             await fetchUnreconciledLines()
+
+            // Close dialog if open
+            setDiffDialog(prev => ({ ...prev, open: false }))
+            setDiffNotes("")
 
             // Move to next line
             const currentIndex = unreconciledLines.findIndex(l => l.id === lineId)
@@ -124,6 +171,10 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
         } finally {
             setMatching(false)
         }
+    }
+
+    const confirmDifferenceMatch = () => {
+        handleMatch(diffDialog.lineId, diffDialog.paymentId, true)
     }
 
     const handleExclude = async (lineId: number) => {
@@ -246,8 +297,8 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                                         key={line.id}
                                         onClick={() => setSelectedLine(line)}
                                         className={`px-4 py-3 border-b cursor-pointer transition-colors ${isSelected
-                                                ? 'bg-blue-50 border-l-4 border-l-blue-600'
-                                                : 'hover:bg-gray-50'
+                                            ? 'bg-blue-50 border-l-4 border-l-blue-600'
+                                            : 'hover:bg-gray-50'
                                             }`}
                                     >
                                         <div className="flex items-start justify-between gap-2">
@@ -388,6 +439,52 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                     </CardContent>
                 </Card>
             </div>
+            {/* Difference Adjustment Dialog */}
+            <Dialog open={diffDialog.open} onOpenChange={open => setDiffDialog(prev => ({ ...prev, open }))}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Ajuste de Diferencia</DialogTitle>
+                        <DialogDescription>
+                            Existe una diferencia de ${parseFloat(diffDialog.amount).toLocaleString('es-CL')}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Tipo de Ajuste</Label>
+                            <Select value={diffType} onValueChange={setDiffType}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="COMMISSION">Comisión Bancaria</SelectItem>
+                                    <SelectItem value="INTEREST">Intereses</SelectItem>
+                                    <SelectItem value="EXCHANGE_DIFF">Diferencia de Cambio</SelectItem>
+                                    <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                    <SelectItem value="ERROR">Error Operativo</SelectItem>
+                                    <SelectItem value="OTHER">Otro Ajuste</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Notas (Opcional)</Label>
+                            <Textarea
+                                placeholder="Detalles del ajuste..."
+                                value={diffNotes}
+                                onChange={e => setDiffNotes(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))}>Cancelar</Button>
+                        <Button onClick={confirmDifferenceMatch} disabled={matching}>
+                            {matching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Confirmar Ajuste
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

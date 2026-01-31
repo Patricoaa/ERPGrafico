@@ -9,6 +9,10 @@ from .serializers import (
 )
 from .services import TreasuryService
 from .reconciliation_service import ReconciliationService
+from .matching_service import MatchingService
+from .rule_service import RuleService
+from .difference_service import DifferenceService
+from .reports_service import ReportsService
 from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
@@ -368,6 +372,17 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
     def confirm(self, request, pk=None):
         """Confirm a matched line (MATCHED -> RECONCILED)"""
         try:
+            line = self.get_object()
+            
+            # Check for difference adjustment
+            difference_type = request.data.get('difference_type')
+            notes = request.data.get('notes', '')
+            
+            if difference_type and line.difference_amount != 0:
+                DifferenceService.create_difference_adjustment(
+                    line, difference_type, request.user, notes
+                )
+            
             confirmed_line = MatchingService.confirm_match(pk, request.user)
             return Response(BankStatementLineSerializer(confirmed_line).data)
             
@@ -387,9 +402,88 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    @action(detail=True, methods=['get'])
+    def suggested_difference(self, request, pk=None):
+        """Get suggested difference type for this line"""
+        try:
+            line = self.get_object()
+            suggestion = DifferenceService.suggest_difference_type(line)
+            return Response({'suggestion': suggestion})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ReconciliationRuleViewSet(viewsets.ModelViewSet):
     """ViewSet for reconciliation rules"""
-    queryset = ReconciliationRule.objects.all().select_related('treasury_account')
+    queryset = ReconciliationRule.objects.all().select_related('treasury_account', 'created_by')
     serializer_class = ReconciliationRuleSerializer
+    
+    @action(detail=True, methods=['get'])
+    def statistics(self, request, pk=None):
+        """Get usage statistics for this rule"""
+        stats = RuleService.get_rule_statistics(pk)
+        return Response(stats)
+    
+    @action(detail=False, methods=['post'])
+    def create_defaults(self, request):
+        """Create default rules for an account"""
+        try:
+            account_id = request.data.get('treasury_account_id')
+            if not account_id:
+                return Response({'error': 'treasury_account_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            account = TreasuryAccount.objects.get(id=account_id)
+            RuleService.create_default_rules(account, request.user)
+            
+            return Response({'message': 'Reglas predeterminadas creadas'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReconciliationReportsViewSet(viewsets.ViewSet):
+    """ViewSet for reconciliation reports and dashboard"""
+    
+    @action(detail=False, methods=['get'])
+    def dashboard(self, request):
+        """Reconciliation dashboard metrics"""
+        try:
+            account_id = request.query_params.get('treasury_account')
+            
+            date_from_str = request.query_params.get('date_from')
+            date_to_str = request.query_params.get('date_to')
+            
+            date_from = date.fromisoformat(date_from_str) if date_from_str else None
+            date_to = date.fromisoformat(date_to_str) if date_to_str else None
+            
+            data = ReportsService.get_reconciliation_dashboard(
+                treasury_account_id=account_id,
+                date_from=date_from,
+                date_to=date_to
+            )
+            return Response(data)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def pending(self, request):
+        """Pending reconciliations report"""
+        try:
+            account_id = request.query_params.get('treasury_account')
+            data = ReportsService.get_pending_reconciliations_report(account_id)
+            return Response(data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    @action(detail=False, methods=['get'])
+    def history(self, request):
+        """Reconciliation history/trend"""
+        try:
+            account_id = request.query_params.get('treasury_account')
+            months = int(request.query_params.get('months', 6))
+            data = ReportsService.get_monthly_trend(account_id, months)
+            return Response(data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
