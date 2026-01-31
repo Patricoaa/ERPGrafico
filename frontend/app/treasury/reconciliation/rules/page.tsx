@@ -86,11 +86,17 @@ export default function RulesPage() {
 
     const handleSaveRule = async () => {
         try {
+            // Transform payload to send ID instead of object
+            const payload = {
+                ...editingRule,
+                treasury_account: editingRule.treasury_account?.id || null
+            }
+
             if (editingRule.id) {
-                await api.patch(`/treasury/reconciliation-rules/${editingRule.id}/`, editingRule)
+                await api.patch(`/treasury/reconciliation-rules/${editingRule.id}/`, payload)
                 toast.success('Regla actualizada')
             } else {
-                await api.post('/treasury/reconciliation-rules/', editingRule)
+                await api.post('/treasury/reconciliation-rules/', payload)
                 toast.success('Regla creada')
             }
             fetchRules()
@@ -352,34 +358,34 @@ export default function RulesPage() {
 
                     </div>
 
-                </div>
 
-                <div className="flex justify-end pt-2 pb-4">
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="secondary" className="mr-2">
-                                <Wand2 className="mr-2 h-4 w-4" />
-                                Probar Regla
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                                <DialogTitle>Simulación de Regla</DialogTitle>
-                                <DialogDescription>
-                                    Probando regla contra las últimas 50 líneas no reconciliadas.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <SimulationResults rule={editingRule} />
-                        </DialogContent>
-                    </Dialog>
-                </div>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
-                    <Button onClick={handleSaveRule}>Guardar Regla</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                    <div className="flex justify-end pt-2 pb-4">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="secondary" className="mr-2">
+                                    <Wand2 className="mr-2 h-4 w-4" />
+                                    Probar Regla
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                                <DialogHeader>
+                                    <DialogTitle>Simulación de Regla</DialogTitle>
+                                    <DialogDescription>
+                                        Probando regla contra las últimas 50 líneas no reconciliadas.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <SimulationResults rule={editingRule} />
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
+                        <Button onClick={handleSaveRule}>Guardar Regla</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div >
     )
 }

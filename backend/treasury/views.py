@@ -434,6 +434,9 @@ class ReconciliationRuleViewSet(viewsets.ModelViewSet):
     queryset = ReconciliationRule.objects.all().select_related('treasury_account', 'created_by')
     serializer_class = ReconciliationRuleSerializer
     
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    
     @action(detail=True, methods=['get'])
     def statistics(self, request, pk=None):
         """Get usage statistics for this rule"""

@@ -135,3 +135,4 @@ class ReconciliationRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReconciliationRule
         fields = '__all__'
+        read_only_fields = ['created_by', 'times_applied', 'success_rate']
