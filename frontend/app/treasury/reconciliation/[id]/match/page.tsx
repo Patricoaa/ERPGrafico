@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Loader2, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, Loader2, CheckCircle2, Info, GraduationCap } from "lucide-react"
 import api from "@/lib/api"
 import ReconciliationPanel from "@/components/treasury/ReconciliationPanel"
+import { DataCell } from "@/components/ui/data-table-cells"
+import { Progress } from "@/components/ui/progress"
 
 interface BankStatement {
     id: number
@@ -69,9 +71,10 @@ export default function ReconciliationMatchPage({ params }: { params: Promise<{ 
 
     if (loading) {
         return (
-            <div className="flex-1 space-y-4 p-8 pt-6">
-                <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <div className="flex-1 p-8 pt-6">
+                <div className="flex flex-col items-center justify-center h-64 gap-3">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+                    <p className="text-muted-foreground text-sm font-medium">Preparando entorno de reconciliación...</p>
                 </div>
             </div>
         )
@@ -79,8 +82,21 @@ export default function ReconciliationMatchPage({ params }: { params: Promise<{ 
 
     if (!statement) {
         return (
-            <div className="flex-1 space-y-4 p-8 pt-6">
-                <p className="text-red-600">Extracto no encontrado</p>
+            <div className="flex-1 p-8 pt-6">
+                <Card className="max-w-md mx-auto mt-12 bg-red-50/50 border-red-100">
+                    <CardHeader>
+                        <CardTitle className="text-red-600 flex items-center gap-2">
+                            <Info className="h-5 w-5" />
+                            Error
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground text-sm">No pudimos localizar el extracto #{id}. Por favor verifica el enlace.</p>
+                        <Button onClick={() => router.push('/treasury/reconciliation')} variant="outline" className="mt-6 w-full font-bold">
+                            Volver al listado
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         )
     }
@@ -88,72 +104,91 @@ export default function ReconciliationMatchPage({ params }: { params: Promise<{ 
     const canConfirm = statement.reconciliation_progress === 100
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => router.push(`/treasury/reconciliation/${statementId}`)}
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight">
-                            Reconciliar {statement.display_id}
-                        </h2>
-                        <p className="text-muted-foreground">{statement.treasury_account_name}</p>
+        <div className="flex-1 space-y-6 p-8 pt-6 bg-muted/20 min-h-screen">
+            {/* Header Area */}
+            <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="rounded-full shadow-sm"
+                            onClick={() => router.push(`/treasury/reconciliation/${statementId}`)}
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-2xl font-bold tracking-tight text-foreground/80">
+                                    Motor de Reconciliación
+                                </h2>
+                                <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold px-3">
+                                    {statement.display_id}
+                                </Badge>
+                            </div>
+                            <p className="text-muted-foreground text-sm">{statement.treasury_account_name}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="hidden md:flex items-center gap-3 mr-4 text-right">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Sincronización</p>
+                                <p className="text-xs font-black text-foreground/70">{statement.reconciled_lines} de {statement.total_lines} líneas procesadas</p>
+                            </div>
+                        </div>
+                        {canConfirm && (
+                            <Button
+                                onClick={handleConfirmStatement}
+                                disabled={confirming}
+                                className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 px-6 font-bold"
+                            >
+                                {confirming ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Finalizando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        Confirmar Extracto
+                                    </>
+                                )}
+                            </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="text-muted-foreground">
+                            <GraduationCap className="h-5 w-5" />
+                        </Button>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Badge variant="outline">
-                        {statement.reconciled_lines} / {statement.total_lines} reconciliadas
-                    </Badge>
-                    {canConfirm && (
-                        <Button onClick={handleConfirmStatement} disabled={confirming}>
-                            {confirming ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Confirmando...
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                                    Confirmar Extracto
-                                </>
-                            )}
-                        </Button>
-                    )}
+
+                {/* Global Progress Header Tooltip-like Area */}
+                <div className="bg-card p-5 rounded-2xl border shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Flujo de conciliación en tiempo real</span>
+                        </div>
+                        <span className="text-sm font-black text-primary font-mono">{statement.reconciliation_progress}%</span>
+                    </div>
+                    <Progress value={statement.reconciliation_progress} className="h-2 bg-muted overflow-hidden" />
                 </div>
             </div>
 
-            {/* Progress Bar */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Progreso de Reconciliación</CardTitle>
-                    <CardDescription>
-                        {statement.reconciliation_progress}% completado
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div
-                            className={`h-3 rounded-full transition-all ${statement.reconciliation_progress === 100
-                                ? 'bg-green-600'
-                                : 'bg-blue-600'
-                                }`}
-                            style={{ width: `${statement.reconciliation_progress}%` }}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Reconciliation Panel */}
+            {/* Core Matching Engine (Panel) */}
             <ReconciliationPanel
                 statementId={statementId}
                 onComplete={handleComplete}
             />
+
+            {/* Context Help Footer */}
+            {!canConfirm && (
+                <div className="flex items-center justify-center p-8 opacity-40 hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white px-4 py-2 rounded-full border shadow-sm">
+                        <Info className="h-3.5 w-3.5" />
+                        Para confirmar el extracto, debes reconciliar o excluir el 100% de las transacciones.
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

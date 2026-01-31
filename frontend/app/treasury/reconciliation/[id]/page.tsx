@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown, Undo2 } from "lucide-react"
+import { ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown, Undo2, Search, Info, AlertCircle } from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -19,6 +19,11 @@ import {
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table"
+import { DataCell } from "@/components/ui/data-table-cells"
+import { Progress } from "@/components/ui/progress"
 
 interface BankStatementLine {
     id: number
@@ -80,42 +85,12 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         }
     }
 
-    const getStateColor = (state: string) => {
-        switch (state) {
-            case 'DRAFT':
-                return 'bg-yellow-100 text-yellow-800'
-            case 'CONFIRMED':
-                return 'bg-green-100 text-green-800'
-            case 'CANCELLED':
-                return 'bg-red-100 text-red-800'
-            default:
-                return 'bg-gray-100 text-gray-800'
-        }
-    }
-
-    const getReconciliationStateColor = (state: string) => {
-        switch (state) {
-            case 'UNRECONCILED':
-                return 'bg-gray-100 text-gray-800'
-            case 'MATCHED':
-                return 'bg-blue-100 text-blue-800'
-            case 'RECONCILED':
-                return 'bg-green-100 text-green-800'
-            case 'DISPUTED':
-                return 'bg-red-100 text-red-800'
-            case 'EXCLUDED':
-                return 'bg-gray-200 text-gray-600'
-            default:
-                return 'bg-gray-100 text-gray-800'
-        }
-    }
-
     const handleUnmatch = async () => {
         if (!unmatchDialog.lineId) return
 
         try {
             await api.post(`/treasury/statement-lines/${unmatchDialog.lineId}/unmatch/`)
-            await fetchStatement() // Refresh data
+            await fetchStatement()
         } catch (error) {
             console.error('Error unmatching line:', error)
             alert('Error al deshacer la reconciliación')
@@ -124,11 +99,122 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         }
     }
 
+    const columns: ColumnDef<BankStatementLine>[] = [
+        {
+            accessorKey: "line_number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="#" />
+            ),
+            cell: ({ row }) => <span className="text-muted-foreground font-mono text-xs">{row.getValue("line_number")}</span>,
+        },
+        {
+            accessorKey: "transaction_date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+            cell: ({ row }) => <DataCell.Date value={row.getValue("transaction_date")} />,
+        },
+        {
+            accessorKey: "description",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Descripción" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex flex-col max-w-[200px]">
+                    <span className="font-medium text-xs truncate" title={row.getValue("description")}>{row.getValue("description")}</span>
+                    {row.original.reference && (
+                        <span className="text-[10px] text-muted-foreground truncate">{row.original.reference}</span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "debit",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Egreso" />
+            ),
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("debit"))
+                return val > 0 ? <DataCell.Currency value={val} className="text-red-600 font-bold" /> : <span className="text-muted-foreground/30 ml-4">-</span>
+            },
+        },
+        {
+            accessorKey: "credit",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Ingreso" />
+            ),
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("credit"))
+                return val > 0 ? <DataCell.Currency value={val} className="text-emerald-600 font-bold" /> : <span className="text-muted-foreground/30 ml-4">-</span>
+            },
+        },
+        {
+            accessorKey: "balance",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Saldo" />
+            ),
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("balance")} className="font-mono text-[11px]" />,
+        },
+        {
+            accessorKey: "reconciliation_state",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estado" />
+            ),
+            cell: ({ row }) => {
+                const state = row.getValue("reconciliation_state") as string
+                let variant: any = 'secondary'
+                if (state === 'MATCHED' || state === 'RECONCILED') variant = 'success'
+                if (state === 'DISPUTED') variant = 'destructive'
+                if (state === 'EXCLUDED') variant = 'outline'
+
+                return (
+                    <DataCell.Badge variant={variant}>
+                        {row.original.reconciliation_state_display}
+                    </DataCell.Badge>
+                )
+            },
+        },
+        {
+            id: "matched_payment",
+            header: "Pago Vinculado",
+            cell: ({ row }) => (
+                <span className="text-[10px] font-mono text-muted-foreground">
+                    {row.original.matched_payment_info?.display_id || '-'}
+                </span>
+            ),
+        },
+        {
+            id: "actions",
+            header: "Acción",
+            cell: ({ row }) => {
+                const state = row.original.reconciliation_state
+                const canUnmatch = ['MATCHED', 'RECONCILED', 'EXCLUDED'].includes(state) && statement?.state !== 'CONFIRMED'
+
+                return (
+                    <div className="flex justify-center">
+                        {canUnmatch && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                                onClick={() => setUnmatchDialog({ open: true, lineId: row.original.id })}
+                                title="Deshacer reconciliación"
+                            >
+                                <Undo2 className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                )
+            },
+        },
+    ]
+
     if (loading) {
         return (
-            <div className="flex-1 space-y-4 p-8 pt-6">
-                <div className="text-center py-12">
-                    <p className="text-muted-foreground">Cargando extracto...</p>
+            <div className="flex-1 p-8 pt-6">
+                <div className="flex flex-col items-center justify-center h-64 gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-muted-foreground text-sm">Cargando detalles del extracto...</p>
                 </div>
             </div>
         )
@@ -136,13 +222,21 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
     if (!statement) {
         return (
-            <div className="flex-1 space-y-4 p-8 pt-6">
-                <div className="text-center py-12">
-                    <p className="text-red-600">Extracto no encontrado</p>
-                    <Button onClick={() => router.push('/treasury/reconciliation')} className="mt-4">
-                        Volver a Extractos
-                    </Button>
-                </div>
+            <div className="flex-1 p-8 pt-6">
+                <Card className="max-w-md mx-auto mt-12">
+                    <CardHeader>
+                        <CardTitle className="text-red-600 flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5" />
+                            Error
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">No se pudo encontrar el extracto solicitado.</p>
+                        <Button onClick={() => router.push('/treasury/reconciliation')} className="mt-4 w-full">
+                            Volver al listado
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         )
     }
@@ -152,204 +246,163 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const netMovement = totalCredits - totalDebits
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex-1 space-y-4 p-8 pt-6 bg-muted/20">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/treasury/reconciliation')}>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => router.push('/treasury/reconciliation')}
+                        className="rounded-full shadow-sm"
+                    >
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight">{statement.display_id}</h2>
-                        <p className="text-muted-foreground">{statement.treasury_account_name}</p>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-3xl font-bold tracking-tight text-foreground/90">{statement.display_id}</h2>
+                            <DataCell.Badge variant={statement.state === 'CONFIRMED' ? 'success' : 'secondary'}>
+                                {statement.state_display}
+                            </DataCell.Badge>
+                        </div>
+                        <p className="text-muted-foreground text-sm font-medium">{statement.treasury_account_name}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Badge className={getStateColor(statement.state)}>
-                        {statement.state_display}
-                    </Badge>
                     {statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
-                        <Button onClick={() => router.push(`/treasury/reconciliation/${id}/match`)}>
+                        <Button
+                            onClick={() => router.push(`/treasury/reconciliation/${id}/match`)}
+                            className="bg-primary hover:bg-primary/90 shadow-sm"
+                        >
+                            <span className="mr-2">⚡</span>
                             Reconciliar
                         </Button>
                     )}
                 </div>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Balance Apertura</CardTitle>
-                        <Banknote className="h-4 w-4 text-muted-foreground" />
+            {/* Summary Grid */}
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
+                        <Banknote className="h-3.5 w-3.5 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono">
+                        <div className="text-xl font-bold font-mono">
                             ${parseFloat(statement.opening_balance).toLocaleString('es-CL')}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            {format(new Date(statement.statement_date), 'dd MMM yyyy', { locale: es })}
+                        <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <Calendar className="h-2.5 w-2.5" />
+                            {format(new Date(statement.statement_date), 'dd MMMM yyyy', { locale: es })}
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Balance Cierre</CardTitle>
-                        <Banknote className="h-4 w-4 text-muted-foreground" />
+                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
+                        <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono">
+                        <div className="text-xl font-bold font-mono">
                             ${parseFloat(statement.closing_balance).toLocaleString('es-CL')}
                         </div>
-                        <p className={`text-xs flex items-center gap-1 ${netMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {netMovement >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                            Movimiento: ${Math.abs(netMovement).toLocaleString('es-CL')}
+                        <p className={`text-[10px] font-medium mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                            {netMovement >= 0 ? 'Excedente' : 'Déficit'}: ${Math.abs(netMovement).toLocaleString('es-CL')}
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Débitos</CardTitle>
-                        <TrendingDown className="h-4 w-4 text-red-600" />
+                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Salidas (Dr)</CardTitle>
+                        <TrendingDown className="h-3.5 w-3.5 text-red-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono text-red-600">
+                        <div className="text-xl font-bold font-mono text-red-600/80">
                             ${totalDebits.toLocaleString('es-CL')}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            {statement.lines.filter(l => parseFloat(l.debit) > 0).length} transacciones
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {statement.lines.filter(l => parseFloat(l.debit) > 0).length} cargos detectados
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Créditos</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-green-600" />
+                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Entradas (Cr)</CardTitle>
+                        <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono text-green-600">
+                        <div className="text-xl font-bold font-mono text-emerald-600/80">
                             ${totalCredits.toLocaleString('es-CL')}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            {statement.lines.filter(l => parseFloat(l.credit) > 0).length} transacciones
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {statement.lines.filter(l => parseFloat(l.credit) > 0).length} abonos detectados
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Reconciliation Progress */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Progreso de Reconciliación</CardTitle>
-                    <CardDescription>
-                        {statement.reconciled_lines} de {statement.total_lines} líneas reconciliadas
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center gap-4">
-                        <div className="flex-1 bg-gray-200 rounded-full h-4">
-                            <div
-                                className="bg-blue-600 h-4 rounded-full transition-all"
-                                style={{ width: `${statement.reconciliation_progress}%` }}
-                            />
-                        </div>
-                        <span className="text-lg font-bold text-blue-600">
-                            {statement.reconciliation_progress}%
-                        </span>
+            {/* Progress Bar Container */}
+            <div className="bg-card p-4 rounded-xl border shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado de la Conciliación</span>
+                        <Info className="h-3 w-3 text-muted-foreground" />
                     </div>
-                </CardContent>
-            </Card>
+                    <span className="text-sm font-bold text-primary">{statement.reconciliation_progress}% completado</span>
+                </div>
+                <Progress value={statement.reconciliation_progress} className="h-2.5 bg-muted" />
+                <div className="mt-2 text-[10px] text-muted-foreground flex justify-between">
+                    <span>{statement.reconciled_lines} líneas procesadas</span>
+                    <span>{statement.total_lines - statement.reconciled_lines} líneas pendientes</span>
+                </div>
+            </div>
 
-            {/* Statement Lines Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Líneas del Extracto</CardTitle>
-                    <CardDescription>
-                        {statement.total_lines} transacciones bancarias
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="relative overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs uppercase bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-3">#</th>
-                                    <th className="px-4 py-3">Fecha</th>
-                                    <th className="px-4 py-3">Descripción</th>
-                                    <th className="px-4 py-3">Referencia</th>
-                                    <th className="px-4 py-3 text-right">Débito</th>
-                                    <th className="px-4 py-3 text-right">Crédito</th>
-                                    <th className="px-4 py-3 text-right">Saldo</th>
-                                    <th className="px-4 py-3">Estado</th>
-                                    <th className="px-4 py-3">Pago</th>
-                                    <th className="px-4 py-3 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {statement.lines.map((line) => (
-                                    <tr key={line.id} className="bg-white border-b hover:bg-gray-50">
-                                        <td className="px-4 py-3 font-medium text-gray-500">
-                                            {line.line_number}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            {format(new Date(line.transaction_date), 'dd/MM/yy', { locale: es })}
-                                        </td>
-                                        <td className="px-4 py-3 max-w-xs truncate">
-                                            {line.description}
-                                        </td>
-                                        <td className="px-4 py-3 text-gray-500 text-xs">
-                                            {line.reference || '-'}
-                                        </td>
-                                        <td className="px-4 py-3 text-right font-mono text-red-600">
-                                            {parseFloat(line.debit) > 0
-                                                ? `$${parseFloat(line.debit).toLocaleString('es-CL')}`
-                                                : '-'
-                                            }
-                                        </td>
-                                        <td className="px-4 py-3 text-right font-mono text-green-600">
-                                            {parseFloat(line.credit) > 0
-                                                ? `$${parseFloat(line.credit).toLocaleString('es-CL')}`
-                                                : '-'
-                                            }
-                                        </td>
-                                        <td className="px-4 py-3 text-right font-mono font-semibold">
-                                            ${parseFloat(line.balance).toLocaleString('es-CL')}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge className={getReconciliationStateColor(line.reconciliation_state)}>
-                                                {line.reconciliation_state_display}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3 text-xs text-gray-500">
-                                            {line.matched_payment_info
-                                                ? line.matched_payment_info.display_id
-                                                : '-'
-                                            }
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            {(line.reconciliation_state === 'MATCHED' || line.reconciliation_state === 'RECONCILED' || line.reconciliation_state === 'EXCLUDED') && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-gray-500 hover:text-red-600"
-                                                    title="Deshacer reconciliación"
-                                                    onClick={() => setUnmatchDialog({ open: true, lineId: line.id })}
-                                                    disabled={statement.state === 'CONFIRMED'}
-                                                >
-                                                    <Undo2 className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+            {/* Lines DataTable */}
+            <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+                <DataTable
+                    columns={columns}
+                    data={statement.lines}
+                    filterColumn="description"
+                    searchPlaceholder="Buscar por descripción o referencia..."
+                    facetedFilters={[
+                        {
+                            column: "reconciliation_state",
+                            title: "Estado Reconciliación",
+                            options: [
+                                { label: "Pendiente", value: "UNRECONCILED" },
+                                { label: "Reconciliado", value: "RECONCILED" },
+                                { label: "Vinculado", value: "MATCHED" },
+                                { label: "Excluido", value: "EXCLUDED" },
+                                { label: "Disputa", value: "DISPUTED" },
+                            ]
+                        }
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
+                />
+            </div>
+
+            {/* Metadata Footer */}
+            <div className="flex items-center justify-between px-2 pt-2">
+                <div className="flex gap-4">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <span className="font-semibold uppercase">Importado:</span>
+                        <span>{format(new Date(statement.imported_at), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
                     </div>
-                </CardContent>
-            </Card>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <span className="font-semibold uppercase">Por:</span>
+                        <span>{statement.imported_by_name}</span>
+                    </div>
+                </div>
+                <div className="text-[10px] text-muted-foreground/40 italic">
+                    Referencia del sistema: #{statement.id}
+                </div>
+            </div>
 
             <AlertDialog open={unmatchDialog.open} onOpenChange={(open) => !open && setUnmatchDialog(prev => ({ ...prev, open: false }))}>
                 <AlertDialogContent>
@@ -361,29 +414,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleUnmatch}>Confirmar</AlertDialogAction>
+                        <AlertDialogAction onClick={handleUnmatch} className="bg-red-600 hover:bg-red-700">Confirmar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
-            {/* Metadata */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Información del Extracto</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-2 text-sm">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Importado por:</span>
-                        <span className="font-medium">{statement.imported_by_name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Fecha de importación:</span>
-                        <span className="font-medium">
-                            {format(new Date(statement.imported_at), 'dd MMM yyyy HH:mm', { locale: es })}
-                        </span>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     )
 }
