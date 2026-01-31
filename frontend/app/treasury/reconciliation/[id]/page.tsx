@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -271,11 +272,13 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex items-center gap-2">
                     {statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
                         <Button
-                            onClick={() => router.push(`/treasury/reconciliation/${id}/match`)}
+                            asChild
                             className="bg-primary hover:bg-primary/90 shadow-sm"
                         >
-                            <span className="mr-2">⚡</span>
-                            Reconciliar
+                            <Link href={`/treasury/reconciliation/${id}/process`}>
+                                <span className="mr-2">⚡</span>
+                                Reconciliar
+                            </Link>
                         </Button>
                     )}
                 </div>
