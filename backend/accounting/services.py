@@ -490,20 +490,15 @@ class AccountingMapper:
         is_boleta = invoice.dte_type == 'BOLETA'
         
         if is_boleta:
-            # BOLETAS: Always capitalize VAT into product cost
-            for line in order.lines.all():
-                asset_account = line.product.get_asset_account() if callable(line.product.get_asset_account) else line.product.get_asset_account
-                if not asset_account:
-                    asset_account = settings.default_inventory_account
-                
-                line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
-                if line_tax > 0 and asset_account:
-                    items.append({
-                        'account': asset_account,
-                        'debit': line_tax,
-                        'credit': Decimal('0.00'),
-                        'label': f"IVA Capitalizado - {line.product.code}"
-                    })
+            # BOLETAS: Tax is capitalized into inventory, Net goes to bridge
+            # This ensures balance even if receipt was recorded at Net
+            if invoice.total_tax > 0:
+                items.append({
+                    'account': settings.default_inventory_account,
+                    'debit': invoice.total_tax,
+                    'credit': Decimal('0.00'),
+                    'label': "IVA Capitalizado (Boleta)"
+                })
         else:
             # FACTURAS: Record VAT as tax receivable
             if invoice.total_tax > 0 and tax_account:
@@ -529,7 +524,6 @@ class AccountingMapper:
 
         items = []
         total_amount = Decimal('0.00')
-        
         for line in receipt.lines.all():
             # Choose account based on product type
             if line.product.product_type == 'CONSUMABLE':

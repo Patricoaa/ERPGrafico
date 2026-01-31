@@ -91,8 +91,8 @@ class TotalsCalculationMixin:
             self.total_net = total_sum
             # Calculate VAT on total net amount (Chilean DTE requirement)
             total_tax_calc = self.total_net * (tax_rate / Decimal('100.0'))
-            # Round up to nearest peso (Chilean tax regulation for DTE)
-            self.total_tax = Decimal(str(math.ceil(total_tax_calc)))
+            # Round to nearest peso (Chilean tax regulation for DTE)
+            self.total_tax = total_tax_calc.quantize(Decimal('1'), rounding='ROUND_HALF_UP')
             self.total = self.total_net + self.total_tax
         
         if commit:

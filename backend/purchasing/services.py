@@ -661,11 +661,9 @@ class PurchasingService:
             )
 
         # 4. Reverse Stock Input Account (clearing account)
-        # 4. Reverse Stock Input Account (clearing account)
-        # This reverses the "Debit: Stock Input" from the original invoice
+        # We always use the NET amount for bridge, consistent with Receipt/Bill flow
         if note_type == Invoice.DTEType.NOTA_CREDITO:
             # Credit: Stock Input (reverses the debit from invoice)
-            # FIX: Use CREDIT, not DEBIT
             JournalItem.objects.create(
                 entry=entry, 
                 account=stock_input_account, 
@@ -675,7 +673,6 @@ class PurchasingService:
             )
         else:
             # Debit: Stock Input
-            # FIX: Use DEBIT, not CREDIT
             JournalItem.objects.create(
                 entry=entry, 
                 account=stock_input_account, 
@@ -688,75 +685,24 @@ class PurchasingService:
         if amount_tax > 0:
             if is_boleta:
                 # BOLETA: Tax was capitalized into product cost
-                # Need to reverse the capitalized VAT from inventory
-                if return_items:
-                    # Process per product to reverse capitalized VAT
-                    for item in return_items:
-                        product_id = item.get('product_id')
-                        quantity = Decimal(str(item.get('quantity', 0)))
-                        
-                        # Find the purchase line to get unit cost and tax rate
-                        purchase_line = order.lines.filter(product_id=product_id).first()
-                        if not purchase_line:
-                            continue
-                            
-                        # Calculate the tax portion for this line
-                        line_tax = (purchase_line.unit_cost * quantity * (purchase_line.tax_rate / Decimal('100.0'))).quantize(
-                            Decimal('0.01'), rounding='ROUND_HALF_UP'
-                        )
-                        
-                        if line_tax > 0:
-                            asset_account = purchase_line.product.get_asset_account or settings.default_inventory_account
-                            
-                            if note_type == Invoice.DTEType.NOTA_CREDITO:
-                                # Credit: Asset Account (reverse capitalized VAT)
-                                # FIX: Use CREDIT, not DEBIT
-                                JournalItem.objects.create(
-                                    entry=entry,
-                                    account=asset_account,
-                                    debit=0,
-                                    credit=line_tax,
-                                    label=f"Reverso IVA Capitalizado - {purchase_line.product.code}"
-                                )
-                                
-                                # Reverse VAT from product cost
-                                BillingService._revert_tax_from_product_cost(purchase_line.product, line_tax)
-                            else:
-                                # Debit: Asset Account (add capitalized VAT)
-                                # FIX: Use DEBIT, not CREDIT
-                                JournalItem.objects.create(
-                                    entry=entry,
-                                    account=asset_account,
-                                    debit=line_tax,
-                                    credit=0,
-                                    label=f"IVA Capitalizado - {purchase_line.product.code}"
-                                )
-                                
-                                # Add VAT to product cost
-                                if quantity > 0:
-                                    BillingService._capitalize_tax_to_product_cost(
-                                        purchase_line.product, line_tax, purchase_line.unit_cost, quantity
-                                    )
+                # For simplicity and balance, we use a global adjustment to inventory 
+                # instead of detailed per-product logic that can cause rounding remainders.
+                if note_type == Invoice.DTEType.NOTA_CREDITO:
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=settings.default_inventory_account,
+                        debit=0,
+                        credit=amount_tax,
+                        label="Reverso IVA Capitalizado (Global)"
+                    )
                 else:
-                    # No return items specified, use global adjustment to inventory
-                    if note_type == Invoice.DTEType.NOTA_CREDITO:
-                        # FIX: Use CREDIT
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=settings.default_inventory_account,
-                            debit=0,
-                            credit=amount_tax,
-                            label="Reverso IVA Capitalizado (Global)"
-                        )
-                    else:
-                        # FIX: Use DEBIT
-                        JournalItem.objects.create(
-                            entry=entry,
-                            account=settings.default_inventory_account,
-                            debit=amount_tax,
-                            credit=0,
-                            label="IVA Capitalizado (Global)"
-                        )
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=settings.default_inventory_account,
+                        debit=amount_tax,
+                        credit=0,
+                        label="IVA Capitalizado (Global)"
+                    )
             else:
                 # FACTURA: Tax was recorded as IVA Crédito Fiscal
                 # Reverse the tax receivable account
