@@ -45,6 +45,7 @@ const categoryItems: Record<string, any> = {
     "treasury": [
         { title: "Cajas y Bancos", url: "/treasury/accounts" },
         { title: "Ingresos y Egresos", url: "/treasury/payments" },
+        { title: "Conciliación Bancaria", url: "/treasury/reconciliation" },
     ],
     "purchasing": [
         { title: "Ordenes de Compra", url: "/purchasing/orders" },

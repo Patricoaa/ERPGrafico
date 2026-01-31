@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Payment, TreasuryAccount
+from .models import Payment, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
 
@@ -18,6 +18,10 @@ class PaymentSerializer(serializers.ModelSerializer):
     treasury_account_type = serializers.CharField(source='treasury_account.account_type', read_only=True)
     code = serializers.SerializerMethodField()
     document_info = serializers.SerializerMethodField()
+    
+    # Reconciliation data
+    reconciled_by_name = serializers.CharField(source='reconciled_by.username', read_only=True, allow_null=True)
+    bank_statement_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -62,3 +66,72 @@ class PaymentSerializer(serializers.ModelSerializer):
             info['label'] = f"PV-{obj.sale_order.number}"
         
         return info if info['type'] else None
+    
+    def get_bank_statement_info(self, obj):
+        if obj.bank_statement_line:
+            return {
+                'line_id': obj.bank_statement_line.id,
+                'statement_id': obj.bank_statement_line.statement.id,
+                'statement_display_id': obj.bank_statement_line.statement.display_id,
+            }
+        return None
+
+
+class BankStatementLineSerializer(serializers.ModelSerializer):
+    """Serializer for bank statement lines"""
+    amount = serializers.DecimalField(source='amount', read_only=True, max_digits=20, decimal_places=2)
+    matched_payment_info = serializers.SerializerMethodField()
+    reconciliation_state_display = serializers.CharField(source='get_reconciliation_state_display', read_only=True)
+    reconciled_by_name = serializers.CharField(source='reconciled_by.username', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = BankStatementLine
+        fields = '__all__'
+    
+    def get_matched_payment_info(self, obj):
+        if obj.matched_payment:
+            return {
+                'id': obj.matched_payment.id,
+                'display_id': obj.matched_payment.display_id,
+                'amount': obj.matched_payment.amount,
+                'date': obj.matched_payment.date,
+            }
+        return None
+
+
+class BankStatementSerializer(serializers.ModelSerializer):
+    """Serializer for bank statements"""
+    display_id = serializers.CharField(read_only=True)
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    reconciliation_progress = serializers.DecimalField(read_only=True, max_digits=5, decimal_places=1)
+    state_display = serializers.CharField(source='get_state_display', read_only=True)
+    imported_by_name = serializers.CharField(source='imported_by.username', read_only=True)
+    
+    # Nested lines (optional, for detail view)
+    lines = BankStatementLineSerializer(many=True, read_only=True, required=False)
+    
+    class Meta:
+        model = BankStatement
+        fields = '__all__'
+
+
+class BankStatementListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for list view"""
+    display_id = serializers.CharField(read_only=True)
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    reconciliation_progress = serializers.DecimalField(read_only=True, max_digits=5, decimal_places=1)
+    state_display = serializers.CharField(source='get_state_display', read_only=True)
+    imported_by_name = serializers.CharField(source='imported_by.username', read_only=True)
+    
+    class Meta:
+        model = BankStatement
+        exclude = ['notes']
+
+
+class ReconciliationRuleSerializer(serializers.ModelSerializer):
+    """Serializer for reconciliation rules"""
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = ReconciliationRule
+        fields = '__all__'
