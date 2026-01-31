@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -57,7 +57,8 @@ interface BankStatement {
     lines: BankStatementLine[]
 }
 
-export default function StatementDetailPage({ params }: { params: { id: string } }) {
+export default function StatementDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params)
     const router = useRouter()
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
@@ -65,12 +66,12 @@ export default function StatementDetailPage({ params }: { params: { id: string }
 
     useEffect(() => {
         fetchStatement()
-    }, [params.id])
+    }, [id])
 
     const fetchStatement = async () => {
         try {
             setLoading(true)
-            const response = await api.get(`/treasury/statements/${params.id}/`)
+            const response = await api.get(`/treasury/statements/${id}/`)
             setStatement(response.data)
         } catch (error) {
             console.error('Error fetching statement:', error)
@@ -168,7 +169,7 @@ export default function StatementDetailPage({ params }: { params: { id: string }
                         {statement.state_display}
                     </Badge>
                     {statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
-                        <Button onClick={() => router.push(`/treasury/reconciliation/${params.id}/match`)}>
+                        <Button onClick={() => router.push(`/treasury/reconciliation/${id}/match`)}>
                             Reconciliar
                         </Button>
                     )}

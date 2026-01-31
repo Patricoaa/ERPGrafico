@@ -79,7 +79,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class BankStatementLineSerializer(serializers.ModelSerializer):
     """Serializer for bank statement lines"""
-    amount = serializers.DecimalField(source='amount', read_only=True, max_digits=20, decimal_places=2)
+    amount = serializers.DecimalField(read_only=True, max_digits=20, decimal_places=2)
     matched_payment_info = serializers.SerializerMethodField()
     reconciliation_state_display = serializers.CharField(source='get_reconciliation_state_display', read_only=True)
     reconciled_by_name = serializers.CharField(source='reconciled_by.username', read_only=True, allow_null=True)

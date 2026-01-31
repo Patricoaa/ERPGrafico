@@ -249,6 +249,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        
         try:
             result = ReconciliationService.import_statement(
                 file=file,

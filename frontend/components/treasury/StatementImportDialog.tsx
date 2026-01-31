@@ -137,7 +137,10 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             setPreviewData(response.data)
             setStep('MAPPING')
 
-            // Auto-guess mapping if possible (simple heuristic)
+            // Update bank format if it's generic and file type matches excel
+            if (response.data.file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
+                setBankFormat('GENERIC_EXCEL')
+            }
             const cols = response.data.columns
             const newMapping = { ...mapping }
             cols.forEach((col: any, idx: number) => {

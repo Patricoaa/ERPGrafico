@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useState, useEffect, use } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,17 +20,19 @@ interface BankStatement {
     state_display: string
 }
 
-export default function ReconciliationMatchPage() {
+export default function ReconciliationMatchPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params)
     const router = useRouter()
-    const params = useParams()
-    const statementId = parseInt(params.id as string)
+    const statementId = parseInt(id)
 
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
     const [confirming, setConfirming] = useState(false)
 
     useEffect(() => {
-        fetchStatement()
+        if (statementId) {
+            fetchStatement()
+        }
     }, [statementId])
 
     const fetchStatement = async () => {
@@ -138,8 +140,8 @@ export default function ReconciliationMatchPage() {
                     <div className="w-full bg-gray-200 rounded-full h-3">
                         <div
                             className={`h-3 rounded-full transition-all ${statement.reconciliation_progress === 100
-                                    ? 'bg-green-600'
-                                    : 'bg-blue-600'
+                                ? 'bg-green-600'
+                                : 'bg-blue-600'
                                 }`}
                             style={{ width: `${statement.reconciliation_progress}%` }}
                         />

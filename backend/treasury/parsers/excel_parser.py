@@ -128,15 +128,38 @@ class GenericExcelParser(BaseParser):
                 lines.append(line)
                 line_idx += 1
                 
-                if line_idx == 2: # Set opening balance tentatively
-                     # Si tenemos balance en linea 1, intentar deducir opening
-                     # Opening = Balance1 - (Credit1 - Debit1)
-                     opening_balance = amount_balance - (amount_credit - amount_debit)
-                
-                closing_balance = amount_balance
+            # Determine direction and balances
+            if not lines:
+                return {
+                    'statement_date': date.today(),
+                    'opening_balance': Decimal('0'),
+                    'closing_balance': Decimal('0'),
+                    'lines': [],
+                    'metadata': {
+                        'format': 'GENERIC_EXCEL',
+                        'original_filename': file.name
+                    }
+                }
+
+            # Si el archivo viene en orden inverso (más reciente primero), lo invertimos
+            # Comparamos la fecha de la primera y última línea
+            if len(lines) > 1:
+                first_date = lines[0]['transaction_date']
+                last_date = lines[-1]['transaction_date']
+                if first_date > last_date:
+                    lines.reverse()
+            
+            # Ahora las líneas están en orden cronológico (más antigua a más reciente)
+            # Opening = Balance de la primera línea - su movimiento neto
+            # Closing = Balance de la última línea
+            first_line = lines[0]
+            last_line = lines[-1]
+            
+            opening_balance = first_line['balance'] - (first_line['credit'] - first_line['debit'])
+            closing_balance = last_line['balance']
 
             return {
-                'statement_date': lines[0]['transaction_date'] if lines else date.today(),
+                'statement_date': last_line['transaction_date'],
                 'opening_balance': opening_balance,
                 'closing_balance': closing_balance,
                 'lines': lines,

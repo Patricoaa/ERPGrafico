@@ -177,29 +177,41 @@ class GenericCSVParser(BaseParser):
                 print(f"Error parseando línea {idx}: {e}")
                 continue
         
-        # Calcular balances si no están en el archivo
-        if not opening_balance and lines:
-            # Asumir que el primer balance - primer movimiento es opening
+        if not lines:
+            return {
+                'statement_date': statement_date or date.today(),
+                'opening_balance': opening_balance or Decimal('0'),
+                'closing_balance': closing_balance or Decimal('0'),
+                'lines': [],
+                'metadata': {
+                    'total_lines': 0,
+                    'encoding': encoding,
+                    'format': 'GENERIC_CSV'
+                }
+            }
+
+        # Si el archivo viene en orden inverso (más reciente primero), lo invertimos
+        if len(lines) > 1:
+            if lines[0]['transaction_date'] > lines[-1]['transaction_date']:
+                lines.reverse()
+
+        # Calcular balances basados en orden cronológico
+        # Si ya se extrajeron de la configuración (cabeceras), los respetamos.
+        # Si no, los deducimos de las líneas.
+        if not opening_balance:
             first_line = lines[0]
             opening_balance = first_line['balance'] - (first_line['credit'] - first_line['debit'])
         
-        if not closing_balance and lines:
+        if not closing_balance:
             closing_balance = lines[-1]['balance']
         
-        # Estimar statement_date si no está
-        if not statement_date and lines:
+        if not statement_date:
             statement_date = lines[-1]['transaction_date']
-        
-        # Validar balances
-        if opening_balance and lines:
-            is_valid = self.validate_balance_consistency(lines, opening_balance)
-            if not is_valid:
-                print("WARNING: Los balances no son consistentes")
-        
+
         return {
-            'statement_date': statement_date or date.today(),
-            'opening_balance': opening_balance or Decimal('0'),
-            'closing_balance': closing_balance or Decimal('0'),
+            'statement_date': statement_date,
+            'opening_balance': opening_balance,
+            'closing_balance': closing_balance,
             'lines': lines,
             'metadata': {
                 'total_lines': len(lines),
