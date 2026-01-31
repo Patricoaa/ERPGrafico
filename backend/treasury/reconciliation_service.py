@@ -219,7 +219,8 @@ class ReconciliationService:
                 actual = line['balance']
                 
                 # Tolerancia
-                if abs(expected - actual) > Decimal('0.05'): # Un poco más permisivo por acumulacion
+                diff = abs(expected - actual)
+                if not diff.is_nan() and diff > Decimal('0.05'): # Un poco más permisivo por acumulacion
                     # Intentar detectar si es orden inverso
                     # Si falla mucho, quizás el archivo está al revés.
                     # Por ahora, solo warning si es inconsistencia leve, error si es grave

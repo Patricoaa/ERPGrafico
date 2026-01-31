@@ -132,11 +132,19 @@ class BaseParser(ABC):
         Raises:
             ValueError: Si el valor no puede ser convertido
         """
-        if isinstance(value, (Decimal, int, float)):
-            return Decimal(str(value))
-        
-        if not value or str(value).lower() == 'nan':
+        if value is None or str(value).lower() in ('nan', 'none', ''):
             return Decimal('0')
+
+        if isinstance(value, (Decimal, int, float)):
+            try:
+                # Check for float('nan') or float('inf')
+                if isinstance(value, float):
+                    import math
+                    if math.isnan(value) or math.isinf(value):
+                        return Decimal('0')
+                return Decimal(str(value))
+            except Exception:
+                return Decimal('0')
         
         value_str = str(value).strip()
         
