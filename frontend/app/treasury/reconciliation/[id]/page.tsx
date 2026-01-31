@@ -138,9 +138,16 @@ export default function StatementDetailPage({ params }: { params: { id: string }
                         <p className="text-muted-foreground">{statement.treasury_account_name}</p>
                     </div>
                 </div>
-                <Badge className={getStateColor(statement.state)}>
-                    {statement.state_display}
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <Badge className={getStateColor(statement.state)}>
+                        {statement.state_display}
+                    </Badge>
+                    {statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
+                        <Button onClick={() => router.push(`/treasury/reconciliation/${params.id}/match`)}>
+                            Reconciliar
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Summary Cards */}

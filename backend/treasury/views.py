@@ -275,6 +275,47 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         """Get available bank formats"""
         formats = ReconciliationService.get_available_bank_formats()
         return Response({'formats': formats})
+    
+    @action(detail=True, methods=['post'])
+    def auto_match(self, request, pk=None):
+        """Auto-match all unreconciled lines in statement"""
+        try:
+            threshold = float(request.data.get('confidence_threshold', 90.0))
+            result = MatchingService.auto_match_statement(pk, threshold)
+            return Response(result)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        """Confirm statement (locks it)"""
+        try:
+            statement = BankStatement.objects.get(id=pk)
+            
+            if statement.state == 'CONFIRMED':
+                return Response({'error': 'Extracto ya confirmado'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate all lines are reconciled or excluded
+            unreconciled = statement.lines.filter(
+                reconciliation_state='UNRECONCILED'
+            ).count()
+            
+            if unreconciled > 0:
+                return Response({
+                    'error': f'{unreconciled} líneas sin reconciliar. Debes reconciliar o excluir todas las líneas.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            statement.state = 'CONFIRMED'
+            statement.save()
+            
+            return Response(BankStatementSerializer(statement).data)
+            
+        except BankStatement.DoesNotExist:
+            return Response({'error': 'Extracto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class BankStatementLineViewSet(viewsets.ModelViewSet):
@@ -296,6 +337,56 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(reconciliation_state=reconciliation_state)
         
         return queryset
+    
+    @action(detail=True, methods=['get'])
+    def suggestions(self, request, pk=None):
+        """Get payment matching suggestions for this line"""
+        try:
+            limit = int(request.query_params.get('limit', 5))
+            suggestions = MatchingService.suggest_matches(pk, limit)
+            return Response({'suggestions': suggestions})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def match(self, request, pk=None):
+        """Manually match line with payment"""
+        try:
+            payment_id = request.data.get('payment_id')
+            if not payment_id:
+                return Response({'error': 'payment_id requerido'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            matched_line = MatchingService.manual_match(pk, payment_id, request.user)
+            return Response(BankStatementLineSerializer(matched_line).data)
+            
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        """Confirm a matched line (MATCHED -> RECONCILED)"""
+        try:
+            confirmed_line = MatchingService.confirm_match(pk, request.user)
+            return Response(BankStatementLineSerializer(confirmed_line).data)
+            
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def unmatch(self, request, pk=None):
+        """Remove match from line"""
+        try:
+            unmatched_line = MatchingService.unmatch(pk)
+            return Response(BankStatementLineSerializer(unmatched_line).data)
+            
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ReconciliationRuleViewSet(viewsets.ModelViewSet):
