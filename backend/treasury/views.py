@@ -25,6 +25,7 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Payment.objects.all().order_by('-date', '-created_at')
     serializer_class = PaymentSerializer
+    filterset_fields = ['is_reconciled', 'treasury_account', 'payment_type', 'contact']
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -198,8 +199,21 @@ class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def suggestions(self, request, pk=None):
+        """Get bank statement line suggestions for this payment"""
+        try:
+            suggestions = MatchingService.suggest_lines_for_payment(pk)
+            return Response({'suggestions': suggestions})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        """Get bank statement line suggestions for this payment"""
+        try:
+            suggestions = MatchingService.suggest_lines_for_payment(pk)
+            return Response({'suggestions': suggestions})
+        except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -379,6 +393,28 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             return Response({'message': 'Grupo creado', 'group_id': group.id})
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'])
+    def bulk_exclude(self, request):
+        """Exclude multiple lines from reconciliation"""
+        try:
+            line_ids = request.data.get('line_ids', [])
+            if not line_ids:
+                return Response({'error': 'line_ids requerido'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if statement is confirmed
+            lines = BankStatementLine.objects.filter(id__in=line_ids).select_related('statement')
+            if any(l.statement.state == 'CONFIRMED' for l in lines):
+                return Response({'error': 'No se pueden excluir movimientos de un extracto confirmado'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Update state
+            BankStatementLine.objects.filter(id__in=line_ids).update(
+                reconciliation_state='EXCLUDED'
+            )
+            
+            return Response({'message': f'{len(line_ids)} movimientos excluidos'})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

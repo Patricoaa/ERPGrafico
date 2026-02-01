@@ -11,7 +11,8 @@ from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
 from typing import List, Dict, Any, Optional
-from .models import BankStatementLine, Payment, BankStatement
+from .models import BankStatementLine, Payment, BankStatement, ReconciliationRule
+from .rule_service import RuleService
 
 
 class MatchingService:
@@ -87,7 +88,27 @@ class MatchingService:
         
         # Scoring de cada pago
         suggestions = []
+        
+        # 1. Aplicar reglas personalizadas primero
+        rule_matches = RuleService.apply_rules_to_line(line)
+        for match in rule_matches:
+            from .serializers import PaymentSerializer
+            suggestions.append({
+                'payment_data': PaymentSerializer(match['payment']).data,
+                'score': match['score'],
+                'reasons': [f"Rule: {match['rule_name']}"],
+                'difference': abs(line.credit - line.debit) - abs(match['payment'].amount),
+                'rule_id': match['rule_id'],
+                'auto_confirm': match['auto_confirm']
+            })
+            
+        # 2. Scoring estándar (evitando duplicados)
+        seen_ids = {s['payment_data']['id'] for s in suggestions}
+        
         for payment in payments_query[:50]:  # Limitar procesamiento
+            if payment.id in seen_ids:
+                continue
+                
             score_data = MatchingService._calculate_match_score(line, payment)
             
             if score_data['score'] >= 50:  # Threshold mínimo
@@ -97,6 +118,64 @@ class MatchingService:
         suggestions.sort(key=lambda x: x['score'], reverse=True)
         return suggestions[:limit]
     
+    @staticmethod
+    def suggest_lines_for_payment(
+        payment_id: int,
+        limit: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Sugiere líneas de extracto para un pago. (Bidireccional)
+        """
+        try:
+            payment = Payment.objects.get(id=payment_id)
+        except Payment.DoesNotExist:
+            return []
+            
+        if payment.is_reconciled or not payment.treasury_account:
+            return []
+            
+        # Rango de fechas
+        date_min = payment.date - timedelta(days=7)
+        date_max = payment.date + timedelta(days=7)
+        
+        # Filtros base
+        filters = Q(
+            statement__treasury_account=payment.treasury_account,
+            reconciliation_state='UNRECONCILED'
+        )
+        
+        # Sentido
+        if payment.payment_type == 'INBOUND':
+            filters &= Q(credit__gt=0)
+        else:
+            filters &= Q(debit__gt=0)
+            
+        # Candidatos
+        candidate_filters = Q(transaction_date__gte=date_min, transaction_date__lte=date_max)
+        if payment.transaction_number:
+            candidate_filters |= Q(transaction_id__iexact=payment.transaction_number)
+            candidate_filters |= Q(reference__iexact=payment.transaction_number)
+            
+        lines_query = BankStatementLine.objects.filter(
+            filters & candidate_filters
+        )
+        
+        suggestions = []
+        for line in lines_query[:20]:
+            score_data = MatchingService._calculate_match_score(line, payment)
+            if score_data['score'] >= 50:
+                # Re-format for line suggestion
+                from .serializers import BankStatementLineSerializer
+                suggestions.append({
+                    'line_data': BankStatementLineSerializer(line).data,
+                    'score': score_data['score'],
+                    'reasons': score_data['reasons'],
+                    'difference': score_data['difference']
+                })
+                
+        suggestions.sort(key=lambda x: x['score'], reverse=True)
+        return suggestions[:limit]
+
     @staticmethod
     def _calculate_match_score(
         line: BankStatementLine,
@@ -376,7 +455,9 @@ class MatchingService:
              return line
              
         if not group:
-            # Nothing to do
+            if line.reconciliation_state == 'EXCLUDED':
+                line.reconciliation_state = 'UNRECONCILED'
+                line.save()
             return line
 
         # Disband Group (Remove all links)
@@ -451,28 +532,39 @@ class MatchingService:
         for line in unreconciled_lines:
             suggestions = MatchingService.suggest_matches(line.id, limit=1)
             
-            if suggestions and suggestions[0]['score'] >= confidence_threshold:
+            if suggestions:
                 top_suggestion = suggestions[0]
-                payment_id = top_suggestion['payment_data']['id']
+                score = top_suggestion['score']
                 
-                try:
-                    # Auto-match (Ahora usa el wrapper que crea grupos)
-                    MatchingService.manual_match(
-                        line.id,
-                        payment_id,
-                        None  # Sistema
-                    )
+                # Condición de auto-match: Score >= threshold O Regla con auto_confirm
+                should_match = score >= confidence_threshold or top_suggestion.get('auto_confirm', False)
+                
+                if should_match:
+                    payment_id = top_suggestion['payment_data']['id']
                     
-                    matched_count += 1
-                    matches.append({
-                        'line_id': line.id,
-                        'line_number': line.line_number,
-                        'payment_id': payment_id,
-                        'score': top_suggestion['score']
-                    })
-                except Exception as e:
-                    # Skip si falla
-                    continue
+                    try:
+                        # Auto-match (Ahora usa el wrapper que crea grupos)
+                        MatchingService.manual_match(
+                            line.id,
+                            payment_id,
+                            None  # Sistema
+                        )
+                        
+                        # Si viene de una regla, confirmar el uso
+                        if top_suggestion.get('rule_id'):
+                            RuleService.increment_rule_usage(top_suggestion['rule_id'], success=True)
+                        
+                        matched_count += 1
+                        matches.append({
+                            'line_id': line.id,
+                            'line_number': line.line_number,
+                            'payment_id': payment_id,
+                            'score': score,
+                            'rule_applied': top_suggestion.get('rule_id') is not None
+                        })
+                    except Exception as e:
+                        # Skip si falla
+                        continue
         
         return {
             'matched_count': matched_count,

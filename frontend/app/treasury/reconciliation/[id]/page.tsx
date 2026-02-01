@@ -328,22 +328,12 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         </div>
                     </div>
 
-                    {/* Global Progress Header Tooltip-like Area */}
-                    <div className="bg-card p-5 rounded-2xl border shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Flujo de conciliación en tiempo real</span>
-                            </div>
-                            <span className="text-sm font-black text-primary font-mono">{statement.reconciliation_progress}%</span>
-                        </div>
-                        <Progress value={statement.reconciliation_progress} className="h-2 bg-muted overflow-hidden" />
-                    </div>
                 </div>
 
                 {/* Core Matching Engine (Panel) */}
                 <ReconciliationPanel
                     statementId={statement.id}
+                    treasuryAccountId={statement.treasury_account}
                     onComplete={fetchStatement}
                 />
 

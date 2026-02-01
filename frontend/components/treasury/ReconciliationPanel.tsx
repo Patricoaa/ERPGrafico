@@ -28,7 +28,7 @@ import {
 import {
     AlertCircle, AlertTriangle, ArrowRight, Ban, Check, CheckCircle2, ChevronRight, Filter,
     Loader2, MoreVertical, MousePointer2, Search, Settings2, Sparkles, Trash2,
-    TrendingDown, TrendingUp, X, XCircle, ZapIcon
+    TrendingDown, TrendingUp, Wand2, X, XCircle, ZapIcon
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -61,14 +61,24 @@ interface PaymentSuggestion {
     score: number
     reasons: string[]
     difference: string
+    rule_id?: number
+    auto_confirm?: boolean
+}
+
+interface LineSuggestion {
+    line_data: BankStatementLine
+    score: number
+    reasons: string[]
+    difference: string
 }
 
 interface ReconciliationPanelProps {
     statementId: number
+    treasuryAccountId: number
     onComplete: () => void
 }
 
-export default function ReconciliationPanel({ statementId, onComplete }: ReconciliationPanelProps) {
+export default function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
     const [unreconciledLines, setUnreconciledLines] = useState<BankStatementLine[]>([])
     // Multi-selection state
     const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
@@ -85,6 +95,7 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     const [selectedPayments, setSelectedPayments] = useState<any[]>([])
     const [paymentSearch, setPaymentSearch] = useState("")
     const [loadingPayments, setLoadingPayments] = useState(false)
+    const [lineSuggestions, setLineSuggestions] = useState<LineSuggestion[]>([])
 
     const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string }>({
         open: false, lineId: 0, paymentId: 0, amount: '0'
@@ -94,20 +105,41 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     const [searchQuery, setSearchQuery] = useState("")
     const [actionDialog, setActionDialog] = useState<{
         open: boolean,
-        type: 'exclude' | 'automatch' | null,
+        type: 'exclude' | 'bulk_exclude' | 'automatch' | null,
         lineId?: number
     }>({ open: false, type: null })
+    const [statement, setStatement] = useState<any>(null)
 
     useEffect(() => {
         fetchUnreconciledLines()
         fetchUnreconciledPayments()
+        fetchStatement()
     }, [statementId])
 
-    useEffect(() => {
-        if (selectedLine) {
-            fetchSuggestions(selectedLine.id)
+    const fetchStatement = async () => {
+        try {
+            const response = await api.get(`/treasury/statements/${statementId}/`)
+            setStatement(response.data)
+        } catch (error) {
+            console.error('Error fetching statement:', error)
         }
-    }, [selectedLine])
+    }
+
+    useEffect(() => {
+        if (selectedLines.length === 1) {
+            fetchSuggestions(selectedLines[0].id)
+        } else {
+            setSuggestions([])
+        }
+    }, [selectedLines])
+
+    useEffect(() => {
+        if (selectedPayments.length === 1) {
+            fetchLineSuggestions(selectedPayments[0].id)
+        } else {
+            setLineSuggestions([])
+        }
+    }, [selectedPayments])
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -160,6 +192,7 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
             const response = await api.get('/treasury/payments/', {
                 params: {
                     is_reconciled: 'False',
+                    treasury_account: treasuryAccountId,
                     limit: 100 // Get a good amount for the side panel
                 }
             })
@@ -172,17 +205,22 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     }
 
     const fetchSuggestions = async (lineId: number) => {
-        // Only fetch suggestions if single line selected
-        if (selectedLines.length !== 1) {
-            setSuggestions([])
-            return
-        }
         try {
             const response = await api.get(`/treasury/statement-lines/${lineId}/suggestions/`)
             setSuggestions(response.data.suggestions || [])
         } catch (error) {
             console.error('Error fetching suggestions:', error)
             setSuggestions([])
+        }
+    }
+
+    const fetchLineSuggestions = async (paymentId: number) => {
+        try {
+            const response = await api.get(`/treasury/payments/${paymentId}/suggestions/`)
+            setLineSuggestions(response.data.suggestions || [])
+        } catch (error) {
+            console.error('Error fetching line suggestions:', error)
+            setLineSuggestions([])
         }
     }
 
@@ -252,11 +290,29 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     const filteredPayments = unreconciledPayments.filter(payment => {
         if (!paymentSearch) return true
         const query = paymentSearch.toLowerCase()
+        const docLabel = payment.document_info?.label?.toLowerCase() || ''
+        const displayId = payment.display_id || payment.code || ''
+        const contactName = payment.contact_name || ''
+
         return (
-            payment.display_id.toLowerCase().includes(query) ||
-            payment.contact_name?.toLowerCase().includes(query) ||
-            payment.amount.toString().includes(query)
+            displayId.toLowerCase().includes(query) ||
+            contactName.toLowerCase().includes(query) ||
+            docLabel.includes(query) ||
+            payment.amount?.toString().includes(query)
         )
+    }).sort((a, b) => {
+        // Prioritize smart suggestions visually
+        const lineTotal = selectedLines.length > 0 ? selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0) : null
+        const isAmountMatchA = lineTotal !== null && Math.abs(Math.abs(parseFloat(a.amount)) - lineTotal) < 1
+        const isAmountMatchB = lineTotal !== null && Math.abs(Math.abs(parseFloat(b.amount)) - lineTotal) < 1
+
+        const isBackendSuggestA = suggestions.some(s => s.payment_data.id === a.id)
+        const isBackendSuggestB = suggestions.some(s => s.payment_data.id === b.id)
+
+        const scoreA = (isBackendSuggestA ? 10 : 0) + (isAmountMatchA ? 5 : 0)
+        const scoreB = (isBackendSuggestB ? 10 : 0) + (isAmountMatchB ? 5 : 0)
+
+        return scoreB - scoreA
     })
 
     const handleMatch = async (lineId: number, paymentId: number, force: boolean = false) => {
@@ -324,16 +380,27 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
         setActionDialog({ open: true, type: 'exclude', lineId })
     }
 
-    const confirmExclude = async () => {
-        if (!actionDialog.lineId) return
+    const handleBulkExclude = () => {
+        if (selectedLines.length === 0) return
+        setActionDialog({ open: true, type: 'bulk_exclude' })
+    }
 
+    const confirmExclude = async () => {
         try {
-            await api.patch(`/treasury/statement-lines/${actionDialog.lineId}/`, {
-                reconciliation_state: 'EXCLUDED'
-            })
+            if (actionDialog.type === 'bulk_exclude') {
+                await api.post(`/treasury/statement-lines/bulk_exclude/`, {
+                    line_ids: selectedLines.map(l => l.id)
+                })
+                setSelectedLines([])
+            } else if (actionDialog.lineId) {
+                await api.patch(`/treasury/statement-lines/${actionDialog.lineId}/`, {
+                    reconciliation_state: 'EXCLUDED'
+                })
+                setSelectedLines(prev => prev.filter(l => l.id !== actionDialog.lineId))
+            }
             await fetchUnreconciledLines()
         } catch (error) {
-            console.error('Error excluding line:', error)
+            console.error('Error excluding line(s):', error)
         } finally {
             setActionDialog({ open: false, type: null })
         }
@@ -395,44 +462,33 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     return (
         <div className="space-y-6">
             {/* Header / Toolbar */}
-            <div className="flex items-end justify-between bg-white p-4 rounded-xl border shadow-sm">
-                <div className="space-y-3 flex-1 max-w-xl">
+            <div className="flex items-center justify-between bg-white p-4 rounded-xl border shadow-sm">
+                <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <h3 className="text-xl font-bold tracking-tight text-foreground/80">Reconciliación Activa</h3>
                         <Badge variant="outline" className="font-mono">{unreconciledLines.length} pendientes</Badge>
                     </div>
-                    <div className="flex gap-4">
-                        <div className="relative flex-1 group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <Input
-                                placeholder="Filtrar movimientos bancarios..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 h-10 bg-muted/30 border-none focus-visible:ring-1"
-                            />
-                        </div>
-                        <div className="relative flex-1 group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <Input
-                                placeholder="Filtrar pagos en sistema..."
-                                value={paymentSearch}
-                                onChange={(e) => setPaymentSearch(e.target.value)}
-                                className="pl-9 h-10 bg-muted/30 border-none focus-visible:ring-1"
-                            />
-                        </div>
-                    </div>
                 </div>
-                <div className="flex gap-2">
+
+                <div className="flex items-center gap-6">
+                    {statement && (
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Sincronización</span>
+                            <span className="text-sm font-bold text-foreground/70">
+                                {statement.reconciled_lines} de {statement.total_lines} procesadas
+                            </span>
+                        </div>
+                    )}
                     <Button
                         onClick={handleAutoMatch}
                         disabled={autoMatching}
                         variant="secondary"
-                        className="h-10 px-6 font-semibold shadow-sm hover:translate-y-[-1px] transition-all"
+                        className="h-10 px-6 font-semibold shadow-sm hover:translate-y-[-1px] transition-all bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200"
                     >
                         {autoMatching ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                            <Sparkles className="mr-2 h-4 w-4 text-amber-500" />
+                            <Wand2 className="mr-2 h-4 w-4" />
                         )}
                         Auto-Match Inteligente
                     </Button>
@@ -496,14 +552,34 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                 {/* Left: Statement Lines List */}
                 <Card className="shadow-md border-none overflow-hidden">
                     <CardHeader className="bg-muted/30 border-b py-3 px-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                    <Filter className="h-3.5 w-3.5" />
-                                    Transacciones Bancarias
-                                </CardTitle>
+                        <div className="flex items-center justify-between gap-4">
+                            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2 whitespace-nowrap">
+                                <Filter className="h-3.5 w-3.5" />
+                                Movimientos Bancarios
+                            </CardTitle>
+                            <div className="flex items-center gap-2 max-w-[320px] w-full">
+                                {selectedLines.length > 0 && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 text-[10px] font-black text-red-500 hover:text-red-600 hover:bg-red-50 px-2 shrink-0 animate-in fade-in slide-in-from-right-2"
+                                        onClick={(e) => { e.stopPropagation(); handleBulkExclude(); }}
+                                        disabled={matching}
+                                    >
+                                        <Ban className="h-3 w-3 mr-1" />
+                                        EXCLUIR ({selectedLines.length})
+                                    </Button>
+                                )}
+                                <div className="relative flex-1 group">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary" />
+                                    <Input
+                                        placeholder="Buscar..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="h-8 pl-8 text-xs bg-white border-muted-foreground/20 focus-visible:ring-1"
+                                    />
+                                </div>
                             </div>
-                            <span className="text-[10px] font-mono text-muted-foreground">{filteredLines.length} mostradas</span>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -512,14 +588,19 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                                 const amount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit))
                                 const isCredit = parseFloat(line.credit) > parseFloat(line.debit)
                                 const isSelected = selectedLines.some(l => l.id === line.id)
+                                const payTotal = selectedPayments.length > 0 ? selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0) : null
+                                const isAmountMatch = payTotal !== null && Math.abs(amount - payTotal) < 1
+                                const isBackendSuggest = lineSuggestions.some(s => s.line_data.id === line.id)
+                                const isSuggested = isAmountMatch || isBackendSuggest
 
                                 return (
                                     <div
                                         key={line.id}
                                         onClick={() => toggleLineSelection(line)}
                                         className={cn(
-                                            "group relative px-5 py-4 cursor-pointer transition-all hover:bg-muted/20",
-                                            isSelected && "bg-primary/[0.03] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary shadow-[inset_0_0_20px_rgba(0,0,0,0.02)]"
+                                            "group relative px-5 py-4 cursor-pointer transition-all hover:bg-muted/20 border-l-2 border-transparent",
+                                            isSelected && "bg-primary/[0.03] border-l-primary shadow-[inset_0_0_20px_rgba(0,0,0,0.02)]",
+                                            isSuggested && !isSelected && "bg-amber-50/50 border-l-amber-400"
                                         )}
                                     >
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
@@ -539,6 +620,9 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                                                     <span className="text-[10px] font-medium text-muted-foreground">
                                                         {format(new Date(line.transaction_date), 'dd MMM yyyy', { locale: es })}
                                                     </span>
+                                                    {isSuggested && (
+                                                        <Badge className="bg-amber-500 hover:bg-amber-500 text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>
+                                                    )}
                                                 </div>
                                                 <p className={cn(
                                                     "text-sm font-bold truncate transition-colors",
@@ -552,12 +636,23 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className="text-right flex flex-col items-end gap-1">
-                                                <div className={cn(
-                                                    "text-[15px] font-black font-mono tracking-tight",
-                                                    isCredit ? "text-emerald-600" : "text-red-500"
-                                                )}>
-                                                    ${amount.toLocaleString('es-CL')}
+                                            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                                                        onClick={(e) => { e.stopPropagation(); handleExclude(line.id); }}
+                                                        title="Excluir movimiento"
+                                                    >
+                                                        <Ban className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    <div className={cn(
+                                                        "text-[15px] font-black font-mono tracking-tight",
+                                                        isCredit ? "text-emerald-600" : "text-red-500"
+                                                    )}>
+                                                        ${amount.toLocaleString('es-CL')}
+                                                    </div>
                                                 </div>
                                                 <div className={cn(
                                                     "text-[9px] font-bold uppercase tracking-widest",
@@ -577,14 +672,20 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                 {/* Right: Payments Panel */}
                 <Card className="shadow-md border-none overflow-hidden">
                     <CardHeader className="bg-muted/30 border-b py-3 px-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                    <ZapIcon className="h-3.5 w-3.5" />
-                                    Pagos Registrados en Sistema
-                                </CardTitle>
+                        <div className="flex items-center justify-between gap-4">
+                            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2 whitespace-nowrap">
+                                <ZapIcon className="h-3.5 w-3.5" />
+                                Pagos en Sistema
+                            </CardTitle>
+                            <div className="relative max-w-[200px] w-full group">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary" />
+                                <Input
+                                    placeholder="Buscar..."
+                                    value={paymentSearch}
+                                    onChange={(e) => setPaymentSearch(e.target.value)}
+                                    className="h-8 pl-8 text-xs bg-white border-muted-foreground/20 focus-visible:ring-1"
+                                />
                             </div>
-                            <span className="text-[10px] font-mono text-muted-foreground">{filteredPayments.length} disponibles</span>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -600,18 +701,19 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                                 </div>
                             ) : filteredPayments.map((payment) => {
                                 const isSelected = selectedPayments.some(p => p.id === payment.id)
-                                // SMART HIGHLIGHT: If lines selected, highlight if amount matches
                                 const lineTotal = selectedLines.length > 0 ? selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0) : null
-                                const isSmartSuggestion = lineTotal !== null && Math.abs(Math.abs(parseFloat(payment.amount)) - lineTotal) < 1
+                                const isAmountMatch = lineTotal !== null && Math.abs(Math.abs(parseFloat(payment.amount)) - lineTotal) < 1
+                                const isBackendSuggest = suggestions.some(s => s.payment_data.id === payment.id)
+                                const isSmartSuggestion = isAmountMatch || isBackendSuggest
 
                                 return (
                                     <div
                                         key={payment.id}
                                         onClick={() => togglePaymentSelection(payment)}
                                         className={cn(
-                                            "group relative px-5 py-4 cursor-pointer transition-all hover:bg-muted/20",
-                                            isSelected && "bg-blue-50/50 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-500 shadow-[inset_0_0_20px_rgba(0,0,0,0.01)]",
-                                            isSmartSuggestion && !isSelected && "bg-emerald-50/30 border-l-4 border-emerald-400/30"
+                                            "group relative px-5 py-4 cursor-pointer transition-all hover:bg-muted/20 border-l-2 border-transparent",
+                                            isSelected && "bg-blue-50/50 border-l-blue-500 shadow-[inset_0_0_20px_rgba(0,0,0,0.01)]",
+                                            isSmartSuggestion && !isSelected && "bg-emerald-50/50 border-l-emerald-400"
                                         )}
                                     >
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
@@ -624,16 +726,32 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                                         </div>
                                         <div className="flex items-start justify-between gap-4 pl-6">
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1.5">
-                                                    <span className="text-[10px] font-black text-foreground/70">{payment.display_id}</span>
-                                                    {isSmartSuggestion && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[8px] h-4 py-0 px-1 font-bold">MONTO COINCIDE</Badge>}
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-[10px] font-black text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{payment.display_id || payment.code}</span>
+                                                    {isAmountMatch && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[8px] h-4 py-0 px-1 font-bold">MONTO COINCIDE</Badge>}
+                                                    {isBackendSuggest && <Badge className="bg-amber-500 hover:bg-amber-500 text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>}
                                                 </div>
-                                                <p className="text-sm font-bold text-foreground/80 truncate">{payment.contact_name || 'Particular'}</p>
-                                                <p className="text-[11px] text-muted-foreground mt-0.5">📅 {format(new Date(payment.date), 'dd/MM/yy', { locale: es })}</p>
+                                                <p className="text-sm font-bold text-foreground/80 truncate mb-0.5">{payment.contact_name || 'Particular'}</p>
+
+                                                {/* Enriched Info */}
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                                                    {payment.document_info && (
+                                                        <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">
+                                                            <Filter className="h-2.5 w-2.5 opacity-50" />
+                                                            {payment.document_info.label}
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                                                        📅 {format(new Date(payment.date), 'dd/MM/yy', { locale: es })}
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-[15px] font-black font-mono tracking-tight text-foreground/90">
                                                     ${Math.abs(parseFloat(payment.amount)).toLocaleString('es-CL')}
+                                                </div>
+                                                <div className="text-[9px] font-bold uppercase text-muted-foreground/50 mt-0.5">
+                                                    {payment.payment_method_display || 'Transferencia'}
                                                 </div>
                                             </div>
                                         </div>
@@ -705,10 +823,10 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                 <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl font-bold flex items-center gap-2">
-                            {actionDialog.type === 'exclude' ? (
+                            {actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude' ? (
                                 <>
                                     <Ban className="h-5 w-5 text-red-500" />
-                                    ¿Excluir transacción?
+                                    ¿Excluir transacciones?
                                 </>
                             ) : (
                                 <>
@@ -718,8 +836,8 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                             )}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-foreground/60">
-                            {actionDialog.type === 'exclude'
-                                ? 'Esta transacción se moverá al archivo de excluidos y dejará de aparecer en este panel. Podrás re-incorporarla desde el detalle del extracto si fuera necesario.'
+                            {actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude'
+                                ? 'Estas transacciones se moverán al archivo de excluidos y dejarán de aparecer en este panel. Podrás re-incorporarlas desde el detalle del extracto si fuera necesario.'
                                 : 'Nuestro algoritmo analizará todas las líneas pendientes buscando coincidencias exactas y de alta confianza (90%+). Las transacciones seleccionadas se reconciliarán automáticamente.'
                             }
                         </AlertDialogDescription>
@@ -728,12 +846,12 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                         <AlertDialogCancel className="font-bold border-none bg-muted/50 hover:bg-muted">Retroceder</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
-                                if (actionDialog.type === 'exclude') confirmExclude()
+                                if (actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude') confirmExclude()
                                 if (actionDialog.type === 'automatch') confirmAutoMatch()
                             }}
                             className={cn(
                                 "font-bold shadow-lg",
-                                actionDialog.type === 'exclude' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary"
+                                (actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude') ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary"
                             )}
                         >
                             Comprendido, procesar

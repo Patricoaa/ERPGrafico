@@ -17,6 +17,7 @@ class PaymentSerializer(serializers.ModelSerializer):
     journal_name = serializers.CharField(source='treasury_account.name', read_only=True)
     treasury_account_type = serializers.CharField(source='treasury_account.account_type', read_only=True)
     code = serializers.SerializerMethodField()
+    display_id = serializers.CharField(read_only=True)
     document_info = serializers.SerializerMethodField()
     
     # Reconciliation data
@@ -30,7 +31,13 @@ class PaymentSerializer(serializers.ModelSerializer):
     def get_partner_name(self, obj):
         if obj.contact:
             return obj.contact.name
-        return '-'
+        if obj.invoice and obj.invoice.contact:
+            return obj.invoice.contact.name
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.name
+        if obj.purchase_order and obj.purchase_order.supplier:
+            return obj.purchase_order.supplier.name
+        return 'Particular'
 
     def get_journal_entry(self, obj):
         if obj.journal_entry:
@@ -39,8 +46,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         return None
 
     def get_code(self, obj):
-        prefix = 'ING' if obj.payment_type == 'INBOUND' else 'EGR'
-        return f"{prefix}-{str(obj.id).zfill(5)}"
+        return obj.display_id
 
     def get_document_info(self, obj):
         info = {
