@@ -201,62 +201,85 @@ class MatchingService:
     
     @staticmethod
     @transaction.atomic
+    def create_match_group(
+        line_ids: List[int],
+        payment_ids: List[int],
+        user
+    ):
+        """
+        Crea un grupo de conciliación (N:M).
+        """
+        from .models import ReconciliationMatch
+        
+        lines = list(BankStatementLine.objects.filter(id__in=line_ids).select_for_update())
+        payments = list(Payment.objects.filter(id__in=payment_ids).select_for_update())
+        
+        if len(lines) != len(line_ids) or len(payments) != len(payment_ids):
+            raise ValueError("Algunas líneas o pagos no existen")
+            
+        # Validaciones de estado
+        for l in lines:
+            if l.reconciliation_state == 'RECONCILED':
+                raise ValueError(f"Línea {l.line_number} ya reconciliada")
+            if l.statement.state == 'CONFIRMED':
+                raise ValueError(f"Extracto {l.statement.display_id} está confirmado")
+        
+        for p in payments:
+            if p.is_reconciled:
+                 # Check if partial? For now strict.
+                 raise ValueError(f"Pago {p.id} ya reconciliado")
+
+        # Create Group
+        treasury_account = lines[0].statement.treasury_account
+        group = ReconciliationMatch.objects.create(
+            treasury_account=treasury_account,
+            created_by=user,
+            is_confirmed=False
+        )
+        
+        # Link Lines
+        total_lines_amount = Decimal(0)
+        for l in lines:
+            l.reconciliation_match = group
+            l.matched_payment = None  # Clear legacy
+            l.reconciliation_state = 'MATCHED'
+            l.save()
+            total_lines_amount += abs(l.credit - l.debit)
+            
+        # Link Payments
+        total_payments_amount = Decimal(0)
+        for p in payments:
+            p.reconciliation_match = group
+            p.save()
+            total_payments_amount += abs(p.amount)
+            
+        # Calculate Difference and assign to first line (Arbitrary anchor)
+        difference = total_lines_amount - total_payments_amount
+        
+        # Reset diff on all lines first
+        for l in lines:
+            l.difference_amount = Decimal(0)
+            l.save()
+            
+        # Assign to first line
+        if lines:
+            lines[0].difference_amount = difference
+            lines[0].save()
+            
+        return group
+
+    @staticmethod
+    @transaction.atomic
     def manual_match(
         statement_line_id: int,
         payment_id: int,
         user
     ) -> BankStatementLine:
         """
-        Asocia manualmente una línea con un pago.
-        
-        Args:
-            statement_line_id: ID de línea de extracto
-            payment_id: ID de pago
-            user: Usuario que realiza el match
-        
-        Returns:
-            BankStatementLine actualizado
-        
-        Raises:
-            ValueError: Si la línea o pago no existe, o si ya están reconciliados
+        Asocia manualmente una línea con un pago (Wrapper 1:1).
         """
-        try:
-            line = BankStatementLine.objects.select_for_update().select_related('statement').get(
-                id=statement_line_id
-            )
-        except BankStatementLine.DoesNotExist:
-            raise ValueError(f"Línea de extracto {statement_line_id} no encontrada")
-        
-        try:
-            payment = Payment.objects.get(id=payment_id)
-        except Payment.DoesNotExist:
-            raise ValueError(f"Pago {payment_id} no encontrado")
-        
-        # Validaciones
-        if line.reconciliation_state == 'RECONCILED':
-            raise ValueError("Línea ya reconciliada")
-        
-        if payment.is_reconciled:
-            raise ValueError("Pago ya reconciliado con otra línea")
-        
-        if line.statement.state == 'CONFIRMED':
-            raise ValueError("No se puede modificar extracto confirmado")
-        
-        # Calcular diferencia
-        line_amount = abs(line.credit - line.debit)
-        payment_amount = abs(payment.amount)
-        difference = line_amount - payment_amount
-        
-        # Actualizar línea
-        line.matched_payment = payment
-        line.reconciliation_state = 'MATCHED'
-        line.difference_amount = difference
-        line.save()
-        
-        # Actualizar contador en statement
-        line.statement.save()  # Triggers reconciled_lines recalc via property
-        
-        return line
+        MatchingService.create_match_group([statement_line_id], [payment_id], user)
+        return BankStatementLine.objects.get(id=statement_line_id)
     
     @staticmethod
     @transaction.atomic
@@ -265,50 +288,61 @@ class MatchingService:
         user
     ) -> BankStatementLine:
         """
-        Confirma un match (MATCHED -> RECONCILED).
-        Marca el pago como reconciliado.
-        
-        Args:
-            statement_line_id: ID de línea
-            user: Usuario que confirma
-        
-        Returns:
-            BankStatementLine actualizado
+        Confirma un match (MATCHED -> RECONCILED) usando Grupos.
         """
         try:
-            # Nota: No usamos select_related('matched_payment') aquí porque es nullable
-            # y causa error con select_for_update() en Postgres (Outer Join)
             line = BankStatementLine.objects.select_for_update().select_related(
-                'statement'
+                'statement', 'reconciliation_match'
             ).get(id=statement_line_id)
         except BankStatementLine.DoesNotExist:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
         
-        if not line.matched_payment:
-            raise ValueError("Línea no tiene pago asociado")
+        group = line.reconciliation_match
         
-        if line.reconciliation_state == 'RECONCILED':
-            raise ValueError("Línea ya reconciliada")
+        # Fallback legacy 1:1 if no group (Migración en caliente)
+        if not group and line.matched_payment:
+             # Convert legacy to group logic on the fly? Or just run legacy code?
+             # Let's simple create a group now to migrate it.
+             group = MatchingService.create_match_group([line.id], [line.matched_payment.id], user)
+             # Refresh line
+             line.refresh_from_db()
         
-        # Actualizar línea
-        line.reconciliation_state = 'RECONCILED'
-        line.reconciled_at = timezone.now()
-        line.reconciled_by = user
-        line.save()
+        if not group:
+            raise ValueError("Línea no tiene conciliación asociada para confirmar")
         
-        # Actualizar pago
-        payment = line.matched_payment
-        payment.is_reconciled = True
-        payment.reconciled_at = timezone.now()
-        payment.reconciled_by = user
-        payment.bank_statement_line = line
-        payment.save()
+        if group.is_confirmed:
+             return line # Already confirmed
+             
+        # Confirm Group
+        group.is_confirmed = True
+        group.confirmed_at = timezone.now()
+        group.confirmed_by = user
+        group.save()
         
-        # Actualizar statement
-        line.statement.reconciled_lines = line.statement.lines.filter(
-            reconciliation_state='RECONCILED'
-        ).count()
-        line.statement.save()
+        # Update All Lines in Group
+        for l in group.lines.all():
+            l.reconciliation_state = 'RECONCILED'
+            l.reconciled_at = timezone.now()
+            l.reconciled_by = user
+            l.save()
+            
+            # Update Statement counters logic (Optimization: update once per statement)
+            l.statement.reconciled_lines = l.statement.lines.filter(
+                reconciliation_state='RECONCILED'
+            ).count()
+            l.statement.save()
+
+        # Update All Payments in Group
+        for p in group.payments.all():
+            p.is_reconciled = True
+            p.reconciled_at = timezone.now()
+            p.reconciled_by = user
+            p.bank_statement_line = line # Legacy connection primarily to the 'main' line? 
+                                         # Or leave null? Better leave null to avoid confusion, 
+                                         # but models.Payment.bank_statement_line exists.
+                                         # Let's link it to the first line if 1:1, or None if N:M?
+                                         # For now, let's skip legacy field to encourage 'reconciliation_match' usage.
+            p.save()
         
         return line
     
@@ -316,48 +350,67 @@ class MatchingService:
     @transaction.atomic
     def unmatch(statement_line_id: int) -> BankStatementLine:
         """
-        Remueve asociación entre línea y pago.
-        
-        Args:
-            statement_line_id: ID de línea
-        
-        Returns:
-            BankStatementLine actualizado
+        Remueve asociación (Deshace el grupo).
         """
         try:
-            # Nota: No usamos select_related('matched_payment') por bug de outer join
             line = BankStatementLine.objects.select_for_update().select_related(
-                'statement'
+                'statement', 'reconciliation_match'
             ).get(id=statement_line_id)
         except BankStatementLine.DoesNotExist:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
-        
+            
         if line.statement.state == 'CONFIRMED':
             raise ValueError("No se puede modificar extracto confirmado")
+
+        group = line.reconciliation_match
         
-        # Limpiar pago si está asociado
-        if line.matched_payment:
-            payment = line.matched_payment
-            payment.is_reconciled = False
-            payment.reconciled_at = None
-            payment.reconciled_by = None
-            payment.bank_statement_line = None
-            payment.save()
+        # Legacy fallback
+        if not group and line.matched_payment:
+             # Legacy unmatch logic
+             payment = line.matched_payment
+             payment.is_reconciled = False
+             payment.reconciled_at = None
+             payment.bank_statement_line = None
+             payment.save()
+             
+             line.matched_payment = None
+             line.reconciliation_state = 'UNRECONCILED'
+             line.difference_amount = Decimal(0)
+             line.save()
+             return line
+             
+        if not group:
+            # Nothing to do
+            return line
+
+        # Disband Group (Remove all links)
+        # 1. Payments
+        for p in group.payments.all():
+            p.is_reconciled = False
+            p.reconciled_at = None
+            p.reconciliation_match = None
+            p.bank_statement_line = None
+            p.save()
+            
+        # 2. Lines
+        for l in group.lines.all():
+            l.reconciliation_match = None
+            l.matched_payment = None
+            l.reconciliation_state = 'UNRECONCILED'
+            l.reconciled_at = None
+            l.difference_amount = Decimal(0)
+            l.save()
+            
+            # Update statement
+            l.statement.reconciled_lines = l.statement.lines.filter(
+                 reconciliation_state='RECONCILED'
+            ).count()
+            l.statement.save()
+            
+        # 3. Delete Group
+        group.delete()
         
-        # Limpiar línea
-        line.matched_payment = None
-        line.reconciliation_state = 'UNRECONCILED'
-        line.reconciled_at = None
-        line.reconciled_by = None
-        line.difference_amount = Decimal(0)
-        line.save()
-        
-        # Actualizar statement
-        line.statement.reconciled_lines = line.statement.lines.filter(
-            reconciliation_state='RECONCILED'
-        ).count()
-        line.statement.save()
-        
+        line.refresh_from_db()
         return line
     
     @staticmethod
@@ -407,8 +460,8 @@ class MatchingService:
                 payment_id = top_suggestion['payment_data']['id']
                 
                 try:
-                    # Auto-match
-                    matched_line = MatchingService.manual_match(
+                    # Auto-match (Ahora usa el wrapper que crea grupos)
+                    MatchingService.manual_match(
                         line.id,
                         payment_id,
                         None  # Sistema

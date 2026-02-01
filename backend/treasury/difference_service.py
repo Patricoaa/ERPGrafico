@@ -11,7 +11,7 @@ from django.utils import timezone
 from decimal import Decimal
 from typing import Dict, Optional
 from .models import BankStatementLine
-from accounting.models import JournalEntry, JournalItem, Account
+from accounting.models import JournalEntry, JournalItem, Account, AccountingSettings
 
 
 class DifferenceService:
@@ -37,15 +37,14 @@ class DifferenceService:
         (OTHER, 'Otro')
     ]
     
-    # Mapeo de tipos a cuentas contables (códigos estándar chileno)
-    # NOTA: Ajustar según plan de cuentas del sistema
-    DIFFERENCE_ACCOUNTS = {
-        COMMISSION: '512001',  # Gastos Bancarios - Comisiones
-        INTEREST: '413001',    # Ingresos Financieros - Intereses Ganados
-        EXCHANGE_DIFF: '413002',  # Diferencia de Cambio
-        ROUNDING: '511099',    # Gastos Varios - Ajustes de Redondeo
-        ERROR: '511098',       # Gastos Varios - Ajustes por Error
-        OTHER: '511099'        # Gastos Varios
+    # Mapeo de tipos a nombres de campos en AccountingSettings
+    ACCOUNT_FIELD_MAP = {
+        COMMISSION: 'bank_commission_account',
+        INTEREST: 'interest_income_account',
+        EXCHANGE_DIFF: 'exchange_difference_account',
+        ROUNDING: 'rounding_adjustment_account',
+        ERROR: 'error_adjustment_account',
+        OTHER: 'miscellaneous_adjustment_account'
     }
     
     @staticmethod
@@ -80,19 +79,23 @@ class DifferenceService:
         if difference_type not in valid_types:
             raise ValueError(f"Tipo de diferencia inválido: {difference_type}")
         
-        # Obtener código de cuenta de diferencia
-        difference_account_code = DifferenceService.DIFFERENCE_ACCOUNTS.get(difference_type)
-        if not difference_account_code:
-            raise ValueError(f"No hay cuenta configurada para tipo: {difference_type}")
+        # Obtener configuración contable
+        settings = AccountingSettings.objects.select_related(
+            'bank_commission_account', 'interest_income_account', 
+            'exchange_difference_account', 'rounding_adjustment_account', 
+            'error_adjustment_account', 'miscellaneous_adjustment_account'
+        ).first()
         
-        # Obtener cuentas contables
-        try:
-            difference_account = Account.objects.get(code=difference_account_code)
-        except Account.DoesNotExist:
-            raise ValueError(
-                f"Cuenta de diferencia no encontrada: {difference_account_code}. "
-                "Por favor, configura la cuenta en el plan contable."
-            )
+        if not settings:
+            raise ValueError("No existe configuración contable global. Por favor configure los ajustes de contabilidad.")
+            
+        # Obtener cuenta según el tipo
+        field_name = DifferenceService.ACCOUNT_FIELD_MAP.get(difference_type)
+        difference_account = getattr(settings, field_name)
+        
+        if not difference_account:
+            label = dict(DifferenceService.DIFFERENCE_CHOICES)[difference_type]
+            raise ValueError(f"No se ha configurado la cuenta contable para '{label}'. Revise la configuración contable.")
         
         # Cuenta de banco (de la TreasuryAccount)
         treasury_account = line.statement.treasury_account.account

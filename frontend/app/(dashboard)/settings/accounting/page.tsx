@@ -38,6 +38,14 @@ const accountingSchema = z.object({
     initial_inventory_account: z.string().nullable(),
     revaluation_account: z.string().nullable(),
 
+    // Reconciliation
+    bank_commission_account: z.string().nullable(),
+    interest_income_account: z.string().nullable(),
+    exchange_difference_account: z.string().nullable(),
+    rounding_adjustment_account: z.string().nullable(),
+    error_adjustment_account: z.string().nullable(),
+    miscellaneous_adjustment_account: z.string().nullable(),
+
     default_service_expense_account: z.string().nullable(),
     default_service_revenue_account: z.string().nullable(),
     default_subscription_expense_account: z.string().nullable(),
@@ -81,6 +89,14 @@ export default function AccountingSettingsPage() {
             adjustment_expense_account: null,
             initial_inventory_account: null,
             revaluation_account: null,
+
+            bank_commission_account: null,
+            interest_income_account: null,
+            exchange_difference_account: null,
+            rounding_adjustment_account: null,
+            error_adjustment_account: null,
+            miscellaneous_adjustment_account: null,
+
             default_service_expense_account: null,
             default_service_revenue_account: null,
             default_subscription_expense_account: null,
@@ -237,6 +253,23 @@ export default function AccountingSettingsPage() {
                                         <AccountField form={form} name="default_tax_payable_account" label="IVA Débito Fiscal (Pasivo)" accountType="LIABILITY" />
                                         <AccountField form={form} name="default_prepayment_account" label="Anticipos a Proveedores (Activo)" accountType="ASSET" />
                                         <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="md:col-span-2">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">Conciliación Bancaria</CardTitle>
+                                        <CardDescription>Cuentas para justificar diferencias en conciliaciones.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <AccountField form={form} name="bank_commission_account" label="Comisiones Bancarias (Gasto)" accountType="EXPENSE" />
+                                            <AccountField form={form} name="interest_income_account" label="Intereses Ganados (Ingreso)" accountType="INCOME" />
+                                            <AccountField form={form} name="exchange_difference_account" label="Diferencia de Cambio" accountType="" />
+                                            <AccountField form={form} name="rounding_adjustment_account" label="Ajuste por Redondeo" accountType="EXPENSE" />
+                                            <AccountField form={form} name="error_adjustment_account" label="Ajuste por Error" accountType="EXPENSE" />
+                                            <AccountField form={form} name="miscellaneous_adjustment_account" label="Ajustes Varios" accountType="EXPENSE" />
+                                        </div>
                                     </CardContent>
                                 </Card>
 

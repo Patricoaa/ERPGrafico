@@ -365,6 +365,23 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    @action(detail=False, methods=['post'])
+    def match_group(self, request):
+        """Match multiple lines with multiple payments (N:M)"""
+        try:
+            line_ids = request.data.get('line_ids', [])
+            payment_ids = request.data.get('payment_ids', [])
+            
+            if not line_ids or not payment_ids:
+                return Response({'error': 'line_ids y payment_ids requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            group = MatchingService.create_match_group(line_ids, payment_ids, request.user)
+            return Response({'message': 'Grupo creado', 'group_id': group.id})
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=True, methods=['get'])
     def suggestions(self, request, pk=None):
         """Get payment matching suggestions for this line"""
@@ -383,6 +400,7 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             if not payment_id:
                 return Response({'error': 'payment_id requerido'}, status=status.HTTP_400_BAD_REQUEST)
             
+            # Wrapper sets up a 1:1 group
             matched_line = MatchingService.manual_match(pk, payment_id, request.user)
             return Response(BankStatementLineSerializer(matched_line).data)
             

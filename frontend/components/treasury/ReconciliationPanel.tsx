@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -68,11 +69,22 @@ interface ReconciliationPanelProps {
 
 export default function ReconciliationPanel({ statementId, onComplete }: ReconciliationPanelProps) {
     const [unreconciledLines, setUnreconciledLines] = useState<BankStatementLine[]>([])
-    const [selectedLine, setSelectedLine] = useState<BankStatementLine | null>(null)
+    // Multi-selection state
+    const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
+    // Keep 'selectedLine' as the "Active/Focused" line for backward compatibility/single view
+    const selectedLine = selectedLines.length > 0 ? selectedLines[selectedLines.length - 1] : null
+
     const [suggestions, setSuggestions] = useState<PaymentSuggestion[]>([])
     const [loading, setLoading] = useState(true)
     const [matching, setMatching] = useState(false)
     const [autoMatching, setAutoMatching] = useState(false)
+
+    // Manual Grouping State
+    const [manualPayments, setManualPayments] = useState<any[]>([])
+    const [paymentSearch, setPaymentSearch] = useState("")
+    const [foundPayments, setFoundPayments] = useState<any[]>([])
+    const [searchingPayments, setSearchingPayments] = useState(false)
+
     const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string }>({
         open: false, lineId: 0, paymentId: 0, amount: '0'
     })
@@ -130,8 +142,8 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
             })
             setUnreconciledLines(response.data)
 
-            if (response.data.length > 0 && !selectedLine) {
-                setSelectedLine(response.data[0])
+            if (response.data.length > 0 && selectedLines.length === 0) {
+                setSelectedLines([response.data[0]])
             }
         } catch (error) {
             console.error('Error fetching unreconciled lines:', error)
@@ -141,12 +153,73 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
     }
 
     const fetchSuggestions = async (lineId: number) => {
+        // Only fetch suggestions if single line selected
+        if (selectedLines.length !== 1) {
+            setSuggestions([])
+            return
+        }
         try {
             const response = await api.get(`/treasury/statement-lines/${lineId}/suggestions/`)
             setSuggestions(response.data.suggestions || [])
         } catch (error) {
             console.error('Error fetching suggestions:', error)
             setSuggestions([])
+        }
+    }
+
+    const searchPayments = async (query: string) => {
+        if (!query || query.length < 2) return
+        setSearchingPayments(true)
+        try {
+            // Use existing payments endpoint with search
+            const response = await api.get('/treasury/payments/', {
+                params: { search: query, is_reconciled: 'False' } // Filter unreconciled
+            })
+            setFoundPayments(response.data.results || response.data)
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setSearchingPayments(false)
+        }
+    }
+
+    const toggleLineSelection = (line: BankStatementLine, multi: boolean) => {
+        if (multi) {
+            if (selectedLines.find(l => l.id === line.id)) {
+                setSelectedLines(prev => prev.filter(l => l.id !== line.id))
+            } else {
+                setSelectedLines(prev => [...prev, line])
+            }
+        } else {
+            setSelectedLines([line])
+        }
+    }
+
+    const handleGroupMatch = async () => {
+        if (selectedLines.length === 0 || manualPayments.length === 0) return
+
+        try {
+            setMatching(true)
+            const lineIds = selectedLines.map(l => l.id)
+            const paymentIds = manualPayments.map(p => p.id)
+
+            await api.post('/treasury/statement-lines/match_group/', {
+                line_ids: lineIds,
+                payment_ids: paymentIds
+            })
+
+            // Auto-confirm group via first line
+            await api.post(`/treasury/statement-lines/${lineIds[0]}/confirm/`)
+
+            await fetchUnreconciledLines()
+            setManualPayments([])
+            setSelectedLines([])
+
+        } catch (error: any) {
+            console.error('Group Match Error', error)
+            alert(error.response?.data?.error || 'Error creando grupo')
+        } finally {
+            setMatching(false)
         }
     }
 
@@ -203,9 +276,12 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
 
             const currentIndex = unreconciledLines.findIndex(l => l.id === lineId)
             if (currentIndex < unreconciledLines.length - 1) {
-                setSelectedLine(unreconciledLines[currentIndex + 1])
+                const nextLine = unreconciledLines[currentIndex + 1]
+                setSelectedLines([nextLine])
             } else if (unreconciledLines.length === 1) {
                 onComplete()
+            } else {
+                setSelectedLines([])
             }
         } catch (error: any) {
             console.error('Error matching:', error)
@@ -347,18 +423,29 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                             {filteredLines.map((line) => {
                                 const amount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit))
                                 const isCredit = parseFloat(line.credit) > parseFloat(line.debit)
-                                const isSelected = selectedLine?.id === line.id
+                                const isSelected = selectedLines.some(l => l.id === line.id)
 
                                 return (
                                     <div
                                         key={line.id}
-                                        onClick={() => setSelectedLine(line)}
+                                        onClick={(e) => toggleLineSelection(line, e.ctrlKey || e.metaKey)}
                                         className={cn(
                                             "group relative px-5 py-4 cursor-pointer transition-all hover:bg-muted/20",
                                             isSelected && "bg-primary/[0.03] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary shadow-[inset_0_0_20px_rgba(0,0,0,0.02)]"
                                         )}
                                     >
-                                        <div className="flex items-start justify-between gap-4">
+                                        <div className="absolute left-1 top-1/2 -translate-y-1/2">
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={(checked) => {
+                                                    // Allow direct checkbox interaction
+                                                    if (checked) setSelectedLines(prev => [...prev, line])
+                                                    else setSelectedLines(prev => prev.filter(l => l.id !== line.id))
+                                                }}
+                                                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                            />
+                                        </div>
+                                        <div className="flex items-start justify-between gap-4 pl-6">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-1.5">
                                                     <span className="text-[10px] font-bold px-1.5 py-0.5 bg-muted rounded font-mono text-muted-foreground uppercase">
@@ -412,126 +499,247 @@ export default function ReconciliationPanel({ statementId, onComplete }: Reconci
                     <Card className="shadow-md border-none overflow-hidden h-full">
                         <CardHeader className="bg-muted/30 border-b py-3 px-4">
                             <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                <ZapIcon className="h-3.5 w-3.5 text-amber-500" />
-                                Sugerencias de Conciliación
+                                {selectedLines.length > 1 ? (
+                                    <>
+                                        <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+                                        Conciliación de Grupo
+                                    </>
+                                ) : (
+                                    <>
+                                        <ZapIcon className="h-3.5 w-3.5 text-amber-500" />
+                                        Sugerencias de Conciliación
+                                    </>
+                                )}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-5">
-                            {!selectedLine ? (
-                                <div className="flex flex-col items-center justify-center py-24 text-center">
-                                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                                        <ArrowRight className="h-6 w-6 text-muted-foreground/40" />
-                                    </div>
-                                    <p className="text-sm font-bold text-foreground/40">Selecciona una transacción</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Buscaremos coincidencias inteligentes para tu selección</p>
-                                </div>
-                            ) : suggestions.length === 0 ? (
-                                <div className="space-y-4 py-4">
-                                    <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-6 text-center">
-                                        <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-3" />
-                                        <h4 className="font-bold text-amber-900 text-sm mb-1">Sin coincidencias automáticas</h4>
-                                        <p className="text-xs text-amber-800/60 max-w-[200px] mx-auto">
-                                            No encontramos pagos o depósitos que coincidan con este monto y descripción.
-                                        </p>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-2">
-                                        <Button variant="outline" className="h-11 border-dashed justify-start px-4">
-                                            <Search className="mr-2 h-4 w-4 opacity-50" />
-                                            Buscar manualmente...
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleExclude(selectedLine.id)}
-                                            variant="ghost"
-                                            className="h-11 text-muted-foreground hover:text-red-500 hover:bg-red-50"
-                                        >
-                                            <Ban className="mr-2 h-4 w-4" />
-                                            Ignorar / Excluir transacción
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Resultados Identificados</span>
-                                        <span className="text-[10px] font-mono text-muted-foreground">Top {suggestions.length} resultados</span>
-                                    </div>
-                                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-                                        {suggestions.map((suggestion, index) => (
-                                            <div
-                                                key={suggestion.payment_data.id}
-                                                className={cn(
-                                                    "group p-4 rounded-xl border transition-all hover:border-primary/50 relative overflow-hidden",
-                                                    index === 0 && "border-emerald-200 bg-emerald-50/30 ring-1 ring-emerald-500/10 shadow-sm"
-                                                )}
-                                            >
-                                                {index === 0 && (
-                                                    <div className="absolute top-0 right-0">
-                                                        <div className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-tight">Recomendado</div>
-                                                    </div>
-                                                )}
-
-                                                <div className="flex items-start justify-between gap-4 mb-3">
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1.5">
-                                                            <span className="text-xs font-black text-foreground/80">{suggestion.payment_data.display_id}</span>
-                                                            <DataCell.Badge variant={getScoreVariant(suggestion.score)}>
-                                                                {suggestion.score}% Match
-                                                            </DataCell.Badge>
+                            {selectedLines.length > 1 ? (
+                                (() => {
+                                    const totalLines = selectedLines.reduce((acc, l) => acc + (parseFloat(l.credit) - parseFloat(l.debit)), 0)
+                                    const totalPayments = manualPayments.reduce((acc, p) => acc + parseFloat(p.amount), 0)
+                                    const diff = Math.abs(totalLines) - Math.abs(totalPayments)
+                                    return (
+                                        <div className="space-y-6">
+                                            {/* Summary */}
+                                            <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <span className="text-[10px] uppercase text-muted-foreground font-bold">Total Líneas ({selectedLines.length})</span>
+                                                        <div className="text-lg font-mono font-bold text-foreground/80">
+                                                            ${Math.abs(totalLines).toLocaleString('es-CL')}
                                                         </div>
-                                                        <p className="text-[13px] font-bold text-foreground/70 truncate">{suggestion.payment_data.contact_name || 'Particular'}</p>
-                                                        <p className="text-[11px] text-muted-foreground mt-0.5">📅 {format(new Date(suggestion.payment_data.date), 'dd MMMM, yyyy', { locale: es })}</p>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <div className="text-[16px] font-black font-mono tracking-tighter text-foreground/90">
-                                                            ${Math.abs(parseFloat(suggestion.payment_data.amount)).toLocaleString('es-CL')}
+                                                    <div>
+                                                        <span className="text-[10px] uppercase text-muted-foreground font-bold">Total Pagos ({manualPayments.length})</span>
+                                                        <div className="text-lg font-mono font-bold text-foreground/80">
+                                                            ${Math.abs(totalPayments).toLocaleString('es-CL')}
                                                         </div>
-                                                        {parseFloat(suggestion.difference) !== 0 && (
-                                                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-100 text-[10px] font-bold text-amber-700 mt-1">
-                                                                Dif: ${Math.abs(parseFloat(suggestion.difference)).toLocaleString('es-CL')}
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </div>
+                                                <div className="mt-3 pt-3 border-t border-blue-200/50 flex justify-between items-center">
+                                                    <span className="text-xs font-bold uppercase text-muted-foreground">Diferencia</span>
+                                                    <span className={cn("font-mono font-black", Math.abs(diff) > 10 ? "text-red-500" : "text-emerald-600")}>
+                                                        ${Math.abs(diff).toLocaleString('es-CL')}
+                                                    </span>
+                                                </div>
+                                            </div>
 
-                                                <div className="flex flex-wrap gap-1.5 mb-4">
-                                                    {suggestion.reasons.map((reason) => (
-                                                        <span key={reason} className="text-[9px] font-bold uppercase tracking-wider bg-white border px-2 py-1 rounded-md text-muted-foreground">
-                                                            {reason.replace('_', ' ')}
-                                                        </span>
+                                            {/* Search */}
+                                            <div className="space-y-3">
+                                                <Label className="text-xs font-bold uppercase text-muted-foreground">Buscar Pagos para Agrupar</Label>
+                                                <div className="relative">
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                                    <Input
+                                                        placeholder="Monto, ID, contacto..."
+                                                        value={paymentSearch}
+                                                        onChange={(e) => {
+                                                            setPaymentSearch(e.target.value)
+                                                            searchPayments(e.target.value)
+                                                        }}
+                                                        className="pl-9 h-9 text-sm"
+                                                    />
+                                                </div>
+                                                {/* Results */}
+                                                {(foundPayments.length > 0 && paymentSearch.length >= 2) && (
+                                                    <div className="border rounded-md max-h-40 overflow-y-auto bg-white shadow-xl absolute z-50 w-full">
+                                                        {foundPayments.map(p => {
+                                                            const isAdded = manualPayments.some(mp => mp.id === p.id)
+                                                            if (isAdded) return null;
+                                                            return (
+                                                                <div key={p.id} className="p-2.5 text-xs hover:bg-muted flex justify-between cursor-pointer border-b last:border-0 bg-white"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setManualPayments([...manualPayments, p])
+                                                                        setPaymentSearch("")
+                                                                        setFoundPayments([])
+                                                                    }}>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold">{p.display_id}</span>
+                                                                        <span className="text-muted-foreground">{p.contact_name || 'Sin contacto'}</span>
+                                                                    </div>
+                                                                    <span className="font-mono font-bold self-center">${Math.abs(parseFloat(p.amount)).toLocaleString('es-CL')}</span>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Selected Payments */}
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold uppercase text-muted-foreground">Pagos Seleccionados</Label>
+                                                <div className="border rounded-lg bg-muted/10 divide-y max-h-[200px] overflow-y-auto">
+                                                    {manualPayments.length === 0 ? (
+                                                        <div className="p-4 text-center text-xs text-muted-foreground italic">
+                                                            Busca y selecciona pagos para el grupo
+                                                        </div>
+                                                    ) : manualPayments.map(p => (
+                                                        <div key={p.id} className="flex justify-between items-center p-2.5">
+                                                            <div>
+                                                                <div className="font-bold text-xs">{p.display_id}</div>
+                                                                <div className="text-[10px] text-muted-foreground">{format(new Date(p.date), 'dd/MM/yy', { locale: es })} • {p.contact_name}</div>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="font-mono text-xs font-bold">${Math.abs(parseFloat(p.amount)).toLocaleString('es-CL')}</div>
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-500" onClick={() => setManualPayments(prev => prev.filter(x => x.id !== p.id))}>
+                                                                    <XCircle className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
                                                     ))}
                                                 </div>
+                                            </div>
 
-                                                <Button
-                                                    onClick={() => handleMatch(selectedLine.id, suggestion.payment_data.id)}
-                                                    disabled={matching}
+                                            <Button className="w-full font-bold h-11 bg-blue-600 hover:bg-blue-700" onClick={handleGroupMatch} disabled={matching || manualPayments.length === 0}>
+                                                {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                                                Confirmar Grupo Match
+                                            </Button>
+
+                                            <Button variant="ghost" className="w-full h-8 text-xs text-muted-foreground" onClick={() => {
+                                                setSelectedLines([])
+                                                setManualPayments([])
+                                            }}>
+                                                Cancelar selección múltiple
+                                            </Button>
+                                        </div>
+                                    )
+                                })()
+                            ) : (
+                                !selectedLine ? (
+                                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                            <ArrowRight className="h-6 w-6 text-muted-foreground/40" />
+                                        </div>
+                                        <p className="text-sm font-bold text-foreground/40">Selecciona una transacción</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Buscaremos coincidencias inteligentes para tu selección</p>
+                                    </div>
+                                ) : suggestions.length === 0 ? (
+                                    <div className="space-y-4 py-4">
+                                        <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-6 text-center">
+                                            <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-3" />
+                                            <h4 className="font-bold text-amber-900 text-sm mb-1">Sin coincidencias automáticas</h4>
+                                            <p className="text-xs text-amber-800/60 max-w-[200px] mx-auto">
+                                                No encontramos pagos o depósitos que coincidan con este monto y descripción.
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            <Button variant="outline" className="h-11 border-dashed justify-start px-4">
+                                                <Search className="mr-2 h-4 w-4 opacity-50" />
+                                                Buscar manualmente...
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleExclude(selectedLine.id)}
+                                                variant="ghost"
+                                                className="h-11 text-muted-foreground hover:text-red-500 hover:bg-red-50"
+                                            >
+                                                <Ban className="mr-2 h-4 w-4" />
+                                                Ignorar / Excluir transacción
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Resultados Identificados</span>
+                                            <span className="text-[10px] font-mono text-muted-foreground">Top {suggestions.length} resultados</span>
+                                        </div>
+                                        <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                                            {suggestions.map((suggestion, index) => (
+                                                <div
+                                                    key={suggestion.payment_data.id}
                                                     className={cn(
-                                                        "w-full h-11 font-bold shadow-sm transition-transform active:scale-95",
-                                                        index === 0 ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary/80 hover:bg-primary"
+                                                        "group p-4 rounded-xl border transition-all hover:border-primary/50 relative overflow-hidden",
+                                                        index === 0 && "border-emerald-200 bg-emerald-50/30 ring-1 ring-emerald-500/10 shadow-sm"
                                                     )}
                                                 >
-                                                    {matching ? (
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="h-4 w-4" />
-                                                            <span>Confirmar Reconciliación</span>
+                                                    {index === 0 && (
+                                                        <div className="absolute top-0 right-0">
+                                                            <div className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-tight">Recomendado</div>
                                                         </div>
                                                     )}
-                                                </Button>
-                                            </div>
-                                        ))}
 
-                                        <Button
-                                            onClick={() => handleExclude(selectedLine.id)}
-                                            variant="ghost"
-                                            className="w-full text-muted-foreground text-[11px] font-bold uppercase hover:text-red-500 h-10 mt-2"
-                                        >
-                                            <Ban className="mr-2 h-3.5 w-3.5" />
-                                            Descartar temporalmente
-                                        </Button>
+                                                    <div className="flex items-start justify-between gap-4 mb-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 mb-1.5">
+                                                                <span className="text-xs font-black text-foreground/80">{suggestion.payment_data.display_id}</span>
+                                                                <DataCell.Badge variant={getScoreVariant(suggestion.score)}>
+                                                                    {suggestion.score}% Match
+                                                                </DataCell.Badge>
+                                                            </div>
+                                                            <p className="text-[13px] font-bold text-foreground/70 truncate">{suggestion.payment_data.contact_name || 'Particular'}</p>
+                                                            <p className="text-[11px] text-muted-foreground mt-0.5">📅 {format(new Date(suggestion.payment_data.date), 'dd MMMM, yyyy', { locale: es })}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="text-[16px] font-black font-mono tracking-tighter text-foreground/90">
+                                                                ${Math.abs(parseFloat(suggestion.payment_data.amount)).toLocaleString('es-CL')}
+                                                            </div>
+                                                            {parseFloat(suggestion.difference) !== 0 && (
+                                                                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-100 text-[10px] font-bold text-amber-700 mt-1">
+                                                                    Dif: ${Math.abs(parseFloat(suggestion.difference)).toLocaleString('es-CL')}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-1.5 mb-4">
+                                                        {suggestion.reasons.map((reason) => (
+                                                            <span key={reason} className="text-[9px] font-bold uppercase tracking-wider bg-white border px-2 py-1 rounded-md text-muted-foreground">
+                                                                {reason.replace('_', ' ')}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+
+                                                    <Button
+                                                        onClick={() => handleMatch(selectedLine.id, suggestion.payment_data.id)}
+                                                        disabled={matching}
+                                                        className={cn(
+                                                            "w-full h-11 font-bold shadow-sm transition-transform active:scale-95",
+                                                            index === 0 ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary/80 hover:bg-primary"
+                                                        )}
+                                                    >
+                                                        {matching ? (
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 className="h-4 w-4" />
+                                                                <span>Confirmar Reconciliación</span>
+                                                            </div>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            ))}
+
+                                            <Button
+                                                onClick={() => handleExclude(selectedLine.id)}
+                                                variant="ghost"
+                                                className="w-full text-muted-foreground text-[11px] font-bold uppercase hover:text-red-500 h-10 mt-2"
+                                            >
+                                                <Ban className="mr-2 h-3.5 w-3.5" />
+                                                Descartar temporalmente
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
                         </CardContent>
                     </Card>
                 </div>

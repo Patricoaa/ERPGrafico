@@ -199,6 +199,57 @@ class Command(BaseCommand):
                 settings.default_payable_account = ap_acc
                 self.stdout.write("  ✓ Cuenta por pagar por defecto configurada (2.1.01.01)")
             
+            # --- Reconciliation Accounts ---
+            # 5.2.10 - Comisiones Bancarias
+            acc_comm = None
+            if parent_52:
+                acc_comm, _ = Account.objects.get_or_create(code='5.2.10', defaults={
+                    'name': 'Comisiones Bancarias', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                })
+                settings.bank_commission_account = acc_comm
+
+            # 4.2.03 - Intereses Ganados
+            acc_int = None
+            if parent_42:
+                acc_int, _ = Account.objects.get_or_create(code='4.2.03', defaults={
+                    'name': 'Intereses Ganados', 'account_type': AccountType.INCOME, 'parent': parent_42
+                })
+                settings.interest_income_account = acc_int
+            
+            # 4.2.04 - Diferencia de Cambio
+            acc_exchange = None
+            if parent_42:
+                acc_exchange, _ = Account.objects.get_or_create(code='4.2.04', defaults={
+                    'name': 'Diferencia de Cambio', 'account_type': AccountType.INCOME, 'parent': parent_42
+                })
+                settings.exchange_difference_account = acc_exchange
+
+            # 5.2.11 - Redondeo
+            acc_rounding = None
+            if parent_52:
+                acc_rounding, _ = Account.objects.get_or_create(code='5.2.11', defaults={
+                    'name': 'Ajuste por Redondeo', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                })
+                settings.rounding_adjustment_account = acc_rounding
+
+            # 5.2.12 - Error
+            acc_error = None
+            if parent_52:
+                acc_error, _ = Account.objects.get_or_create(code='5.2.12', defaults={
+                    'name': 'Ajuste por Error', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                })
+                settings.error_adjustment_account = acc_error
+
+            # 5.2.99 - Otros
+            acc_misc = None
+            if parent_52:
+                acc_misc, _ = Account.objects.get_or_create(code='5.2.99', defaults={
+                    'name': 'Otros Gastos Varios', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                })
+                settings.miscellaneous_adjustment_account = acc_misc
+
+            self.stdout.write("  ✓ Cuentas de conciliación bancaria configuradas y mapeadas")
+
             settings.save()
             self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")
 

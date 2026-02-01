@@ -450,6 +450,44 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta usada para ajustes de costo sin cambio físico en stock.")
     )
 
+    # Reconciliation Difference Accounts
+    bank_commission_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_bank_commission',
+        verbose_name=_("Cuenta de Comisiones Bancarias"),
+        help_text=_("Para justificar diferencias por comisiones")
+    )
+    interest_income_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_interest_income',
+        verbose_name=_("Cuenta de Intereses Ganados"),
+        help_text=_("Para justificar diferencias por intereses")
+    )
+    exchange_difference_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_exchange_diff',
+        verbose_name=_("Cuenta de Diferencia de Cambio"),
+        help_text=_("Para justificar diferencias por tipo de cambio")
+    )
+    rounding_adjustment_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_rounding',
+        verbose_name=_("Cuenta de Ajuste por Redondeo"),
+        help_text=_("Para justificar diferencias de redondeo")
+    )
+    error_adjustment_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_error_adj',
+        verbose_name=_("Cuenta de Ajuste por Error"),
+        help_text=_("Para justificar errores de registro")
+    )
+    miscellaneous_adjustment_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_misc_adj',
+        verbose_name=_("Cuenta de Ajustes Varios"),
+        help_text=_("Cuenta por defecto para otros ajustes")
+    )
+
 
 
     # Advanced Accounting
