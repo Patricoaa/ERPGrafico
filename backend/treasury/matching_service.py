@@ -291,9 +291,7 @@ class MatchingService:
         Confirma un match (MATCHED -> RECONCILED) usando Grupos.
         """
         try:
-            line = BankStatementLine.objects.select_for_update().select_related(
-                'statement', 'reconciliation_match'
-            ).get(id=statement_line_id)
+            line = BankStatementLine.objects.select_for_update().get(id=statement_line_id)
         except BankStatementLine.DoesNotExist:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
         
@@ -353,9 +351,7 @@ class MatchingService:
         Remueve asociación (Deshace el grupo).
         """
         try:
-            line = BankStatementLine.objects.select_for_update().select_related(
-                'statement', 'reconciliation_match'
-            ).get(id=statement_line_id)
+            line = BankStatementLine.objects.select_for_update().get(id=statement_line_id)
         except BankStatementLine.DoesNotExist:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
             
