@@ -2,11 +2,13 @@
 
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown, Undo2, Search, Info, AlertCircle } from "lucide-react"
+import {
+    ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown,
+    Undo2, Info, AlertCircle, Loader2, CheckCircle2, GraduationCap
+} from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -25,6 +27,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
+import ReconciliationPanel from "@/components/treasury/ReconciliationPanel"
 
 interface BankStatementLine {
     id: number
@@ -63,11 +66,16 @@ interface BankStatement {
     lines: BankStatementLine[]
 }
 
+type ViewMode = 'summary' | 'matching'
+
 export default function StatementDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const router = useRouter()
+
+    const [view, setView] = useState<ViewMode>('summary')
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
+    const [confirming, setConfirming] = useState(false)
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
 
     useEffect(() => {
@@ -97,6 +105,22 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             alert('Error al deshacer la reconciliación')
         } finally {
             setUnmatchDialog({ open: false, lineId: null })
+        }
+    }
+
+    const handleConfirmStatement = async () => {
+        if (!confirm('¿Confirmar extracto? Esto lo bloqueará y no podrá modificarse.')) return
+
+        try {
+            setConfirming(true)
+            await api.post(`/treasury/statements/${id}/confirm/`)
+            alert('✅ Extracto confirmado exitosamente')
+            router.push('/treasury/reconciliation')
+        } catch (error: any) {
+            console.error('Error confirming statement:', error)
+            alert(error.response?.data?.error || 'Error al confirmar extracto')
+        } finally {
+            setConfirming(false)
         }
     }
 
@@ -213,9 +237,9 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     if (loading) {
         return (
             <div className="flex-1 p-8 pt-6">
-                <div className="flex flex-col items-center justify-center h-64 gap-2">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <p className="text-muted-foreground text-sm">Cargando detalles del extracto...</p>
+                <div className="flex flex-col items-center justify-center h-64 gap-3">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+                    <p className="text-muted-foreground text-sm font-medium">Cargando detalles del extracto...</p>
                 </div>
             </div>
         )
@@ -242,6 +266,101 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         )
     }
 
+    // --- RENDER MATCHING VIEW ---
+    if (view === 'matching') {
+        const canConfirm = statement.reconciliation_progress === 100
+
+        return (
+            <div className="flex-1 space-y-6 p-8 pt-6 bg-muted/20 min-h-screen">
+                {/* Header Area */}
+                <div className="flex flex-col gap-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full shadow-sm"
+                                onClick={() => setView('summary')}
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-2xl font-bold tracking-tight text-foreground/80">
+                                        Banco de Trabajo
+                                    </h2>
+                                    <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold px-3">
+                                        {statement.display_id}
+                                    </Badge>
+                                </div>
+                                <p className="text-muted-foreground text-sm">{statement.treasury_account_name}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="hidden md:flex items-center gap-3 mr-4 text-right">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Sincronización</p>
+                                    <p className="text-xs font-black text-foreground/70">{statement.reconciled_lines} de {statement.total_lines} líneas procesadas</p>
+                                </div>
+                            </div>
+                            {canConfirm && (
+                                <Button
+                                    onClick={handleConfirmStatement}
+                                    disabled={confirming}
+                                    className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 px-6 font-bold"
+                                >
+                                    {confirming ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Finalizando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                                            Confirmar Extracto
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="text-muted-foreground">
+                                <GraduationCap className="h-5 w-5" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Global Progress Header Tooltip-like Area */}
+                    <div className="bg-card p-5 rounded-2xl border shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Flujo de conciliación en tiempo real</span>
+                            </div>
+                            <span className="text-sm font-black text-primary font-mono">{statement.reconciliation_progress}%</span>
+                        </div>
+                        <Progress value={statement.reconciliation_progress} className="h-2 bg-muted overflow-hidden" />
+                    </div>
+                </div>
+
+                {/* Core Matching Engine (Panel) */}
+                <ReconciliationPanel
+                    statementId={statement.id}
+                    onComplete={fetchStatement}
+                />
+
+                {/* Context Help Footer */}
+                {!canConfirm && (
+                    <div className="flex items-center justify-center p-8 opacity-40 hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white px-4 py-2 rounded-full border shadow-sm">
+                            <Info className="h-3.5 w-3.5" />
+                            Para confirmar el extracto, debes reconciliar o excluir el 100% de las transacciones.
+                        </div>
+                    </div>
+                )}
+            </div>
+        )
+    }
+
+    // --- RENDER SUMMARY VIEW ---
     const totalDebits = statement.lines.reduce((acc, line) => acc + parseFloat(line.debit), 0)
     const totalCredits = statement.lines.reduce((acc, line) => acc + parseFloat(line.credit), 0)
     const netMovement = totalCredits - totalDebits
@@ -272,13 +391,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex items-center gap-2">
                     {statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
                         <Button
-                            asChild
+                            onClick={() => setView('matching')}
                             className="bg-primary hover:bg-primary/90 shadow-sm"
                         >
-                            <Link href={`/treasury/reconciliation/${id}/process`}>
-                                <span className="mr-2">⚡</span>
-                                Reconciliar
-                            </Link>
+                            <span className="mr-2">⚡</span>
+                            Reconciliar
                         </Button>
                     )}
                 </div>

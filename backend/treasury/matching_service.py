@@ -59,21 +59,35 @@ class MatchingService:
         line_amount = line.credit - line.debit
         is_inbound = line_amount > 0
         
-        # Filtrar pagos candidatos
+        # Rango de fechas (±7 días por defecto para candidatos generales)
         date_min = line.transaction_date - timedelta(days=7)
         date_max = line.transaction_date + timedelta(days=7)
         
-        payments_query = Payment.objects.filter(
+        # Criterios básicos: misma cuenta, no reconciliado, mismo sentido
+        base_filters = Q(
             treasury_account=line.statement.treasury_account,
-            date__gte=date_min,
-            date__lte=date_max,
-            is_reconciled=False,  # Solo pagos no reconciliados
+            is_reconciled=False,
             payment_type='INBOUND' if is_inbound else 'OUTBOUND'
+        )
+
+        # Candidatos por proximidad de fecha O por coincidencia exacta de ID/Referencia
+        candidate_filters = Q(date__gte=date_min, date__lte=date_max)
+        
+        if line.transaction_id:
+            candidate_filters |= Q(transaction_number__iexact=line.transaction_id)
+        
+        if line.reference:
+            # Si hay referencia, buscamos coincidencia exacta en nro transacción o referencia
+            candidate_filters |= Q(transaction_number__iexact=line.reference)
+            candidate_filters |= Q(reference__iexact=line.reference)
+
+        payments_query = Payment.objects.filter(
+            base_filters & candidate_filters
         ).select_related('contact', 'invoice', 'sale_order', 'purchase_order')
         
         # Scoring de cada pago
         suggestions = []
-        for payment in payments_query[:100]:  # Limitar a 100 para performance
+        for payment in payments_query[:50]:  # Limitar procesamiento
             score_data = MatchingService._calculate_match_score(line, payment)
             
             if score_data['score'] >= 50:  # Threshold mínimo
@@ -130,14 +144,32 @@ class MatchingService:
             score += 5
             reasons.append('date_week')
         
-        # 3. Reference match (20 puntos)
+        # 3. Reference/ID match (Hasta 30 puntos)
+        id_score = 0
+        
+        # Prioridad 1: ID de transacción exacto (30 pts)
+        if line.transaction_id and payment.transaction_number:
+            l_id = line.transaction_id.strip().upper()
+            p_id = payment.transaction_number.strip().upper()
+            if l_id == p_id:
+                id_score = max(id_score, 30)
+                reasons.append('exact_id_match')
+            elif l_id in p_id or p_id in l_id:
+                id_score = max(id_score, 20)
+                reasons.append('partial_id_match')
+        
+        # Prioridad 2: Referencia (Hasta 25 pts)
         if line.reference and payment.transaction_number:
-            if line.reference.upper() in payment.transaction_number.upper():
-                score += 20
-                reasons.append('reference_match')
-            elif payment.transaction_number.upper() in line.reference.upper():
-                score += 15
-                reasons.append('reference_partial')
+            l_ref = line.reference.strip().upper()
+            p_id = payment.transaction_number.strip().upper()
+            if l_ref == p_id:
+                id_score = max(id_score, 25)
+                reasons.append('exact_ref_match')
+            elif l_ref in p_id or p_id in l_ref:
+                id_score = max(id_score, 15)
+                reasons.append('partial_ref_match')
+        
+        score += id_score
         
         # 4. Description match (10 puntos)
         # Buscar RUT o nombre de contacto en descripción
@@ -161,7 +193,6 @@ class MatchingService:
         payment_data = PaymentSerializer(payment).data
         
         return {
-            'payment': payment,
             'payment_data': payment_data,
             'score': min(score, 100),  # Cap at 100
             'reasons': reasons,
@@ -356,9 +387,11 @@ class MatchingService:
             raise ValueError("Extracto ya confirmado")
         
         # Obtener líneas no reconciliadas
-        unreconciled_lines = statement.lines.filter(
+        unreconciled_qs = statement.lines.filter(
             reconciliation_state='UNRECONCILED'
-        ).iterator()
+        )
+        total_unreconciled = unreconciled_qs.count()
+        unreconciled_lines = unreconciled_qs.iterator()
         
         matched_count = 0
         matches = []
@@ -368,12 +401,13 @@ class MatchingService:
             
             if suggestions and suggestions[0]['score'] >= confidence_threshold:
                 top_suggestion = suggestions[0]
+                payment_id = top_suggestion['payment_data']['id']
                 
                 try:
                     # Auto-match
                     matched_line = MatchingService.manual_match(
                         line.id,
-                        top_suggestion['payment'].id,
+                        payment_id,
                         None  # Sistema
                     )
                     
@@ -381,7 +415,7 @@ class MatchingService:
                     matches.append({
                         'line_id': line.id,
                         'line_number': line.line_number,
-                        'payment_id': top_suggestion['payment'].id,
+                        'payment_id': payment_id,
                         'score': top_suggestion['score']
                     })
                 except Exception as e:
@@ -390,6 +424,6 @@ class MatchingService:
         
         return {
             'matched_count': matched_count,
-            'total_unreconciled': unreconciled_lines.count(),
+            'total_unreconciled': total_unreconciled,
             'matches': matches
         }

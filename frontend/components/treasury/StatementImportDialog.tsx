@@ -62,7 +62,8 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
         debit: null,
         credit: null,
         balance: null,
-        reference: null
+        reference: null,
+        transaction_id: null
     })
 
     const REQUIRED_FIELDS = ['date', 'description', 'debit', 'credit', 'balance']
@@ -87,7 +88,8 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             debit: null,
             credit: null,
             balance: null,
-            reference: null
+            reference: null,
+            transaction_id: null
         })
         setError(null)
         setSuccess(false)
@@ -348,6 +350,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                                                                 <SelectItem value="credit">Abonos</SelectItem>
                                                                 <SelectItem value="balance">Saldo</SelectItem>
                                                                 <SelectItem value="reference">Referencia</SelectItem>
+                                                                <SelectItem value="transaction_id">ID Transacción</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>

@@ -20,7 +20,8 @@ class GenericExcelParser(BaseParser):
                 'debit': 'C',
                 'credit': 'D',
                 'balance': 'E',
-                'reference': 'F'
+                'reference': 'F',
+                'transaction_id': 'G'
             }
         }
         if config:
@@ -99,6 +100,7 @@ class GenericExcelParser(BaseParser):
                 credit_val = get_col_val(row, col_map.get('credit'))
                 balance_val = get_col_val(row, col_map.get('balance'))
                 ref_val = get_col_val(row, col_map.get('reference'))
+                txn_id_val = get_col_val(row, col_map.get('transaction_id'))
                 
                 amount_debit = self.normalize_amount(debit_val) if debit_val else Decimal(0)
                 amount_credit = self.normalize_amount(credit_val) if credit_val else Decimal(0)
@@ -114,12 +116,13 @@ class GenericExcelParser(BaseParser):
                     else:
                         amount_credit = abs(amt)
                         amount_debit = Decimal(0)
-
+                
                 line = {
                     'line_number': line_idx,
                     'transaction_date': txn_date,
                     'description': str(desc_val).strip(),
                     'reference': str(ref_val).strip() if ref_val else '',
+                    'transaction_id': str(txn_id_val).strip() if txn_id_val else '',
                     'debit': abs(amount_debit),
                     'credit': abs(amount_credit),
                     'balance': amount_balance
