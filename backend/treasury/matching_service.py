@@ -276,8 +276,10 @@ class MatchingService:
             BankStatementLine actualizado
         """
         try:
+            # Nota: No usamos select_related('matched_payment') aquí porque es nullable
+            # y causa error con select_for_update() en Postgres (Outer Join)
             line = BankStatementLine.objects.select_for_update().select_related(
-                'matched_payment', 'statement'
+                'statement'
             ).get(id=statement_line_id)
         except BankStatementLine.DoesNotExist:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
@@ -323,8 +325,9 @@ class MatchingService:
             BankStatementLine actualizado
         """
         try:
+            # Nota: No usamos select_related('matched_payment') por bug de outer join
             line = BankStatementLine.objects.select_for_update().select_related(
-                'matched_payment', 'statement'
+                'statement'
             ).get(id=statement_line_id)
         except BankStatementLine.DoesNotExist:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
@@ -346,7 +349,7 @@ class MatchingService:
         line.reconciliation_state = 'UNRECONCILED'
         line.reconciled_at = None
         line.reconciled_by = None
-        line.difference_amount = None
+        line.difference_amount = Decimal(0)
         line.save()
         
         # Actualizar statement
