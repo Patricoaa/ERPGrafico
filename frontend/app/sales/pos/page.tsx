@@ -83,6 +83,20 @@ interface CartItem extends Product {
     uom_name?: string
 }
 
+interface BOMLine {
+    id: number
+    component: number
+    quantity: number
+    uom: number | null
+}
+
+interface BOM {
+    id: number
+    product: number
+    lines: BOMLine[]
+    active: boolean
+}
+
 const DynamicIcon = ({ name, className }: { name: string, className?: string }) => {
     const IconComponent = (LucideIcons as any)[name] || LucideIcons.Package
     return <IconComponent className={className} />
@@ -102,6 +116,11 @@ export default function POSPage() {
     const [variantModalOpen, setVariantModalOpen] = useState(false)
     const [activeParentProduct, setActiveParentProduct] = useState<Product | null>(null)
     const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null)
+
+    // Stock Validation State
+    const [bomCache, setBomCache] = useState<Record<number, BOM>>({})
+    const [componentCache, setComponentCache] = useState<Record<number, { stock: number, uom: number }>>({})
+
 
     useEffect(() => {
         // ... (fetchData implementation unchanged)
@@ -173,9 +192,116 @@ export default function POSPage() {
         }
     }
 
+    // --- Shared Stock Validation Logic ---
+
+    const fetchBOM = async (productId: number): Promise<BOM | null> => {
+        if (bomCache[productId]) return bomCache[productId]
+
+        try {
+            const res = await api.get(`/production/boms/?product_id=${productId}&active=true`)
+            const boms = res.data.results || res.data
+            const activeBom = boms.find((b: BOM) => b.active)
+            if (activeBom) {
+                setBomCache(prev => ({ ...prev, [productId]: activeBom }))
+                return activeBom
+            }
+        } catch (error) {
+            console.error(`Error fetching BOM for product ${productId}`, error)
+        }
+        return null
+    }
+
+    const fetchComponentStock = async (componentId: number): Promise<number> => {
+        // First check if it's in our main product list
+        const internalProd = products.find(p => p.id === componentId)
+        if (internalProd) return internalProd.current_stock || 0
+
+        // Then check cache
+        if (componentStockCache[componentId] !== undefined) return componentStockCache[componentId]
+
+        // Finally fetch from API
+        try {
+            const res = await api.get(`/inventory/products/${componentId}/`)
+            const stock = res.data.current_stock || 0
+            setComponentStockCache(prev => ({ ...prev, [componentId]: stock }))
+            return stock
+        } catch (error) {
+            console.error(`Error fetching stock for component ${componentId}`, error)
+            return 0
+        }
+    }
+
+    const validateStock = async (projectedItems: CartItem[]): Promise<{ valid: boolean, error?: string }> => {
+        const consumption: Record<number, number> = {}
+
+        for (const item of projectedItems) {
+            const isManufacturable = (item.product_type === 'MANUFACTURABLE' || item.requires_advanced_manufacturing)
+            const hasBom = item.has_bom || (item as any).has_active_bom
+
+            if (isManufacturable && hasBom) {
+                // Fetch BOM if missing (though usually we should pre-fetch)
+                let bom = bomCache[item.id]
+                if (!bom) bom = await fetchBOM(item.id) as BOM
+
+                if (bom && bom.lines) {
+                    for (const line of bom.lines) {
+                        const needed = line.quantity * item.qty
+                        consumption[line.component] = (consumption[line.component] || 0) + needed
+                    }
+                }
+            } else if (item.product_type === 'STORABLE') {
+                // Direct consumption
+                consumption[item.id] = (consumption[item.id] || 0) + item.qty
+            }
+        }
+
+        // Check availability
+        for (const [componentIdStr, qtyNeeded] of Object.entries(consumption)) {
+            const componentId = parseInt(componentIdStr)
+            const available = await fetchComponentStock(componentId)
+
+            if (qtyNeeded > available) {
+                // Try to get a name for the error message
+                const prod = products.find(p => p.id === componentId)
+                const name = prod?.name || `Componente #${componentId}`
+                return {
+                    valid: false,
+                    error: `Stock insuficiente para ${name}. Necesario: ${qtyNeeded}, Disponible: ${available}`
+                }
+            }
+        }
+
+        return { valid: true }
+    }
+
+
     const addProductToCart = async (product: Product, mfgData?: any) => {
+        // Pre-fetch BOM if needed for validation
         const isManufacturable = product.product_type === 'MANUFACTURABLE' || product.requires_advanced_manufacturing;
+        const hasBom = product.has_bom || (product as any).has_active_bom
+        if (isManufacturable && hasBom && !bomCache[product.id]) {
+            await fetchBOM(product.id)
+        }
+
         const existing = !isManufacturable ? items.find(i => i.id === product.id) : null;
+
+        let projectedItems = [...items]
+        let newQty = 1
+
+        if (existing) {
+            newQty = existing.qty + 1
+            projectedItems = items.map(i => i.cartItemId === existing.cartItemId ? { ...i, qty: newQty } : i)
+        } else {
+            // Mock item for validation
+            const tempItem: any = { ...product, qty: 1 }
+            projectedItems.push(tempItem)
+        }
+
+        const check = await validateStock(projectedItems)
+        if (!check.valid) {
+            toast.error(check.error)
+            return
+        }
 
         // Prioritize sale_uom if available
         const saleUoMId = (product as any).sale_uom
@@ -183,7 +309,7 @@ export default function POSPage() {
         const uomName = uoms?.find(u => u.id === defaultUoM)?.name || (product as any).uom_name
 
         if (existing) {
-            const newQty = existing.qty + 1
+            // Recalculate prices
             const prices = await fetchEffectivePrice(product, newQty, existing.uom)
             setItems(prevItems => prevItems.map(i => i.cartItemId === existing.cartItemId
                 ? {
@@ -234,16 +360,33 @@ export default function POSPage() {
         let newQty = typeof qty === 'string' ? parseFloat(qty) : qty
         if (isNaN(newQty) || newQty < 0.01) newQty = 1
 
-        const product = products.find(p => p.id === item.id)
-        if (product) {
-            let maxQty = Infinity
-            if (product.product_type === 'STORABLE') maxQty = product.current_stock || 0
-            if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
+        let maxQty = Infinity
+        const product_type = item.product_type
+        const has_bom = item.has_bom || (item as any).has_active_bom
 
-            if (newQty > maxQty) {
-                newQty = maxQty
-                toast.info(`Stock máximo alcanzado: ${maxQty}`)
-            }
+        if (product_type === 'STORABLE') maxQty = item.current_stock || 0
+        if (product_type === 'MANUFACTURABLE' && has_bom) {
+            maxQty = item.manufacturable_quantity ?? 0
+        }
+
+        if (newQty > maxQty) {
+            newQty = maxQty
+            toast.info(`Stock/Producción máxima: ${maxQty}`)
+        }
+
+        // Validate Shared Stock 
+        const projectedItems = items.map(i => i.cartItemId === cartItemId ? { ...i, qty: newQty } : i)
+        const check = await validateStock(projectedItems)
+
+        if (!check.valid) {
+            toast.error(check.error)
+            // If invalid, we don't update to the new quantity. 
+            // We could revert, but since it's an input, we just don't set the state.
+            // However, the input is controlled. We should probably set it back to previous or max valid.
+            // For now, let's just toast and stay at previous valid?
+            // Actually, if we don't call setItems, the UI might desync from the input value depending on how it's handled. 
+            // The input value is value={item.qty}. If we don't update item.qty, it snaps back.
+            return
         }
 
         const prices = await fetchEffectivePrice(item, newQty, item.uom)
@@ -282,12 +425,34 @@ export default function POSPage() {
     }
 
     const handleVariantSelected = async (variant: any) => {
+        // Ensure has_bom is set for the variant based on its active BOM status
+        const variantWithBom = {
+            ...variant,
+            has_bom: variant.has_active_bom
+        }
+
+        // Pre-fetch BOM validation
+        if ((variant.product_type === 'MANUFACTURABLE' || variant.requires_advanced_manufacturing) && variant.has_active_bom && !bomCache[variant.id]) {
+            await fetchBOM(variant.id)
+        }
+
         if (editingCartItem) {
             // Updating existing line
-            const prices = await fetchEffectivePrice(variant, editingCartItem.qty, variant.uom)
+            const projectedItems = items.map(i => i.cartItemId === editingCartItem.cartItemId ? {
+                ...i,
+                ...variantWithBom
+            } : i) // Preserve qty of editing item but change product details
+
+            const check = await validateStock(projectedItems)
+            if (!check.valid) {
+                toast.error(check.error)
+                return
+            }
+
+            const prices = await fetchEffectivePrice(variantWithBom, editingCartItem.qty, variantWithBom.uom)
             setItems(prev => prev.map(i => i.cartItemId === editingCartItem.cartItemId ? {
                 ...i,
-                ...variant,
+                ...variantWithBom,
                 unit_price_net: prices.net,
                 unit_price_gross: prices.gross,
                 total_net: PricingUtils.calculateLineNet(i.qty, prices.net),
@@ -297,7 +462,7 @@ export default function POSPage() {
         } else {
             // Adding new line
             // Use addProductToCart directly to bypass variant check
-            await addProductToCart(variant)
+            await addProductToCart(variantWithBom)
         }
     }
 
@@ -561,11 +726,10 @@ export default function POSPage() {
                                                                 className={cn(
                                                                     "h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0",
                                                                     (() => {
-                                                                        const product = products.find(p => p.id === item.id)
-                                                                        if (!product) return ""
                                                                         let maxQty = Infinity
-                                                                        if (product.product_type === 'STORABLE') maxQty = product.current_stock || 0
-                                                                        if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
+                                                                        const has_bom = item.has_bom || (item as any).has_active_bom
+                                                                        if (item.product_type === 'STORABLE') maxQty = item.current_stock || 0
+                                                                        if (item.product_type === 'MANUFACTURABLE' && has_bom) maxQty = item.manufacturable_quantity ?? 0
 
                                                                         return item.qty >= maxQty && maxQty > 0 ? "text-amber-600 bg-amber-50 rounded" : ""
                                                                     })()
@@ -575,12 +739,10 @@ export default function POSPage() {
                                                                 min="1"
                                                             />
                                                             {(() => {
-                                                                const product = products.find(p => p.id === item.id)
-                                                                if (!product) return null
-
                                                                 let maxQty = null
-                                                                if (product.product_type === 'STORABLE') maxQty = product.current_stock || 0
-                                                                if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity ?? 0
+                                                                const has_bom = item.has_bom || (item as any).has_active_bom
+                                                                if (item.product_type === 'STORABLE') maxQty = item.current_stock || 0
+                                                                if (item.product_type === 'MANUFACTURABLE' && has_bom) maxQty = item.manufacturable_quantity ?? 0
 
                                                                 if (maxQty !== null && maxQty !== Infinity) {
                                                                     return (
