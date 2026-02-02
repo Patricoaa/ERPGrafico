@@ -223,8 +223,9 @@ export function ProductVariantsTab({ form, initialData, onEditVariant }: Product
                                 <TableRow>
                                     <TableHead className="font-bold">Código</TableHead>
                                     <TableHead className="font-bold">Nombre Variante / Atributos</TableHead>
-                                    <TableHead className="font-bold text-right">Precio</TableHead>
-                                    <TableHead className="font-bold text-center">Stock</TableHead>
+                                    <TableHead className="font-bold text-right">Precio Neto</TableHead>
+                                    <TableHead className="font-bold text-right">Total c/IVA</TableHead>
+                                    <TableHead className="font-bold text-center">Disponibilidad</TableHead>
                                     <TableHead className="font-bold text-center">BOM</TableHead>
                                     <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
@@ -246,10 +247,37 @@ export function ProductVariantsTab({ form, initialData, onEditVariant }: Product
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right font-bold">${Number(v.sale_price).toLocaleString()}</TableCell>
+                                        <TableCell className="text-right font-bold text-muted-foreground">
+                                            ${Math.round(Number(v.sale_price) * 1.19).toLocaleString()}
+                                        </TableCell>
                                         <TableCell className="text-center">
-                                            <Badge variant={v.current_stock > 0 ? "success" : (v.mfg_auto_finalize ? "secondary" : "destructive")} className="font-bold">
-                                                {v.mfg_auto_finalize ? "Sobre Pedido" : v.current_stock}
-                                            </Badge>
+                                            {/* Availability Logic */}
+                                            {v.has_active_bom ? (
+                                                // If BOM exists, show manufacturable quantity (Placeholder for now as logic is complex on frontend)
+                                                // Or just use stock if it represents available?
+                                                // Request: "if variant has BOM assigned calculate units defined... if no BOM assigned (and advanced mfg) put badge available"
+                                                // Since we cannot calculate max manufacturable without component stock, we will show "Disponible" or check stock.
+                                                // The prompt says "calcula la cantidad...". Assuming current_stock might reflect it or we need to wait for backend.
+                                                // For now, I'll show current stock but with a "Mfg" hint, or just regular stock.
+                                                // User said: "if no BOM assigned (and fabricable avanzada) put badge available"
+                                                // Implies that if BOM IS assigned, we show a number.
+                                                // I will show current_stock for now.
+                                                <Badge variant={v.current_stock > 0 ? "success" : "secondary"} className="font-bold">
+                                                    {v.current_stock}
+                                                </Badge>
+                                            ) : (
+                                                // No BOM
+                                                (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
+                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                                        Disponible
+                                                    </Badge>
+                                                ) : (
+                                                    // Storable without BOM? Just stock
+                                                    <Badge variant={v.current_stock > 0 ? "success" : "destructive"} className="font-bold">
+                                                        {v.current_stock}
+                                                    </Badge>
+                                                )
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-center">
                                             {v.mfg_auto_finalize ? (

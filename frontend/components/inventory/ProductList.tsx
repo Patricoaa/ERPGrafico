@@ -63,7 +63,10 @@ export function ProductList() {
     const fetchProducts = async () => {
         setLoading(true)
         try {
-            const params = { active: 'all' }
+            const params = {
+                active: 'all',
+                parent_template__isnull: true
+            }
             const response = await api.get('/inventory/products/', { params })
             const data = response.data.results || response.data
             setProducts(data)

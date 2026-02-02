@@ -100,7 +100,7 @@ export function ProductSelector({
         const fetchProducts = async () => {
             setLoading(true)
             try {
-                let url = `/inventory/products/?search=${encodeURIComponent(searchTerm)}`
+                let url = `/inventory/products/?search=${encodeURIComponent(searchTerm)}&parent_template__isnull=true`
                 if (productType) {
                     url += `&product_type=${productType}`
                 }

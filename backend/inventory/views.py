@@ -40,29 +40,25 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
 
         active_param = self.request.query_params.get('active')
         
-        # Default behavior: Show only active products
-        if active_param is None:
-            return queryset.filter(active=True)
-            
-        # If active=all, show everything
+        # Filter by active status
         if active_param == 'all':
-            return queryset
-            
-        # If active=false, show only archived
-        if active_param == 'false':
-            return queryset.filter(active=False)
-            
-        # If active=true (default explicit)
-        queryset = queryset.filter(active=True)
+            pass # Show all
+        elif active_param == 'false':
+            queryset = queryset.filter(active=False)
+        else:
+            # Default behavior: Show only active products (active=true or active is None)
+            queryset = queryset.filter(active=True)
 
-        # Optimization: Don't show technical variants in the main list by default
-        # (they will be visible by expanding the parent template)
-        show_technical_variants = self.request.query_params.get('show_technical_variants', 'false') == 'true'
-        if not show_technical_variants and not self.kwargs.get('pk'):
-             queryset = queryset.filter(parent_template__isnull=True)
+        # Variant filtering logic
+        # 1. If parent_template__isnull is explicitly provided in query_params, 
+        #    we let DjangoFilterBackend handle it (it will be applied after get_queryset).
+        # 2. If NOT provided, we apply the default behavior of hiding technical variants.
+        if 'parent_template__isnull' not in self.request.query_params:
+            show_technical_variants = self.request.query_params.get('show_technical_variants', 'false') == 'true'
+            if not show_technical_variants:
+                queryset = queryset.filter(parent_template__isnull=True)
 
         # Option to exclude variant templates (products with has_variants=True)
-        # Useful for purchase orders where we don't want to purchase templates
         exclude_variant_templates = self.request.query_params.get('exclude_variant_templates', 'false') == 'true'
         if exclude_variant_templates:
             queryset = queryset.filter(has_variants=False)

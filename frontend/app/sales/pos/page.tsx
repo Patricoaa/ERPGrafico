@@ -103,7 +103,7 @@ export default function POSPage() {
 
             // Fetch Products
             try {
-                const res = await api.get('/inventory/products/?can_be_sold=true')
+                const res = await api.get('/inventory/products/?can_be_sold=true&parent_template__isnull=true')
                 setProducts(res.data.results || res.data)
             } catch (error) {
                 console.error("Failed to fetch products", error)

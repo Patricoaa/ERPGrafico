@@ -539,131 +539,144 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 open={open}
                 onOpenChange={onOpenChange}
                 title={`Editar Variante: ${initialData?.name || initialData?.internal_code || 'Nueva'}`}
+                size="lg"
                 description="Gestión de variante"
-                className="max-w-4xl"
+                className="max-w-[95vw] h-[90vh]"
             >
-                <div className="p-6">
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-6">
-                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/20 p-1">
-                                    <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                        Información General
-                                    </TabsTrigger>
-                                    <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                        Reglas de Precios
-                                    </TabsTrigger>
-                                    <TabsTrigger value="manufacturing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                        Fabricación
-                                    </TabsTrigger>
-                                </TabsList>
+                <div className="flex h-full">
+                    <div className="flex-1 p-6 overflow-y-auto">
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-6">
+                                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                                    <TabsList className="grid w-full grid-cols-3 rounded-xl bg-muted/20 p-1">
+                                        <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                            Información General
+                                        </TabsTrigger>
+                                        <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                            Reglas de Precios
+                                        </TabsTrigger>
+                                        <TabsTrigger value="manufacturing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                            Fabricación
+                                        </TabsTrigger>
+                                    </TabsList>
 
-                                <TabsContent value="general" className="mt-6 space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-4 md:col-span-2">
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="md:col-span-1">
-                                                    <div className="aspect-square w-full">
-                                                        <ProductImageUpload form={form} imagePreview={imagePreview} setImagePreview={setImagePreview} />
+                                    <TabsContent value="general" className="mt-6 space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-4 md:col-span-2">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div className="md:col-span-1">
+                                                        <div className="aspect-square w-full">
+                                                            <ProductImageUpload form={form} imagePreview={imagePreview} setImagePreview={setImagePreview} />
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="md:col-span-2 space-y-4">
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="internal_code"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Código Interno</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input {...field} readOnly className="bg-muted" />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                        <FormField<ProductFormValues>
-                                                            control={form.control}
-                                                            name="name"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Nombre Comercial</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input {...field} />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
+                                                    <div className="md:col-span-2 space-y-4">
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <FormField<ProductFormValues>
+                                                                control={form.control}
+                                                                name="internal_code"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Código Interno</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input {...field} readOnly className="bg-muted" />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField<ProductFormValues>
+                                                                control={form.control}
+                                                                name="name"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Nombre Comercial</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input {...field} />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="md:col-span-2">
-                                            <ProductPricingSection
-                                                form={form as any}
-                                                initialData={initialData}
-                                                canBeSold={true}
-                                                uoms={uoms}
-                                                forceEdit={true}
-                                            />
+                                            <div className="md:col-span-2">
+                                                <ProductPricingSection
+                                                    form={form as any}
+                                                    initialData={initialData}
+                                                    canBeSold={true}
+                                                    uoms={uoms}
+                                                    forceEdit={true}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                </TabsContent>
+                                    </TabsContent>
 
-                                <TabsContent value="pricing" className="mt-6">
-                                    <ProductPricingTab
+                                    <TabsContent value="pricing" className="mt-6">
+                                        <ProductPricingTab
+                                            initialData={initialData}
+                                            pricingRules={pricingRules}
+                                            fetchPricingRules={fetchPricingRules}
+                                            onOpenRuleDialog={(rule) => {
+                                                setSelectedPricingRule(rule || null)
+                                                setPricingRuleDialogOpen(true)
+                                            }}
+                                        />
+                                    </TabsContent>
+
+                                    <ProductManufacturingTab
+                                        form={form as any}
                                         initialData={initialData}
-                                        pricingRules={pricingRules}
-                                        fetchPricingRules={fetchPricingRules}
-                                        onOpenRuleDialog={(rule) => {
-                                            setSelectedPricingRule(rule || null)
-                                            setPricingRuleDialogOpen(true)
-                                        }}
+                                        products={products}
+                                        uoms={uoms}
+                                        variantMode={true}
                                     />
-                                </TabsContent>
+                                </Tabs>
 
-                                <ProductManufacturingTab
-                                    form={form as any}
-                                    initialData={initialData}
-                                    products={products}
-                                    uoms={uoms}
-                                    variantMode={true}
-                                />
-                            </Tabs>
+                                <div className="flex justify-end gap-4 pt-4 border-t">
+                                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                        Cancelar
+                                    </Button>
+                                    <Button type="submit" disabled={loading}>
+                                        {loading ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Guardando...
+                                            </>
+                                        ) : (
+                                            "Guardar Cambios"
+                                        )}
+                                    </Button>
+                                </div>
+                            </form>
+                        </Form>
+                    </div>
 
-                            <div className="flex justify-end gap-4 pt-4 border-t">
-                                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                                    Cancelar
-                                </Button>
-                                <Button type="submit" disabled={loading}>
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Guardando...
-                                        </>
-                                    ) : (
-                                        "Guardar Cambios"
-                                    )}
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
-
-                    <PricingRuleForm
-                        open={pricingRuleDialogOpen}
-                        onOpenChange={(open) => {
-                            setPricingRuleDialogOpen(open)
-                            if (!open) setSelectedPricingRule(null)
-                        }}
-                        initialData={selectedPricingRule}
-                        onSuccess={fetchPricingRules}
-                        productId={initialData?.id}
-                        productName={initialData?.name}
-                    />
+                    {/* Activity Sidebar */}
+                    {initialData && (
+                        <div className="w-80 border-l bg-muted/5 h-full flex flex-col overflow-hidden">
+                            <ActivitySidebar
+                                entityId={initialData.id}
+                                entityType="product"
+                            />
+                        </div>
+                    )}
                 </div>
-            </BaseModal >
+
+                <PricingRuleForm
+                    open={pricingRuleDialogOpen}
+                    onOpenChange={(open) => {
+                        setPricingRuleDialogOpen(open)
+                        if (!open) setSelectedPricingRule(null)
+                    }}
+                    initialData={selectedPricingRule}
+                    onSuccess={fetchPricingRules}
+                    productId={initialData?.id}
+                    productName={initialData?.name}
+                />
+            </BaseModal>
         )
     }
 
