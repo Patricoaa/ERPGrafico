@@ -313,13 +313,13 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                     {step === 'MAPPING' && previewData && (
                         <div className="space-y-4">
                             <div className="rounded-md border max-h-[500px] overflow-auto w-full">
-                                <Table>
+                                <Table className="table-auto min-w-full">
                                     <TableHeader>
                                         <TableRow>
                                             {previewData.columns.map((col, idx) => (
-                                                <TableHead key={idx} className="min-w-[150px] bg-muted/50">
-                                                    <div className="flex flex-col gap-2 py-2">
-                                                        <span className="text-xs font-mono text-muted-foreground truncate" title={String(col)}>
+                                                <TableHead key={idx} className="min-w-[180px] bg-muted/50 border-x">
+                                                    <div className="flex flex-col gap-2 py-2 px-1">
+                                                        <span className="text-[10px] font-mono text-muted-foreground break-all line-clamp-2 leading-tight h-8" title={String(col)}>
                                                             {String(col)}
                                                         </span>
                                                         <Select

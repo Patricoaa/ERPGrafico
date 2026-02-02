@@ -82,11 +82,11 @@ class BaseParser(ABC):
         Returns:
             Objeto date o None si falla
         """
-        if isinstance(value, date):
-            return value
-        
         if isinstance(value, datetime):
             return value.date()
+        
+        if isinstance(value, date):
+            return value
         
         if not value:
             return None

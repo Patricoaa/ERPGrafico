@@ -11,7 +11,11 @@ from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoM
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
-from treasury.models import TreasuryAccount, Payment
+from treasury.models import (
+    TreasuryAccount, Payment, BankStatement, BankStatementLine,
+    ReconciliationMatch, ReconciliationRule, CardPaymentProvider,
+    DailySettlement, CardTransaction
+)
 from billing.models import Invoice, NoteWorkflow
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
@@ -342,7 +346,13 @@ class Command(BaseCommand):
         _safe_delete(Warehouse, "Warehouse")
         _safe_delete(Contact, "Contact")
         
-        # 6. Treasury & Configuration
+        # 6. Treasury & Reconciliation
+        _safe_delete(CardTransaction, "CardTransaction")
+        _safe_delete(DailySettlement, "DailySettlement")
+        _safe_delete(BankStatement, "BankStatement") # Cascades to lines
+        _safe_delete(ReconciliationMatch, "ReconciliationMatch")
+        _safe_delete(ReconciliationRule, "ReconciliationRule")
+        _safe_delete(CardPaymentProvider, "CardPaymentProvider")
         _safe_delete(TreasuryAccount, "TreasuryAccount")
         _safe_delete(AccountingSettings, "AccountingSettings")
         _safe_delete(UoM, "UoM")
