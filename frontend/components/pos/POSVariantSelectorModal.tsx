@@ -28,6 +28,8 @@ interface Variant {
     id: number
     name: string
     variant_display_name?: string
+    code: string
+    internal_code?: string
     sale_price: string
     sale_price_gross: string
     current_stock: number
@@ -35,6 +37,8 @@ interface Variant {
     has_active_bom: boolean
     product_type: string
     requires_advanced_manufacturing?: boolean
+    uom?: number
+    uom_name?: string
     image?: string | null
     attribute_values_data?: {
         id: number

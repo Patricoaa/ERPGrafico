@@ -173,15 +173,7 @@ export default function POSPage() {
         }
     }
 
-    const addToCart = async (product: Product, mfgData?: any) => {
-        // If product has variants, open modal instead of adding directly
-        if (product.has_variants) {
-            setActiveParentProduct(product)
-            setEditingCartItem(null)
-            setVariantModalOpen(true)
-            return
-        }
-
+    const addProductToCart = async (product: Product, mfgData?: any) => {
         const isManufacturable = product.product_type === 'MANUFACTURABLE' || product.requires_advanced_manufacturing;
         const existing = !isManufacturable ? items.find(i => i.id === product.id) : null;
 
@@ -220,6 +212,18 @@ export default function POSPage() {
                 manufacturing_data: mfgData
             }])
         }
+    }
+
+    const addToCart = async (product: Product, mfgData?: any) => {
+        // If product has variants, open modal instead of adding directly
+        if (product.has_variants) {
+            setActiveParentProduct(product)
+            setEditingCartItem(null)
+            setVariantModalOpen(true)
+            return
+        }
+
+        await addProductToCart(product, mfgData)
     }
 
 
@@ -292,7 +296,8 @@ export default function POSPage() {
             setEditingCartItem(null)
         } else {
             // Adding new line
-            await addToCart(variant)
+            // Use addProductToCart directly to bypass variant check
+            await addProductToCart(variant)
         }
     }
 
