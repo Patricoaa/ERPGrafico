@@ -328,6 +328,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     boms: [],
                     product_custom_fields: [],
                     has_variants: false,
+                    is_dynamic_pricing: false,
                     parent_template: null,
                     attribute_values: [],
                     variant_display_name: "",

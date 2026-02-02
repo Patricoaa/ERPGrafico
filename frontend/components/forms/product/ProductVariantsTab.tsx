@@ -157,7 +157,7 @@ export function ProductVariantsTab({ form, initialData }: ProductVariantsTabProp
                                             <div key={val.id} className="flex items-center space-x-2 p-2 rounded-lg border bg-background/50">
                                                 <Checkbox
                                                     id={`val-${val.id}`}
-                                                    checked={selectedValues[attr.id]?.includes(val.id)}
+                                                    checked={selectedValues[attr.id]?.includes(val.id) || false}
                                                     onCheckedChange={() => toggleValue(attr.id, val.id)}
                                                 />
                                                 <label htmlFor={`val-${val.id}`} className="text-xs cursor-pointer select-none truncate">
@@ -173,13 +173,18 @@ export function ProductVariantsTab({ form, initialData }: ProductVariantsTabProp
                         <Button
                             className="w-full h-12 rounded-xl font-bold"
                             onClick={handleGenerateVariants}
-                            disabled={isGenerating || !initialData}
+                            disabled={isGenerating || !initialData || (form.watch("has_variants") && !initialData.has_variants)}
                         >
                             {isGenerating ? "Generando..." : "Generar Combinaciones"}
                         </Button>
                         {!initialData && (
                             <p className="text-[10px] text-destructive text-center font-medium italic">
                                 * Debe guardar el producto antes de crear variantes
+                            </p>
+                        )}
+                        {initialData && form.watch("has_variants") && !initialData.has_variants && (
+                            <p className="text-[10px] text-amber-600 text-center font-medium italic">
+                                * Guarde los cambios para activar la generación de variantes
                             </p>
                         )}
                     </div>

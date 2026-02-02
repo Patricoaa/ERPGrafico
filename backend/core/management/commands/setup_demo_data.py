@@ -7,7 +7,10 @@ from decimal import Decimal
 import random
 from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
 from accounting.services import AccountingService
-from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, PricingRule, Subscription
+from inventory.models import (
+    ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, 
+    PricingRule, Subscription, ProductAttribute, ProductAttributeValue
+)
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
@@ -350,6 +353,8 @@ class Command(BaseCommand):
         # 5. Master Data
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(Product, "Product")
+        _safe_delete(ProductAttributeValue, "ProductAttributeValue")
+        _safe_delete(ProductAttribute, "ProductAttribute")
         _safe_delete(ProductCategory, "ProductCategory")
         _safe_delete(Warehouse, "Warehouse")
         _safe_delete(Contact, "Contact")
@@ -428,6 +433,26 @@ class Command(BaseCommand):
             'paquete': uom_paquete
         }
 
+    def _create_attributes(self):
+        color, _ = ProductAttribute.objects.get_or_create(name="Color")
+        material, _ = ProductAttribute.objects.get_or_create(name="Material")
+        talla, _ = ProductAttribute.objects.get_or_create(name="Talla")
+        
+        for val in ["Blanco", "Negro", "Rojo", "Azul"]:
+            ProductAttributeValue.objects.get_or_create(attribute=color, value=val)
+            
+        for val in ["Papel Couché 300g", "Papel Kraft", "PVC"]:
+            ProductAttributeValue.objects.get_or_create(attribute=material, value=val)
+            
+        for val in ["S", "M", "L", "XL"]:
+            ProductAttributeValue.objects.get_or_create(attribute=talla, value=val)
+            
+        return {
+            'color': color,
+            'material': material,
+            'talla': talla
+        }
+
     def _create_inventory(self, accounts, uoms):
         wh, _ = Warehouse.objects.get_or_create(code="WH-CITY", defaults={'name': "Bodega Taller Central"})
 
@@ -476,6 +501,61 @@ class Command(BaseCommand):
             'receiving_warehouse': wh,
             'requires_advanced_manufacturing': True
         })
+        
+        # ---------------------------------------------------------
+        # PRODUCT VARIANTS DEMO
+        # ---------------------------------------------------------
+        attrs = self._create_attributes()
+        p_polera_base, _ = Product.objects.get_or_create(code="PT-POL-BASE", defaults={
+            'name': "Polera Corporativa",
+            'category': cat_finished,
+            'product_type': Product.Type.MANUFACTURABLE,
+            'uom': uoms['un'],
+            'sale_price': 8500,
+            'has_variants': True,
+            'mfg_auto_finalize': True, # Express
+            'requires_advanced_manufacturing': False
+        })
+        
+        # Create some variants manually for the demo
+        if p_polera_base:
+            # Variant 1: Blanco - L
+            v_blanco = ProductAttributeValue.objects.get(attribute=attrs['color'], value="Blanco")
+            v_l = ProductAttributeValue.objects.get(attribute=attrs['talla'], value="L")
+            
+            p_blanco_l, _ = Product.objects.get_or_create(
+                code="PT-POL-BLA-L",
+                defaults={
+                    'name': "Polera Corporativa",
+                    'variant_display_name': "Polera Corporativa (Blanco, L)",
+                    'category': cat_finished,
+                    'product_type': Product.Type.MANUFACTURABLE,
+                    'uom': uoms['un'],
+                    'sale_price': 8500,
+                    'parent_template': p_polera_base,
+                    'mfg_auto_finalize': True,
+                }
+            )
+            p_blanco_l.attribute_values.set([v_blanco, v_l])
+            
+            # Variant 2: Negro - XL
+            v_negro = ProductAttributeValue.objects.get(attribute=attrs['color'], value="Negro")
+            v_xl = ProductAttributeValue.objects.get(attribute=attrs['talla'], value="XL")
+            
+            p_negro_xl, _ = Product.objects.get_or_create(
+                code="PT-POL-NEG-XL",
+                defaults={
+                    'name': "Polera Corporativa",
+                    'variant_display_name': "Polera Corporativa (Negro, XL)",
+                    'category': cat_finished,
+                    'product_type': Product.Type.MANUFACTURABLE,
+                    'uom': uoms['un'],
+                    'sale_price': 9500, # Price override
+                    'parent_template': p_polera_base,
+                    'mfg_auto_finalize': True,
+                }
+            )
+            p_negro_xl.attribute_values.set([v_negro, v_xl])
 
         # BOMs
         if not BillOfMaterials.objects.filter(product=p_impresion_color).exists():

@@ -185,14 +185,14 @@ class ProductSerializer(serializers.ModelSerializer):
         # Convert QueryDict to a dict that preserves lists for our specific fields
         if isinstance(data, QueryDict):
             ret = data.dict()  # Start with standard dict (last-value)
-            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules']:
+            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules', 'attribute_values']:
                 if field in data:
                     ret[field] = data.getlist(field)
         else:
             ret = data.copy() if hasattr(data, 'copy') else data
         
         # Process the list fields (handle JSON strings if necessary)
-        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules']:
+        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules', 'attribute_values']:
             if field in ret:
                 raw_value = ret[field]
                 
@@ -210,7 +210,7 @@ class ProductSerializer(serializers.ModelSerializer):
                             except (ValueError, TypeError):
                                 # If it's a simple ID string, it will be handled by the field itself or we can cast to int
                                 # Casting to int is safer for Many-to-Many IDs
-                                if field == 'allowed_sale_uoms' and item.isdigit():
+                                if (field == 'allowed_sale_uoms' or field == 'attribute_values') and item.isdigit():
                                     processed_list.append(int(item))
                                 else:
                                     processed_list.append(item)
@@ -221,7 +221,7 @@ class ProductSerializer(serializers.ModelSerializer):
                     try:
                         ret[field] = json.loads(raw_value)
                     except (ValueError, TypeError):
-                        if field == 'allowed_sale_uoms' and raw_value.isdigit():
+                        if (field == 'allowed_sale_uoms' or field == 'attribute_values') and raw_value.isdigit():
                             ret[field] = [int(raw_value)]
                         
         return super().to_internal_value(ret)
