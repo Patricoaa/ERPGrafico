@@ -1,0 +1,108 @@
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { formatCurrency } from "@/lib/currency"
+import { Printer } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+interface POSReportProps {
+    data: {
+        session_id: number
+        opening_balance: number
+        total_cash_sales: number
+        total_card_sales: number
+        total_transfer_sales: number
+        total_credit_sales: number
+        total_sales: number
+        expected_cash: number
+        sales_by_category?: Array<{ name: string, value: number }>
+        generated_at?: string
+        user_name?: string
+    }
+    title?: string
+    type?: "X" | "Z"
+}
+
+export function POSReport({ data, title = "Informe de Caja", type = "X" }: POSReportProps) {
+    const handlePrint = () => {
+        window.print()
+    }
+
+    return (
+        <div className="w-full max-w-sm mx-auto bg-white p-4 shadow-sm border text-sm print:shadow-none print:border-none">
+            <div className="text-center mb-4">
+                <h3 className="font-bold text-lg">{title}</h3>
+                <p className="text-muted-foreground">Tipo: Informe {type}</p>
+                <p className="text-xs text-muted-foreground">Sesión #{data.session_id}</p>
+                <p className="text-xs text-muted-foreground">{new Date().toLocaleString()}</p>
+            </div>
+
+            <Separator className="my-2" />
+
+            <div className="space-y-1">
+                <div className="flex justify-between font-semibold">
+                    <span>Ventas Totales</span>
+                    <span>{formatCurrency(data.total_sales)}</span>
+                </div>
+            </div>
+
+            <Separator className="my-2" />
+
+            <div className="space-y-1">
+                <p className="font-semibold text-xs uppercase text-muted-foreground mb-1">Desglose por Medios de Pago</p>
+                <div className="flex justify-between">
+                    <span>Efectivo</span>
+                    <span>{formatCurrency(data.total_cash_sales)}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span>Tarjeta</span>
+                    <span>{formatCurrency(data.total_card_sales)}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span>Transferencia</span>
+                    <span>{formatCurrency(data.total_transfer_sales)}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span>Crédito</span>
+                    <span>{formatCurrency(data.total_credit_sales)}</span>
+                </div>
+            </div>
+
+            <Separator className="my-2" />
+
+            <div className="space-y-1">
+                <div className="flex justify-between font-semibold">
+                    <span>Fondo Inicial</span>
+                    <span>{formatCurrency(data.opening_balance)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-base">
+                    <span>Total Efectivo en Caja</span>
+                    <span>{formatCurrency(data.expected_cash)}</span>
+                </div>
+            </div>
+
+            {data.sales_by_category && data.sales_by_category.length > 0 && (
+                <>
+                    <Separator className="my-2" />
+                    <div className="space-y-1">
+                        <p className="font-semibold text-xs uppercase text-muted-foreground mb-1">Ventas por Categoría</p>
+                        {data.sales_by_category.map((cat, idx) => (
+                            <div key={idx} className="flex justify-between text-xs">
+                                <span>{cat.name}</span>
+                                <span>{formatCurrency(cat.value)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            <div className="mt-8 print:hidden">
+                <Button variant="outline" className="w-full gap-2" onClick={handlePrint}>
+                    <Printer className="h-4 w-4" />
+                    Imprimir Comprobante
+                </Button>
+            </div>
+        </div>
+    )
+}

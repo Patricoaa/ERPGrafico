@@ -494,6 +494,20 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta por defecto para otros ajustes")
     )
 
+    # POS Cash Control Accounts
+    pos_cash_difference_gain_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_diff_gain',
+        verbose_name=_("Cuenta Ganancia Diferencia Caja POS"),
+        help_text=_("Cuenta de ingreso para registrar sobrantes de caja.")
+    )
+    pos_cash_difference_loss_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_diff_loss',
+        verbose_name=_("Cuenta Pérdida Diferencia Caja POS"),
+        help_text=_("Cuenta de gasto para registrar faltantes de caja.")
+    )
+
 
 
     # Advanced Accounting

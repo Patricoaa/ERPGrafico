@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Lock, Unlock, Calculator, Banknote, CreditCard, ArrowRightLeft, FileText } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { POSReport } from "@/components/pos/POSReport"
 
 interface TreasuryAccount {
     id: number
@@ -59,6 +60,9 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
     const [loading, setLoading] = useState(true)
     const [openDialogOpen, setOpenDialogOpen] = useState(false)
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
+    const [reportDialogOpen, setReportDialogOpen] = useState(false)
+    const [reportData, setReportData] = useState<any>(null)
+    const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
 
     // Open session form state
@@ -150,15 +154,40 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
                 toast.success("Caja cerrada correctamente - Cuadra perfecto!")
             }
 
+            // Immediately fetch summary for Z Report
+            const summaryResponse = await api.get(`/treasury/pos-sessions/${currentSession.id}/summary/`)
+            setReportData(summaryResponse.data)
+            setReportType("Z")
+
+            // Close Closing Dialog and Open Report Dialog
+            setCloseDialogOpen(false)
+            setReportDialogOpen(true)
+
+            // Reset session state (local only, report is still shown)
             setCurrentSession(null)
             onSessionChange?.(null)
-            setCloseDialogOpen(false)
             setActualCash("0")
             setCloseNotes("")
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al cerrar caja")
         } finally {
             setSubmitting(false)
+        }
+    }
+
+    const handleShowXReport = async () => {
+        if (!currentSession) return
+        setLoading(true)
+        try {
+            const response = await api.get(`/treasury/pos-sessions/${currentSession.id}/summary/`)
+            setReportData(response.data)
+            setReportType("X")
+            setReportDialogOpen(true)
+        } catch (error) {
+            console.error("Error fetching report:", error)
+            toast.error("Error al generar informe")
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -256,6 +285,15 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
                 <Button
                     variant="outline"
                     size="sm"
+                    onClick={handleShowXReport}
+                    className="gap-1"
+                >
+                    <FileText className="h-4 w-4" />
+                    Informe X
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => {
                         // Pre-populate expected cash
                         setActualCash(currentSession.expected_cash.toString())
@@ -267,6 +305,21 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
                     Cerrar Caja
                 </Button>
             </div>
+
+            <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+                <DialogContent className="max-w-md">
+                    {reportData && (
+                        <POSReport
+                            data={reportData}
+                            type={reportType}
+                            title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                        />
+                    )}
+                    <DialogFooter>
+                        <Button onClick={() => setReportDialogOpen(false)}>Cerrar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
                 <DialogContent className="max-w-lg">
@@ -337,8 +390,8 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
                             />
                             {parseFloat(actualCash) !== currentSession.expected_cash && (
                                 <p className={`text-sm font-medium ${parseFloat(actualCash) > currentSession.expected_cash
-                                        ? 'text-emerald-600'
-                                        : 'text-red-600'
+                                    ? 'text-emerald-600'
+                                    : 'text-red-600'
                                     }`}>
                                     Diferencia: ${(parseFloat(actualCash) - currentSession.expected_cash).toLocaleString()}
                                     {parseFloat(actualCash) > currentSession.expected_cash ? ' (Sobrante)' : ' (Faltante)'}

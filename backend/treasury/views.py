@@ -760,9 +760,66 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 notes=notes
             )
             
-            # TODO: If difference != 0, create adjustment journal entry
-            # This would debit/credit a "Cash Shortage/Overage" account
-            
+            # Handle Cash Differences (Accounting Adjustment)
+            if difference != 0:
+                from accounting.models import AccountingSettings, JournalEntry, JournalItem
+                from accounting.services import JournalEntryService
+                
+                settings = AccountingSettings.objects.first()
+                if not settings:
+                    print("WARNING: No AccountingSettings found for POS adjustment")
+                else:
+                    treasury_account = session.treasury_account.account
+                    
+                    if difference > 0:
+                        # GAIN (Sobrante): We found MORE cash than expected.
+                        # We need to DEBIT Treasury (Increase Asset) and CREDIT Gain Account (Income)
+                        adjustment_account = settings.pos_cash_difference_gain_account
+                        description = f"Sobrante de Caja - Sesión #{session.id}"
+                        
+                        if treasury_account and adjustment_account:
+                            entry = JournalEntry.objects.create(
+                                date=timezone.now().date(),
+                                description=description,
+                                reference=f"POS-DIFF-{session.id}",
+                                state=JournalEntry.State.DRAFT # Draft initially for safety
+                            )
+                            # Debit Treasury (Increase)
+                            JournalItem.objects.create(entry=entry, account=treasury_account, debit=difference, credit=0)
+                            # Credit Gain (Income)
+                            JournalItem.objects.create(entry=entry, account=adjustment_account, debit=0, credit=difference)
+                            
+                            JournalEntryService.post_entry(entry)
+                            audit.journal_entry = entry
+                            audit.save()
+                        else:
+                             print(f"WARNING: Missing accounts for POS Gain. Treasury: {treasury_account}, Gain: {adjustment_account}")
+
+                    else:
+                        # LOSS (Faltante): We found LESS cash than expected.
+                        # We need to CREDIT Treasury (Decrease Asset) and DEBIT Loss Account (Expense)
+                        adjustment_account = settings.pos_cash_difference_loss_account
+                        description = f"Faltante de Caja - Sesión #{session.id}"
+                        abs_diff = abs(difference)
+                        
+                        if treasury_account and adjustment_account:
+                            entry = JournalEntry.objects.create(
+                                date=timezone.now().date(),
+                                description=description,
+                                reference=f"POS-DIFF-{session.id}",
+                                state=JournalEntry.State.DRAFT
+                            )
+                            # Debit Loss (Expense)
+                            JournalItem.objects.create(entry=entry, account=adjustment_account, debit=abs_diff, credit=0)
+                            # Credit Treasury (Decrease)
+                            JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_diff)
+                            
+                            JournalEntryService.post_entry(entry)
+                            audit.journal_entry = entry
+                            audit.save()
+                        else:
+                            print(f"WARNING: Missing accounts for POS Loss. Treasury: {treasury_account}, Loss: {adjustment_account}")
+
             # Close session
             session.status = 'CLOSED'
             session.closed_at = timezone.now()
@@ -783,13 +840,14 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
-        """Get summary of sales in this session"""
+        """Get detailed summary of sales in this session (X/Z Report data)"""
         try:
             session = self.get_object()
+            from django.db.models import Sum, F
+            from .models import Payment
             
-            # Get payments linked to this session (would need FK from Payment to POSSession)
-            # For now, return the stored totals
-            return Response({
+            # Basic totals from the session model (denormalized for performance)
+            totals = {
                 'session_id': session.id,
                 'opening_balance': session.opening_balance,
                 'total_cash_sales': session.total_cash_sales,
@@ -803,6 +861,48 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                     session.total_transfer_sales + 
                     session.total_credit_sales
                 )
+            }
+            
+            # Advanced Stats: Sales by Category
+            # We traverse: Session -> Payments -> Invoices -> Lines -> Product -> Category
+            # Note: This assumes 1 Payment ~= 1 Sale. For split payments, this might overcount or need weighting.
+            # For POS, typically 1 Invoice = 1 Payment, so reliable enough for X Report.
+            
+            sales_by_category = {}
+            
+            # Get all invoices paid in this session
+            # We filter payments in this session that have an invoice
+            payments = session.payments.filter(invoice__isnull=False).select_related('invoice')
+            invoices = {p.invoice for p in payments}
+            
+            for invoice in invoices:
+                # Get lines for this invoice
+                # We use the net total for category stats usually, or gross. Let's use Gross for now.
+                for line in invoice.lines.all().select_related('product', 'product__category'):
+                    category_name = "Sin Categoría"
+                    if line.product and line.product.category:
+                        # category can be an ID or object depending on how it's serialized/mapped, 
+                        # but ORM gives object.
+                        category_name = line.product.category.name
+                    
+                    if category_name not in sales_by_category:
+                        sales_by_category[category_name] = 0
+                    
+                    # Add line total (price * quantity)
+                    # We should use line.total_gross or calculate it
+                    sales_by_category[category_name] += (line.total or 0)
+            
+            # Format category data for frontend
+            category_data = [
+                {'name': k, 'value': v} for k, v in sales_by_category.items()
+            ]
+            category_data.sort(key=lambda x: x['value'], reverse=True)
+            
+            return Response({
+                **totals,
+                'sales_by_category': category_data
             })
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

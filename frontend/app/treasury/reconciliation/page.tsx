@@ -237,28 +237,33 @@ export default function ReconciliationPage() {
             </div>
 
             {/* Main Content */}
-            <div className="bg-card rounded-xl border shadow-sm">
-                <DataTable
-                    columns={columns}
-                    data={statements}
-                    loading={loading}
-                    filterColumn="display_id"
-                    searchPlaceholder="Buscar por ID..."
-                    facetedFilters={[
-                        {
-                            column: "state",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Confirmado", value: "CONFIRMED" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ]
-                        }
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={10}
-                />
-            </div>
+            {loading ? (
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+            ) : (
+                <div className="bg-card rounded-xl border shadow-sm">
+                    <DataTable
+                        columns={columns}
+                        data={statements}
+                        filterColumn="display_id"
+                        searchPlaceholder="Buscar por ID..."
+                        facetedFilters={[
+                            {
+                                column: "state",
+                                title: "Estado",
+                                options: [
+                                    { label: "Borrador", value: "DRAFT" },
+                                    { label: "Confirmado", value: "CONFIRMED" },
+                                    { label: "Anulado", value: "CANCELLED" },
+                                ]
+                            }
+                        ]}
+                        useAdvancedFilter={true}
+                        defaultPageSize={10}
+                    />
+                </div>
+            )}
 
             {/* Import Dialog */}
             <StatementImportDialog
