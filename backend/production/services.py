@@ -24,6 +24,13 @@ class WorkOrderService:
         product = sale_line.product
         if not product or product.product_type != Product.Type.MANUFACTURABLE:
             return None
+        
+        # Validate BOM requirement for Express products/variants
+        if product.requires_bom_validation:
+            raise ValidationError(
+                f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo. "
+                f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
+            )
 
         # Determine number
         last_order = WorkOrder.objects.all().order_by('id').last()
@@ -132,6 +139,13 @@ class WorkOrderService:
         """
         if product.product_type != Product.Type.MANUFACTURABLE:
             raise ValidationError("El producto debe ser fabricable.")
+        
+        # Validate BOM requirement for Express products/variants
+        if product.requires_bom_validation:
+            raise ValidationError(
+                f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo. "
+                f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
+            )
 
         final_stage_data = {'quantity': float(quantity)}
         if uom:
@@ -195,6 +209,13 @@ class WorkOrderService:
         # Only for express manufacturable products
         if not (product and product.product_type == Product.Type.MANUFACTURABLE and product.mfg_auto_finalize):
             return None
+        
+        # Validate BOM requirement for Express products/variants
+        if product.requires_bom_validation:
+            raise ValidationError(
+                f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo. "
+                f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
+            )
         
         # Determine number
         last_order = WorkOrder.objects.all().order_by('id').last()

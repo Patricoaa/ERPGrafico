@@ -377,6 +377,14 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             stage_data = request.data.get('stage_data', {})
             
             product = Product.objects.get(pk=product_id)
+            
+            # Validate BOM requirement for Express products/variants
+            if product.requires_bom_validation:
+                error_msg = f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo."
+                if product.parent_template:
+                    error_msg += " Por favor, asigne un BOM a esta variante desde el formulario de producto."
+                return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
+            
             warehouse = Warehouse.objects.get(pk=warehouse_id) if warehouse_id else Warehouse.objects.first()
             uom = UoM.objects.get(pk=uom_id) if uom_id else None
             
