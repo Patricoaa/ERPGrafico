@@ -274,7 +274,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             )
             
             return Response({
-                'message': 'Extracto importado exitosamente',
+                'message': 'Cartola importada exitosamente',
                 'statement': BankStatementSerializer(result['statement']).data,
                 'total_lines': result['total_lines'],
                 'warnings': result['warnings']
@@ -285,7 +285,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         except Exception as e:
             import traceback
             traceback.print_exc()
-            return Response({'error': f'Error al importar extracto: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'Error al importar cartola: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'])
     def preview(self, request):
@@ -336,7 +336,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             statement = BankStatement.objects.get(id=pk)
             
             if statement.state == 'CONFIRMED':
-                return Response({'error': 'Extracto ya confirmado'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Cartola ya confirmada'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Validate all lines are reconciled or excluded
             unreconciled = statement.lines.filter(
@@ -354,7 +354,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             return Response(BankStatementSerializer(statement).data)
             
         except BankStatement.DoesNotExist:
-            return Response({'error': 'Extracto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Cartola no encontrada'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -409,7 +409,7 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             # Check if statement is confirmed
             lines = BankStatementLine.objects.filter(id__in=line_ids).select_related('statement')
             if any(l.statement.state == 'CONFIRMED' for l in lines):
-                return Response({'error': 'No se pueden excluir movimientos de un extracto confirmado'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'No se pueden excluir movimientos de una cartola confirmada'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Update state
             BankStatementLine.objects.filter(id__in=line_ids).update(

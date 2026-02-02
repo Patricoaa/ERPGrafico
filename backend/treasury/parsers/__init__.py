@@ -2,7 +2,7 @@
 Bank Statement Parsers
 =======================
 
-Módulo extensible para parsear extractos bancarios de diferentes formatos.
+Módulo extensible para parsear cartolas bancarios de diferentes formatos.
 """
 
 from .base import BaseParser

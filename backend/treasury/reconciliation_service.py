@@ -29,7 +29,7 @@ class ReconciliationService:
         custom_config: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        Importa un extracto bancario desde archivo.
+        Importa una cartola bancaria desde archivo.
         
         Args:
             file: Archivo a importar (Django UploadedFile)
@@ -154,10 +154,10 @@ class ReconciliationService:
     @staticmethod
     def validate_statement(parsed_data: Dict[str, Any], treasury_account: TreasuryAccount) -> Dict[str, Any]:
         """
-        Valida los datos de un extracto parseado.
+        Valida los datos de una cartola parseada.
         
         Args:
-            parsed_data: Datos del extracto parseado
+            parsed_data: Datos de la cartola parseada
             treasury_account: Cuenta de tesorería
         
         Returns:
@@ -173,7 +173,7 @@ class ReconciliationService:
         
         # Validar que tenga líneas
         if not parsed_data.get('lines'):
-            errors.append("El extracto no contiene líneas de transacciones")
+            errors.append("La cartola no contiene líneas de transacciones")
         
         # Validar balances
         opening_balance = parsed_data.get('opening_balance', Decimal('0'))
@@ -199,7 +199,7 @@ class ReconciliationService:
         # Validar fechas
         statement_date = parsed_data.get('statement_date')
         if not statement_date:
-            errors.append("Fecha del extracto es requerida")
+            errors.append("Fecha de la cartola es requerida")
 
         # Validar consistencia línea por línea
         if lines:
@@ -257,18 +257,18 @@ class ReconciliationService:
     @staticmethod
     def get_statement_summary(statement_id: int) -> Dict[str, Any]:
         """
-        Obtiene resumen de un extracto.
+        Obtiene resumen de una cartola.
         
         Args:
-            statement_id: ID del extracto
+            statement_id: ID de la cartola
         
         Returns:
-            Dict con estadísticas del extracto
+            Dict con estadísticas de la cartola
         """
         try:
             statement = BankStatement.objects.get(id=statement_id)
         except BankStatement.DoesNotExist:
-            raise ValueError(f"Extracto {statement_id} no encontrado")
+            raise ValueError(f"Cartola {statement_id} no encontrada")
         
         lines = statement.lines.all()
         

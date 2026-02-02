@@ -2,7 +2,7 @@
 Generic CSV Parser for Bank Statements
 =======================================
 
-Parser configurable para extractos bancarios en formato CSV.
+Parser configurable para cartolas bancarios en formato CSV.
 Soporta configuración flexible por banco mediante JSON.
 """
 
@@ -16,7 +16,7 @@ from .base import BaseParser
 
 class GenericCSVParser(BaseParser):
     """
-    Parser genérico para archivos CSV de extractos bancarios.
+    Parser genérico para archivos CSV de cartolas bancarios.
     
     Configuración esperada:
     {
@@ -118,7 +118,7 @@ class GenericCSVParser(BaseParser):
             file: Archivo CSV a parsear
         
         Returns:
-            Diccionario con datos del extracto
+            Diccionario con datos del cartola
         
         Raises:
             ValueError: Si el formato es inválido

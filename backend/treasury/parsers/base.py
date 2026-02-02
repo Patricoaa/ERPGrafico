@@ -14,7 +14,7 @@ import re
 
 class BaseParser(ABC):
     """
-    Clase base abstracta para parsers de extractos bancarios.
+    Clase base abstracta para parsers de cartolas bancarios.
     
     Todos los parsers específicos deben heredar de esta clase e implementar
     los métodos mark como @abstractmethod.
@@ -32,7 +32,7 @@ class BaseParser(ABC):
     @abstractmethod
     def parse(self, file) -> Dict[str, Any]:
         """
-        Parsea el archivo de extracto bancario.
+        Parsea el archivo de cartola bancario.
         
         Args:
             file: Archivo a parsear (Django UploadedFile o file-like object)
@@ -231,7 +231,7 @@ class BaseParser(ABC):
         balance_anterior + (credit - debit) = balance_nuevo
         
         Args:
-            lines: Lista de líneas del extracto
+            lines: Lista de líneas del cartola
             opening_balance: Balance de apertura
         
         Returns:

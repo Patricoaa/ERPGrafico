@@ -28,7 +28,7 @@ class RuleService:
         Aplica reglas activas a una línea y retorna matches ordenados.
         
         Args:
-            line: Línea de extracto bancario
+            line: Línea de Cartola Bancaria
             limit: Máximo de sugerencias a retornar
         
         Returns:

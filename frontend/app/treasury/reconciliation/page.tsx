@@ -164,7 +164,7 @@ export default function ReconciliationPage() {
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground/90">Conciliación Bancaria</h2>
                     <p className="text-muted-foreground">
-                        Gestión de extractos y cuadratura de movimientos bancarios.
+                        Gestión de cartolas y cuadratura de movimientos bancarios.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ export default function ReconciliationPage() {
                     </Button>
                     <Button onClick={() => setImportDialogOpen(true)} className="bg-primary hover:bg-primary/90">
                         <Upload className="mr-2 h-4 w-4" />
-                        Importar Extracto
+                        Importar cartola
                     </Button>
                 </div>
             </div>
@@ -187,7 +187,7 @@ export default function ReconciliationPage() {
             <div className="grid gap-4 md:grid-cols-4">
                 <Card className="border-l-4 border-l-blue-500 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Extractos</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total cartolas</CardTitle>
                         <FileText className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>

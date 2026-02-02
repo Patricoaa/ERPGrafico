@@ -16,7 +16,7 @@ from accounting.models import JournalEntry, JournalItem, Account, AccountingSett
 
 class DifferenceService:
     """
-    Manejo de diferencias entre extractos bancarios y pagos registrados.
+    Manejo de diferencias entre cartolas bancarias y pagos registrados.
     Genera asientos contables automáticos para ajustes.
     """
     
@@ -269,10 +269,10 @@ class DifferenceService:
     @staticmethod
     def get_difference_summary(statement_id: int) -> Dict:
         """
-        Resumen de diferencias para un extracto.
+        Resumen de diferencias para una cartola.
         
         Args:
-            statement_id: ID del extracto
+            statement_id: ID de la cartola
         
         Returns:
             Dict con resumen de diferencias

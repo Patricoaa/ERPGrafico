@@ -47,10 +47,10 @@ class ReportsService:
         if date_to:
             filters &= Q(statement_date__lte=date_to)
         
-        # Obtener extractos
+        # Obtener cartolas
         statements = BankStatement.objects.filter(filters)
         
-        # Métricas de extractos
+        # Métricas de cartolas
         total_statements = statements.count()
         confirmed_statements = statements.filter(state='CONFIRMED').count()
         draft_statements = statements.filter(state='DRAFT').count()
@@ -286,10 +286,10 @@ class ReportsService:
         statement_id: int
     ) -> List[Dict[str, Any]]:
         """
-        Timeline de actividades de reconciliación para un extracto.
+        Timeline de actividades de reconciliación para una cartola.
         
         Args:
-            statement_id: ID del extracto
+            statement_id: ID de la cartola
         
         Returns:
             Lista de eventos cronológicos
@@ -302,7 +302,7 @@ class ReportsService:
         events.append({
             'timestamp': statement.imported_at.isoformat(),
             'type': 'IMPORT',
-            'description': 'Extracto importado',
+            'description': 'Cartola importada',
             'user': statement.imported_by.get_full_name() if statement.imported_by else None
         })
         
@@ -321,12 +321,12 @@ class ReportsService:
                     'amount': float(abs(line.credit - line.debit))
                 })
         
-        # Evento: Confirmación del extracto (si está confirmada)
+        # Evento: Confirmación de la cartola (si está confirmada)
         if statement.state == 'CONFIRMED':
             events.append({
                 'timestamp': statement.updated_at.isoformat(),
                 'type': 'CONFIRM',
-                'description': 'Extracto confirmado',
+                'description': 'Cartola confirmada',
                 'user': None
             })
         
@@ -368,7 +368,7 @@ class ReportsService:
             row = {
                 'Fecha': line.transaction_date,
                 'Cuenta': line.statement.treasury_account.name,
-                'Extracto': line.statement.id,
+                'Cartola': line.statement.id,
                 'Descripción': line.description,
                 'Referencia': line.reference,
                 'Cargo': line.debit if line.debit > 0 else 0,

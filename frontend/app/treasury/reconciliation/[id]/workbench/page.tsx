@@ -18,6 +18,7 @@ interface BankStatement {
     total_lines: number
     reconciled_lines: number
     reconciliation_progress: number
+    treasury_account: number
     state: string
     state_display: string
 }
@@ -54,16 +55,16 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
     }
 
     const handleConfirmStatement = async () => {
-        if (!confirm('¿Confirmar extracto? Esto lo bloqueará y no podrá modificarse.')) return
+        if (!confirm('¿Confirmar cartola? Esto lo bloqueará y no podrá modificarse.')) return
 
         try {
             setConfirming(true)
             await api.post(`/treasury/statements/${statementId}/confirm/`)
-            alert('✅ Extracto confirmado exitosamente')
+            alert('✅ Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
         } catch (error: any) {
             console.error('Error confirming statement:', error)
-            alert(error.response?.data?.error || 'Error al confirmar extracto')
+            alert(error.response?.data?.error || 'Error al confirmar cartola')
         } finally {
             setConfirming(false)
         }
@@ -91,7 +92,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground text-sm">No pudimos localizar el extracto #{id}. Por favor verifica el enlace.</p>
+                        <p className="text-muted-foreground text-sm">No pudimos localizar la cartola #{id}. Por favor verifica el enlace.</p>
                         <Button onClick={() => router.push('/treasury/reconciliation')} variant="outline" className="mt-6 w-full font-bold">
                             Volver al listado
                         </Button>
@@ -150,7 +151,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                                 ) : (
                                     <>
                                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                                        Confirmar Extracto
+                                        Confirmar Cartola
                                     </>
                                 )}
                             </Button>
@@ -177,6 +178,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
             {/* Core Matching Engine (Panel) */}
             <ReconciliationPanel
                 statementId={statementId}
+                treasuryAccountId={statement.treasury_account}
                 onComplete={handleComplete}
             />
 
@@ -185,7 +187,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                 <div className="flex items-center justify-center p-8 opacity-40 hover:opacity-100 transition-opacity">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white px-4 py-2 rounded-full border shadow-sm">
                         <Info className="h-3.5 w-3.5" />
-                        Para confirmar el extracto, debes reconciliar o excluir el 100% de las transacciones.
+                        Para confirmar la cartola, debes reconciliar o excluir el 100% de las transacciones.
                     </div>
                 </div>
             )}

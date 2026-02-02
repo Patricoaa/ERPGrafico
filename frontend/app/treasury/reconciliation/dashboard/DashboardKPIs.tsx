@@ -75,7 +75,7 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Extractos</CardTitle>
+                    <CardTitle className="text-sm font-medium">cartolas</CardTitle>
                     <FileText className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>

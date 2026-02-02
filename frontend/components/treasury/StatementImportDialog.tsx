@@ -212,7 +212,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             console.error('Error importing:', error)
             setError(
                 error.response?.data?.error ||
-                'Error al importar el extracto.'
+                'Error al importar la cartola.'
             )
         } finally {
             setLoading(false)
@@ -253,7 +253,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             <DialogContent className={cn("transition-all duration-300", step === 'MAPPING' ? "sm:max-w-7xl max-w-[95vw] w-full" : "sm:max-w-[500px]")}>
                 <DialogHeader>
                     <DialogTitle>
-                        {step === 'MAPPING' ? 'Configurar Columnas' : 'Importar Extracto Bancario'}
+                        {step === 'MAPPING' ? 'Configurar Columnas' : 'Importar Cartola Bancaria'}
                     </DialogTitle>
                     <DialogDescription>
                         {step === 'MAPPING'

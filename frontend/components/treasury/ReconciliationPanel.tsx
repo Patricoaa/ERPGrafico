@@ -250,6 +250,34 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
     const handleGroupMatch = async (force: boolean = false) => {
         if (selectedLines.length === 0 || selectedPayments.length === 0) return
 
+        // Check for consistency (All same sense)
+        const lineSenses = selectedLines.map(l => parseFloat(l.credit) > 0 ? 'ABONO' : 'CARGO')
+        const paySenses = selectedPayments.map(p => p.payment_type)
+
+        const allLinesSame = new Set(lineSenses).size === 1
+        const allPaysSame = new Set(paySenses).size === 1
+
+        if (!allLinesSame) {
+            alert("⚠️ No puedes mezclar Cargos y Abonos en una sola conciliación.")
+            return
+        }
+        if (!allPaysSame) {
+            alert("⚠️ No puedes mezclar Ingresos y Egresos en una sola conciliación.")
+            return
+        }
+
+        const lineSense = lineSenses[0]
+        const paySense = paySenses[0]
+
+        if (lineSense === 'ABONO' && paySense !== 'INBOUND') {
+            alert("⚠️ Los Abonos bancarios solo pueden conciliarse con Ingresos.")
+            return
+        }
+        if (lineSense === 'CARGO' && paySense !== 'OUTBOUND') {
+            alert("⚠️ Los Cargos bancarios solo pueden conciliarse con Egresos.")
+            return
+        }
+
         // Check for difference
         if (!force) {
             const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
@@ -502,7 +530,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                         <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                         <div>
                             <p className="font-bold text-emerald-900">¡Todo reconciliado!</p>
-                            <p className="text-sm text-emerald-700/80">Has completado el procesamiento de todas las líneas de este extracto.</p>
+                            <p className="text-sm text-emerald-700/80">Has completado el procesamiento de todas las líneas de esta cartola.</p>
                         </div>
                     </div>
                 </CardContent>
@@ -534,14 +562,14 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                         onClick={handleAutoMatch}
                         disabled={autoMatching}
                         variant="secondary"
-                        className="h-10 px-6 font-semibold shadow-sm hover:translate-y-[-1px] transition-all bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200"
+                        className="h-10 px-6 font-semibold shadow-sm hover:translate-y-[-1px] transition-all bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200"
                     >
                         {autoMatching ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                            <Wand2 className="mr-2 h-4 w-4" />
+                            <Sparkles className="mr-2 h-4 w-4" />
                         )}
-                        Auto-Match Inteligente
+                        Conciliación Automática
                     </Button>
                 </div>
             </div>
@@ -709,7 +737,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                                     "text-[9px] font-bold uppercase tracking-widest",
                                                     isCredit ? "text-emerald-600/50" : "text-red-500/50"
                                                 )}>
-                                                    {isCredit ? "Crédito" : "Débito"}
+                                                    {isCredit ? "Abono" : "Cargo"}
                                                 </div>
                                             </div>
                                         </div>
@@ -889,7 +917,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-foreground/60">
                             {actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude'
-                                ? 'Estas transacciones se moverán al archivo de excluidos y dejarán de aparecer en este panel. Podrás re-incorporarlas desde el detalle del extracto si fuera necesario.'
+                                ? 'Estas transacciones se moverán al archivo de excluidos y dejarán de aparecer en este panel. Podrás re-incorporarlas desde el detalle de la cartola si fuera necesario.'
                                 : 'Nuestro algoritmo analizará todas las líneas pendientes buscando coincidencias exactas y de alta confianza (90%+). Las transacciones seleccionadas se reconciliarán automáticamente.'
                             }
                         </AlertDialogDescription>

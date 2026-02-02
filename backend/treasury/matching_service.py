@@ -2,7 +2,7 @@
 Matching Service
 ================
 
-Servicio para matching automático y manual de líneas de extracto con pagos.
+Servicio para matching automático y manual de líneas de cartola con pagos.
 """
 
 from django.db import transaction
@@ -17,7 +17,7 @@ from .rule_service import RuleService
 
 class MatchingService:
     """
-    Servicio para matching de líneas de extracto con pagos.
+    Servicio para matching de líneas de cartola con pagos.
     
     Implementa 3 estrategias de matching por prioridad:
     1. Exact Match: monto + fecha + referencia exactos
@@ -31,10 +31,10 @@ class MatchingService:
         limit: int = 5
     ) -> List[Dict[str, Any]]:
         """
-        Sugiere pagos candidatos para una línea de extracto.
+        Sugiere pagos candidatos para una línea de cartola.
         
         Args:
-            statement_line_id: ID de la línea de extracto
+            statement_line_id: ID de la línea de cartola
             limit: Máximo número de sugerencias a retornar
         
         Returns:
@@ -124,7 +124,7 @@ class MatchingService:
         limit: int = 5
     ) -> List[Dict[str, Any]]:
         """
-        Sugiere líneas de extracto para un pago. (Bidireccional)
+        Sugiere líneas de cartola para un pago. (Bidireccional)
         """
         try:
             payment = Payment.objects.get(id=payment_id)
@@ -298,16 +298,33 @@ class MatchingService:
         if len(lines) != len(line_ids) or len(payments) != len(payment_ids):
             raise ValueError("Algunas líneas o pagos no existen")
             
-        # Validaciones de estado
+        # Validaciones de estado y consistencia
+        is_all_abonos = all(l.credit > 0 for l in lines)
+        is_all_cargos = all(l.debit > 0 for l in lines)
+        
+        if not (is_all_abonos or is_all_cargos):
+            raise ValueError("No se pueden mezclar Cargos y Abonos en un mismo grupo de conciliación.")
+            
+        is_all_inbound = all(p.payment_type == 'INBOUND' for p in payments)
+        is_all_outbound = all(p.payment_type == 'OUTBOUND' for p in payments)
+        
+        if not (is_all_inbound or is_all_outbound):
+            raise ValueError("No se pueden mezclar Ingresos y Egresos en un mismo grupo de conciliación.")
+
+        # Validación de sentido cruzado
+        if is_all_abonos and not is_all_inbound:
+            raise ValueError("Los Abonos bancarios solo pueden conciliarse con Ingresos del sistema.")
+        if is_all_cargos and not is_all_outbound:
+            raise ValueError("Los Cargos bancarios solo pueden conciliarse con Egresos del sistema.")
+
         for l in lines:
             if l.reconciliation_state == 'RECONCILED':
                 raise ValueError(f"Línea {l.line_number} ya reconciliada")
             if l.statement.state == 'CONFIRMED':
-                raise ValueError(f"Extracto {l.statement.display_id} está confirmado")
+                raise ValueError(f"Cartola {l.statement.display_id} está confirmada")
         
         for p in payments:
             if p.is_reconciled:
-                 # Check if partial? For now strict.
                  raise ValueError(f"Pago {p.id} ya reconciliado")
 
         # Create Group
@@ -475,7 +492,7 @@ class MatchingService:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
             
         if line.statement.state == 'CONFIRMED':
-            raise ValueError("No se puede modificar extracto confirmado")
+            raise ValueError("No se puede modificar una cartola confirmada")
 
         group = line.reconciliation_match
         
@@ -537,11 +554,11 @@ class MatchingService:
         confidence_threshold: float = 90.0
     ) -> Dict[str, Any]:
         """
-        Intenta matching automático para todas las líneas de un extracto.
+        Intenta matching automático para todas las líneas de una cartola.
         Solo confirma matches con score >= threshold.
         
         Args:
-            statement_id: ID del extracto
+            statement_id: ID de la cartola
             confidence_threshold: Score mínimo para auto-match (default: 90)
         
         Returns:
@@ -554,10 +571,10 @@ class MatchingService:
         try:
             statement = BankStatement.objects.get(id=statement_id)
         except BankStatement.DoesNotExist:
-            raise ValueError(f"Extracto {statement_id} no encontrado")
+            raise ValueError(f"Cartola {statement_id} no encontrada")
         
         if statement.state == 'CONFIRMED':
-            raise ValueError("Extracto ya confirmado")
+            raise ValueError("Cartola ya confirmada")
         
         # Obtener líneas no reconciliadas
         unreconciled_qs = statement.lines.filter(

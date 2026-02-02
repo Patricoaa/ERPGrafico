@@ -225,7 +225,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                             <Card className="bg-green-50/50 border-none shadow-none">
                                 <CardContent className="pt-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-green-600 uppercase">Débitos (Debe)</p>
+                                        <p className="text-xs font-medium text-green-600 uppercase">Cargos (Debe)</p>
                                         <ArrowUpRight className="h-4 w-4 text-green-500" />
                                     </div>
                                     <div className="text-xl font-bold mt-1 text-green-700">
@@ -237,7 +237,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                             <Card className="bg-red-50/50 border-none shadow-none">
                                 <CardContent className="pt-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-red-600 uppercase">Créditos (Haber)</p>
+                                        <p className="text-xs font-medium text-red-600 uppercase">Abonos (Haber)</p>
                                         <ArrowDownRight className="h-4 w-4 text-red-500" />
                                     </div>
                                     <div className="text-xl font-bold mt-1 text-red-700">

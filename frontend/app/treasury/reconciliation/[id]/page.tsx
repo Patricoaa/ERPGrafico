@@ -52,6 +52,7 @@ interface BankStatementLine {
 interface BankStatement {
     id: number
     display_id: string
+    treasury_account: number
     treasury_account_name: string
     statement_date: string
     opening_balance: string
@@ -109,16 +110,16 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     }
 
     const handleConfirmStatement = async () => {
-        if (!confirm('¿Confirmar extracto? Esto lo bloqueará y no podrá modificarse.')) return
+        if (!confirm('¿Confirmar cartola? Esto lo bloqueará y no podrá modificarse.')) return
 
         try {
             setConfirming(true)
             await api.post(`/treasury/statements/${id}/confirm/`)
-            alert('✅ Extracto confirmado exitosamente')
+            alert('✅ Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
         } catch (error: any) {
             console.error('Error confirming statement:', error)
-            alert(error.response?.data?.error || 'Error al confirmar extracto')
+            alert(error.response?.data?.error || 'Error al confirmar cartola')
         } finally {
             setConfirming(false)
         }
@@ -156,7 +157,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         {
             accessorKey: "debit",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Egreso" />
+                <DataTableColumnHeader column={column} title="Cargo" />
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("debit"))
@@ -166,7 +167,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         {
             accessorKey: "credit",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Ingreso" />
+                <DataTableColumnHeader column={column} title="Abono" />
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("credit"))
@@ -239,7 +240,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             <div className="flex-1 p-8 pt-6">
                 <div className="flex flex-col items-center justify-center h-64 gap-3">
                     <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-                    <p className="text-muted-foreground text-sm font-medium">Cargando detalles del extracto...</p>
+                    <p className="text-muted-foreground text-sm font-medium">Cargando detalles de la cartola...</p>
                 </div>
             </div>
         )
@@ -256,7 +257,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground">No se pudo encontrar el extracto solicitado.</p>
+                        <p className="text-muted-foreground">No se pudo encontrar la cartola solicitada.</p>
                         <Button onClick={() => router.push('/treasury/reconciliation')} className="mt-4 w-full">
                             Volver al listado
                         </Button>
@@ -317,7 +318,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                                     ) : (
                                         <>
                                             <CheckCircle2 className="mr-2 h-4 w-4" />
-                                            Confirmar Extracto
+                                            Confirmar Cartola
                                         </>
                                     )}
                                 </Button>
@@ -342,7 +343,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     <div className="flex items-center justify-center p-8 opacity-40 hover:opacity-100 transition-opacity">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white px-4 py-2 rounded-full border shadow-sm">
                             <Info className="h-3.5 w-3.5" />
-                            Para confirmar el extracto, debes reconciliar o excluir el 100% de las transacciones.
+                            Para confirmar la cartola, debes reconciliar o excluir el 100% de las transacciones.
                         </div>
                     </div>
                 )}
@@ -427,7 +428,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
                 <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Salidas (Dr)</CardTitle>
+                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
                         <TrendingDown className="h-3.5 w-3.5 text-red-400" />
                     </CardHeader>
                     <CardContent>
@@ -442,7 +443,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
                 <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Entradas (Cr)</CardTitle>
+                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
                         <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
                     </CardHeader>
                     <CardContent>

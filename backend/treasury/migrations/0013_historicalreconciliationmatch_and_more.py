@@ -127,12 +127,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='historicalpayment',
             name='bank_statement_line',
-            field=models.ForeignKey(blank=True, db_constraint=False, help_text='DEPRECATED: Use reconciliation_match instead', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='treasury.bankstatementline', verbose_name='Línea de Extracto Bancario'),
+            field=models.ForeignKey(blank=True, db_constraint=False, help_text='DEPRECATED: Use reconciliation_match instead', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='treasury.bankstatementline', verbose_name='Línea de cartola Bancario'),
         ),
         migrations.AlterField(
             model_name='payment',
             name='bank_statement_line',
-            field=models.ForeignKey(blank=True, help_text='DEPRECATED: Use reconciliation_match instead', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='payments', to='treasury.bankstatementline', verbose_name='Línea de Extracto Bancario'),
+            field=models.ForeignKey(blank=True, help_text='DEPRECATED: Use reconciliation_match instead', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='payments', to='treasury.bankstatementline', verbose_name='Línea de cartola Bancario'),
         ),
         migrations.AddIndex(
             model_name='bankstatement',

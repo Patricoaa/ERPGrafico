@@ -79,7 +79,7 @@ class TreasuryReturnService:
         if payment.sale_order:
             # Sale payment return
             partner_account = payment.partner.account_receivable or settings.default_receivable_account
-            treasury_account = payment.treasury_account or settings.default_cash_account
+            treasury_account = payment.treasury_account
             
             entry = JournalEntry.objects.create(
                 date=return_payment.date,
@@ -110,7 +110,7 @@ class TreasuryReturnService:
         elif payment.purchase_order:
             # Purchase payment return
             partner_account = payment.partner.account_payable or settings.default_payable_account
-            treasury_account = payment.treasury_account or settings.default_cash_account
+            treasury_account = payment.treasury_account
             
             entry = JournalEntry.objects.create(
                 date=return_payment.date,

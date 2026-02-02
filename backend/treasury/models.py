@@ -122,8 +122,7 @@ class Payment(models.Model):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='payments',
-        verbose_name=_("Línea de Extracto Bancario"),
-        help_text=_("DEPRECATED: Use reconciliation_match instead")
+        verbose_name=_("Línea de Cartola Bancaria"),
     )
     reconciliation_match = models.ForeignKey(
         'ReconciliationMatch',
@@ -225,7 +224,7 @@ class TreasuryAccount(models.Model):
 
 
 class BankStatement(models.Model):
-    """Extracto bancario importado"""
+    """Cartola bancaria importada"""
     
     class State(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
@@ -238,7 +237,7 @@ class BankStatement(models.Model):
         related_name='bank_statements',
         verbose_name=_("Cuenta de Tesorería")
     )
-    statement_date = models.DateField(_("Fecha del Extracto"))
+    statement_date = models.DateField(_("Fecha de la Cartola"))
     opening_balance = models.DecimalField(
         _("Balance de Apertura"), 
         max_digits=20, 
@@ -284,8 +283,8 @@ class BankStatement(models.Model):
     history = HistoricalRecords()
     
     class Meta:
-        verbose_name = _("Extracto Bancario")
-        verbose_name_plural = _("Extractos Bancarios")
+        verbose_name = _("Cartola Bancaria")
+        verbose_name_plural = _("Cartolas Bancarias")
         ordering = ['-statement_date', '-id']
         indexes = [
             models.Index(fields=['statement_date', 'treasury_account']),
@@ -307,7 +306,7 @@ class BankStatement(models.Model):
 
 
 class BankStatementLine(models.Model):
-    """Línea individual del extracto bancario"""
+    """Línea individual de la cartola bancaria"""
     
     class ReconciliationState(models.TextChoices):
         UNRECONCILED = 'UNRECONCILED', _('No Reconciliado')
@@ -320,7 +319,7 @@ class BankStatementLine(models.Model):
         'BankStatement',
         on_delete=models.CASCADE,
         related_name='lines',
-        verbose_name=_("Extracto")
+        verbose_name=_("Cartola")
     )
     line_number = models.IntegerField(_("N° de Línea"))
     
@@ -338,13 +337,13 @@ class BankStatementLine(models.Model):
     
     # Montos
     debit = models.DecimalField(
-        _("Débito"), 
+        _("Cargo"), 
         max_digits=20, 
         decimal_places=2, 
         default=0
     )
     credit = models.DecimalField(
-        _("Crédito"), 
+        _("Abono"), 
         max_digits=20, 
         decimal_places=2, 
         default=0
@@ -413,8 +412,8 @@ class BankStatementLine(models.Model):
     history = HistoricalRecords()
     
     class Meta:
-        verbose_name = _("Línea de Extracto")
-        verbose_name_plural = _("Líneas de Extracto")
+        verbose_name = _("Línea de Cartola")
+        verbose_name_plural = _("Líneas de Cartola")
         ordering = ['statement', 'line_number']
         unique_together = [['statement', 'line_number']]
         indexes = [

@@ -42,7 +42,7 @@ export default function TreasuryPage() {
                             <FileCheck className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">Extractos</div>
+                            <div className="text-2xl font-bold">Cartolas</div>
                             <p className="text-xs text-muted-foreground">Reconciliación de movimientos</p>
                         </CardContent>
                     </Card>

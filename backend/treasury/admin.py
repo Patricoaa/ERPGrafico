@@ -45,7 +45,7 @@ class BankStatementAdmin(admin.ModelAdmin):
     readonly_fields = ['display_id', 'imported_at', 'imported_by', 'reconciliation_progress']
     
     fieldsets = (
-        ('Información del Extracto', {
+        ('Información de la cartola', {
             'fields': ('treasury_account', 'statement_date', 'state', 'bank_format')
         }),
         ('Balances', {
@@ -77,7 +77,7 @@ class BankStatementLineAdmin(admin.ModelAdmin):
     readonly_fields = ['reconciled_at', 'reconciled_by', 'amount']
     
     fieldsets = (
-        ('Extracto', {
+        ('Cartola', {
             'fields': ('statement', 'line_number')
         }),
         ('Datos Bancarios', {
