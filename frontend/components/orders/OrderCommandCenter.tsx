@@ -47,7 +47,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { getHubStatuses, getNoteHubStatuses } from "@/lib/order-status-utils"
 
 interface OrderCommandCenterProps {
-    orderId: number | null
+    orderId?: number | null
     invoiceId?: number | null
     type: 'purchase' | 'sale' | 'obligation'
     open: boolean

@@ -53,6 +53,10 @@ interface POSVariantSelectorModalProps {
     product: Product | null
     onSelect: (variant: Variant) => void
     initialVariantId?: number | null
+    items: any[]
+    bomCache: Record<number, any>
+    componentCache: Record<number, { stock: number, uom: number }>
+    calculateMaxQty: (product: any, currentQty?: number, cartItemId?: string) => Promise<number>
 }
 
 export function POSVariantSelectorModal({
@@ -60,10 +64,15 @@ export function POSVariantSelectorModal({
     onOpenChange,
     product,
     onSelect,
-    initialVariantId
+    initialVariantId,
+    items,
+    bomCache,
+    componentCache,
+    calculateMaxQty
 }: POSVariantSelectorModalProps) {
     const [variants, setVariants] = useState<Variant[]>([])
     const [loading, setLoading] = useState(false)
+    const [variantLimits, setVariantLimits] = useState<Record<number, number>>({})
 
     useEffect(() => {
         if (open && product?.id) {
@@ -84,17 +93,25 @@ export function POSVariantSelectorModal({
         }
     }
 
+    useEffect(() => {
+        let active = true
+        const updateVariantLimits = async () => {
+            if (variants.length === 0) return
+            const newLimits: Record<number, number> = {}
+            for (const v of variants) {
+                const max = await calculateMaxQty(v)
+                newLimits[v.id] = max
+            }
+            if (active) setVariantLimits(newLimits)
+        }
+        updateVariantLimits()
+        return () => { active = false }
+    }, [variants, items, bomCache, componentCache])
+
     const handleSelect = (variant: Variant) => {
-        // Check availability
-        const isAvailable = variant.has_active_bom
-            ? (variant.manufacturable_quantity !== null && variant.manufacturable_quantity > 0)
-            : (variant.product_type === 'MANUFACTURABLE' || variant.requires_advanced_manufacturing || variant.product_type === 'SERVICE' || variant.product_type === 'CONSUMABLE');
+        const maxQty = variantLimits[variant.id] ?? (variant.manufacturable_quantity ?? variant.current_stock ?? 0)
 
-        // Note: For Storable without BOM we might still want to check current_stock? 
-        // User said: "calcula la cantidad de productos que se pueden fabricar basado en su BOM. Si es porducto fabricable avanzado sin BOM simplemente muestra un disponible"
-        // This implies for POS we care about manufacturing availability.
-
-        if (isAvailable || variant.current_stock > 0) {
+        if (maxQty > 0 || variant.product_type === 'SERVICE' || variant.product_type === 'CONSUMABLE') {
             onSelect(variant)
             onOpenChange(false)
         }
@@ -121,19 +138,18 @@ export function POSVariantSelectorModal({
                         <ScrollArea className="h-[50vh] pr-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
                                 {variants.map((v) => {
-                                    const hasQty = v.has_active_bom
-                                        ? (v.manufacturable_quantity !== null && v.manufacturable_quantity > 0)
-                                        : (v.current_stock > 0 || v.product_type !== 'STORABLE');
+                                    const limit = variantLimits[v.id]
+                                    const max = limit !== undefined ? limit : (v.manufacturable_quantity ?? v.current_stock ?? Infinity)
 
-                                    const canSelect = hasQty || v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing;
+                                    const isAvailable = max > 0 || v.product_type === 'SERVICE' || v.product_type === 'CONSUMABLE'
 
                                     return (
                                         <div
                                             key={v.id}
-                                            onClick={() => canSelect && handleSelect(v)}
+                                            onClick={() => isAvailable && handleSelect(v)}
                                             className={cn(
                                                 "relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer",
-                                                !canSelect ? "opacity-50 grayscale pointer-events-none bg-muted/20 border-dashed" : "border-muted bg-card hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
+                                                !isAvailable ? "opacity-50 grayscale pointer-events-none bg-muted/20 border-dashed" : "border-muted bg-card hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
                                             )}
                                         >
                                             {/* Variant Image or Placeholder */}
@@ -167,8 +183,8 @@ export function POSVariantSelectorModal({
                                                     </span>
 
                                                     {v.has_active_bom ? (
-                                                        <Badge variant={v.manufacturable_quantity && v.manufacturable_quantity > 0 ? "success" : "destructive"} className="text-[10px]">
-                                                            {v.manufacturable_quantity || 0} fab.
+                                                        <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
+                                                            {limit !== undefined ? limit : (v.manufacturable_quantity || 0)} fab.
                                                         </Badge>
                                                     ) : (
                                                         (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
@@ -176,8 +192,8 @@ export function POSVariantSelectorModal({
                                                                 Disponible
                                                             </Badge>
                                                         ) : (
-                                                            <Badge variant={v.current_stock > 0 ? "success" : "destructive"} className="text-[10px]">
-                                                                {v.current_stock} stock
+                                                            <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
+                                                                {limit !== undefined ? limit : v.current_stock} stock
                                                             </Badge>
                                                         )
                                                     )}

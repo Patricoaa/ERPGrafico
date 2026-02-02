@@ -38,7 +38,7 @@ export function ProductTypeSelector({ form, disabled, lockedType }: ProductTypeS
                                 { id: 'SUBSCRIPTION', label: 'Suscripción (Recurrente)' }
                             ].map((t) => {
                                 const isLocked = lockedType && lockedType !== t.id;
-                                const isDisabled = disabled || isLocked;
+                                const isDisabled = !!(disabled || isLocked);
 
                                 return (
                                     <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 p-3 rounded-xl border hover:bg-muted/50 transition-all ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>

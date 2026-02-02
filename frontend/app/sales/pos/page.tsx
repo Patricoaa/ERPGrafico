@@ -1061,6 +1061,10 @@ export default function POSPage() {
                     product={activeParentProduct}
                     onSelect={handleVariantSelected}
                     initialVariantId={editingCartItem?.id}
+                    items={items}
+                    bomCache={bomCache}
+                    componentCache={componentCache}
+                    calculateMaxQty={calculateMaxQty}
                 />
             )}
 
