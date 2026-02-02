@@ -2,14 +2,13 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import (
-    ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
-    StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
-    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, ReorderingRuleSerializer,
-    ReplenishmentProposalSerializer, SubscriptionSerializer
+    ReplenishmentProposalSerializer, SubscriptionSerializer,
+    ProductAttributeSerializer, ProductAttributeValueSerializer
 )
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal, Subscription
+    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal, Subscription,
+    ProductAttribute, ProductAttributeValue
 )
 from django.shortcuts import get_object_or_404
 from .services import StockService, ProcurementService, UoMService
@@ -51,7 +50,15 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             return queryset.filter(active=False)
             
         # If active=true (default explicit)
-        return queryset.filter(active=True)
+        queryset = queryset.filter(active=True)
+
+        # Optimization: Don't show technical variants in the main list by default
+        # (they will be visible by expanding the parent template)
+        show_technical_variants = self.request.query_params.get('show_technical_variants', 'false') == 'true'
+        if not show_technical_variants and not self.kwargs.get('pk'):
+             queryset = queryset.filter(parent_template__isnull=True)
+
+        return queryset
 
     def perform_update(self, serializer):
         serializer.save()
@@ -220,6 +227,87 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             'production_usage': production_usage
         })
 
+    @action(detail=True, methods=['post'])
+    def generate_variants(self, request, pk=None):
+        template = self.get_object()
+        selection = request.data.get('selection', [])  # List of {attribute: id, values: [ids]}
+        
+        if not template.has_variants:
+            return Response({"error": "El producto no tiene activada la opción de variantes."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        import itertools
+        from django.db import transaction
+        
+        # Prepare lists of values for each attribute
+        attr_values_lists = []
+        for item in selection:
+            attr_id = item.get('attribute')
+            val_ids = item.get('values', [])
+            if val_ids:
+                attr_values_lists.append(list(ProductAttributeValue.objects.filter(id__in=val_ids, attribute_id=attr_id)))
+        
+        if not attr_values_lists:
+            return Response({"error": "Debe seleccionar valores de atributos."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Cartesian product of attribute values
+        combinations = list(itertools.product(*attr_values_lists))
+        
+        created_count = 0
+        skipped_count = 0
+        
+        with transaction.atomic():
+            for combo in combinations:
+                # Check if variant already exists
+                existing_variants = Product.objects.filter(parent_template=template)
+                for val in combo:
+                    existing_variants = existing_variants.filter(attribute_values=val)
+                
+                # Ensure it has exactly the same number of attributes to avoid partial matches
+                existing_variants = [v for v in existing_variants if v.attribute_values.count() == len(combo)]
+                
+                if existing_variants:
+                    skipped_count += 1
+                    continue
+                
+                # Create the variant
+                variant = Product.objects.create(
+                    name=template.name,
+                    category=template.category,
+                    product_type=template.product_type,
+                    uom=template.uom,
+                    sale_uom=template.sale_uom,
+                    purchase_uom=template.purchase_uom,
+                    receiving_warehouse=template.receiving_warehouse,
+                    track_inventory=template.track_inventory,
+                    can_be_sold=template.can_be_sold,
+                    can_be_purchased=template.can_be_purchased,
+                    parent_template=template,
+                    sale_price=template.sale_price,
+                    cost_price=template.cost_price,
+                    requires_advanced_manufacturing=template.requires_advanced_manufacturing,
+                    mfg_auto_finalize=template.mfg_auto_finalize,
+                    mfg_enable_prepress=template.mfg_enable_prepress,
+                    mfg_enable_press=template.mfg_enable_press,
+                    mfg_enable_postpress=template.mfg_enable_postpress,
+                    mfg_prepress_design=template.mfg_prepress_design,
+                    mfg_prepress_specs=template.mfg_prepress_specs,
+                    mfg_prepress_folio=template.mfg_prepress_folio,
+                    mfg_press_offset=template.mfg_press_offset,
+                    mfg_press_digital=template.mfg_press_digital,
+                    mfg_postpress_finishing=template.mfg_postpress_finishing,
+                    mfg_postpress_binding=template.mfg_postpress_binding,
+                    mfg_default_delivery_days=template.mfg_default_delivery_days,
+                )
+                variant.attribute_values.set(combo)
+                variant.save()  # Triggers display name generation
+                created_count += 1
+                
+        return Response({
+            "message": f"Se han creado {created_count} variantes. {skipped_count} ya existían.",
+            "created": created_count,
+            "skipped": skipped_count
+        })
+
     @action(detail=True, methods=['get'])
     def effective_price(self, request, pk=None):
         product = self.get_object()
@@ -363,6 +451,15 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         })
 
 
+
+class ProductAttributeViewSet(viewsets.ModelViewSet):
+    queryset = ProductAttribute.objects.all()
+    serializer_class = ProductAttributeSerializer
+
+class ProductAttributeValueViewSet(viewsets.ModelViewSet):
+    queryset = ProductAttributeValue.objects.all()
+    serializer_class = ProductAttributeValueSerializer
+    filterset_fields = ['attribute']
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = ProductCategory.objects.all()

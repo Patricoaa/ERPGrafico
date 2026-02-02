@@ -2,11 +2,23 @@ from rest_framework import serializers
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
     CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal,
-    Subscription
+    Subscription, ProductAttribute, ProductAttributeValue
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
 from production.serializers import BillOfMaterialsSerializer
 from core.serializers import AttachmentSerializer
+
+class ProductAttributeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductAttribute
+        fields = ['id', 'name', 'created_at']
+
+class ProductAttributeValueSerializer(serializers.ModelSerializer):
+    attribute_name = serializers.CharField(source='attribute.name', read_only=True)
+    
+    class Meta:
+        model = ProductAttributeValue
+        fields = ['id', 'attribute', 'attribute_name', 'value']
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,6 +99,17 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ProductSimpleSerializer(serializers.ModelSerializer):
+    """Simplified product serializer for nested lists to avoid recursion"""
+    attribute_values_data = ProductAttributeValueSerializer(source='attribute_values', many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'internal_code', 'name', 'variant_display_name', 
+            'sale_price', 'cost_price', 'attribute_values', 'attribute_values_data'
+        ]
+
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
@@ -96,6 +119,10 @@ class ProductSerializer(serializers.ModelSerializer):
     receiving_warehouse_name = serializers.CharField(source='receiving_warehouse.name', read_only=True)
     subscription_supplier_name = serializers.CharField(source='subscription_supplier.name', read_only=True)
     preferred_supplier_name = serializers.CharField(source='preferred_supplier.name', read_only=True)
+    
+    # Variants fields
+    variants = serializers.SerializerMethodField()
+    attribute_values_data = ProductAttributeValueSerializer(source='attribute_values', many=True, read_only=True)
     
     current_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
@@ -135,8 +162,17 @@ class ProductSerializer(serializers.ModelSerializer):
             'subscription_supplier', 'subscription_supplier_name', 'subscription_amount', 'subscription_start_date',
             'auto_activate_subscription', 'default_invoice_type', 'is_indefinite', 'contract_end_date',
             'payment_day_type', 'payment_day', 'payment_interval_days',
-            'attachments'
+            'attachments',
+            # Variant Fields
+            'has_variants', 'parent_template', 'attribute_values', 'attribute_values_data',
+            'variant_display_name', 'variants'
         ]
+
+    def get_variants(self, obj):
+        if obj.has_variants:
+            variants = obj.variants.all()
+            return ProductSimpleSerializer(variants, many=True).data
+        return []
 
     def get_uom_category(self, obj):
         return obj.uom.category_id if obj.uom else None

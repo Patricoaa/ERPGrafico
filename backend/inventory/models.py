@@ -69,6 +69,32 @@ class UoM(models.Model):
     def __str__(self):
         return self.name
 
+class ProductAttribute(models.Model):
+    """Atributo maestro (ej: Color, Talla)"""
+    name = models.CharField(_("Nombre"), max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Atributo de Producto")
+        verbose_name_plural = _("Atributos de Producto")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class ProductAttributeValue(models.Model):
+    """Valor específico de un atributo (ej: Rojo, XL)"""
+    attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE, related_name='values')
+    value = models.CharField(_("Valor"), max_length=100)
+
+    class Meta:
+        verbose_name = _("Valor de Atributo")
+        verbose_name_plural = _("Valores de Atributo")
+        unique_together = ['attribute', 'value']
+
+    def __str__(self):
+        return f"{self.attribute.name}: {self.value}"
+
 class Product(models.Model):
     class Type(models.TextChoices):
         CONSUMABLE = 'CONSUMABLE', _('Consumible')
@@ -88,7 +114,35 @@ class Product(models.Model):
         null=True, blank=True,
         validators=[validate_file_size, validate_image_extension]
     )
-    
+
+    # Variants Integration
+    has_variants = models.BooleanField(
+        _("Tiene Variantes"),
+        default=False,
+        help_text=_("Indica si este producto actúa como plantilla para múltiples variantes.")
+    )
+    parent_template = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='variants',
+        verbose_name=_("Plantilla Padre"),
+        help_text=_("Si está definido, este producto es una variante de la plantilla seleccionada.")
+    )
+    attribute_values = models.ManyToManyField(
+        ProductAttributeValue,
+        blank=True,
+        related_name='products',
+        verbose_name=_("Valores de Atributos"),
+        help_text=_("Valores que definen esta variante (ej: Color Rojo, Talla L)")
+    )
+    variant_display_name = models.CharField(
+        _("Nombre de Variante"),
+        max_length=255,
+        null=True, blank=True,
+        help_text=_("Nombre descriptivo para esta variante específica. Si se deja vacío, se generará automáticamente.")
+    )
+
     attachments = GenericRelation('core.Attachment')
     history = HistoricalRecords()
     
@@ -478,7 +532,33 @@ class Product(models.Model):
                         self.image = compressed
             except Exception as e:
                 print(f"Image compression warning: {str(e)}")
-            
+
+        # Variant Restrictions & Logic
+        if self.has_variants:
+            # Only allow Express or Advanced manufacturing types to have variants
+            # Express: mfg_auto_finalize=True
+            # Advanced: requires_advanced_manufacturing=True
+            is_valid_type = (
+                self.product_type == self.Type.MANUFACTURABLE and 
+                (self.mfg_auto_finalize or self.requires_advanced_manufacturing)
+            )
+            if not is_valid_type:
+                # If it's not a valid type, force has_variants to False
+                self.has_variants = False
+
+        # Automatic variant display name generation if empty
+        if self.parent_template and not self.variant_display_name:
+            # We can't access ManyToMany (attribute_values) before saving for the first time
+            # So if it's already saved, we can try to build it
+            if self.pk:
+                attrs = ", ".join([str(v.value) for v in self.attribute_values.all()])
+                if attrs:
+                    self.variant_display_name = f"{self.parent_template.name} ({attrs})"
+                else:
+                    self.variant_display_name = self.parent_template.name
+            else:
+                self.variant_display_name = f"{self.parent_template.name} (Variante)"
+
         super().save(*args, **kwargs)
 
     # Helpers to get effective accounts (Product override > Category > Type-based > Fallback)

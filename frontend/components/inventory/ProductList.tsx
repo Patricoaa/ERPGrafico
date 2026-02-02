@@ -41,6 +41,8 @@ interface Product {
     can_be_purchased: boolean
     active: boolean
     is_dynamic_pricing?: boolean
+    has_variants?: boolean
+    variants?: Product[]
 }
 
 export function ProductList() {
@@ -56,11 +58,11 @@ export function ProductList() {
     const [isRetrying, setIsRetrying] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+    const [expandedTemplates, setExpandedTemplates] = useState<Set<number>>(new Set())
 
     const fetchProducts = async () => {
         setLoading(true)
         try {
-            // Fetch all products so the faceted filter can handle actives vs archived
             const params = { active: 'all' }
             const response = await api.get('/inventory/products/', { params })
             const data = response.data.results || response.data
@@ -72,6 +74,28 @@ export function ProductList() {
             setLoading(false)
         }
     }
+
+    const toggleExpand = (templateId: number) => {
+        setExpandedTemplates(prev => {
+            const next = new Set(prev)
+            if (next.has(templateId)) next.delete(templateId)
+            else next.add(templateId)
+            return next
+        })
+    }
+
+    const displayProducts = React.useMemo(() => {
+        const result: any[] = []
+        products.forEach(p => {
+            result.push(p)
+            if (p.has_variants && expandedTemplates.has(p.id) && p.variants) {
+                p.variants.forEach(v => {
+                    result.push({ ...v, is_child_variant: true })
+                })
+            }
+        })
+        return result
+    }, [products, expandedTemplates])
 
     const handleArchive = async (product: Product, isConfirmed = false) => {
         const isArchiving = product.active
@@ -151,13 +175,32 @@ export function ProductList() {
                 <DataTableColumnHeader column={column} title="Nombre" />
             ),
             cell: ({ row }) => {
-                const product = row.original;
+                const product = row.original as any;
+                const isChild = product.is_child_variant;
                 return (
-                    <div className="max-w-[250px]">
-                        <DataCell.Text className={cn(!product.active ? "line-through text-muted-foreground" : "")}>
-                            {product.name}
-                        </DataCell.Text>
-                        {!product.active && <Badge variant="destructive" className="text-[8px] h-3 px-1 ml-1">ARCHIVADO</Badge>}
+                    <div className={cn("max-w-[250px] flex items-center gap-2", isChild && "ml-8")}>
+                        {isChild && <div className="h-4 w-4 border-l-2 border-b-2 border-muted-foreground/30 rounded-bl-lg -mt-2" />}
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <DataCell.Text className={cn(!product.active ? "line-through text-muted-foreground" : "", isChild && "text-[11px] text-muted-foreground/70")}>
+                                    {product.name}
+                                </DataCell.Text>
+                                {!product.active && <Badge variant="destructive" className="text-[8px] h-3 px-1 ml-1">ARCHIVADO</Badge>}
+                                {product.has_variants && !isChild && (
+                                    <Badge
+                                        variant="outline"
+                                        className="text-[9px] h-4 cursor-pointer hover:bg-primary/10"
+                                        onClick={() => toggleExpand(product.id)}
+                                    >
+                                        {product.variants?.length || 0} variantes
+                                        {expandedTemplates.has(product.id) ? <ChevronDown className="h-3 w-3 ml-1" /> : <ChevronRight className="h-3 w-3 ml-1" />}
+                                    </Badge>
+                                )}
+                            </div>
+                            {isChild && product.variant_display_name && (
+                                <span className="text-[9px] font-bold text-primary uppercase">{product.variant_display_name}</span>
+                            )}
+                        </div>
                     </div>
                 );
             },
@@ -288,7 +331,7 @@ export function ProductList() {
                 ) : (
                     <DataTable
                         columns={columns}
-                        data={products}
+                        data={displayProducts}
                         globalFilterFields={["name", "code", "internal_code"]}
                         searchPlaceholder="Buscar por nombre, SKU o código..."
                         initialColumnVisibility={{ active: false }}

@@ -23,6 +23,10 @@ export const productSchema = z.object({
     // Manufacturing fields
     has_bom: z.boolean().default(false),
     requires_advanced_manufacturing: z.boolean().default(false),
+    has_variants: z.boolean().default(false),
+    parent_template: z.string().optional().or(z.literal("")).nullable(),
+    attribute_values: z.array(z.string()).default([]),
+    variant_display_name: z.string().optional().or(z.literal("")),
     mfg_auto_finalize: z.boolean().default(false),
     // Print Shop Workflow
     mfg_enable_prepress: z.boolean().default(false),

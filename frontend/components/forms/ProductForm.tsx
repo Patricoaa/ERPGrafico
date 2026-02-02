@@ -23,6 +23,7 @@ import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { ProductUoMTab } from "./product/ProductUoMTab"
 import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
+import { ProductVariantsTab } from "./product/ProductVariantsTab"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 
 // Import dialogs
@@ -89,6 +90,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             mfg_auto_finalize: false,
             boms: [],
             product_custom_fields: [],
+            has_variants: false,
+            parent_template: null,
+            attribute_values: [],
+            variant_display_name: "",
         },
     })
 
@@ -249,6 +254,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     mfg_postpress_binding: initialData.mfg_postpress_binding ?? false,
                     mfg_default_delivery_days: initialData.mfg_default_delivery_days ?? 3,
                     mfg_auto_finalize: initialData.mfg_auto_finalize ?? false,
+                    has_variants: initialData.has_variants ?? false,
+                    parent_template: initialData.parent_template?.toString() || null,
+                    attribute_values: initialData.attribute_values?.map((v: any) => v.toString()) || [],
+                    variant_display_name: initialData.variant_display_name || "",
                     boms: initialData.boms?.map((b: any) => ({
                         id: b.id,
                         name: b.name || "",
@@ -318,6 +327,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     mfg_auto_finalize: false,
                     boms: [],
                     product_custom_fields: [],
+                    has_variants: false,
+                    parent_template: null,
+                    attribute_values: [],
+                    variant_display_name: "",
                     income_account: "",
                     expense_account: "",
                     preferred_supplier: "",
@@ -383,6 +396,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             formData.append('mfg_postpress_binding', data.mfg_postpress_binding ? 'true' : 'false')
             formData.append('mfg_default_delivery_days', data.mfg_default_delivery_days.toString())
             formData.append('mfg_auto_finalize', data.mfg_auto_finalize ? 'true' : 'false')
+            formData.append('has_variants', data.has_variants ? 'true' : 'false')
+            if (data.parent_template) formData.append('parent_template', data.parent_template)
+            if (data.variant_display_name) formData.append('variant_display_name', data.variant_display_name)
+            if (data.attribute_values && data.attribute_values.length > 0) {
+                data.attribute_values.forEach(v => formData.append('attribute_values', v))
+            }
 
             if (!initialData && data.boms && data.boms.length > 0) {
                 formData.append('boms', JSON.stringify(data.boms))
@@ -552,6 +571,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                         </TabsTrigger>
                                     )}
 
+                                    {form.watch("has_variants") && (
+                                        <TabsTrigger value="variants" className="px-8 flex gap-2">
+                                            Variantes
+                                        </TabsTrigger>
+                                    )}
                                 </TabsList>
 
                                 <TabsContent value="general" className="mt-0 space-y-8">
@@ -588,6 +612,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                     initialData={initialData}
                                     products={products}
                                     uoms={uoms}
+                                />
+
+                                <ProductVariantsTab
+                                    form={form as any}
+                                    initialData={initialData}
                                 />
 
                                 <ProductInventoryTab

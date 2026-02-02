@@ -70,6 +70,10 @@ export function ProductSelector({
     const [selectedProduct, setSelectedProduct] = useState<any>(null)
     const [displayLimit, setDisplayLimit] = useState(20)
 
+    // Variant Selection state
+    const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false)
+    const [templateToResolve, setTemplateToResolve] = useState<any>(null)
+
     // Effect to fetch the selected product if it's missing but we have a value
     useEffect(() => {
         const fetchSingleProduct = async () => {
@@ -175,10 +179,26 @@ export function ProductSelector({
             return;
         }
 
+        if (product.has_variants && product.variants && product.variants.length > 0) {
+            setTemplateToResolve(product)
+            setIsVariantDialogOpen(true)
+            setOpen(false)
+            return
+        }
+
         setSelectedProduct(product)
         onChange(product ? product.id.toString() : null)
         if (onSelect) onSelect(product)
         setOpen(false)
+    }
+
+    const handleVariantSelect = (variant: any) => {
+        setIsVariantDialogOpen(false)
+        setTemplateToResolve(null)
+
+        setSelectedProduct(variant)
+        onChange(variant ? variant.id.toString() : null)
+        if (onSelect) onSelect(variant)
     }
 
     const searchProducts = (val: string) => {
@@ -341,6 +361,56 @@ export function ProductSelector({
                     </div>
                 </PopoverContent>
             </Popover>
+
+            <Dialog open={isVariantDialogOpen} onOpenChange={setIsVariantDialogOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Seleccionar Variante</DialogTitle>
+                        <DialogDescription>
+                            El producto "{templateToResolve?.name}" tiene múltiples variantes. Por favor seleccione una.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <div className="rounded-md border overflow-hidden max-h-[300px] overflow-y-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted hover:bg-muted">
+                                        <TableHead className="font-bold">Variante / Atributos</TableHead>
+                                        <TableHead className="text-right font-bold w-[120px]">Disponibilidad</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {templateToResolve?.variants?.map((v: any) => (
+                                        <TableRow
+                                            key={v.id}
+                                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                            onClick={() => handleVariantSelect(v)}
+                                        >
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{v.variant_display_name || v.name}</span>
+                                                    <div className="flex gap-1 mt-1">
+                                                        {v.attribute_values_data?.map((av: any) => (
+                                                            <Badge key={av.id} variant="secondary" className="text-[9px] py-0 h-4">
+                                                                {av.attribute_name}: {av.value}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Badge variant={(v.current_stock || 0) > 0 ? "success" : "secondary"} className="text-[10px]">
+                                                    {v.current_stock || 0} disp.
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

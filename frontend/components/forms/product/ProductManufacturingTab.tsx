@@ -133,6 +133,42 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                             )}
                         />
 
+                        {/* Variants toggle moved here as per user request */}
+                        <FormField<ProductFormValues>
+                            control={form.control}
+                            name="has_variants"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="font-bold">Posee Variantes</FormLabel>
+                                        <FormDescription className="text-[10px]">
+                                            Permite generar múltiples versiones de este producto.
+                                        </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={(val) => {
+                                                field.onChange(val)
+                                                if (val) {
+                                                    // Ensure it's manufacturable if variants are enabled
+                                                    // (Requirement says variants only for Express/Advanced)
+                                                    const mfgMode = form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")
+                                                    if (mfgMode === "simple") {
+                                                        // Force to express if it's currently simple?
+                                                        // User said Express/Advanced only.
+                                                        form.setValue("mfg_auto_finalize", true)
+                                                        form.setValue("has_bom", true)
+                                                        form.setValue("track_inventory", false)
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
                         {form.watch("requires_advanced_manufacturing") && (
                             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="space-y-3">
