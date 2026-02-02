@@ -101,7 +101,7 @@ class TreasuryReturnService:
             # Credit: Cash/Bank (Money leaves our account)
             JournalItem.objects.create(
                 entry=entry,
-                account=treasury_account,
+                account=treasury_account.account if hasattr(treasury_account, 'account') else treasury_account,
                 debit=0,
                 credit=amount,
                 label=f"Salida efectivo - Devolución"
@@ -122,7 +122,7 @@ class TreasuryReturnService:
             # Debit: Cash/Bank (Money comes back)
             JournalItem.objects.create(
                 entry=entry,
-                account=treasury_account,
+                account=treasury_account.account if hasattr(treasury_account, 'account') else treasury_account,
                 debit=amount,
                 credit=0,
                 label=f"Entrada efectivo - Devolución"

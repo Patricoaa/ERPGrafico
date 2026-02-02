@@ -312,14 +312,19 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
 
                     {step === 'MAPPING' && previewData && (
                         <div className="space-y-4">
-                            <div className="rounded-md border max-h-[500px] overflow-auto w-full">
-                                <Table className="table-auto min-w-full">
-                                    <TableHeader>
+                            <div className="rounded-md border max-h-[500px] overflow-auto w-full relative">
+                                <Table className="table-fixed w-max min-w-full border-separate border-spacing-0">
+                                    <TableHeader className="sticky top-0 z-10 bg-background">
                                         <TableRow>
                                             {previewData.columns.map((col, idx) => (
-                                                <TableHead key={idx} className="min-w-[180px] bg-muted/50 border-x">
-                                                    <div className="flex flex-col gap-2 py-2 px-1">
-                                                        <span className="text-[10px] font-mono text-muted-foreground break-all line-clamp-2 leading-tight h-8" title={String(col)}>
+                                                <TableHead key={idx} className="w-[250px] bg-muted/50 border-x p-0">
+                                                    <div className="flex flex-col gap-2 p-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                                                {idx}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-xs font-mono text-muted-foreground break-all line-clamp-1 h-4" title={String(col)}>
                                                             {String(col)}
                                                         </span>
                                                         <Select

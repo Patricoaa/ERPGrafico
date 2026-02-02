@@ -132,9 +132,8 @@ class DifferenceService:
         entry = JournalEntry.objects.create(
             date=line.transaction_date,
             reference=f"Ajuste {line.statement.display_id} #{line.line_number}",
-            notes=f"{difference_label}\n{notes}" if notes else difference_label,
-            state='DRAFT',
-            created_by=user
+            description=f"{difference_label} - {notes}" if notes else difference_label,
+            state=JournalEntry.State.DRAFT
         )
         
         # Lógica de debe/haber según signo de diferencia
@@ -147,13 +146,13 @@ class DifferenceService:
             if difference_type in [DifferenceService.INTEREST]:
                 # Es un ingreso → Debe: Banco | Haber: Ingreso
                 JournalItem.objects.create(
-                    journal_entry=entry,
+                    entry=entry,
                     account=treasury_account,
                     debit=abs_diff,
                     credit=0
                 )
                 JournalItem.objects.create(
-                    journal_entry=entry,
+                    entry=entry,
                     account=difference_account,
                     debit=0,
                     credit=abs_diff
@@ -161,13 +160,13 @@ class DifferenceService:
             else:
                 # Es ajuste genérico
                 JournalItem.objects.create(
-                    journal_entry=entry,
+                    entry=entry,
                     account=difference_account,
                     debit=abs_diff,
                     credit=0
                 )
                 JournalItem.objects.create(
-                    journal_entry=entry,
+                    entry=entry,
                     account=treasury_account,
                     debit=0,
                     credit=abs_diff
@@ -180,13 +179,13 @@ class DifferenceService:
             if difference_type in [DifferenceService.COMMISSION, DifferenceService.CARD_COMMISSION, DifferenceService.ERROR]:
                 # Es un gasto → Debe: Gasto | Haber: Banco
                 JournalItem.objects.create(
-                    journal_entry=entry,
+                    entry=entry,
                     account=difference_account,
                     debit=abs_diff,
                     credit=0
                 )
                 JournalItem.objects.create(
-                    journal_entry=entry,
+                    entry=entry,
                     account=treasury_account,
                     debit=0,
                     credit=abs_diff
@@ -194,13 +193,13 @@ class DifferenceService:
             else:
                 # Ajuste genérico
                 JournalItem.objects.create(
-                    journal_entry=entry,
+                    entry=entry,
                     account=treasury_account,
                     debit=abs_diff,
                     credit=0
                 )
                 JournalItem.objects.create(
-                    journal_entry=entry,
+                    entry=entry,
                     account=difference_account,
                     debit=0,
                     credit=abs_diff

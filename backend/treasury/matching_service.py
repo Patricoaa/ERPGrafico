@@ -427,13 +427,12 @@ class MatchingService:
                     date=line.transaction_date,
                     reference=f"Transferencia Conciliación {line.statement.display_id}",
                     description=f"Movimiento de fondos por conciliación ({p.get_payment_method_display()})",
-                    state=JournalEntry.State.POSTED,
-                    created_by=user
+                    state=JournalEntry.State.POSTED
                 )
                 
                 # Dr Bank (Destination)
                 JournalItem.objects.create(
-                    journal_entry=transfer_entry,
+                    entry=transfer_entry,
                     account=stmt_account,
                     debit=abs(p.amount) if p.payment_type == 'INBOUND' else 0,
                     credit=abs(p.amount) if p.payment_type == 'OUTBOUND' else 0,
@@ -442,7 +441,7 @@ class MatchingService:
                 
                 # Cr Original Account (Source/Bridge)
                 JournalItem.objects.create(
-                    journal_entry=transfer_entry,
+                    entry=transfer_entry,
                     account=p.account,
                     debit=abs(p.amount) if p.payment_type == 'OUTBOUND' else 0,
                     credit=abs(p.amount) if p.payment_type == 'INBOUND' else 0,
