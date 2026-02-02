@@ -9,7 +9,8 @@ import api from "@/lib/api"
 import { productSchema, type ProductFormValues } from "./product/schema"
 
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Form } from "@/components/ui/form"
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -36,9 +37,10 @@ interface ProductFormProps {
     initialData?: any
     onSuccess: () => void
     lockedType?: string
+    variantMode?: boolean
 }
 
-export function ProductForm({ open, onOpenChange, initialData, onSuccess, lockedType }: ProductFormProps) {
+export function ProductForm({ open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
     const [uoms, setUoms] = useState<any[]>([])
@@ -49,6 +51,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     const [pricingRules, setPricingRules] = useState<any[]>([])
     const [selectedPricingRule, setSelectedPricingRule] = useState<any>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
+    const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
+    const [editingVariant, setEditingVariant] = useState<any>(null)
 
     // State for Replenishment Rules
     const [reorderingRules, setReorderingRules] = useState<any[]>([])
@@ -232,7 +236,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     uom: initialData.uom?.id?.toString() || initialData.uom?.toString() || "",
                     sale_uom: initialData.sale_uom?.id?.toString() || initialData.sale_uom?.toString() || "",
                     purchase_uom: initialData.purchase_uom?.id?.toString() || initialData.purchase_uom?.toString() || "",
-                    allowed_sale_uoms: initialData.allowed_sale_uoms?.map((u: any) => u.id?.toString() || u.toString()) || [],
+                    allowed_sale_uoms: (initialData.allowed_sale_uoms && initialData.allowed_sale_uoms.length > 0)
+                        ? initialData.allowed_sale_uoms.map((u: any) => u.id?.toString() || u.toString())
+                        : (initialData.uom ? [(initialData.uom.id || initialData.uom).toString()] : []), // Safeguard: Ensure at least base UoM is allowed
                     receiving_warehouse: initialData.receiving_warehouse?.id?.toString() || initialData.receiving_warehouse?.toString() || "",
                     track_inventory: initialData.track_inventory ?? true,
                     can_be_sold: initialData.can_be_sold ?? true,
@@ -526,6 +532,130 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
         }
     }
 
+    // Simplified Render for Variant Mode
+    if (variantMode) {
+        return (
+            <BaseModal
+                open={open}
+                onOpenChange={onOpenChange}
+                title={`Editar Variante: ${initialData?.internal_code || initialData?.code || 'Nueva'}`}
+                description="Gestión simplificada de variante"
+                className="max-w-4xl"
+            >
+                <div className="p-6">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-6">
+                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/20 p-1">
+                                    <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                        Información General
+                                    </TabsTrigger>
+                                    <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                        Reglas de Precios
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="general" className="mt-6 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-4 md:col-span-2">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="md:col-span-1">
+                                                    <FormField<ProductFormValues>
+                                                        control={form.control}
+                                                        name="internal_code"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Código Interno</FormLabel>
+                                                                <FormControl>
+                                                                    <Input {...field} readOnly className="bg-muted" />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div className="md:col-span-2">
+                                                    <FormField<ProductFormValues>
+                                                        control={form.control}
+                                                        name="name"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Nombre Comercial</FormLabel>
+                                                                <FormControl>
+                                                                    <Input {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="md:col-span-2">
+                                            <ProductPricingSection
+                                                form={form as any}
+                                                initialData={initialData}
+                                                canBeSold={true}
+                                                uoms={uoms}
+                                            />
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                <ProductPricingTab
+                                    initialData={initialData}
+                                    pricingRules={pricingRules}
+                                    fetchPricingRules={fetchPricingRules}
+                                    onOpenRuleDialog={(rule) => {
+                                        setSelectedPricingRule(rule || null)
+                                        setPricingRuleDialogOpen(true)
+                                    }}
+                                />
+                            </TabsContent>
+
+                            <ProductManufacturingTab
+                                form={form as any}
+                                initialData={initialData}
+                                products={products}
+                                uoms={uoms}
+                            />
+                        </Tabs>
+
+                        <div className="flex justify-end gap-4 pt-4 border-t">
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={loading}>
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    "Guardar Cambios"
+                                )}
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+
+                <PricingRuleForm
+                    open={pricingRuleDialogOpen}
+                    onOpenChange={(open) => {
+                        setPricingRuleDialogOpen(open)
+                        if (!open) setSelectedPricingRule(null)
+                    }}
+                    initialData={selectedPricingRule}
+                    onSuccess={fetchPricingRules}
+                    productId={initialData?.id}
+                    productName={initialData?.name}
+                />
+            </div>
+            </BaseModal >
+        )
+    }
+
     return (
         <BaseModal
             open={open}
@@ -649,14 +779,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                 />
 
                                 <ProductVariantsTab
+                                    key={variantsRefreshKey}
                                     form={form as any}
                                     initialData={initialData}
-                                    onEditVariant={(variant) => {
-                                        toast.info(`Editar variante: ${variant.code || variant.id}`)
-                                    }}
-                                    onDeleteVariant={(variant) => {
-                                        toast.info(`Eliminar variante: ${variant.code || variant.id}`)
-                                    }}
+                                    onEditVariant={(variant) => setEditingVariant(variant)}
                                 />
 
                                 <ProductInventoryTab
@@ -703,6 +829,23 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     </div>
                 )}
             </div>
+
+            {/* Nested Product Form for Variant Editing */}
+            {editingVariant && (
+                <ProductForm
+                    open={true}
+                    onOpenChange={(open) => {
+                        if (!open) setEditingVariant(null)
+                    }}
+                    initialData={editingVariant}
+                    onSuccess={() => {
+                        setVariantsRefreshKey(prev => prev + 1)
+                        setEditingVariant(null)
+                    }}
+                    lockedType={editingVariant.product_type}
+                    variantMode={true} // Enable simplified mode
+                />
+            )}
 
             <PricingRuleForm
                 open={pricingRuleDialogOpen}

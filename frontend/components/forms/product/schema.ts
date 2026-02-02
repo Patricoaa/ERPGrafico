@@ -90,7 +90,8 @@ export const productSchema = z.object({
     path: ["sale_price"]
 }).refine((data) => {
     // If can_be_sold is true, sale_uom must be selected
-    if (data.can_be_sold && (!data.sale_uom || data.sale_uom === "")) {
+    // EXCEPTION: If has_variants is true, sale_uom might be defined per variant
+    if (data.can_be_sold && !data.has_variants && (!data.sale_uom || data.sale_uom === "")) {
         return false;
     }
     return true;
@@ -99,7 +100,10 @@ export const productSchema = z.object({
     path: ["sale_uom"]
 }).refine((data) => {
     // If can_be_sold is true, at least 1 allowed_sale_uom must be selected
-    if (data.can_be_sold && (!data.allowed_sale_uoms || data.allowed_sale_uoms.length === 0)) {
+    // EXCEPTION: If has_variants is true, this might be handled per variant.
+    // However, usually allowed UoMs are global? If the user request implies they are per variant or just hidden, we skip.
+    // The user said: "Unidad de medida de venta deberia asignarse a cada variante".
+    if (data.can_be_sold && !data.has_variants && (!data.allowed_sale_uoms || data.allowed_sale_uoms.length === 0)) {
         return false;
     }
     return true;
@@ -108,7 +112,8 @@ export const productSchema = z.object({
     path: ["allowed_sale_uoms"]
 }).refine((data) => {
     // If express production is enabled, at least one BOM must exist
-    if (data.mfg_auto_finalize && (!data.boms || data.boms.length === 0)) {
+    // EXCEPTION: If has_variants is true, BOMs are on the variants, not the parent
+    if (data.mfg_auto_finalize && !data.has_variants && (!data.boms || data.boms.length === 0)) {
         return false;
     }
     return true;
@@ -117,7 +122,7 @@ export const productSchema = z.object({
     path: ["boms"]
 }).refine((data) => {
     // If express production is enabled, BOMs must have lines
-    if (data.mfg_auto_finalize && data.boms && data.boms.some(bom => !bom.lines || bom.lines.length === 0)) {
+    if (data.mfg_auto_finalize && !data.has_variants && data.boms && data.boms.some(bom => !bom.lines || bom.lines.length === 0)) {
         return false;
     }
     return true;

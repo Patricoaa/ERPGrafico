@@ -16,7 +16,6 @@ interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
     initialData?: any
     onEditVariant?: (variant: any) => void
-    onDeleteVariant?: (variant: any) => void
 }
 
 interface Attribute {
@@ -30,7 +29,7 @@ interface AttributeValue {
     value: string
 }
 
-export function ProductVariantsTab({ form, initialData, onEditVariant, onDeleteVariant }: ProductVariantsTabProps) {
+export function ProductVariantsTab({ form, initialData, onEditVariant }: ProductVariantsTabProps) {
     const [availableAttributes, setAvailableAttributes] = useState<Attribute[]>([])
     const [selectedValues, setSelectedValues] = useState<Record<number, number[]>>({})
     const [isGenerating, setIsGenerating] = useState(false)
@@ -81,6 +80,21 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onDeleteV
                 return { ...prev, [attrId]: [...current, valueId] }
             }
         })
+    }
+
+    const handleDeleteVariant = async (variant: any) => {
+        if (!confirm(`¿Está seguro de eliminar la variante ${variant.variant_display_name || variant.name}?`)) {
+            return
+        }
+
+        try {
+            await api.delete(`/inventory/products/${variant.id}/`)
+            toast.success("Variante eliminada exitosamente")
+            fetchVariants()
+        } catch (error) {
+            console.error("Failed to delete variant", error)
+            toast.error("Error al eliminar variante")
+        }
     }
 
     const handleGenerateVariants = async () => {
@@ -233,8 +247,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onDeleteV
                                         </TableCell>
                                         <TableCell className="text-right font-bold">${Number(v.sale_price).toLocaleString()}</TableCell>
                                         <TableCell className="text-center">
-                                            <Badge variant={v.current_stock > 0 ? "success" : "destructive"} className="font-bold">
-                                                {v.current_stock}
+                                            <Badge variant={v.current_stock > 0 ? "success" : (v.mfg_auto_finalize ? "secondary" : "destructive")} className="font-bold">
+                                                {v.mfg_auto_finalize ? "Sobre Pedido" : v.current_stock}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-center">
@@ -297,7 +311,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onDeleteV
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-destructive"
-                                                    onClick={() => onDeleteVariant?.(v)}
+                                                    onClick={() => handleDeleteVariant(v)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
