@@ -52,6 +52,16 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return SaleOrderSerializer
 
     def create(self, request, *args, **kwargs):
+        # Check for active POS session
+        # Strict requirement: User must have an open session to create orders
+        from treasury.models import POSSession
+        has_session = POSSession.objects.filter(user=request.user, status='OPEN').exists()
+        if not has_session:
+             return Response(
+                {'error': 'Debe tener una sesión de caja activa para crear ventas.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         order = serializer.save()

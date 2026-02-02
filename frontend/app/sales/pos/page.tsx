@@ -302,7 +302,28 @@ export default function POSPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full overflow-hidden">
+            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 h-full overflow-hidden">
+                {(!currentSession || currentSession.status !== 'OPEN') && (
+                    <div className="absolute inset-0 z-50 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
+                        <Card className="w-full max-w-md shadow-2xl border-primary/20 animate-in fade-in zoom-in duration-300">
+                            <CardHeader className="text-center pb-2">
+                                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
+                                    <LucideIcons.Lock className="h-8 w-8 text-primary" />
+                                </div>
+                                <CardTitle className="text-2xl">Caja Cerrada</CardTitle>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">
+                                        Debe abrir una sesión de caja para realizar ventas.
+                                    </p>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex justify-center pb-8">
+                                {/* Use a specific ID to target the header control or just guide user */}
+                                <SessionControl onSessionChange={setCurrentSession} />
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
                 {/* Left: Product List / Search */}
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col space-y-4 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden">

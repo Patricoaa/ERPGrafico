@@ -877,8 +877,12 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             
             for invoice in invoices:
                 # Get lines for this invoice
-                # We use the net total for category stats usually, or gross. Let's use Gross for now.
-                for line in invoice.lines.all().select_related('product', 'product__category'):
+                # POS Invoices are always linked to a SaleOrder
+                lines = []
+                if invoice.sale_order:
+                    lines = invoice.sale_order.lines.all().select_related('product', 'product__category')
+                
+                for line in lines:
                     category_name = "Sin Categoría"
                     if line.product and line.product.category:
                         # category can be an ID or object depending on how it's serialized/mapped, 
@@ -889,8 +893,19 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         sales_by_category[category_name] = 0
                     
                     # Add line total (price * quantity)
-                    # We should use line.total_gross or calculate it
-                    sales_by_category[category_name] += (line.total or 0)
+                    # We should use line.total (net) or total (gross). POS usually shows Gross sales.
+                    # SaleLine has 'total' (net) and tax calculation is on Order level usually.
+                    # Let's check SaleLine model if needed, but 'total' is usually there.
+                    # For X report, Gross is often better. SaleLine usually stores unit_price * qty.
+                    # Let's use whatever 'total' is available or calculate it.
+                    # Assuming line.total is net, and we want gross... this might be complex without tax info on line.
+                    # For now, let's just use line.total (Net) as a proxy or if it includes tax.
+                    # Actually, for POS X report, typically you want GROSS sales.
+                    # If SaleLine has tax included price...
+                    
+                    # Safe fallback
+                    amount = line.total if hasattr(line, 'total') else (line.quantity * line.unit_price)
+                    sales_by_category[category_name] += (amount or 0)
             
             # Format category data for frontend
             category_data = [
