@@ -102,6 +102,8 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
     })
     const [diffType, setDiffType] = useState<string>("COMMISSION")
     const [diffNotes, setDiffNotes] = useState<string>("")
+    const [cardProviders, setCardProviders] = useState<any[]>([])
+    const [selectedProviderId, setSelectedProviderId] = useState<string>("")
     const [searchQuery, setSearchQuery] = useState("")
     const [actionDialog, setActionDialog] = useState<{
         open: boolean,
@@ -114,7 +116,17 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
         fetchUnreconciledLines()
         fetchUnreconciledPayments()
         fetchStatement()
+        fetchProviders()
     }, [statementId])
+
+    const fetchProviders = async () => {
+        try {
+            const response = await api.get('/treasury/card-providers/')
+            setCardProviders(response.data.results || response.data)
+        } catch (error) {
+            console.error('Error fetching card providers:', error)
+        }
+    }
 
     const fetchStatement = async () => {
         try {
@@ -332,6 +344,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
             if (force) {
                 confirmPayload.difference_type = diffType
                 confirmPayload.notes = diffNotes
+                confirmPayload.card_provider_id = selectedProviderId
             }
 
             await api.post(`/treasury/statement-lines/${lineIds[0]}/confirm/`, confirmPayload)
@@ -422,6 +435,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
             if (force) {
                 confirmData.difference_type = diffType
                 confirmData.notes = diffNotes
+                confirmData.card_provider_id = selectedProviderId
             }
 
             await api.post(`/treasury/statement-lines/${lineId}/confirm/`, confirmData)
@@ -877,6 +891,23 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                     </SelectContent>
                                 </Select>
                             </div>
+                            {diffType === 'CARD_COMMISSION' && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-sans">Proveedor de Abono (Transbank, etc.)</Label>
+                                    <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+                                        <SelectTrigger className="h-12 bg-muted/20 border-border/50 focus:ring-blue-500 shadow-sm">
+                                            <SelectValue placeholder="Seleccione proveedor..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {cardProviders.map(p => (
+                                                <SelectItem key={p.id} value={p.id.toString()}>
+                                                    {p.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Observaciones</Label>
                                 <Textarea

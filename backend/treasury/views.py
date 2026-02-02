@@ -456,10 +456,11 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             # Check for difference adjustment
             difference_type = request.data.get('difference_type')
             notes = request.data.get('notes', '')
+            card_provider_id = request.data.get('card_provider_id')
             
             if difference_type and line.difference_amount != 0:
                 DifferenceService.create_difference_adjustment(
-                    line, difference_type, request.user, notes
+                    line, difference_type, request.user, notes, card_provider_id
                 )
             
             confirmed_line = MatchingService.confirm_match(pk, request.user)
@@ -581,5 +582,83 @@ class ReconciliationReportsViewSet(viewsets.ViewSet):
             months = int(request.query_params.get('months', 6))
             data = ReportsService.get_monthly_trend(account_id, months)
             return Response(data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CardBillingViewSet(viewsets.ViewSet):
+    """ViewSet for Card Payment Billing and Dashboard"""
+    
+    @action(detail=False, methods=['get'])
+    def dashboard(self, request):
+        """Dashboard data for card commissions and invoicing"""
+        try:
+            from django.utils import timezone
+            year = int(request.query_params.get('year', timezone.now().year))
+            month = int(request.query_params.get('month', timezone.now().month))
+            
+            providers = CardPaymentProvider.objects.filter(is_active=True)
+            data = []
+            
+            for provider in providers:
+                settlements = DailySettlement.objects.filter(
+                    provider=provider,
+                    settlement_date__year=year,
+                    settlement_date__month=month
+                ).order_by('settlement_date')
+                
+                # Fetch monthly invoice if any settlement has one
+                invoice = None
+                settlement_with_invoice = settlements.filter(monthly_invoice__isnull=False).first()
+                if settlement_with_invoice:
+                    invoice = settlement_with_invoice.monthly_invoice
+                
+                provider_data = {
+                    'provider_id': provider.id,
+                    'provider_name': provider.name,
+                    'supplier_name': provider.supplier.name,
+                    'total_gross': sum(s.total_gross for s in settlements),
+                    'total_commission': sum(s.total_commission for s in settlements),
+                    'total_vat': sum(s.total_vat for s in settlements),
+                    'total_net': sum(s.total_net for s in settlements),
+                    'settlements_count': settlements.count(),
+                    'invoice_id': invoice.id if invoice else None,
+                    'invoice_number': invoice.number if invoice else None,
+                    'invoice_status': invoice.status if invoice else 'PENDING',
+                    'details': DailySettlementSerializer(settlements, many=True).data
+                }
+                data.append(provider_data)
+                
+            return Response(data)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'])
+    def generate_invoice(self, request):
+        """Manually trigger monthly invoice generation"""
+        try:
+            provider_id = request.data.get('provider_id')
+            year = int(request.data.get('year'))
+            month = int(request.data.get('month'))
+            
+            from .card_invoice_service import CardInvoiceService
+            provider = CardPaymentProvider.objects.get(id=provider_id)
+            
+            invoice = CardInvoiceService.generate_monthly_invoice(provider, year, month, request.user)
+            
+            if invoice:
+                return Response({
+                    'message': 'Factura generada con éxito',
+                    'invoice_id': invoice.id
+                })
+            else:
+                return Response({
+                    'error': 'No hay liquidaciones pendientes para este periodo'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except CardPaymentProvider.DoesNotExist:
+            return Response({'error': 'Proveedor no encontrado'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

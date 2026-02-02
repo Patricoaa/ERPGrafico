@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PaymentViewSet, TreasuryAccountViewSet,
     BankStatementViewSet, BankStatementLineViewSet,
-    ReconciliationRuleViewSet, ReconciliationReportsViewSet
+    ReconciliationRuleViewSet, ReconciliationReportsViewSet,
+    CardBillingViewSet
 )
 
 
@@ -14,6 +15,7 @@ router.register(r'statements', BankStatementViewSet)
 router.register(r'statement-lines', BankStatementLineViewSet)
 router.register(r'reconciliation-rules', ReconciliationRuleViewSet)
 router.register(r'reconciliation-reports', ReconciliationReportsViewSet, basename='reconciliation-reports')
+router.register(r'card-billing', CardBillingViewSet, basename='card-billing')
 
 urlpatterns = [
     path('', include(router.urls)),
