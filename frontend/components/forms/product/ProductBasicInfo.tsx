@@ -98,19 +98,19 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                     )}
                 />
 
-                <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/20 p-4 rounded-lg border border-dashed mt-6">
+                <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/20 p-4 rounded-lg border mt-6">
                     <FormField<ProductFormValues>
                         control={form.control}
                         name="can_be_sold"
                         render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
+                            <FormItem className="flex flex-row items-center justify-between p-3 shadow-sm bg-background">
                                 <div className="space-y-0.5">
                                     <FormLabel className="flex items-center gap-2">
                                         <ShoppingCart className="h-4 w-4 text-emerald-600" />
                                         Puede ser vendido
                                     </FormLabel>
                                     <FormDescription className="text-[10px]">
-                                        Habilitar para ventas y punto de venta.
+                                        Habilitar para venta.
                                     </FormDescription>
                                 </div>
                                 <FormControl>
@@ -135,7 +135,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                         Puede ser comprado
                                     </FormLabel>
                                     <FormDescription className="text-[10px]">
-                                        Habilitar para compras y proveedores.
+                                        Habilitar para compras.
                                     </FormDescription>
                                 </div>
                                 <FormControl>

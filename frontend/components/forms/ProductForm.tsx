@@ -67,6 +67,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             category: "",
             product_type: lockedType || "STORABLE",
             sale_price: 0,
+            sale_price_gross: 0,
             is_dynamic_pricing: false,
             uom: "",
             // ...
@@ -232,6 +233,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     category: initialData.category?.id?.toString() || initialData.category?.toString() || "",
                     product_type: initialData.product_type || "STORABLE",
                     sale_price: Number(initialData.sale_price) || 0,
+                    sale_price_gross: Number(initialData.sale_price_gross) || 0,
                     is_dynamic_pricing: initialData.is_dynamic_pricing ?? false,
                     uom: initialData.uom?.id?.toString() || initialData.uom?.toString() || "",
                     sale_uom: initialData.sale_uom?.id?.toString() || initialData.sale_uom?.toString() || "",
@@ -308,6 +310,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     category: "",
                     product_type: lockedType || "STORABLE",
                     sale_price: 0,
+                    sale_price_gross: 0,
                     uom: "",
                     sale_uom: "",
                     purchase_uom: "",
@@ -552,12 +555,13 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                         <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                                             Información General
                                         </TabsTrigger>
-                                        <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                            Reglas de Precios
-                                        </TabsTrigger>
                                         <TabsTrigger value="manufacturing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                                             Fabricación
                                         </TabsTrigger>
+                                        <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                            Reglas de Precios
+                                        </TabsTrigger>
+
                                     </TabsList>
 
                                     <TabsContent value="general" className="mt-6 space-y-6">
