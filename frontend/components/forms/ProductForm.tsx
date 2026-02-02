@@ -539,7 +539,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 open={open}
                 onOpenChange={onOpenChange}
                 title={`Editar Variante: ${initialData?.name || initialData?.internal_code || 'Nueva'}`}
-                size="lg"
+                size="xl"
                 description="Gestión de variante"
                 className="max-w-[95vw] h-[90vh]"
             >

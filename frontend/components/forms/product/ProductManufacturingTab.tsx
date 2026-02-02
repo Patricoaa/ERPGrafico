@@ -35,277 +35,279 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
     return (
         <TabsContent value="manufacturing" className="mt-0 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                {/* Left Column: Settings & Workflow */}
-                <div className="md:col-span-4 space-y-6">
-                    <div className="p-6 rounded-2xl border bg-card/50 space-y-6">
-                        <div className="flex items-center gap-3 border-b pb-4">
-                            <div className="p-2 rounded-lg bg-primary/10">
-                                <Settings2 className="h-5 w-5 text-primary" />
-                            </div>
-                            <h3 className="font-bold">Ajustes de Producción</h3>
-                        </div>
-
-                        <FormField<ProductFormValues>
-                            control={form.control}
-                            name="mfg_default_delivery_days"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                        <FormLabel className="!mb-0">Días de Entrega Estándar</FormLabel>
-                                    </div>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Input type="number" {...field} className="font-bold" />
-                                            <span className="absolute right-3 top-2.5 text-xs text-muted-foreground uppercase font-black">Días</span>
-                                        </div>
-                                    </FormControl>
-                                    <FormDescription className="text-[10px]">
-                                        Tiempo estimado desde la orden hasta la entrega.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <div className="space-y-4 pt-2">
-                            <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Modo de Producción</Label>
-                            <Tabs
-                                value={form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")}
-                                onValueChange={(value) => {
-                                    if (value === "simple") {
-                                        form.setValue("requires_advanced_manufacturing", false);
-                                        form.setValue("mfg_auto_finalize", false);
-                                        form.setValue("track_inventory", true);
-                                        // Simple mode now allows BOM for manual/batch OTs
-                                    } else if (value === "express") {
-                                        form.setValue("requires_advanced_manufacturing", false);
-                                        form.setValue("mfg_auto_finalize", true);
-                                        form.setValue("has_bom", true);
-                                        form.setValue("track_inventory", false);
-                                    } else if (value === "advanced") {
-                                        form.setValue("requires_advanced_manufacturing", true);
-                                        form.setValue("mfg_auto_finalize", false);
-                                        form.setValue("has_bom", true);
-                                        form.setValue("track_inventory", false);
-                                    }
-                                }}
-                                className="w-full"
-                            >
-                                <TabsList className="grid w-full grid-cols-3 h-20 bg-muted/30 p-1">
-                                    <TabsTrigger value="simple" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                                        <Package className="h-4 w-4" />
-                                        <span className="text-[10px] font-bold">Simple</span>
-                                        <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Manual / Lote<br />(Contra Stock)</span>
-                                    </TabsTrigger>
-                                    <TabsTrigger value="express" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                                        <Clock className="h-4 w-4" />
-                                        <span className="text-[10px] font-bold">Express</span>
-                                        <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Auto-cierre<br />(Sobre Pedido)</span>
-                                    </TabsTrigger>
-                                    <TabsTrigger value="advanced" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                                        <Layers className="h-4 w-4" />
-                                        <span className="text-[10px] font-bold">Avanzado</span>
-                                        <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Wizard Etapas<br />(Sobre Pedido)</span>
-                                    </TabsTrigger>
-                                </TabsList>
-                            </Tabs>
-                        </div>
-
-                        {/* Traditional Switch for BOM if someone wants custom config */}
-                        <FormField<ProductFormValues>
-                            control={form.control}
-                            name="has_bom"
-                            render={({ field }) => {
-                                const isExpress = form.watch("mfg_auto_finalize")
-                                const hasVariants = form.watch("has_variants")
-                                // Express products without variants MUST have BOM (enforced by backend)
-                                const shouldDisable = isExpress && !hasVariants
-
-                                return (
-                                    <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="font-bold">Posee Receta (BOM)</FormLabel>
-                                            <FormDescription className="text-[10px]">
-                                                {shouldDisable
-                                                    ? "Los productos Express requieren BOM obligatorio."
-                                                    : "Detección automática por modo seleccionado."}
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                                disabled={shouldDisable}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )
-                            }}
-                        />
-
-                        {/* Variants toggle moved here as per user request */}
-                        <FormField<ProductFormValues>
-                            control={form.control}
-                            name="has_variants"
-                            render={({ field }) => (
-                                !variantMode ? (
-                                    <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="font-bold">Posee Variantes</FormLabel>
-                                            <FormDescription className="text-[10px]">
-                                                Permite generar múltiples versiones de este producto.
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={(val) => {
-                                                    field.onChange(val)
-                                                    if (val) {
-                                                        // Ensure it's manufacturable if variants are enabled
-                                                        // (Requirement says variants only for Express/Advanced)
-                                                        const mfgMode = form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")
-                                                        if (mfgMode === "simple") {
-                                                            // Force to express if it's currently simple?
-                                                            // User said Express/Advanced only.
-                                                            form.setValue("mfg_auto_finalize", true)
-                                                            form.setValue("has_bom", true)
-                                                            form.setValue("track_inventory", false)
-                                                        }
-                                                    }
-                                                }}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                ) : <></>
-                            )}
-                        />
-
-                        {form.watch("requires_advanced_manufacturing") && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div className="space-y-3">
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Etapas del Flujo</h4>
-
-                                    <FormField<ProductFormValues>
-                                        control={form.control}
-                                        name="mfg_enable_prepress"
-                                        render={({ field }) => (
-                                            <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
-                                                <FormLabel className="text-xs font-medium">Pre-Impresión</FormLabel>
-                                                <FormControl>
-                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {form.watch("mfg_enable_prepress") && (
-                                        <div className="ml-4 space-y-2 pl-4 border-l-2 border-primary/20">
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="mfg_prepress_design"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-between">
-                                                        <FormLabel className="text-[11px] font-normal">Diseño Requerido</FormLabel>
-                                                        <FormControl>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="mfg_prepress_folio"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-between">
-                                                        <FormLabel className="text-[11px] font-normal">Folio</FormLabel>
-                                                        <FormControl>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    )}
-
-                                    <FormField<ProductFormValues>
-                                        control={form.control}
-                                        name="mfg_enable_press"
-                                        render={({ field }) => (
-                                            <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
-                                                <FormLabel className="text-xs font-medium">Impresión</FormLabel>
-                                                <FormControl>
-                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {form.watch("mfg_enable_press") && (
-                                        <div className="ml-4 space-y-2 pl-4 border-l-2 border-primary/20">
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="mfg_press_offset"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-between">
-                                                        <FormLabel className="text-[11px] font-normal">Offset</FormLabel>
-                                                        <FormControl>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="mfg_press_digital"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-between">
-                                                        <FormLabel className="text-[11px] font-normal">Digital</FormLabel>
-                                                        <FormControl>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="mfg_press_special"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-between">
-                                                        <FormLabel className="text-[11px] font-normal">Especial</FormLabel>
-                                                        <FormControl>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    )}
-
-                                    <FormField<ProductFormValues>
-                                        control={form.control}
-                                        name="mfg_enable_postpress"
-                                        render={({ field }) => (
-                                            <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
-                                                <FormLabel className="text-xs font-medium">Post-Impresión</FormLabel>
-                                                <FormControl>
-                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-
-
+                {/* Left Column: Settings & Workflow - Hidden in variant mode for "direct" BOM access */}
+                {!variantMode && (
+                    <div className="md:col-span-4 space-y-6">
+                        <div className="p-6 rounded-2xl border bg-card/50 space-y-6">
+                            <div className="flex items-center gap-3 border-b pb-4">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                    <Settings2 className="h-5 w-5 text-primary" />
                                 </div>
+                                <h3 className="font-bold">Ajustes de Producción</h3>
                             </div>
-                        )}
-                    </div>
-                </div>
 
-                {/* Right Column: BOM Management */}
-                <div className="md:col-span-8 space-y-6">
-                    {hasBom && (
+                            <FormField<ProductFormValues>
+                                control={form.control}
+                                name="mfg_default_delivery_days"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Clock className="h-4 w-4 text-muted-foreground" />
+                                            <FormLabel className="!mb-0">Días de Entrega Estándar</FormLabel>
+                                        </div>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Input type="number" {...field} className="font-bold" />
+                                                <span className="absolute right-3 top-2.5 text-xs text-muted-foreground uppercase font-black">Días</span>
+                                            </div>
+                                        </FormControl>
+                                        <FormDescription className="text-[10px]">
+                                            Tiempo estimado desde la orden hasta la entrega.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="space-y-4 pt-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Modo de Producción</Label>
+                                <Tabs
+                                    value={form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")}
+                                    onValueChange={(value) => {
+                                        if (value === "simple") {
+                                            form.setValue("requires_advanced_manufacturing", false);
+                                            form.setValue("mfg_auto_finalize", false);
+                                            form.setValue("track_inventory", true);
+                                            // Simple mode now allows BOM for manual/batch OTs
+                                        } else if (value === "express") {
+                                            form.setValue("requires_advanced_manufacturing", false);
+                                            form.setValue("mfg_auto_finalize", true);
+                                            form.setValue("has_bom", true);
+                                            form.setValue("track_inventory", false);
+                                        } else if (value === "advanced") {
+                                            form.setValue("requires_advanced_manufacturing", true);
+                                            form.setValue("mfg_auto_finalize", false);
+                                            form.setValue("has_bom", true);
+                                            form.setValue("track_inventory", false);
+                                        }
+                                    }}
+                                    className="w-full"
+                                >
+                                    <TabsList className="grid w-full grid-cols-3 h-20 bg-muted/30 p-1">
+                                        <TabsTrigger value="simple" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                                            <Package className="h-4 w-4" />
+                                            <span className="text-[10px] font-bold">Simple</span>
+                                            <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Manual / Lote<br />(Contra Stock)</span>
+                                        </TabsTrigger>
+                                        <TabsTrigger value="express" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                                            <Clock className="h-4 w-4" />
+                                            <span className="text-[10px] font-bold">Express</span>
+                                            <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Auto-cierre<br />(Sobre Pedido)</span>
+                                        </TabsTrigger>
+                                        <TabsTrigger value="advanced" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                                            <Layers className="h-4 w-4" />
+                                            <span className="text-[10px] font-bold">Avanzado</span>
+                                            <span className="text-[8px] text-muted-foreground font-normal leading-tight text-center">Wizard Etapas<br />(Sobre Pedido)</span>
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            </div>
+
+                            {/* Traditional Switch for BOM if someone wants custom config */}
+                            <FormField<ProductFormValues>
+                                control={form.control}
+                                name="has_bom"
+                                render={({ field }) => {
+                                    const isExpress = form.watch("mfg_auto_finalize")
+                                    const hasVariants = form.watch("has_variants")
+                                    // Express products without variants MUST have BOM (enforced by backend)
+                                    const shouldDisable = isExpress && !hasVariants
+
+                                    return (
+                                        <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="font-bold">Posee Receta (BOM)</FormLabel>
+                                                <FormDescription className="text-[10px]">
+                                                    {shouldDisable
+                                                        ? "Los productos Express requieren BOM obligatorio."
+                                                        : "Detección automática por modo seleccionado."}
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                    disabled={shouldDisable}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )
+                                }}
+                            />
+
+                            {/* Variants toggle moved here as per user request */}
+                            <FormField<ProductFormValues>
+                                control={form.control}
+                                name="has_variants"
+                                render={({ field }) => (
+                                    !variantMode ? (
+                                        <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="font-bold">Posee Variantes</FormLabel>
+                                                <FormDescription className="text-[10px]">
+                                                    Permite generar múltiples versiones de este producto.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={(val) => {
+                                                        field.onChange(val)
+                                                        if (val) {
+                                                            // Ensure it's manufacturable if variants are enabled
+                                                            // (Requirement says variants only for Express/Advanced)
+                                                            const mfgMode = form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")
+                                                            if (mfgMode === "simple") {
+                                                                // Force to express if it's currently simple?
+                                                                // User said Express/Advanced only.
+                                                                form.setValue("mfg_auto_finalize", true)
+                                                                form.setValue("has_bom", true)
+                                                                form.setValue("track_inventory", false)
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    ) : <></>
+                                )}
+                            />
+
+                            {form.watch("requires_advanced_manufacturing") && (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="space-y-3">
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Etapas del Flujo</h4>
+
+                                        <FormField<ProductFormValues>
+                                            control={form.control}
+                                            name="mfg_enable_prepress"
+                                            render={({ field }) => (
+                                                <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                    <FormLabel className="text-xs font-medium">Pre-Impresión</FormLabel>
+                                                    <FormControl>
+                                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {form.watch("mfg_enable_prepress") && (
+                                            <div className="ml-4 space-y-2 pl-4 border-l-2 border-primary/20">
+                                                <FormField<ProductFormValues>
+                                                    control={form.control}
+                                                    name="mfg_prepress_design"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex items-center justify-between">
+                                                            <FormLabel className="text-[11px] font-normal">Diseño Requerido</FormLabel>
+                                                            <FormControl>
+                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField<ProductFormValues>
+                                                    control={form.control}
+                                                    name="mfg_prepress_folio"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex items-center justify-between">
+                                                            <FormLabel className="text-[11px] font-normal">Folio</FormLabel>
+                                                            <FormControl>
+                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        )}
+
+                                        <FormField<ProductFormValues>
+                                            control={form.control}
+                                            name="mfg_enable_press"
+                                            render={({ field }) => (
+                                                <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                    <FormLabel className="text-xs font-medium">Impresión</FormLabel>
+                                                    <FormControl>
+                                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {form.watch("mfg_enable_press") && (
+                                            <div className="ml-4 space-y-2 pl-4 border-l-2 border-primary/20">
+                                                <FormField<ProductFormValues>
+                                                    control={form.control}
+                                                    name="mfg_press_offset"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex items-center justify-between">
+                                                            <FormLabel className="text-[11px] font-normal">Offset</FormLabel>
+                                                            <FormControl>
+                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField<ProductFormValues>
+                                                    control={form.control}
+                                                    name="mfg_press_digital"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex items-center justify-between">
+                                                            <FormLabel className="text-[11px] font-normal">Digital</FormLabel>
+                                                            <FormControl>
+                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField<ProductFormValues>
+                                                    control={form.control}
+                                                    name="mfg_press_special"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex items-center justify-between">
+                                                            <FormLabel className="text-[11px] font-normal">Especial</FormLabel>
+                                                            <FormControl>
+                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        )}
+
+                                        <FormField<ProductFormValues>
+                                            control={form.control}
+                                            name="mfg_enable_postpress"
+                                            render={({ field }) => (
+                                                <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                    <FormLabel className="text-xs font-medium">Post-Impresión</FormLabel>
+                                                    <FormControl>
+                                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+
+
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Right Column: BOM Management - Full width in variant mode */}
+                <div className={cn(variantMode ? "md:col-span-12" : "md:col-span-8", "space-y-6")}>
+                    {(hasBom || variantMode) && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
@@ -329,8 +331,8 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                             </div>
 
                             {isEditing ? (
-                                <div className="p-4 rounded-2xl border bg-muted/5">
-                                    <BOMManager product={initialData} />
+                                <div className={cn("p-4 rounded-2xl border bg-muted/5", variantMode && "p-0 border-none bg-transparent")}>
+                                    <BOMManager product={initialData} variantMode={variantMode} />
                                 </div>
                             ) : (
                                 <div className="space-y-4">

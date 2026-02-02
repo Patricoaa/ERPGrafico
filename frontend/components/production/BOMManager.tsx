@@ -25,12 +25,14 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 interface BOMManagerProps {
     product: any
+    variantMode?: boolean
 }
 
-export function BOMManager({ product }: BOMManagerProps) {
+export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
     const [boms, setBoms] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -136,77 +138,101 @@ export function BOMManager({ product }: BOMManagerProps) {
     }
 
     return (
-        <Card className="border-border shadow-sm">
-            <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="text-base font-bold flex items-center gap-2">
-                            <Workflow className="h-5 w-5 text-primary" />
-                            Listas de Materiales (BOM)
-                        </CardTitle>
-                        <CardDescription className="text-xs mt-1">
-                            Defina los componentes necesarios para fabricar este producto.
-                        </CardDescription>
-                    </div>
-                </div>
-
-                {product?.has_variants && (
-                    <div className="mt-4 flex items-center gap-4 bg-muted/20 p-3 rounded-lg border">
-                        <Workflow className="h-4 w-4 text-muted-foreground" />
-                        <div className="flex-1 flex items-center gap-2">
-                            <Label className="text-sm font-medium whitespace-nowrap">Gestionar variante:</Label>
-                            <Select
-                                value={selectedVariantId}
-                                onValueChange={setSelectedVariantId}
-                            >
-                                <SelectTrigger className="w-[300px] h-9 bg-white">
-                                    <SelectValue placeholder="Seleccione variante..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        -- Variantes --
-                                    </SelectItem>
-                                    {variants.map(v => (
-                                        <SelectItem key={v.id} value={v.id.toString()}>
-                                            {v.variant_display_name || v.name} ({v.internal_code || v.code})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+        <Card className={cn("border-border shadow-sm", variantMode && "border-none shadow-none bg-transparent")}>
+            {!variantMode && (
+                <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="text-base font-bold flex items-center gap-2">
+                                <Workflow className="h-5 w-5 text-primary" />
+                                Listas de Materiales (BOM)
+                            </CardTitle>
+                            <CardDescription className="text-xs mt-1">
+                                Defina los componentes necesarios para fabricar este producto.
+                            </CardDescription>
                         </div>
-                        <Button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                handleCreate()
-                            }}
-                            size="sm"
-                            className="gap-2"
-                            disabled={selectedVariantId === "all"}
-                        >
-                            <Plus className="h-4 w-4" />
-                            Validar / Crear BOM
-                        </Button>
                     </div>
-                )}
 
-                {(!product?.has_variants) && (
-                    <div className="flex justify-end mt-2">
-                        <Button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                handleCreate()
-                            }}
-                            size="sm"
-                            className="gap-2"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Nueva Lista
-                        </Button>
+                    {product?.has_variants && (
+                        <div className="mt-4 flex items-center gap-4 bg-muted/20 p-3 rounded-lg border">
+                            <Workflow className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex-1 flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">Gestionar variante:</Label>
+                                <Select
+                                    value={selectedVariantId}
+                                    onValueChange={setSelectedVariantId}
+                                >
+                                    <SelectTrigger className="w-[300px] h-9 bg-white">
+                                        <SelectValue placeholder="Seleccione variante..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            -- Variantes --
+                                        </SelectItem>
+                                        {variants.map(v => (
+                                            <SelectItem key={v.id} value={v.id.toString()}>
+                                                {v.variant_display_name || v.name} ({v.internal_code || v.code})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleCreate()
+                                }}
+                                size="sm"
+                                className="gap-2"
+                                disabled={selectedVariantId === "all"}
+                            >
+                                <Plus className="h-4 w-4" />
+                                Validar / Crear BOM
+                            </Button>
+                        </div>
+                    )}
+
+                    {(!product?.has_variants) && (
+                        <div className="flex justify-end mt-2">
+                            <Button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleCreate()
+                                }}
+                                size="sm"
+                                className="gap-2"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Nueva Lista
+                            </Button>
+                        </div>
+                    )}
+                </CardHeader>
+            )}
+
+            {variantMode && (
+                <div className="flex justify-between items-center mb-4 px-2">
+                    <div className="flex items-center gap-2">
+                        <Workflow className="h-4 w-4 text-primary" />
+                        <span className="font-bold text-sm">Recetas de esta variante</span>
                     </div>
-                )}
-            </CardHeader>
+                    <Button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleCreate()
+                        }}
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-2 rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        Añadir Receta
+                    </Button>
+                </div>
+            )}
             <CardContent>
                 <div className="rounded-md border overflow-hidden">
                     <Table>
