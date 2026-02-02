@@ -20,9 +20,10 @@ interface ProductManufacturingTabProps {
     initialData?: any
     products: any[]
     uoms: any[]
+    variantMode?: boolean
 }
 
-export function ProductManufacturingTab({ form, initialData, products, uoms }: ProductManufacturingTabProps) {
+export function ProductManufacturingTab({ form, initialData, products, uoms, variantMode = false }: ProductManufacturingTabProps) {
     const { fields: bomFields, append: appendBom, remove: removeBom } = useFieldArray({
         control: form.control,
         name: "boms"
@@ -148,34 +149,36 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                             control={form.control}
                             name="has_variants"
                             render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="font-bold">Posee Variantes</FormLabel>
-                                        <FormDescription className="text-[10px]">
-                                            Permite generar múltiples versiones de este producto.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={(val) => {
-                                                field.onChange(val)
-                                                if (val) {
-                                                    // Ensure it's manufacturable if variants are enabled
-                                                    // (Requirement says variants only for Express/Advanced)
-                                                    const mfgMode = form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")
-                                                    if (mfgMode === "simple") {
-                                                        // Force to express if it's currently simple?
-                                                        // User said Express/Advanced only.
-                                                        form.setValue("mfg_auto_finalize", true)
-                                                        form.setValue("has_bom", true)
-                                                        form.setValue("track_inventory", false)
+                                !variantMode ? (
+                                    <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="font-bold">Posee Variantes</FormLabel>
+                                            <FormDescription className="text-[10px]">
+                                                Permite generar múltiples versiones de este producto.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={(val) => {
+                                                    field.onChange(val)
+                                                    if (val) {
+                                                        // Ensure it's manufacturable if variants are enabled
+                                                        // (Requirement says variants only for Express/Advanced)
+                                                        const mfgMode = form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")
+                                                        if (mfgMode === "simple") {
+                                                            // Force to express if it's currently simple?
+                                                            // User said Express/Advanced only.
+                                                            form.setValue("mfg_auto_finalize", true)
+                                                            form.setValue("has_bom", true)
+                                                            form.setValue("track_inventory", false)
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                                                }}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                ) : <></>
                             )}
                         />
 

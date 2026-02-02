@@ -18,9 +18,10 @@ interface ProductPricingSectionProps {
     initialData?: any
     canBeSold?: boolean
     uoms: any[]
+    forceEdit?: boolean
 }
 
-export function ProductPricingSection({ form, initialData, canBeSold, uoms }: ProductPricingSectionProps) {
+export function ProductPricingSection({ form, initialData, canBeSold, uoms, forceEdit = false }: ProductPricingSectionProps) {
     const salePrice = Number(form.watch("sale_price")) || 0
     const salePriceGross = Number(form.watch("sale_price_gross")) || 0
     const productType = form.watch("product_type")
@@ -38,7 +39,8 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
     if (!canBeSold) return null;
 
     // Hide pricing section if product has variants enabled (prices are set per variant)
-    if (hasVariants) {
+    // UNLESS forceEdit is true (for simplified variant editing)
+    if (hasVariants && !forceEdit) {
         return (
             <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-200">
                 <div className="flex items-start gap-3">

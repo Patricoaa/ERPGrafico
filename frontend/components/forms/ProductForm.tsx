@@ -538,8 +538,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             <BaseModal
                 open={open}
                 onOpenChange={onOpenChange}
-                title={`Editar Variante: ${initialData?.internal_code || initialData?.code || 'Nueva'}`}
-                description="Gestión simplificada de variante"
+                title={`Editar Variante: ${initialData?.name || initialData?.internal_code || 'Nueva'}`}
+                description="Gestión de variante"
                 className="max-w-4xl"
             >
                 <div className="p-6">
@@ -553,6 +553,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                     <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                                         Reglas de Precios
                                     </TabsTrigger>
+                                    <TabsTrigger value="manufacturing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                        Fabricación
+                                    </TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="general" className="mt-6 space-y-6">
@@ -560,34 +563,39 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                         <div className="space-y-4 md:col-span-2">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div className="md:col-span-1">
-                                                    <FormField<ProductFormValues>
-                                                        control={form.control}
-                                                        name="internal_code"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Código Interno</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} readOnly className="bg-muted" />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
+                                                    <div className="aspect-square w-full">
+                                                        <ProductImageUpload form={form} imagePreview={imagePreview} setImagePreview={setImagePreview} />
+                                                    </div>
                                                 </div>
-                                                <div className="md:col-span-2">
-                                                    <FormField<ProductFormValues>
-                                                        control={form.control}
-                                                        name="name"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Nombre Comercial</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
+                                                <div className="md:col-span-2 space-y-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <FormField<ProductFormValues>
+                                                            control={form.control}
+                                                            name="internal_code"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Código Interno</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input {...field} readOnly className="bg-muted" />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField<ProductFormValues>
+                                                            control={form.control}
+                                                            name="name"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Nombre Comercial</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input {...field} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -598,60 +606,63 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                                 initialData={initialData}
                                                 canBeSold={true}
                                                 uoms={uoms}
+                                                forceEdit={true}
                                             />
                                         </div>
                                     </div>
                                 </TabsContent>
 
-                                <ProductPricingTab
+                                <TabsContent value="pricing" className="mt-6">
+                                    <ProductPricingTab
+                                        initialData={initialData}
+                                        pricingRules={pricingRules}
+                                        fetchPricingRules={fetchPricingRules}
+                                        onOpenRuleDialog={(rule) => {
+                                            setSelectedPricingRule(rule || null)
+                                            setPricingRuleDialogOpen(true)
+                                        }}
+                                    />
+                                </TabsContent>
+
+                                <ProductManufacturingTab
+                                    form={form as any}
                                     initialData={initialData}
-                                    pricingRules={pricingRules}
-                                    fetchPricingRules={fetchPricingRules}
-                                    onOpenRuleDialog={(rule) => {
-                                        setSelectedPricingRule(rule || null)
-                                        setPricingRuleDialogOpen(true)
-                                    }}
+                                    products={products}
+                                    uoms={uoms}
+                                    variantMode={true}
                                 />
-                            </TabsContent>
+                            </Tabs>
 
-                            <ProductManufacturingTab
-                                form={form as any}
-                                initialData={initialData}
-                                products={products}
-                                uoms={uoms}
-                            />
-                        </Tabs>
+                            <div className="flex justify-end gap-4 pt-4 border-t">
+                                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                    Cancelar
+                                </Button>
+                                <Button type="submit" disabled={loading}>
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Guardando...
+                                        </>
+                                    ) : (
+                                        "Guardar Cambios"
+                                    )}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
 
-                        <div className="flex justify-end gap-4 pt-4 border-t">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Guardando...
-                                    </>
-                                ) : (
-                                    "Guardar Cambios"
-                                )}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-
-                <PricingRuleForm
-                    open={pricingRuleDialogOpen}
-                    onOpenChange={(open) => {
-                        setPricingRuleDialogOpen(open)
-                        if (!open) setSelectedPricingRule(null)
-                    }}
-                    initialData={selectedPricingRule}
-                    onSuccess={fetchPricingRules}
-                    productId={initialData?.id}
-                    productName={initialData?.name}
-                />
-            </div>
+                    <PricingRuleForm
+                        open={pricingRuleDialogOpen}
+                        onOpenChange={(open) => {
+                            setPricingRuleDialogOpen(open)
+                            if (!open) setSelectedPricingRule(null)
+                        }}
+                        initialData={selectedPricingRule}
+                        onSuccess={fetchPricingRules}
+                        productId={initialData?.id}
+                        productName={initialData?.name}
+                    />
+                </div>
             </BaseModal >
         )
     }
