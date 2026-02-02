@@ -439,20 +439,7 @@ export default function SalesOrdersPage() {
             <div className="flex items-center gap-4 space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Notas de Venta</h2>
                 <div className="flex items-center space-x-2 pt-1">
-                    <SaleOrderForm
-                        onConfirmCheckout={(data) => {
-                            setCheckoutData(data)
-                            setIsFormOpen(false)
-                        }}
-                        open={isFormOpen && !editingOrder}
-                        onOpenChange={(open) => {
-                            setIsFormOpen(open)
-                            if (!open) {
-                                setEditingOrder(null)
-                            }
-                        }}
-                        triggerVariant="circular"
-                    />
+
                     {editingOrder && (
                         <SaleOrderForm
                             initialData={editingOrder}

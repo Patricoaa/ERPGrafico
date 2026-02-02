@@ -20,9 +20,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Lock, Unlock, Calculator, Banknote, CreditCard, ArrowRightLeft, FileText } from "lucide-react"
+import { Loader2, Lock, Unlock, Calculator, Banknote, CreditCard, ArrowRightLeft, FileText, Users, LogOut } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { POSReport } from "@/components/pos/POSReport"
@@ -64,22 +65,53 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
     const [reportData, setReportData] = useState<any>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
+    const [availableSessions, setAvailableSessions] = useState<POSSession[]>([])
 
     // Open session form state
     const [selectedAccountId, setSelectedAccountId] = useState<string>("")
     const [openingBalance, setOpeningBalance] = useState<string>("0")
+
+    // Shared session selection
+    const [selectedSharedSessionId, setSelectedSharedSessionId] = useState<string>("")
 
     // Close session form state
     const [actualCash, setActualCash] = useState<string>("0")
     const [closeNotes, setCloseNotes] = useState<string>("")
 
     const [submitting, setSubmitting] = useState(false)
+    const [isSharedSession, setIsSharedSession] = useState(false)
 
-    // Fetch current session on mount
+    // Fetch current session on mount (or shared session)
     useEffect(() => {
-        fetchCurrentSession()
+        const storedSharedId = localStorage.getItem('shared_pos_session_id')
+        if (storedSharedId) {
+            fetchSharedSession(parseInt(storedSharedId))
+        } else {
+            fetchCurrentSession()
+        }
         fetchAccounts()
     }, [])
+
+    const fetchSharedSession = async (id: number) => {
+        try {
+            const response = await api.get(`/treasury/pos-sessions/${id}/`)
+            if (response.data && response.data.status === 'OPEN') {
+                setCurrentSession(response.data)
+                onSessionChange?.(response.data)
+                setIsSharedSession(true)
+            } else {
+                // Invalid or closed
+                localStorage.removeItem('shared_pos_session_id')
+                fetchCurrentSession() // Fallback to personal session check
+            }
+        } catch (error) {
+            console.error("Error fetching shared session:", error)
+            localStorage.removeItem('shared_pos_session_id')
+            fetchCurrentSession()
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const fetchCurrentSession = async () => {
         try {
@@ -87,6 +119,7 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
             if (response.data && response.data.id) {
                 setCurrentSession(response.data)
                 onSessionChange?.(response.data)
+                setIsSharedSession(false)
             } else {
                 setCurrentSession(null)
                 onSessionChange?.(null)
@@ -110,6 +143,23 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
         }
     }
 
+    const fetchAvailableSessions = async () => {
+        try {
+            const response = await api.get('/treasury/pos-sessions/?status=OPEN')
+            const results = response.data.results || response.data
+            setAvailableSessions(results)
+        } catch (error) {
+            console.error("Error fetching available sessions:", error)
+        }
+    }
+
+    // Load available sessions when dialog opens
+    useEffect(() => {
+        if (openDialogOpen) {
+            fetchAvailableSessions()
+        }
+    }, [openDialogOpen])
+
     const handleOpenSession = async () => {
         if (!selectedAccountId) {
             toast.error("Debe seleccionar una caja")
@@ -125,13 +175,45 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
 
             setCurrentSession(response.data)
             onSessionChange?.(response.data)
+            setIsSharedSession(false)
             setOpenDialogOpen(false)
             toast.success("Caja abierta correctamente")
+            // Clear any stale shared session
+            localStorage.removeItem('shared_pos_session_id')
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al abrir caja")
         } finally {
             setSubmitting(false)
         }
+    }
+
+    const handleJoinSession = () => {
+        if (!selectedSharedSessionId) {
+            toast.error("Debe seleccionar una sesión")
+            return
+        }
+
+        const session = availableSessions.find(s => s.id === parseInt(selectedSharedSessionId))
+        if (session) {
+            localStorage.setItem('shared_pos_session_id', session.id.toString())
+            setCurrentSession(session)
+            // onSessionChange passed here
+            onSessionChange?.(session)
+            setIsSharedSession(true)
+            setOpenDialogOpen(false)
+            toast.success(`Unido a la sesión de ${session.user_name}`)
+        }
+    }
+
+    const handleDisconnect = () => {
+        localStorage.removeItem('shared_pos_session_id')
+        setCurrentSession(null)
+        onSessionChange?.(null)
+        setIsSharedSession(false)
+        toast.info("Desconectado de la sesión compartida")
+        // Optionally fetch personal session again
+        setLoading(true)
+        fetchCurrentSession()
     }
 
     const handleCloseSession = async () => {
@@ -163,9 +245,11 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
             setCloseDialogOpen(false)
             setReportDialogOpen(true)
 
-            // Reset session state (local only, report is still shown)
+            // Reset session state
+            localStorage.removeItem('shared_pos_session_id')
             setCurrentSession(null)
             onSessionChange?.(null)
+            setIsSharedSession(false)
             setActualCash("0")
             setCloseNotes("")
         } catch (error: any) {
@@ -193,7 +277,7 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
 
     if (loading) {
         return (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground p-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Cargando sesión...</span>
             </div>
@@ -214,57 +298,88 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
                 </Button>
 
                 <Dialog open={openDialogOpen} onOpenChange={setOpenDialogOpen}>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
                                 <Unlock className="h-5 w-5" />
-                                Abrir Caja
+                                Gestión de Caja
                             </DialogTitle>
                             <DialogDescription>
-                                Seleccione la caja e ingrese el fondo inicial.
+                                Abra una nueva caja o únase a una existente.
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label>Caja</Label>
-                                <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una caja" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {accounts.map((account) => (
-                                            <SelectItem key={account.id} value={account.id.toString()}>
-                                                {account.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        <Tabs defaultValue="new" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="new">Nueva Caja</TabsTrigger>
+                                <TabsTrigger value="join">Unirse a Caja</TabsTrigger>
+                            </TabsList>
 
-                            <div className="space-y-2">
-                                <Label>Fondo de Caja Inicial ($)</Label>
-                                <Input
-                                    type="number"
-                                    value={openingBalance}
-                                    onChange={(e) => setOpeningBalance(e.target.value)}
-                                    placeholder="0"
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Monto de efectivo con el que inicia el turno
+                            <TabsContent value="new" className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Seleccionar Caja Física</Label>
+                                    <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccione una caja..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {accounts.map((account) => (
+                                                <SelectItem key={account.id} value={account.id.toString()}>
+                                                    {account.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Fondo Inicial ($)</Label>
+                                    <Input
+                                        type="number"
+                                        value={openingBalance}
+                                        onChange={(e) => setOpeningBalance(e.target.value)}
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                <Button onClick={handleOpenSession} disabled={submitting} className="w-full mt-4">
+                                    {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Abrir Turno Personal
+                                </Button>
+                            </TabsContent>
+
+                            <TabsContent value="join" className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Cajas Activas Disponibles</Label>
+                                    {availableSessions.length === 0 ? (
+                                        <div className="p-4 border rounded-md text-center text-muted-foreground bg-muted/20">
+                                            No hay cajas abiertas en este momento.
+                                        </div>
+                                    ) : (
+                                        <Select value={selectedSharedSessionId} onValueChange={setSelectedSharedSessionId}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccione una sesión abierta..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableSessions.map((session) => (
+                                                    <SelectItem key={session.id} value={session.id.toString()}>
+                                                        {session.treasury_account_name} - {session.user_name} (Abierta: {new Date(session.opened_at).toLocaleTimeString()})
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Puede unirse a una caja abierta por otro usuario para realizar ventas en su turno (modo compartido).
                                 </p>
-                            </div>
-                        </div>
 
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setOpenDialogOpen(false)}>
-                                Cancelar
-                            </Button>
-                            <Button onClick={handleOpenSession} disabled={submitting}>
-                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Abrir Caja
-                            </Button>
-                        </DialogFooter>
+                                <Button onClick={handleJoinSession} disabled={!selectedSharedSessionId} className="w-full mt-4" variant="secondary">
+                                    <Users className="mr-2 h-4 w-4" />
+                                    Usar Esta Caja
+                                </Button>
+                            </TabsContent>
+                        </Tabs>
                     </DialogContent>
                 </Dialog>
             </>
@@ -274,36 +389,57 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
     // Session is active - show status and close button
     return (
         <>
-            <div className="flex items-center gap-3">
-                <Badge variant="outline" className="gap-1 px-3 py-1.5 border-emerald-500 text-emerald-600">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Caja Abierta
+            <div className="flex items-center gap-2">
+                <Badge variant={isSharedSession ? "secondary" : "outline"} className={`gap-1 px-3 py-1.5 ${isSharedSession ? 'bg-blue-100 text-blue-800 border-blue-200' : 'border-emerald-500 text-emerald-600'}`}>
+                    <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-blue-500' : 'bg-emerald-500'} animate-pulse`} />
+                    {isSharedSession ? "Caja Compartida" : "Caja Abierta"}
                 </Badge>
-                <span className="text-sm text-muted-foreground">
-                    {currentSession.treasury_account_name}
-                </span>
+
+                <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mr-2">
+                    <span className="text-sm font-medium">
+                        {currentSession.treasury_account_name}
+                    </span>
+                    {isSharedSession && (
+                        <span className="text-xs text-muted-foreground">
+                            (Titular: {currentSession.user_name})
+                        </span>
+                    )}
+                </div>
+
                 <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={handleShowXReport}
-                    className="gap-1"
+                    title="Informe X"
                 >
                     <FileText className="h-4 w-4" />
-                    Informe X
                 </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        // Pre-populate expected cash
-                        setActualCash(currentSession.expected_cash.toString())
-                        setCloseDialogOpen(true)
-                    }}
-                    className="gap-1"
-                >
-                    <Lock className="h-4 w-4" />
-                    Cerrar Caja
-                </Button>
+
+                {isSharedSession ? (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleDisconnect}
+                        title="Desconectar de Caja"
+                        className="text-muted-foreground hover:text-destructive"
+                    >
+                        <LogOut className="h-4 w-4" />
+                    </Button>
+                ) : (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                            // Pre-populate expected cash
+                            setActualCash(currentSession.expected_cash.toString())
+                            setCloseDialogOpen(true)
+                        }}
+                        title="Cerrar Caja"
+                        className="text-muted-foreground hover:text-destructive"
+                    >
+                        <Lock className="h-4 w-4" />
+                    </Button>
+                )}
             </div>
 
             <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>

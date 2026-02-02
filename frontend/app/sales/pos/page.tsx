@@ -304,7 +304,7 @@ export default function POSPage() {
 
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 h-full overflow-hidden">
                 {(!currentSession || currentSession.status !== 'OPEN') && (
-                    <div className="absolute inset-0 z-50 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
+                    <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
                         <Card className="w-full max-w-md shadow-2xl border-primary/20 animate-in fade-in zoom-in duration-300">
                             <CardHeader className="text-center pb-2">
                                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
