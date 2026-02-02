@@ -31,8 +31,8 @@ class DifferenceService:
     
     DIFFERENCE_CHOICES = [
         (COMMISSION, 'Comisión Bancaria'),
-        (CARD_COMMISSION, 'Comisión Tarjeta (Transbank)'),
-        (INTEREST, 'Interés'),
+        (CARD_COMMISSION, 'Comisión Tarjeta'),
+        (INTEREST, 'Intereses Percibidos/Pagados'),
         (EXCHANGE_DIFF, 'Diferencia de Cambio'),
         (ROUNDING, 'Ajuste por Redondeo'),
         (ERROR, 'Error de Registro'),
@@ -42,6 +42,7 @@ class DifferenceService:
     # Mapeo de tipos a nombres de campos en AccountingSettings
     ACCOUNT_FIELD_MAP = {
         COMMISSION: 'bank_commission_account',
+        CARD_COMMISSION: 'card_commission_account',
         INTEREST: 'interest_income_account',
         EXCHANGE_DIFF: 'exchange_difference_account',
         ROUNDING: 'rounding_adjustment_account',
@@ -83,7 +84,7 @@ class DifferenceService:
         
         # Obtener configuración contable
         settings = AccountingSettings.objects.select_related(
-            'bank_commission_account', 'interest_income_account', 
+            'bank_commission_account', 'card_commission_account', 'interest_income_account', 
             'exchange_difference_account', 'rounding_adjustment_account', 
             'error_adjustment_account', 'miscellaneous_adjustment_account'
         ).first()
@@ -108,8 +109,11 @@ class DifferenceService:
              
              if provider and provider.commission_bridge_account:
                  difference_account = provider.commission_bridge_account
+             elif settings.card_commission_account:
+                 # Dedicated fallback
+                 difference_account = settings.card_commission_account
              elif settings.bank_commission_account:
-                 # Fallback
+                 # Global fallback
                  difference_account = settings.bank_commission_account
 
         if not difference_account:

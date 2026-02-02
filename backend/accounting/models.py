@@ -457,6 +457,12 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta de Comisiones Bancarias"),
         help_text=_("Para justificar diferencias por comisiones")
     )
+    card_commission_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_card_commission',
+        verbose_name=_("Cuenta de Comisiones de Tarjeta"),
+        help_text=_("Para justificar diferencias por comisiones de tarjetas (Transbank, etc.)")
+    )
     interest_income_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='settings_interest_income',

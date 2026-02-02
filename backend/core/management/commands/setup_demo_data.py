@@ -244,6 +244,14 @@ class Command(BaseCommand):
                 })
                 settings.error_adjustment_account = acc_error
 
+            # 5.2.13 - Comisión Tarjeta
+            acc_card_comm = None
+            if parent_52:
+                acc_card_comm, _ = Account.objects.get_or_create(code='5.2.13', defaults={
+                    'name': 'Comisión Tarjeta', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                })
+                settings.card_commission_account = acc_card_comm
+
             # 5.2.99 - Otros
             acc_misc = None
             if parent_52:
@@ -252,7 +260,7 @@ class Command(BaseCommand):
                 })
                 settings.miscellaneous_adjustment_account = acc_misc
 
-            self.stdout.write("  ✓ Cuentas de conciliación bancaria configuradas y mapeadas")
+            self.stdout.write("  ✓ Cuentas de conciliación bancaria configuradas y mapeadas (incluye Comisión Tarjeta)")
 
             settings.save()
             self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")

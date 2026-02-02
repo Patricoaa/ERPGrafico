@@ -867,8 +867,8 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="COMMISSION">🏦 Comisión Bancaria / Gastos</SelectItem>
-                                        <SelectItem value="CARD_COMMISSION">💳 Comisión Tarjeta (Transbank)</SelectItem>
+                                        <SelectItem value="COMMISSION">🏦 Comisión Bancaria</SelectItem>
+                                        <SelectItem value="CARD_COMMISSION">💳 Comisión Tarjeta</SelectItem>
                                         <SelectItem value="INTEREST">📈 Intereses Percibidos/Pagados</SelectItem>
                                         <SelectItem value="EXCHANGE_DIFF">💱 Diferencia de Cambio</SelectItem>
                                         <SelectItem value="ROUNDING">🔢 Ajuste por Redondeo</SelectItem>
