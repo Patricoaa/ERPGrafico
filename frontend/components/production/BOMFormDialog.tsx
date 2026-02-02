@@ -83,11 +83,16 @@ export function BOMFormDialog({
 }: BOMFormDialogProps) {
     const [loading, setLoading] = useState(false)
     const [selectedProduct, setSelectedProduct] = useState<any>(initialProduct)
+    const [selectedVariant, setSelectedVariant] = useState<any>(null)
+    const [variants, setVariants] = useState<any[]>([])
+    const [loadingVariants, setLoadingVariants] = useState(false)
     const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoms] = useState<any[]>([])
 
     useEffect(() => {
         setSelectedProduct(initialProduct)
+        setSelectedVariant(null)
+        setVariants([])
     }, [initialProduct])
 
     useEffect(() => {
@@ -105,6 +110,29 @@ export function BOMFormDialog({
         }
         fetchData()
     }, [])
+
+    // Fetch variants when product has_variants is true
+    useEffect(() => {
+        const fetchVariants = async () => {
+            if (!selectedProduct?.id || !selectedProduct?.has_variants) {
+                setVariants([])
+                setSelectedVariant(null)
+                return
+            }
+
+            setLoadingVariants(true)
+            try {
+                const res = await api.get(`/inventory/products/?parent_template=${selectedProduct.id}`)
+                setVariants(res.data.results || res.data)
+            } catch (error) {
+                console.error("Error fetching variants:", error)
+                toast.error("Error al cargar variantes")
+            } finally {
+                setLoadingVariants(false)
+            }
+        }
+        fetchVariants()
+    }, [selectedProduct])
 
     // Form
     const form = useForm<BOMFormValues>({
@@ -157,10 +185,20 @@ export function BOMFormDialog({
             toast.error("Debe seleccionar un producto")
             return
         }
+
+        // Validate variant selection for products with variants
+        if (selectedProduct.has_variants && !selectedVariant) {
+            toast.error("Debe seleccionar una variante específica para asignar el BOM")
+            return
+        }
+
         setLoading(true)
         try {
+            // Use variant if selected, otherwise use product
+            const targetProductId = selectedVariant?.id || selectedProduct.id || selectedProduct
+
             const payload = {
-                product: selectedProduct.id || selectedProduct,
+                product: targetProductId,
                 ...data,
                 lines: data.lines.map(l => ({
                     component: parseInt(l.component),
@@ -205,7 +243,11 @@ export function BOMFormDialog({
                         {bomToEdit ? `Editar BOM: ${bomToEdit.name}` : "Nueva Lista de Materiales"}
                     </DialogTitle>
                     <DialogDescription className="text-xs">
-                        {selectedProduct ? `Definiendo componentes para: ${selectedProduct.name} (${selectedProduct.internal_code || selectedProduct.code})` : 'Seleccione el producto para el cual desea crear la lista de materiales.'}
+                        {selectedVariant
+                            ? `Definiendo componentes para variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
+                            : selectedProduct
+                                ? `Definiendo componentes para: ${selectedProduct.name} (${selectedProduct.internal_code || selectedProduct.code})`
+                                : 'Seleccione el producto para el cual desea crear la lista de materiales.'}
                     </DialogDescription>
                     {!initialProduct && (
                         <div className="mt-4 pb-2 border-b">

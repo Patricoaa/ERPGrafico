@@ -17,6 +17,14 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DataCell } from "@/components/ui/data-table-cells"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 interface BOMManagerProps {
     product: any
@@ -30,11 +38,18 @@ export function BOMManager({ product }: BOMManagerProps) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [bomToDelete, setBomToDelete] = useState<any>(null)
 
+    // Variant support
+    const [variants, setVariants] = useState<any[]>([])
+    const [selectedVariantId, setSelectedVariantId] = useState<string>("all")
+    const [variantsLoading, setVariantsLoading] = useState(false)
+
     const fetchBoms = async () => {
         if (!product?.id) return
         setLoading(true)
         try {
-            const res = await api.get(`/production/boms/?product_id=${product.id}`)
+            // Determine target ID: if specific variant selected, use it. Otherwise use product ID.
+            const targetId = (selectedVariantId && selectedVariantId !== "all") ? selectedVariantId : product.id
+            const res = await api.get(`/production/boms/?product_id=${targetId}`)
             setBoms(res.data)
         } catch (error) {
             console.error("Error fetching BOMs:", error)
@@ -44,9 +59,29 @@ export function BOMManager({ product }: BOMManagerProps) {
         }
     }
 
+    // Fetch variants
+    useEffect(() => {
+        const loadVariants = async () => {
+            if (product?.has_variants) {
+                setVariantsLoading(true)
+                try {
+                    const res = await api.get(`/inventory/products/?parent_template=${product.id}`)
+                    setVariants(res.data.results || res.data)
+                } catch (e) {
+                    console.error("Error loading variants", e)
+                } finally {
+                    setVariantsLoading(false)
+                }
+            } else {
+                setVariants([])
+            }
+        }
+        loadVariants()
+    }, [product])
+
     useEffect(() => {
         fetchBoms()
-    }, [product])
+    }, [product, selectedVariantId])
 
     const handleCreate = () => {
         setEditingBom(null)
@@ -79,10 +114,9 @@ export function BOMManager({ product }: BOMManagerProps) {
     }
 
     const handleToggleActive = async (bom: any) => {
-        if (bom.active) return // Already active, do nothing (cannot deactivate the only active one easily without activating another, logic handles usually setting one as active)
+        if (bom.active) return
 
         try {
-            // Setting this one to active will automatically deactivate others via backend model logic
             await api.patch(`/production/boms/${bom.id}/`, { active: true })
             toast.success("BOM establecida como activa")
             fetchBoms()
@@ -114,19 +148,64 @@ export function BOMManager({ product }: BOMManagerProps) {
                             Defina los componentes necesarios para fabricar este producto.
                         </CardDescription>
                     </div>
-                    <Button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleCreate()
-                        }}
-                        size="sm"
-                        className="gap-2"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Nueva Lista
-                    </Button>
                 </div>
+
+                {product?.has_variants && (
+                    <div className="mt-4 flex items-center gap-4 bg-muted/20 p-3 rounded-lg border">
+                        <Workflow className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1 flex items-center gap-2">
+                            <Label className="text-sm font-medium whitespace-nowrap">Gestionar variante:</Label>
+                            <Select
+                                value={selectedVariantId}
+                                onValueChange={setSelectedVariantId}
+                            >
+                                <SelectTrigger className="w-[300px] h-9 bg-white">
+                                    <SelectValue placeholder="Seleccione variante..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        -- Variantes --
+                                    </SelectItem>
+                                    {variants.map(v => (
+                                        <SelectItem key={v.id} value={v.id.toString()}>
+                                            {v.variant_display_name || v.name} ({v.internal_code || v.code})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleCreate()
+                            }}
+                            size="sm"
+                            className="gap-2"
+                            disabled={selectedVariantId === "all"}
+                        >
+                            <Plus className="h-4 w-4" />
+                            Validar / Crear BOM
+                        </Button>
+                    </div>
+                )}
+
+                {(!product?.has_variants) && (
+                    <div className="flex justify-end mt-2">
+                        <Button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleCreate()
+                            }}
+                            size="sm"
+                            className="gap-2"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Nueva Lista
+                        </Button>
+                    </div>
+                )}
             </CardHeader>
             <CardContent>
                 <div className="rounded-md border overflow-hidden">
@@ -150,7 +229,7 @@ export function BOMManager({ product }: BOMManagerProps) {
                             ) : boms.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                        No hay listas de materiales definidas.
+                                        No hay listas de materiales definidas {selectedVariantId !== "all" ? "para esta variante" : ""}.
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -173,7 +252,6 @@ export function BOMManager({ product }: BOMManagerProps) {
                                                 <DataCell.Badge
                                                     variant="outline"
                                                     className="text-muted-foreground cursor-pointer hover:bg-emerald-100 hover:text-emerald-700 hover:border-emerald-200 transition-colors"
-                                                // onClick maintained as it is an interactive badge, though we could wrap it
                                                 >
                                                     <span onClick={() => handleToggleActive(bom)} title="Clic para activar">Inactiva</span>
                                                 </DataCell.Badge>
@@ -218,7 +296,11 @@ export function BOMManager({ product }: BOMManagerProps) {
             <BOMFormDialog
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
-                product={product}
+                product={
+                    (selectedVariantId && selectedVariantId !== "all")
+                        ? variants.find(v => v.id.toString() === selectedVariantId) || product
+                        : product
+                }
                 bomToEdit={editingBom}
                 onSuccess={fetchBoms}
             />

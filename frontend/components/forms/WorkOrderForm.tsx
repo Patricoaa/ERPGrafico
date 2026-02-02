@@ -285,6 +285,12 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     }
 
     async function onSubmit(data: WorkOrderFormValues) {
+        // Validation: Check for Express BOM requirement
+        if (selectedManualProduct?.requires_bom_validation) {
+            toast.error(`El producto "${selectedManualProduct.name}" requiere una Lista de Materiales (BOM) asignada antes de fabricar.`)
+            return
+        }
+
         setLoading(true)
 
         // Prepare stage_data structure
@@ -362,7 +368,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             if (onSuccess) onSuccess()
         } catch (error: any) {
             console.error("Error saving work order:", error)
-            toast.error(error.response?.data?.detail || "Error al guardar la Orden de Trabajo")
+            const errorMsg = error.response?.data?.error || error.response?.data?.detail || "Error al guardar la Orden de Trabajo"
+            toast.error(errorMsg)
         } finally {
             setLoading(false)
         }
