@@ -15,6 +15,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
     initialData?: any
+    onEditVariant?: (variant: any) => void
+    onDeleteVariant?: (variant: any) => void
 }
 
 interface Attribute {
@@ -28,11 +30,12 @@ interface AttributeValue {
     value: string
 }
 
-export function ProductVariantsTab({ form, initialData }: ProductVariantsTabProps) {
+export function ProductVariantsTab({ form, initialData, onEditVariant, onDeleteVariant }: ProductVariantsTabProps) {
     const [availableAttributes, setAvailableAttributes] = useState<Attribute[]>([])
     const [selectedValues, setSelectedValues] = useState<Record<number, number[]>>({})
     const [isGenerating, setIsGenerating] = useState(false)
     const [variants, setVariants] = useState<any[]>([])
+
 
     useEffect(() => {
         fetchAttributes()
@@ -280,10 +283,22 @@ export function ProductVariantsTab({ form, initialData }: ProductVariantsTabProp
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex gap-1">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-primary"
+                                                    onClick={() => onEditVariant?.(v)}
+                                                >
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-destructive"
+                                                    onClick={() => onDeleteVariant?.(v)}
+                                                >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>

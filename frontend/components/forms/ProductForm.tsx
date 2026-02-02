@@ -343,15 +343,48 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
         }
     }, [open, initialData])
 
+    const FIELD_LABELS: Record<string, string> = {
+        name: "Nombre Comercial",
+        code: "Código / SKU",
+        category: "Categoría",
+        product_type: "Tipo de Producto",
+        sale_price: "Precio de Venta",
+        uom: "Unidad de Medida Stock",
+        sale_uom: "Unidad de Medida Venta",
+        purchase_uom: "Unidad de Medida Compra",
+        receiving_warehouse: "Bodega de Recepción",
+        income_account: "Cuenta de Ingresos",
+        expense_account: "Cuenta de Gastos",
+        subscription_supplier: "Proveedor de Suscripción",
+        recurrence_period: "Período de Facturación",
+        subscription_amount: "Monto de Suscripción",
+        boms: "Lista de Materiales",
+        attribute_values: "Valores de Atributos"
+    };
+
     const onSubmitError = (errors: any) => {
         console.log("Form validation errors:", errors)
         const tabsWithErrors = getTabsWithErrors()
         const firstErrorTab = Object.keys(tabsWithErrors)[0]
 
+        // Create list of missing fields
+        const missingFields = Object.keys(errors)
+            .map(key => FIELD_LABELS[key] || key) // Use mapped name or fallback to key
+            .map(label => `• ${label}`)
+            .join("\n")
+
         if (firstErrorTab) {
             setActiveTab(firstErrorTab)
             toast.error("Formulario incompleto", {
-                description: "Por favor complete todos los campos requeridos. Revise las pestañas marcadas en rojo."
+                description: (
+                    <div className="flex flex-col gap-1">
+                        <span>Por favor complete los siguientes campos:</span>
+                        <pre className="mt-2 font-sans text-xs text-muted-foreground whitespace-pre-wrap">
+                            {missingFields}
+                        </pre>
+                    </div>
+                ),
+                duration: 5000,
             })
         }
     }
@@ -618,6 +651,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                 <ProductVariantsTab
                                     form={form as any}
                                     initialData={initialData}
+                                    onEditVariant={(variant) => {
+                                        toast.info(`Editar variante: ${variant.code || variant.id}`)
+                                    }}
+                                    onDeleteVariant={(variant) => {
+                                        toast.info(`Eliminar variante: ${variant.code || variant.id}`)
+                                    }}
                                 />
 
                                 <ProductInventoryTab
