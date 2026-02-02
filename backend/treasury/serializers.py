@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Payment, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule
+from .models import Payment, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule, CardPaymentProvider, DailySettlement, CardTransaction
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
 
@@ -142,3 +142,29 @@ class ReconciliationRuleSerializer(serializers.ModelSerializer):
         model = ReconciliationRule
         fields = '__all__'
         read_only_fields = ['created_by', 'times_applied', 'success_rate']
+
+
+class CardPaymentProviderSerializer(serializers.ModelSerializer):
+    """Serializer for Card Payment Providers"""
+    
+    class Meta:
+        model = CardPaymentProvider
+        fields = '__all__'
+
+
+class DailySettlementSerializer(serializers.ModelSerializer):
+    """Serializer for Daily Settlements"""
+    provider_name = serializers.CharField(source='provider.name', read_only=True)
+    
+    class Meta:
+        model = DailySettlement
+        fields = '__all__'
+
+
+class CardTransactionSerializer(serializers.ModelSerializer):
+    """Serializer for Card Transactions"""
+    provider_name = serializers.CharField(source='provider.name', read_only=True)
+    
+    class Meta:
+        model = CardTransaction
+        fields = '__all__'

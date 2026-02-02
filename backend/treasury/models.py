@@ -141,6 +141,15 @@ class Payment(models.Model):
         related_name='reconciled_payments',
         verbose_name=_("Reconciliado Por")
     )
+    
+    # Card Payment Provider (for specific card reconciliation flow)
+    card_provider = models.ForeignKey(
+        'CardPaymentProvider',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payments',
+        verbose_name=_("Proveedor de Tarjeta")
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -195,6 +204,16 @@ class TreasuryAccount(models.Model):
     allows_cash = models.BooleanField(_("Permite Efectivo"), default=False)
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
     allows_transfer = models.BooleanField(_("Permite Transferencia"), default=False)
+    
+    # Configuration for Card Payments
+    card_receivable_account = models.ForeignKey(
+        Account,
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='treasury_card_receivables',
+        verbose_name=_("Cuenta Puente Tarjetas (Bruto)"),
+        help_text=_("Cuenta donde se registran las ventas bruto (ej: Transbank por Cobrar)")
+    )
 
     class Meta:
         verbose_name = _("Cuenta de Tesorería")
@@ -499,4 +518,210 @@ class ReconciliationRule(models.Model):
     def __str__(self):
         scope = self.treasury_account.name if self.treasury_account else "Global"
         return f"{self.name} ({scope})"
+
+
+class CardPaymentProvider(models.Model):
+    """Proveedor de procesamiento de pagos con tarjeta (Transbank, Webpay, etc.)"""
+    
+    name = models.CharField(_("Nombre"), max_length=100)
+    code = models.CharField(_("Código"), max_length=20, unique=True)
+    
+    # Proveedor que factura (debe existir en contacts.Contact)
+    supplier = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.PROTECT,
+        related_name='card_providers',
+        limit_choices_to={'is_supplier': True},
+        verbose_name=_("Proveedor (Contacto)")
+    )
+    
+    # Configuración de Comisiones
+    commission_rate = models.DecimalField(
+        _("Tasa de Comisión (%)"),
+        max_digits=5,
+        decimal_places=2,
+        default=2.95
+    )
+    fixed_amount = models.DecimalField(
+        _("Monto Fijo"),
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    vat_rate = models.DecimalField(
+        _("Tasa de IVA (%)"),
+        max_digits=5,
+        decimal_places=2,
+        default=19
+    )
+    
+    settlement_delay_days = models.IntegerField(
+        _("Días de Retraso de Abono"),
+        default=1
+    )
+    
+    # Cuentas Contables
+    receivable_account = models.ForeignKey(
+        'accounting.Account',
+        on_delete=models.PROTECT,
+        related_name='card_provider_receivables',
+        verbose_name=_("Cuenta Tarjetas por Cobrar")
+    )
+    commission_bridge_account = models.ForeignKey(
+        'accounting.Account',
+        on_delete=models.PROTECT,
+        related_name='card_commission_bridges',
+        verbose_name=_("Cuenta Puente Comisiones Pendientes"),
+        help_text=_("Pasivo transitorio: Comisiones retenidas pendientes de facturar")
+    )
+    
+    is_active = models.BooleanField(_("Activo"), default=True)
+
+    class Meta:
+        verbose_name = _("Proveedor de Pagos con Tarjeta")
+        verbose_name_plural = _("Proveedores de Pagos con Tarjeta")
+
+    def __str__(self):
+        return self.name
+
+
+class DailySettlement(models.Model):
+    """Abono diario del proveedor de tarjetas"""
+    
+    provider = models.ForeignKey(
+        'CardPaymentProvider',
+        on_delete=models.PROTECT,
+        related_name='settlements'
+    )
+    
+    settlement_date = models.DateField(_("Fecha de Abono"))
+    
+    # Montos totales
+    total_gross = models.DecimalField(
+        _("Total Bruto"),
+        max_digits=12,
+        decimal_places=2
+    )
+    total_commission = models.DecimalField(
+        _("Total Comisiones"),
+        max_digits=12,
+        decimal_places=2
+    )
+    total_vat = models.DecimalField(
+        _("Total IVA"),
+        max_digits=12,
+        decimal_places=2
+    )
+    total_net = models.DecimalField(
+        _("Total Neto Abonado"),
+        max_digits=12,
+        decimal_places=2
+    )
+    
+    # Reconciliación
+    bank_statement_line = models.ForeignKey(
+        'BankStatementLine',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='card_settlements'
+    )
+    is_reconciled = models.BooleanField(_("Reconciliado"), default=False)
+    reconciled_at = models.DateTimeField(null=True, blank=True)
+    
+    # Facturación mensual
+    monthly_invoice = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='card_settlements'
+    )
+    
+    notes = models.TextField(_("Notas"), blank=True)
+
+    class Meta:
+        verbose_name = _("Abono Diario Tarjetas")
+        verbose_name_plural = _("Abonos Diarios Tarjetas")
+
+    def __str__(self):
+        return f"{self.provider.code} - {self.settlement_date}"
+
+
+class CardTransaction(models.Model):
+    """Transacción individual de tarjeta vinculada a un pago del sistema"""
+    
+    provider = models.ForeignKey(
+        'CardPaymentProvider',
+        on_delete=models.PROTECT,
+        related_name='transactions'
+    )
+    payment = models.OneToOneField(
+        'Payment',
+        on_delete=models.PROTECT,
+        related_name='card_transaction'
+    )
+    
+    transaction_date = models.DateField(_("Fecha de Transacción"))
+    authorization_code = models.CharField(max_length=50, blank=True)
+    
+    # Montos calculados
+    gross_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text=_("Monto total de la venta")
+    )
+    commission_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    commission_vat = models.DecimalField(max_digits=12, decimal_places=2)
+    net_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text=_("Monto neto a recibir = bruto - comisión - IVA")
+    )
+    
+    expected_settlement_date = models.DateField(null=True, blank=True)
+    
+    # Link to Daily Settlement
+    daily_settlement = models.ForeignKey(
+        DailySettlement,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='transactions'
+    )
+
+    # Reconciliación
+    bank_statement_line = models.ForeignKey(
+        'BankStatementLine',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='card_transactions'
+    )
+    is_reconciled = models.BooleanField(default=False)
+    reconciled_at = models.DateTimeField(null=True, blank=True)
+    
+    # Comisión procesada
+    commission_journal_entry = models.ForeignKey(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='card_daily_commissions'
+    )
+    
+    # Factura mensual (se asigna al final del mes)
+    monthly_invoice = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='card_transactions'
+    )
+
+    class Meta:
+        verbose_name = _("Transacción de Tarjeta")
+        verbose_name_plural = _("Transacciones de Tarjeta")
+
+    def __str__(self):
+        return f"{self.provider.code} - {self.gross_amount}"
 

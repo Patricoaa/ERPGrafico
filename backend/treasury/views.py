@@ -388,8 +388,10 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             
             if not line_ids or not payment_ids:
                 return Response({'error': 'line_ids y payment_ids requeridos'}, status=status.HTTP_400_BAD_REQUEST)
-                
-            group = MatchingService.create_match_group(line_ids, payment_ids, request.user)
+            
+            difference_reason = request.data.get('difference_reason')
+            notes = request.data.get('notes')
+            group = MatchingService.create_match_group(line_ids, payment_ids, request.user, difference_reason, notes)
             return Response({'message': 'Grupo creado', 'group_id': group.id})
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

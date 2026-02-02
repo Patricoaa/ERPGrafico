@@ -97,8 +97,8 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
     const [loadingPayments, setLoadingPayments] = useState(false)
     const [lineSuggestions, setLineSuggestions] = useState<LineSuggestion[]>([])
 
-    const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string }>({
-        open: false, lineId: 0, paymentId: 0, amount: '0'
+    const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string, isGroup?: boolean }>({
+        open: false, lineId: 0, paymentId: 0, amount: '0', isGroup: false
     })
     const [diffType, setDiffType] = useState<string>("COMMISSION")
     const [diffNotes, setDiffNotes] = useState<string>("")
@@ -247,26 +247,73 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
         }
     }
 
-    const handleGroupMatch = async () => {
+    const handleGroupMatch = async (force: boolean = false) => {
         if (selectedLines.length === 0 || selectedPayments.length === 0) return
+
+        // Check for difference
+        if (!force) {
+            const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
+            const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
+            const diff = lineTotal - payTotal
+
+            if (Math.abs(diff) > 1) { // Tolerance
+                setDiffDialog({
+                    open: true,
+                    lineId: selectedLines[0].id,
+                    paymentId: 0,
+                    amount: diff.toString(),
+                    isGroup: true
+                })
+                // Heuristic: If net < gross (negative diff), suggest COMMISSION
+                if (diff < 0) {
+                    setDiffType("CARD_COMMISSION")
+                } else {
+                    setDiffType("ROUNDING")
+                }
+                return
+            }
+        }
 
         try {
             setMatching(true)
             const lineIds = selectedLines.map(l => l.id)
             const paymentIds = selectedPayments.map(p => p.id)
 
-            await api.post('/treasury/statement-lines/match_group/', {
+            const payload: any = {
                 line_ids: lineIds,
                 payment_ids: paymentIds
-            })
+            }
+
+            if (force) {
+                payload.difference_reason = diffType
+                payload.notes = diffNotes
+            }
+
+            await api.post('/treasury/statement-lines/match_group/', payload)
 
             // Auto-confirm group via first line
-            await api.post(`/treasury/statement-lines/${lineIds[0]}/confirm/`)
+            // If difference was passed, confirm should handle adjustment creation logic if implemented,
+            // or if match_group saved it, confirm just confirms it.
+            // Our backend view sets difference adjustment if passed to confirm endpoint.
+            // We should pass it here too if we want immediate adjustment.
+            // BUT backend's create_match_group saves difference_reason/diff_amount to line.
+            // The Confirm View reads line.difference_amount.
+            // And Confirm View accepts difference_type.
+
+            const confirmPayload: any = {}
+            if (force) {
+                confirmPayload.difference_type = diffType
+                confirmPayload.notes = diffNotes
+            }
+
+            await api.post(`/treasury/statement-lines/${lineIds[0]}/confirm/`, confirmPayload)
 
             await fetchUnreconciledLines()
             await fetchUnreconciledPayments()
             setSelectedPayments([])
             setSelectedLines([])
+            setDiffDialog(prev => ({ ...prev, open: false }))
+            setDiffNotes("")
 
         } catch (error: any) {
             console.error('Group Match Error', error)
@@ -373,7 +420,11 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
     }
 
     const confirmDifferenceMatch = () => {
-        handleMatch(diffDialog.lineId, diffDialog.paymentId, true)
+        if (diffDialog.isGroup) {
+            handleGroupMatch(true)
+        } else {
+            handleMatch(diffDialog.lineId, diffDialog.paymentId, true)
+        }
     }
 
     const handleExclude = (lineId: number) => {
@@ -537,7 +588,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                         </Button>
                         <Button
                             className="bg-primary hover:bg-primary/90 font-bold px-8 shadow-lg shadow-primary/20"
-                            onClick={handleGroupMatch}
+                            onClick={() => handleGroupMatch(false)}
                             disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
                         >
                             {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
@@ -789,6 +840,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="COMMISSION">🏦 Comisión Bancaria / Gastos</SelectItem>
+                                        <SelectItem value="CARD_COMMISSION">💳 Comisión Tarjeta (Transbank)</SelectItem>
                                         <SelectItem value="INTEREST">📈 Intereses Percibidos/Pagados</SelectItem>
                                         <SelectItem value="EXCHANGE_DIFF">💱 Diferencia de Cambio</SelectItem>
                                         <SelectItem value="ROUNDING">🔢 Ajuste por Redondeo</SelectItem>

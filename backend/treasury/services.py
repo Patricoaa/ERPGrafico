@@ -13,7 +13,8 @@ class TreasuryService:
                          date=None, reference='', partner=None, invoice=None, 
                          treasury_account_id=None, sale_order=None, purchase_order=None, 
                          transaction_number=None, is_pending_registration=False,
-                         dte_type=None, document_reference=None):
+                         dte_type=None, document_reference=None,
+                         card_provider_id=None):
         """
         Registers a payment and creates the corresponding Accounting Entry.
         """
@@ -33,15 +34,31 @@ class TreasuryService:
              except TreasuryAccount.DoesNotExist:
                  pass
         
-        if not treasury_account:
+        if not treasury_account and not card_provider_id:
          # ELIMINATED FALLBACKS: We no longer guess the account. 
          # The user MUST provide one or have a default set in the frontend/service call.
-         raise ValidationError(f"Debe seleccionar una cuenta de tesorería (Caja o Banco) para procesar un pago de tipo {payment_method}.")
+         raise ValidationError(f"Debe seleccionar una cuenta de tesorería (Caja o Banco) o un proveedor de tarjetas para procesar un pago de tipo {payment_method}.")
              
         # Resolve Financial Account from Treasury Account
-        financial_account = treasury_account.account
+        financial_account = treasury_account.account if treasury_account else None
+        
+        # New: Resolve Card Provider
+        card_provider = None
+        if card_provider_id and payment_method == Payment.Method.CARD:
+            from .models import CardPaymentProvider
+            try:
+                card_provider = CardPaymentProvider.objects.get(pk=card_provider_id)
+                # Use provider's receivable account instead of treasury account
+                financial_account = card_provider.receivable_account
+            except CardPaymentProvider.DoesNotExist:
+                pass
+        
         if not financial_account:
-             raise ValidationError(f"La cuenta de tesorería '{treasury_account.name}' no tiene una cuenta contable asociada.")
+             raise ValidationError("No se pudo determinar la cuenta contable de origen (Tesorería o Tarjeta).")
+
+        # Overwrite financial account if Treasury Account has a specific Card Receivable Bridge
+        if treasury_account and payment_method == Payment.Method.CARD and treasury_account.card_receivable_account:
+            financial_account = treasury_account.card_receivable_account
 
         # 1.5 Handle Purchase Document Registration (Auto-billing during payment)
         if purchase_order and dte_type and document_reference and not invoice:
@@ -75,8 +92,29 @@ class TreasuryService:
             purchase_order=purchase_order,
             transaction_number=transaction_number,
             is_pending_registration=is_pending_registration,
-            contact=partner  # Unified contact field
+            contact=partner,  # Unified contact field
+            card_provider=card_provider
         )
+        
+        if card_provider:
+            # Create Card Transaction
+            from .models import CardTransaction
+            commission = (amount * card_provider.commission_rate / 100) + card_provider.fixed_amount
+            commission_vat = commission * (card_provider.vat_rate / 100)
+            net_amount = amount - commission - commission_vat
+            
+            CardTransaction.objects.create(
+                provider=card_provider,
+                payment=payment,
+                transaction_date=date,
+                gross_amount=amount,
+                commission_amount=commission,
+                commission_vat=commission_vat,
+                net_amount=net_amount,
+                expected_settlement_date=date + timezone.timedelta(days=card_provider.settlement_delay_days),
+                authorization_code=reference or '',
+                # daily_settlement will be linked later via reconciliation
+            )
         
         payment.save()
 

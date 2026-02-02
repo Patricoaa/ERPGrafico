@@ -22,6 +22,7 @@ class DifferenceService:
     
     # Tipos de diferencias predefinidos
     COMMISSION = 'COMMISSION'
+    CARD_COMMISSION = 'CARD_COMMISSION'  # Comisión Transbank/Tarjeta
     INTEREST = 'INTEREST'
     EXCHANGE_DIFF = 'EXCHANGE_DIFF'
     ROUNDING = 'ROUNDING'
@@ -30,6 +31,7 @@ class DifferenceService:
     
     DIFFERENCE_CHOICES = [
         (COMMISSION, 'Comisión Bancaria'),
+        (CARD_COMMISSION, 'Comisión Tarjeta (Transbank)'),
         (INTEREST, 'Interés'),
         (EXCHANGE_DIFF, 'Diferencia de Cambio'),
         (ROUNDING, 'Ajuste por Redondeo'),
@@ -90,11 +92,33 @@ class DifferenceService:
             raise ValueError("No existe configuración contable global. Por favor configure los ajustes de contabilidad.")
             
         # Obtener cuenta según el tipo
-        field_name = DifferenceService.ACCOUNT_FIELD_MAP.get(difference_type)
-        difference_account = getattr(settings, field_name)
+        difference_account = None
+        
+        if difference_type == DifferenceService.CARD_COMMISSION:
+             # Intentar obtener cuenta puente del proveedor de tarjeta
+             # Buscamos pagos asociados a la línea
+             provider = None
+             if line.matched_payment and line.matched_payment.card_provider:
+                 provider = line.matched_payment.card_provider
+             elif line.reconciliation_match:
+                 # Buscar en grupo (primer pago con proveedor)
+                 first_payment = line.reconciliation_match.payments.filter(card_provider__isnull=False).first()
+                 if first_payment:
+                     provider = first_payment.card_provider
+             
+             if provider and provider.commission_bridge_account:
+                 difference_account = provider.commission_bridge_account
+             elif settings.bank_commission_account:
+                 # Fallback
+                 difference_account = settings.bank_commission_account
+
+        if not difference_account:
+            field_name = DifferenceService.ACCOUNT_FIELD_MAP.get(difference_type)
+            if field_name:
+                difference_account = getattr(settings, field_name)
         
         if not difference_account:
-            label = dict(DifferenceService.DIFFERENCE_CHOICES)[difference_type]
+            label = dict(DifferenceService.DIFFERENCE_CHOICES).get(difference_type, difference_type)
             raise ValueError(f"No se ha configurado la cuenta contable para '{label}'. Revise la configuración contable.")
         
         # Cuenta de banco (de la TreasuryAccount)
@@ -153,7 +177,7 @@ class DifferenceService:
             # Significa: gasto no registrado (comisión, etc.)
             # Debe: Banco | Haber: Gasto/Ingreso
             
-            if difference_type in [DifferenceService.COMMISSION, DifferenceService.ERROR]:
+            if difference_type in [DifferenceService.COMMISSION, DifferenceService.CARD_COMMISSION, DifferenceService.ERROR]:
                 # Es un gasto → Debe: Gasto | Haber: Banco
                 JournalItem.objects.create(
                     journal_entry=entry,

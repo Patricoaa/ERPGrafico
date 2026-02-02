@@ -283,7 +283,9 @@ class MatchingService:
     def create_match_group(
         line_ids: List[int],
         payment_ids: List[int],
-        user
+        user,
+        difference_reason: Optional[str] = None,
+        notes: Optional[str] = None
     ):
         """
         Crea un grupo de conciliación (N:M).
@@ -343,6 +345,8 @@ class MatchingService:
         # Assign to first line
         if lines:
             lines[0].difference_amount = difference
+            if difference_reason:
+                lines[0].difference_reason = difference_reason
             lines[0].save()
             
         return group
@@ -409,8 +413,45 @@ class MatchingService:
             ).count()
             l.statement.save()
 
-        # Update All Payments in Group
+        # Update All Payments in Group AND Handle Transfer if Accounts Differs
         for p in group.payments.all():
+            
+            # Check for Account Mismatch (e.g. Card Payment vs Bank Statement)
+            # If Payment was registered in "Transbank Account" but matched to "Bank Statement"
+            # We need to transfer funds: Dr Bank / Cr Transbank
+            stmt_account = line.statement.treasury_account.account
+            if p.account and p.account != stmt_account:
+                # Create Transfer Entry
+                from accounting.models import JournalEntry, JournalItem
+                transfer_entry = JournalEntry.objects.create(
+                    date=line.transaction_date,
+                    reference=f"Transferencia Conciliación {line.statement.display_id}",
+                    description=f"Movimiento de fondos por conciliación ({p.get_payment_method_display()})",
+                    state=JournalEntry.State.POSTED,
+                    created_by=user
+                )
+                
+                # Dr Bank (Destination)
+                JournalItem.objects.create(
+                    journal_entry=transfer_entry,
+                    account=stmt_account,
+                    debit=abs(p.amount) if p.payment_type == 'INBOUND' else 0,
+                    credit=abs(p.amount) if p.payment_type == 'OUTBOUND' else 0,
+                    partner=p.contact.name if p.contact else ''
+                )
+                
+                # Cr Original Account (Source/Bridge)
+                JournalItem.objects.create(
+                    journal_entry=transfer_entry,
+                    account=p.account,
+                    debit=abs(p.amount) if p.payment_type == 'OUTBOUND' else 0,
+                    credit=abs(p.amount) if p.payment_type == 'INBOUND' else 0,
+                    partner=p.contact.name if p.contact else ''
+                )
+                
+                # Link entry to payment? maybe append to notes or add M2M?
+                # Ideally we track this, but for now just create it.
+
             p.is_reconciled = True
             p.reconciled_at = timezone.now()
             p.reconciled_by = user
