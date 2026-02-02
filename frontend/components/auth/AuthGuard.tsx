@@ -85,7 +85,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const displayCategory = hoveredCategory || activeCategory
 
     return (
-        <div className="flex h-screen bg-background overflow-hidden font-sans border-t border-sidebar-border/10">
+        <div className="flex h-screen bg-background overflow-hidden font-sans">
             {/* Mini Sidebar (Left) */}
             <MiniSidebar
                 activeCategory={activeCategory}

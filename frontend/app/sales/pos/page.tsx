@@ -31,6 +31,9 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
+import { POSVariantSelectorModal } from "@/components/pos/POSVariantSelectorModal"
+import { Edit2 } from "lucide-react"
+
 interface Product {
     id: number
     code: string
@@ -42,6 +45,7 @@ interface Product {
     manufacturable_quantity?: number | null
     product_type?: string
     variants_count?: number
+    has_variants?: boolean
     image?: string | null
     requires_advanced_manufacturing?: boolean
     is_dynamic_pricing?: boolean
@@ -95,6 +99,9 @@ export default function POSPage() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([])
     const [currentSession, setCurrentSession] = useState<any>(null)
+    const [variantModalOpen, setVariantModalOpen] = useState(false)
+    const [activeParentProduct, setActiveParentProduct] = useState<Product | null>(null)
+    const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null)
 
     useEffect(() => {
         // ... (fetchData implementation unchanged)
@@ -167,6 +174,14 @@ export default function POSPage() {
     }
 
     const addToCart = async (product: Product, mfgData?: any) => {
+        // If product has variants, open modal instead of adding directly
+        if (product.has_variants) {
+            setActiveParentProduct(product)
+            setEditingCartItem(null)
+            setVariantModalOpen(true)
+            return
+        }
+
         const isManufacturable = product.product_type === 'MANUFACTURABLE' || product.requires_advanced_manufacturing;
         const existing = !isManufacturable ? items.find(i => i.id === product.id) : null;
 
@@ -246,6 +261,39 @@ export default function POSPage() {
 
     const removeItem = (cartItemId: string) => {
         setItems(items.filter(i => i.cartItemId !== cartItemId))
+    }
+
+    const editVariantInCart = (item: CartItem) => {
+        // Find parent product
+        const parentId = (item as any).parent_template
+        if (!parentId) return
+
+        // We might need to fetch the parent product if it's not in the list (though usually it is as categories only show parents)
+        const parent = products.find(p => p.id === parentId)
+        if (parent) {
+            setActiveParentProduct(parent)
+            setEditingCartItem(item)
+            setVariantModalOpen(true)
+        }
+    }
+
+    const handleVariantSelected = async (variant: any) => {
+        if (editingCartItem) {
+            // Updating existing line
+            const prices = await fetchEffectivePrice(variant, editingCartItem.qty, variant.uom)
+            setItems(prev => prev.map(i => i.cartItemId === editingCartItem.cartItemId ? {
+                ...i,
+                ...variant,
+                unit_price_net: prices.net,
+                unit_price_gross: prices.gross,
+                total_net: PricingUtils.calculateLineNet(i.qty, prices.net),
+                total_gross: Math.round(i.qty * prices.gross)
+            } : i))
+            setEditingCartItem(null)
+        } else {
+            // Adding new line
+            await addToCart(variant)
+        }
     }
 
     const handleConfirm = () => {
@@ -628,14 +676,26 @@ export default function POSPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-2 text-center align-top">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            onClick={() => removeItem(item.cartItemId)}
-                                                        >
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </Button>
+                                                        <div className="flex gap-1">
+                                                            {((item as any).parent_template) && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-7 w-7 text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    onClick={() => editVariantInCart(item)}
+                                                                >
+                                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                                </Button>
+                                                            )}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                onClick={() => removeItem(item.cartItemId)}
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                        </div>
                                                     </TableCell>
                                                 </TableRow>
                                             )
@@ -679,6 +739,16 @@ export default function POSPage() {
                     </Card>
                 </div>
             </div>
+
+            {variantModalOpen && (
+                <POSVariantSelectorModal
+                    open={variantModalOpen}
+                    onOpenChange={setVariantModalOpen}
+                    product={activeParentProduct}
+                    onSelect={handleVariantSelected}
+                    initialVariantId={editingCartItem?.id}
+                />
+            )}
 
             {
                 checkoutOpen && (
