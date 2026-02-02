@@ -394,18 +394,17 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                     </div>
 
                     {/* Sidebar Area */}
-                    <div className="w-full lg:w-80 bg-muted/5 border-t lg:border-t-0 lg:border-l flex flex-col overflow-hidden">
-                        <div className="flex-1 flex flex-col p-4 overflow-hidden">
-                            {initialData ? (
-                                <ActivitySidebar entityId={initialData.id} entityType="user" />
-                            ) : (
-                                <div className="h-full flex items-center justify-center p-8 text-center bg-muted/10 rounded-xl border border-dashed">
-                                    <p className="text-xs text-muted-foreground italic">
-                                        El historial de actividad estará disponible una vez que se cree el usuario.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                    {/* Sidebar Area */}
+                    <div className="w-full lg:w-72 bg-muted/5 border-t lg:border-t-0 lg:border-l flex flex-col overflow-hidden">
+                        {initialData ? (
+                            <ActivitySidebar entityId={initialData.id} entityType="user" />
+                        ) : (
+                            <div className="h-full p-8 flex items-center justify-center text-center bg-muted/10 rounded-xl border border-dashed m-6">
+                                <p className="text-xs text-muted-foreground italic">
+                                    El historial de actividad estará disponible una vez que se cree el usuario.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </BaseModal>

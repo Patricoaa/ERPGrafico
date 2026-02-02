@@ -660,7 +660,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
 
                     {/* Activity Sidebar */}
                     {initialData && (
-                        <div className="w-80 border-l bg-muted/5 h-full flex flex-col overflow-hidden">
+                        <div className="w-72 border-l bg-muted/5 h-full flex flex-col overflow-hidden">
                             <ActivitySidebar
                                 entityId={initialData.id}
                                 entityType="product"
@@ -849,7 +849,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
 
                 {/* Activity Sidebar */}
                 {initialData && (
-                    <div className="w-80 border-l bg-muted/5 h-full flex flex-col overflow-hidden">
+                    <div className="w-72 border-l bg-muted/5 h-full flex flex-col overflow-hidden">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="product"

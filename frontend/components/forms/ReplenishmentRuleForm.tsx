@@ -149,7 +149,7 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                 </div>
 
                 {initialData?.id && (
-                    <div className="w-80 border-l bg-muted/5 ml-6 -my-6 py-6 px-6 flex flex-col overflow-hidden">
+                    <div className="w-72 border-l bg-muted/5 flex flex-col overflow-hidden">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="reordering_rule"

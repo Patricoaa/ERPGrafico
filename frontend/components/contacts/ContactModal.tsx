@@ -475,18 +475,17 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                         </div>
 
                         {/* Always Visible Sidebar */}
-                        <div className="w-80 flex flex-col bg-muted/5 border-l overflow-hidden">
-                            <div className="h-full p-4 flex flex-col overflow-hidden">
-                                {contact ? (
-                                    <ActivitySidebar entityId={contact.id} entityType="contact" />
-                                ) : (
-                                    <div className="h-full flex items-center justify-center p-8 text-center bg-muted/10 rounded-xl border border-dashed">
-                                        <p className="text-xs text-muted-foreground italic">
-                                            El historial de actividad estará disponible una vez que se cree el contacto.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
+                        {/* Always Visible Sidebar */}
+                        <div className="w-72 flex flex-col bg-muted/5 border-l overflow-hidden">
+                            {contact ? (
+                                <ActivitySidebar entityId={contact.id} entityType="contact" />
+                            ) : (
+                                <div className="h-full p-8 flex items-center justify-center text-center bg-muted/10 rounded-xl border border-dashed m-6">
+                                    <p className="text-xs text-muted-foreground italic">
+                                        El historial de actividad estará disponible una vez que se cree el contacto.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </Tabs>

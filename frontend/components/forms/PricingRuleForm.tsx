@@ -469,13 +469,11 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                     </div>
 
                     {initialData?.id && (
-                        <div className="w-80 border-l bg-muted/5 flex flex-col">
-                            <div className="h-full p-6 flex flex-col overflow-hidden">
-                                <ActivitySidebar
-                                    entityId={initialData.id}
-                                    entityType="pricing_rule"
-                                />
-                            </div>
+                        <div className="w-72 border-l bg-muted/5 flex flex-col">
+                            <ActivitySidebar
+                                entityId={initialData.id}
+                                entityType="pricing_rule"
+                            />
                         </div>
                     )}
                 </div>
