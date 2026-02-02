@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -121,6 +121,10 @@ export default function POSPage() {
     const [bomCache, setBomCache] = useState<Record<number, BOM>>({})
     const [componentCache, setComponentCache] = useState<Record<number, { stock: number, uom: number }>>({})
 
+    // Live recalculation state
+    const [limits, setLimits] = useState<Record<string, number>>({}) // Keyed by cartItemId or productID (prefix?)
+
+
 
     useEffect(() => {
         // ... (fetchData implementation unchanged)
@@ -163,15 +167,17 @@ export default function POSPage() {
     }, [])
 
     // ... (filteredProducts and getEffectivePrice unchanged)
-    const filteredProducts = products.filter(p => {
-        const matchesSearch = (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.code.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filteredProducts = useMemo(() => {
+        return products.filter(p => {
+            const matchesSearch = (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.code.toLowerCase().includes(searchTerm.toLowerCase()))
 
-        const categoryId = typeof p.category === 'object' ? p.category?.id : p.category
-        const matchesCategory = selectedCategoryId === null || categoryId === selectedCategoryId
+            const categoryId = typeof p.category === 'object' ? p.category?.id : p.category
+            const matchesCategory = selectedCategoryId === null || categoryId === selectedCategoryId
 
-        return matchesSearch && matchesCategory
-    })
+            return matchesSearch && matchesCategory
+        })
+    }, [products, searchTerm, selectedCategoryId])
 
     const fetchEffectivePrice = async (product: any, qty: number, selectedUomId?: number) => {
         if (!product || !product.id) return { net: 0, gross: 0 }
@@ -194,6 +200,15 @@ export default function POSPage() {
 
     // --- Shared Stock Validation Logic ---
 
+    const getConversionFactor = (fromUomId: number | undefined, toUomId: number | undefined): number => {
+        if (!fromUomId || !toUomId || fromUomId === toUomId) return 1
+        const fromUom = uoms.find(u => u.id === fromUomId)
+        const toUom = uoms.find(u => u.id === toUomId)
+        if (!fromUom || !toUom || fromUom.category !== toUom.category) return 1
+        return (parseFloat(fromUom.ratio || "1") / parseFloat(toUom.ratio || "1"))
+    }
+
+
     const fetchBOM = async (productId: number): Promise<BOM | null> => {
         if (bomCache[productId]) return bomCache[productId]
 
@@ -211,68 +226,201 @@ export default function POSPage() {
         return null
     }
 
-    const fetchComponentStock = async (componentId: number): Promise<number> => {
-        // First check if it's in our main product list
+    const fetchComponentData = async (componentId: number): Promise<{ stock: number, uom: number } | null> => {
         const internalProd = products.find(p => p.id === componentId)
-        if (internalProd) return internalProd.current_stock || 0
+        if (internalProd) return { stock: internalProd.current_stock || 0, uom: internalProd.uom || 0 }
 
-        // Then check cache
-        if (componentStockCache[componentId] !== undefined) return componentStockCache[componentId]
+        if (componentCache[componentId]) return componentCache[componentId]
 
-        // Finally fetch from API
         try {
             const res = await api.get(`/inventory/products/${componentId}/`)
-            const stock = res.data.current_stock || 0
-            setComponentStockCache(prev => ({ ...prev, [componentId]: stock }))
-            return stock
+            const data = {
+                stock: res.data.current_stock || 0,
+                uom: res.data.uom || 0
+            }
+            setComponentCache(prev => ({ ...prev, [componentId]: data }))
+            return data
         } catch (error) {
-            console.error(`Error fetching stock for component ${componentId}`, error)
-            return 0
+            console.error(`Error fetching data for component ${componentId}`, error)
+            return null
         }
     }
 
-    const validateStock = async (projectedItems: CartItem[]): Promise<{ valid: boolean, error?: string }> => {
+    // Helper to calculate total consumption of components by a list of items
+    const calculateConsumption = async (cartItems: CartItem[], ignoreItemId?: string) => {
         const consumption: Record<number, number> = {}
 
-        for (const item of projectedItems) {
+        for (const item of cartItems) {
+            if (ignoreItemId && item.cartItemId === ignoreItemId) continue
+
+            let itemRefUomId = (item as any).uom
+            let productDef = products.find(p => p.id === item.id)
+            if (productDef) itemRefUomId = productDef.uom
+
+            const itemFactor = getConversionFactor(item.uom, itemRefUomId)
+            const qtyRef = item.qty * itemFactor
+
             const isManufacturable = (item.product_type === 'MANUFACTURABLE' || item.requires_advanced_manufacturing)
             const hasBom = item.has_bom || (item as any).has_active_bom
 
             if (isManufacturable && hasBom) {
-                // Fetch BOM if missing (though usually we should pre-fetch)
                 let bom = bomCache[item.id]
                 if (!bom) bom = await fetchBOM(item.id) as BOM
 
                 if (bom && bom.lines) {
                     for (const line of bom.lines) {
-                        const needed = line.quantity * item.qty
-                        consumption[line.component] = (consumption[line.component] || 0) + needed
+                        const neededInLineUom = qtyRef * line.quantity
+                        const compData = await fetchComponentData(line.component)
+                        if (compData) {
+                            const lineToCompFactor = getConversionFactor(line.uom || undefined, compData.uom)
+                            const neededInCompRef = neededInLineUom * lineToCompFactor
+                            consumption[line.component] = (consumption[line.component] || 0) + neededInCompRef
+                        }
                     }
                 }
             } else if (item.product_type === 'STORABLE') {
-                // Direct consumption
-                consumption[item.id] = (consumption[item.id] || 0) + item.qty
+                consumption[item.id] = (consumption[item.id] || 0) + qtyRef
             }
         }
+        return consumption
+    }
 
-        // Check availability
-        for (const [componentIdStr, qtyNeeded] of Object.entries(consumption)) {
-            const componentId = parseInt(componentIdStr)
-            const available = await fetchComponentStock(componentId)
+    const calculateMaxQty = async (product: Product | CartItem, currentQty: number = 0, cartItemId?: string): Promise<number> => {
+        const consumption = await calculateConsumption(items, cartItemId)
 
-            if (qtyNeeded > available) {
-                // Try to get a name for the error message
-                const prod = products.find(p => p.id === componentId)
-                const name = prod?.name || `Componente #${componentId}`
-                return {
-                    valid: false,
-                    error: `Stock insuficiente para ${name}. Necesario: ${qtyNeeded}, Disponible: ${available}`
+        let maxQty = Infinity
+
+        const isManufacturable = (product.product_type === 'MANUFACTURABLE' || product.requires_advanced_manufacturing)
+        const hasBom = product.has_bom || (product as any).has_active_bom
+
+        const productDef = products.find(p => p.id === product.id)
+        if (!productDef && product.product_type === 'STORABLE') return Infinity
+
+        const itemUom = (product as any).uom
+        const defUom = productDef ? productDef.uom : itemUom
+        const factorToRef = getConversionFactor(itemUom, defUom)
+
+        if (product.product_type === 'STORABLE') {
+            const currentStock = (product as any).current_stock || (productDef ? productDef.current_stock : 0) || 0
+            const availableRef = currentStock - (consumption[product.id] || 0)
+            maxQty = availableRef / factorToRef
+        } else if (isManufacturable && hasBom) {
+            const bom = bomCache[product.id]
+            if (!bom) return (product.manufacturable_quantity ?? Infinity)
+
+            for (const line of bom.lines) {
+                const compData = await fetchComponentData(line.component)
+                if (compData) {
+                    const usedByOthers = consumption[line.component] || 0
+                    const remainingStock = compData.stock - usedByOthers
+                    const lineToCompFactor = getConversionFactor(line.uom || undefined, compData.uom)
+                    const compNeededPerProductRef = line.quantity * lineToCompFactor
+
+                    if (compNeededPerProductRef > 0) {
+                        const maxProductRefUnits = remainingStock / compNeededPerProductRef
+                        const maxProductUnits = maxProductRefUnits / factorToRef
+                        if (maxProductUnits < maxQty) maxQty = maxProductUnits
+                    }
                 }
             }
         }
 
+        return maxQty < 0 ? 0 : Math.floor(maxQty)
+    }
+
+    const validateStock = async (projectedItems: CartItem[]): Promise<{ valid: boolean, error?: string }> => {
+        const consumption = await calculateConsumption(projectedItems)
+
+        for (const [componentIdStr, qtyNeeded] of Object.entries(consumption)) {
+            const componentId = parseInt(componentIdStr)
+            const data = await fetchComponentData(componentId)
+
+            if (data && qtyNeeded > (data.stock + 0.0001)) { // Add epsilon for float errors
+                const prod = products.find(p => p.id === componentId)
+                let name = prod?.name
+                if (!name) {
+                    try {
+                        const res = await api.get(`/inventory/products/${componentId}/`)
+                        name = res.data.name
+                    } catch (e) { name = `Componente #${componentId}` }
+                }
+
+                return {
+                    valid: false,
+                    error: `Stock insuficiente para ${name}. Necesario: ${parseFloat(qtyNeeded.toFixed(4))}, Disponible: ${parseFloat(data.stock.toFixed(4))}`
+                }
+            }
+        }
         return { valid: true }
     }
+
+
+    // Recalculate limits when items or stock cache changes
+    useEffect(() => {
+        let active = true
+        const updateLimits = async () => {
+            const consumption = await calculateConsumption(items)
+            if (!active) return
+
+            const newLimits: Record<string, number> = {}
+
+            // 1. For Cart Items
+            for (const item of items) {
+                const max = await calculateMaxQty(item, item.qty, item.cartItemId)
+                newLimits[`cart_${item.cartItemId}`] = max
+            }
+
+            // 2. For Visible Products
+            for (const p of filteredProducts) {
+                let maxQty = Infinity
+                const productDef = products.find(prod => prod.id === p.id)
+                if (!productDef && p.product_type === 'STORABLE') continue
+
+                const itemUom = (p as any).uom
+                const defUom = productDef ? productDef.uom : itemUom
+                const factorToRef = getConversionFactor(itemUom, defUom)
+
+                if (p.product_type === 'STORABLE') {
+                    const availableRef = ((p as any).current_stock || 0) - (consumption[p.id] || 0)
+                    maxQty = availableRef / factorToRef
+                } else if ((p.product_type === 'MANUFACTURABLE' || p.requires_advanced_manufacturing) && (p.has_bom || (p as any).has_active_bom)) {
+                    const bom = bomCache[p.id]
+                    if (bom) {
+                        for (const line of bom.lines) {
+                            const compData = await fetchComponentData(line.component)
+                            if (compData) {
+                                const usedTotal = consumption[line.component] || 0
+                                const remainingStock = compData.stock - usedTotal
+
+                                const lineToCompFactor = getConversionFactor(line.uom || undefined, compData.uom)
+                                const compNeededPerProductRef = line.quantity * lineToCompFactor
+
+                                if (compNeededPerProductRef > 0) {
+                                    const maxProductRefUnits = remainingStock / compNeededPerProductRef
+                                    const maxProductUnits = maxProductRefUnits / factorToRef
+                                    if (maxProductUnits < maxQty) maxQty = maxProductUnits
+                                }
+                            }
+                        }
+                    } else {
+                        maxQty = p.manufacturable_quantity ?? Infinity
+                    }
+                }
+
+                newLimits[`prod_${p.id}`] = maxQty < 0 ? 0 : Math.floor(maxQty)
+            }
+
+            if (active) setLimits(newLimits)
+        }
+
+        const timer = setTimeout(() => {
+            updateLimits()
+        }, 300)
+        return () => {
+            active = false
+            clearTimeout(timer)
+        }
+    }, [items, bomCache, componentCache, products, filteredProducts])
 
 
     const addProductToCart = async (product: Product, mfgData?: any) => {
@@ -607,16 +755,23 @@ export default function POSPage() {
                                                 {/* Stock/Availability Badge */}
                                                 {product.product_type === 'STORABLE' && (
                                                     <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
-                                                        <div className={`h-2 w-2 rounded-full ${(product.current_stock || 0) > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                                                        {product.current_stock || 0}
+                                                        <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.current_stock ?? 0) > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                                                        {limits[`prod_${product.id}`] ?? product.current_stock ?? 0}
                                                     </div>
                                                 )}
                                                 {product.product_type === 'MANUFACTURABLE' && (
                                                     <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
-                                                        <div className={`h-2 w-2 rounded-full ${(!product.has_bom || (product.manufacturable_quantity || 0) > 0 || product.manufacturable_quantity === null || product.manufacturable_quantity === undefined) ? 'bg-blue-500' : 'bg-red-500'}`} />
-                                                        {(!product.has_bom || product.manufacturable_quantity === null || product.manufacturable_quantity === undefined || product.manufacturable_quantity > 999999)
-                                                            ? 'Disponible'
-                                                            : `${product.manufacturable_quantity} fab.`}
+                                                        <div className={`h-2 w-2 rounded-full ${(() => {
+                                                            const limit = limits[`prod_${product.id}`]
+                                                            const max = limit !== undefined ? limit : (product.manufacturable_quantity ?? Infinity)
+                                                            return max > 0 ? 'bg-blue-500' : 'bg-red-500'
+                                                        })()}`} />
+                                                        {(() => {
+                                                            const limit = limits[`prod_${product.id}`]
+                                                            const max = limit !== undefined ? limit : (product.manufacturable_quantity)
+                                                            if (max === null || max === undefined || max > 999999) return 'Disponible'
+                                                            return `${max} fab.`
+                                                        })()}
                                                     </div>
                                                 )}
                                                 {(product.product_type === 'SERVICE' || product.product_type === 'SUBSCRIPTION' || product.product_type === 'CONSUMABLE') && (
@@ -726,27 +881,19 @@ export default function POSPage() {
                                                                 className={cn(
                                                                     "h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0",
                                                                     (() => {
-                                                                        let maxQty = Infinity
-                                                                        const has_bom = item.has_bom || (item as any).has_active_bom
-                                                                        if (item.product_type === 'STORABLE') maxQty = item.current_stock || 0
-                                                                        if (item.product_type === 'MANUFACTURABLE' && has_bom) maxQty = item.manufacturable_quantity ?? 0
-
-                                                                        return item.qty >= maxQty && maxQty > 0 ? "text-amber-600 bg-amber-50 rounded" : ""
+                                                                        const maxQty = limits[`cart_${item.cartItemId}`] ?? Infinity
+                                                                        return item.qty > maxQty ? "text-red-600 bg-red-50 rounded" : ""
                                                                     })()
                                                                 )}
                                                                 value={item.qty}
                                                                 onChange={(e) => updateQty(item.cartItemId, e.target.value)}
-                                                                min="1"
+                                                                min="0.01"
                                                             />
                                                             {(() => {
-                                                                let maxQty = null
-                                                                const has_bom = item.has_bom || (item as any).has_active_bom
-                                                                if (item.product_type === 'STORABLE') maxQty = item.current_stock || 0
-                                                                if (item.product_type === 'MANUFACTURABLE' && has_bom) maxQty = item.manufacturable_quantity ?? 0
-
-                                                                if (maxQty !== null && maxQty !== Infinity) {
+                                                                const maxQty = limits[`cart_${item.cartItemId}`]
+                                                                if (maxQty !== undefined && maxQty !== Infinity) {
                                                                     return (
-                                                                        <Badge variant="secondary" className="text-[8px] px-1 h-3.5 bg-muted text-muted-foreground hover:bg-muted font-normal border-0 whitespace-nowrap">
+                                                                        <Badge variant="secondary" className={cn("text-[8px] px-1 h-3.5 bg-muted text-muted-foreground hover:bg-muted font-normal border-0 whitespace-nowrap", item.qty > maxQty && "text-red-600 bg-red-50")}>
                                                                             MAX: {maxQty}
                                                                         </Badge>
                                                                     )

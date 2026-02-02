@@ -76,7 +76,7 @@ export function GroupForm({
                 await api.post("/core/groups/", values)
                 toast.success("Grupo creado correctamente")
             }
-            setOpen(false)
+            setOpen?.(false)
             onSuccess?.()
         } catch (error) {
             console.error(error)

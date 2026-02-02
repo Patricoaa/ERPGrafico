@@ -45,6 +45,7 @@ const contactSchema = z.object({
 
     is_default_customer: z.boolean(),
     is_default_vendor: z.boolean(),
+    payment_terms: z.string().optional(),
 })
 
 interface ContactModalProps {
@@ -140,7 +141,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                 phone: contact.phone || "",
                 address: contact.address || "",
                 city: contact.city || "",
-
+                payment_terms: contact.payment_terms || "CONTADO",
                 is_default_customer: !!contact.is_default_customer,
                 is_default_vendor: !!contact.is_default_vendor
             })
