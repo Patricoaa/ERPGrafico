@@ -253,6 +253,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                             <ProductSelector
                                                                 value={field.value}
                                                                 context="purchase"
+                                                                excludeVariantTemplates={true}
                                                                 onChange={(val) => {
                                                                     field.onChange(val)
                                                                     // Automatically set unit_cost and UoM if product selected

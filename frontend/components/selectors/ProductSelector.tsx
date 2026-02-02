@@ -39,6 +39,7 @@ interface ProductSelectorProps {
     restrictStock?: boolean
     excludeIds?: (string | number)[]
     context?: 'sale' | 'purchase'
+    excludeVariantTemplates?: boolean
     onSelect?: (product: any) => void
     customFilter?: (product: any) => boolean
     customDisabled?: (product: any) => boolean
@@ -57,6 +58,7 @@ export function ProductSelector({
     restrictStock = false,
     excludeIds = EMPTY_ARRAY,
     context,
+    excludeVariantTemplates = false,
     onSelect,
     customFilter,
     customDisabled,
@@ -107,6 +109,10 @@ export function ProductSelector({
                     url += '&can_be_sold=true'
                 } else if (context === 'purchase') {
                     url += '&can_be_purchased=true'
+                    // Exclude variant templates from purchase orders
+                    if (excludeVariantTemplates) {
+                        url += '&exclude_variant_templates=true'
+                    }
                 }
 
                 const res = await api.get(url)

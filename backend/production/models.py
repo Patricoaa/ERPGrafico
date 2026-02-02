@@ -356,6 +356,11 @@ class BillOfMaterials(models.Model):
                 self.product.save(update_fields=['has_bom'])
                 
         super().save(*args, **kwargs)
+    
+    @classmethod
+    def get_active_bom_for_product(cls, product):
+        """Get the active BOM for a product (including variants)."""
+        return cls.objects.filter(product=product, active=True).first()
 
 class BillOfMaterialsLine(models.Model):
     """

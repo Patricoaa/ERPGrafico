@@ -25,6 +25,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
     const salePriceGross = Number(form.watch("sale_price_gross")) || 0
     const productType = form.watch("product_type")
     const isDynamicPricing = form.watch("is_dynamic_pricing")
+    const hasVariants = form.watch("has_variants")
 
     // Choice cost: BoM cost for manufacturable products (if available), otherwise weighed average cost
     const costPrice = (productType === 'MANUFACTURABLE' && initialData?.bom_cost > 0)
@@ -33,7 +34,25 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
 
     const marginPercentage = PricingUtils.calculateMargin(salePrice, costPrice)
 
+    // Hide pricing section if product cannot be sold
     if (!canBeSold) return null;
+
+    // Hide pricing section if product has variants enabled (prices are set per variant)
+    if (hasVariants) {
+        return (
+            <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-200">
+                <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-amber-600 mt-0.5" />
+                    <div>
+                        <p className="font-medium text-amber-900">Producto con Variantes</p>
+                        <p className="text-sm text-amber-700 mt-1">
+                            Los precios se asignan individualmente a cada variante desde la pestaña "Variantes".
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Handlers for synchronization
     const handleNetChange = (e: React.ChangeEvent<HTMLInputElement>) => {

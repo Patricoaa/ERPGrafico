@@ -3,13 +3,14 @@ import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Plus, ListFilter, Trash2, RefreshCw, Layers, Pencil } from "lucide-react"
+import { Plus, ListFilter, Trash2, RefreshCw, Layers, Pencil, AlertCircle } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -207,6 +208,7 @@ export function ProductVariantsTab({ form, initialData }: ProductVariantsTabProp
                                     <TableHead className="font-bold">Nombre Variante / Atributos</TableHead>
                                     <TableHead className="font-bold text-right">Precio</TableHead>
                                     <TableHead className="font-bold text-center">Stock</TableHead>
+                                    <TableHead className="font-bold text-center">BOM</TableHead>
                                     <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -231,6 +233,50 @@ export function ProductVariantsTab({ form, initialData }: ProductVariantsTabProp
                                             <Badge variant={v.current_stock > 0 ? "success" : "destructive"} className="font-bold">
                                                 {v.current_stock}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {v.mfg_auto_finalize ? (
+                                                // Express variant - BOM required
+                                                v.has_active_bom ? (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 cursor-pointer">
+                                                                    ✓ BOM
+                                                                </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                BOM asignado correctamente
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ) : (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Badge variant="destructive" className="cursor-pointer">
+                                                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                                                    Sin BOM
+                                                                </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                Variante Express requiere BOM obligatorio
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                )
+                                            ) : (
+                                                // Non-Express variant - BOM optional
+                                                v.has_active_bom ? (
+                                                    <Badge variant="outline">
+                                                        ✓ BOM
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary" className="text-muted-foreground">
+                                                        ➖
+                                                    </Badge>
+                                                )
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex gap-1">

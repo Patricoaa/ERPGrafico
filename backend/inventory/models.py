@@ -559,7 +559,39 @@ class Product(models.Model):
             else:
                 self.variant_display_name = f"{self.parent_template.name} (Variante)"
 
+        # BOM Requirement for Express Products
+        # Express products (mfg_auto_finalize=True) without variants MUST have a BOM
+        if self.mfg_auto_finalize and not self.has_variants and not self.parent_template:
+            self.has_bom = True
+
         super().save(*args, **kwargs)
+
+    # BOM-related helpers
+    @property
+    def is_express_variant(self):
+        """Check if this is an Express variant (has parent and is Express)."""
+        return self.parent_template is not None and self.mfg_auto_finalize
+
+    def has_active_bom(self):
+        """Check if this product has an active BOM assigned."""
+        return self.boms.filter(active=True).exists()
+
+    @property
+    def requires_bom_validation(self):
+        """
+        Express products/variants require a BOM.
+        Returns True if this product should have a BOM but doesn't.
+        """
+        # Only Express products (auto-finalize) require BOM validation
+        if not self.mfg_auto_finalize:
+            return False
+        
+        # Templates with variants don't need their own BOM
+        if self.has_variants:
+            return False
+            
+        # Express products and variants without an active BOM need validation
+        return not self.has_active_bom()
 
     # Helpers to get effective accounts (Product override > Category > Type-based > Fallback)
     @property

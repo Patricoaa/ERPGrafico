@@ -130,6 +130,11 @@ class ProductSerializer(serializers.ModelSerializer):
     manufacturable_quantity = serializers.SerializerMethodField()
     bom_cost = serializers.SerializerMethodField()
     
+    # BOM validation fields
+    has_active_bom = serializers.SerializerMethodField()
+    active_bom_id = serializers.SerializerMethodField()
+    requires_bom_validation = serializers.SerializerMethodField()
+    
     qty_reserved = serializers.FloatField(read_only=True)
     qty_available = serializers.FloatField(read_only=True)
     
@@ -165,7 +170,9 @@ class ProductSerializer(serializers.ModelSerializer):
             'attachments',
             # Variant Fields
             'has_variants', 'parent_template', 'attribute_values', 'attribute_values_data',
-            'variant_display_name', 'variants'
+            'variant_display_name', 'variants',
+            # BOM validation fields
+            'has_active_bom', 'active_bom_id', 'requires_bom_validation'
         ]
 
     def get_variants(self, obj):
@@ -248,6 +255,16 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_bom_cost(self, obj):
         """Returns the total cost from the active BoM."""
         return float(obj.get_bom_cost())
+    
+    def get_has_active_bom(self, obj):
+        return obj.has_active_bom()
+    
+    def get_active_bom_id(self, obj):
+        active_bom = obj.boms.filter(active=True).first()
+        return active_bom.id if active_bom else None
+    
+    def get_requires_bom_validation(self, obj):
+        return obj.requires_bom_validation
 
     def validate(self, data):
         # Fallback for base UoM if missing but others are present

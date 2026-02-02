@@ -115,22 +115,32 @@ export function ProductManufacturingTab({ form, initialData, products, uoms }: P
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="has_bom"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="font-bold">Posee Receta (BOM)</FormLabel>
-                                        <FormDescription className="text-[10px]">
-                                            Detección automática por modo seleccionado.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
+                            render={({ field }) => {
+                                const isExpress = form.watch("mfg_auto_finalize")
+                                const hasVariants = form.watch("has_variants")
+                                // Express products without variants MUST have BOM (enforced by backend)
+                                const shouldDisable = isExpress && !hasVariants
+
+                                return (
+                                    <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="font-bold">Posee Receta (BOM)</FormLabel>
+                                            <FormDescription className="text-[10px]">
+                                                {shouldDisable
+                                                    ? "Los productos Express requieren BOM obligatorio."
+                                                    : "Detección automática por modo seleccionado."}
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                disabled={shouldDisable}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )
+                            }}
                         />
 
                         {/* Variants toggle moved here as per user request */}

@@ -61,6 +61,12 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         if not show_technical_variants and not self.kwargs.get('pk'):
              queryset = queryset.filter(parent_template__isnull=True)
 
+        # Option to exclude variant templates (products with has_variants=True)
+        # Useful for purchase orders where we don't want to purchase templates
+        exclude_variant_templates = self.request.query_params.get('exclude_variant_templates', 'false') == 'true'
+        if exclude_variant_templates:
+            queryset = queryset.filter(has_variants=False)
+
         return queryset
 
     def perform_update(self, serializer):
