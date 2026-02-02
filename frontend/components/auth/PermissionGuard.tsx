@@ -3,7 +3,7 @@
 import { usePermission } from "@/hooks/usePermission";
 import React from "react";
 
-interface PermissionGuardProps {
+interface PermissionGuardProps extends React.HTMLAttributes<HTMLDivElement> {
     permission?: string | null;
     children: React.ReactNode;
     fallback?: React.ReactNode;
