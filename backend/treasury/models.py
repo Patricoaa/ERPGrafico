@@ -149,6 +149,15 @@ class Payment(models.Model):
         related_name='payments',
         verbose_name=_("Proveedor de Tarjeta")
     )
+    
+    # POS Session (for cash control)
+    pos_session = models.ForeignKey(
+        'POSSession',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payments',
+        verbose_name=_("Sesión de Caja")
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -723,4 +732,150 @@ class CardTransaction(models.Model):
 
     def __str__(self):
         return f"{self.provider.code} - {self.gross_amount}"
+
+
+class POSSession(models.Model):
+    """
+    Represents a cashier's session (shift) in the POS.
+    Each session has an opening and closing time, with cash control.
+    """
+    class Status(models.TextChoices):
+        OPEN = 'OPEN', _('Abierta')
+        CLOSING = 'CLOSING', _('En Cierre')
+        CLOSED = 'CLOSED', _('Cerrada')
+    
+    treasury_account = models.ForeignKey(
+        'TreasuryAccount',
+        on_delete=models.PROTECT,
+        related_name='pos_sessions',
+        verbose_name=_("Caja"),
+        help_text=_("Cuenta de tesorería (caja) asociada a esta sesión")
+    )
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='pos_sessions',
+        verbose_name=_("Cajero")
+    )
+    
+    status = models.CharField(
+        _("Estado"),
+        max_length=10,
+        choices=Status.choices,
+        default=Status.OPEN
+    )
+    
+    # Opening
+    opened_at = models.DateTimeField(_("Abierta el"), auto_now_add=True)
+    opening_balance = models.DecimalField(
+        _("Fondo de Caja Inicial"),
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text=_("Monto de efectivo declarado al abrir la caja")
+    )
+    
+    # Closing
+    closed_at = models.DateTimeField(_("Cerrada el"), null=True, blank=True)
+    closed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='closed_pos_sessions',
+        verbose_name=_("Cerrada Por")
+    )
+    
+    # Totals (calculated at close)
+    total_cash_sales = models.DecimalField(
+        _("Total Ventas Efectivo"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    total_card_sales = models.DecimalField(
+        _("Total Ventas Tarjeta"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    total_transfer_sales = models.DecimalField(
+        _("Total Ventas Transferencia"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    total_credit_sales = models.DecimalField(
+        _("Total Ventas Crédito"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = _("Sesión de Caja")
+        verbose_name_plural = _("Sesiones de Caja")
+        ordering = ['-opened_at']
+    
+    def __str__(self):
+        return f"Sesión #{self.id} - {self.user.get_full_name() or self.user.username} ({self.get_status_display()})"
+    
+    @property
+    def expected_cash(self):
+        """Calculate expected cash: opening balance + cash sales"""
+        return self.opening_balance + self.total_cash_sales
+
+
+class POSSessionAudit(models.Model):
+    """
+    Records the cash counting (arqueo) when closing a POS session.
+    """
+    session = models.OneToOneField(
+        POSSession,
+        on_delete=models.CASCADE,
+        related_name='audit',
+        verbose_name=_("Sesión")
+    )
+    
+    expected_amount = models.DecimalField(
+        _("Monto Esperado"),
+        max_digits=12,
+        decimal_places=2,
+        help_text=_("Monto calculado por el sistema (fondo + ventas efectivo)")
+    )
+    actual_amount = models.DecimalField(
+        _("Monto Contado"),
+        max_digits=12,
+        decimal_places=2,
+        help_text=_("Monto físico contado por el cajero")
+    )
+    difference = models.DecimalField(
+        _("Diferencia"),
+        max_digits=12,
+        decimal_places=2,
+        help_text=_("Diferencia: actual - esperado (+ sobrante, - faltante)")
+    )
+    
+    # Accounting adjustment for difference
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='pos_session_audit',
+        verbose_name=_("Asiento de Ajuste")
+    )
+    
+    notes = models.TextField(_("Notas del Arqueo"), blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = _("Arqueo de Caja")
+        verbose_name_plural = _("Arqueos de Caja")
+    
+    def __str__(self):
+        return f"Arqueo Sesión #{self.session.id} - Diff: {self.difference}"
 

@@ -21,6 +21,7 @@ import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { SalesCheckoutWizard } from "@/components/sales/SalesCheckoutWizard"
+import { SessionControl } from "@/components/pos/SessionControl"
 import { Badge } from "@/components/ui/badge"
 import {
     Select,
@@ -93,6 +94,7 @@ export default function POSPage() {
     const [categories, setCategories] = useState<Category[]>([])
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([])
+    const [currentSession, setCurrentSession] = useState<any>(null)
 
     useEffect(() => {
         // ... (fetchData implementation unchanged)
@@ -296,7 +298,7 @@ export default function POSPage() {
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold tracking-tight">Punto de Venta</h2>
                 <div className="flex items-center gap-4">
-                    {/* Elements moved to cart card */}
+                    <SessionControl onSessionChange={setCurrentSession} />
                 </div>
             </div>
 
@@ -665,12 +667,14 @@ export default function POSPage() {
                         order={null}
                         orderLines={items}
                         total={total_gross_sum}
+                        posSessionId={currentSession?.id}
                         onComplete={() => {
                             setItems([])
                         }}
                     />
                 )
             }
-        </div>
+
+        </div >
     )
 }

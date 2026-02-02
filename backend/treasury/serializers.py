@@ -168,3 +168,31 @@ class CardTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CardTransaction
         fields = '__all__'
+
+
+class POSSessionSerializer(serializers.ModelSerializer):
+    """Serializer for POS Sessions"""
+    from .models import POSSession
+    
+    user_name = serializers.SerializerMethodField()
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    expected_cash = serializers.DecimalField(read_only=True, max_digits=12, decimal_places=2)
+    closed_by_name = serializers.CharField(source='closed_by.username', read_only=True, allow_null=True)
+    
+    class Meta:
+        from .models import POSSession
+        model = POSSession
+        fields = '__all__'
+    
+    def get_user_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+
+
+class POSSessionAuditSerializer(serializers.ModelSerializer):
+    """Serializer for POS Session Audits (Arqueos)"""
+    
+    class Meta:
+        from .models import POSSessionAudit
+        model = POSSessionAudit
+        fields = '__all__'

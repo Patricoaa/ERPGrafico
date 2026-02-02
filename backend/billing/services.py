@@ -290,9 +290,10 @@ class BillingService:
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
-                     line_files=None):
+                     line_files=None, pos_session_id=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
+        pos_session_id: Optional ID of an open POS session to link the payment to.
         """
         from sales.serializers import CreateSaleOrderSerializer
         from treasury.services import TreasuryService
@@ -450,10 +451,12 @@ class BillingService:
                 sale_order=order,
                 treasury_account_id=treasury_account_id,
                 transaction_number=transaction_number,
-                is_pending_registration=payment_is_pending
+                is_pending_registration=payment_is_pending,
+                pos_session_id=pos_session_id
             )
             
         return invoice
+
 
     @staticmethod
     @transaction.atomic

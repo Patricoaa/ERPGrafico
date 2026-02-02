@@ -14,7 +14,7 @@ class TreasuryService:
                          treasury_account_id=None, sale_order=None, purchase_order=None, 
                          transaction_number=None, is_pending_registration=False,
                          dte_type=None, document_reference=None,
-                         card_provider_id=None):
+                         card_provider_id=None, pos_session_id=None):
         """
         Registers a payment and creates the corresponding Accounting Entry.
         """
@@ -93,7 +93,8 @@ class TreasuryService:
             transaction_number=transaction_number,
             is_pending_registration=is_pending_registration,
             contact=partner,  # Unified contact field
-            card_provider=card_provider
+            card_provider=card_provider,
+            pos_session_id=pos_session_id  # Link to POS session
         )
         
         if card_provider:
@@ -253,6 +254,23 @@ class TreasuryService:
         
         payment.journal_entry = entry
         payment.save()
+        
+        # Update POS Session totals if linked to a session
+        if pos_session_id and payment_type == Payment.Type.INBOUND:
+            from .models import POSSession
+            try:
+                session = POSSession.objects.get(id=pos_session_id, status='OPEN')
+                if payment_method == Payment.Method.CASH:
+                    session.total_cash_sales += amount
+                elif payment_method == Payment.Method.CARD:
+                    session.total_card_sales += amount
+                elif payment_method == Payment.Method.TRANSFER:
+                    session.total_transfer_sales += amount
+                elif payment_method == Payment.Method.CREDIT:
+                    session.total_credit_sales += amount
+                session.save()
+            except POSSession.DoesNotExist:
+                pass  # Session not found or closed, ignore
         
         return payment
 

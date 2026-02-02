@@ -662,3 +662,147 @@ class CardBillingViewSet(viewsets.ViewSet):
             return Response({'error': 'Proveedor no encontrado'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class POSSessionViewSet(viewsets.ModelViewSet):
+    """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
+    from .models import POSSession
+    from .serializers import POSSessionSerializer
+    
+    queryset = POSSession.objects.all().select_related('treasury_account', 'user', 'closed_by')
+    serializer_class = POSSessionSerializer
+    filterset_fields = ['status', 'treasury_account', 'user']
+    
+    @action(detail=False, methods=['get'])
+    def current(self, request):
+        """Get the current open session for the requesting user"""
+        try:
+            from .models import POSSession
+            session = POSSession.objects.filter(
+                user=request.user,
+                status='OPEN'
+            ).select_related('treasury_account').first()
+            
+            if session:
+                from .serializers import POSSessionSerializer
+                return Response(POSSessionSerializer(session).data)
+            return Response({'session': None})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def open_session(self, request):
+        """Open a new POS session (Abrir Caja)"""
+        try:
+            from .models import POSSession
+            from decimal import Decimal
+            
+            treasury_account_id = request.data.get('treasury_account_id')
+            opening_balance = Decimal(str(request.data.get('opening_balance', '0')))
+            
+            if not treasury_account_id:
+                return Response({'error': 'Debe seleccionar una caja'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if user already has an open session
+            existing = POSSession.objects.filter(user=request.user, status='OPEN').first()
+            if existing:
+                return Response({
+                    'error': 'Ya tiene una sesión abierta',
+                    'session_id': existing.id
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Create new session
+            treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
+            session = POSSession.objects.create(
+                treasury_account=treasury_account,
+                user=request.user,
+                opening_balance=opening_balance,
+                status='OPEN'
+            )
+            
+            from .serializers import POSSessionSerializer
+            return Response(POSSessionSerializer(session).data, status=status.HTTP_201_CREATED)
+        
+        except TreasuryAccount.DoesNotExist:
+            return Response({'error': 'Caja no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def close_session(self, request, pk=None):
+        """Close a POS session with cash audit (Cierre de Caja / Arqueo)"""
+        try:
+            from .models import POSSession, POSSessionAudit
+            from decimal import Decimal
+            from django.utils import timezone
+            
+            session = self.get_object()
+            
+            if session.status == 'CLOSED':
+                return Response({'error': 'Esta sesión ya está cerrada'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            actual_cash = Decimal(str(request.data.get('actual_cash', '0')))
+            notes = request.data.get('notes', '')
+            
+            # Calculate totals from payments in this session
+            # For now, use the stored totals (which would be updated by checkout service)
+            expected_cash = session.expected_cash
+            difference = actual_cash - expected_cash
+            
+            # Create audit record
+            audit = POSSessionAudit.objects.create(
+                session=session,
+                expected_amount=expected_cash,
+                actual_amount=actual_cash,
+                difference=difference,
+                notes=notes
+            )
+            
+            # TODO: If difference != 0, create adjustment journal entry
+            # This would debit/credit a "Cash Shortage/Overage" account
+            
+            # Close session
+            session.status = 'CLOSED'
+            session.closed_at = timezone.now()
+            session.closed_by = request.user
+            session.save()
+            
+            from .serializers import POSSessionSerializer, POSSessionAuditSerializer
+            return Response({
+                'session': POSSessionSerializer(session).data,
+                'audit': POSSessionAuditSerializer(audit).data,
+                'message': 'Caja cerrada correctamente'
+            })
+        
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['get'])
+    def summary(self, request, pk=None):
+        """Get summary of sales in this session"""
+        try:
+            session = self.get_object()
+            
+            # Get payments linked to this session (would need FK from Payment to POSSession)
+            # For now, return the stored totals
+            return Response({
+                'session_id': session.id,
+                'opening_balance': session.opening_balance,
+                'total_cash_sales': session.total_cash_sales,
+                'total_card_sales': session.total_card_sales,
+                'total_transfer_sales': session.total_transfer_sales,
+                'total_credit_sales': session.total_credit_sales,
+                'expected_cash': session.expected_cash,
+                'total_sales': (
+                    session.total_cash_sales + 
+                    session.total_card_sales + 
+                    session.total_transfer_sales + 
+                    session.total_credit_sales
+                )
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

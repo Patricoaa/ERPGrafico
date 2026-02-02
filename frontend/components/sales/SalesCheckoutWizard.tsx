@@ -35,6 +35,7 @@ interface SalesCheckoutWizardProps {
     initialCustomerName?: string
     initialCustomerId?: string
     channel?: string
+    posSessionId?: number | null // POS session ID for cash control
 }
 
 export function SalesCheckoutWizard({
@@ -46,7 +47,8 @@ export function SalesCheckoutWizard({
     onComplete,
     initialCustomerName = "",
     initialCustomerId = "",
-    channel = "POS"
+    channel = "POS",
+    posSessionId = null
 }: SalesCheckoutWizardProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
@@ -393,6 +395,11 @@ export function SalesCheckoutWizard({
                     quantity: pq.dispatchedQty,
                     uom: pq.uom
                 }))))
+            }
+
+            // POS Session ID for cash control
+            if (posSessionId) {
+                formData.append('pos_session_id', posSessionId.toString())
             }
 
             await api.post('/billing/invoices/pos_checkout/', formData)

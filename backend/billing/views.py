@@ -155,6 +155,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         amount = request.data.get('amount')
         treasury_account_id = request.data.get('treasury_account_id')
         payment_type = request.data.get('payment_type', 'INBOUND')
+        pos_session_id = request.data.get('pos_session_id')
         
         # New delivery parameters
         delivery_type = request.data.get('delivery_type', 'IMMEDIATE')
@@ -205,7 +206,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 delivery_notes=delivery_notes,
                 immediate_lines=immediate_lines,
                 payment_type=payment_type,
-                line_files=line_files # Pass line-specific files
+                line_files=line_files,
+                pos_session_id=pos_session_id
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
@@ -215,6 +217,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             import traceback
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
