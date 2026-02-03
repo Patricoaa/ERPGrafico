@@ -434,9 +434,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Descripción / Título</FormLabel>
+                                        <FormLabel className="{FORM_STYLES.label}">Descripción / Título</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ej: Impresión Folletos 1000u" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
+                                            <Input placeholder="Ej: Impresión Folletos 1000u" className="{FORM_STYLES.input} focus-visible:ring-primary" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -472,7 +472,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                         name="sale_order"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nota de Venta (Opcional)</FormLabel>
+                                                <FormLabel className="{FORM_STYLES.label}">Nota de Venta (Opcional)</FormLabel>
                                                 <FormControl>
                                                     <AdvancedSaleOrderSelector
                                                         value={field.value}
@@ -653,14 +653,14 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                     name="sale_line"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ítem de Venta a Fabricar</FormLabel>
+                                                            <FormLabel className="{FORM_STYLES.label}">Ítem de Venta a Fabricar</FormLabel>
                                                             <Select
                                                                 onValueChange={field.onChange}
                                                                 value={field.value}
                                                                 disabled={!!initialData} // Lock in Edit Mode
                                                             >
                                                                 <FormControl>
-                                                                    <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                                                    <SelectTrigger className="{FORM_STYLES.input}">
                                                                         <SelectValue placeholder="Seleccionar ítem..." />
                                                                     </SelectTrigger>
                                                                 </FormControl>
@@ -721,7 +721,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 name="start_date"
                                 render={({ field }) => (
                                     <FormItem className="flex flex-col">
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha Inicio</FormLabel>
+                                        <FormLabel className="{FORM_STYLES.label}">Fecha Inicio</FormLabel>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <FormControl>
@@ -759,7 +759,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 name="due_date"
                                 render={({ field }) => (
                                     <FormItem className="flex flex-col">
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha Entrega</FormLabel>
+                                        <FormLabel className="{FORM_STYLES.label}">Fecha Entrega</FormLabel>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <FormControl>
@@ -800,12 +800,12 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 name="product_description"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                        <FormLabel className="{FORM_STYLES.label} flex items-center gap-2">
                                             <FileText className="h-4 w-4 text-muted-foreground" />
                                             Descripción del Producto
                                         </FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ej: Trípticos 10x21cm, Papel Couche 170gr..." className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
+                                            <Input placeholder="Ej: Trípticos 10x21cm, Papel Couche 170gr..." className="{FORM_STYLES.input} focus-visible:ring-primary" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -1016,11 +1016,11 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                             name="internal_notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notas Internas (No visible para cliente)</FormLabel>
+                                    <FormLabel className="{FORM_STYLES.label}">Notas Internas (No visible para cliente)</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Observaciones para el equipo de producción..."
-                                            className="h-20 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                            className={cn(FORM_STYLES.input, "h-20 py-2")}
                                             {...field}
                                         />
                                     </FormControl>
@@ -1047,3 +1047,4 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         </Dialog >
     )
 }
+

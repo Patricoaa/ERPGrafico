@@ -11,6 +11,8 @@ import { ReplenishmentRuleForm } from "../ReplenishmentRuleForm"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface ProductInventoryTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -134,7 +136,7 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                             render={({ field }) => (
                                 <div className="space-y-4">
                                     {productType === 'MANUFACTURABLE' ? (
-                                        <div className="flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/20">
+                                        <div className={cn("flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/20", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <div className="flex items-center gap-2">
                                                     <FormLabel className="text-xs font-bold">Control de Inventario</FormLabel>
@@ -153,7 +155,7 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                             </div>
                                         </div>
                                     ) : (
-                                        <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50">
+                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <FormLabel className="text-xs font-bold">Controlar Stock</FormLabel>
                                                 <FormDescription className="text-[10px]">
@@ -173,7 +175,7 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                     )}
 
                                     {field.value && (
-                                        <div className="space-y-4 pt-2 border-t border-dashed mt-4 animate-in fade-in slide-in-from-top-1 bg-background/30 p-4 rounded-xl">
+                                        <div className="space-y-4 pt-2 border-t mt-4 animate-in fade-in slide-in-from-top-1 bg-background/30 p-4 rounded-xl">
                                             <FormField<ProductFormValues>
                                                 control={form.control}
                                                 name="receiving_warehouse"
@@ -224,7 +226,7 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                     )}
 
                                     {field.value && initialData && (
-                                        <div className="grid grid-cols-3 gap-2 p-3 bg-muted/20 rounded-lg border border-dashed">
+                                        <div className={cn("grid grid-cols-3 gap-2 p-3 bg-muted/20", FORM_STYLES.card)}>
                                             <div className="flex flex-col items-center bg-background rounded p-2 shadow-sm">
                                                 <span className="text-[10px] uppercase text-muted-foreground font-bold">A Mano</span>
                                                 <span className="text-lg font-bold tabular-nums">{initialData.current_stock || 0}</span>

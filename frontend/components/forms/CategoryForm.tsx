@@ -270,9 +270,9 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre</FormLabel>
+                                    <FormLabel className="{FORM_STYLES.label}">Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Insumos" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
+                                        <Input placeholder="Insumos" className="{FORM_STYLES.input} focus-visible:ring-primary" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -283,9 +283,9 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="prefix"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Siglas (Prefijo)</FormLabel>
+                                    <FormLabel className="{FORM_STYLES.label}">Siglas (Prefijo)</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ej: IMP, DIS, MER" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} value={field.value || ""} />
+                                        <Input placeholder="Ej: IMP, DIS, MER" className="{FORM_STYLES.input} focus-visible:ring-primary" {...field} value={field.value || ""} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -296,7 +296,7 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="icon"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Icono</FormLabel>
+                                    <FormLabel className="{FORM_STYLES.label}">Icono</FormLabel>
                                     <FormControl>
                                         <RichIconSelector
                                             value={field.value || "Package"}
@@ -312,10 +312,10 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="parent"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Categoría Padre (Opcional)</FormLabel>
+                                    <FormLabel className="{FORM_STYLES.label}">Categoría Padre (Opcional)</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || "__none__"}>
                                         <FormControl>
-                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                            <SelectTrigger className="{FORM_STYLES.input}">
                                                 <SelectValue placeholder="Sin padre" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -337,10 +337,10 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="asset_account"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cuenta de Activo (Inventario)</FormLabel>
+                                    <FormLabel className="{FORM_STYLES.label}">Cuenta de Activo (Inventario)</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || "none"}>
                                         <FormControl>
-                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                            <SelectTrigger className="{FORM_STYLES.input}">
                                                 <SelectValue placeholder="Seleccionar cuenta" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -362,10 +362,10 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="income_account"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cuenta de Ingresos (Ventas)</FormLabel>
+                                    <FormLabel className="{FORM_STYLES.label}">Cuenta de Ingresos (Ventas)</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || "none"}>
                                         <FormControl>
-                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                            <SelectTrigger className="{FORM_STYLES.input}">
                                                 <SelectValue placeholder="Seleccionar cuenta" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -387,10 +387,10 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             name="expense_account"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cuenta de Gastos (Costo)</FormLabel>
+                                    <FormLabel className="{FORM_STYLES.label}">Cuenta de Gastos (Costo)</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || "none"}>
                                         <FormControl>
-                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                            <SelectTrigger className="{FORM_STYLES.input}">
                                                 <SelectValue placeholder="Seleccionar cuenta" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -425,3 +425,4 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
         </Dialog>
     )
 }
+

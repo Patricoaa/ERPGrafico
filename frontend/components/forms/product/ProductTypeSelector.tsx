@@ -2,6 +2,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface ProductTypeSelectorProps {
     form: UseFormReturn<ProductFormValues>
@@ -15,7 +16,7 @@ export function ProductTypeSelector({ form, disabled, lockedType }: ProductTypeS
             name="product_type"
             render={({ field }) => (
                 <FormItem className="space-y-4">
-                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tipo de Producto</FormLabel>
+                    <FormLabel className={FORM_STYLES.label}>Tipo de Producto</FormLabel>
                     <FormControl>
                         <RadioGroup
                             onValueChange={(val) => {

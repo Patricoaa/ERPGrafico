@@ -24,6 +24,8 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
+import { cn } from "@/lib/utils"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface SaleNoteModalProps {
     open: boolean
@@ -150,9 +152,9 @@ export function SaleNoteModal({
                 <div className="space-y-6 py-6">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tipo de Nota</Label>
+                            <Label className={FORM_STYLES.label}>Tipo de Nota</Label>
                             <Select value={noteType} onValueChange={(val: any) => setNoteType(val)}>
-                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                <SelectTrigger className={FORM_STYLES.input}>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -163,11 +165,10 @@ export function SaleNoteModal({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="doc_num" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">N° de Folio / Documento</Label>
+                            <Label className={FORM_STYLES.label}>Número Documento</Label>
                             <Input
-                                id="doc_num"
-                                placeholder="Ej: 8823"
-                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                placeholder="Ej: NC-12345"
+                                className={FORM_STYLES.input}
                                 value={documentNumber}
                                 onChange={(e) => setDocumentNumber(e.target.value)}
                             />
@@ -239,11 +240,11 @@ export function SaleNoteModal({
 
                     <div className="flex justify-between items-start gap-8">
                         <div className="flex-1 space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Adjuntar Documento (Opcional)</Label>
+                            <Label className={FORM_STYLES.label}>Adjuntar Documento (Opcional)</Label>
                             <Input
                                 type="file"
                                 onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                                className="cursor-pointer text-xs h-10 rounded-xl border-dashed bg-background"
+                                className={cn(FORM_STYLES.input, "cursor-pointer h-10")}
                             />
                             {attachment && (
                                 <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
@@ -252,7 +253,7 @@ export function SaleNoteModal({
                             )}
                         </div>
 
-                        <div className="w-64 p-4 bg-card/50 rounded-2xl border border-dashed space-y-2">
+                        <div className={FORM_STYLES.card + " w-64 space-y-2"}>
                             <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
                                 <span>Neto:</span>
                                 <span>{formatCurrency(amountNet)}</span>

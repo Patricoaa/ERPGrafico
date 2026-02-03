@@ -1,6 +1,7 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { FORM_STYLES } from "@/lib/styles"
 import { Info } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
@@ -125,7 +126,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                     <Input
                                         type="number"
                                         step="1"
-                                        className="pl-8 h-10 bg-transparent border-none shadow-none rounded-xl font-black text-xl transition-all focus-visible:ring-primary"
+                                        className={cn(FORM_STYLES.input, "pl-8 h-10 bg-transparent border-none shadow-none rounded-xl font-black text-xl transition-all focus-visible:ring-primary")}
                                         {...field}
                                         onChange={handleNetChange}
                                         disabled={isDynamicPricing}
@@ -138,12 +139,10 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                 />
 
                 <div className={cn("space-y-0.5 p-3 rounded-xl border bg-background", isDynamicPricing && "opacity-50")}>
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">IVA (19%)</Label>
-                    <div className="h-10 flex items-center px-3 rounded-xl bg-background/50 border border-dashed font-mono text-lg font-bold text-muted-foreground">
+                    <div className="h-10 flex items-center px-3 rounded-xl bg-background/50 border font-mono text-lg font-bold text-muted-foreground">
                         {formatCurrency(salePriceGross - salePrice)}
                     </div>
                 </div>
-                破
                 <FormField<ProductFormValues>
                     control={form.control}
                     name="sale_price_gross"

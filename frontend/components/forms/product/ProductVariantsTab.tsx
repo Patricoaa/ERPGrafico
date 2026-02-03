@@ -11,6 +11,8 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -158,7 +160,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant }: Product
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                 {/* Left: Generator */}
                 <div className="md:col-span-4 space-y-6">
-                    <div className="p-6 rounded-2xl border bg-card/50 space-y-6">
+                    <div className={cn("space-y-6", FORM_STYLES.card)}>
                         <div className="flex items-center gap-3 border-b pb-4">
                             <div className="p-2 rounded-lg bg-primary/10">
                                 <RefreshCw className="h-5 w-5 text-primary" />
@@ -169,7 +171,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant }: Product
                         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
                             {availableAttributes.map(attr => (
                                 <div key={attr.id} className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">{attr.name}</Label>
+                                    <Label className={FORM_STYLES.label}>{attr.name}</Label>
                                     <div className="grid grid-cols-2 gap-2">
                                         {attr.values.map(val => (
                                             <div key={val.id} className="flex items-center space-x-2 p-2 rounded-lg border bg-background/50">

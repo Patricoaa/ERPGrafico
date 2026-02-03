@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 import { Info, Plus, Pencil, Trash2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -19,7 +21,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
     return (
         <TabsContent value="pricing" className="mt-0">
             <div className="space-y-4">
-                <div className="flex items-center justify-between bg-muted/30 p-4 rounded-xl border">
+                <div className={cn("flex items-center justify-between p-4 rounded-xl border bg-muted/30", FORM_STYLES.card)}>
                     <div className="flex gap-4 items-center">
                         <div className="p-2 rounded-lg bg-primary/10">
                             <Info className="h-5 w-5 text-primary" />

@@ -13,6 +13,8 @@ import { BOMManager } from "@/components/production/BOMManager"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
 interface ProductManufacturingTabProps {
@@ -124,7 +126,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     const shouldDisable = isExpress && !hasVariants
 
                                     return (
-                                        <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
+                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <FormLabel className="font-bold">Posee Receta (BOM)</FormLabel>
                                                 <FormDescription className="text-[10px]">
@@ -151,7 +153,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                 name="has_variants"
                                 render={({ field }) => (
                                     !variantMode ? (
-                                        <FormItem className="flex items-center justify-between p-4 rounded-xl border bg-background/50 border-dashed">
+                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <FormLabel className="font-bold">Posee Variantes</FormLabel>
                                                 <FormDescription className="text-[10px]">
@@ -322,7 +324,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        className="rounded-xl font-bold gap-2"
+                                        className={cn(FORM_STYLES.input, "font-bold gap-2")}
                                         onClick={() => appendBom({ name: `Receta ${bomFields.length + 1}`, active: bomFields.length === 0, lines: [] })}
                                     >
                                         <Plus className="h-4 w-4" /> Nueva lista de materiales
@@ -379,9 +381,9 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
 
     return (
         <div className={cn(
-            "rounded-xl border transition-all duration-200",
-            isActive ? "border-primary/50 bg-primary/[0.02]" : "bg-background shadow-sm hover:border-muted-foreground/30"
-        )}>
+            cn("rounded-xl border transition-all duration-200",
+                isActive ? "border-primary/50 bg-primary/[0.02]" : "bg-background shadow-sm hover:border-muted-foreground/30"
+            )}>
             <div className="p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 shrink-0">
                     <Button

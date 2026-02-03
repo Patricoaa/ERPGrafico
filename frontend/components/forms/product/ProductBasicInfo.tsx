@@ -6,6 +6,8 @@ import { Plus, ShoppingCart, Truck } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Switch } from "@/components/ui/switch"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface ProductBasicInfoProps {
     form: UseFormReturn<ProductFormValues>
@@ -25,7 +27,7 @@ export function ProductIdentitySection({ form, isEditing }: { form: UseFormRetur
                             name="internal_code"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary/70">ID Interno</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>ID Interno</FormLabel>
                                     <FormControl>
                                         <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-xl border border-primary/20">
                                             <Plus className="h-3 w-3 text-primary" />
@@ -48,12 +50,12 @@ export function ProductIdentitySection({ form, isEditing }: { form: UseFormRetur
                         name="name"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre del Producto</FormLabel>
+                                <FormLabel className={FORM_STYLES.label}>Nombre del Producto</FormLabel>
                                 <FormControl>
                                     <Input
                                         placeholder="Ej: Camiseta de Algodón Premium"
                                         {...field}
-                                        className="h-10 text-lg font-bold bg-background rounded-xl border-dashed focus-visible:ring-primary shadow-sm"
+                                        className={cn(FORM_STYLES.input, "text-lg font-bold shadow-sm")}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -68,9 +70,9 @@ export function ProductIdentitySection({ form, isEditing }: { form: UseFormRetur
                         name="code"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">SKU / Código EAN</FormLabel>
+                                <FormLabel className={FORM_STYLES.label}>SKU / Código EAN</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ej: 100000001" {...field} className="h-10 font-bold bg-background rounded-xl border-dashed" />
+                                    <Input placeholder="Ej: 100000001" {...field} className={cn(FORM_STYLES.input, "font-bold")} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -99,7 +101,7 @@ export function ProductCategorizationSection({ form, categories, isEditing, onAd
                         <div className="flex gap-2">
                             <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
                                 <FormControl>
-                                    <SelectTrigger className="flex-1 rounded-xl h-11 bg-background border-dashed">
+                                    <SelectTrigger className={FORM_STYLES.input}>
                                         <SelectValue placeholder="Seleccionar categoría" />
                                     </SelectTrigger>
                                 </FormControl>

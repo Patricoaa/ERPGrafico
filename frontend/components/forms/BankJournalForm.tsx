@@ -30,6 +30,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { ActivitySidebar } from "../audit/ActivitySidebar"
+import { FORM_STYLES } from "@/lib/styles"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -139,9 +141,9 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Banco Estado" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
+                                        <Input placeholder="Banco Estado Cta Cte" className={FORM_STYLES.input} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -152,9 +154,9 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             name="code"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Código Interno</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="BNK-01" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
+                                        <Input placeholder="BEST-CTE" className={FORM_STYLES.input} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -165,10 +167,10 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             name="currency"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Moneda</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Moneda</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                            <SelectTrigger className={FORM_STYLES.input}>
                                                 <SelectValue placeholder="Seleccione moneda" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -187,10 +189,13 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             name="account"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cuenta Contable (Activo)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormLabel className={FORM_STYLES.label}>Cuenta Contable</FormLabel>
+                                    <Select
+                                        onValueChange={(val) => field.onChange(parseInt(val))}
+                                        value={field.value ? field.value.toString() : undefined}
+                                    >
                                         <FormControl>
-                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                            <SelectTrigger className={FORM_STYLES.input}>
                                                 <SelectValue placeholder="Seleccionar cuenta contable" />
                                             </SelectTrigger>
                                         </FormControl>

@@ -25,6 +25,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface PurchaseOrderLine {
     id: number
@@ -238,12 +239,12 @@ export function ReceiptModal({
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="warehouse" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Bodega de {isRefund ? 'Salida' : 'Recepción'}</Label>
+                            <Label htmlFor="warehouse" className={FORM_STYLES.label}>Bodega de {isRefund ? 'Salida' : 'Recepción'}</Label>
                             <Select
                                 value={selectedWarehouse?.toString() || ''}
                                 onValueChange={(val) => setSelectedWarehouse(Number(val))}
                             >
-                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                <SelectTrigger className={FORM_STYLES.input}>
                                     <SelectValue placeholder="Seleccione bodega" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -256,11 +257,11 @@ export function ReceiptModal({
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="receipt-date" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha de {isRefund ? 'Devolución' : 'Recepción'}</Label>
+                            <Label htmlFor="receipt-date" className={FORM_STYLES.label}>Fecha de {isRefund ? 'Devolución' : 'Recepción'}</Label>
                             <Input
                                 id="receipt-date"
                                 type="date"
-                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                className={FORM_STYLES.input}
                                 value={receiptDate}
                                 onChange={(e) => setReceiptDate(e.target.value)}
                             />
@@ -269,21 +270,21 @@ export function ReceiptModal({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="delivery-reference" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Referencia (Guía/Comprobante)</Label>
+                            <Label htmlFor="delivery-reference" className={FORM_STYLES.label}>Referencia (Guía/Comprobante)</Label>
                             <Input
                                 id="delivery-reference"
                                 placeholder="Ej: GD-12345"
-                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                className={FORM_STYLES.input}
                                 value={deliveryReference}
                                 onChange={(e) => setDeliveryReference(e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notas / Observaciones</Label>
+                            <Label htmlFor="notes" className={FORM_STYLES.label}>Notas / Observaciones</Label>
                             <Input
                                 id="notes"
                                 placeholder="Mercadería recibida en buen estado..."
-                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                className={FORM_STYLES.input}
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                             />

@@ -7,7 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useEffect } from "react"
 import { z } from "zod"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import api from "@/lib/api"
+import { ActivitySidebar } from "../audit/ActivitySidebar"
+import { FORM_STYLES } from "@/lib/styles"
 
 const ruleSchema = z.object({
     id: z.number().optional(),
@@ -87,10 +89,10 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                                 name="warehouse"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Almacén</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormLabel className={FORM_STYLES.label}>Bodega</FormLabel>
+                                        <Select onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString() || ""}>
                                             <FormControl>
-                                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                                <SelectTrigger className={FORM_STYLES.input}>
                                                     <SelectValue placeholder="Seleccione almacén" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -112,12 +114,12 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                                     name="min_quantity"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cantidad Mínima</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Cantidad Mínima</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     type="number"
                                                     step="0.0001"
-                                                    className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                                    className={FORM_STYLES.input}
                                                     {...field}
                                                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                 />
@@ -131,12 +133,13 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                                     name="max_quantity"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cantidad Máxima</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Cantidad Máxima</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     type="number"
+                                                    placeholder="100"
                                                     step="0.0001"
-                                                    className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                                    className={FORM_STYLES.input}
                                                     {...field}
                                                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                 />

@@ -7,6 +7,7 @@ import { useEffect } from "react"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface ProductUoMTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -66,7 +67,7 @@ export function ProductUoMTab({ form, uoms, canBeSold, canBePurchased }: Product
         <TabsContent value="uoms" className="mt-0 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                    <div className="p-6 rounded-2xl border bg-card/50">
+                    <div className={FORM_STYLES.card}>
                         <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
                             <Package className="h-4 w-4" />
                             Unidades de Medida Básicas
@@ -148,7 +149,7 @@ export function ProductUoMTab({ form, uoms, canBeSold, canBePurchased }: Product
 
                 <div className="space-y-6">
                     {canBeSold && ['STORABLE', 'MANUFACTURABLE', 'SERVICE', 'CONSUMABLE', 'SUBSCRIPTION'].includes(productType) && (
-                        <div className="p-6 rounded-2xl border bg-card/50 space-y-8">
+                        <div className={cn("space-y-8", FORM_STYLES.card)}>
                             {/* 1. Permitted Units Selection */}
                             <div className="space-y-4">
                                 <h3 className="text-sm font-bold flex items-center gap-2">

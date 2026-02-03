@@ -26,6 +26,7 @@ import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface SaleOrderLine {
     id: number
@@ -349,12 +350,12 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="warehouse" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Bodega de Despacho</Label>
+                            <Label htmlFor="warehouse" className={FORM_STYLES.label}>Bodega de Despacho</Label>
                             <Select
                                 value={selectedWarehouse?.toString() || ''}
                                 onValueChange={(val) => setSelectedWarehouse(Number(val))}
                             >
-                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                <SelectTrigger className={FORM_STYLES.input}>
                                     <SelectValue placeholder="Seleccione bodega" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -367,11 +368,11 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="delivery-date" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha de Despacho</Label>
+                            <Label htmlFor="delivery-date" className={FORM_STYLES.label}>Fecha de Despacho</Label>
                             <Input
                                 id="delivery-date"
                                 type="date"
-                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                className={FORM_STYLES.input}
                                 value={deliveryDate}
                                 onChange={(e) => setDeliveryDate(e.target.value)}
                             />
