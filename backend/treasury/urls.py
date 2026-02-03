@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    PaymentViewSet, TreasuryAccountViewSet,
+    PaymentViewSet, TreasuryAccountViewSet, POSTerminalViewSet,
     BankStatementViewSet, BankStatementLineViewSet,
     ReconciliationRuleViewSet, ReconciliationReportsViewSet,
     CardBillingViewSet, POSSessionViewSet
@@ -11,6 +11,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'payments', PaymentViewSet)
 router.register(r'accounts', TreasuryAccountViewSet)
+router.register(r'pos-terminals', POSTerminalViewSet)
 router.register(r'statements', BankStatementViewSet)
 router.register(r'statement-lines', BankStatementLineViewSet)
 router.register(r'reconciliation-rules', ReconciliationRuleViewSet)

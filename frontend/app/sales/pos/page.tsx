@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Info, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Info, ChevronLeft, ChevronRight, BarChart3 } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -21,7 +21,7 @@ import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { SalesCheckoutWizard } from "@/components/sales/SalesCheckoutWizard"
-import { SessionControl } from "@/components/pos/SessionControl"
+import { SessionControl, SessionControlHandle } from "@/components/pos/SessionControl"
 import { Badge } from "@/components/ui/badge"
 import {
     Select,
@@ -141,6 +141,8 @@ export default function POSPage() {
 
     // Live recalculation state
     const [limits, setLimits] = useState<Record<string, number>>({}) // Keyed by cartItemId or productID (prefix?)
+
+    const sessionControlRef = useRef<SessionControlHandle>(null)
 
 
 
@@ -791,6 +793,10 @@ export default function POSPage() {
                                 <Save className="mr-2 h-4 w-4" />
                                 <span>Ver Borradores</span>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}>
+                                <BarChart3 className="mr-2 h-4 w-4" />
+                                <span>Reporte X (Parcial)</span>
+                            </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                                 <a href="/sales/orders" className="cursor-pointer flex items-center">
                                     <FileText className="mr-2 h-4 w-4" />
@@ -802,6 +808,7 @@ export default function POSPage() {
 
                     {/* Session Close Button */}
                     <SessionControl
+                        ref={sessionControlRef}
                         onSessionChange={setCurrentSession}
                         hideSessionInfo={true}
                     />
@@ -833,7 +840,7 @@ export default function POSPage() {
                 {/* Left: Product List / Search */}
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     <Card className="flex-1 flex flex-col overflow-hidden shadow-none bg-muted/20 border">
-                        <CardHeader className="pb-3 px-4 border-b bg-background/50 rounded-t-xl">
+                        <CardHeader className="pb-3 px-6 border-b bg-background/50 rounded-t-xl">
                             <div className="flex flex-col gap-4">
                                 <div className="relative">
                                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -891,11 +898,11 @@ export default function POSPage() {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-auto pt-4">
+                        <CardContent className="flex-1 overflow-auto p-6 pt-4">
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {filteredProducts.map(product => {
                                     const categoryId = typeof product.category === 'object' ? product.category?.id : product.category
-                                    const catData = categories.find(c => c.id === categoryId)
+                                    const catData = categories.find(c => Number(c.id) === Number(categoryId))
                                     const categoryIcon = (typeof product.category === 'object' ? product.category?.icon : catData?.icon) || null
 
                                     return (
@@ -988,7 +995,7 @@ export default function POSPage() {
                 <div className="md:col-span-12 lg:col-span-5 flex flex-col min-h-0 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden border">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                            <div className="p-4 border-b font-medium bg-muted/50 flex justify-between items-center">
+                            <div className="p-4 px-6 border-b font-medium bg-muted/50 flex justify-between items-center">
                                 <span>Resumen de Venta</span>
                                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{items.length} items</span>
                             </div>

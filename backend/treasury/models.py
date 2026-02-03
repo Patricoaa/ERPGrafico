@@ -232,6 +232,72 @@ class TreasuryAccount(models.Model):
         return f"{self.name} ({self.currency})"
 
 
+class POSTerminal(models.Model):
+    """
+    Represents a physical POS terminal (point of sale hardware/software).
+    Separate from TreasuryAccount to avoid conceptual confusion.
+    """
+    name = models.CharField(
+        _("Nombre del Terminal"),
+        max_length=100,
+        help_text=_("Ej: 'Caja 1', 'Mostrador Principal', 'Terminal Móvil'")
+    )
+    code = models.CharField(
+        _("Código"),
+        max_length=20,
+        unique=True,
+        help_text=_("Identificador único del terminal")
+    )
+    location = models.CharField(
+        _("Ubicación"),
+        max_length=200,
+        blank=True,
+        help_text=_("Ubicación física del terminal")
+    )
+    is_active = models.BooleanField(_("Activo"), default=True)
+    
+    # Default treasury account for this terminal
+    default_treasury_account = models.ForeignKey(
+        'TreasuryAccount',
+        on_delete=models.PROTECT,
+        related_name='default_for_terminals',
+        verbose_name=_("Cuenta de Tesorería por Defecto"),
+        help_text=_("Cuenta donde se registran las operaciones de este terminal")
+    )
+    
+    # Payment methods allowed on this terminal
+    allowed_payment_methods = models.JSONField(
+        _("Métodos de Pago Permitidos"),
+        default=list,
+        help_text=_("Lista de métodos permitidos: ['CASH', 'CARD', 'TRANSFER']")
+    )
+    
+    # Hardware information (optional)
+    serial_number = models.CharField(
+        _("Número de Serie"),
+        max_length=100,
+        blank=True
+    )
+    ip_address = models.GenericIPAddressField(
+        _("Dirección IP"),
+        null=True,
+        blank=True
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = _("Terminal POS")
+        verbose_name_plural = _("Terminales POS")
+        ordering = ['code']
+    
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
 class BankStatement(models.Model):
     """Cartola bancaria importada"""
     
@@ -744,12 +810,26 @@ class POSSession(models.Model):
         CLOSING = 'CLOSING', _('En Cierre')
         CLOSED = 'CLOSED', _('Cerrada')
     
+    # New: Terminal reference (replaces direct treasury_account)
+    terminal = models.ForeignKey(
+        'POSTerminal',
+        on_delete=models.PROTECT,
+        null=True,  # Allow null during migration
+        blank=True,
+        related_name='sessions',
+        verbose_name=_("Terminal POS"),
+        help_text=_("Terminal donde se realizó esta sesión")
+    )
+    
+    # Legacy: Keep for retrocompatibility during migration
     treasury_account = models.ForeignKey(
         'TreasuryAccount',
         on_delete=models.PROTECT,
+        null=True,  # Now nullable
+        blank=True,
         related_name='pos_sessions',
-        verbose_name=_("Caja"),
-        help_text=_("Cuenta de tesorería (caja) asociada a esta sesión")
+        verbose_name=_("Caja (Legacy)"),
+        help_text=_("DEPRECATED: Use terminal.default_treasury_account")
     )
     
     user = models.ForeignKey(

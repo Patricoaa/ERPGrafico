@@ -1,11 +1,13 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Payment, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule
+from .models import (Payment, TreasuryAccount, BankStatement, BankStatementLine, 
+                     ReconciliationRule, POSTerminal)
 from .serializers import (
     PaymentSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
-    BankStatementLineSerializer, ReconciliationRuleSerializer
+    BankStatementLineSerializer, ReconciliationRuleSerializer,
+    POSTerminalSerializer
 )
 from .services import TreasuryService
 from .reconciliation_service import ReconciliationService
@@ -21,6 +23,25 @@ from core.views import AuditHistoryMixin
 class TreasuryAccountViewSet(viewsets.ModelViewSet):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
     serializer_class = TreasuryAccountSerializer
+
+
+class POSTerminalViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing POS Terminals.
+    Supports filtering by active status via `?active_only=true` query param.
+    """
+    queryset = POSTerminal.objects.select_related('default_treasury_account').all()
+    serializer_class = POSTerminalSerializer
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        
+        # Filter by active status if requested
+        if self.request.query_params.get('active_only') == 'true':
+            qs = qs.filter(is_active=True)
+        
+        return qs.order_by('code')
+
 
 class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Payment.objects.all().order_by('-date', '-created_at')
@@ -694,14 +715,12 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     def open_session(self, request):
         """Open a new POS session (Abrir Caja)"""
         try:
-            from .models import POSSession
+            from .models import POSSession, POSTerminal
             from decimal import Decimal
             
-            treasury_account_id = request.data.get('treasury_account_id')
+            terminal_id = request.data.get('terminal_id')
+            treasury_account_id = request.data.get('treasury_account_id')  # Legacy fallback
             opening_balance = Decimal(str(request.data.get('opening_balance', '0')))
-            
-            if not treasury_account_id:
-                return Response({'error': 'Debe seleccionar una caja'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Check if user already has an open session
             existing = POSSession.objects.filter(user=request.user, status='OPEN').first()
@@ -711,20 +730,52 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                     'session_id': existing.id
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Create new session
-            treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
-            session = POSSession.objects.create(
-                treasury_account=treasury_account,
-                user=request.user,
-                opening_balance=opening_balance,
-                status='OPEN'
-            )
+            # New flow: Use terminal
+            if terminal_id:
+                try:
+                    terminal = POSTerminal.objects.select_related('default_treasury_account').get(
+                        id=terminal_id,
+                        is_active=True
+                    )
+                except POSTerminal.DoesNotExist:
+                    return Response({
+                        'error': 'Terminal no encontrado o inactivo'
+                    }, status=status.HTTP_404_NOT_FOUND)
+                
+                # Create session with terminal
+                session = POSSession.objects.create(
+                    terminal=terminal,
+                    treasury_account=terminal.default_treasury_account,  # Maintain legacy field
+                    user=request.user,
+                    opening_balance=opening_balance,
+                    status='OPEN'
+                )
+            
+            # Legacy flow: Direct treasury account (deprecated)
+            elif treasury_account_id:
+                try:
+                    treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
+                except TreasuryAccount.DoesNotExist:
+                    return Response({
+                        'error': 'Caja no encontrada'
+                    }, status=status.HTTP_404_NOT_FOUND)
+                
+                session = POSSession.objects.create(
+                    treasury_account=treasury_account,
+                    terminal=None,  # No terminal in legacy mode
+                    user=request.user,
+                    opening_balance=opening_balance,
+                    status='OPEN'
+                )
+            
+            else:
+                return Response({
+                    'error': 'Debe especificar terminal_id o treasury_account_id'
+                }, status=status.HTTP_400_BAD_REQUEST)
             
             from .serializers import POSSessionSerializer
             return Response(POSSessionSerializer(session).data, status=status.HTTP_201_CREATED)
         
-        except TreasuryAccount.DoesNotExist:
-            return Response({'error': 'Caja no encontrada'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             import traceback
             traceback.print_exc()

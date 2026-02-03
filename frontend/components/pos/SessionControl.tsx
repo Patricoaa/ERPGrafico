@@ -27,12 +27,17 @@ import { Loader2, Lock, Unlock, Calculator, Banknote, CreditCard, ArrowRightLeft
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { POSReport } from "@/components/pos/POSReport"
+import { forwardRef, useImperativeHandle } from "react"
 
-interface TreasuryAccount {
+interface POSTerminal {
     id: number
     name: string
-    account_type: string
-    allows_cash: boolean
+    code: string
+    location: string
+    is_active: boolean
+    default_treasury_account: number
+    default_treasury_account_name: string
+    allowed_payment_methods: string[]
 }
 
 interface POSSession {
@@ -57,7 +62,11 @@ interface SessionControlProps {
     hideSessionInfo?: boolean
 }
 
-export function SessionControl({ onSessionChange, hideSessionInfo = false }: SessionControlProps) {
+export interface SessionControlHandle {
+    showXReport: () => void
+}
+
+export const SessionControl = forwardRef<SessionControlHandle, SessionControlProps>(({ onSessionChange, hideSessionInfo = false }, ref) => {
     const [currentSession, setCurrentSession] = useState<POSSession | null>(null)
     const [loading, setLoading] = useState(true)
     const [openDialogOpen, setOpenDialogOpen] = useState(false)
@@ -65,11 +74,11 @@ export function SessionControl({ onSessionChange, hideSessionInfo = false }: Ses
     const [reportDialogOpen, setReportDialogOpen] = useState(false)
     const [reportData, setReportData] = useState<any>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
-    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
+    const [terminals, setTerminals] = useState<POSTerminal[]>([])
     const [availableSessions, setAvailableSessions] = useState<POSSession[]>([])
 
     // Open session form state
-    const [selectedAccountId, setSelectedAccountId] = useState<string>("")
+    const [selectedTerminalId, setSelectedTerminalId] = useState<string>("")
     const [openingBalance, setOpeningBalance] = useState<string>("0")
 
     // Shared session selection
@@ -82,6 +91,16 @@ export function SessionControl({ onSessionChange, hideSessionInfo = false }: Ses
     const [submitting, setSubmitting] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
 
+    useImperativeHandle(ref, () => ({
+        showXReport: () => {
+            if (currentSession) {
+                handleShowXReport()
+            } else {
+                toast.error("No hay una sesión activa para generar el reporte")
+            }
+        }
+    }))
+
     // Fetch current session on mount (or shared session)
     useEffect(() => {
         const storedSharedId = localStorage.getItem('shared_pos_session_id')
@@ -90,7 +109,7 @@ export function SessionControl({ onSessionChange, hideSessionInfo = false }: Ses
         } else {
             fetchCurrentSession()
         }
-        fetchAccounts()
+        fetchTerminals()
     }, [])
 
     const fetchSharedSession = async (id: number) => {
@@ -132,15 +151,14 @@ export function SessionControl({ onSessionChange, hideSessionInfo = false }: Ses
         }
     }
 
-    const fetchAccounts = async () => {
+    const fetchTerminals = async () => {
         try {
-            const response = await api.get('/treasury/accounts/')
+            const response = await api.get('/treasury/pos-terminals/?active_only=true')
             const results = response.data.results || response.data
-            // Filter to cash-enabled accounts
-            const cashAccounts = results.filter((a: TreasuryAccount) => a.allows_cash)
-            setAccounts(cashAccounts)
+            setTerminals(results)
         } catch (error) {
-            console.error("Error fetching accounts:", error)
+            console.error("Error fetching terminals:", error)
+            toast.error("Error al cargar terminales")
         }
     }
 
@@ -162,15 +180,15 @@ export function SessionControl({ onSessionChange, hideSessionInfo = false }: Ses
     }, [openDialogOpen])
 
     const handleOpenSession = async () => {
-        if (!selectedAccountId) {
-            toast.error("Debe seleccionar una caja")
+        if (!selectedTerminalId) {
+            toast.error("Debe seleccionar un terminal")
             return
         }
 
         setSubmitting(true)
         try {
             const response = await api.post('/treasury/pos-sessions/open_session/', {
-                treasury_account_id: parseInt(selectedAccountId),
+                terminal_id: parseInt(selectedTerminalId),
                 opening_balance: parseFloat(openingBalance) || 0
             })
 
@@ -260,7 +278,22 @@ export function SessionControl({ onSessionChange, hideSessionInfo = false }: Ses
         }
     }
 
-    /* handleShowXReport removed as per user request to remove from POS view */
+    const handleShowXReport = async () => {
+        if (!currentSession) return
+
+        setLoading(true)
+        try {
+            const response = await api.get(`/treasury/pos-sessions/${currentSession.id}/summary/`)
+            setReportData(response.data)
+            setReportType("X")
+            setReportDialogOpen(true)
+        } catch (error) {
+            console.error("Error fetching X Report:", error)
+            toast.error("Error al generar el reporte parcial")
+        } finally {
+            setLoading(false)
+        }
+    }
 
     if (loading) {
         return (
@@ -304,17 +337,28 @@ export function SessionControl({ onSessionChange, hideSessionInfo = false }: Ses
 
                             <TabsContent value="new" className="space-y-4 py-4">
                                 <div className="space-y-2">
-                                    <Label>Seleccionar Caja Física</Label>
-                                    <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                                    <Label>Seleccionar Terminal POS</Label>
+                                    <Select value={selectedTerminalId} onValueChange={setSelectedTerminalId}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Seleccione una caja..." />
+                                            <SelectValue placeholder="Seleccione un terminal..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {accounts.map((account) => (
-                                                <SelectItem key={account.id} value={account.id.toString()}>
-                                                    {account.name}
-                                                </SelectItem>
-                                            ))}
+                                            {terminals.length === 0 ? (
+                                                <div className="p-4 text-sm text-center text-muted-foreground">
+                                                    No hay terminales activos disponibles
+                                                </div>
+                                            ) : (
+                                                terminals.map((terminal) => (
+                                                    <SelectItem key={terminal.id} value={terminal.id.toString()}>
+                                                        <div className="flex flex-col">
+                                                            <span>{terminal.name}</span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {terminal.code} • {terminal.default_treasury_account_name}
+                                                            </span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -551,4 +595,6 @@ export function SessionControl({ onSessionChange, hideSessionInfo = false }: Ses
             </Dialog>
         </>
     )
-}
+})
+
+SessionControl.displayName = "SessionControl"
