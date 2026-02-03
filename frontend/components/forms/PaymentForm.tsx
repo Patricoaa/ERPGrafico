@@ -166,10 +166,10 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name="payment_type"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Tipo de Pago</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tipo de Pago</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                     <SelectValue placeholder="Seleccione tipo" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -190,10 +190,10 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name="payment_method"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Método</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Método</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                     <SelectValue placeholder="Seleccione método" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -215,7 +215,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name="treasury_account"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Cuenta (Opcional)</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cuenta (Opcional)</FormLabel>
                                         <FormControl>
                                             <TreasuryAccountSelector
                                                 value={field.value}
@@ -237,7 +237,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name={paymentType === "INBOUND" ? "customer_id" : "supplier_id"}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Proveedor/Cliente</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Proveedor/Cliente</FormLabel>
                                         <FormControl>
                                             <AdvancedContactSelector
                                                 value={field.value === "__none__" ? "" : field.value}
@@ -257,10 +257,10 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                     name="invoice_id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Factura (Opcional)</FormLabel>
+                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Factura (Opcional)</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value || "__none__"}>
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                         <SelectValue placeholder="Seleccione..." />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -285,11 +285,12 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                             name="amount"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Monto</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Monto</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="number"
                                             step="0.01"
+                                            className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                             {...field}
                                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                         />
@@ -304,9 +305,9 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                             name="reference"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Referencia / N° Operación</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Referencia / N° Operación</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ej: Transf #12345" {...field} />
+                                        <Input placeholder="Ej: Transf #12345" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

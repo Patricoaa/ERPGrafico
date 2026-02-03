@@ -367,7 +367,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-medium">Líneas de Venta</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Líneas de Venta</h3>
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -379,7 +379,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                 </Button>
                             </div>
 
-                            <div className="rounded-md border">
+                            <div className="rounded-2xl border border-dashed">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>

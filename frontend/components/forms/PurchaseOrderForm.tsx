@@ -217,7 +217,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium">Líneas de Compra</h3>
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Líneas de Compra</h3>
                             <Button
                                 type="button"
                                 variant="outline"
@@ -229,7 +229,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                             </Button>
                         </div>
 
-                        <div className="rounded-md border">
+                        <div className="rounded-2xl border border-dashed">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -349,11 +349,11 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Notas / Observaciones</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notas / Observaciones</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Notas adicionales..."
-                                            className="resize-none h-24"
+                                            className="resize-none h-24 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                             {...field}
                                         />
                                     </FormControl>
