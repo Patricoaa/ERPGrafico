@@ -189,14 +189,38 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             cell: ({ row }) => {
                 const state = row.getValue("reconciliation_state") as string
                 let variant: any = 'secondary'
-                if (state === 'MATCHED' || state === 'RECONCILED') variant = 'success'
-                if (state === 'DISPUTED') variant = 'destructive'
-                if (state === 'EXCLUDED') variant = 'outline'
+                let label = row.original.reconciliation_state_display
+                let tooltip = ""
+
+                if (state === 'MATCHED') {
+                    variant = 'warning'
+                    label = "Sugerencia de Match"
+                    tooltip = "Esta línea tiene un match sugerido. Revise y confirme para finalizar."
+                }
+                if (state === 'RECONCILED') {
+                    variant = 'success'
+                    label = "Conciliado"
+                    tooltip = "Confirmado y asiento contable generado."
+                }
+                if (state === 'DISPUTED') {
+                    variant = 'destructive'
+                    label = "En Disputa"
+                }
+                if (state === 'EXCLUDED') {
+                    variant = 'outline'
+                    label = "Excluido"
+                    tooltip = "Esta línea no será considerada en la conciliación."
+                }
+                if (state === 'UNRECONCILED') {
+                    label = "Sin Conciliar"
+                }
 
                 return (
-                    <DataCell.Badge variant={variant}>
-                        {row.original.reconciliation_state_display}
-                    </DataCell.Badge>
+                    <div title={tooltip}>
+                        <DataCell.Badge variant={variant}>
+                            {label}
+                        </DataCell.Badge>
+                    </div>
                 )
             },
         },
@@ -485,11 +509,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                             column: "reconciliation_state",
                             title: "Estado Reconciliación",
                             options: [
-                                { label: "Pendiente", value: "UNRECONCILED" },
-                                { label: "Reconciliado", value: "RECONCILED" },
-                                { label: "Vinculado", value: "MATCHED" },
+                                { label: "Sin Conciliar", value: "UNRECONCILED" },
+                                { label: "Conciliado", value: "RECONCILED" },
+                                { label: "Sugerencia (Match)", value: "MATCHED" },
                                 { label: "Excluido", value: "EXCLUDED" },
-                                { label: "Disputa", value: "DISPUTED" },
+                                { label: "En Disputa", value: "DISPUTED" },
                             ]
                         }
                     ]}

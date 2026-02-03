@@ -45,7 +45,7 @@ const categoryItems: Record<string, any> = {
         { title: "Materiales (BOM)", url: "/production/boms" },
     ],
     "treasury": [
-        { title: "Cajas y Bancos", url: "/treasury/accounts" },
+        { title: "Cuentas de Tesorería", url: "/treasury/accounts" },
         { title: "Contenedores Físicos", url: "/treasury/containers" },
         { title: "Trazabilidad Efectivo", url: "/treasury/movements" },
         { title: "Diferencias POS", url: "/treasury/differences" },

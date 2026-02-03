@@ -198,7 +198,7 @@ export default function CashContainersPage() {
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Contenedores de Efectivo</h2>
                     <p className="text-muted-foreground">
-                        Gestión física de cajas fuertes, cajas menores y fondos de cambio.
+                        Gestión de ubicaciones físicas de efectivo. Los contenedores rastrean dónde está el dinero, mientras que las Cuentas de Tesorería registran el valor contable.
                     </p>
                 </div>
                 <Button onClick={openCreate} className="gap-2">
@@ -230,8 +230,8 @@ export default function CashContainersPage() {
                         column: "is_active",
                         title: "Estado",
                         options: [
-                            { label: "Activo", value: true },
-                            { label: "Inactivo", value: false },
+                            { label: "Activo", value: "true" },
+                            { label: "Inactivo", value: "false" },
                         ],
                     },
                 ]}
@@ -316,7 +316,8 @@ function ContainerDialog({ open, onOpenChange, container, onSuccess }: { open: b
                 <DialogHeader>
                     <DialogTitle>{container ? "Editar Contenedor" : "Nuevo Contenedor de Efectivo"}</DialogTitle>
                     <DialogDescription>
-                        Configure los detalles del contenedor físico de dinero.
+                        Los contenedores rastrean <strong>dónde está físicamente</strong> el efectivo
+                        (cajas fuertes, gavetas, etc.) independientemente del registro contable.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
@@ -352,7 +353,7 @@ function ContainerDialog({ open, onOpenChange, container, onSuccess }: { open: b
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Caja de Tesorería Relacionada</Label>
+                        <Label>Cuenta de Tesorería Relacionada (Opcional)</Label>
                         <TreasuryAccountSelector
                             value={treasuryAccount}
                             onChange={setTreasuryAccount}
@@ -360,7 +361,9 @@ function ContainerDialog({ open, onOpenChange, container, onSuccess }: { open: b
                             placeholder="Vincular con una cuenta de tesorería..."
                         />
                         <p className="text-[10px] text-muted-foreground italic">
-                            Opcional. Permite vincular los movimientos físicos con una cuenta contable específica.
+                            <strong>Opcional</strong>: Este contenedor rastrea la <strong>ubicación física</strong> del efectivo.
+                            La vinculación con una Cuenta de Tesorería solo es necesaria si desea conectar movimientos físicos
+                            con registros contables específicos.
                         </p>
                     </div>
 

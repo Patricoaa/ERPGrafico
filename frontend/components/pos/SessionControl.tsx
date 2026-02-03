@@ -476,9 +476,18 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         variant={hideSessionInfo ? "destructive" : "ghost"}
                         size={hideSessionInfo ? "sm" : "icon"}
                         onClick={() => {
-                            // Pre-populate expected cash
-                            setActualCash(currentSession.expected_cash.toString())
-                            setCloseDialogOpen(true)
+                            // Show confirmation before allowing close (Z Report is irreversible)
+                            const confirmed = window.confirm(
+                                "⚠️ ATENCIÓN: Cerrar la sesión es IRREVERSIBLE.\n\n" +
+                                "Se generará el Reporte Z (cierre definitivo) y no podrá revertir esta acción.\n\n" +
+                                "¿Está seguro de que desea cerrar la caja?"
+                            );
+
+                            if (confirmed) {
+                                // Pre-populate expected cash
+                                setActualCash(currentSession.expected_cash.toString())
+                                setCloseDialogOpen(true)
+                            }
                         }}
                         title="Cerrar Caja"
                         className={hideSessionInfo ? "px-3 gap-2" : "text-muted-foreground hover:text-destructive"}

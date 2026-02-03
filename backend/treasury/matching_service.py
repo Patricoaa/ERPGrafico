@@ -65,9 +65,11 @@ class MatchingService:
         date_max = line.transaction_date + timedelta(days=7)
         
         # Criterios básicos: misma cuenta, no reconciliado, mismo sentido
+        # Exclude pending payments that haven't been registered in the bank yet
         base_filters = Q(
             treasury_account=line.statement.treasury_account,
             is_reconciled=False,
+            is_pending_registration=False,  # Don't suggest pending payments
             payment_type='INBOUND' if is_inbound else 'OUTBOUND'
         )
 
@@ -326,6 +328,11 @@ class MatchingService:
         for p in payments:
             if p.is_reconciled:
                  raise ValueError(f"Pago {p.id} ya reconciliado")
+            if p.is_pending_registration:
+                raise ValueError(
+                    f"Pago {p.display_id} está pendiente de registro bancario. "
+                    "No se puede reconciliar hasta que el banco confirme la transacción."
+                )
 
         # Create Group
         treasury_account = lines[0].statement.treasury_account

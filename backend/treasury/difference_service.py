@@ -234,16 +234,28 @@ class POSDifferenceService:
         
         if difference.status != 'PENDING':
             raise ValueError(f"No se puede aprobar una diferencia en estado {difference.get_status_display()}")
+        
+        # Prevent duplicate approval and journal entries
+        if difference.journal_entry:
+            raise ValueError(
+                f"Esta diferencia ya tiene un asiento contable asociado (#{difference.journal_entry.id}). "
+                "No se puede aprobar nuevamente."
+            )
             
         settings = AccountingSettings.objects.first()
         if not settings:
             raise ValueError("Configuración contable no encontrada.")
             
-        # Determine accounts
+        # Determine accounts - Prioritize terminal (new model), fallback to legacy
         session = difference.pos_session_audit.session
-        treasury_account = session.treasury_account.account if session.treasury_account else (
-            session.terminal.default_treasury_account.account if session.terminal else None
-        )
+        
+        if session.terminal and session.terminal.default_treasury_account:
+            treasury_account = session.terminal.default_treasury_account.account
+        elif session.treasury_account:
+            # Legacy fallback for backward compatibility
+            treasury_account = session.treasury_account.account
+        else:
+            treasury_account = None
         
         if not treasury_account:
             raise ValueError("No se pudo determinar la cuenta contable de tesorería para esta sesión.")
