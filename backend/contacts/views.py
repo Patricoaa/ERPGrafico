@@ -15,9 +15,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['is_default_customer', 'is_default_vendor']
-    search_fields = ['name', 'tax_id', 'email', 'contact_name']
+    search_fields = ['name', 'tax_id', 'email', 'contact_name', 'code']
     ordering_fields = ['name', 'created_at']
     ordering = ['name']
     
@@ -34,8 +34,38 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         ?type=supplier - only contacts with purchase orders
         ?type=both - contacts with both sale and purchase orders
         ?type=none - contacts without any orders
+        
+        Also implements custom RUT search normalization.
         """
         queryset = super().get_queryset()
+        
+        # Custom RUT normalization for search
+        search_param = self.request.query_params.get('search', None)
+        if search_param:
+            # Normalize the search term by removing dots, hyphens, and spaces
+            normalized_search = search_param.replace('.', '').replace('-', '').replace(' ', '')
+            
+            # Build a complex query that searches in multiple fields
+            # For tax_id, we use a database function to normalize it for comparison
+            from django.db.models.functions import Replace
+            
+            queryset = queryset.annotate(
+                normalized_tax_id=Replace(
+                    Replace(
+                        Replace('tax_id', models.Value('.'), models.Value('')),
+                        models.Value('-'), models.Value('')
+                    ),
+                    models.Value(' '), models.Value('')
+                )
+            ).filter(
+                models.Q(name__icontains=search_param) |
+                models.Q(email__icontains=search_param) |
+                models.Q(contact_name__icontains=search_param) |
+                models.Q(code__icontains=search_param) |
+                models.Q(normalized_tax_id__icontains=normalized_search)
+            )
+        
+        # Type filtering
         contact_type = self.request.query_params.get('type', None)
         
         if contact_type:

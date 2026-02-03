@@ -401,3 +401,93 @@ class SaleReturnLine(models.Model):
     def save(self, *args, **kwargs):
         self.calculate_subtotal()
         super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        self.calculate_subtotal()
+        super().save(*args, **kwargs)
+
+
+class DraftCart(models.Model):
+    """
+    Almacena borradores de carrito del POS por SESIÓN (multi-usuario).
+    Los borradores son visibles para todos los usuarios de la sesión.
+    Se eliminan al cerrar la sesión o después de 1 día.
+    """
+    # SESIÓN REQUERIDA - Borradores atados a sesiones, no a usuarios
+    pos_session = models.ForeignKey(
+        'treasury.POSSession',
+        on_delete=models.CASCADE,  # Si sesión se elimina, borradores también
+        related_name='draft_carts',
+        verbose_name=_("Sesión POS")
+    )
+    
+    # Auditoría de quién creó/modificó (para trazabilidad)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_draft_carts',
+        verbose_name=_("Creado Por")
+    )
+    
+    last_modified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='modified_draft_carts',
+        verbose_name=_("Última Modificación Por")
+    )
+    
+    # Datos del carrito
+    customer = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='draft_carts',
+        verbose_name=_("Cliente")
+    )
+    
+    name = models.CharField(
+        _("Nombre"),
+        max_length=255,
+        blank=True,
+        help_text=_("Nombre descriptivo del borrador")
+    )
+    
+    notes = models.TextField(
+        _("Notas"),
+        blank=True
+    )
+    
+    items = models.JSONField(
+        _("Items del Carrito"),
+        help_text=_("Estructura JSON con los items del carrito")
+    )
+    
+    total_net = models.DecimalField(
+        _("Total Neto"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    
+    total_gross = models.DecimalField(
+        _("Total Bruto"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    
+    # Auditoría temporal
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = _("Borrador de Carrito")
+        verbose_name_plural = _("Borradores de Carrito")
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['pos_session', '-updated_at']),
+        ]
+    
+    def __str__(self):
+        return f"Borrador #{self.id} - Sesión {self.pos_session_id} ({self.updated_at.strftime('%d/%m/%Y %H:%M')})"

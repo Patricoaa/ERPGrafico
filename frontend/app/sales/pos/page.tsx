@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Info } from "lucide-react"
+import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Info, ChevronLeft, ChevronRight } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -30,9 +30,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 import { POSVariantSelectorModal } from "@/components/pos/POSVariantSelectorModal"
-import { Edit2 } from "lucide-react"
+import { DraftCartsList } from "@/components/pos/DraftCartsList"
+import { Edit2, Save, Clock, LayoutGrid, FileText, ChevronDown } from "lucide-react"
 
 interface Product {
     id: number
@@ -109,6 +118,7 @@ export default function POSPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [loading, setLoading] = useState(false)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
+    const [draftsListOpen, setDraftsListOpen] = useState(false)
     const [categories, setCategories] = useState<Category[]>([])
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([])
@@ -116,6 +126,14 @@ export default function POSPage() {
     const [variantModalOpen, setVariantModalOpen] = useState(false)
     const [activeParentProduct, setActiveParentProduct] = useState<Product | null>(null)
     const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null)
+    const categoryScrollRef = useRef<HTMLDivElement>(null)
+
+    // Draft Cart State
+    const [currentDraftId, setCurrentDraftId] = useState<number | null>(null)
+    const [draftName, setDraftName] = useState("")
+    const [saving, setSaving] = useState(false)
+    const [lastSaved, setLastSaved] = useState<Date | null>(null)
+    const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
 
     // Stock Validation State
     const [bomCache, setBomCache] = useState<Record<number, BOM>>({})
@@ -633,6 +651,86 @@ export default function POSPage() {
         setCheckoutOpen(true)
     }
 
+    // Draft Cart Functions
+    const saveDraft = async (showToast = true, autoSaveName = false) => {
+        if (!currentSession?.id) {
+            if (showToast) toast.error("No hay sesión activa")
+            return
+        }
+
+        if (items.length === 0) {
+            if (showToast) toast.info("El carrito está vacío")
+            return
+        }
+
+        setSaving(true)
+        try {
+            const draftData = {
+                pos_session_id: currentSession.id,
+                items: items,
+                customer_id: selectedCustomerId,
+                name: autoSaveName
+                    ? `Auto-guardado ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`
+                    : draftName || `Borrador ${new Date().toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`,
+                notes: ""
+            }
+
+            let response
+            if (currentDraftId) {
+                // Update existing draft
+                response = await api.put(`/sales/draft-carts/${currentDraftId}/`, draftData)
+            } else {
+                // Create new draft
+                response = await api.post('/sales/draft-carts/', draftData)
+                setCurrentDraftId(response.data.id)
+            }
+
+            setLastSaved(new Date())
+            if (showToast) {
+                toast.success("Borrador guardado exitosamente")
+            }
+        } catch (error: any) {
+            console.error("Error al guardar borrador:", error)
+            if (showToast) {
+                toast.error(error.response?.data?.error || "Error al guardar borrador")
+            }
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const loadDraft = (draft: any) => {
+        try {
+            // Load items
+            setItems(draft.items || [])
+
+            // Load customer
+            setSelectedCustomerId(draft.customer)
+
+            // Load draft metadata
+            setCurrentDraftId(draft.id)
+            setDraftName(draft.name)
+            setLastSaved(new Date(draft.updated_at))
+
+            toast.success(`Borrador "${draft.name}" cargado`)
+        } catch (error) {
+            console.error("Error al cargar borrador:", error)
+            toast.error("Error al cargar el borrador")
+        }
+    }
+
+    // Auto-save every 30 seconds
+    useEffect(() => {
+        if (!currentSession?.id || items.length === 0) return
+
+        const timer = setTimeout(() => {
+            saveDraft(false, true)
+        }, 30000) // 30 seconds
+
+        return () => clearTimeout(timer)
+    }, [items, currentSession, selectedCustomerId])
+
+
     const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault()
@@ -661,14 +759,56 @@ export default function POSPage() {
 
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)] p-4 space-y-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold tracking-tight">Punto de Venta</h2>
+            <div className="flex items-center justify-between py-1 px-1 mb-1">
                 <div className="flex items-center gap-4">
-                    <SessionControl onSessionChange={setCurrentSession} />
+                    <h2 className="text-xl font-bold tracking-tight">
+                        {currentSession?.treasury_account_name || "Punto de Venta"}
+                    </h2>
+
+                    {/* Session Status Badge */}
+                    {currentSession && currentSession.status === 'OPEN' && (
+                        <Badge variant="outline" className="border-emerald-500 text-emerald-600 gap-1 px-2 py-0.5 text-[10px] items-center h-5">
+                            <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                            Caja Abierta
+                        </Badge>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* Actions Dropdown */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-2">
+                                <LayoutGrid className="h-4 w-4" />
+                                Menú
+                                <ChevronDown className="h-3 w-3 opacity-50" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>Acciones de Caja</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setDraftsListOpen(true)}>
+                                <Save className="mr-2 h-4 w-4" />
+                                <span>Ver Borradores</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <a href="/sales/orders" className="cursor-pointer flex items-center">
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    <span>Notas de Venta</span>
+                                </a>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Session Close Button */}
+                    <SessionControl
+                        onSessionChange={setCurrentSession}
+                        hideSessionInfo={true}
+                    />
                 </div>
             </div>
 
-            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 h-full overflow-hidden">
+            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
                 {(!currentSession || currentSession.status !== 'OPEN') && (
                     <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
                         <Card className="w-full max-w-md shadow-2xl border-primary/20 animate-in fade-in zoom-in duration-300">
@@ -691,9 +831,9 @@ export default function POSPage() {
                     </div>
                 )}
                 {/* Left: Product List / Search */}
-                <div className="md:col-span-12 lg:col-span-7 flex flex-col space-y-4 overflow-hidden">
-                    <Card className="flex-1 flex flex-col overflow-hidden">
-                        <CardHeader className="pb-3 border-b">
+                <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
+                    <Card className="flex-1 flex flex-col overflow-hidden shadow-none bg-muted/20 border">
+                        <CardHeader className="pb-3 px-4 border-b bg-background/50 rounded-t-xl">
                             <div className="flex flex-col gap-4">
                                 <div className="relative">
                                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -706,32 +846,57 @@ export default function POSPage() {
                                         autoFocus
                                     />
                                 </div>
-                                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                                    <Badge
-                                        variant={selectedCategoryId === null ? "default" : "outline"}
-                                        className="cursor-pointer whitespace-nowrap"
-                                        onClick={() => setSelectedCategoryId(null)}
+                                <div className="relative flex items-center group">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 absolute left-0 z-10 bg-background/80 backdrop-blur shadow-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => categoryScrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' })}
                                     >
-                                        Todos
-                                    </Badge>
-                                    {categories.map(cat => (
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+
+                                    <div
+                                        ref={categoryScrollRef}
+                                        className="flex gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth"
+                                    >
                                         <Badge
-                                            key={cat.id}
-                                            variant={selectedCategoryId === cat.id ? "default" : "outline"}
-                                            className="cursor-pointer whitespace-nowrap flex items-center gap-1"
-                                            onClick={() => setSelectedCategoryId(cat.id)}
+                                            variant={selectedCategoryId === null ? "default" : "outline"}
+                                            className="cursor-pointer whitespace-nowrap"
+                                            onClick={() => setSelectedCategoryId(null)}
                                         >
-                                            {cat.icon && <DynamicIcon name={cat.icon} className="h-3 w-3" />}
-                                            {cat.name}
+                                            Todos
                                         </Badge>
-                                    ))}
+                                        {categories.map(cat => (
+                                            <Badge
+                                                key={cat.id}
+                                                variant={selectedCategoryId === cat.id ? "default" : "outline"}
+                                                className="cursor-pointer whitespace-nowrap flex items-center gap-1"
+                                                onClick={() => setSelectedCategoryId(cat.id)}
+                                            >
+                                                {cat.icon && <DynamicIcon name={cat.icon} className="h-3 w-3" />}
+                                                {cat.name}
+                                            </Badge>
+                                        ))}
+                                    </div>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 absolute right-0 z-10 bg-background/80 backdrop-blur shadow-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => categoryScrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' })}
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-1 overflow-auto pt-4">
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {filteredProducts.map(product => {
-                                    const categoryIcon = typeof product.category === 'object' ? product.category?.icon : null
+                                    const categoryId = typeof product.category === 'object' ? product.category?.id : product.category
+                                    const catData = categories.find(c => c.id === categoryId)
+                                    const categoryIcon = (typeof product.category === 'object' ? product.category?.icon : catData?.icon) || null
 
                                     return (
                                         <Card
@@ -745,11 +910,11 @@ export default function POSPage() {
                                             )}
                                             onClick={() => addToCart(product)}
                                         >
-                                            <div className="aspect-square bg-muted flex items-center justify-center relative">
+                                            <div className="aspect-square bg-muted/50 flex items-center justify-center relative">
                                                 {product.image ? (
                                                     <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <DynamicIcon name={categoryIcon || "Package"} className="h-12 w-12 text-muted-foreground/40 group-hover:scale-110 transition-transform" />
+                                                    <DynamicIcon name={categoryIcon || "Package"} className="h-10 w-10 text-muted-foreground/30 group-hover:scale-110 transition-transform" />
                                                 )}
 
                                                 {/* Stock/Availability Badge */}
@@ -781,7 +946,7 @@ export default function POSPage() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <CardContent className="p-3 text-center flex-1 flex flex-col justify-center">
+                                            <CardContent className="p-2 text-center flex-1 flex flex-col justify-center">
                                                 <div className="font-bold text-sm line-clamp-2">{product.name}</div>
                                                 <div className="text-primary font-semibold text-base mt-1">
                                                     {product.is_dynamic_pricing ? (
@@ -820,8 +985,8 @@ export default function POSPage() {
                 </div>
 
                 {/* Right: Cart & Totals */}
-                <div className="md:col-span-12 lg:col-span-5 flex flex-col space-y-4 overflow-hidden">
-                    <Card className="flex-1 flex flex-col overflow-hidden">
+                <div className="md:col-span-12 lg:col-span-5 flex flex-col min-h-0 overflow-hidden">
+                    <Card className="flex-1 flex flex-col overflow-hidden border">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                             <div className="p-4 border-b font-medium bg-muted/50 flex justify-between items-center">
                                 <span>Resumen de Venta</span>
@@ -1024,7 +1189,25 @@ export default function POSPage() {
                                     </TableBody>
                                 </Table>
                             </div>
-                            <div className="p-4 bg-muted/50 border-t space-y-4">
+                            <div className="p-4 bg-muted/20 border-t space-y-4">
+                                {/* Status Bar (Subtle) */}
+                                <div className="flex justify-between items-center px-1 min-h-[16px]">
+                                    <div>
+                                        {currentDraftId && (
+                                            <Badge variant="outline" className="text-[10px] h-4 px-1 bg-background font-normal text-muted-foreground uppercase tracking-widest border-muted-foreground/20">
+                                                Modo Borrador
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {lastSaved && (
+                                        <div className="flex items-center text-[10px] text-muted-foreground gap-1 opacity-70">
+                                            <Clock className="h-3 w-3" />
+                                            <span>
+                                                {saving ? "Guardando..." : `Actualizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-muted-foreground">
                                         <span>Neto</span>
@@ -1079,6 +1262,10 @@ export default function POSPage() {
                         posSessionId={currentSession?.id}
                         onComplete={() => {
                             setItems([])
+                            setCurrentDraftId(null)
+                            setDraftName("")
+                            setLastSaved(null)
+                            setSelectedCustomerId(null)
                         }}
                     />
                 )

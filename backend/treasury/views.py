@@ -820,6 +820,10 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         else:
                             print(f"WARNING: Missing accounts for POS Loss. Treasury: {treasury_account}, Loss: {adjustment_account}")
 
+            # Clean up draft carts for this session
+            from sales.draft_cart_service import DraftCartService
+            DraftCartService.cleanup_on_session_close(session.id)
+
             # Close session
             session.status = 'CLOSED'
             session.closed_at = timezone.now()

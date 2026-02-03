@@ -21,6 +21,7 @@ interface Contact {
     email?: string
     phone?: string
     contact_type?: 'PERSON' | 'COMPANY'
+    code?: string
 }
 
 interface AdvancedContactSelectorProps {
@@ -129,7 +130,7 @@ export function AdvancedContactSelector({
                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                         <input
                             className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="Buscar por nombre, rut..."
+                            placeholder="Buscar por nombre, rut, código..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             autoFocus
@@ -164,6 +165,7 @@ export function AdvancedContactSelector({
                                             <span className="truncate font-medium">{contact.name}</span>
                                             <span className="text-xs text-muted-foreground truncate">
                                                 {contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}
+                                                {contact.code && ` • ${contact.code}`}
                                             </span>
                                         </div>
                                         {selectedContact?.id === contact.id && (

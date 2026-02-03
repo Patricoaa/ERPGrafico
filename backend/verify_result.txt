@@ -1,0 +1,9 @@
+Starting Contact Search Verification...
+Created test contact: Test Search Contact (RUT: 99.999.999-9, Code: 000012)
+Test 'Formatted RUT (exact)' with query '99.999.999-9': PASSED
+Test 'Unformatted RUT (no dots/dash)' with query '999999999': PASSED
+Test 'Mixed format' with query '99.999.9999': PASSED
+Test 'Internal Code' with query '000012': PASSED
+Test 'Name partial match' with query 'Test Search': PASSED
+
+ALL TESTS PASSED!

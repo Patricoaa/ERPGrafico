@@ -54,9 +54,10 @@ interface POSSession {
 
 interface SessionControlProps {
     onSessionChange?: (session: POSSession | null) => void
+    hideSessionInfo?: boolean
 }
 
-export function SessionControl({ onSessionChange }: SessionControlProps) {
+export function SessionControl({ onSessionChange, hideSessionInfo = false }: SessionControlProps) {
     const [currentSession, setCurrentSession] = useState<POSSession | null>(null)
     const [loading, setLoading] = useState(true)
     const [openDialogOpen, setOpenDialogOpen] = useState(false)
@@ -259,21 +260,7 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
         }
     }
 
-    const handleShowXReport = async () => {
-        if (!currentSession) return
-        setLoading(true)
-        try {
-            const response = await api.get(`/treasury/pos-sessions/${currentSession.id}/summary/`)
-            setReportData(response.data)
-            setReportType("X")
-            setReportDialogOpen(true)
-        } catch (error) {
-            console.error("Error fetching report:", error)
-            toast.error("Error al generar informe")
-        } finally {
-            setLoading(false)
-        }
-    }
+    /* handleShowXReport removed as per user request to remove from POS view */
 
     if (loading) {
         return (
@@ -390,60 +377,65 @@ export function SessionControl({ onSessionChange }: SessionControlProps) {
     return (
         <>
             <div className="flex items-center gap-2">
-                <Badge variant={isSharedSession ? "secondary" : "outline"} className={`gap-1 px-3 py-1.5 ${isSharedSession ? 'bg-blue-100 text-blue-800 border-blue-200' : 'border-emerald-500 text-emerald-600'}`}>
-                    <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-blue-500' : 'bg-emerald-500'} animate-pulse`} />
-                    {isSharedSession ? "Caja Compartida" : "Caja Abierta"}
-                </Badge>
+                {!hideSessionInfo && (
+                    <>
+                        <Badge variant={isSharedSession ? "secondary" : "outline"} className={`gap-1 px-3 py-1.5 ${isSharedSession ? 'bg-blue-100 text-blue-800 border-blue-200' : 'border-emerald-500 text-emerald-600'}`}>
+                            <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-blue-500' : 'bg-emerald-500'} animate-pulse`} />
+                            {isSharedSession ? "Caja Compartida" : "Caja Abierta"}
+                        </Badge>
 
-                <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mr-2">
-                    <span className="text-sm font-medium">
-                        {currentSession.treasury_account_name}
-                    </span>
-                    {isSharedSession && (
-                        <span className="text-xs text-muted-foreground">
-                            (Titular: {currentSession.user_name})
-                        </span>
-                    )}
-                </div>
+                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mr-2">
+                            <span className="text-sm font-medium">
+                                {currentSession.treasury_account_name}
+                            </span>
+                            {isSharedSession && (
+                                <span className="text-xs text-muted-foreground">
+                                    (Titular: {currentSession.user_name})
+                                </span>
+                            )}
+                        </div>
+                    </>
+                )}
 
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleShowXReport}
-                    title="Informe X"
-                >
-                    <FileText className="h-4 w-4" />
-                </Button>
 
                 {isSharedSession ? (
                     <Button
-                        variant="ghost"
+                        variant={hideSessionInfo ? "outline" : "ghost"}
                         size="icon"
                         onClick={handleDisconnect}
                         title="Desconectar de Caja"
-                        className="text-muted-foreground hover:text-destructive"
+                        className={hideSessionInfo ? "" : "text-muted-foreground hover:text-destructive"}
                     >
                         <LogOut className="h-4 w-4" />
                     </Button>
                 ) : (
                     <Button
-                        variant="ghost"
-                        size="icon"
+                        variant={hideSessionInfo ? "destructive" : "ghost"}
+                        size={hideSessionInfo ? "sm" : "icon"}
                         onClick={() => {
                             // Pre-populate expected cash
                             setActualCash(currentSession.expected_cash.toString())
                             setCloseDialogOpen(true)
                         }}
                         title="Cerrar Caja"
-                        className="text-muted-foreground hover:text-destructive"
+                        className={hideSessionInfo ? "px-3 gap-2" : "text-muted-foreground hover:text-destructive"}
                     >
                         <Lock className="h-4 w-4" />
+                        {hideSessionInfo && "Cerrar Caja"}
                     </Button>
                 )}
             </div>
 
             <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
                 <DialogContent className="max-w-md">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>
+                            {reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Detalles del informe de sesión
+                        </DialogDescription>
+                    </DialogHeader>
                     {reportData && (
                         <POSReport
                             data={reportData}
