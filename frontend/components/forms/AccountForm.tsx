@@ -179,13 +179,13 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                             name="code"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Código</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Código</FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder={initialData ? "" : "Automático"}
                                             {...field}
                                             readOnly={!!initialData}
-                                            className={initialData ? "bg-muted" : ""}
+                                            className={cn("h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary", initialData && "bg-muted")}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -197,9 +197,9 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Nombre</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Caja" {...field} />
+                                        <Input placeholder="Caja" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -210,10 +210,10 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                             name="account_type"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Tipo</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tipo</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                 <SelectValue placeholder="Seleccione tipo" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -234,10 +234,10 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                             name="parent"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Cuenta Padre (Opcional)</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cuenta Padre (Opcional)</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || "none"}>
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                 <SelectValue placeholder="Sin padre" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -261,7 +261,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 name="is_category"
                                 render={({ field }) => (
                                     <FormItem className={cn(!isPLAccount && "opacity-50 pointer-events-none")}>
-                                        <FormLabel className="flex justify-between">
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex justify-between">
                                             <span>Mapeo EERR</span>
                                             {!isPLAccount && <span className="text-[10px] text-amber-600 font-normal">Solo Ingresos/Gastos</span>}
                                         </FormLabel>
@@ -271,7 +271,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                             disabled={!isPLAccount}
                                         >
                                             <FormControl>
-                                                <SelectTrigger className={cn(!field.value && inheritedIsCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                                <SelectTrigger className={cn("h-10 rounded-xl border-dashed bg-background", !field.value && inheritedIsCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
                                                     <SelectValue placeholder={inheritedIsCategory ? `Heredado (${inheritedIsCategory === 'REVENUE' ? 'Ingresos' : 'Ventas...'})` : "Sin mapeo"} />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -297,10 +297,10 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 name="cf_category"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Mapeo Flujo Caja</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mapeo Flujo Caja</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value || ""}>
                                             <FormControl>
-                                                <SelectTrigger className={cn(!field.value && inheritedCfCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                                <SelectTrigger className={cn("h-10 rounded-xl border-dashed bg-background", !field.value && inheritedCfCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
                                                     <SelectValue placeholder={inheritedCfCategory ? "Heredado del padre" : "Sin mapeo"} />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -326,10 +326,10 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                             name="bs_category"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Mapeo Balance (Ratios)</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mapeo Balance (Ratios)</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ""}>
                                         <FormControl>
-                                            <SelectTrigger className={cn(!field.value && inheritedBsCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                            <SelectTrigger className={cn("h-10 rounded-xl border-dashed bg-background", !field.value && inheritedBsCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
                                                 <SelectValue placeholder={inheritedBsCategory ? "Heredado del padre" : "Sin mapeo"} />
                                             </SelectTrigger>
                                         </FormControl>

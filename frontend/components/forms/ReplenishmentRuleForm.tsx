@@ -87,10 +87,10 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                                 name="warehouse"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Almacén</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Almacén</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                     <SelectValue placeholder="Seleccione almacén" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -112,11 +112,12 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                                     name="min_quantity"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Cantidad Mínima</FormLabel>
+                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cantidad Mínima</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     type="number"
                                                     step="0.0001"
+                                                    className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                                     {...field}
                                                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                 />
@@ -130,11 +131,12 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                                     name="max_quantity"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Cantidad Máxima</FormLabel>
+                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cantidad Máxima</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     type="number"
                                                     step="0.0001"
+                                                    className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                                     {...field}
                                                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                 />

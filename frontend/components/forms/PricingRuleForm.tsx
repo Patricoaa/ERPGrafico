@@ -187,9 +187,9 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Nombre de la Regla</FormLabel>
+                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre de la Regla</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Ej: Descuento Mayorista" {...field} />
+                                                <Input placeholder="Ej: Descuento Mayorista" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -202,7 +202,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         name="product"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Producto</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Producto</FormLabel>
                                                 <FormControl>
                                                     <ProductSelector
                                                         value={field.value?.toString() || null}
@@ -223,10 +223,10 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         name="operator"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Condición (Operador)</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Condición (Operador)</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                             <SelectValue placeholder="Seleccione" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -248,9 +248,9 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         name="priority"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Prioridad</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Prioridad</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                                                    <Input type="number" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -264,9 +264,9 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         name="min_quantity"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>{operator === "BT" ? "Desde" : "Cantidad"}</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{operator === "BT" ? "Desde" : "Cantidad"}</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" {...field} />
+                                                    <Input type="number" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -277,13 +277,13 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         name="uom"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Unidad de Medida (Opcional)</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Unidad de Medida (Opcional)</FormLabel>
                                                 <Select
                                                     onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
                                                     value={field.value?.toString() || "none"}
                                                 >
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                             <SelectValue placeholder="Base del producto" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -307,9 +307,9 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                             name="max_quantity"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Hasta</FormLabel>
+                                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Hasta</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" {...field} value={field.value || ""} />
+                                                        <Input type="number" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} value={field.value || ""} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -324,10 +324,10 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         name="rule_type"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Tipo de Regla</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tipo de Regla</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                             <SelectValue placeholder="Seleccione tipo" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -348,10 +348,11 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                                 name="fixed_price"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Precio Fijo (Neto)</FormLabel>
+                                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Precio Fijo (Neto)</FormLabel>
                                                         <FormControl>
                                                             <Input
                                                                 type="number"
+                                                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                                                 {...field}
                                                                 value={field.value || ""}
                                                                 onChange={(e) => {
@@ -375,10 +376,11 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                                 name="fixed_price_gross"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Precio Fijo (Bruto)</FormLabel>
+                                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Precio Fijo (Bruto)</FormLabel>
                                                         <FormControl>
                                                             <Input
                                                                 type="number"
+                                                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                                                 {...field}
                                                                 value={field.value || ""}
                                                                 onChange={(e) => {
@@ -407,9 +409,9 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                             name="discount_percentage"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Descuento (%)</FormLabel>
+                                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Descuento (%)</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" {...field} value={field.value || ""} />
+                                                        <Input type="number" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} value={field.value || ""} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -424,9 +426,9 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         name="start_date"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Fecha Inicio</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha Inicio</FormLabel>
                                                 <FormControl>
-                                                    <Input type="date" {...field} value={field.value || ""} />
+                                                    <Input type="date" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} value={field.value || ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -437,9 +439,9 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                         name="end_date"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Fecha Fin</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha Fin</FormLabel>
                                                 <FormControl>
-                                                    <Input type="date" {...field} value={field.value || ""} />
+                                                    <Input type="date" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} value={field.value || ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -451,7 +453,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                     control={form.control}
                                     name="active"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-2xl border border-dashed p-4">
                                             <FormControl>
                                                 <Checkbox
                                                     checked={field.value}
@@ -459,7 +461,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                                                 />
                                             </FormControl>
                                             <div className="space-y-1 leading-none">
-                                                <FormLabel>Regla Activa</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Regla Activa</FormLabel>
                                             </div>
                                         </FormItem>
                                     )}

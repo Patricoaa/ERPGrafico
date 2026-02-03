@@ -139,9 +139,9 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Nombre</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Banco Estado" {...field} />
+                                        <Input placeholder="Banco Estado" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -152,9 +152,9 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             name="code"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Código Interno</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Código Interno</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="BNK-01" {...field} />
+                                        <Input placeholder="BNK-01" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -165,10 +165,10 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             name="currency"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Moneda</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Moneda</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                 <SelectValue placeholder="Seleccione moneda" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -187,10 +187,10 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             name="account"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Cuenta Contable (Activo)</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cuenta Contable (Activo)</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                 <SelectValue placeholder="Seleccionar cuenta contable" />
                                             </SelectTrigger>
                                         </FormControl>

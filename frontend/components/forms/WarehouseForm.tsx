@@ -110,9 +110,9 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Nombre</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Almacén Central" {...field} />
+                                        <Input placeholder="Almacén Central" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -123,9 +123,9 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                             name="code"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Código</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Código</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="BOD-01" {...field} />
+                                        <Input placeholder="BOD-01" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -136,9 +136,9 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                             name="address"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Dirección</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Dirección</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Calle Principal 123" {...field} />
+                                        <Input placeholder="Calle Principal 123" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
