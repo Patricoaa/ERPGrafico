@@ -270,42 +270,71 @@ export function BOMFormDialog({
                         <form id="bom-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
 
                             {/* Header Fields */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Nombre de la Lista</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ej: Versión Estándar 2024" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="active"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col gap-2">
-                                            <div className="flex items-center justify-between rounded-lg border p-3 mt-1">
-                                                <div className="space-y-0.5">
-                                                    <FormLabel className="text-base">Activa</FormLabel>
-                                                    <FormDescription>
-                                                        Solo una BOM activa por producto.
-                                                    </FormDescription>
-                                                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                <div className={cn(selectedProduct?.has_variants ? "md:col-span-4" : "md:col-span-8")}>
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nombre de la Lista</FormLabel>
                                                 <FormControl>
-                                                    <Switch
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
+                                                    <Input placeholder="Ej: Versión Estándar 2024" {...field} className="h-10 rounded-xl bg-background" />
                                                 </FormControl>
-                                            </div>
-                                        </FormItem>
-                                    )}
-                                />
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                {selectedProduct?.has_variants && (
+                                    <div className="md:col-span-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Variante Asociada</Label>
+                                            <Select
+                                                value={selectedVariant?.id?.toString() || ""}
+                                                onValueChange={(val) => {
+                                                    const v = variants.find(varnt => varnt.id.toString() === val)
+                                                    setSelectedVariant(v)
+                                                }}
+                                                disabled={!!bomToEdit} // Disable variant change when editing
+                                            >
+                                                <SelectTrigger className="h-10 rounded-xl bg-background">
+                                                    <SelectValue placeholder="Seleccionar variante..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {variants.map(v => (
+                                                        <SelectItem key={v.id} value={v.id.toString()}>
+                                                            {v.variant_display_name || v.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <p className="text-[10px] text-muted-foreground italic">La receta se asignará a esta variante específica.</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="md:col-span-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="active"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-col gap-1">
+                                                <div className="flex items-center justify-between rounded-xl border p-2 bg-background border-dashed h-10 mt-6">
+                                                    <FormLabel className="text-xs font-bold">Activa</FormLabel>
+                                                    <FormControl>
+                                                        <Switch
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                            className="scale-75"
+                                                        />
+                                                    </FormControl>
+                                                </div>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
                             </div>
 
                             <FormField

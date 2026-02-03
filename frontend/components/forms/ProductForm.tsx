@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Package, Loader2, AlertCircle } from "lucide-react"
+import { Package, Loader2, AlertCircle, Factory, Truck, ShoppingCart, Scale, Layers } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -17,15 +17,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // Import modular components
 import { ProductTypeSelector } from "./product/ProductTypeSelector"
 import { ProductImageUpload } from "./product/ProductImageUpload"
-import { ProductBasicInfo } from "./product/ProductBasicInfo"
+import { ProductBasicInfo, ProductIdentitySection, ProductCategorizationSection, ProductStatusSection } from "./product/ProductBasicInfo"
 import { ProductPricingSection } from "./product/ProductPricingSection"
 import { ProductInventoryTab } from "./product/ProductInventoryTab"
 import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
-import { ProductUoMTab } from "./product/ProductUoMTab"
 import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
 import { ProductVariantsTab } from "./product/ProductVariantsTab"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { Badge } from "@/components/ui/badge"
 
 // Import dialogs
 import { PricingRuleForm } from "./PricingRuleForm"
@@ -535,245 +535,85 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
         }
     }
 
-    // Simplified Render for Variant Mode
-    if (variantMode) {
-        return (
-            <BaseModal
-                open={open}
-                onOpenChange={onOpenChange}
-                title={`Editar Variante: ${initialData?.name || initialData?.internal_code || 'Nueva'}`}
-                size="xl"
-                description="Gestión de variante"
-                className="max-w-[95vw] h-[90vh]"
-            >
-                <div className="flex h-full">
-                    <div className="flex-1 p-6 overflow-y-auto">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-6">
-                                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                    <TabsList className="grid w-full grid-cols-3 rounded-xl bg-muted/20 p-1">
-                                        <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                            Información General
-                                        </TabsTrigger>
-                                        <TabsTrigger value="manufacturing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                            Fabricación
-                                        </TabsTrigger>
-                                        <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                            Reglas de Precios
-                                        </TabsTrigger>
+    const formContent = (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <div className="px-6 border-b bg-muted/5">
+                <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
+                    <TabsTrigger
+                        value="general"
+                        className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
+                    >
+                        <Package className="h-4 w-4" />
+                        Información General
+                        {tabErrors['general'] && (
+                            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-black">!</span>
+                        )}
+                    </TabsTrigger>
 
-                                    </TabsList>
-
-                                    <TabsContent value="general" className="mt-6 space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-4 md:col-span-2">
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <div className="md:col-span-1">
-                                                        <div className="aspect-square w-full">
-                                                            <ProductImageUpload form={form} imagePreview={imagePreview} setImagePreview={setImagePreview} />
-                                                        </div>
-                                                    </div>
-                                                    <div className="md:col-span-2 space-y-4">
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <FormField<ProductFormValues>
-                                                                control={form.control}
-                                                                name="internal_code"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>Código Interno</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input {...field} readOnly className="bg-muted" />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField<ProductFormValues>
-                                                                control={form.control}
-                                                                name="name"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>Nombre Comercial</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="md:col-span-2">
-                                                <ProductPricingSection
-                                                    form={form as any}
-                                                    initialData={initialData}
-                                                    canBeSold={true}
-                                                    uoms={uoms}
-                                                    forceEdit={true}
-                                                />
-                                            </div>
-                                        </div>
-                                    </TabsContent>
-
-                                    <TabsContent value="pricing" className="mt-6">
-                                        <ProductPricingTab
-                                            initialData={initialData}
-                                            pricingRules={pricingRules}
-                                            fetchPricingRules={fetchPricingRules}
-                                            onOpenRuleDialog={(rule) => {
-                                                setSelectedPricingRule(rule || null)
-                                                setPricingRuleDialogOpen(true)
-                                            }}
-                                        />
-                                    </TabsContent>
-
-                                    <ProductManufacturingTab
-                                        form={form as any}
-                                        initialData={initialData}
-                                        products={products}
-                                        uoms={uoms}
-                                        variantMode={true}
-                                    />
-                                </Tabs>
-
-                                <div className="flex justify-end gap-4 pt-4 border-t">
-                                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                                        Cancelar
-                                    </Button>
-                                    <Button type="submit" disabled={loading}>
-                                        {loading ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Guardando...
-                                            </>
-                                        ) : (
-                                            "Guardar Cambios"
-                                        )}
-                                    </Button>
-                                </div>
-                            </form>
-                        </Form>
-                    </div>
-
-                    {/* Activity Sidebar */}
-                    {initialData && (
-                        <div className="w-72 border-l bg-muted/5 h-full flex flex-col overflow-hidden">
-                            <ActivitySidebar
-                                entityId={initialData.id}
-                                entityType="product"
-                            />
-                        </div>
+                    {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
+                        <TabsTrigger
+                            value="manufacturing"
+                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
+                        >
+                            <Factory className="h-4 w-4" />
+                            Fabricación
+                        </TabsTrigger>
                     )}
-                </div>
 
-                <PricingRuleForm
-                    open={pricingRuleDialogOpen}
-                    onOpenChange={(open) => {
-                        setPricingRuleDialogOpen(open)
-                        if (!open) setSelectedPricingRule(null)
-                    }}
-                    initialData={selectedPricingRule}
-                    onSuccess={fetchPricingRules}
-                    productId={initialData?.id}
-                    productName={initialData?.name}
-                />
-            </BaseModal>
-        )
-    }
+                    {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
+                        <TabsTrigger
+                            value="logistics"
+                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
+                        >
+                            <Truck className="h-4 w-4" />
+                            Logística
+                        </TabsTrigger>
+                    )}
 
-    return (
-        <BaseModal
-            open={open}
-            onOpenChange={onOpenChange}
-            size="full"
-            hideScrollArea
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-2">
-                    <Package className="h-6 w-6 text-primary" />
-                    {initialData ? 'Editar Producto' : 'Nuevo Producto'}
-                </div>
-            }
-            footer={
-                <>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" form="product-form" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {initialData ? 'Guardar Cambios' : 'Crear Producto'}
-                    </Button>
-                </>
-            }
-        >
-            <div className="flex flex-1 overflow-hidden h-full">
-                {/* Main content area */}
-                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+                    {form.watch("product_type") === 'SUBSCRIPTION' && (
+                        <TabsTrigger
+                            value="commercial"
+                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
+                        >
+                            <ShoppingCart className="h-4 w-4" />
+                            Comercial
+                        </TabsTrigger>
+                    )}
+
+                    {form.watch("can_be_sold") && (
+                        <TabsTrigger
+                            value="pricing"
+                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
+                        >
+                            <Scale className="h-4 w-4" />
+                            Reglas
+                        </TabsTrigger>
+                    )}
+
+                    {form.watch("has_variants") && !variantMode && (
+                        <TabsTrigger
+                            value="variants"
+                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
+                        >
+                            <Layers className="h-4 w-4" />
+                            Variantes
+                        </TabsTrigger>
+                    )}
+                </TabsList>
+            </div>
+
+            <div className="flex-1 flex overflow-hidden">
+                <div className="flex-1 overflow-y-auto scrollbar-thin">
                     <Form {...form}>
-                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-6">
-                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                <TabsList className="mb-4 bg-muted/50 p-1">
-                                    <TabsTrigger value="general" className="px-8 flex gap-2 relative">
-                                        Información General
-                                        {tabErrors['general'] && (
-                                            <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                                                <AlertCircle className="h-3 w-3" />
-                                            </span>
-                                        )}
-                                    </TabsTrigger>
-                                    {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
-                                        <TabsTrigger value="manufacturing" className="px-8 flex gap-2 relative">
-                                            Fabricación
-                                            {tabErrors['manufacturing'] && (
-                                                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                                                    <AlertCircle className="h-3 w-3" />
-                                                </span>
-                                            )}
-                                        </TabsTrigger>
-                                    )}
-                                    {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
-                                        <TabsTrigger value="inventory" className="px-8 flex gap-2">
-                                            Inventario
-                                        </TabsTrigger>
-                                    )}
-                                    <TabsTrigger value="uoms" className="px-8 flex gap-2 relative">
-                                        Und. de Medida
-                                        {tabErrors['uoms'] && (
-                                            <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                                                <AlertCircle className="h-3 w-3" />
-                                            </span>
-                                        )}
-                                    </TabsTrigger>
-                                    {form.watch("product_type") === 'SUBSCRIPTION' && (
-                                        <TabsTrigger value="subscription" className="px-8 flex gap-2 relative">
-                                            Suscripción
-                                            {tabErrors['subscription'] && (
-                                                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                                                    <AlertCircle className="h-3 w-3" />
-                                                </span>
-                                            )}
-                                        </TabsTrigger>
-                                    )}
-                                    {form.watch("can_be_sold") && (
-                                        <TabsTrigger value="pricing" className="px-8 flex gap-2">
-                                            Reglas de Precios
-                                        </TabsTrigger>
-                                    )}
-
-                                    {form.watch("has_variants") && (
-                                        <TabsTrigger value="variants" className="px-8 flex gap-2">
-                                            Variantes
-                                        </TabsTrigger>
-                                    )}
-                                </TabsList>
-
-                                <TabsContent value="general" className="mt-0 space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                        <div className="md:col-span-3 space-y-6 border-r pr-8">
-                                            <ProductTypeSelector form={form as any} disabled={!!initialData} lockedType={lockedType} />
+                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-4 pt-6 px-4 mx-auto pb-32">
+                            <TabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                                    <div className="md:col-span-3 space-y-4">
+                                        <div className="p-4 rounded-2xl border bg-card/50 space-y-4 shadow-sm">
+                                            <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-2">
+                                                <div className="w-1.5 h-3 bg-primary rounded-full" />
+                                                Imagen del Producto
+                                            </h3>
                                             <ProductImageUpload
                                                 form={form as any}
                                                 imagePreview={imagePreview}
@@ -781,68 +621,76 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                             />
                                         </div>
 
-                                        <div className="md:col-span-9 space-y-8">
-                                            <ProductBasicInfo
-                                                form={form as any}
-                                                categories={categories}
-                                                isEditing={!!initialData}
-                                                onAddCategory={() => setIsCategoryFormOpen(true)}
-                                            />
-                                            <ProductPricingSection
-                                                form={form as any}
-                                                initialData={initialData}
-                                                canBeSold={form.watch("can_be_sold")}
-                                                uoms={uoms}
-                                            />
-
+                                        <div className="p-4 rounded-2xl border bg-card/50 space-y-4 shadow-sm">
+                                            <ProductTypeSelector form={form as any} disabled={!!initialData} lockedType={lockedType} />
                                         </div>
                                     </div>
-                                </TabsContent>
 
-                                <ProductManufacturingTab
-                                    form={form as any}
-                                    initialData={initialData}
-                                    products={products}
-                                    uoms={uoms}
-                                />
+                                    <div className="md:col-span-9 space-y-4">
+                                        {/* Row 1: Identity */}
+                                        <ProductIdentitySection form={form as any} isEditing={!!initialData} />
 
-                                <ProductVariantsTab
-                                    key={variantsRefreshKey}
-                                    form={form as any}
-                                    initialData={initialData}
-                                    onEditVariant={(variant) => setEditingVariant(variant)}
-                                />
+                                        {/* Row 2: Categorization */}
+                                        <ProductCategorizationSection
+                                            form={form as any}
+                                            categories={categories}
+                                            isEditing={!!initialData}
+                                            onAddCategory={() => setIsCategoryFormOpen(true)}
+                                        />
 
-                                <ProductInventoryTab
-                                    form={form as any}
-                                    initialData={initialData}
-                                    reorderingRules={reorderingRules}
-                                    setReorderingRules={setReorderingRules}
-                                    warehouses={warehouses}
-                                />
+                                        {/* Row 3: Status & Visibility (Now full width or adjusted) */}
+                                        <ProductStatusSection form={form as any} />
 
-                                <ProductUoMTab
-                                    form={form as any}
-                                    uoms={uoms}
-                                    canBeSold={form.watch("can_be_sold")}
-                                    canBePurchased={form.watch("can_be_purchased")}
-                                />
+                                        {/* Row 4: Pricing */}
+                                        <ProductPricingSection
+                                            form={form as any}
+                                            initialData={initialData}
+                                            canBeSold={form.watch("can_be_sold")}
+                                            uoms={uoms}
+                                        />
+                                    </div>
+                                </div>
+                            </TabsContent>
 
-                                <TabsContent value="subscription" className="mt-0">
+                            <ProductManufacturingTab
+                                form={form as any}
+                                initialData={initialData}
+                                products={products}
+                                uoms={uoms}
+                                variantMode={variantMode}
+                            />
+
+                            <ProductVariantsTab
+                                key={variantsRefreshKey}
+                                form={form as any}
+                                initialData={initialData}
+                                onEditVariant={(variant) => setEditingVariant(variant)}
+                            />
+
+                            <ProductInventoryTab
+                                form={form as any}
+                                initialData={initialData}
+                                reorderingRules={reorderingRules}
+                                setReorderingRules={setReorderingRules}
+                                warehouses={warehouses}
+                                uoms={uoms}
+                            />
+
+                            <TabsContent value="commercial" className="mt-0 animate-in fade-in duration-300">
+                                <div className="p-6 rounded-[1.5rem] border bg-card/50 shadow-inner">
                                     <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                </TabsContent>
+                                </div>
+                            </TabsContent>
 
-                                <ProductPricingTab
-                                    initialData={initialData}
-                                    pricingRules={pricingRules}
-                                    fetchPricingRules={fetchPricingRules}
-                                    onOpenRuleDialog={(rule) => {
-                                        setSelectedPricingRule(rule || null)
-                                        setPricingRuleDialogOpen(true)
-                                    }}
-                                />
-
-                            </Tabs>
+                            <ProductPricingTab
+                                initialData={initialData}
+                                pricingRules={pricingRules}
+                                fetchPricingRules={fetchPricingRules}
+                                onOpenRuleDialog={(rule) => {
+                                    setSelectedPricingRule(rule || null)
+                                    setPricingRuleDialogOpen(true)
+                                }}
+                            />
                         </form>
                     </Form>
                 </div>
@@ -858,20 +706,22 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 )}
             </div>
 
-            {/* Nested Product Form for Variant Editing */}
+            {/* Nested Modals */}
             {editingVariant && (
                 <ProductForm
-                    open={true}
+                    open={!!editingVariant}
                     onOpenChange={(open) => {
-                        if (!open) setEditingVariant(null)
+                        if (!open) {
+                            setEditingVariant(null)
+                            setVariantsRefreshKey(prev => prev + 1)
+                        }
                     }}
                     initialData={editingVariant}
                     onSuccess={() => {
                         setVariantsRefreshKey(prev => prev + 1)
                         setEditingVariant(null)
                     }}
-                    lockedType={editingVariant.product_type}
-                    variantMode={true} // Enable simplified mode
+                    variantMode={true}
                 />
             )}
 
@@ -890,11 +740,59 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             <CategoryForm
                 open={isCategoryFormOpen}
                 onOpenChange={setIsCategoryFormOpen}
-                onSuccess={(newCat: any) => {
-                    setCategories(prev => [...prev, newCat])
-                    form.setValue("category", newCat.id.toString())
+                onSuccess={(newCategory) => {
+                    setCategories(prev => [...prev, newCategory])
+                    form.setValue("category", newCategory.id.toString())
                 }}
             />
+        </Tabs>
+    )
+
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="full"
+            hideScrollArea
+            contentClassName="p-0 overflow-hidden flex flex-col"
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Package className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>{initialData?.name || form.watch("name") || 'Nuevo Producto'}</span>
+                    {initialData?.internal_code && (
+                        <Badge variant="outline" className="font-mono text-[10px] bg-primary/5 text-primary border-primary/20">
+                            {initialData.internal_code}
+                        </Badge>
+                    )}
+                </div>
+            }
+            description={
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                    {variantMode ? "Edición de Variante" : "Configuración Maestra de Producto"}
+                </div>
+            }
+            footer={
+                <div className="flex justify-end gap-3 w-full px-6 py-4">
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        form="product-form"
+                        type="submit"
+                        disabled={loading}
+                    >
+                        {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                        {initialData ? 'Guardar Cambios' : 'Crear Producto'}
+                    </Button>
+                </div>
+            }
+        >
+            {formContent}
         </BaseModal>
     )
 }

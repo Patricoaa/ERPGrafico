@@ -229,7 +229,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                 size="full"
                 hideScrollArea={true}
                 footer={activeTab === "profile" && (
-                    <div className="flex justify-end gap-3 w-full px-6 py-4 border-t bg-white">
+                    <div className="flex justify-end gap-3 w-full px-6 py-4">
                         <Button variant="outline" onClick={() => onOpenChange(false)}>
                             Cancelar
                         </Button>

@@ -105,8 +105,8 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
     }
 
     return (
-        <div className={`flex flex-col h-full p-6 ${className}`}>
-            <div className="border-b pb-3 mb-4 shrink-0">
+        <div className={`flex flex-col h-full p-3 ${className}`}>
+            <div className="border-b pb-2 mb-3 shrink-0">
                 <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     {title}
@@ -130,7 +130,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                         </p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {history.map((record, index) => {
                             const changedFields = index < history.length - 1
                                 ? getChangedFields(record, history[index + 1])
@@ -140,7 +140,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                 <div key={record.history_id} className="flex gap-3">
                                     {/* Avatar */}
                                     <div className="flex-shrink-0">
-                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
                                             <span className="text-xs font-bold text-primary">
                                                 {record.history_user_username?.substring(0, 2).toUpperCase() || 'SY'}
                                             </span>
@@ -148,8 +148,8 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                     </div>
 
                                     {/* Content */}
-                                    <div className="flex-1 min-w-0 pb-4 border-b last:border-b-0">
-                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                    <div className="flex-1 min-w-0 pb-3 border-b last:border-b-0">
+                                        <div className="flex items-start justify-between gap-1 mb-0.5">
                                             <div className="flex items-center gap-2">
                                                 {getChangeIcon(record.history_type)}
                                                 <span className="text-xs font-bold">
@@ -164,12 +164,12 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                             </time>
                                         </div>
 
-                                        <p className="text-xs text-muted-foreground mb-2">
+                                        <p className="text-xs text-muted-foreground mb-1">
                                             por <span className="font-semibold">{record.history_user_username || 'Sistema'}</span>
                                         </p>
 
                                         {changedFields.length > 0 && record.history_type === '~' && (
-                                            <div className="mt-2 space-y-1.5">
+                                            <div className="mt-1 space-y-1">
                                                 {changedFields.map(field => {
                                                     const oldValue = history[index + 1][field];
                                                     const newValue = record[field];

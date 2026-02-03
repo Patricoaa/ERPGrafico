@@ -18,9 +18,10 @@ interface ProductInventoryTabProps {
     reorderingRules?: any[]
     setReorderingRules?: (rules: any[]) => void
     warehouses?: any[]
+    uoms?: any[]
 }
 
-export function ProductInventoryTab({ form, initialData, reorderingRules = [], setReorderingRules, warehouses = [] }: ProductInventoryTabProps) {
+export function ProductInventoryTab({ form, initialData, reorderingRules = [], setReorderingRules, warehouses = [], uoms = [] }: ProductInventoryTabProps) {
     const productType = form.watch("product_type")
     const trackInventory = form.watch("track_inventory")
 
@@ -61,12 +62,69 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
     }
 
     return (
-        <TabsContent value="inventory" className="mt-0 space-y-8">
+        <TabsContent value="logistics" className="mt-0 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
+                    {/* Units of Measure Section */}
+                    <div className="p-6 rounded-2xl border bg-card/50 space-y-6">
+                        <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
+                            <Settings2 className="h-4 w-4" />
+                            Unidades de Medida
+                        </h3>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            <FormField<ProductFormValues>
+                                control={form.control}
+                                name="uom"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <div className="flex items-center gap-2">
+                                            <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                                            <FormLabel className="text-xs font-bold">Unidad de Stock (Base)</FormLabel>
+                                        </div>
+                                        <FormControl>
+                                            <select
+                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                {...field}
+                                            >
+                                                <option value="">Seleccionar unidad...</option>
+                                                {uoms.map((u) => (
+                                                    <option key={u.id} value={u.id.toString()}>{u.name}</option>
+                                                ))}
+                                            </select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField<ProductFormValues>
+                                control={form.control}
+                                name="purchase_uom"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs font-bold">Unidad de Compra</FormLabel>
+                                        <FormControl>
+                                            <select
+                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                {...field}
+                                            >
+                                                <option value="">Igual a Stock</option>
+                                                {uoms.map((u) => (
+                                                    <option key={u.id} value={u.id.toString()}>{u.name}</option>
+                                                ))}
+                                            </select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </div>
+
                     <div className="p-6 rounded-2xl border bg-card/50">
                         <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
-                            <Package className="h-4 w-4" />
+                            <Warehouse className="h-4 w-4" />
                             Control de Inventario
                         </h3>
 
@@ -136,9 +194,6 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                                                 ))}
                                                             </select>
                                                         </FormControl>
-                                                        <FormDescription className="text-[10px]">
-                                                            Bodega sugerida automáticamente al registrar recepciones de este producto.
-                                                        </FormDescription>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
@@ -161,9 +216,6 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                                                 placeholder="Seleccionar proveedor preferido..."
                                                             />
                                                         </FormControl>
-                                                        <FormDescription className="text-[10px]">
-                                                            Proveedor sugerido automáticamente para propuestas de reabastecimiento.
-                                                        </FormDescription>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
