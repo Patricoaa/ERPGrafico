@@ -27,6 +27,7 @@ import { Loader2, Lock, Unlock, Calculator, Banknote, CreditCard, ArrowRightLeft
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { POSReport } from "@/components/pos/POSReport"
+import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
 import { forwardRef, useImperativeHandle } from "react"
 
 interface POSTerminal {
@@ -80,6 +81,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // Open session form state
     const [selectedTerminalId, setSelectedTerminalId] = useState<string>("")
     const [openingBalance, setOpeningBalance] = useState<string>("0")
+    const [fundSourceId, setFundSourceId] = useState<string | null>(null)
 
     // Shared session selection
     const [selectedSharedSessionId, setSelectedSharedSessionId] = useState<string>("")
@@ -87,6 +89,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // Close session form state
     const [actualCash, setActualCash] = useState<string>("0")
     const [closeNotes, setCloseNotes] = useState<string>("")
+    const [cashDestinationId, setCashDestinationId] = useState<string | null>(null)
 
     const [submitting, setSubmitting] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
@@ -189,7 +192,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         try {
             const response = await api.post('/treasury/pos-sessions/open_session/', {
                 terminal_id: parseInt(selectedTerminalId),
-                opening_balance: parseFloat(openingBalance) || 0
+                opening_balance: parseFloat(openingBalance) || 0,
+                fund_source_id: fundSourceId ? parseInt(fundSourceId) : null
             })
 
             setCurrentSession(response.data)
@@ -242,7 +246,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         try {
             const response = await api.post(`/treasury/pos-sessions/${currentSession.id}/close_session/`, {
                 actual_cash: parseFloat(actualCash) || 0,
-                notes: closeNotes
+                notes: closeNotes,
+                cash_destination_id: cashDestinationId ? parseInt(cashDestinationId) : null
             })
 
             const audit = response.data.audit
@@ -372,6 +377,20 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         placeholder="0"
                                     />
                                 </div>
+
+                                {parseFloat(openingBalance) > 0 && (
+                                    <div className="space-y-2">
+                                        <Label>Origen de Fondo de Apertura</Label>
+                                        <CashContainerSelector
+                                            value={fundSourceId}
+                                            onChange={setFundSourceId}
+                                            placeholder="¿De dónde sale el efectivo?"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground italic">
+                                            Recomendado para trazabilidad física si retira dinero de una caja fuerte.
+                                        </p>
+                                    </div>
+                                )}
 
                                 <Button onClick={handleOpenSession} disabled={submitting} className="w-full mt-4">
                                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -580,6 +599,20 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 rows={2}
                             />
                         </div>
+
+                        {parseFloat(actualCash) > 0 && (
+                            <div className="space-y-2 border-t pt-4">
+                                <Label>Destino del Efectivo Contado</Label>
+                                <CashContainerSelector
+                                    value={cashDestinationId}
+                                    onChange={setCashDestinationId}
+                                    placeholder="¿Dónde depositará el dinero?"
+                                />
+                                <p className="text-[10px] text-muted-foreground italic">
+                                    El saldo del contenedor seleccionado aumentará automáticamente.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <DialogFooter>

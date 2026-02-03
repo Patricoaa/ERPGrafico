@@ -215,3 +215,80 @@ class DifferenceService:
             'net_difference': total_positive - total_negative,
             'by_type': by_type
         }
+class POSDifferenceService:
+    """
+    Handles the approval workflow and accounting for POS Cash Differences.
+    """
+    
+    @staticmethod
+    @transaction.atomic
+    def approve_difference(difference_id: int, approved_by_user, notes: str = "") -> 'CashDifference':
+        from .models import CashDifference
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from accounting.services import JournalEntryService
+        
+        difference = CashDifference.objects.select_related(
+            'pos_session_audit__session__terminal__default_treasury_account',
+            'pos_session_audit__session__treasury_account'
+        ).get(id=difference_id)
+        
+        if difference.status != 'PENDING':
+            raise ValueError(f"No se puede aprobar una diferencia en estado {difference.get_status_display()}")
+            
+        settings = AccountingSettings.objects.first()
+        if not settings:
+            raise ValueError("Configuración contable no encontrada.")
+            
+        # Determine accounts
+        session = difference.pos_session_audit.session
+        treasury_account = session.treasury_account.account if session.treasury_account else (
+            session.terminal.default_treasury_account.account if session.terminal else None
+        )
+        
+        if not treasury_account:
+            raise ValueError("No se pudo determinar la cuenta contable de tesorería para esta sesión.")
+            
+        amount = difference.amount
+        abs_amount = abs(amount)
+        
+        if amount > 0:
+            # GAIN
+            adjustment_account = settings.pos_cash_difference_gain_account
+            description = f"Sobrante de Caja (Aprobado) - Sesión #{session.id}"
+        else:
+            # LOSS
+            adjustment_account = settings.pos_cash_difference_loss_account
+            description = f"Faltante de Caja (Aprobado) - Sesión #{session.id}"
+            
+        if not adjustment_account:
+            raise ValueError("Cuentas de ajuste POS no configuradas en contabilidad.")
+            
+        # Create Journal Entry
+        entry = JournalEntry.objects.create(
+            date=timezone.now().date(),
+            description=description,
+            reference=f"POS-DIFF-APR-{session.id}",
+            state=JournalEntry.State.DRAFT
+        )
+        
+        if amount > 0:
+            # Debit Treasury, Credit Gain
+            JournalItem.objects.create(entry=entry, account=treasury_account, debit=abs_amount, credit=0)
+            JournalItem.objects.create(entry=entry, account=adjustment_account, debit=0, credit=abs_amount)
+        else:
+            # Debit Loss, Credit Treasury
+            JournalItem.objects.create(entry=entry, account=adjustment_account, debit=abs_amount, credit=0)
+            JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_amount)
+            
+        # Post entry
+        JournalEntryService.post_entry(entry)
+        
+        # Update difference
+        difference.status = 'APPROVED'
+        difference.approved_by = approved_by_user
+        difference.approved_at = timezone.now()
+        difference.approval_notes = notes
+        difference.journal_entry = entry
+        difference.save()
+        
+        return difference

@@ -2,12 +2,14 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import (Payment, TreasuryAccount, BankStatement, BankStatementLine, 
-                     ReconciliationRule, POSTerminal)
+                     ReconciliationRule, POSTerminal, CashContainer, CashMovement, 
+                     CashDifference)
 from .serializers import (
     PaymentSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
     BankStatementLineSerializer, ReconciliationRuleSerializer,
-    POSTerminalSerializer
+    POSTerminalSerializer, CashContainerSerializer,
+    CashMovementSerializer, CashDifferenceSerializer
 )
 from .services import TreasuryService
 from .reconciliation_service import ReconciliationService
@@ -41,6 +43,55 @@ class POSTerminalViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_active=True)
         
         return qs.order_by('code')
+
+
+class CashContainerViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing physical cash containers (safes, petty cash).
+    """
+    queryset = CashContainer.objects.all().order_by('container_type', 'name')
+    serializer_class = CashContainerSerializer
+    filterset_fields = ['container_type', 'is_active', 'treasury_account']
+
+
+class CashMovementViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for tracking cash movements between containers and POS sessions.
+    """
+    queryset = CashMovement.objects.all().order_by('-date')
+    serializer_class = CashMovementSerializer
+    filterset_fields = ['movement_type', 'status', 'from_container', 'to_container', 'pos_session']
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class CashDifferenceViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing cash differences that require supervisor approval.
+    """
+    queryset = CashDifference.objects.all().order_by('-reported_at')
+    serializer_class = CashDifferenceSerializer
+    filterset_fields = ['status', 'reason', 'pos_session_audit']
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """
+        Approve the cash difference and trigger accounting entry via POSDifferenceService.
+        """
+        try:
+            from .difference_service import POSDifferenceService
+            difference = POSDifferenceService.approve_difference(
+                difference_id=self.get_object().id,
+                approved_by_user=request.user,
+                notes=request.data.get('notes', '')
+            )
+            return Response(CashDifferenceSerializer(difference).data)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -773,6 +824,26 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                     'error': 'Debe especificar terminal_id o treasury_account_id'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
+            # Track Physical Cash Withdrawal for fund if source provided
+            fund_source_id = request.data.get('fund_source_id')
+            if opening_balance > 0 and fund_source_id:
+                from .models import CashMovement, CashContainer
+                try:
+                    from_container = CashContainer.objects.get(id=fund_source_id)
+                    movement = CashMovement.objects.create(
+                        movement_type='WITHDRAWAL',
+                        from_container=from_container,
+                        amount=opening_balance,
+                        pos_session=session,
+                        created_by=request.user,
+                        notes=f"Retiro para fondo de apertura sesión #{session.id}"
+                    )
+                    # Update container balance
+                    from_container.current_balance -= opening_balance
+                    from_container.save()
+                except CashContainer.DoesNotExist:
+                    print(f"WARNING: Fund source container {fund_source_id} not found for withdrawal")
+
             from .serializers import POSSessionSerializer
             return Response(POSSessionSerializer(session).data, status=status.HTTP_201_CREATED)
         
@@ -811,65 +882,93 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 notes=notes
             )
             
-            # Handle Cash Differences (Accounting Adjustment)
+            # Handle Cash Differences (Accounting Adjustment or Approval Workflow)
             if difference != 0:
-                from accounting.models import AccountingSettings, JournalEntry, JournalItem
-                from accounting.services import JournalEntryService
-                
+                from accounting.models import AccountingSettings
                 settings = AccountingSettings.objects.first()
-                if not settings:
-                    print("WARNING: No AccountingSettings found for POS adjustment")
-                else:
-                    treasury_account = session.treasury_account.account
-                    
-                    if difference > 0:
-                        # GAIN (Sobrante): We found MORE cash than expected.
-                        # We need to DEBIT Treasury (Increase Asset) and CREDIT Gain Account (Income)
-                        adjustment_account = settings.pos_cash_difference_gain_account
-                        description = f"Sobrante de Caja - Sesión #{session.id}"
-                        
-                        if treasury_account and adjustment_account:
-                            entry = JournalEntry.objects.create(
-                                date=timezone.now().date(),
-                                description=description,
-                                reference=f"POS-DIFF-{session.id}",
-                                state=JournalEntry.State.DRAFT # Draft initially for safety
-                            )
-                            # Debit Treasury (Increase)
-                            JournalItem.objects.create(entry=entry, account=treasury_account, debit=difference, credit=0)
-                            # Credit Gain (Income)
-                            JournalItem.objects.create(entry=entry, account=adjustment_account, debit=0, credit=difference)
-                            
-                            JournalEntryService.post_entry(entry)
-                            audit.journal_entry = entry
-                            audit.save()
-                        else:
-                             print(f"WARNING: Missing accounts for POS Gain. Treasury: {treasury_account}, Gain: {adjustment_account}")
+                threshold = settings.pos_cash_difference_approval_threshold if settings else Decimal('5000')
 
+                if abs(difference) > threshold:
+                    # New: Workflow for large differences
+                    from .models import CashDifference
+                    CashDifference.objects.create(
+                        pos_session_audit=audit,
+                        amount=difference,
+                        reason='UNKNOWN',
+                        status='PENDING',
+                        reported_by=request.user,
+                        reporter_notes=notes
+                    )
+                    audit.requires_approval = True
+                    audit.save()
+                    print(f"INFO: Difference {difference} exceeds threshold {threshold}. Approval required.")
+                else:
+                    # Legacy: Automatic adjustment for small differences
+                    from accounting.models import JournalEntry, JournalItem
+                    from accounting.services import JournalEntryService
+                    
+                    if not settings:
+                        print("WARNING: No AccountingSettings found for POS adjustment")
                     else:
-                        # LOSS (Faltante): We found LESS cash than expected.
-                        # We need to CREDIT Treasury (Decrease Asset) and DEBIT Loss Account (Expense)
-                        adjustment_account = settings.pos_cash_difference_loss_account
-                        description = f"Faltante de Caja - Sesión #{session.id}"
-                        abs_diff = abs(difference)
+                        treasury_account = session.treasury_account.account if session.treasury_account else (
+                            session.terminal.default_treasury_account.account if session.terminal else None
+                        )
                         
-                        if treasury_account and adjustment_account:
-                            entry = JournalEntry.objects.create(
-                                date=timezone.now().date(),
-                                description=description,
-                                reference=f"POS-DIFF-{session.id}",
-                                state=JournalEntry.State.DRAFT
-                            )
-                            # Debit Loss (Expense)
-                            JournalItem.objects.create(entry=entry, account=adjustment_account, debit=abs_diff, credit=0)
-                            # Credit Treasury (Decrease)
-                            JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_diff)
+                        if difference > 0:
+                            # GAIN (Sobrante)
+                            adjustment_account = settings.pos_cash_difference_gain_account
+                            description = f"Sobrante de Caja - Sesión #{session.id}"
                             
-                            JournalEntryService.post_entry(entry)
-                            audit.journal_entry = entry
-                            audit.save()
+                            if treasury_account and adjustment_account:
+                                entry = JournalEntry.objects.create(
+                                    date=timezone.now().date(),
+                                    description=description,
+                                    reference=f"POS-DIFF-{session.id}",
+                                    state=JournalEntry.State.DRAFT
+                                )
+                                JournalItem.objects.create(entry=entry, account=treasury_account, debit=difference, credit=0)
+                                JournalItem.objects.create(entry=entry, account=adjustment_account, debit=0, credit=difference)
+                                JournalEntryService.post_entry(entry)
+                                audit.journal_entry = entry
+                                audit.save()
                         else:
-                            print(f"WARNING: Missing accounts for POS Loss. Treasury: {treasury_account}, Loss: {adjustment_account}")
+                            # LOSS (Faltante)
+                            adjustment_account = settings.pos_cash_difference_loss_account
+                            description = f"Faltante de Caja - Sesión #{session.id}"
+                            abs_diff = abs(difference)
+                            
+                            if treasury_account and adjustment_account:
+                                entry = JournalEntry.objects.create(
+                                    date=timezone.now().date(),
+                                    description=description,
+                                    reference=f"POS-DIFF-{session.id}",
+                                    state=JournalEntry.State.DRAFT
+                                )
+                                JournalItem.objects.create(entry=entry, account=adjustment_account, debit=abs_diff, credit=0)
+                                JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_diff)
+                                JournalEntryService.post_entry(entry)
+                                audit.journal_entry = entry
+                                audit.save()
+
+            # New: Track Physical Cash Deposit
+            cash_destination_id = request.data.get('cash_destination_id')
+            if actual_cash > 0 and cash_destination_id:
+                from .models import CashMovement, CashContainer
+                try:
+                    to_container = CashContainer.objects.get(id=cash_destination_id)
+                    movement = CashMovement.objects.create(
+                        movement_type='DEPOSIT',
+                        to_container=to_container,
+                        amount=actual_cash,
+                        pos_session=session,
+                        created_by=request.user,
+                        notes=f"Depósito de cierre sesión #{session.id}"
+                    )
+                    # Update container balance
+                    to_container.current_balance += actual_cash
+                    to_container.save()
+                except CashContainer.DoesNotExist:
+                    print(f"WARNING: CashContainer {cash_destination_id} not found for deposit")
 
             # Clean up draft carts for this session
             from sales.draft_cart_service import DraftCartService

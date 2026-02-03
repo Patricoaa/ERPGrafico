@@ -507,6 +507,14 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta Pérdida Diferencia Caja POS"),
         help_text=_("Cuenta de gasto para registrar faltantes de caja.")
     )
+    
+    pos_cash_difference_approval_threshold = models.DecimalField(
+        _("Umbral de Aprobación de Diferencias POS"),
+        max_digits=12,
+        decimal_places=2,
+        default=5000,
+        help_text=_("Montos mayores a este valor requieren aprobación manual.")
+    )
 
 
 

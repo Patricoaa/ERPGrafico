@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models import (Payment, TreasuryAccount, BankStatement, BankStatementLine,  
                      ReconciliationRule, CardPaymentProvider, DailySettlement, 
-                     CardTransaction, POSTerminal)
+                     CardTransaction, POSTerminal, CashContainer, CashMovement, 
+                     CashDifference, POSSessionAudit)
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
 
@@ -231,7 +232,8 @@ class POSSessionSerializer(serializers.ModelSerializer):
     from .models import POSSession
     
     user_name = serializers.SerializerMethodField()
-    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    terminal_name = serializers.CharField(source='terminal.name', read_only=True, allow_null=True)
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     expected_cash = serializers.DecimalField(read_only=True, max_digits=12, decimal_places=2)
     closed_by_name = serializers.CharField(source='closed_by.username', read_only=True, allow_null=True)
@@ -249,6 +251,46 @@ class POSSessionAuditSerializer(serializers.ModelSerializer):
     """Serializer for POS Session Audits (Arqueos)"""
     
     class Meta:
-        from .models import POSSessionAudit
         model = POSSessionAudit
         fields = '__all__'
+
+
+class CashContainerSerializer(serializers.ModelSerializer):
+    """Serializer for Cash Containers (Safes, Petty Cash, etc.)"""
+    container_type_display = serializers.CharField(source='get_container_type_display', read_only=True)
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
+    custodian_name = serializers.CharField(source='custodian.username', read_only=True, allow_null=True)
+
+    class Meta:
+        model = CashContainer
+        fields = '__all__'
+        read_only_fields = ['current_balance', 'created_at', 'updated_at']
+
+
+class CashMovementSerializer(serializers.ModelSerializer):
+    """Serializer for Cash Movements"""
+    movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    from_container_name = serializers.CharField(source='from_container.name', read_only=True, allow_null=True)
+    to_container_name = serializers.CharField(source='to_container.name', read_only=True, allow_null=True)
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+
+    class Meta:
+        model = CashMovement
+        fields = '__all__'
+        read_only_fields = ['created_by', 'created_at', 'updated_at']
+
+
+class CashDifferenceSerializer(serializers.ModelSerializer):
+    """Serializer for Cash Differences requiring approval"""
+    reason_display = serializers.CharField(source='get_reason_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    reported_by_name = serializers.CharField(source='reported_by.username', read_only=True)
+    approved_by_name = serializers.CharField(source='approved_by.username', read_only=True, allow_null=True)
+    session_id = serializers.IntegerField(source='pos_session_audit.session.id', read_only=True)
+    terminal_name = serializers.CharField(source='pos_session_audit.session.terminal.name', read_only=True, allow_null=True)
+
+    class Meta:
+        model = CashDifference
+        fields = '__all__'
+        read_only_fields = ['reported_by', 'reported_at', 'approved_by', 'approved_at', 'journal_entry']

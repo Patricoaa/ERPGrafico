@@ -17,7 +17,9 @@ from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, Purc
 from treasury.models import (
     TreasuryAccount, Payment, BankStatement, BankStatementLine,
     ReconciliationMatch, ReconciliationRule, CardPaymentProvider,
-    DailySettlement, CardTransaction
+    DailySettlement, CardTransaction,
+    CashContainer, CashMovement, CashDifference,
+    POSTerminal, POSSession, POSSessionAudit
 )
 from billing.models import Invoice, NoteWorkflow
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
@@ -79,6 +81,9 @@ class Command(BaseCommand):
         # Add initial stock for all storable products
         self.stdout.write('Adding Initial Stock...')
         self._add_initial_stock(accounts)
+
+        self.stdout.write('Creating Treasury Infrastructure...')
+        self._create_treasury_infrastructure(accounts)
 
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
@@ -265,6 +270,10 @@ class Command(BaseCommand):
 
             self.stdout.write("  ✓ Cuentas de conciliación bancaria configuradas y mapeadas (incluye Comisión Tarjeta)")
 
+            # NUEVO: Umbral de aprobación de diferencias POS
+            settings.pos_cash_difference_approval_threshold = Decimal('5000') # $5.000 CLP
+            self.stdout.write("  ✓ Umbral de aprobación de diferencias POS configurado ($5.000)")
+
             settings.save()
             self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")
 
@@ -367,9 +376,17 @@ class Command(BaseCommand):
         _safe_delete(ReconciliationRule, "ReconciliationRule")
         _safe_delete(CardPaymentProvider, "CardPaymentProvider")
         _safe_delete(TreasuryAccount, "TreasuryAccount")
-        _safe_delete(AccountingSettings, "AccountingSettings")
+        # _safe_delete(AccountingSettings, "AccountingSettings")
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
+        
+        # Treasury New Models
+        _safe_delete(CashDifference, "CashDifference")
+        _safe_delete(CashMovement, "CashMovement")
+        _safe_delete(POSSessionAudit, "POSSessionAudit")
+        _safe_delete(POSSession, "POSSession")
+        _safe_delete(POSTerminal, "POSTerminal")
+        _safe_delete(CashContainer, "CashContainer")
         
         # 7. Accounts
         _safe_delete(Account, "Account")
@@ -886,3 +903,60 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}")
+
+    def _create_treasury_infrastructure(self, accounts):
+        self.stdout.write('  Creating POS Terminals and Cash Containers...')
+        
+        # 1. POS Terminals
+        t1, _ = POSTerminal.objects.get_or_create(
+            code="POS-01",
+            defaults={
+                'name': "Caja Central P1",
+                'location': "Planta 1 - Recepción",
+                'default_treasury_account': TreasuryAccount.objects.get(code="CAJA01")
+            }
+        )
+        t2, _ = POSTerminal.objects.get_or_create(
+            code="POS-02",
+            defaults={
+                'name': "Caja Taller P2",
+                'location': "Planta 2 - Taller",
+                'default_treasury_account': TreasuryAccount.objects.get(code="CAJA01")
+            }
+        )
+
+        # 2. Cash Containers
+        manager_user = User.objects.get(username='gerente')
+        
+        safe, _ = CashContainer.objects.get_or_create(
+            name="Caja Fuerte Principal",
+            defaults={
+                'container_type': CashContainer.Type.SAFE,
+                'location': "Oficina Gerencia",
+                'treasury_account': TreasuryAccount.objects.get(code="CAJA01"),
+                'current_balance': Decimal('1500000'),
+                'custodian': manager_user
+            }
+        )
+
+        till1, _ = CashContainer.objects.get_or_create(
+            name="Gaveta POS 01",
+            defaults={
+                'container_type': CashContainer.Type.TILL,
+                'location': "Mostrador 1",
+                'treasury_account': TreasuryAccount.objects.get(code="CAJA01"),
+                'current_balance': 0
+            }
+        )
+
+        petty, _ = CashContainer.objects.get_or_create(
+            name="Caja Chica Administración",
+            defaults={
+                'container_type': CashContainer.Type.PETTY_CASH,
+                'location': "Administración",
+                'treasury_account': TreasuryAccount.objects.get(code="CAJA01"),
+                'current_balance': Decimal('50000')
+            }
+        )
+
+        self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills).")

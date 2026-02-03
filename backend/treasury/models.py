@@ -5,6 +5,8 @@ from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from simple_history.models import HistoricalRecords
 from django.conf import settings
+from django.utils import timezone
+from django.core.validators import MinValueValidator
 
 
 class ReconciliationMatch(models.Model):
@@ -940,6 +942,13 @@ class POSSessionAudit(models.Model):
         help_text=_("Diferencia: actual - esperado (+ sobrante, - faltante)")
     )
     
+    # New: Tracking if this audit requires manual approval due to threshold
+    requires_approval = models.BooleanField(
+        _("Requiere Aprobación"),
+        default=False,
+        help_text=_("True si la diferencia excede el umbral de aprobación")
+    )
+    
     # Accounting adjustment for difference
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
@@ -958,4 +967,265 @@ class POSSessionAudit(models.Model):
     
     def __str__(self):
         return f"Arqueo Sesión #{self.session.id} - Diff: {self.difference}"
+
+
+class CashContainer(models.Model):
+    """
+    Represents a physical container of cash (safe, petty cash, change fund, etc.).
+    Allows tracking of cash location and movements.
+    """
+    class Type(models.TextChoices):
+        SAFE = 'SAFE', _('Caja Fuerte')
+        PETTY_CASH = 'PETTY_CASH', _('Caja Menor')
+        CHANGE_FUND = 'CHANGE_FUND', _('Fondo de Cambio')
+        TILL = 'TILL', _('Gaveta/Caja Registradora')
+
+    name = models.CharField(_("Nombre"), max_length=100)
+    container_type = models.CharField(
+        _("Tipo"),
+        max_length=20,
+        choices=Type.choices
+    )
+    location = models.CharField(
+        _("Ubicación"),
+        max_length=200,
+        blank=True
+    )
+
+    # Link to accounting (optional, usually links to a specific Asset account)
+    treasury_account = models.ForeignKey(
+        'TreasuryAccount',
+        on_delete=models.PROTECT,
+        related_name='cash_containers',
+        verbose_name=_("Cuenta de Tesorería Asociada"),
+        null=True,
+        blank=True
+    )
+
+    # Current balance (denormalized for performance)
+    current_balance = models.DecimalField(
+        _("Saldo Actual"),
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text=_("Saldo físico actual en el contenedor")
+    )
+
+    # Responsible person
+    custodian = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='managed_cash_containers',
+        verbose_name=_("Responsable")
+    )
+
+    is_active = models.BooleanField(_("Activo"), default=True)
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Contenedor de Efectivo")
+        verbose_name_plural = _("Contenedores de Efectivo")
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_container_type_display()})"
+
+
+class CashMovement(models.Model):
+    """
+    Records internal cash movements between containers or between container and POS Session.
+    Provides full traceability of cash flow.
+    """
+    class Type(models.TextChoices):
+        DEPOSIT = 'DEPOSIT', _('Depósito')              # POS → Safe / Petty Cash
+        WITHDRAWAL = 'WITHDRAWAL', _('Retiro')          # Safe → POS (Open fund)
+        TRANSFER = 'TRANSFER', _('Transferencia')       # Safe ↔ Petty Cash
+        BANK_DEPOSIT = 'BANK_DEPOSIT', _('Depósito Bancario')  # Safe → Bank
+        ADJUSTMENT = 'ADJUSTMENT', _('Ajuste')          # Manual correction
+
+    class Status(models.TextChoices):
+        DRAFT = 'DRAFT', _('Borrador')
+        CONFIRMED = 'CONFIRMED', _('Confirmado')
+        CANCELLED = 'CANCELLED', _('Cancelado')
+
+    movement_type = models.CharField(
+        _("Tipo"),
+        max_length=20,
+        choices=Type.choices
+    )
+    date = models.DateTimeField(_("Fecha"), default=timezone.now)
+    amount = models.DecimalField(
+        _("Monto"),
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    status = models.CharField(
+        _("Estado"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.CONFIRMED
+    )
+
+    # Origin and Destination
+    from_container = models.ForeignKey(
+        'CashContainer',
+        on_delete=models.PROTECT,
+        related_name='outgoing_movements',
+        null=True,
+        blank=True,
+        verbose_name=_("Desde Contenedor")
+    )
+    to_container = models.ForeignKey(
+        'CashContainer',
+        on_delete=models.PROTECT,
+        related_name='incoming_movements',
+        null=True,
+        blank=True,
+        verbose_name=_("Hacia Contenedor")
+    )
+
+    # Link to POS Session if applicable
+    pos_session = models.ForeignKey(
+        'POSSession',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cash_movements',
+        verbose_name=_("Sesión POS Relacionada")
+    )
+
+    # Accounting (optional for purely physical movements, required for bank deposits)
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cash_movement',
+        verbose_name=_("Asiento Contable")
+    )
+
+    # Audit
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='created_cash_movements',
+        verbose_name=_("Creado Por")
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Movimiento de Efectivo")
+        verbose_name_plural = _("Movimientos de Efectivo")
+        ordering = ['-date']
+
+    def __str__(self):
+        from_desc = self.from_container.name if self.from_container else "Exterior/POS"
+        to_desc = self.to_container.name if self.to_container else "Exterior/POS"
+        return f"{from_desc} → {to_desc}: ${self.amount}"
+
+
+class CashDifference(models.Model):
+    """
+    Detailed record of cash differences requiring approval.
+    Replaces simple gain/loss dichotomy with categorized tracking.
+    """
+    class Reason(models.TextChoices):
+        COUNTING_ERROR = 'COUNTING_ERROR', _('Error de Conteo')
+        THEFT = 'THEFT', _('Robo/Faltante')
+        ROUNDING = 'ROUNDING', _('Redondeo')
+        TIP = 'TIP', _('Propina')
+        CASHBACK = 'CASHBACK', _('Vuelto Incorrecto')
+        SYSTEM_ERROR = 'SYSTEM_ERROR', _('Error del Sistema')
+        UNKNOWN = 'UNKNOWN', _('Desconocido')
+
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', _('Pendiente Revisión')
+        APPROVED = 'APPROVED', _('Aprobada')
+        DISPUTED = 'DISPUTED', _('En Disputa')
+        CANCELLED = 'CANCELLED', _('Cancelada')
+
+    # Link to audit
+    pos_session_audit = models.ForeignKey(
+        'POSSessionAudit',
+        on_delete=models.CASCADE,
+        related_name='differences',
+        verbose_name=_("Arqueo Asociado")
+    )
+
+    amount = models.DecimalField(
+        _("Monto"),
+        max_digits=12,
+        decimal_places=2,
+        help_text=_("+ para sobrante, - para faltante")
+    )
+
+    reason = models.CharField(
+        _("Razón"),
+        max_length=20,
+        choices=Reason.choices,
+        default=Reason.UNKNOWN
+    )
+
+    status = models.CharField(
+        _("Estado"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING
+    )
+
+    # Workflow
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='reported_differences',
+        verbose_name=_("Reportado Por")
+    )
+    reported_at = models.DateTimeField(_("Reportado el"), auto_now_add=True)
+
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_differences',
+        verbose_name=_("Aprobado Por")
+    )
+    approved_at = models.DateTimeField(_("Aprobado el"), null=True, blank=True)
+
+    approval_notes = models.TextField(_("Notas de Aprobación"), blank=True)
+    reporter_notes = models.TextField(_("Notas del Reportante"), blank=True)
+
+    # Accounting entry (created after approval if applicable)
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cash_difference',
+        verbose_name=_("Asiento Contable")
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Diferencia de Efectivo")
+        verbose_name_plural = _("Diferencias de Efectivo")
+        ordering = ['-reported_at']
+
+    def __str__(self):
+        sign = "+" if self.amount >= 0 else "-"
+        return f"{sign}${abs(self.amount)} - {self.get_reason_display()} ({self.get_status_display()})"
 
