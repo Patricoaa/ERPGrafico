@@ -214,6 +214,27 @@ class TreasuryAccount(models.Model):
     allows_cash = models.BooleanField(_("Permite Efectivo"), default=False)
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
     allows_transfer = models.BooleanField(_("Permite Transferencia"), default=False)
+
+    # Physical Location Fields (Refactor from CashContainer)
+    location = models.CharField(
+        _("Ubicación"),
+        max_length=200,
+        blank=True,
+        help_text=_("Ubicación física (ej: Caja Fuerte Principal, Gaveta 1)")
+    )
+    custodian = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='custodian_of_accounts',
+        verbose_name=_("Responsable / Custodio")
+    )
+    is_physical = models.BooleanField(
+        _("Es Contenedor Físico"),
+        default=False,
+        help_text=_("Marcar si esta cuenta representa un lugar físico de almacenamiento de dinero")
+    )
     
     # Configuration for Card Payments
     card_receivable_account = models.ForeignKey(
@@ -969,73 +990,7 @@ class POSSessionAudit(models.Model):
         return f"Arqueo Sesión #{self.session.id} - Diff: {self.difference}"
 
 
-class CashContainer(models.Model):
-    """
-    Represents a physical container of cash (safe, petty cash, change fund, etc.).
-    Allows tracking of cash location and movements.
-    """
-    class Type(models.TextChoices):
-        SAFE = 'SAFE', _('Caja Fuerte')
-        PETTY_CASH = 'PETTY_CASH', _('Caja Menor')
-        CHANGE_FUND = 'CHANGE_FUND', _('Fondo de Cambio')
-        TILL = 'TILL', _('Gaveta/Caja Registradora')
 
-    name = models.CharField(_("Nombre"), max_length=100)
-    container_type = models.CharField(
-        _("Tipo"),
-        max_length=20,
-        choices=Type.choices
-    )
-    location = models.CharField(
-        _("Ubicación"),
-        max_length=200,
-        blank=True
-    )
-
-    # Link to accounting (optional, usually links to a specific Asset account)
-    treasury_account = models.ForeignKey(
-        'TreasuryAccount',
-        on_delete=models.PROTECT,
-        related_name='cash_containers',
-        verbose_name=_("Cuenta de Tesorería Asociada"),
-        null=True,
-        blank=True
-    )
-
-    # Current balance (denormalized for performance)
-    current_balance = models.DecimalField(
-        _("Saldo Actual"),
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        help_text=_("Saldo físico actual en el contenedor")
-    )
-
-    # Responsible person
-    custodian = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='managed_cash_containers',
-        verbose_name=_("Responsable")
-    )
-
-    is_active = models.BooleanField(_("Activo"), default=True)
-    notes = models.TextField(_("Notas"), blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    history = HistoricalRecords()
-
-    class Meta:
-        verbose_name = _("Contenedor de Efectivo")
-        verbose_name_plural = _("Contenedores de Efectivo")
-        ordering = ['name']
-
-    def __str__(self):
-        return f"{self.name} ({self.get_container_type_display()})"
 
 
 class CashMovement(models.Model):
@@ -1074,22 +1029,22 @@ class CashMovement(models.Model):
         default=Status.CONFIRMED
     )
 
-    # Origin and Destination
-    from_container = models.ForeignKey(
-        'CashContainer',
+    # Origin and Destination (Now TreasuryAccount)
+    from_account = models.ForeignKey(
+        'TreasuryAccount',
         on_delete=models.PROTECT,
         related_name='outgoing_movements',
         null=True,
         blank=True,
-        verbose_name=_("Desde Contenedor")
+        verbose_name=_("Desde Cuenta")
     )
-    to_container = models.ForeignKey(
-        'CashContainer',
+    to_account = models.ForeignKey(
+        'TreasuryAccount',
         on_delete=models.PROTECT,
         related_name='incoming_movements',
         null=True,
         blank=True,
-        verbose_name=_("Hacia Contenedor")
+        verbose_name=_("Hacia Cuenta")
     )
 
     # Link to POS Session if applicable
@@ -1132,8 +1087,8 @@ class CashMovement(models.Model):
         ordering = ['-date']
 
     def __str__(self):
-        from_desc = self.from_container.name if self.from_container else "Exterior/POS"
-        to_desc = self.to_container.name if self.to_container else "Exterior/POS"
+        from_desc = self.from_account.name if self.from_account else "Exterior/POS"
+        to_desc = self.to_account.name if self.to_account else "Exterior/POS"
         return f"{from_desc} → {to_desc}: ${self.amount}"
 
 

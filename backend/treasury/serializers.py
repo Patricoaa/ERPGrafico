@@ -1,13 +1,14 @@
 from rest_framework import serializers
 from .models import (Payment, TreasuryAccount, BankStatement, BankStatementLine,  
                      ReconciliationRule, CardPaymentProvider, DailySettlement, 
-                     CardTransaction, POSTerminal, CashContainer, CashMovement, 
+                     CardTransaction, POSTerminal, CashMovement, 
                      CashDifference, POSSessionAudit)
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
 
 class TreasuryAccountSerializer(serializers.ModelSerializer):
     account_name = serializers.CharField(source='account.name', read_only=True)
+    custodian_name = serializers.CharField(source='custodian.username', read_only=True, allow_null=True)
     
     class Meta:
         model = TreasuryAccount
@@ -255,24 +256,15 @@ class POSSessionAuditSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class CashContainerSerializer(serializers.ModelSerializer):
-    """Serializer for Cash Containers (Safes, Petty Cash, etc.)"""
-    container_type_display = serializers.CharField(source='get_container_type_display', read_only=True)
-    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
-    custodian_name = serializers.CharField(source='custodian.username', read_only=True, allow_null=True)
 
-    class Meta:
-        model = CashContainer
-        fields = '__all__'
-        read_only_fields = ['current_balance', 'created_at', 'updated_at']
 
 
 class CashMovementSerializer(serializers.ModelSerializer):
     """Serializer for Cash Movements"""
     movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    from_container_name = serializers.CharField(source='from_container.name', read_only=True, allow_null=True)
-    to_container_name = serializers.CharField(source='to_container.name', read_only=True, allow_null=True)
+    from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
+    to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
 
     class Meta:

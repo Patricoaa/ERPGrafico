@@ -2,13 +2,14 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import (Payment, TreasuryAccount, BankStatement, BankStatementLine, 
-                     ReconciliationRule, POSTerminal, CashContainer, CashMovement, 
+                     ReconciliationRule, POSTerminal, CashMovement, 
                      CashDifference)
 from .serializers import (
     PaymentSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
     BankStatementLineSerializer, ReconciliationRuleSerializer,
-    POSTerminalSerializer, CashContainerSerializer,
+    BankStatementLineSerializer, ReconciliationRuleSerializer,
+    POSTerminalSerializer,
     CashMovementSerializer, CashDifferenceSerializer
 )
 from .services import TreasuryService
@@ -45,22 +46,14 @@ class POSTerminalViewSet(viewsets.ModelViewSet):
         return qs.order_by('code')
 
 
-class CashContainerViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing physical cash containers (safes, petty cash).
-    """
-    queryset = CashContainer.objects.all().order_by('container_type', 'name')
-    serializer_class = CashContainerSerializer
-    filterset_fields = ['container_type', 'is_active', 'treasury_account']
-
 
 class CashMovementViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for tracking cash movements between containers and POS sessions.
+    ViewSet for tracking cash movements between accounts and POS sessions.
     """
     queryset = CashMovement.objects.all().order_by('-date')
     serializer_class = CashMovementSerializer
-    filterset_fields = ['movement_type', 'status', 'from_container', 'to_container', 'pos_session']
+    filterset_fields = ['movement_type', 'status', 'from_account', 'to_account', 'pos_session']
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -953,22 +946,23 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             # New: Track Physical Cash Deposit
             cash_destination_id = request.data.get('cash_destination_id')
             if actual_cash > 0 and cash_destination_id:
-                from .models import CashMovement, CashContainer
                 try:
-                    to_container = CashContainer.objects.get(id=cash_destination_id)
+                    to_account = TreasuryAccount.objects.get(id=cash_destination_id)
                     movement = CashMovement.objects.create(
                         movement_type='DEPOSIT',
-                        to_container=to_container,
+                        to_account=to_account,
                         amount=actual_cash,
                         pos_session=session,
                         created_by=request.user,
                         notes=f"Depósito de cierre sesión #{session.id}"
                     )
-                    # Update container balance
-                    to_container.current_balance += actual_cash
-                    to_container.save()
-                except CashContainer.DoesNotExist:
-                    print(f"WARNING: CashContainer {cash_destination_id} not found for deposit")
+                    # No need to update 'current_balance' as it's not denormalized on account yet/anymore
+                    # But if we did migrate balance logic, we would do it here.
+                    # For now, TreasuryAccount doesn't have a 'current_balance' field in my new model definition
+                    # (only accounting balance via ledger, unless I add it). 
+                    # User said "separados cuentas" so let's stick to standard behavior.
+                except TreasuryAccount.DoesNotExist:
+                    print(f"WARNING: TreasuryAccount {cash_destination_id} not found for deposit")
 
             # Clean up draft carts for this session
             from sales.draft_cart_service import DraftCartService

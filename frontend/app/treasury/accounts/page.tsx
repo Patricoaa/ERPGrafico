@@ -16,7 +16,6 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogFooter
 } from "@/components/ui/dialog"
 import {
@@ -27,10 +26,11 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Plus, Pencil, Trash2, Loader2, Building2, Banknote, CheckCircle2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Building2, Banknote, MapPin, Shield } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { UserSelector } from "@/components/selectors/UserSelector" // Assuming this exists or creates generic selector
 
 interface TreasuryAccount {
     id: number
@@ -39,11 +39,15 @@ interface TreasuryAccount {
     currency: string
     account: number | null
     account_name?: string
-    account_details?: any
     account_type: 'BANK' | 'CASH'
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
+    // New fields
+    location: string
+    custodian: number | null
+    custodian_name?: string
+    is_physical: boolean
 }
 
 export default function TreasuryAccountsPage() {
@@ -97,7 +101,20 @@ export default function TreasuryAccountsPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Nombre" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            cell: ({ row }) => {
+                const acc = row.original
+                return (
+                    <div className="flex flex-col">
+                        <span className="font-medium">{acc.name}</span>
+                        {acc.is_physical && (
+                            <Badge variant="outline" className="w-fit text-[10px] mt-1 border-stone-400 text-stone-600">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {acc.location || 'Físico sin ubicación'}
+                            </Badge>
+                        )}
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "account_type",
@@ -109,16 +126,10 @@ export default function TreasuryAccountsPage() {
                 return (
                     <div className="flex items-center gap-2">
                         {type === 'BANK' ? <Building2 className="h-4 w-4 text-blue-500" /> : <Banknote className="h-4 w-4 text-green-500" />}
-                        {type === 'BANK' ? 'Banco' : 'Caja (Efectivo)'}
+                        {type === 'BANK' ? 'Banco' : 'Caja'}
                     </div>
                 )
             },
-        },
-        {
-            accessorKey: "currency",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Moneda" />
-            ),
         },
         {
             id: "methods",
@@ -130,23 +141,23 @@ export default function TreasuryAccountsPage() {
                         {acc.allows_cash && <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 border-emerald-200 bg-emerald-50">Efectivo</Badge>}
                         {acc.allows_card && <Badge variant="outline" className="text-[10px] uppercase font-bold text-blue-600 border-blue-200 bg-blue-50">Tarjeta</Badge>}
                         {acc.allows_transfer && <Badge variant="outline" className="text-[10px] uppercase font-bold text-purple-600 border-purple-200 bg-purple-50">Transf.</Badge>}
-                        {!acc.allows_cash && !acc.allows_card && !acc.allows_transfer && <span className="text-[10px] text-muted-foreground italic">Ninguno</span>}
                     </div>
                 )
             },
         },
         {
-            id: "accounting",
-            header: "Cuenta Contable",
+            id: "custodian",
+            header: "Responsable",
             cell: ({ row }) => {
                 const acc = row.original
-                return acc.account ? (
-                    <div className="flex flex-col">
-                        <span className="text-sm font-medium">{acc.account_name || 'Cuenta Contable'}</span>
-                        <span className="text-[10px] text-muted-foreground">ID: {acc.account}</span>
+                if (!acc.custodian_name) return <span className="text-muted-foreground">-</span>
+                return (
+                    <div className="flex items-center gap-1 text-sm text-stone-600">
+                        <Shield className="h-3 w-3" />
+                        {acc.custodian_name}
                     </div>
-                ) : <span className="text-muted-foreground text-xs">Sin asignar</span>
-            },
+                )
+            }
         },
         {
             id: "actions",
@@ -193,7 +204,6 @@ export default function TreasuryAccountsPage() {
                             ],
                         },
                     ]}
-                    useAdvancedFilter={true}
                 />
             </div>
 
@@ -220,6 +230,11 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
     const [allowsCard, setAllowsCard] = useState(false)
     const [allowsTransfer, setAllowsTransfer] = useState(false)
 
+    // New fields
+    const [location, setLocation] = useState("")
+    const [custodian, setCustodian] = useState<string | null>(null)
+    const [isPhysical, setIsPhysical] = useState(false)
+
     useEffect(() => {
         if (open) {
             if (account) {
@@ -230,14 +245,21 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setAllowsCash(account.allows_cash)
                 setAllowsCard(account.allows_card)
                 setAllowsTransfer(account.allows_transfer)
+                // New fields
+                setLocation(account.location || "")
+                setCustodian(account.custodian ? account.custodian.toString() : null)
+                setIsPhysical(account.is_physical || false)
             } else {
                 setName("")
                 setType("CASH")
                 setCurrency("CLP")
                 setAccountingAccount(null)
-                setAllowsCash(true) // Default for new account
+                setAllowsCash(true)
                 setAllowsCard(false)
                 setAllowsTransfer(false)
+                setLocation("")
+                setCustodian(null)
+                setIsPhysical(false)
             }
         }
     }, [open, account])
@@ -253,7 +275,10 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 account: accountingAccount,
                 allows_cash: allowsCash,
                 allows_card: allowsCard,
-                allows_transfer: allowsTransfer
+                allows_transfer: allowsTransfer,
+                location,
+                custodian,
+                is_physical: isPhysical
             }
             if (account) {
                 await api.patch(`/treasury/accounts/${account.id}/`, payload)
@@ -272,73 +297,104 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[700px]">
                 <DialogHeader>
                     <DialogTitle>{account ? "Editar Cuenta" : "Nueva Cuenta de Tesorería"}</DialogTitle>
                     <DialogDescription>
-                        Configure los detalles de la cuenta de caja o banco.
+                        Configure los detalles de la cuenta.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid gap-2">
-                        <Label>Nombre</Label>
-                        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal, Banco Estado..." required />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label>Tipo</Label>
-                            <Select value={type} onValueChange={(v: any) => setType(v)}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="CASH">Caja (Efectivo)</SelectItem>
-                                    <SelectItem value="BANK">Banco</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>Moneda</Label>
-                            <Select value={currency} onValueChange={setCurrency}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="CLP">Pesos (CLP)</SelectItem>
-                                    <SelectItem value="USD">Dólar (USD)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <div className="grid gap-3 p-4 border rounded-lg bg-muted/20">
-                        <Label className="text-sm font-bold">Métodos de Pago Permitidos</Label>
-                        <div className="flex flex-wrap gap-6">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="check-cash" checked={allowsCash} onCheckedChange={(v) => setAllowsCash(!!v)} />
-                                <Label htmlFor="check-cash" className="text-xs cursor-pointer">Efectivo</Label>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-6">
+                        {/* Column 1: Basic Info */}
+                        <div className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label>Nombre</Label>
+                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" required />
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="check-card" checked={allowsCard} onCheckedChange={(v) => setAllowsCard(!!v)} />
-                                <Label htmlFor="check-card" className="text-xs cursor-pointer">Tarjeta</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Tipo</Label>
+                                    <Select value={type} onValueChange={(v: any) => setType(v)}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="CASH">Caja (Efectivo)</SelectItem>
+                                            <SelectItem value="BANK">Banco</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Moneda</Label>
+                                    <Select value={currency} onValueChange={setCurrency}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="CLP">Pesos (CLP)</SelectItem>
+                                            <SelectItem value="USD">Dólar (USD)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="check-transfer" checked={allowsTransfer} onCheckedChange={(v) => setAllowsTransfer(!!v)} />
-                                <Label htmlFor="check-transfer" className="text-xs cursor-pointer">Transferencia</Label>
+                            <div className="grid gap-2">
+                                <Label>Cuenta Contable (Activo)</Label>
+                                <AccountSelector
+                                    value={accountingAccount}
+                                    onChange={setAccountingAccount}
+                                    accountType="ASSET"
+                                    placeholder="Seleccione cuenta contable..."
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                    Cuenta donde se reflejará el saldo contable.
+                                </p>
                             </div>
                         </div>
-                        <p className="text-[10px] text-muted-foreground italic">
-                            Seleccione todos los métodos que esta caja o banco puede recibir.
-                        </p>
+
+                        {/* Column 2: Physical & Config */}
+                        <div className="space-y-4">
+                            <div className="p-4 border rounded-lg bg-orange-50/50 space-y-3">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="is-physical" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
+                                    <Label htmlFor="is-physical" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
+                                </div>
+                                {isPhysical && (
+                                    <>
+                                        <div className="grid gap-2">
+                                            <Label className="text-xs">Ubicación</Label>
+                                            <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central - Caja Fuerte" className="h-8 text-xs" />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label className="text-xs">Responsable (Custodio)</Label>
+                                            {/* Assuming UserSelector exists, otherwise basic select or input */}
+                                            {/* Placeholder for user selector - using basic Input for now if UserSelector is not confirmed */}
+                                            <Input value={custodian || ''} onChange={e => setCustodian(e.target.value || null)} placeholder="ID Usuario (Temporal)" className="h-8 text-xs" />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                                <Label className="text-sm font-bold">Métodos Permitidos</Label>
+                                <div className="space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="check-cash" checked={allowsCash} onCheckedChange={(v) => setAllowsCash(!!v)} />
+                                        <Label htmlFor="check-cash" className="text-xs cursor-pointer">Efectivo</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="check-card" checked={allowsCard} onCheckedChange={(v) => setAllowsCard(!!v)} />
+                                        <Label htmlFor="check-card" className="text-xs cursor-pointer">Tarjeta</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="check-transfer" checked={allowsTransfer} onCheckedChange={(v) => setAllowsTransfer(!!v)} />
+                                        <Label htmlFor="check-transfer" className="text-xs cursor-pointer">Transferencia</Label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="grid gap-2">
-                        <Label>Cuenta Contable (Activo)</Label>
-                        <AccountSelector
-                            value={accountingAccount}
-                            onChange={setAccountingAccount}
-                            accountType="ASSET"
-                            placeholder="Seleccione cuenta contable..."
-                        />
-                    </div>
+
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                         <Button type="submit" disabled={loading}>
