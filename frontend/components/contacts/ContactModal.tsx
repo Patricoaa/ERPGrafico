@@ -305,8 +305,8 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                     <div className="p-8 pb-32">
                                         <Form {...form}>
                                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="md:col-span-2 flex items-center gap-8 p-4 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="md:col-span-2 flex items-center gap-8 p-4 bg-primary/5 rounded-2xl border border-dashed border-primary/10">
                                                         <FormField
                                                             control={form.control}
                                                             name="is_default_customer"
@@ -353,9 +353,9 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                         name="name"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Nombre / Razón Social</FormLabel>
+                                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre / Razón Social</FormLabel>
                                                                 <FormControl>
-                                                                    <Input placeholder="Ej: Juan Pérez o Empresa SpA" {...field} />
+                                                                    <Input placeholder="Ej: Juan Pérez o Empresa SpA" {...field} className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -367,12 +367,13 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                         name="tax_id"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>RUT / Tax ID</FormLabel>
+                                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">RUT / Tax ID</FormLabel>
                                                                 <FormControl>
                                                                     <Input
                                                                         placeholder="12.345.678-9"
                                                                         {...field}
                                                                         onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                                                        className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />
@@ -385,9 +386,9 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                         name="email"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Email</FormLabel>
+                                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email</FormLabel>
                                                                 <FormControl>
-                                                                    <Input placeholder="ejemplo@correo.com" {...field} />
+                                                                    <Input placeholder="ejemplo@correo.com" {...field} className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -399,9 +400,9 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                         name="phone"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Teléfono</FormLabel>
+                                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Teléfono</FormLabel>
                                                                 <FormControl>
-                                                                    <Input placeholder="+56 9 ..." {...field} />
+                                                                    <Input placeholder="+56 9 ..." {...field} className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -414,9 +415,9 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                             name="address"
                                                             render={({ field }) => (
                                                                 <FormItem>
-                                                                    <FormLabel>Dirección</FormLabel>
+                                                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Dirección</FormLabel>
                                                                     <FormControl>
-                                                                        <Input placeholder="Calle, Número, Depto" {...field} />
+                                                                        <Input placeholder="Calle, Número, Depto" {...field} className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" />
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
@@ -429,9 +430,9 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                                         name="city"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Ciudad / Comuna</FormLabel>
+                                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ciudad / Comuna</FormLabel>
                                                                 <FormControl>
-                                                                    <Input placeholder="Santiago" {...field} />
+                                                                    <Input placeholder="Santiago" {...field} className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>

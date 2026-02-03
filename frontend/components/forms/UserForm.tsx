@@ -191,12 +191,14 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
                                 <Tabs defaultValue="general" className="flex-1 flex flex-col">
-                                    <div className="px-6 lg:px-8 pt-6">
-                                        <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/50 rounded-full h-10 p-1 border">
-                                            <TabsTrigger value="general" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs">
+                                    <div className="px-6 border-b bg-muted/5">
+                                        <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
+                                            <TabsTrigger value="general" className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2">
+                                                <User className="h-4 w-4" />
                                                 Información General
                                             </TabsTrigger>
-                                            <TabsTrigger value="permissions" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs">
+                                            <TabsTrigger value="permissions" className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2">
+                                                <ShieldCheck className="h-4 w-4" />
                                                 Permisos y Equipos
                                             </TabsTrigger>
                                         </TabsList>
@@ -210,14 +212,14 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     name="contact"
                                                     render={({ field }) => (
                                                         <FormItem className="md:col-span-2">
-                                                            <FormLabel>Contacto Vinculado</FormLabel>
+                                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contacto Vinculado</FormLabel>
                                                             <Select
                                                                 onValueChange={(val) => field.onChange(parseInt(val))}
                                                                 value={field.value?.toString()}
                                                                 disabled={!!initialData}
                                                             >
                                                                 <FormControl>
-                                                                    <SelectTrigger className="h-11">
+                                                                    <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
                                                                         <SelectValue placeholder="Seleccione la persona" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
@@ -239,13 +241,13 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     name="username"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Nombre de Usuario</FormLabel>
+                                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre de Usuario</FormLabel>
                                                             <FormControl>
                                                                 <Input
                                                                     {...field}
                                                                     disabled={!!initialData}
                                                                     placeholder="ej: pmartinez"
-                                                                    className="h-11"
+                                                                    className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />
@@ -257,9 +259,9 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     control={form.control}
                                                     name="is_active"
                                                     render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/5">
+                                                        <FormItem className="flex flex-row items-center justify-between rounded-2xl border border-dashed p-4 bg-card/50">
                                                             <div className="space-y-0.5">
-                                                                <FormLabel className="flex items-center gap-2">
+                                                                <FormLabel className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                                                     {field.value ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
                                                                     Estado del Acceso
                                                                 </FormLabel>
@@ -282,9 +284,9 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     name="password"
                                                     render={({ field }) => (
                                                         <FormItem className="md:col-span-2">
-                                                            <FormLabel>Contraseña {initialData && "(opcional)"}</FormLabel>
+                                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contraseña {initialData && "(opcional)"}</FormLabel>
                                                             <FormControl>
-                                                                <Input {...field} type="password" placeholder="••••••••" className="h-11" />
+                                                                <Input {...field} type="password" placeholder="••••••••" className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" />
                                                             </FormControl>
                                                             {!initialData && <p className="text-[11px] text-muted-foreground">Mínimo 6 caracteres</p>}
                                                             <FormMessage />

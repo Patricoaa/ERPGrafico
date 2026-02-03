@@ -105,9 +105,9 @@ export function GroupForm({
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Nombre</FormLabel>
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ej: Bodega, Ventas..." {...field} />
+                                        <Input placeholder="Ej: Bodega, Ventas..." {...field} className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
