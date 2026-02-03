@@ -140,12 +140,12 @@ export default function CashDifferencesPage() {
             },
         },
         {
-            accessorKey: "status",
+            accessorKey: "status_display",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" />
             ),
             cell: ({ row }) => {
-                const status = row.getValue("status") as string
+                const status = row.original.status
                 const colorMap: Record<string, string> = {
                     'PENDING': 'warning',
                     'APPROVED': 'success',
@@ -159,7 +159,7 @@ export default function CashDifferencesPage() {
                 return (
                     <Badge variant={colorMap[status] as any} className="flex items-center w-fit">
                         {iconMap[status]}
-                        {row.original.status_display}
+                        {row.getValue("status_display")}
                     </Badge>
                 )
             },

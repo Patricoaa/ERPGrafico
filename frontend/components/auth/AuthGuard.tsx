@@ -77,7 +77,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         "billing": "/billing/sales",
         "inventory": "/inventory/products",
         "production": "/production/orders",
-        "treasury": "/treasury/accounts",
+        "treasury": "/treasury",
         "purchasing": "/purchasing/orders",
         "finances": "/finances/statements",
     }

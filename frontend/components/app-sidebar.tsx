@@ -46,6 +46,9 @@ const categoryItems: Record<string, any> = {
     ],
     "treasury": [
         { title: "Cajas y Bancos", url: "/treasury/accounts" },
+        { title: "Contenedores Físicos", url: "/treasury/containers" },
+        { title: "Trazabilidad Efectivo", url: "/treasury/movements" },
+        { title: "Diferencias POS", url: "/treasury/differences" },
         { title: "Ingresos y Egresos", url: "/treasury/payments" },
         { title: "Conciliación Bancaria", url: "/treasury/reconciliation" },
         { title: "Facturación Tarjetas", url: "/treasury/card-billing" },

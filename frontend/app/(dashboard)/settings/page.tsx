@@ -72,6 +72,18 @@ export default function SettingsPage() {
                         </CardHeader>
                     </Card>
                 </Link>
+
+                <Link href="/settings/terminals">
+                    <Card className="cursor-pointer hover:border-primary">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <ShoppingCart className="h-8 w-8 text-primary" />
+                            <div>
+                                <CardTitle>Terminales POS</CardTitle>
+                                <CardDescription>Configuración de cajas y puntos de venta físicos.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
             </div>
 
             <Card>
