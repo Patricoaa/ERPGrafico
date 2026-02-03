@@ -31,6 +31,7 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { FORM_STYLES } from "@/lib/styles"
 
 // Schema
 const bomSchema = z.object({
@@ -277,9 +278,9 @@ export function BOMFormDialog({
                                         name="name"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nombre de la Lista</FormLabel>
+                                                <FormLabel className={FORM_STYLES.label}>Nombre de la Lista</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Ej: Versión Estándar 2024" {...field} className="h-10 rounded-xl bg-background" />
+                                                    <Input placeholder="Ej: Versión Estándar 2024" {...field} className={FORM_STYLES.input} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -290,7 +291,7 @@ export function BOMFormDialog({
                                 {selectedProduct?.has_variants && (
                                     <div className="md:col-span-4">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Variante Asociada</Label>
+                                            <Label className={FORM_STYLES.label}>Variante Asociada</Label>
                                             <Select
                                                 value={selectedVariant?.id?.toString() || ""}
                                                 onValueChange={(val) => {
@@ -299,7 +300,7 @@ export function BOMFormDialog({
                                                 }}
                                                 disabled={!!bomToEdit} // Disable variant change when editing
                                             >
-                                                <SelectTrigger className="h-10 rounded-xl bg-background">
+                                                <SelectTrigger className={FORM_STYLES.input}>
                                                     <SelectValue placeholder="Seleccionar variante..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -321,8 +322,8 @@ export function BOMFormDialog({
                                         name="active"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col gap-1">
-                                                <div className="flex items-center justify-between rounded-xl border p-2 bg-background border-dashed h-10 mt-6">
-                                                    <FormLabel className="text-xs font-bold">Activa</FormLabel>
+                                                <div className={cn("flex items-center justify-between mt-6", FORM_STYLES.card)}>
+                                                    <FormLabel className={FORM_STYLES.label}>Activa</FormLabel>
                                                     <FormControl>
                                                         <Switch
                                                             checked={field.value}
@@ -422,7 +423,7 @@ export function BOMFormDialog({
                                                             render={({ field }) => (
                                                                 <FormItem>
                                                                     <FormControl>
-                                                                        <Input type="number" step="0.0001" {...field} />
+                                                                        <Input type="number" step="0.0001" {...field} className={cn(FORM_STYLES.input, "h-8")} />
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
@@ -508,7 +509,7 @@ export function BOMFormDialog({
                                                             render={({ field }) => (
                                                                 <FormItem>
                                                                     <FormControl>
-                                                                        <Input {...field} placeholder="Opcional" />
+                                                                        <Input {...field} placeholder="Opcional" className={cn(FORM_STYLES.input, "h-8")} />
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>

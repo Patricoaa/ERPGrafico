@@ -46,6 +46,8 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { ProposalsList } from "@/components/inventory/ProposalsList"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 // Interfaces
 interface ReorderingRule {
@@ -368,7 +370,7 @@ export function ReplenishmentDashboard() {
                                             name="product"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Producto</FormLabel>
+                                                    <FormLabel className={FORM_STYLES.label}>Producto</FormLabel>
                                                     <FormControl>
                                                         <ProductSelector
                                                             value={field.value}
@@ -387,10 +389,10 @@ export function ReplenishmentDashboard() {
                                             name="warehouse"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Almacén</FormLabel>
+                                                    <FormLabel className={FORM_STYLES.label}>Almacén</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
-                                                            <SelectTrigger>
+                                                            <SelectTrigger className={FORM_STYLES.input}>
                                                                 <SelectValue placeholder="Seleccionar almacén..." />
                                                             </SelectTrigger>
                                                         </FormControl>
@@ -414,9 +416,9 @@ export function ReplenishmentDashboard() {
                                             name="min_quantity"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Stock Mínimo</FormLabel>
+                                                    <FormLabel className={FORM_STYLES.label}>Stock Mínimo</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" step="0.01" {...field} />
+                                                        <Input type="number" step="0.01" {...field} className={FORM_STYLES.input} />
                                                     </FormControl>
                                                     <FormDescription className="text-[10px]">
                                                         Punto de reorden.
@@ -430,9 +432,9 @@ export function ReplenishmentDashboard() {
                                             name="max_quantity"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Stock Máximo</FormLabel>
+                                                    <FormLabel className={FORM_STYLES.label}>Stock Máximo</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" step="0.01" {...field} />
+                                                        <Input type="number" step="0.01" {...field} className={FORM_STYLES.input} />
                                                     </FormControl>
                                                     <FormDescription className="text-[10px]">
                                                         Objetivo de stock.
@@ -447,9 +449,9 @@ export function ReplenishmentDashboard() {
                                         control={form.control}
                                         name="active"
                                         render={({ field }) => (
-                                            <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                                            <FormItem className={cn("flex items-center justify-between", FORM_STYLES.card)}>
                                                 <div className="space-y-0.5">
-                                                    <FormLabel className="text-sm">Regla Activa</FormLabel>
+                                                    <FormLabel className={FORM_STYLES.label}>Regla Activa</FormLabel>
                                                 </div>
                                                 <FormControl>
                                                     <Switch

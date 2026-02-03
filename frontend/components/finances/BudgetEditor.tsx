@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Info, History, Share2, BarChart2 } from "lucide-react";
 import api from '@/lib/api';
+import { FORM_STYLES } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 interface BudgetEditorProps {
     open: boolean;
@@ -257,7 +259,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             placeholder="Buscar cuenta por nombre o código..."
                             value={filter}
                             onChange={e => setFilter(e.target.value)}
-                            className="bg-white dark:bg-slate-950"
+                            className={cn(FORM_STYLES.input, "bg-white dark:bg-slate-950")}
                         />
                         <TooltipProvider>
                             <Tooltip>

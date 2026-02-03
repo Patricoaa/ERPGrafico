@@ -14,7 +14,6 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
 interface ProductManufacturingTabProps {
@@ -381,9 +380,9 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
 
     return (
         <div className={cn(
-            cn("rounded-xl border transition-all duration-200",
-                isActive ? "border-primary/50 bg-primary/[0.02]" : "bg-background shadow-sm hover:border-muted-foreground/30"
-            )}>
+            "rounded-xl border transition-all duration-200",
+            isActive ? "border-primary/50 bg-primary/[0.02]" : "bg-background shadow-sm hover:border-muted-foreground/30"
+        )}>
             <div className="p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 shrink-0">
                     <Button

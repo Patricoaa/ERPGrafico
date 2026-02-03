@@ -416,7 +416,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                             <TableCell>
                                                 <div>
                                                     <div className="font-medium">{line.product_name}</div>
-                                                    <div className="text-xs text-muted-foreground">{line.description}</div>
+                                                    <div className={cn(FORM_STYLES.input, "cursor-pointer h-10")}>{line.description}</div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">
@@ -474,7 +474,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                     step="0.01"
                                                     value={deliveryQuantities[line.id] || 0}
                                                     onChange={(e) => handleQuantityChange(line.id, e.target.value)}
-                                                    className="w-24 text-center mx-auto h-8 rounded-lg border-dashed bg-background focus-visible:ring-primary font-bold"
+                                                    className={cn(FORM_STYLES.input, "w-24 text-center mx-auto h-8 font-bold")}
                                                 />
                                             </TableCell>
                                             <TableCell>

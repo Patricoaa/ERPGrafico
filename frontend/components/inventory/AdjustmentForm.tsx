@@ -39,6 +39,8 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface Warehouse {
     id: number
@@ -247,13 +249,13 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                         name="warehouse_id"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="flex items-center text-muted-foreground">
+                                <FormLabel className={cn(FORM_STYLES.label, "flex items-center text-muted-foreground")}>
                                     <WarehouseIcon className="h-4 w-4 mr-2" />
                                     Almacén
                                 </FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                     <FormControl>
-                                        <SelectTrigger className="bg-background">
+                                        <SelectTrigger className={cn("bg-background", FORM_STYLES.input)}>
                                             <SelectValue placeholder="Seleccionar ubicación..." />
                                         </SelectTrigger>
                                     </FormControl>
@@ -275,7 +277,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                         name="product_id"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="flex items-center text-muted-foreground">
+                                <FormLabel className={cn(FORM_STYLES.label, "flex items-center text-muted-foreground")}>
                                     <Package className="h-4 w-4 mr-2" />
                                     Producto
                                 </FormLabel>
@@ -306,13 +308,13 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                 name="quantity"
                                 render={({ field }) => (
                                     <FormItem className="flex-1">
-                                        <FormLabel>Cantidad</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Cantidad</FormLabel>
                                         <FormControl>
                                             <div className="relative">
                                                 <Input
                                                     type="number"
                                                     step="0.01"
-                                                    className="text-lg font-bold h-10"
+                                                    className={cn(FORM_STYLES.input, "text-lg font-bold h-10")}
                                                     placeholder="0.00"
                                                     {...field}
                                                 />
@@ -328,14 +330,14 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                 name="uom_id"
                                 render={({ field }) => (
                                     <FormItem className="w-[140px]">
-                                        <FormLabel>Unidad</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Unidad</FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
                                             value={field.value}
                                             disabled={productUoMs.length === 0}
                                         >
                                             <FormControl>
-                                                <SelectTrigger className="h-10">
+                                                <SelectTrigger className={FORM_STYLES.input}>
                                                     <SelectValue placeholder="UoM" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -359,12 +361,12 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                 name="unit_cost"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="flex justify-between">
+                                        <FormLabel className={cn(FORM_STYLES.label, "flex justify-between")}>
                                             <span>Costo {selectedUoM ? `por ${selectedUoM.name}` : 'Unitario'}</span>
                                             <span className="text-xs font-normal text-muted-foreground">Total: ${totalValue.toFixed(2)}</span>
                                         </FormLabel>
                                         <FormControl>
-                                            <Input icon="$" type="number" step="0.01" className="h-10 text-right font-mono" {...field} />
+                                            <Input icon="$" type="number" step="0.01" className={cn(FORM_STYLES.input, "text-right font-mono")} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -394,10 +396,10 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                         name="adjustment_reason"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Motivo de Ajuste</FormLabel>
+                                <FormLabel className={FORM_STYLES.label}>Motivo de Ajuste</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                        <SelectTrigger>
+                                        <SelectTrigger className={FORM_STYLES.input}>
                                             <SelectValue />
                                         </SelectTrigger>
                                     </FormControl>
@@ -419,9 +421,9 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                         name="description"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Notas / Referencia</FormLabel>
+                                <FormLabel className={FORM_STYLES.label}>Notas / Referencia</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ej: Conteo mensual, Dañado en bodega..." {...field} />
+                                    <Input placeholder="Ej: Conteo mensual, Dañado en bodega..." {...field} className={FORM_STYLES.input} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

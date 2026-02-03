@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Wallet, AlertCircle, Building2 } from "lucide-react"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 
 interface PaymentDialogProps {
@@ -189,7 +191,7 @@ export function PaymentDialog({
                         )}
 
                         {!hideDteFields && ((isPurchase && (dteType === "BOLETA" || dteType === "FACTURA")) || (!isPurchase && dteType === "FACTURA")) && (
-                            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed">
+                            <div className={cn("space-y-4 p-4", FORM_STYLES.card)}>
                                 {dteType === 'FACTURA' && (
                                     <div className="flex items-center space-x-2 py-1">
                                         <Checkbox

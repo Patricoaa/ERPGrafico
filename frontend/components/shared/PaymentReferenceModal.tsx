@@ -9,6 +9,8 @@ import { Hash, Landmark, CreditCard, Save, Loader2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface PaymentReferenceModalProps {
     open: boolean
@@ -96,7 +98,7 @@ export function PaymentReferenceModal({
 
                     {selectedPayment && (
                         <div className="space-y-4">
-                            <div className="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
+                            <div className={cn("flex items-center gap-4 p-4", FORM_STYLES.card)}>
                                 <div className="p-3 bg-white dark:bg-zinc-900 rounded-full shadow-sm">
                                     {selectedPayment.payment_method === 'TRANSFER' ? (
                                         <Landmark className="h-6 w-6 text-blue-600" />
@@ -120,7 +122,7 @@ export function PaymentReferenceModal({
                                     placeholder="Ej: 99884455"
                                     value={transactionNumber}
                                     onChange={(e) => setTransactionNumber(e.target.value)}
-                                    className="text-lg font-bold h-12"
+                                    className={cn(FORM_STYLES.input, "text-lg font-bold h-12")}
                                     autoFocus
                                 />
                                 <p className="text-[10px] text-muted-foreground italic">

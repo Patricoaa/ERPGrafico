@@ -45,6 +45,7 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { FORM_STYLES } from "@/lib/styles"
 
 const journalItemSchema = z.object({
     id: z.number().optional(),
@@ -234,13 +235,14 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                     name="date"
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
-                                            <FormLabel>Fecha</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Fecha</FormLabel>
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <FormControl>
                                                         <Button
                                                             variant={"outline"}
                                                             className={cn(
+                                                                FORM_STYLES.input,
                                                                 "w-full pl-3 text-left font-normal",
                                                                 !field.value && "text-muted-foreground"
                                                             )}
@@ -277,9 +279,9 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                     name="description"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Descripción</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Descripción</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Venta de mercadería..." {...field} />
+                                                <Input placeholder="Venta de mercadería..." {...field} className={FORM_STYLES.input} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -292,9 +294,9 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                     name="reference"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Referencia</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Referencia</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="FAC-123" {...field} />
+                                                <Input placeholder="FAC-123" {...field} className={FORM_STYLES.input} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -341,7 +343,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                                     render={({ field }) => (
                                                         <FormItem className="space-y-0">
                                                             <FormControl>
-                                                                <Input {...field} />
+                                                                <Input {...field} className={cn(FORM_STYLES.input, "h-8")} />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}
@@ -354,7 +356,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                                     render={({ field }) => (
                                                         <FormItem className="space-y-0">
                                                             <FormControl>
-                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} />
+                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8")} />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}
@@ -367,7 +369,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                                                     render={({ field }) => (
                                                         <FormItem className="space-y-0">
                                                             <FormControl>
-                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} />
+                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8")} />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}

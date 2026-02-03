@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Upload, FileText, AlertCircle, CheckCircle2, Loader2, RefreshCw, ArrowRight } from "lucide-react"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface TreasuryAccount {
     id: number
@@ -266,9 +267,9 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                     {step === 'UPLOAD' && (
                         <>
                             <div className="space-y-2">
-                                <Label>Cuenta de Tesorería *</Label>
+                                <Label className={FORM_STYLES.label}>Cuenta de Tesorería *</Label>
                                 <Select value={treasuryAccountId} onValueChange={setTreasuryAccountId}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className={FORM_STYLES.input}>
                                         <SelectValue placeholder="Selecciona cuenta..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -282,9 +283,9 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Formato *</Label>
+                                <Label className={FORM_STYLES.label}>Formato *</Label>
                                 <Select value={bankFormat} onValueChange={setBankFormat}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className={FORM_STYLES.input}>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -304,8 +305,8 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Archivo *</Label>
-                                <Input type="file" onChange={handleFileChange} accept=".csv,.xls,.xlsx" />
+                                <Label className={FORM_STYLES.label}>Archivo *</Label>
+                                <Input type="file" onChange={handleFileChange} accept=".csv,.xls,.xlsx" className={cn(FORM_STYLES.input, "cursor-pointer pt-1.5")} />
                             </div>
                         </>
                     )}
@@ -344,7 +345,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                                                                 setMapping(newMapping)
                                                             }}
                                                         >
-                                                            <SelectTrigger className="h-7 text-xs">
+                                                            <SelectTrigger className={cn(FORM_STYLES.input, "h-7 text-xs")}>
                                                                 <SelectValue placeholder="Ignorar" />
                                                             </SelectTrigger>
                                                             <SelectContent>

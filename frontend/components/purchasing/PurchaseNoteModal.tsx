@@ -24,6 +24,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
+import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 
 interface PurchaseNoteModalProps {
@@ -241,7 +242,7 @@ export function PurchaseNoteModal({
                             <Input
                                 type="file"
                                 onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                                className="cursor-pointer text-xs h-10 rounded-xl border-dashed bg-background"
+                                className={cn(FORM_STYLES.input, "cursor-pointer h-10")}
                             />
                             {attachment && (
                                 <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">

@@ -31,6 +31,8 @@ import {
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { SimulationResults } from "./SimulationResults"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface ReconciliationRule {
     id: number
@@ -256,14 +258,15 @@ export default function RulesPage() {
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Nombre</Label>
+                                <Label className={FORM_STYLES.label}>Nombre</Label>
                                 <Input
                                     value={editingRule.name}
                                     onChange={e => setEditingRule({ ...editingRule, name: e.target.value })}
+                                    className={FORM_STYLES.input}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Cuenta</Label>
+                                <Label className={FORM_STYLES.label}>Cuenta</Label>
                                 <Select
                                     value={editingRule.treasury_account?.id?.toString() || "global"}
                                     onValueChange={val => setEditingRule({
@@ -271,7 +274,7 @@ export default function RulesPage() {
                                         treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as any
                                     })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className={FORM_STYLES.input}>
                                         <SelectValue placeholder="Global (Todas)" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -285,16 +288,17 @@ export default function RulesPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Descripción</Label>
+                            <Label className={FORM_STYLES.label}>Descripción</Label>
                             <Textarea
                                 value={editingRule.description}
                                 onChange={e => setEditingRule({ ...editingRule, description: e.target.value })}
+                                className={cn("min-h-[80px]", FORM_STYLES.input, "h-auto py-2")}
                             />
                         </div>
 
-                        <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                        <div className={cn("flex items-center justify-between", FORM_STYLES.card)}>
                             <div className="space-y-0.5">
-                                <Label>Auto-Confirmar</Label>
+                                <Label className={FORM_STYLES.label}>Auto-Confirmar</Label>
                                 <p className="text-xs text-muted-foreground">
                                     Reconciliar automáticamente si el score es alto
                                 </p>
@@ -307,7 +311,7 @@ export default function RulesPage() {
 
                         {/* Configuración de Criterios Simplificada */}
                         <div className="space-y-2">
-                            <Label>Criterios de Coincidencia</Label>
+                            <Label className={FORM_STYLES.label}>Criterios de Coincidencia</Label>
                             <div className="grid grid-cols-2 gap-2">
                                 {['amount_exact', 'transaction_id', 'date_range', 'reference'].map(criteria => (
                                     <div key={criteria} className="flex items-center space-x-2 border p-2 rounded">
@@ -336,7 +340,7 @@ export default function RulesPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Score Mínimo ({editingRule.match_config?.min_score || 50}%)</Label>
+                            <Label className={FORM_STYLES.label}>Score Mínimo ({editingRule.match_config?.min_score || 50}%)</Label>
                             <div className="flex items-center gap-4">
                                 <input
                                     type="range"
