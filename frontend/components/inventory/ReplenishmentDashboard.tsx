@@ -236,6 +236,13 @@ export function ReplenishmentDashboard() {
             },
         },
         {
+            accessorKey: "product_code",
+            id: "product_code",
+            header: "Código",
+            enableHiding: true,
+            enableGlobalFilter: true, // Enable for global search
+        },
+        {
             accessorKey: "category_name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Categoría" />
@@ -476,7 +483,7 @@ export function ReplenishmentDashboard() {
                     <DataTable
                         columns={columns}
                         data={rules}
-                        filterColumn="product_code"
+                        globalFilterFields={["product_name", "product_code"]}
                         searchPlaceholder="Buscar por producto..."
                         facetedFilters={[
                             {
@@ -489,7 +496,7 @@ export function ReplenishmentDashboard() {
                             },
                         ]}
                         useAdvancedFilter={true}
-                        initialColumnVisibility={{ active: false }}
+                        initialColumnVisibility={{ active: false, product_code: false }}
                         rightAction={tabs_ui}
                     />
                 </TabsContent>

@@ -109,6 +109,13 @@ export function ProposalsList({ data, onRefresh, toolbarAction, rightAction }: P
             enableHiding: false,
         },
         {
+            accessorKey: "product_code",
+            id: "product_code",
+            header: "Código",
+            enableHiding: true,
+            enableGlobalFilter: true,
+        },
+        {
             accessorKey: "product_name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Producto" />
@@ -265,7 +272,7 @@ export function ProposalsList({ data, onRefresh, toolbarAction, rightAction }: P
             <DataTable
                 columns={columns}
                 data={data.filter(p => p.status === 'PENDING')}
-                filterColumn="product_code"
+                globalFilterFields={["product_name", "product_code"]}
                 searchPlaceholder="Filtrar por producto..."
                 useAdvancedFilter={true}
                 toolbarAction={toolbarAction}

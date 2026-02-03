@@ -13,6 +13,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -342,25 +349,29 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="warehouse">Bodega de Despacho</Label>
-                            <select
-                                id="warehouse"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                value={selectedWarehouse || ''}
-                                onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
+                            <Label htmlFor="warehouse" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Bodega de Despacho</Label>
+                            <Select
+                                value={selectedWarehouse?.toString() || ''}
+                                onValueChange={(val) => setSelectedWarehouse(Number(val))}
                             >
-                                {warehouses.map(warehouse => (
-                                    <option key={warehouse.id} value={warehouse.id}>
-                                        {warehouse.name} ({warehouse.code})
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                    <SelectValue placeholder="Seleccione bodega" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {warehouses.map(warehouse => (
+                                        <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                                            {warehouse.name} ({warehouse.code})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="delivery-date">Fecha de Despacho</Label>
+                            <Label htmlFor="delivery-date" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha de Despacho</Label>
                             <Input
                                 id="delivery-date"
                                 type="date"
+                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                 value={deliveryDate}
                                 onChange={(e) => setDeliveryDate(e.target.value)}
                             />
@@ -462,7 +473,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                     step="0.01"
                                                     value={deliveryQuantities[line.id] || 0}
                                                     onChange={(e) => handleQuantityChange(line.id, e.target.value)}
-                                                    className="w-24 text-center mx-auto"
+                                                    className="w-24 text-center mx-auto h-8 rounded-lg border-dashed bg-background focus-visible:ring-primary font-bold"
                                                 />
                                             </TableCell>
                                             <TableCell>

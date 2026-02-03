@@ -13,6 +13,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -231,25 +238,29 @@ export function ReceiptModal({
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="warehouse">Bodega de {isRefund ? 'Salida' : 'Recepción'}</Label>
-                            <select
-                                id="warehouse"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                value={selectedWarehouse || ''}
-                                onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
+                            <Label htmlFor="warehouse" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Bodega de {isRefund ? 'Salida' : 'Recepción'}</Label>
+                            <Select
+                                value={selectedWarehouse?.toString() || ''}
+                                onValueChange={(val) => setSelectedWarehouse(Number(val))}
                             >
-                                {warehouses.map(warehouse => (
-                                    <option key={warehouse.id} value={warehouse.id}>
-                                        {warehouse.name} ({warehouse.code})
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger className="h-10 rounded-xl border-dashed bg-background">
+                                    <SelectValue placeholder="Seleccione bodega" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {warehouses.map(warehouse => (
+                                        <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                                            {warehouse.name} ({warehouse.code})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="receipt-date">Fecha de {isRefund ? 'Devolución' : 'Recepción'}</Label>
+                            <Label htmlFor="receipt-date" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha de {isRefund ? 'Devolución' : 'Recepción'}</Label>
                             <Input
                                 id="receipt-date"
                                 type="date"
+                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                 value={receiptDate}
                                 onChange={(e) => setReceiptDate(e.target.value)}
                             />
@@ -258,19 +269,21 @@ export function ReceiptModal({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="delivery-reference">Referencia (Guía/Comprobante)</Label>
+                            <Label htmlFor="delivery-reference" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Referencia (Guía/Comprobante)</Label>
                             <Input
                                 id="delivery-reference"
                                 placeholder="Ej: GD-12345"
+                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                 value={deliveryReference}
                                 onChange={(e) => setDeliveryReference(e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="notes">Notas / Observaciones</Label>
+                            <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notas / Observaciones</Label>
                             <Input
                                 id="notes"
                                 placeholder="Mercadería recibida en buen estado..."
+                                className="h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                             />
@@ -336,7 +349,7 @@ export function ReceiptModal({
                                                         step="1"
                                                         value={receiptQuantities[line.id] || 0}
                                                         onChange={(e) => handleQuantityChange(line.id, e.target.value)}
-                                                        className="w-24 text-center mx-auto"
+                                                        className="w-24 text-center mx-auto h-8 rounded-lg border-dashed bg-background focus-visible:ring-primary font-bold"
                                                     />
                                                 </TableCell>
                                                 <TableCell className="text-center">
@@ -346,7 +359,7 @@ export function ReceiptModal({
                                                         step="1"
                                                         value={receiptCosts[line.id] || 0}
                                                         onChange={(e) => handleCostChange(line.id, e.target.value)}
-                                                        className="w-32 text-center mx-auto"
+                                                        className="w-32 text-center mx-auto h-8 rounded-lg border-dashed bg-background focus-visible:ring-primary font-bold"
                                                     />
                                                 </TableCell>
                                                 <TableCell>
