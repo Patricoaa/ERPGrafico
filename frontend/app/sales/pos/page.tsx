@@ -41,7 +41,9 @@ import {
 
 import { POSVariantSelectorModal } from "@/components/pos/POSVariantSelectorModal"
 import { DraftCartsList } from "@/components/pos/DraftCartsList"
-import { Edit2, Save, Clock, LayoutGrid, FileText, ChevronDown } from "lucide-react"
+import { Edit2, Save, Clock, LayoutGrid, FileText, ChevronDown, Keyboard } from "lucide-react"
+import { ScannerFeedback, ScannerFeedbackHandle } from "@/components/pos/ScannerFeedback"
+import { Numpad } from "@/components/ui/numpad"
 
 interface Product {
     id: number
@@ -141,8 +143,65 @@ export default function POSPage() {
 
     // Live recalculation state
     const [limits, setLimits] = useState<Record<string, number>>({}) // Keyed by cartItemId or productID (prefix?)
+    // Numpad State
+    const [numpadOpen, setNumpadOpen] = useState(false)
+    const [numpadValue, setNumpadValue] = useState("0")
+    const [numpadTarget, setNumpadTarget] = useState<{ id: string, field: 'qty' | 'price' } | null>(null)
 
     const sessionControlRef = useRef<SessionControlHandle>(null)
+    const scannerFeedbackRef = useRef<ScannerFeedbackHandle>(null)
+    const searchInputRef = useRef<HTMLInputElement>(null)
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'F1') {
+                e.preventDefault()
+                searchInputRef.current?.focus()
+            }
+            if (e.key === 'F12') {
+                e.preventDefault()
+                const confirmButton = document.querySelector('button[id="confirm-sale-btn"]') as HTMLButtonElement
+                confirmButton?.click()
+            }
+            if (e.key === 'Escape') {
+                if (document.activeElement === searchInputRef.current) {
+                    setSearchTerm("")
+                }
+            }
+        }
+        window.addEventListener('keydown', handleGlobalKeyDown)
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+    }, [])
+
+    const openNumpad = (id: string, field: 'qty' | 'price', initialValue: number) => {
+        setNumpadTarget({ id, field })
+        setNumpadValue(initialValue.toString())
+        setNumpadOpen(true)
+    }
+
+    const handleNumpadConfirm = () => {
+        if (!numpadTarget) return
+        const val = parseFloat(numpadValue)
+        if (numpadTarget.field === 'qty') {
+            updateQty(numpadTarget.id, val)
+        } else {
+            // Price update logic for dynamic pricing
+            const item = items.find(i => i.cartItemId === numpadTarget.id)
+            if (item) {
+                const newGross = val
+                const newNet = PricingUtils.grossToNet(newGross)
+                setItems(prevItems => prevItems.map(i => i.cartItemId === item.cartItemId ? {
+                    ...i,
+                    unit_price_net: newNet,
+                    unit_price_gross: newGross,
+                    total_net: PricingUtils.calculateLineNet(i.qty, newNet),
+                    total_gross: Math.round(i.qty * newGross)
+                } : i))
+            }
+        }
+        setNumpadOpen(false)
+    }
 
 
 
@@ -506,6 +565,9 @@ export default function POSPage() {
                 manufacturing_data: mfgData
             }])
         }
+
+        // Trigger success feedback
+        scannerFeedbackRef.current?.triggerSuccess()
     }
 
     const addToCart = async (product: Product, mfgData?: any) => {
@@ -740,7 +802,7 @@ export default function POSPage() {
             if (!term) return
 
             // 1. Try exact code match
-            const exactMatch = products.find(p => p.code.toLowerCase() === term)
+            const exactMatch = products.find(p => p.code.toLowerCase() === term || p.internal_code?.toLowerCase() === term)
             if (exactMatch) {
                 addToCart(exactMatch)
                 setSearchTerm("")
@@ -751,7 +813,11 @@ export default function POSPage() {
             if (filteredProducts.length === 1) {
                 addToCart(filteredProducts[0])
                 setSearchTerm("")
+                return
             }
+
+            // If no match found on Enter, trigger error feedback
+            scannerFeedbackRef.current?.triggerError()
         }
     }
 
@@ -845,8 +911,9 @@ export default function POSPage() {
                                 <div className="relative">
                                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
-                                        placeholder="Buscar por nombre o código..."
-                                        className="pl-8"
+                                        ref={searchInputRef}
+                                        placeholder="Buscar por nombre o código... [F1]"
+                                        className="pl-8 h-12 text-lg"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         onKeyDown={handleSearchKeyDown}
@@ -1059,6 +1126,8 @@ export default function POSPage() {
                                                                 )}
                                                                 value={item.qty}
                                                                 onChange={(e) => updateQty(item.cartItemId, e.target.value)}
+                                                                onClick={() => openNumpad(item.cartItemId, 'qty', item.qty)}
+                                                                readOnly // Force Numpad on touch or just allow both? For touch, readOnly prevents OS keyboard
                                                                 min="0.01"
                                                             />
                                                             {(() => {
@@ -1122,6 +1191,8 @@ export default function POSPage() {
                                                                         className="h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1"
                                                                         value={item.unit_price_gross || ""}
                                                                         placeholder="0"
+                                                                        onClick={() => openNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)}
+                                                                        readOnly
                                                                         onChange={async (e) => {
                                                                             const newGross = parseFloat(e.target.value) || 0
                                                                             const newNet = PricingUtils.grossToNet(newGross)
@@ -1162,24 +1233,24 @@ export default function POSPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-2 text-center align-top">
-                                                        <div className="flex gap-1">
+                                                        <div className="flex gap-1 justify-center">
                                                             {((item as any).parent_template) && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-7 w-7 text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    className="h-10 w-10 text-primary hover:bg-primary/10 lg:opacity-0 group-hover:opacity-100 transition-opacity"
                                                                     onClick={() => editVariantInCart(item)}
                                                                 >
-                                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                                    <Edit2 className="h-5 w-5" />
                                                                 </Button>
                                                             )}
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 lg:opacity-0 group-hover:opacity-100 transition-opacity"
                                                                 onClick={() => removeItem(item.cartItemId)}
                                                             >
-                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                                <Trash2 className="h-5 w-5" />
                                                             </Button>
                                                         </div>
                                                     </TableCell>
@@ -1230,13 +1301,14 @@ export default function POSPage() {
                                     </div>
                                 </div>
                                 <Button
-                                    className="w-full h-12 text-lg shadow-lg"
+                                    id="confirm-sale-btn"
+                                    className="w-full h-16 text-xl shadow-lg font-black uppercase tracking-tight"
                                     size="lg"
                                     disabled={loading || items.length === 0}
                                     onClick={handleConfirm}
                                 >
-                                    <ShoppingCart className="mr-2 h-5 w-5" />
-                                    {loading ? "Procesando..." : "Confirmar Venta"}
+                                    <ShoppingCart className="mr-2 h-6 w-6" />
+                                    {loading ? "Procesando..." : "Confirmar Venta [F12]"}
                                 </Button>
                             </div>
                         </CardContent>
@@ -1279,6 +1351,19 @@ export default function POSPage() {
                 )
             }
 
+            {numpadOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <Numpad
+                        value={numpadValue}
+                        onChange={setNumpadValue}
+                        onConfirm={handleNumpadConfirm}
+                        onClose={() => setNumpadOpen(false)}
+                        className="scale-125"
+                    />
+                </div>
+            )}
+
+            <ScannerFeedback ref={scannerFeedbackRef} />
         </div >
     )
 }

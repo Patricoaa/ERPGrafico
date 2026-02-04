@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Settings } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Numpad } from "@/components/ui/numpad"
 import {
     Dialog,
     DialogContent,
@@ -250,20 +251,38 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <Label htmlFor="modal-amount">Monto</Label>
-                            <Input
-                                id="modal-amount"
-                                type="number"
-                                value={tempAmount}
-                                onChange={(e) => setTempAmount(e.target.value)}
-                                max={total}
-                                placeholder="0"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleAmountConfirm()
-                                }}
-                            />
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs h-9 font-bold"
+                                    onClick={() => setTempAmount(total.toString())}
+                                >
+                                    Exacto
+                                </Button>
+                                {[1000, 5000, 10000, 20000].map(val => (
+                                    <Button
+                                        key={val}
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs h-9 font-bold"
+                                        onClick={() => setTempAmount(val.toString())}
+                                    >
+                                        ${val.toLocaleString('es-CL')}
+                                    </Button>
+                                ))}
+                            </div>
+
+                            <div className="flex justify-center">
+                                <Numpad
+                                    value={tempAmount}
+                                    onChange={setTempAmount}
+                                    onConfirm={handleAmountConfirm}
+                                    className="border-none shadow-none p-0"
+                                />
+                            </div>
                         </div>
 
                         {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
