@@ -102,6 +102,8 @@ class AccountingService:
             ('1.1.01', 'Efectivo y Equivalentes', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, None),
             ('1.1.01.01', 'Caja General', AccountType.ASSET, '1.1.01', None, None, None),
             ('1.1.01.02', 'Banco Principal', AccountType.ASSET, '1.1.01', None, None, None),
+            ('1.1.01.03', 'Banco de Chile', AccountType.ASSET, '1.1.01', None, None, None),
+            ('1.1.01.04', 'Caja Recepción', AccountType.ASSET, '1.1.01', None, None, None),
             
             ('1.1.02', 'Deudores Comerciales', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, None),
             ('1.1.02.01', 'Clientes Locales', AccountType.ASSET, '1.1.02', None, None, None),
@@ -150,6 +152,7 @@ class AccountingService:
             ('3.2', 'Ganancias y Pérdidas', AccountType.EQUITY, None, None, None, None),
             ('3.2.01', 'Resultados de Ejercicios Anteriores', AccountType.EQUITY, '3.2', None, None, None),
             ('3.2.02', 'Resultado del Ejercicio', AccountType.EQUITY, '3.2', None, None, None),
+            ('3.1.03', 'Retiros de Socios', AccountType.EQUITY, '3.1', None, None, None),
 
             # 4.1 Ordinary Activities Revenue
             ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, None, None, None),
@@ -157,6 +160,7 @@ class AccountingService:
             ('4.1.02', 'Venta de Servicios', AccountType.INCOME, '4.1', None, None, None),
             ('4.2', 'Otros Ingresos', AccountType.INCOME, None, ISCategory.NON_OPERATING_REVENUE, None, None),
             ('4.2.01', 'Intereses Ganados', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.05', 'Otros Ingresos POS', AccountType.INCOME, '4.2', None, None, None),
 
             # 5.1 Cost of Sales
             ('5.1', 'Costo de Ventas', AccountType.EXPENSE, None, ISCategory.COST_OF_SALES, None, None),
@@ -171,6 +175,8 @@ class AccountingService:
             ('5.2.04', 'Honorarios Profesionales', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.05', 'Materiales y Suministros Consumibles', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.06', 'Gastos Generales', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.14', 'Faltante por Robo', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.15', 'Otros Egresos POS', AccountType.EXPENSE, '5.2', None, None, None),
         ]
         
         created_count = 0

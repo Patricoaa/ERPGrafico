@@ -303,28 +303,22 @@ export default function AccountingSettingsPage() {
                                                 <CardTitle className="text-lg">Diferencias y Ajustes de Tesorería</CardTitle>
                                                 <CardDescription>Cuentas para comisiones, intereses y control de caja POS.</CardDescription>
                                             </div>
-                                            <div className="bg-primary/10 px-3 py-1 rounded-full">
-                                                <p className="text-[10px] font-bold uppercase text-primary">Control de Caja</p>
-                                            </div>
                                         </div>
                                     </CardHeader>
                                     <CardContent className="pt-6">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <div className="space-y-4 border-r pr-6">
+                                            <div className="space-y-4">
                                                 <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Conciliación Bancaria</p>
                                                 <AccountField form={form} name="bank_commission_account" label="Comisiones Bancarias" accountType="EXPENSE" />
                                                 <AccountField form={form} name="card_commission_account" label="Comisiones Tarjeta" accountType="EXPENSE" />
                                                 <AccountField form={form} name="interest_income_account" label="Intereses Ganados" accountType="INCOME" />
                                                 <AccountField form={form} name="rounding_adjustment_account" label="Ajuste Redondeo" accountType="EXPENSE" />
-                                            </div>
-
-                                            <div className="space-y-4 pl-6">
-                                                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2"></p>
                                                 <AccountField form={form} name="exchange_difference_account" label="Dif. Cambio" accountType="" />
                                                 <AccountField form={form} name="error_adjustment_account" label="Ajuste Error" accountType="EXPENSE" />
                                                 <AccountField form={form} name="miscellaneous_adjustment_account" label="Ajustes Varios" accountType="EXPENSE" />
                                             </div>
-                                            <div className="space-y-4 border-r px-6">
+
+                                            <div className="space-y-4">
                                                 <p className="text-[10px] font-bold uppercase text-emerald-600 mb-2">Punto de Venta (POS)</p>
                                                 <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ingreso)" accountType="INCOME" />
                                                 <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Gasto)" accountType="EXPENSE" />

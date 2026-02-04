@@ -270,9 +270,15 @@ class Command(BaseCommand):
 
             self.stdout.write("  ✓ Cuentas de conciliación bancaria configuradas y mapeadas (incluye Comisión Tarjeta)")
 
-            # NUEVO: Umbral de aprobación de diferencias POS
             settings.pos_cash_difference_approval_threshold = Decimal('5000') # $5.000 CLP
             self.stdout.write("  ✓ Umbral de aprobación de diferencias POS configurado ($5.000)")
+
+            # NUEVO: Mapeo de movimientos de caja POS hardcodeados
+            settings.pos_partner_withdrawal_account = Account.objects.filter(code='3.1.03').first()
+            settings.pos_theft_account = Account.objects.filter(code='5.2.14').first()
+            settings.pos_other_inflow_account = Account.objects.filter(code='4.2.05').first()
+            settings.pos_other_outflow_account = Account.objects.filter(code='5.2.15').first()
+            self.stdout.write("  ✓ Mapeos de movimientos manuales de caja POS configurados")
 
             settings.save()
             self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")
@@ -951,6 +957,33 @@ class Command(BaseCommand):
                 'is_physical': True,
                 'location': "Administración",
                 'custodian': manager_user
+            }
+        )
+        
+        # 1.1 New Additional Accounts (as requested)
+        bank_chile, _ = TreasuryAccount.objects.get_or_create(
+            code="BCO-CHILE",
+            defaults={
+                'name': "Banco de Chile (Cta Corriente)",
+                'currency': "CLP",
+                'account': Account.objects.get(code='1.1.01.03'),
+                'account_type': TreasuryAccount.Type.BANK,
+                'allows_cash': False,
+                'allows_card': True,
+                'allows_transfer': True
+            }
+        )
+
+        recepcion, _ = TreasuryAccount.objects.get_or_create(
+            code="CAJA-REC",
+            defaults={
+                'name': "Caja Recepción Local",
+                'currency': "CLP",
+                'account': Account.objects.get(code='1.1.01.04'),
+                'account_type': TreasuryAccount.Type.CASH,
+                'allows_cash': True,
+                'is_physical': True,
+                'location': "Recepción Principal"
             }
         )
         
