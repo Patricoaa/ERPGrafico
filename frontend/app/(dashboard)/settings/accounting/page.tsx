@@ -315,20 +315,23 @@ export default function AccountingSettingsPage() {
                                                 <AccountField form={form} name="bank_commission_account" label="Comisiones Bancarias" accountType="EXPENSE" />
                                                 <AccountField form={form} name="card_commission_account" label="Comisiones Tarjeta" accountType="EXPENSE" />
                                                 <AccountField form={form} name="interest_income_account" label="Intereses Ganados" accountType="INCOME" />
-                                            </div>
-
-                                            <div className="space-y-4 border-r px-6">
-                                                <p className="text-[10px] font-bold uppercase text-emerald-600 mb-2">Punto de Venta (POS)</p>
-                                                <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ingreso)" accountType="INCOME" />
-                                                <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Gasto)" accountType="EXPENSE" />
                                                 <AccountField form={form} name="rounding_adjustment_account" label="Ajuste Redondeo" accountType="EXPENSE" />
                                             </div>
 
                                             <div className="space-y-4 pl-6">
-                                                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Otros Ajustes</p>
+                                                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2"></p>
                                                 <AccountField form={form} name="exchange_difference_account" label="Dif. Cambio" accountType="" />
                                                 <AccountField form={form} name="error_adjustment_account" label="Ajuste Error" accountType="EXPENSE" />
                                                 <AccountField form={form} name="miscellaneous_adjustment_account" label="Ajustes Varios" accountType="EXPENSE" />
+                                            </div>
+                                            <div className="space-y-4 border-r px-6">
+                                                <p className="text-[10px] font-bold uppercase text-emerald-600 mb-2">Punto de Venta (POS)</p>
+                                                <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ingreso)" accountType="INCOME" />
+                                                <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Gasto)" accountType="EXPENSE" />
+                                                <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro Socio (Cargo Directo)" accountType="ASSET" />
+                                                <AccountField form={form} name="pos_theft_account" label="Faltante por Robo" accountType="EXPENSE" />
+                                                <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos Varios" accountType="INCOME" />
+                                                <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos Varios" accountType="EXPENSE" />
                                             </div>
                                         </div>
                                     </CardContent>

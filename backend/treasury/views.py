@@ -1092,3 +1092,113 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             import traceback
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def register_manual_movement(self, request, pk=None):
+        """
+        Registers a manual cash movement (withdrawal or inflow) for this session.
+        Supporting hardcoded types: PARTNER_WITHDRAWAL, THEFT, OTHER_IN, OTHER_OUT
+        """
+        try:
+            from decimal import Decimal
+            from django.db import transaction
+            from accounting.models import AccountingSettings, JournalEntry, JournalItem
+            from accounting.services import JournalEntryService
+            from django.utils import timezone
+            
+            session = self.get_object()
+            if session.status != 'OPEN':
+                return Response({'error': 'La sesión no está abierta'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            move_type = request.data.get('type')  # PARTNER_WITHDRAWAL, THEFT, OTHER_IN, OTHER_OUT
+            amount = Decimal(str(request.data.get('amount', '0')))
+            notes = request.data.get('notes', '')
+            
+            if amount <= 0:
+                return Response({'error': 'El monto debe ser mayor a cero'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            settings = AccountingSettings.objects.first()
+            if not settings:
+                return Response({'error': 'Configuración contable no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Map type to account and direction
+            mapping = {
+                'PARTNER_WITHDRAWAL': {
+                    'account': settings.pos_partner_withdrawal_account,
+                    'is_inflow': False,
+                    'label': 'Retiro Socio'
+                },
+                'THEFT': {
+                    'account': settings.pos_theft_account,
+                    'is_inflow': False,
+                    'label': 'Robo / Pérdida'
+                },
+                'OTHER_IN': {
+                    'account': settings.pos_other_inflow_account,
+                    'is_inflow': True,
+                    'label': 'Otro Ingreso'
+                },
+                'OTHER_OUT': {
+                    'account': settings.pos_other_outflow_account,
+                    'is_inflow': False,
+                    'label': 'Otro Egreso'
+                }
+            }
+            
+            config = mapping.get(move_type)
+            if not config:
+                return Response({'error': 'Tipo de movimiento inválido'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            target_account = config['account']
+            if not target_account:
+                return Response({'error': f'Cuenta contable no configurada para {config["label"]}'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Treasury account for the session
+            # Note: POSSession.treasury_account is legacy, terminal.default_treasury_account is new
+            # We follow the same logic as close_session for resolving treasury account
+            treasury_account = session.treasury_account.account if session.treasury_account else (
+                session.terminal.default_treasury_account.account if session.terminal else None
+            )
+            
+            if not treasury_account:
+                 return Response({'error': 'No se pudo determinar la cuenta de tesorería para esta sesión'}, status=status.HTTP_400_BAD_REQUEST)
+
+            with transaction.atomic():
+                # Create Journal Entry
+                entry = JournalEntry.objects.create(
+                    date=timezone.now().date(),
+                    description=f"Movimiento Manual POS ({config['label']}) - {notes}",
+                    reference=f"POS-MAN-{session.id}",
+                    state=JournalEntry.State.DRAFT
+                )
+                
+                if config['is_inflow']:
+                    # Debit Cash, Credit Target
+                    JournalItem.objects.create(entry=entry, account=treasury_account, debit=amount, credit=0)
+                    JournalItem.objects.create(entry=entry, account=target_account, debit=0, credit=amount, label=notes)
+                    session.total_other_cash_inflow += amount
+                else:
+                    # Debit Target, Credit Cash
+                    JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0, label=notes)
+                    JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=amount)
+                    session.total_other_cash_outflow += amount
+                
+                entry.save()
+                JournalEntryService.post_entry(entry)
+                
+                # Create a CashMovement record for tracking (optional but good for consistency)
+                # from .models import CashMovement
+                # CashMovement.objects.create(...)
+                
+                session.save()
+            
+            from .serializers import POSSessionSerializer
+            return Response({
+                'session': POSSessionSerializer(session).data,
+                'message': f'Movimiento de {config["label"]} registrado correctamente'
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

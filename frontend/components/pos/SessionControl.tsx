@@ -57,6 +57,8 @@ interface POSSession {
     total_transfer_sales: number
     total_credit_sales: number
     expected_cash: number
+    total_other_cash_inflow: number
+    total_other_cash_outflow: number
 }
 
 interface SessionControlProps {
@@ -74,6 +76,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [openDialogOpen, setOpenDialogOpen] = useState(false)
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
     const [reportDialogOpen, setReportDialogOpen] = useState(false)
+    const [moveDialogOpen, setMoveDialogOpen] = useState(false)
     const [reportData, setReportData] = useState<any>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [terminals, setTerminals] = useState<POSTerminal[]>([])
@@ -91,6 +94,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [actualCash, setActualCash] = useState<string>("0")
     const [closeNotes, setCloseNotes] = useState<string>("")
     const [cashDestinationId, setCashDestinationId] = useState<string | null>(null)
+
+    // Manual movement state
+    const [moveType, setMoveType] = useState<string>("PARTNER_WITHDRAWAL")
+    const [moveAmount, setMoveAmount] = useState<string>("0")
+    const [moveNotes, setMoveNotes] = useState<string>("")
 
     const [submitting, setSubmitting] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
@@ -301,6 +309,34 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }
 
+    const handleRegisterManualMovement = async () => {
+        if (!currentSession) return
+        if (parseFloat(moveAmount) <= 0) {
+            toast.error("El monto debe ser mayor a cero")
+            return
+        }
+
+        setSubmitting(true)
+        try {
+            const response = await api.post(`/treasury/pos-sessions/${currentSession.id}/register_manual_movement/`, {
+                type: moveType,
+                amount: parseFloat(moveAmount),
+                notes: moveNotes
+            })
+
+            setCurrentSession(response.data.session)
+            onSessionChange?.(response.data.session)
+            setMoveDialogOpen(false)
+            setMoveAmount("0")
+            setMoveNotes("")
+            toast.success(response.data.message)
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al registrar movimiento")
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex items-center gap-2 text-muted-foreground p-2">
@@ -462,6 +498,17 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 )}
 
 
+                <Button
+                    variant={hideSessionInfo ? "outline" : "ghost"}
+                    size={hideSessionInfo ? "sm" : "icon"}
+                    onClick={() => setMoveDialogOpen(true)}
+                    title="Movimiento de Caja"
+                    className={hideSessionInfo ? "px-3 gap-2" : "text-muted-foreground hover:text-primary"}
+                >
+                    <ArrowRightLeft className="h-4 w-4" />
+                    {hideSessionInfo && "Movimiento"}
+                </Button>
+
                 {isSharedSession ? (
                     <Button
                         variant={hideSessionInfo ? "outline" : "ghost"}
@@ -571,6 +618,23 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     </span>
                                     <span>${currentSession.total_credit_sales.toLocaleString()}</span>
                                 </div>
+                                {(currentSession.total_other_cash_inflow > 0 || currentSession.total_other_cash_outflow > 0) && (
+                                    <>
+                                        <div className="border-t my-2" />
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground flex items-center gap-1">
+                                                <ArrowRightLeft className="h-3 w-3" /> Otros Ingresos
+                                            </span>
+                                            <span className="text-emerald-600">+${currentSession.total_other_cash_inflow.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground flex items-center gap-1">
+                                                <ArrowRightLeft className="h-3 w-3" /> Otros Egresos
+                                            </span>
+                                            <span className="text-red-600">-${currentSession.total_other_cash_outflow.toLocaleString()}</span>
+                                        </div>
+                                    </>
+                                )}
                                 <div className="border-t pt-2 flex justify-between font-semibold">
                                     <span>Efectivo Esperado</span>
                                     <span className="text-primary">
@@ -632,6 +696,68 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         <Button onClick={handleCloseSession} disabled={submitting}>
                             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Cerrar Caja
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <ArrowRightLeft className="h-5 w-5" />
+                            Registrar Movimiento de Caja
+                        </DialogTitle>
+                        <DialogDescription>
+                            Registre ingresos o egresos manuales de efectivo.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Motivo del Movimiento</Label>
+                            <Select value={moveType} onValueChange={setMoveType}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
+                                    <SelectItem value="THEFT">Robo / Pérdida</SelectItem>
+                                    <SelectItem value="OTHER_IN">Otro Ingreso (Varios)</SelectItem>
+                                    <SelectItem value="OTHER_OUT">Otro Egreso (Gastos Varios)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Monto ($)</Label>
+                            <Input
+                                type="number"
+                                value={moveAmount}
+                                onChange={(e) => setMoveAmount(e.target.value)}
+                                placeholder="0"
+                                className="text-lg font-semibold"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Descripción / Notas</Label>
+                            <Textarea
+                                value={moveNotes}
+                                onChange={(e) => setMoveNotes(e.target.value)}
+                                placeholder="Especifique el motivo..."
+                                rows={3}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleRegisterManualMovement} disabled={submitting}>
+                            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Registrar Movimiento
                         </Button>
                     </DialogFooter>
                 </DialogContent>

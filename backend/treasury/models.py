@@ -1000,6 +1000,19 @@ class POSSession(models.Model):
         default=0
     )
     
+    total_other_cash_inflow = models.DecimalField(
+        _("Otros Ingresos Efectivo"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    total_other_cash_outflow = models.DecimalField(
+        _("Egresos Efectivo"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    
     notes = models.TextField(_("Notas"), blank=True)
     
     history = HistoricalRecords()
@@ -1014,8 +1027,8 @@ class POSSession(models.Model):
     
     @property
     def expected_cash(self):
-        """Calculate expected cash: opening balance + cash sales"""
-        return self.opening_balance + self.total_cash_sales
+        """Calculate expected cash: opening balance + cash sales + other inflows - outflows"""
+        return self.opening_balance + self.total_cash_sales + self.total_other_cash_inflow - self.total_other_cash_outflow
 
 
 class POSSessionAudit(models.Model):

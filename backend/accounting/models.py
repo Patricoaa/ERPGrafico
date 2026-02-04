@@ -508,6 +508,32 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta de gasto para registrar faltantes de caja.")
     )
     
+    # Manual POS Cash Movements
+    pos_partner_withdrawal_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_withdrawal',
+        verbose_name=_("Cuenta Retiro Socio POS"),
+        help_text=_("Cuenta para registrar retiros de socios desde el POS.")
+    )
+    pos_theft_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_theft',
+        verbose_name=_("Cuenta Faltante por Robo POS"),
+        help_text=_("Cuenta para registrar faltantes por robo detectados en el POS.")
+    )
+    pos_other_inflow_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_other_inflow',
+        verbose_name=_("Cuenta Otros Ingresos POS"),
+        help_text=_("Cuenta para otros ingresos de efectivo en el POS.")
+    )
+    pos_other_outflow_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_other_outflow',
+        verbose_name=_("Cuenta Otros Egresos POS"),
+        help_text=_("Cuenta para otros egresos de efectivo en el POS.")
+    )
+    
     pos_cash_difference_approval_threshold = models.DecimalField(
         _("Umbral de Aprobación de Diferencias POS"),
         max_digits=12,
