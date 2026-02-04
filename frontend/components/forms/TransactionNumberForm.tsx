@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { FORM_STYLES } from "@/lib/styles"
 
 const schema = z.object({
     transaction_number: z.string().optional(),
@@ -93,10 +94,11 @@ export function TransactionNumberForm({
                             name="transaction_number"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>N° de Transacción</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>N° de Transacción</FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="Ex: 543210"
+                                            className={FORM_STYLES.input}
                                             {...field}
                                             autoFocus
                                         />

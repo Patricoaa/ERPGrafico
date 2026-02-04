@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Plus, Trash2, Box, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FORM_STYLES } from "@/lib/styles"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
@@ -120,9 +121,9 @@ const DynamicFieldsRenderer = ({ schema, value, onChange }: { schema: any, value
         <div className="grid grid-cols-2 gap-2 p-2 bg-muted/30 rounded-md mt-2">
             {Object.keys(fields).map((key) => (
                 <div key={key} className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-muted-foreground">{key}</label>
+                    <label className={FORM_STYLES.label}>{key}</label>
                     <Input
-                        className="h-8 text-xs font-medium"
+                        className={cn(FORM_STYLES.input, "h-8 text-xs font-medium")}
                         value={value?.[key] || ""}
                         onChange={(e) => onChange({ ...value, [key]: e.target.value })}
                         placeholder={`Ingrese ${key}...`}
@@ -367,7 +368,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Líneas de Venta</h3>
+                                <h3 className={FORM_STYLES.sectionHeader}>Líneas de Venta</h3>
                                 <Button
                                     type="button"
                                     variant="outline"

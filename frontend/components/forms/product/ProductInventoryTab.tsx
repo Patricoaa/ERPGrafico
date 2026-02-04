@@ -82,11 +82,11 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                     <FormItem>
                                         <div className="flex items-center gap-2">
                                             <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                                            <FormLabel className="text-xs font-bold">Unidad de Stock (Base)</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Unidad de Stock (Base)</FormLabel>
                                         </div>
                                         <FormControl>
                                             <select
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                className={cn(FORM_STYLES.input, "flex w-full px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring")}
                                                 {...field}
                                             >
                                                 <option value="">Seleccionar unidad...</option>
@@ -105,10 +105,10 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                 name="purchase_uom"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs font-bold">Unidad de Compra</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Unidad de Compra</FormLabel>
                                         <FormControl>
                                             <select
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                className={cn(FORM_STYLES.input, "flex w-full px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring")}
                                                 {...field}
                                             >
                                                 <option value="">Igual a Stock</option>
@@ -139,7 +139,7 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                         <div className={cn("flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/20", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <div className="flex items-center gap-2">
-                                                    <FormLabel className="text-xs font-bold">Control de Inventario</FormLabel>
+                                                    <FormLabel className={FORM_STYLES.label}>Control de Inventario</FormLabel>
                                                     <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20 uppercase font-black">Automático</Badge>
                                                 </div>
                                                 <FormDescription className="text-[10px]">
@@ -157,7 +157,7 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                     ) : (
                                         <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
-                                                <FormLabel className="text-xs font-bold">Controlar Stock</FormLabel>
+                                                <FormLabel className={FORM_STYLES.label}>Controlar Stock</FormLabel>
                                                 <FormDescription className="text-[10px]">
                                                     {productType === 'STORABLE' ? 'Obligatorio para productos almacenables.' :
                                                         productType === 'SERVICE' || productType === 'CONSUMABLE' ? 'Desactivado para servicios y consumibles.' :
@@ -183,11 +183,11 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                                     <FormItem className="space-y-1">
                                                         <div className="flex items-center gap-2">
                                                             <Warehouse className="h-3.5 w-3.5 text-primary" />
-                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Bodega de Recepción por Defecto</FormLabel>
+                                                            <FormLabel className={FORM_STYLES.label}>Bodega de Recepción por Defecto</FormLabel>
                                                         </div>
                                                         <FormControl>
                                                             <select
-                                                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                                className={cn(FORM_STYLES.input, "flex h-9 w-full px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring")}
                                                                 {...whField}
                                                             >
                                                                 <option value="">Seleccionar bodega...</option>
@@ -208,7 +208,7 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                                     <FormItem className="space-y-1 mt-4">
                                                         <div className="flex items-center gap-2">
                                                             <Package className="h-3.5 w-3.5 text-primary" />
-                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Proveedor Preferido</FormLabel>
+                                                            <FormLabel className={FORM_STYLES.label}>Proveedor Preferido</FormLabel>
                                                         </div>
                                                         <FormControl>
                                                             <AdvancedContactSelector

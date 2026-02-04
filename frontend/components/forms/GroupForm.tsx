@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
+import { FORM_STYLES } from "@/lib/styles"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -105,9 +106,9 @@ export function GroupForm({
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="{FORM_STYLES.label}">Nombre</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ej: Bodega, Ventas..." {...field} className="{FORM_STYLES.input} focus-visible:ring-primary" />
+                                        <Input placeholder="Ej: Bodega, Ventas..." {...field} className={FORM_STYLES.input} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

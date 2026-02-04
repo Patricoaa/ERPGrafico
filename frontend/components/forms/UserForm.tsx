@@ -16,6 +16,8 @@ import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -212,14 +214,14 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     name="contact"
                                                     render={({ field }) => (
                                                         <FormItem className="md:col-span-2">
-                                                            <FormLabel className="{FORM_STYLES.label}">Contacto Vinculado</FormLabel>
+                                                            <FormLabel className={FORM_STYLES.label}>Contacto Vinculado</FormLabel>
                                                             <Select
                                                                 onValueChange={(val) => field.onChange(parseInt(val))}
                                                                 value={field.value?.toString()}
                                                                 disabled={!!initialData}
                                                             >
                                                                 <FormControl>
-                                                                    <SelectTrigger className="{FORM_STYLES.input}">
+                                                                    <SelectTrigger className={FORM_STYLES.input}>
                                                                         <SelectValue placeholder="Seleccione la persona" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
@@ -241,13 +243,13 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     name="username"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="{FORM_STYLES.label}">Nombre de Usuario</FormLabel>
+                                                            <FormLabel className={FORM_STYLES.label}>Nombre de Usuario</FormLabel>
                                                             <FormControl>
                                                                 <Input
                                                                     {...field}
                                                                     disabled={!!initialData}
                                                                     placeholder="ej: pmartinez"
-                                                                    className="{FORM_STYLES.input} focus-visible:ring-primary"
+                                                                    className={FORM_STYLES.input}
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />
@@ -259,9 +261,9 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     control={form.control}
                                                     name="is_active"
                                                     render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center justify-between rounded-2xl border border-dashed p-4 bg-card/50">
+                                                        <FormItem className={cn("flex flex-row items-center justify-between", FORM_STYLES.card)}>
                                                             <div className="space-y-0.5">
-                                                                <FormLabel className="flex items-center gap-2 {FORM_STYLES.label}">
+                                                                <FormLabel className={cn("flex items-center gap-2", FORM_STYLES.label)}>
                                                                     {field.value ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
                                                                     Estado del Acceso
                                                                 </FormLabel>
@@ -284,9 +286,9 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     name="password"
                                                     render={({ field }) => (
                                                         <FormItem className="md:col-span-2">
-                                                            <FormLabel className="{FORM_STYLES.label}">Contraseña {initialData && "(opcional)"}</FormLabel>
+                                                            <FormLabel className={FORM_STYLES.label}>Contraseña {initialData && "(opcional)"}</FormLabel>
                                                             <FormControl>
-                                                                <Input {...field} type="password" placeholder="••••••••" className="{FORM_STYLES.input} focus-visible:ring-primary" />
+                                                                <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
                                                             </FormControl>
                                                             {!initialData && <p className="text-[11px] text-muted-foreground">Mínimo 6 caracteres</p>}
                                                             <FormMessage />

@@ -17,7 +17,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { useState } from "react"
-// import { login } from "@/lib/auth" // We will create this next
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 const formSchema = z.object({
     username: z.string().min(2, {
@@ -83,9 +84,9 @@ export default function LoginPage() {
                                 name="username"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Usuario</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Usuario</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="usuario" {...field} />
+                                            <Input placeholder="usuario" className={FORM_STYLES.input} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -96,9 +97,9 @@ export default function LoginPage() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Contraseña</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Contraseña</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="••••••" {...field} />
+                                            <Input type="password" placeholder="••••••" className={FORM_STYLES.input} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

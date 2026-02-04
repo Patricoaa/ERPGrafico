@@ -33,6 +33,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { FORM_STYLES } from "@/lib/styles"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
@@ -166,10 +167,10 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name="payment_type"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="{FORM_STYLES.label}">Tipo de Pago</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Tipo de Pago</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
-                                                <SelectTrigger className="{FORM_STYLES.input}">
+                                                <SelectTrigger className={FORM_STYLES.input}>
                                                     <SelectValue placeholder="Seleccione tipo" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -190,10 +191,10 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name="payment_method"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="{FORM_STYLES.label}">Método</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Método</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
-                                                <SelectTrigger className="{FORM_STYLES.input}">
+                                                <SelectTrigger className={FORM_STYLES.input}>
                                                     <SelectValue placeholder="Seleccione método" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -215,7 +216,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name="treasury_account"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="{FORM_STYLES.label}">Cuenta (Opcional)</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Cuenta (Opcional)</FormLabel>
                                         <FormControl>
                                             <TreasuryAccountSelector
                                                 value={field.value}
@@ -237,7 +238,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 name={paymentType === "INBOUND" ? "customer_id" : "supplier_id"}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="{FORM_STYLES.label}">Proveedor/Cliente</FormLabel>
+                                        <FormLabel className={FORM_STYLES.label}>Proveedor/Cliente</FormLabel>
                                         <FormControl>
                                             <AdvancedContactSelector
                                                 value={field.value === "__none__" ? "" : field.value}
@@ -257,10 +258,10 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                     name="invoice_id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="{FORM_STYLES.label}">Factura (Opcional)</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Factura (Opcional)</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value || "__none__"}>
                                                 <FormControl>
-                                                    <SelectTrigger className="{FORM_STYLES.input}">
+                                                    <SelectTrigger className={FORM_STYLES.input}>
                                                         <SelectValue placeholder="Seleccione..." />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -285,12 +286,12 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                             name="amount"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="{FORM_STYLES.label}">Monto</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Monto</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="number"
                                             step="0.01"
-                                            className="{FORM_STYLES.input} focus-visible:ring-primary"
+                                            className={FORM_STYLES.input}
                                             {...field}
                                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                         />
@@ -305,9 +306,9 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                             name="reference"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="{FORM_STYLES.label}">Referencia / N° Operación</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Referencia / N° Operación</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ej: Transf #12345" className="{FORM_STYLES.input} focus-visible:ring-primary" {...field} />
+                                        <Input placeholder="Ej: Transf #12345" className={FORM_STYLES.input} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

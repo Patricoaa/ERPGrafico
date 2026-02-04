@@ -119,7 +119,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                     name="sale_price"
                     render={({ field }) => (
                         <FormItem className={cn("space-y-0.5 p-3 rounded-xl border bg-background", isDynamicPricing && "opacity-50 pointer-events-none")}>
-                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Precio Neto</FormLabel>
+                            <FormLabel className={FORM_STYLES.label}>Precio Neto</FormLabel>
                             <FormControl>
                                 <div className="relative group">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg">$</span>
@@ -148,14 +148,14 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                     name="sale_price_gross"
                     render={({ field }) => (
                         <FormItem className={cn("space-y-0.5 p-3 rounded-xl border bg-primary/10", isDynamicPricing && "opacity-50 pointer-events-none")}>
-                            <FormLabel className="text-[10px] font-bold uppercase text-primary">Total Bruto</FormLabel>
+                            <FormLabel className={cn(FORM_STYLES.label, "text-primary")}>Total Bruto</FormLabel>
                             <FormControl>
                                 <div className="relative group">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/50 font-bold text-lg">$</span>
                                     <Input
                                         type="number"
                                         step="1"
-                                        className="pl-8 h-10 bg-transparent border-none shadow-none rounded-xl font-black text-xl text-primary transition-all focus-visible:ring-primary"
+                                        className={cn(FORM_STYLES.input, "pl-8 h-10 bg-transparent border-none shadow-none rounded-xl font-black text-xl text-primary transition-all focus-visible:ring-primary")}
                                         {...field}
                                         onChange={handleGrossChange}
                                         disabled={isDynamicPricing}
@@ -178,14 +178,14 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
 
                         return (
                             <FormItem className="space-y-0.5 p-3 rounded-xl border bg-background">
-                                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Unidad de Venta</FormLabel>
+                                <FormLabel className={FORM_STYLES.label}>Unidad de Venta</FormLabel>
                                 <Select
                                     onValueChange={field.onChange}
                                     value={field.value}
                                     disabled={isDisabled}
                                 >
                                     <FormControl>
-                                        <SelectTrigger className="bg-background border-none shadow-sm h-10 rounded-xl font-medium text-xs">
+                                        <SelectTrigger className={cn(FORM_STYLES.input, "bg-background border-none shadow-sm h-10 rounded-xl font-medium text-xs")}>
                                             <SelectValue placeholder={isDisabled ? "Añadir UdM primero" : "Predeterminada"} />
                                         </SelectTrigger>
                                     </FormControl>

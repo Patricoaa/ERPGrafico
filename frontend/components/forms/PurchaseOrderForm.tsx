@@ -5,6 +5,8 @@ import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Plus, Trash2 } from "lucide-react"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 import {
     Dialog,
     DialogContent,
@@ -217,7 +219,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Líneas de Compra</h3>
+                            <h3 className={FORM_STYLES.sectionHeader}>Líneas de Compra</h3>
                             <Button
                                 type="button"
                                 variant="outline"
@@ -278,6 +280,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                         <Input
                                                             type="number"
                                                             step="0.01"
+                                                            className={FORM_STYLES.input}
                                                             {...field}
                                                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                         />
@@ -316,6 +319,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                         <Input
                                                             type="number"
                                                             step="1"
+                                                            className={FORM_STYLES.input}
                                                             {...field}
                                                             onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                                         />
@@ -349,11 +353,11 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notas / Observaciones</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Notas / Observaciones</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Notas adicionales..."
-                                            className="resize-none h-24 rounded-xl border-dashed bg-background focus-visible:ring-primary"
+                                            className={cn("resize-none h-24 rounded-xl border-dashed bg-background focus-visible:ring-primary")}
                                             {...field}
                                         />
                                     </FormControl>

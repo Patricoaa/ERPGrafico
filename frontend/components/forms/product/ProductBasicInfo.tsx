@@ -97,7 +97,7 @@ export function ProductCategorizationSection({ form, categories, isEditing, onAd
                 name="category"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Categoría del Producto</FormLabel>
+                        <FormLabel className={FORM_STYLES.label}>Categoría del Producto</FormLabel>
                         <div className="flex gap-2">
                             <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
                                 <FormControl>
