@@ -375,7 +375,7 @@ class Command(BaseCommand):
         _safe_delete(ReconciliationMatch, "ReconciliationMatch")
         _safe_delete(ReconciliationRule, "ReconciliationRule")
         _safe_delete(CardPaymentProvider, "CardPaymentProvider")
-        _safe_delete(TreasuryAccount, "TreasuryAccount")
+        # TreasuryAccount moved to end of section
         # _safe_delete(AccountingSettings, "AccountingSettings")
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
@@ -386,6 +386,9 @@ class Command(BaseCommand):
         _safe_delete(POSSessionAudit, "POSSessionAudit")
         _safe_delete(POSSession, "POSSession")
         _safe_delete(POSTerminal, "POSTerminal")
+        
+        # Now safe to delete TreasuryAccount
+        _safe_delete(TreasuryAccount, "TreasuryAccount")
 
         
         # 7. Accounts
@@ -952,6 +955,8 @@ class Command(BaseCommand):
         )
         
         # 2. POS Terminals
+        bank_account = TreasuryAccount.objects.get(code="BCO01")
+        
         t1, _ = POSTerminal.objects.get_or_create(
             code="POS-01",
             defaults={
@@ -960,6 +965,9 @@ class Command(BaseCommand):
                 'default_treasury_account': till1 # Linked to specific till account
             }
         )
+        # Assign allowed accounts (Cash + Bank for Card/Transfer)
+        t1.allowed_treasury_accounts.set([till1, bank_account])
+
         t2, _ = POSTerminal.objects.get_or_create(
             code="POS-02",
             defaults={
@@ -968,5 +976,6 @@ class Command(BaseCommand):
                 'default_treasury_account': TreasuryAccount.objects.get(code="CAJA01") # Fallback to generic if no specific till created yet
             }
         )
+        t2.allowed_treasury_accounts.set([TreasuryAccount.objects.get(code="CAJA01"), bank_account])
 
         self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills as Accounts).")

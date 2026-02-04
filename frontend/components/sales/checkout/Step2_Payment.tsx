@@ -60,11 +60,11 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
         }
 
         const parsed = parseFloat(tempAmount)
-        const cappedAmount = Math.min(parsed || 0, total)
+        const finalAmount = parsed || 0
 
         setPaymentData({
             ...paymentData,
-            amount: cappedAmount,
+            amount: finalAmount,
             transactionNumber: tempTx,
             treasuryAccountId: tempAccount,
             isPending: tempIsPending

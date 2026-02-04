@@ -850,13 +850,9 @@ export function OrderCommandCenter({
                                     docType: 'payment',
                                     status: p.status || 'Pagado',
                                     amount: p.amount,
-                                    transactionNumber: p.transaction_number,
-                                    requiresTransactionNumber: (
-                                        (p.payment_type === 'OUTBOUND' && (p.payment_method === 'CARD' || p.payment_method === 'TRANSFER')) ||
-                                        (p.payment_type === 'INBOUND' && p.payment_method === 'TRANSFER')
-                                    ),
+                                    documentReference: p.reference,
                                     actions: [
-                                        ...(p.requires_transaction_number && !p.transaction_number ? [{
+                                        ...((((p.payment_type === 'OUTBOUND' && (p.payment_method === 'CARD' || p.payment_method === 'TRANSFER')) || (p.payment_type === 'INBOUND' && p.payment_method === 'TRANSFER'))) && !p.transaction_number ? [{
                                             icon: Hash,
                                             title: 'Ingresar N° Transacción',
                                             color: 'text-orange-500 hover:bg-orange-500/10',

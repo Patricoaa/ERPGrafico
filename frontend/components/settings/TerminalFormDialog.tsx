@@ -142,7 +142,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
             serial_number: serialNumber,
             ip_address: ipAddress || null,
             allowed_treasury_account_ids: selectedAccountIds,  // Write field (IDs)
-            default_treasury_account: defaultTreasuryAccount ? parseInt(defaultTreasuryAccount) : null,
+            default_treasury_account: (defaultTreasuryAccount && defaultTreasuryAccount !== "__none__") ? parseInt(defaultTreasuryAccount) : null,
             is_active: true
         }
 
@@ -196,7 +196,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>{terminal ? "Editar Terminal" : "Nuevo Terminal"}</DialogTitle>
                     <DialogDescription>
@@ -319,7 +319,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                     <SelectValue placeholder="Ninguna (el cajero elige al iniciar sesión)" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">Ninguna</SelectItem>
+                                    <SelectItem value="__none__">Ninguna</SelectItem>
                                     {treasuryAccounts
                                         .filter(acc => selectedAccountIds.includes(acc.id))
                                         .map((account) => (

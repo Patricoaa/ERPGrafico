@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Wallet, AlertCircle, Building2 } from "lucide-react"
+import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -66,8 +67,13 @@ export function PaymentDialog({
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isPending, setIsPending] = useState(false)
     const [treasuryAccount, setTreasuryAccount] = useState<string | null>(null)
-    const [availableAccounts, setAvailableAccounts] = useState<any[]>([])
-    const [loadingAccounts, setLoadingAccounts] = useState(false)
+
+    const { accounts, loading: loadingAccounts } = useTreasuryAccounts({
+        context: 'GENERAL',
+        paymentMethod: paymentMethod as any
+    })
+
+    const filteredAccounts = accounts // Hook already filters by paymentMethod if provided
 
     useEffect(() => {
         if (open) {
@@ -77,7 +83,16 @@ export function PaymentDialog({
             setDocumentDate(new Date().toISOString().split('T')[0])
             setDocumentAttachment(null)
             setIsPending(false)
-            setTreasuryAccount(null)
+
+            // Try to load preferred account for this method
+            const preferredId = localStorage.getItem(`pref_treasury_${paymentMethod}`)
+            if (preferredId && filteredAccounts.some(a => a.id.toString() === preferredId)) {
+                setTreasuryAccount(preferredId)
+            } else if (filteredAccounts.length === 1) {
+                setTreasuryAccount(filteredAccounts[0].id.toString())
+            } else {
+                setTreasuryAccount(null)
+            }
 
             if (existingInvoice) {
                 setDteType(existingInvoice.dte_type)
@@ -85,44 +100,14 @@ export function PaymentDialog({
                 setDteType(isPurchase ? "NONE" : "BOLETA")
             }
         }
-    }, [open, pendingAmount, isPurchase, existingInvoice])
+    }, [open, pendingAmount, isPurchase, existingInvoice, paymentMethod, filteredAccounts])
 
-    useEffect(() => {
-        const fetchAndFilterAccounts = async () => {
-            if (!open) {
-                setAvailableAccounts([])
-                return
-            }
-
-            setLoadingAccounts(true)
-            try {
-                const res = await api.get('/treasury/accounts/')
-                const allAccounts = res.data.results || res.data
-
-                const filtered = allAccounts.filter((acc: any) => {
-                    if (paymentMethod === 'CASH') return acc.allows_cash
-                    if (paymentMethod === 'CARD') return acc.allows_card
-                    if (paymentMethod === 'TRANSFER') return acc.allows_transfer
-                    return false
-                })
-
-                setAvailableAccounts(filtered)
-
-                // Auto-select if only one
-                if (filtered.length === 1) {
-                    setTreasuryAccount(filtered[0].id.toString())
-                } else {
-                    setTreasuryAccount(null)
-                }
-            } catch (error) {
-                console.error("Error fetching accounts:", error)
-            } finally {
-                setLoadingAccounts(false)
-            }
+    const handleAccountChange = (val: string | null) => {
+        setTreasuryAccount(val)
+        if (val) {
+            localStorage.setItem(`pref_treasury_${paymentMethod}`, val)
         }
-
-        fetchAndFilterAccounts()
-    }, [open, paymentMethod])
+    }
 
     const change = Math.max(0, parseFloat(amount || "0") - pendingAmount)
 
@@ -290,17 +275,20 @@ export function PaymentDialog({
                             </RadioGroup>
                         </div>
 
-                        {availableAccounts.length > 1 && (
-                            <div className="grid gap-2">
-                                <Label className="text-[11px] font-bold uppercase text-muted-foreground">Cuenta Destino</Label>
+                        {paymentMethod !== 'CASH' || filteredAccounts.length > 0 ? (
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                    {isPurchase ? "Cuenta de Origen" : "Cuenta de Destino"}
+                                </Label>
                                 <TreasuryAccountSelector
+                                    context="GENERAL"
+                                    paymentMethod={paymentMethod as any}
                                     value={treasuryAccount}
-                                    onChange={setTreasuryAccount}
-                                    placeholder="Seleccionar cuenta..."
-                                    type={paymentMethod === 'CASH' ? 'CASH' : 'BANK'}
+                                    onChange={handleAccountChange}
+                                    placeholder="Seleccione cuenta..."
                                 />
                             </div>
-                        )}
+                        ) : null}
 
                         {(paymentMethod === 'TRANSFER' || paymentMethod === 'CARD') && (
                             <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
