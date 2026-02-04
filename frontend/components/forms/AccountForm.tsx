@@ -45,6 +45,7 @@ const accountSchema = z.object({
     is_category: z.string().optional().nullable().or(z.literal("")),
     cf_category: z.string().optional().nullable().or(z.literal("")),
     bs_category: z.string().optional().nullable().or(z.literal("")),
+    is_reconcilable: z.boolean(),
 })
 
 type AccountFormValues = z.infer<typeof accountSchema>
@@ -71,6 +72,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
             is_category: (initialData as any)?.is_category || "",
             cf_category: (initialData as any)?.cf_category || "",
             bs_category: (initialData as any)?.bs_category || "",
+            is_reconcilable: initialData?.is_reconcilable || false,
         },
     })
 
@@ -101,6 +103,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                     parent: initialData.parent || undefined,
                     is_category: (initialData as any).is_category || "",
                     cf_category: (initialData as any).cf_category || "",
+                    is_reconcilable: initialData.is_reconcilable || false,
                 })
             } else {
                 form.reset({
@@ -111,6 +114,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                     is_category: "",
                     cf_category: "",
                     bs_category: "",
+                    is_reconcilable: false,
                 })
             }
         }
@@ -341,6 +345,27 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                         <p className="text-[10px] text-emerald-600 italic mt-1">Heredado del padre</p>
                                     )}
                                     <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="is_reconcilable"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-stone-50/50">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className={FORM_STYLES.label}>Conciliable</FormLabel>
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Permite conciliar movimientos bancarios o de caja con esta cuenta.
+                                        </p>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
                                 </FormItem>
                             )}
                         />

@@ -183,7 +183,8 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                                             value={field.value}
                                             onChange={field.onChange}
                                             accountType="ASSET"
-                                            placeholder="Seleccionar cuenta contable..."
+                                            isReconcilable={true}
+                                            placeholder="Seleccionar cuenta de banco/caja"
                                         />
                                     </FormControl>
                                     <FormMessage />

@@ -344,6 +344,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                                     value={accountingAccount}
                                     onChange={setAccountingAccount}
                                     accountType="ASSET"
+                                    isReconcilable={true}
                                     placeholder="Seleccione cuenta contable..."
                                 />
                                 <p className="text-[10px] text-muted-foreground">

@@ -21,9 +21,10 @@ interface AccountSelectorProps {
     placeholder?: string
     accountType?: string | string[]
     showAll?: boolean
+    isReconcilable?: boolean
 }
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const { accounts: allAccounts, loading: accountsLoading } = useAccountingAccounts(!showAll)
@@ -35,8 +36,22 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
     useEffect(() => {
         if (!allAccounts) return
 
-        // Always filter by is_selectable (Structural accounts shouldn't be picked)
-        const selectableAccounts = allAccounts.filter((a: any) => a.is_selectable !== false)
+        // Filtering logic:
+        // 1. If showAll is false (standard pick for movements/entries):
+        //    Only show leaf accounts (is_selectable !== false).
+        // 2. If showAll is true (picking a parent for a new account):
+        //    Show category accounts but restrict Level 1 (e.g., "1", "2").
+        //    Level 1 accounts are identified by having no dots in their code.
+        const selectableAccounts = allAccounts.filter((a: any) => {
+            const isReconcilableMatch = isReconcilable !== undefined ? a.is_reconcilable === isReconcilable : true;
+
+            if (showAll) {
+                // When selecting a parent, exclude Level 1 (roots)
+                return a.code.includes('.') && isReconcilableMatch;
+            }
+            // For journal entries, only show leaf accounts
+            return a.is_selectable !== false && isReconcilableMatch;
+        })
 
         // Filter by type if provided
         const filteredByType = accountType
@@ -53,7 +68,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
             const found = allAccounts.find((a: any) => a.id.toString() === value.toString())
             setSelectedAccount(found)
         }
-    }, [allAccounts, accountType, value])
+    }, [allAccounts, accountType, value, showAll, isReconcilable])
 
     const handleSelect = (account: any) => {
         setSelectedAccount(account)

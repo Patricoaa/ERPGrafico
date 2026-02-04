@@ -101,7 +101,8 @@ class Command(BaseCommand):
                     'account_type': AccountType.INCOME,
                     'parent': parent_42,
                     'is_category': None,
-                    'cf_category': None
+                    'cf_category': None,
+                    'is_reconcilable': True
                 }
             )
         else:
@@ -117,7 +118,8 @@ class Command(BaseCommand):
                     'account_type': AccountType.EXPENSE,
                     'parent': parent_52,
                     'is_category': None,
-                    'cf_category': None
+                    'cf_category': None,
+                    'is_reconcilable': True
                 }
             )
         else:
@@ -216,7 +218,7 @@ class Command(BaseCommand):
             acc_comm = None
             if parent_52:
                 acc_comm, _ = Account.objects.get_or_create(code='5.2.10', defaults={
-                    'name': 'Comisiones Bancarias', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                    'name': 'Comisiones Bancarias', 'account_type': AccountType.EXPENSE, 'parent': parent_52, 'is_reconcilable': True
                 })
                 settings.bank_commission_account = acc_comm
 
@@ -224,7 +226,7 @@ class Command(BaseCommand):
             acc_int = None
             if parent_42:
                 acc_int, _ = Account.objects.get_or_create(code='4.2.03', defaults={
-                    'name': 'Intereses Ganados', 'account_type': AccountType.INCOME, 'parent': parent_42
+                    'name': 'Intereses Ganados', 'account_type': AccountType.INCOME, 'parent': parent_42, 'is_reconcilable': True
                 })
                 settings.interest_income_account = acc_int
             
@@ -232,7 +234,7 @@ class Command(BaseCommand):
             acc_exchange = None
             if parent_42:
                 acc_exchange, _ = Account.objects.get_or_create(code='4.2.04', defaults={
-                    'name': 'Diferencia de Cambio', 'account_type': AccountType.INCOME, 'parent': parent_42
+                    'name': 'Diferencia de Cambio', 'account_type': AccountType.INCOME, 'parent': parent_42, 'is_reconcilable': True
                 })
                 settings.exchange_difference_account = acc_exchange
 
@@ -240,7 +242,7 @@ class Command(BaseCommand):
             acc_rounding = None
             if parent_52:
                 acc_rounding, _ = Account.objects.get_or_create(code='5.2.11', defaults={
-                    'name': 'Ajuste por Redondeo', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                    'name': 'Ajuste por Redondeo', 'account_type': AccountType.EXPENSE, 'parent': parent_52, 'is_reconcilable': True
                 })
                 settings.rounding_adjustment_account = acc_rounding
 
@@ -248,7 +250,7 @@ class Command(BaseCommand):
             acc_error = None
             if parent_52:
                 acc_error, _ = Account.objects.get_or_create(code='5.2.12', defaults={
-                    'name': 'Ajuste por Error', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                    'name': 'Ajuste por Error', 'account_type': AccountType.EXPENSE, 'parent': parent_52, 'is_reconcilable': True
                 })
                 settings.error_adjustment_account = acc_error
 
@@ -256,7 +258,7 @@ class Command(BaseCommand):
             acc_card_comm = None
             if parent_52:
                 acc_card_comm, _ = Account.objects.get_or_create(code='5.2.13', defaults={
-                    'name': 'Comisión Tarjeta', 'account_type': AccountType.EXPENSE, 'parent': parent_52
+                    'name': 'Comisión Tarjeta', 'account_type': AccountType.EXPENSE, 'parent': parent_52, 'is_reconcilable': True
                 })
                 settings.card_commission_account = acc_card_comm
 
@@ -594,28 +596,7 @@ class Command(BaseCommand):
         Product.objects.get_or_create(code="SRV-DIS-GRA", defaults={'name': "Servicio Diseño Gráfico", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 25000})
         Product.objects.get_or_create(code="SRV-PRE-PRE", defaults={'name': "Pre-Prensa y Planchas", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 15000})
 
-        # Treasury Accounts
-        TreasuryAccount.objects.get_or_create(code="CAJA01", defaults={
-            'name': "Caja Taller", 
-            'currency': "CLP", 
-            'account': accounts['cash'], 
-            'account_type': TreasuryAccount.Type.CASH,
-            'allows_cash': True,
-            'allows_card': False,
-            'allows_transfer': False
-        })
-        TreasuryAccount.objects.get_or_create(code="BCO01", defaults={
-            'name': "Banco Estado Empresa", 
-            'currency': "CLP", 
-            'account': accounts['bank'], 
-            'account_type': TreasuryAccount.Type.BANK,
-            'allows_cash': False,
-            'allows_card': True,
-            'allows_transfer': True
-        })
-
         return {
-            'warehouse': wh,
             'warehouse': wh,
             'raw_materials': [p_papel, p_tinta_c, p_tinta_m, p_tinta_y, p_tinta_k]
         }
@@ -960,7 +941,33 @@ class Command(BaseCommand):
             }
         )
         
-        # 1.1 New Additional Accounts (as requested)
+        # 1.1 New Additional Accounts
+        bco01, _ = TreasuryAccount.objects.get_or_create(
+            code="BCO-ESTADO",
+            defaults={
+                'name': "Banco Estado Empresa", 
+                'currency': "CLP", 
+                'account': accounts['bank'], 
+                'account_type': TreasuryAccount.Type.BANK,
+                'allows_cash': False,
+                'allows_card': True,
+                'allows_transfer': True
+            }
+        )
+
+        caja01, _ = TreasuryAccount.objects.get_or_create(
+            code="CAJA-TALLER",
+            defaults={
+                'name': "Caja Taller", 
+                'currency': "CLP", 
+                'account': accounts['cash'], 
+                'account_type': TreasuryAccount.Type.CASH,
+                'allows_cash': True,
+                'is_physical': True,
+                'location': "Taller - Piso 2"
+            }
+        )
+
         bank_chile, _ = TreasuryAccount.objects.get_or_create(
             code="BCO-CHILE",
             defaults={
@@ -988,7 +995,7 @@ class Command(BaseCommand):
         )
         
         # 2. POS Terminals
-        bank_account = TreasuryAccount.objects.get(code="BCO01")
+        bank_account = bco01
         
         t1, _ = POSTerminal.objects.get_or_create(
             code="POS-01",
@@ -999,16 +1006,16 @@ class Command(BaseCommand):
             }
         )
         # Assign allowed accounts (Cash + Bank for Card/Transfer)
-        t1.allowed_treasury_accounts.set([till1, bank_account])
+        t1.allowed_treasury_accounts.set([till1, bank_account, recepcion])
 
         t2, _ = POSTerminal.objects.get_or_create(
             code="POS-02",
             defaults={
                 'name': "Caja Taller P2",
                 'location': "Planta 2 - Taller",
-                'default_treasury_account': TreasuryAccount.objects.get(code="CAJA01") # Fallback to generic if no specific till created yet
+                'default_treasury_account': caja01
             }
         )
-        t2.allowed_treasury_accounts.set([TreasuryAccount.objects.get(code="CAJA01"), bank_account])
+        t2.allowed_treasury_accounts.set([caja01, bank_account])
 
         self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills as Accounts).")
