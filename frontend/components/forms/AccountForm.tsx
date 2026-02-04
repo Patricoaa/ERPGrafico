@@ -35,6 +35,7 @@ import { Switch } from "@/components/ui/switch"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -236,21 +237,14 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className={FORM_STYLES.label}>Cuenta Padre (Opcional)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || "none"}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Sin padre" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="__none__">Sin padre</SelectItem>
-                                            {accounts.filter((acc: any) => acc.id).map((acc: any) => (
-                                                <SelectItem key={acc.id} value={acc.id.toString()}>
-                                                    {acc.code} - {acc.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                        <AccountSelector
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            showAll={true}
+                                            placeholder="Sin padre (Nivel raíz)"
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

@@ -51,6 +51,9 @@ const accountingSchema = z.object({
     default_service_revenue_account: z.string().nullable(),
     default_subscription_expense_account: z.string().nullable(),
     default_subscription_revenue_account: z.string().nullable(),
+    pos_cash_difference_gain_account: z.string().nullable(),
+    pos_cash_difference_loss_account: z.string().nullable(),
+    pos_cash_difference_approval_threshold: z.number().default(5000),
 
     code_format: z.string(),
     asset_prefix: z.string(),
@@ -103,6 +106,9 @@ export default function AccountingSettingsPage() {
             default_service_revenue_account: null,
             default_subscription_expense_account: null,
             default_subscription_revenue_account: null,
+            pos_cash_difference_gain_account: null,
+            pos_cash_difference_loss_account: null,
+            pos_cash_difference_approval_threshold: 5000,
 
             code_format: "X.X.XX.XXX",
             asset_prefix: "1",
@@ -222,56 +228,86 @@ export default function AccountingSettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-lg">Operaciones Comerciales</CardTitle>
-                                        <CardDescription>Cuentas utilizadas en Ventas y Compras.</CardDescription>
+                                        <CardTitle className="text-lg">Operaciones de Venta y Servicio</CardTitle>
+                                        <CardDescription>Cuentas para ingresos y cuentas por cobrar.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <AccountField form={form} name="default_receivable_account" label="CxC Clientes (Activo)" accountType="ASSET" />
-                                        <AccountField form={form} name="default_payable_account" label="CxP Proveedores (Pasivo)" accountType="LIABILITY" />
                                         <AccountField form={form} name="default_revenue_account" label="Ingresos por Ventas (Ingreso)" accountType="INCOME" />
 
-                                        <Separator className="my-4" />
-                                        <p className="text-xs font-semibold uppercase text-muted-foreground">Costo de Ventas (COGS)</p>
-                                        <AccountField form={form} name="merchandise_cogs_account" label="Costo de Mercaderías (Gasto)" accountType="EXPENSE" />
-                                        <AccountField form={form} name="manufactured_cogs_account" label="Costo de Productos Fabricados (Gasto)" accountType="EXPENSE" />
+                                        <Separator className="my-2" />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <AccountField form={form} name="default_service_revenue_account" label="Servicios (Ingreso)" accountType="INCOME" />
+                                            <AccountField form={form} name="default_subscription_revenue_account" label="Suscripciones (Ingreso)" accountType="INCOME" />
+                                        </div>
 
-                                        <Separator className="my-4" />
-                                        <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios (Ingreso)" accountType="INCOME" />
-                                        <AccountField form={form} name="default_service_expense_account" label="Gastos por Servicios (Gasto)" accountType="EXPENSE" />
-
-                                        <Separator className="my-4" />
-                                        <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos por Suscripciones (Ingreso)" accountType="INCOME" />
-                                        <AccountField form={form} name="default_subscription_expense_account" label="Gastos por Suscripciones (Gasto)" accountType="EXPENSE" />
+                                        <Separator className="my-2" />
+                                        <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
+                                        <AccountField form={form} name="default_tax_payable_account" label="IVA Débito Fiscal (Pasivo)" accountType="LIABILITY" />
                                     </CardContent>
                                 </Card>
 
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-lg">Impuestos y Otros</CardTitle>
-                                        <CardDescription>Cuentas de IVA y Anticipos.</CardDescription>
+                                        <CardTitle className="text-lg">Operaciones de Compra y Gasto</CardTitle>
+                                        <CardDescription>Cuentas para costos, gastos y cuentas por pagar.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <AccountField form={form} name="default_tax_receivable_account" label="IVA Crédito Fiscal (Activo)" accountType="ASSET" />
-                                        <AccountField form={form} name="default_tax_payable_account" label="IVA Débito Fiscal (Pasivo)" accountType="LIABILITY" />
+                                        <AccountField form={form} name="default_payable_account" label="CxP Proveedores (Pasivo)" accountType="LIABILITY" />
+
+                                        <Separator className="my-2" />
+                                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Costo de Ventas (COGS)</p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <AccountField form={form} name="merchandise_cogs_account" label="Mercaderías" accountType="EXPENSE" />
+                                            <AccountField form={form} name="manufactured_cogs_account" label="Producción" accountType="EXPENSE" />
+                                        </div>
+
+                                        <Separator className="my-2" />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <AccountField form={form} name="default_service_expense_account" label="Gastos Servicios" accountType="EXPENSE" />
+                                            <AccountField form={form} name="default_subscription_expense_account" label="Gastos Suscrip." accountType="EXPENSE" />
+                                        </div>
+
+                                        <Separator className="my-2" />
                                         <AccountField form={form} name="default_prepayment_account" label="Anticipos a Proveedores (Activo)" accountType="ASSET" />
-                                        <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
+                                        <AccountField form={form} name="default_tax_receivable_account" label="IVA Crédito Fiscal (Activo)" accountType="ASSET" />
                                     </CardContent>
                                 </Card>
 
                                 <Card className="md:col-span-2">
-                                    <CardHeader>
-                                        <CardTitle className="text-lg">Conciliación Bancaria</CardTitle>
-                                        <CardDescription>Cuentas para justificar diferencias en conciliaciones.</CardDescription>
+                                    <CardHeader className="bg-muted/10">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <CardTitle className="text-lg">Diferencias y Ajustes de Tesorería</CardTitle>
+                                                <CardDescription>Cuentas para comisiones, intereses y control de caja POS.</CardDescription>
+                                            </div>
+                                            <div className="bg-primary/10 px-3 py-1 rounded-full">
+                                                <p className="text-[10px] font-bold uppercase text-primary">Control de Caja</p>
+                                            </div>
+                                        </div>
                                     </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <AccountField form={form} name="bank_commission_account" label="Comisiones Bancarias (Gasto)" accountType="EXPENSE" />
-                                            <AccountField form={form} name="card_commission_account" label="Comisiones de Tarjeta (Gasto)" accountType="EXPENSE" />
-                                            <AccountField form={form} name="interest_income_account" label="Intereses Ganados (Ingreso)" accountType="INCOME" />
-                                            <AccountField form={form} name="exchange_difference_account" label="Diferencia de Cambio" accountType="" />
-                                            <AccountField form={form} name="rounding_adjustment_account" label="Ajuste por Redondeo" accountType="EXPENSE" />
-                                            <AccountField form={form} name="error_adjustment_account" label="Ajuste por Error" accountType="EXPENSE" />
-                                            <AccountField form={form} name="miscellaneous_adjustment_account" label="Ajustes Varios" accountType="EXPENSE" />
+                                    <CardContent className="pt-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="space-y-4 border-r pr-6">
+                                                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Conciliación Bancaria</p>
+                                                <AccountField form={form} name="bank_commission_account" label="Comisiones Bancarias" accountType="EXPENSE" />
+                                                <AccountField form={form} name="card_commission_account" label="Comisiones Tarjeta" accountType="EXPENSE" />
+                                                <AccountField form={form} name="interest_income_account" label="Intereses Ganados" accountType="INCOME" />
+                                            </div>
+
+                                            <div className="space-y-4 border-r px-6">
+                                                <p className="text-[10px] font-bold uppercase text-emerald-600 mb-2">Punto de Venta (POS)</p>
+                                                <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ingreso)" accountType="INCOME" />
+                                                <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Gasto)" accountType="EXPENSE" />
+                                                <AccountField form={form} name="rounding_adjustment_account" label="Ajuste Redondeo" accountType="EXPENSE" />
+                                            </div>
+
+                                            <div className="space-y-4 pl-6">
+                                                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Otros Ajustes</p>
+                                                <AccountField form={form} name="exchange_difference_account" label="Dif. Cambio" accountType="" />
+                                                <AccountField form={form} name="error_adjustment_account" label="Ajuste Error" accountType="EXPENSE" />
+                                                <AccountField form={form} name="miscellaneous_adjustment_account" label="Ajustes Varios" accountType="EXPENSE" />
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -279,92 +315,47 @@ export default function AccountingSettingsPage() {
                                 <Card className="md:col-span-2">
                                     <CardHeader>
                                         <CardTitle className="text-lg">Gestión de Inventario</CardTitle>
-                                        <CardDescription>
-                                            Configuración de cuentas para control de stock por tipo de producto.
-                                        </CardDescription>
+                                        <CardDescription>Control de stock por tipo de producto y cuentas puente.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="space-y-4">
-
-                                                <AccountField
-                                                    form={form}
-                                                    name="storable_inventory_account"
-                                                    label="Inventario Almacenables (STORABLE)"
-                                                    accountType="ASSET"
-                                                />
-                                                <AccountField
-                                                    form={form}
-                                                    name="manufacturable_inventory_account"
-                                                    label="Inventario Fabricables (MANUFACTURABLE)"
-                                                    accountType="ASSET"
-                                                />
-                                                <AccountField
-                                                    form={form}
-                                                    name="default_consumable_account"
-                                                    label="Gastos Consumibles (CONSUMABLE)"
-                                                    accountType="EXPENSE"
-                                                />
+                                                <p className="text-[10px] font-bold uppercase text-muted-foreground">Cuentas por Tipo de Producto</p>
+                                                <AccountField form={form} name="storable_inventory_account" label="Almacenables (STORABLE)" accountType="ASSET" />
+                                                <AccountField form={form} name="manufacturable_inventory_account" label="Fabricables (MANUFACTURABLE)" accountType="ASSET" />
+                                                <AccountField form={form} name="default_consumable_account" label="Consumibles (Gasto)" accountType="EXPENSE" />
                                             </div>
 
                                             <div className="space-y-4">
-                                                <AccountField
-                                                    form={form}
-                                                    name="stock_input_account"
-                                                    label="Puente Recepciones (Pasivo)"
-                                                    accountType="LIABILITY"
-                                                />
-                                                <AccountField
-                                                    form={form}
-                                                    name="stock_output_account"
-                                                    label="Puente Despachos (Activo)"
-                                                    accountType="ASSET"
-                                                />
+                                                <p className="text-[10px] font-bold uppercase text-muted-foreground">Cuentas Puente y Ajustes</p>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <AccountField form={form} name="stock_input_account" label="Recepciones" accountType="LIABILITY" />
+                                                    <AccountField form={form} name="stock_output_account" label="Despachos" accountType="ASSET" />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <AccountField form={form} name="adjustment_income_account" label="Sobrantes" accountType="INCOME" />
+                                                    <AccountField form={form} name="adjustment_expense_account" label="Mermas" accountType="EXPENSE" />
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <Separator className="my-4" />
+                                        <Separator className="my-6" />
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                                            <div className="space-y-4">
-                                                <AccountField
-                                                    form={form}
-                                                    name="adjustment_income_account"
-                                                    label="Ingreso por Ajuste/Sobrante (Ingreso)"
-                                                    accountType="INCOME"
-                                                />
-                                                <AccountField
-                                                    form={form}
-                                                    name="adjustment_expense_account"
-                                                    label="Gasto por Ajuste/Merma (Gasto)"
-                                                    accountType="EXPENSE"
-                                                />
-                                            </div>
-                                            <div className="space-y-4">
-                                                <AccountField
-                                                    form={form}
-                                                    name="initial_inventory_account"
-                                                    label="Carga de Stock Inicial (Patrimonio/Activo)"
-                                                    accountType="EQUITY"
-                                                />
-                                                <AccountField
-                                                    form={form}
-                                                    name="revaluation_account"
-                                                    label="Revalorización de Stock (Ingreso/Gasto)"
-                                                    accountType="INCOME"
-                                                />
-                                            </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <AccountField form={form} name="initial_inventory_account" label="Carga de Stock Inicial (Patrimonio)" accountType="EQUITY" />
+                                            <AccountField form={form} name="revaluation_account" label="Revalorización de Stock" accountType="INCOME" />
                                         </div>
                                     </CardContent>
                                 </Card>
-                                <Card>
+
+                                <Card className="md:col-span-2 bg-muted/5 border-dashed">
                                     <CardHeader>
-                                        <CardTitle className="text-lg">Configuración de Respaldo (Fallbacks)</CardTitle>
-                                        <CardDescription>Cuentas utilizadas como último recurso si no hay mapeo específico.</CardDescription>
+                                        <CardTitle className="text-sm font-medium text-muted-foreground">Configuración de Respaldo (Legacy / Fallback)</CardTitle>
+                                        <CardDescription className="text-xs">Cuentas obsoletas mantenidas por compatibilidad. Se recomienda no utilizarlas.</CardDescription>
                                     </CardHeader>
-                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <AccountField form={form} name="default_inventory_account" label="Inventario Global (Legacy)" accountType="ASSET" />
-                                        <AccountField form={form} name="default_expense_account" label="Gasto/Costo Global (Legacy)" accountType="EXPENSE" />
+                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-70 grayscale-[0.5]">
+                                        <AccountField form={form} name="default_inventory_account" label="Inventario Global (Obsoleto)" accountType="ASSET" />
+                                        <AccountField form={form} name="default_expense_account" label="Gasto Global (Obsoleto)" accountType="EXPENSE" />
                                     </CardContent>
                                 </Card>
                             </div>
@@ -421,34 +412,69 @@ export default function AccountingSettingsPage() {
                         </TabsContent>
 
                         <TabsContent value="business" className="space-y-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Valoración de Inventario</CardTitle>
-                                    <CardDescription>Determine cómo el sistema calcula el costo de sus existencias.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <FormField
-                                        control={form.control}
-                                        name="inventory_valuation_method"
-                                        render={({ field }) => (
-                                            <FormItem className="max-w-md">
-                                                <FormLabel>Método de Valoración</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || "AVERAGE"}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Valoración de Inventario</CardTitle>
+                                        <CardDescription>Determine cómo el sistema calcula el costo de sus existencias.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <FormField
+                                            control={form.control}
+                                            name="inventory_valuation_method"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Método de Valoración</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value || "AVERAGE"}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Seleccione método" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="AVERAGE">Promedio Ponderado</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-emerald-600">Control de Caja POS</CardTitle>
+                                        <CardDescription>Reglas automáticas para el cierre de terminales.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="pos_cash_difference_approval_threshold"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <FormLabel className="text-xs font-semibold uppercase">Umbral de Aprobación Aut.</FormLabel>
+                                                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">Valor en CLP</span>
+                                                    </div>
                                                     <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Seleccione método" />
-                                                        </SelectTrigger>
+                                                        <Input
+                                                            {...field}
+                                                            type="number"
+                                                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                            className="font-mono"
+                                                        />
                                                     </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="AVERAGE">Promedio Ponderado</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </CardContent>
-                            </Card>
+                                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                                        Las diferencias de caja menores a este monto se aprobarán automáticamente al cerrar el terminal.
+                                                    </p>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </TabsContent>
                     </form>
                 </Form>
@@ -459,7 +485,7 @@ export default function AccountingSettingsPage() {
 
 interface AccountFieldProps {
     form: UseFormReturn<AccountingFormValues>
-    name: any
+    name: keyof AccountingFormValues
     label: string
     accountType: string
 }
@@ -471,10 +497,10 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
             name={name}
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel className="text-xs font-semibold uppercase text-muted-foreground">{label}</FormLabel>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
                     <FormControl>
                         <AccountSelector
-                            value={field.value}
+                            value={field.value as string}
                             onChange={field.onChange}
                             accountType={accountType}
                         />

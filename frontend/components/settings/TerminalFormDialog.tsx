@@ -94,7 +94,12 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
     const fetchTreasuryAccounts = async () => {
         try {
             const res = await api.get('/treasury/accounts/')
-            setTreasuryAccounts(res.data.results || res.data)
+            const allAccounts = res.data.results || res.data
+            // Filter: Only accounts with at least one payment method
+            const validAccounts = allAccounts.filter((a: TreasuryAccount) =>
+                a.allows_cash || a.allows_card || a.allows_transfer
+            )
+            setTreasuryAccounts(validAccounts)
         } catch (error) {
             console.error("Error fetching treasury accounts", error)
             toast.error("Error al cargar cuentas de tesorería")
@@ -102,15 +107,30 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
     }
 
     const toggleAccountSelection = (accountId: number) => {
+        // Find account to check type
+        const account = treasuryAccounts.find(a => a.id === accountId)
+
         setSelectedAccountIds(prev => {
-            if (prev.includes(accountId)) {
-                // Deselecting - check if it's the default
+            const isSelected = prev.includes(accountId)
+
+            if (!isSelected) {
+                // Pre-validation: If selecting a CASH account, check if one is already selected
+                if (account?.allows_cash) {
+                    const hasCashDetails = treasuryAccounts
+                        .filter(a => prev.includes(a.id) && a.allows_cash)
+
+                    if (hasCashDetails.length > 0) {
+                        toast.warning("Solo se permite una cuenta de efectivo por terminal.")
+                        return prev
+                    }
+                }
+                return [...prev, accountId]
+            } else {
+                // Deselecting
                 if (defaultTreasuryAccount === accountId.toString()) {
-                    setDefaultTreasuryAccount("")  // Clear default if deselected
+                    setDefaultTreasuryAccount("")
                 }
                 return prev.filter(id => id !== accountId)
-            } else {
-                return [...prev, accountId]
             }
         })
     }
@@ -118,9 +138,8 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // Validation
         if (!name || !code) {
-            toast.error("Complete los campos obligatorios (Nombre y Código)")
+            toast.error("Complete los campos obligatorios")
             return
         }
 
@@ -129,9 +148,12 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
             return
         }
 
-        // Validate default account is in selected accounts
-        if (defaultTreasuryAccount && !selectedAccountIds.includes(parseInt(defaultTreasuryAccount))) {
-            toast.error("La cuenta predeterminada debe estar entre las cuentas seleccionadas")
+        // Final validation for single cash account
+        const cashAccountsCount = treasuryAccounts
+            .filter(a => selectedAccountIds.includes(a.id) && a.allows_cash).length
+
+        if (cashAccountsCount > 1) {
+            toast.error("Solo puede haber una cuenta de Efectivo vinculada.")
             return
         }
 
@@ -139,52 +161,31 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
             name,
             code,
             location,
-            serial_number: serialNumber,
-            ip_address: ipAddress || null,
-            allowed_treasury_account_ids: selectedAccountIds,  // Write field (IDs)
+            allowed_treasury_account_ids: selectedAccountIds,
             default_treasury_account: (defaultTreasuryAccount && defaultTreasuryAccount !== "__none__") ? parseInt(defaultTreasuryAccount) : null,
             is_active: true
         }
 
         try {
             setLoading(true)
-
             if (terminal) {
-                // Update existing terminal
                 await api.patch(`/treasury/pos-terminals/${terminal.id}/`, payload)
-                toast.success("Terminal actualizado correctamente")
+                toast.success("Terminal actualizado")
             } else {
-                // Create new terminal
                 await api.post('/treasury/pos-terminals/', payload)
-                toast.success("Terminal creado correctamente")
+                toast.success("Terminal creado")
             }
-
             onSuccess()
             onOpenChange(false)
         } catch (error: any) {
-            console.error("Error saving terminal", error)
-
-            // Handle validation errors
-            if (error.response?.data) {
-                const errors = error.response.data
-                if (errors.code) {
-                    toast.error(`Código: ${errors.code[0]}`)
-                } else if (errors.default_treasury_account) {
-                    toast.error(`${errors.default_treasury_account}`)
-                } else if (errors.allowed_treasury_account_ids) {
-                    toast.error(`${errors.allowed_treasury_account_ids}`)
-                } else {
-                    toast.error("Error al guardar terminal")
-                }
-            } else {
-                toast.error("Error al guardar terminal")
-            }
+            console.error(error)
+            toast.error("Error al guardar terminal")
         } finally {
             setLoading(false)
         }
     }
 
-    // Get payment methods for visual display based on selected accounts
+    // Computed payment methods for display
     const derivedPaymentMethods = treasuryAccounts
         .filter(acc => selectedAccountIds.includes(acc.id))
         .reduce((methods, acc) => {
@@ -196,175 +197,119 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-xl">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{terminal ? "Editar Terminal" : "Nuevo Terminal"}</DialogTitle>
                     <DialogDescription>
-                        Configure un terminal y asigne las cuentas de tesorería que puede utilizar
+                        Configuración básica y cuentas asociadas.
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">
-                                Nombre <span className="text-destructive">*</span>
-                            </Label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="name" className="text-xs font-semibold">Nombre <span className="text-red-500">*</span></Label>
                             <Input
                                 id="name"
-                                placeholder="Ej: Caja 1, Mostrador Principal"
+                                placeholder="Ej: Caja Principal"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
+                                className="h-8 text-sm"
                                 required
                             />
                         </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="code">
-                                Código <span className="text-destructive">*</span>
-                            </Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="code" className="text-xs font-semibold">Código <span className="text-red-500">*</span></Label>
                             <Input
                                 id="code"
-                                placeholder="Ej: TERM-01"
+                                placeholder="TERM-01"
                                 value={code}
                                 onChange={(e) => setCode(e.target.value)}
+                                className="h-8 text-sm uppercase"
                                 required
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="location">Ubicación</Label>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="location" className="text-xs font-semibold">Ubicación</Label>
                         <Input
                             id="location"
-                            placeholder="Ej: Planta Baja, Piso 2"
+                            placeholder="Ej: Entrada Principal"
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
+                            className="h-8 text-sm"
                         />
                     </div>
 
-                    {/* Multi-select Treasury Accounts */}
-                    <div className="space-y-2">
-                        <Label>
-                            Cuentas de Tesorería Permitidas <span className="text-destructive">*</span>
-                        </Label>
-                        <p className="text-xs text-muted-foreground mb-2">
-                            Seleccione las cuentas que este terminal puede utilizar
-                        </p>
-                        <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-2 border rounded-md p-3 bg-muted/10">
+                        <div className="flex justify-between items-center">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground">Cuentas Permitidas</Label>
+                            <span className="text-[10px] text-muted-foreground">{selectedAccountIds.length} seleccionadas</span>
+                        </div>
+
+                        <div className="h-40 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                             {treasuryAccounts.length === 0 ? (
-                                <p className="text-sm text-center text-muted-foreground py-4">
-                                    No hay cuentas disponibles
-                                </p>
+                                <p className="text-xs text-center text-muted-foreground py-4">No hay cuentas configuradas</p>
                             ) : (
-                                treasuryAccounts.map((account) => (
-                                    <div
-                                        key={account.id}
-                                        className="flex items-center space-x-2 p-2 hover:bg-accent rounded cursor-pointer"
-                                        onClick={() => toggleAccountSelection(account.id)}
-                                    >
-                                        <Checkbox
-                                            id={`account-${account.id}`}
-                                            checked={selectedAccountIds.includes(account.id)}
-                                            onCheckedChange={() => toggleAccountSelection(account.id)}
-                                        />
-                                        <label
-                                            htmlFor={`account-${account.id}`}
-                                            className="flex-1 text-sm font-medium leading-none cursor-pointer"
+                                treasuryAccounts.map((account) => {
+                                    const isSelected = selectedAccountIds.includes(account.id)
+                                    return (
+                                        <div
+                                            key={account.id}
+                                            className={`flex items-center space-x-2 p-1.5 rounded text-sm cursor-pointer border transition-colors ${isSelected ? 'bg-primary/5 border-primary/20' : 'hover:bg-accent border-transparent'}`}
+                                            onClick={() => toggleAccountSelection(account.id)}
                                         >
-                                            {account.name}
-                                            <span className="text-xs text-muted-foreground ml-2">
-                                                ({account.account_type})
-                                            </span>
-                                        </label>
-                                        <div className="flex gap-1">
-                                            {account.allows_cash && <Badge variant="outline" className="text-[10px] px-1">Efectivo</Badge>}
-                                            {account.allows_card && <Badge variant="outline" className="text-[10px] px-1">Tarjeta</Badge>}
-                                            {account.allows_transfer && <Badge variant="outline" className="text-[10px] px-1">Transf</Badge>}
+                                            <Checkbox
+                                                id={`account-${account.id}`}
+                                                checked={isSelected}
+                                                onCheckedChange={() => toggleAccountSelection(account.id)}
+                                                className="h-4 w-4"
+                                            />
+                                            <div className="flex-1 flex items-center justify-between">
+                                                <span className="font-medium text-xs truncate ml-2 text-foreground/90">{account.name}</span>
+                                                <div className="flex gap-1 ml-2">
+                                                    {account.allows_cash && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-emerald-600 bg-emerald-50 border-emerald-100">Efectivo</Badge>}
+                                                    {account.allows_card && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-blue-600 bg-blue-50 border-blue-100">Tarjeta</Badge>}
+                                                    {account.allows_transfer && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-purple-600 bg-purple-50 border-purple-100">Transf</Badge>}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    )
+                                })
                             )}
                         </div>
-                        {selectedAccountIds.length > 0 && (
-                            <p className="text-xs text-muted-foreground mt-2">
-                                {selectedAccountIds.length} cuenta(s) seleccionada(s)
-                            </p>
-                        )}
                     </div>
 
-                    {/* Computed Payment Methods Display */}
-                    {derivedPaymentMethods.length > 0 && (
-                        <div className="bg-muted/50 border rounded-lg p-3 space-y-2">
-                            <Label className="text-xs font-semibold">Métodos de Pago Disponibles (Auto-calculado):</Label>
-                            <div className="flex gap-2 flex-wrap">
-                                {derivedPaymentMethods.map(method => (
-                                    <Badge key={method} variant="secondary" className="text-xs">
-                                        <Check className="h-3 w-3 mr-1" />
-                                        {method}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Default Account Selection (Optional) */}
                     {selectedAccountIds.length > 0 && (
-                        <div className="space-y-2">
-                            <Label htmlFor="defaultAccount">
-                                Cuenta Predeterminada (Opcional)
-                            </Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="defaultAccount" className="text-xs font-semibold">Cuenta Predeterminada (Inicio de Sesión)</Label>
                             <Select value={defaultTreasuryAccount} onValueChange={setDefaultTreasuryAccount}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Ninguna (el cajero elige al iniciar sesión)" />
+                                <SelectTrigger className="h-8 text-sm">
+                                    <SelectValue placeholder="Seleccionar..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="__none__">Ninguna</SelectItem>
+                                    <SelectItem value="__none__">-- Ninguna --</SelectItem>
                                     {treasuryAccounts
                                         .filter(acc => selectedAccountIds.includes(acc.id))
                                         .map((account) => (
                                             <SelectItem key={account.id} value={account.id.toString()}>
-                                                {account.name} ({account.account_type})
+                                                {account.name}
                                             </SelectItem>
                                         ))
                                     }
                                 </SelectContent>
                             </Select>
-                            <p className="text-xs text-muted-foreground">
-                                Se mostrará por defecto al iniciar sesión en este terminal
-                            </p>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="serialNumber">Número de Serie</Label>
-                            <Input
-                                id="serialNumber"
-                                placeholder="Ej: SN-12345"
-                                value={serialNumber}
-                                onChange={(e) => setSerialNumber(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="ipAddress">Dirección IP</Label>
-                            <Input
-                                id="ipAddress"
-                                placeholder="Ej: 192.168.1.100"
-                                value={ipAddress}
-                                onChange={(e) => setIpAddress(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={loading}>
-                            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            {terminal ? "Actualizar" : "Crear"} Terminal
+                        <Button type="submit" size="sm" disabled={loading}>
+                            {loading && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
+                            Guardar Cambios
                         </Button>
                     </DialogFooter>
                 </form>

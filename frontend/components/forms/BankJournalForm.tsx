@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { ActivitySidebar } from "../audit/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -55,7 +56,6 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [accounts, setAccounts] = useState<any[]>([])
 
     const form = useForm<JournalFormValues>({
         resolver: zodResolver(journalSchema),
@@ -69,19 +69,7 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
         },
     })
 
-    const fetchAccounts = async () => {
-        try {
-            const response = await api.get('/accounting/accounts/?is_leaf=true')
-            const allAccounts = response.data.results || response.data
-            setAccounts(allAccounts.filter((a: any) => a.account_type === 'ASSET'))
-        } catch (error) {
-            console.error("Error fetching accounts:", error)
-        }
-    }
 
-    useEffect(() => {
-        if (open) fetchAccounts()
-    }, [open])
 
     // Reset form when initialData changes or modal opens
     useEffect(() => {
@@ -190,23 +178,14 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className={FORM_STYLES.label}>Cuenta Contable</FormLabel>
-                                    <Select
-                                        onValueChange={(val) => field.onChange(parseInt(val))}
-                                        value={field.value ? field.value.toString() : undefined}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccionar cuenta contable" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {accounts.map((acc) => (
-                                                <SelectItem key={acc.id} value={acc.id.toString()}>
-                                                    {acc.code} - {acc.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                        <AccountSelector
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            accountType="ASSET"
+                                            placeholder="Seleccionar cuenta contable..."
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

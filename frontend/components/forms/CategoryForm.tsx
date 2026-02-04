@@ -31,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
 import {
@@ -141,9 +142,9 @@ const categorySchema = z.object({
     prefix: z.string().max(10, "El prefijo no puede exceder 10 caracteres").optional().nullable(),
     icon: z.string().optional(),
     parent: z.string().optional(),
-    asset_account: z.string().optional(),
-    income_account: z.string().optional(),
-    expense_account: z.string().optional(),
+    asset_account: z.string().optional().nullable(),
+    income_account: z.string().optional().nullable(),
+    expense_account: z.string().optional().nullable(),
 })
 
 type CategoryFormValues = z.infer<typeof categorySchema>
@@ -162,7 +163,6 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
 
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
-    const [accounts, setAccounts] = useState<any[]>([])
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
@@ -179,12 +179,10 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
 
     const fetchData = async () => {
         try {
-            const [catsRes, accsRes] = await Promise.all([
-                api.get('/inventory/categories/'),
-                api.get('/accounting/accounts/?is_leaf=true')
+            const [catsRes] = await Promise.all([
+                api.get('/inventory/categories/')
             ])
             setCategories(catsRes.data.results || catsRes.data)
-            setAccounts(accsRes.data.results || accsRes.data)
         } catch (error) {
             console.error("Error fetching dependencies:", error)
         }
@@ -210,9 +208,9 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                     name: "",
                     prefix: "",
                     parent: "none",
-                    asset_account: "none",
-                    income_account: "none",
-                    expense_account: "none",
+                    asset_account: undefined,
+                    income_account: undefined,
+                    expense_account: undefined,
                 })
             }
         }
@@ -246,9 +244,6 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
         }
     }
 
-    const assetAccounts = accounts.filter(a => a.account_type === 'ASSET')
-    const incomeAccounts = accounts.filter(a => a.account_type === 'INCOME')
-    const expenseAccounts = accounts.filter(a => a.account_type === 'EXPENSE')
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -339,21 +334,14 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className={FORM_STYLES.label}>Cuenta de Activo (Inventario)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || "none"}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccionar cuenta" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="__none__">Ninguna</SelectItem>
-                                            {assetAccounts.filter(acc => acc.id).map((acc) => (
-                                                <SelectItem key={acc.id} value={acc.id.toString()}>
-                                                    {acc.code} - {acc.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                        <AccountSelector
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            accountType="ASSET"
+                                            placeholder="Seleccionar cuenta..."
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -364,21 +352,14 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className={FORM_STYLES.label}>Cuenta de Ingresos (Ventas)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || "none"}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccionar cuenta" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="__none__">Ninguna</SelectItem>
-                                            {incomeAccounts.filter(acc => acc.id).map((acc) => (
-                                                <SelectItem key={acc.id} value={acc.id.toString()}>
-                                                    {acc.code} - {acc.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                        <AccountSelector
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            accountType="INCOME"
+                                            placeholder="Seleccionar cuenta..."
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -389,21 +370,14 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className={FORM_STYLES.label}>Cuenta de Gastos (Costo)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || "none"}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccionar cuenta" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="__none__">Ninguna</SelectItem>
-                                            {expenseAccounts.filter(acc => acc.id).map((acc) => (
-                                                <SelectItem key={acc.id} value={acc.id.toString()}>
-                                                    {acc.code} - {acc.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                        <AccountSelector
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            accountType="EXPENSE"
+                                            placeholder="Seleccionar cuenta..."
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

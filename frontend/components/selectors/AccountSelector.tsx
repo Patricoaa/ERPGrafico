@@ -117,7 +117,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                             ) : filteredAccounts.length === 0 ? (
                                 <div className="p-4 text-sm text-center">No se encontraron cuentas.</div>
                             ) : (
-                                filteredAccounts.slice(0, 10).map((account) => (
+                                filteredAccounts.slice(0, 20).map((account) => (
                                     <div
                                         key={account.id}
                                         className={cn(
@@ -136,10 +136,17 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                                     </div>
                                 ))
                             )}
-                            {filteredAccounts.length > 10 && (
-                                <div className="p-2 text-xs text-center text-muted-foreground border-t">
+                            {filteredAccounts.length > 20 && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOpen(false)
+                                        setModalOpen(true)
+                                    }}
+                                    className="w-full p-2 text-xs text-center text-primary hover:underline border-t"
+                                >
                                     Use búsqueda avanzada para ver más...
-                                </div>
+                                </button>
                             )}
                         </div>
                     </div>
