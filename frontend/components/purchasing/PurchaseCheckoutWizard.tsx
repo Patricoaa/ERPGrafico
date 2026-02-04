@@ -21,6 +21,7 @@ import { PricingUtils } from "@/lib/pricing"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
+import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -167,20 +168,9 @@ export function PurchaseCheckoutWizard({
         }
     }, [selectedWarehouseId])
 
-    const [accounts, setAccounts] = useState<any[]>([])
-
-    useEffect(() => {
-        const fetchAccounts = async () => {
-            try {
-                const response = await api.get('/treasury/accounts/')
-                const results = response.data.results || response.data
-                setAccounts(results)
-            } catch (error) {
-                console.error("Failed to fetch treasury accounts", error)
-            }
-        }
-        fetchAccounts()
-    }, [])
+    const { accounts } = useTreasuryAccounts({
+        context: 'GENERAL'
+    })
 
     const validateCurrentStep = (targetStep: number) => {
         if (targetStep === 1) {

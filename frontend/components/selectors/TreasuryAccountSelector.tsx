@@ -9,60 +9,55 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import api from "@/lib/api"
+import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
 
 interface TreasuryAccountSelectorProps {
     value?: string | number | null
     onChange: (value: string | null) => void
     placeholder?: string
-    type?: 'BANK' | 'CASH' // Filter by type
     disabled?: boolean
+
+    // Filtering options
+    context?: PaymentContext
+    terminalId?: number
+    paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER'
+
+    // Legacy filter (optional)
+    type?: 'BANK' | 'CASH'
 }
 
-export function TreasuryAccountSelector({ value, onChange, placeholder = "Seleccionar...", type, disabled }: TreasuryAccountSelectorProps) {
+export function TreasuryAccountSelector({
+    value,
+    onChange,
+    placeholder = "Seleccionar...",
+    disabled,
+    context = 'GENERAL',
+    terminalId,
+    paymentMethod,
+    type
+}: TreasuryAccountSelectorProps) {
     const [open, setOpen] = useState(false)
-    const [accounts, setAccounts] = useState<any[]>([])
-    const [loading, setLoading] = useState(false)
     const [selectedAccount, setSelectedAccount] = useState<any>(null)
 
+    const { accounts, loading } = useTreasuryAccounts({
+        context,
+        terminalId,
+        paymentMethod
+    })
+
+    // Filter by legacy type if provided (on top of hook filters)
+    const filteredAccounts = type
+        ? accounts.filter(a => a.account_type === type)
+        : accounts
+
     useEffect(() => {
-        const fetchAccounts = async () => {
-            setLoading(true)
-            try {
-                const res = await api.get('/treasury/accounts/')
-                let allAccounts = res.data.results || res.data
-
-                if (type) {
-                    allAccounts = allAccounts.filter((a: any) => a.account_type === type)
-                }
-
-                setAccounts(allAccounts)
-
-                if (value) {
-                    const found = allAccounts.find((a: any) => a.id.toString() === value.toString())
-                    setSelectedAccount(found)
-                } else {
-                    setSelectedAccount(null)
-                }
-            } catch (error) {
-                console.error("Error fetching treasury accounts", error)
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchAccounts()
-    }, [type])
-
-    // Update selected if value changes externally
-    useEffect(() => {
-        if (value && accounts.length > 0) {
-            const found = accounts.find((a: any) => a.id.toString() === value.toString())
+        if (value && filteredAccounts.length > 0) {
+            const found = filteredAccounts.find(a => a.id.toString() === value.toString())
             setSelectedAccount(found)
         } else if (!value) {
             setSelectedAccount(null)
         }
-    }, [value, accounts])
-
+    }, [value, filteredAccounts])
 
     const handleSelect = (account: any) => {
         setSelectedAccount(account)
@@ -90,10 +85,10 @@ export function TreasuryAccountSelector({ value, onChange, placeholder = "Selecc
                 <div className="p-2 max-h-[200px] overflow-y-auto space-y-1">
                     {loading ? (
                         <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                    ) : accounts.length === 0 ? (
+                    ) : filteredAccounts.length === 0 ? (
                         <div className="p-4 text-sm text-center">No hay cuentas disponibles.</div>
                     ) : (
-                        accounts.map((account) => (
+                        filteredAccounts.map((account) => (
                             <div
                                 key={account.id}
                                 className={cn(
@@ -118,3 +113,4 @@ export function TreasuryAccountSelector({ value, onChange, placeholder = "Selecc
         </Popover>
     )
 }
+

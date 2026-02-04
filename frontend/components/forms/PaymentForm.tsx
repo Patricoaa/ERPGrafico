@@ -220,7 +220,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                             <TreasuryAccountSelector
                                                 value={field.value}
                                                 onChange={field.onChange}
-                                                type={paymentMethod === 'CASH' ? 'CASH' : (paymentMethod === 'TRANSFER' || paymentMethod === 'CARD') ? 'BANK' : undefined}
+                                                paymentMethod={paymentMethod === 'CASH' ? 'CASH' : paymentMethod === 'CARD' ? 'CARD' : paymentMethod === 'TRANSFER' ? 'TRANSFER' : undefined}
                                                 placeholder="Predeterminada"
                                                 disabled={paymentMethod === 'CREDIT'}
                                             />

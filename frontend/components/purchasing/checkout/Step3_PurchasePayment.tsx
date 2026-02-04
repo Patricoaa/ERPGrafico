@@ -5,6 +5,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Banknote, CreditCard, Building2, Wallet, AlertCircle } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useState, useEffect, useMemo } from "react"
 import api from "@/lib/api"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -26,20 +27,9 @@ interface Step3_PurchasePaymentProps {
 }
 
 export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: Step3_PurchasePaymentProps) {
-    const [accounts, setAccounts] = useState<any[]>([])
-
-    useEffect(() => {
-        const fetchAccounts = async () => {
-            try {
-                const response = await api.get('/treasury/accounts/')
-                const results = response.data.results || response.data
-                setAccounts(results)
-            } catch (error) {
-                console.error("Failed to fetch treasury accounts", error)
-            }
-        }
-        fetchAccounts()
-    }, [])
+    const { accounts } = useTreasuryAccounts({
+        context: 'GENERAL'
+    })
 
     const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
     const [tempAmount, setTempAmount] = useState("")

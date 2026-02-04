@@ -43,6 +43,7 @@ interface POSTerminal {
 
 interface POSSession {
     id: number
+    terminal: number
     treasury_account: number
     treasury_account_name: string
     user: number

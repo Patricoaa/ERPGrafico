@@ -1267,6 +1267,7 @@ export default function POSPage() {
                         orderLines={items}
                         total={total_gross_sum}
                         posSessionId={currentSession?.id}
+                        terminalId={currentSession?.terminal}
                         onComplete={() => {
                             setItems([])
                             setCurrentDraftId(null)

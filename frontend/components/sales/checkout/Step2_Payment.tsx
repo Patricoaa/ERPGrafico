@@ -5,8 +5,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Banknote, CreditCard, Building2, ClipboardList, Wallet, AlertCircle } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useState, useEffect, useMemo } from "react"
-import api from "@/lib/api"
+import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
+
+import { useState, useMemo, useEffect } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Settings } from "lucide-react"
 import Link from "next/link"
@@ -20,27 +21,19 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog"
 
+
 interface Step2_PaymentProps {
     paymentData: any
     setPaymentData: (data: any) => void
     total: number
+    terminalId?: number
 }
 
-export function Step2_Payment({ paymentData, setPaymentData, total }: Step2_PaymentProps) {
-    const [accounts, setAccounts] = useState<any[]>([])
-
-    useEffect(() => {
-        const fetchAccounts = async () => {
-            try {
-                const response = await api.get('/treasury/accounts/')
-                const results = response.data.results || response.data
-                setAccounts(results)
-            } catch (error) {
-                console.error("Failed to fetch treasury accounts", error)
-            }
-        }
-        fetchAccounts()
-    }, [])
+export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }: Step2_PaymentProps) {
+    const { accounts } = useTreasuryAccounts({
+        context: terminalId ? 'POS' : 'GENERAL',
+        terminalId
+    })
 
     const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
     const [tempAmount, setTempAmount] = useState("")

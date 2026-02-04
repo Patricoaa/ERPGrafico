@@ -13,6 +13,7 @@ import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
 import { Step1_DTE } from "./checkout/Step1_DTE"
 import { Step2_Payment } from "./checkout/Step2_Payment"
+import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { Step3_Delivery } from "./checkout/Step3_Delivery"
 import { Step2_ManufacturingDetails } from "./checkout/Step2_ManufacturingDetails"
 import { OrderSummaryCard } from "./checkout/OrderSummaryCard"
@@ -36,6 +37,7 @@ interface SalesCheckoutWizardProps {
     initialCustomerId?: string
     channel?: string
     posSessionId?: number | null // POS session ID for cash control
+    terminalId?: number // Terminal ID for filtering accounts
 }
 
 export function SalesCheckoutWizard({
@@ -48,7 +50,8 @@ export function SalesCheckoutWizard({
     initialCustomerName = "",
     initialCustomerId = "",
     channel = "POS",
-    posSessionId = null
+    posSessionId = null,
+    terminalId
 }: SalesCheckoutWizardProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
@@ -138,20 +141,11 @@ export function SalesCheckoutWizard({
         }
     }, [initialCustomerId, open]);
 
-    const [accounts, setAccounts] = useState<any[]>([])
-
-    useEffect(() => {
-        const fetchAccounts = async () => {
-            try {
-                const response = await api.get('/treasury/accounts/')
-                const results = response.data.results || response.data
-                setAccounts(results)
-            } catch (error) {
-                console.error("Failed to fetch treasury accounts", error)
-            }
-        }
-        fetchAccounts()
-    }, [])
+    // Treasury accounts for validation
+    const { accounts } = useTreasuryAccounts({
+        context: terminalId ? 'POS' : 'GENERAL',
+        terminalId
+    })
 
     const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
     const totalSteps = (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0);
@@ -193,7 +187,7 @@ export function SalesCheckoutWizard({
 
         // Step: Payment
         if (step === currentStepNum) {
-            return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />
+            return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} />
         }
         currentStepNum++;
 
