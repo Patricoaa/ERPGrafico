@@ -16,13 +16,30 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):
+    # Computed field (read-only)
+    allowed_payment_methods = serializers.SerializerMethodField()
+    
+    # Nested serialization for reading (detailed account info)
+    allowed_treasury_accounts = TreasuryAccountSerializer(many=True, read_only=True)
+    
+    # Write field (just IDs)
+    allowed_treasury_account_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=TreasuryAccount.objects.all(),
+        source='allowed_treasury_accounts',
+        write_only=True
+    )
+    
+    # Support for default account
     default_treasury_account_name = serializers.CharField(
         source='default_treasury_account.name',
-        read_only=True
+        read_only=True,
+        allow_null=True
     )
     default_treasury_account_code = serializers.CharField(
         source='default_treasury_account.code',
-        read_only=True
+        read_only=True,
+        allow_null=True
     )
     
     class Meta:
@@ -30,42 +47,37 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'code', 'location', 'is_active',
             'default_treasury_account', 'default_treasury_account_name', 'default_treasury_account_code',
-            'allowed_payment_methods', 'serial_number', 'ip_address',
+            'allowed_treasury_accounts',  # Read (full objects)
+            'allowed_treasury_account_ids',  # Write (only IDs)
+            'allowed_payment_methods',  # Computed from accounts
+            'serial_number', 'ip_address',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
     
-    def validate_allowed_payment_methods(self, value):
-        valid_methods = ['CASH', 'CARD', 'TRANSFER']
-        for method in value:
-            if method not in valid_methods:
-                raise serializers.ValidationError(
-                    f"Método inválido: {method}. Opciones válidas: {', '.join(valid_methods)}"
-                )
-        return value
+    def get_allowed_payment_methods(self, obj):
+        """
+        Returns the computed list of allowed payment methods based on
+        the associated treasury accounts.
+        """
+        return obj.allowed_payment_methods
     
     def validate(self, attrs):
-        account = attrs.get('default_treasury_account')
-        methods = attrs.get('allowed_payment_methods', [])
+        """
+        Ensure default_treasury_account is part of allowed_treasury_accounts.
+        """
+        default_account = attrs.get('default_treasury_account')
+        allowed_accounts = attrs.get('allowed_treasury_accounts', [])
         
-        if account and methods:
-            if 'CASH' in methods and not account.allows_cash:
-                raise serializers.ValidationError({
-                    'default_treasury_account': 
-                    'La cuenta seleccionada no permite efectivo, pero el terminal lo requiere.'
-                })
-            if 'CARD' in methods and not account.allows_card:
-                raise serializers.ValidationError({
-                    'default_treasury_account': 
-                    'La cuenta seleccionada no permite tarjetas, pero el terminal lo requiere.'
-                })
-            if 'TRANSFER' in methods and not account.allows_transfer:
-                raise serializers.ValidationError({
-                    'default_treasury_account': 
-                    'La cuenta seleccionada no permite transferencias, pero el terminal lo requiere.'
-                })
+        # If setting a default account, ensure it's in the allowed list
+        if default_account and allowed_accounts and default_account not in allowed_accounts:
+            raise serializers.ValidationError({
+                'default_treasury_account':
+                'La cuenta predeterminada debe estar en la lista de cuentas permitidas.'
+            })
         
         return attrs
+
 
 
 class PaymentSerializer(serializers.ModelSerializer):

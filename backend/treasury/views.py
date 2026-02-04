@@ -33,7 +33,7 @@ class POSTerminalViewSet(viewsets.ModelViewSet):
     ViewSet for managing POS Terminals.
     Supports filtering by active status via `?active_only=true` query param.
     """
-    queryset = POSTerminal.objects.select_related('default_treasury_account').all()
+    queryset = POSTerminal.objects.select_related('default_treasury_account').prefetch_related('allowed_treasury_accounts').all()
     serializer_class = POSTerminalSerializer
     
     def get_queryset(self):
@@ -44,6 +44,29 @@ class POSTerminalViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_active=True)
         
         return qs.order_by('code')
+    
+    @action(detail=True, methods=['get'])
+    def available_accounts(self, request, pk=None):
+        """
+        Retorna cuentas de tesorería disponibles para este terminal,
+        opcionalmente filtradas por método de pago.
+        
+        Query params:
+        - payment_method: 'CASH', 'CARD', 'TRANSFER' (optional)
+        
+        Returns:
+            list[TreasuryAccount]: Cuentas permitidas, opcionalmente filtradas
+        """
+        terminal = self.get_object()
+        payment_method = request.query_params.get('payment_method')
+        
+        if payment_method:
+            accounts = terminal.get_accounts_for_method(payment_method)
+        else:
+            accounts = terminal.allowed_treasury_accounts.all()
+        
+        serializer = TreasuryAccountSerializer(accounts, many=True)
+        return Response(serializer.data)
 
 
 

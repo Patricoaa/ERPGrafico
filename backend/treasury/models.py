@@ -186,6 +186,45 @@ class Payment(models.Model):
         return f"{prefix}-{str(self.id).zfill(6)}"
 
 
+class TreasuryAccountManager(models.Manager):
+    """Custom manager with query helpers for filtering by payment methods."""
+    
+    def with_payment_methods(self):
+        """
+        Retorna solo cuentas que tengan al menos un método de pago habilitado.
+        Útil para flujos generales (HUB, Compras) donde se filtran todas las cuentas.
+        
+        Returns:
+            QuerySet: Cuentas con al menos un método habilitado
+        """
+        return self.filter(
+            models.Q(allows_cash=True) |
+            models.Q(allows_card=True) |
+            models.Q(allows_transfer=True)
+        )
+    
+    def for_payment_method(self, payment_method):
+        """
+        Retorna cuentas compatibles con un método específico.
+        
+        Args:
+            payment_method (str): Método de pago ('CASH', 'CARD', 'TRANSFER')
+            
+        Returns:
+            QuerySet: Cuentas que soportan el método especificado
+        """
+        lookup = {
+            'CASH': 'allows_cash',
+            'CARD': 'allows_card',
+            'TRANSFER': 'allows_transfer',
+        }
+        filter_key = lookup.get(payment_method)
+        if not filter_key:
+            return self.none()
+        
+        return self.filter(**{filter_key: True})
+
+
 class TreasuryAccount(models.Model):
     class Type(models.TextChoices):
         BANK = 'BANK', _('Banco')
@@ -245,6 +284,9 @@ class TreasuryAccount(models.Model):
         verbose_name=_("Cuenta Puente Tarjetas (Bruto)"),
         help_text=_("Cuenta donde se registran las ventas bruto (ej: Transbank por Cobrar)")
     )
+    
+    # Custom manager
+    objects = TreasuryAccountManager()
 
     class Meta:
         verbose_name = _("Cuenta de Tesorería")
@@ -258,7 +300,7 @@ class TreasuryAccount(models.Model):
 class POSTerminal(models.Model):
     """
     Represents a physical POS terminal (point of sale hardware/software).
-    Separate from TreasuryAccount to avoid conceptual confusion.
+    Terminals can use multiple treasury accounts for payment processing.
     """
     name = models.CharField(
         _("Nombre del Terminal"),
@@ -279,20 +321,23 @@ class POSTerminal(models.Model):
     )
     is_active = models.BooleanField(_("Activo"), default=True)
     
-    # Default treasury account for this terminal
+    # ManyToMany: Cuentas de tesorería permitidas para este terminal
+    allowed_treasury_accounts = models.ManyToManyField(
+        'TreasuryAccount',
+        related_name='pos_terminals',
+        verbose_name=_("Cuentas de Tesorería Permitidas"),
+        help_text=_("Cuentas que este terminal puede utilizar para registrar pagos")
+    )
+    
+    # Cuenta predeterminada (para sugerencias en UI)
     default_treasury_account = models.ForeignKey(
         'TreasuryAccount',
         on_delete=models.PROTECT,
         related_name='default_for_terminals',
+        null=True,
+        blank=True,
         verbose_name=_("Cuenta de Tesorería por Defecto"),
-        help_text=_("Cuenta donde se registran las operaciones de este terminal")
-    )
-    
-    # Payment methods allowed on this terminal
-    allowed_payment_methods = models.JSONField(
-        _("Métodos de Pago Permitidos"),
-        default=list,
-        help_text=_("Lista de métodos permitidos: ['CASH', 'CARD', 'TRANSFER']")
+        help_text=_("Cuenta predeterminada al iniciar sesión")
     )
     
     # Hardware information (optional)
@@ -319,6 +364,46 @@ class POSTerminal(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def allowed_payment_methods(self):
+        """
+        Métodos de pago permitidos en este terminal, derivados de las
+        cuentas de tesorería asociadas.
+        
+        Returns:
+            list[str]: Lista de métodos permitidos ('CASH', 'CARD', 'TRANSFER')
+        """
+        methods = set()
+        for account in self.allowed_treasury_accounts.all():
+            if account.allows_cash:
+                methods.add('CASH')
+            if account.allows_card:
+                methods.add('CARD')
+            if account.allows_transfer:
+                methods.add('TRANSFER')
+        return sorted(list(methods))
+    
+    def get_accounts_for_method(self, payment_method):
+        """
+        Retorna cuentas de tesorería permitidas que soporten el método dado.
+        
+        Args:
+            payment_method (str): Método de pago ('CASH', 'CARD', 'TRANSFER')
+            
+        Returns:
+            QuerySet[TreasuryAccount]: Cuentas compatibles con el método
+        """
+        lookup = {
+            'CASH': 'allows_cash',
+            'CARD': 'allows_card',
+            'TRANSFER': 'allows_transfer',
+        }
+        filter_key = lookup.get(payment_method)
+        if not filter_key:
+            return self.allowed_treasury_accounts.none()
+        
+        return self.allowed_treasury_accounts.filter(**{filter_key: True})
 
 
 class BankStatement(models.Model):

@@ -18,7 +18,7 @@ from treasury.models import (
     TreasuryAccount, Payment, BankStatement, BankStatementLine,
     ReconciliationMatch, ReconciliationRule, CardPaymentProvider,
     DailySettlement, CardTransaction,
-    CashContainer, CashMovement, CashDifference,
+    CashMovement, CashDifference,
     POSTerminal, POSSession, POSSessionAudit
 )
 from billing.models import Invoice, NoteWorkflow
@@ -386,7 +386,7 @@ class Command(BaseCommand):
         _safe_delete(POSSessionAudit, "POSSessionAudit")
         _safe_delete(POSSession, "POSSession")
         _safe_delete(POSTerminal, "POSTerminal")
-        _safe_delete(CashContainer, "CashContainer")
+
         
         # 7. Accounts
         _safe_delete(Account, "Account")
@@ -905,15 +905,59 @@ class Command(BaseCommand):
         self.stdout.write(f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}")
 
     def _create_treasury_infrastructure(self, accounts):
-        self.stdout.write('  Creating POS Terminals and Cash Containers...')
+        self.stdout.write('  Creating POS Terminals and Treasury Physical Accounts...')
         
-        # 1. POS Terminals
+        manager_user = User.objects.get(username='gerente')
+
+        # 1. Create Physical Treasury Accounts (replacing CashContainers)
+        safe, _ = TreasuryAccount.objects.get_or_create(
+            code="CAJA-FUERTE",
+            defaults={
+                'name': "Caja Fuerte Principal",
+                'currency': "CLP",
+                'account': accounts['cash'],
+                'account_type': TreasuryAccount.Type.CASH,
+                'allows_cash': True,
+                'is_physical': True,
+                'location': "Oficina Gerencia",
+                'custodian': manager_user
+            }
+        )
+
+        till1, _ = TreasuryAccount.objects.get_or_create(
+            code="CAJA-POS-01",
+            defaults={
+                'name': "Gaveta POS 01",
+                'currency': "CLP",
+                'account': accounts['cash'],
+                'account_type': TreasuryAccount.Type.CASH,
+                'allows_cash': True,
+                'is_physical': True,
+                'location': "Mostrador 1"
+            }
+        )
+
+        petty, _ = TreasuryAccount.objects.get_or_create(
+            code="CAJA-CHICA",
+            defaults={
+                'name': "Caja Chica Administración",
+                'currency': "CLP",
+                'account': accounts['cash'],
+                'account_type': TreasuryAccount.Type.CASH,
+                'allows_cash': True,
+                'is_physical': True,
+                'location': "Administración",
+                'custodian': manager_user
+            }
+        )
+        
+        # 2. POS Terminals
         t1, _ = POSTerminal.objects.get_or_create(
             code="POS-01",
             defaults={
                 'name': "Caja Central P1",
                 'location': "Planta 1 - Recepción",
-                'default_treasury_account': TreasuryAccount.objects.get(code="CAJA01")
+                'default_treasury_account': till1 # Linked to specific till account
             }
         )
         t2, _ = POSTerminal.objects.get_or_create(
@@ -921,42 +965,8 @@ class Command(BaseCommand):
             defaults={
                 'name': "Caja Taller P2",
                 'location': "Planta 2 - Taller",
-                'default_treasury_account': TreasuryAccount.objects.get(code="CAJA01")
+                'default_treasury_account': TreasuryAccount.objects.get(code="CAJA01") # Fallback to generic if no specific till created yet
             }
         )
 
-        # 2. Cash Containers
-        manager_user = User.objects.get(username='gerente')
-        
-        safe, _ = CashContainer.objects.get_or_create(
-            name="Caja Fuerte Principal",
-            defaults={
-                'container_type': CashContainer.Type.SAFE,
-                'location': "Oficina Gerencia",
-                'treasury_account': TreasuryAccount.objects.get(code="CAJA01"),
-                'current_balance': Decimal('1500000'),
-                'custodian': manager_user
-            }
-        )
-
-        till1, _ = CashContainer.objects.get_or_create(
-            name="Gaveta POS 01",
-            defaults={
-                'container_type': CashContainer.Type.TILL,
-                'location': "Mostrador 1",
-                'treasury_account': TreasuryAccount.objects.get(code="CAJA01"),
-                'current_balance': 0
-            }
-        )
-
-        petty, _ = CashContainer.objects.get_or_create(
-            name="Caja Chica Administración",
-            defaults={
-                'container_type': CashContainer.Type.PETTY_CASH,
-                'location': "Administración",
-                'treasury_account': TreasuryAccount.objects.get(code="CAJA01"),
-                'current_balance': Decimal('50000')
-            }
-        )
-
-        self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills).")
+        self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills as Accounts).")
