@@ -16,6 +16,8 @@ class DraftCartService:
         pos_session_id: int,
         user,
         items: List[Dict[str, Any]],
+        customer_id: Optional[int] = None,
+        name: str = "",
         notes: str = "",
         wizard_state: Optional[Dict[str, Any]] = None,
         draft_id: Optional[int] = None

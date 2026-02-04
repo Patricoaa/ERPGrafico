@@ -1433,6 +1433,14 @@ export default function POSPage() {
             />
 
             <ScannerFeedback ref={scannerFeedbackRef} />
+
+            <DraftCartsList
+                posSessionId={currentSession?.id}
+                open={draftsListOpen}
+                onOpenChange={setDraftsListOpen}
+                onLoadDraft={loadDraft}
+                showTrigger={false}
+            />
         </div >
     )
 }

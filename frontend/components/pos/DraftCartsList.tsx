@@ -61,6 +61,7 @@ interface DraftCartsListProps {
     onDraftDeleted?: () => void
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    showTrigger?: boolean
 }
 
 export function DraftCartsList({
@@ -68,7 +69,8 @@ export function DraftCartsList({
     onLoadDraft,
     onDraftDeleted,
     open: externalOpen,
-    onOpenChange: setExternalOpen
+    onOpenChange: setExternalOpen,
+    showTrigger = true
 }: DraftCartsListProps) {
     const [drafts, setDrafts] = useState<DraftCart[]>([])
     const [loading, setLoading] = useState(false)
@@ -149,17 +151,19 @@ export function DraftCartsList({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <Archive className="h-4 w-4 mr-2" />
-                    Ver Borradores
-                    {drafts.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                            {drafts.length}
-                        </Badge>
-                    )}
-                </Button>
-            </DialogTrigger>
+            {showTrigger && (
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                        <Archive className="h-4 w-4 mr-2" />
+                        Ver Borradores
+                        {drafts.length > 0 && (
+                            <Badge variant="secondary" className="ml-2">
+                                {drafts.length}
+                            </Badge>
+                        )}
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="max-w-4xl max-h-[80vh]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center justify-between">
