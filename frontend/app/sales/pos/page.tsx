@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Info, ChevronLeft, ChevronRight, BarChart3 } from "lucide-react"
+import { Plus, Trash2, ShoppingCart, Search, User, Minus, Package, Info, ChevronLeft, ChevronRight, BarChart3, Zap } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -121,6 +121,7 @@ export default function POSPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [loading, setLoading] = useState(false)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
+    const [quickSaleMode, setQuickSaleMode] = useState(false) // Track if opening in quick sale mode
     const [draftsListOpen, setDraftsListOpen] = useState(false)
     const [categories, setCategories] = useState<Category[]>([])
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
@@ -223,6 +224,23 @@ export default function POSPage() {
             setLoading(false)
         }
         fetchData()
+    }, [])
+
+    // Fetch default customer on mount
+    useEffect(() => {
+        const fetchDefaultCustomer = async () => {
+            try {
+                const response = await api.get('/contacts/?is_default_customer=true');
+                const results = response.data.results || response.data;
+                const defaultCustomer = results.find((c: any) => c.is_default_customer);
+                if (defaultCustomer) {
+                    setSelectedCustomerId(defaultCustomer.id);
+                }
+            } catch (error) {
+                console.error("Error fetching default customer:", error);
+            }
+        };
+        fetchDefaultCustomer();
     }, [])
 
     // ... (filteredProducts and getEffectivePrice unchanged)
@@ -695,6 +713,49 @@ export default function POSPage() {
         setCheckoutOpen(true)
     }
 
+    // Quick Sale Validation
+    const canQuickSale = useMemo(() => {
+        // Check if default customer exists
+        if (!selectedCustomerId) {
+            return { allowed: false, reason: "No hay cliente por defecto configurado" }
+        }
+
+        // Check for products with zero price
+        const productsWithoutPrice = items.filter(i => i.unit_price_gross <= 0 || i.unit_price_net <= 0)
+        if (productsWithoutPrice.length > 0) {
+            return { allowed: false, reason: "El carrito contiene productos sin precio asignado" }
+        }
+
+        // Check for manufacturing products
+        const manufacturingProducts = items.filter(i =>
+            i.product_type === 'MANUFACTURABLE' || i.requires_advanced_manufacturing
+        )
+        if (manufacturingProducts.length > 0) {
+            return { allowed: false, reason: "El carrito contiene productos que requieren fabricación" }
+        }
+
+        return { allowed: true, reason: "" }
+    }, [items, selectedCustomerId])
+
+    const handleQuickSale = () => {
+        if (!canQuickSale.allowed) {
+            toast.error(canQuickSale.reason)
+            return
+        }
+
+        // Open checkout in quick sale mode
+        setQuickSaleMode(true)
+        setCheckoutOpen(true)
+    }
+
+    // Reset quick sale mode when checkout closes
+    const handleCheckoutClose = (open: boolean) => {
+        setCheckoutOpen(open)
+        if (!open) {
+            setQuickSaleMode(false)
+        }
+    }
+
     // Draft Cart Functions
     const saveDraft = async (showToast = true, autoSaveName = false) => {
         if (!currentSession?.id) {
@@ -810,7 +871,7 @@ export default function POSPage() {
             <div className="flex items-center justify-between py-1 px-1 mb-1">
                 <div className="flex items-center gap-4">
                     <h2 className="text-xl font-bold tracking-tight">
-                        {currentSession?.treasury_account_name || "Punto de Venta"}
+                        {currentSession?.terminal_name || "Punto de Venta"}
                     </h2>
 
                     {/* Session Status Badge */}
@@ -933,7 +994,6 @@ export default function POSPage() {
                                             </Badge>
                                         ))}
                                     </div>
-
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -1266,6 +1326,16 @@ export default function POSPage() {
                                         </div>
                                     )}
                                 </div>
+                                <Button
+                                    variant="outline"
+                                    className="w-full h-12 font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                                    disabled={loading || items.length === 0 || !canQuickSale.allowed}
+                                    onClick={handleQuickSale}
+                                    title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
+                                >
+                                    <Zap className="mr-2 h-5 w-5" />
+                                    {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
+                                </Button>
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-muted-foreground">
                                         <span>Neto</span>
@@ -1314,12 +1384,13 @@ export default function POSPage() {
                 checkoutOpen && (
                     <SalesCheckoutWizard
                         open={checkoutOpen}
-                        onOpenChange={setCheckoutOpen}
+                        onOpenChange={handleCheckoutClose}
                         order={null}
                         orderLines={items}
                         total={total_gross_sum}
                         posSessionId={currentSession?.id}
                         terminalId={currentSession?.terminal}
+                        quickSale={quickSaleMode}
                         onComplete={() => {
                             setItems([])
                             setCurrentDraftId(null)

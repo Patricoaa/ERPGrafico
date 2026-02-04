@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
     Dialog,
     DialogContent,
@@ -38,6 +38,7 @@ interface SalesCheckoutWizardProps {
     channel?: string
     posSessionId?: number | null // POS session ID for cash control
     terminalId?: number // Terminal ID for filtering accounts
+    quickSale?: boolean // Quick sale mode: auto-fill and jump to payment
 }
 
 export function SalesCheckoutWizard({
@@ -51,7 +52,8 @@ export function SalesCheckoutWizard({
     initialCustomerId = "",
     channel = "POS",
     posSessionId = null,
-    terminalId
+    terminalId,
+    quickSale = false
 }: SalesCheckoutWizardProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
@@ -141,14 +143,30 @@ export function SalesCheckoutWizard({
         }
     }, [initialCustomerId, open]);
 
+    // Calculate step information (memoized for quickSale useEffect)
+    const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
+    const totalSteps = useMemo(() => (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0), [isOnlyService, hasManufacturing]);
+
+    // Quick Sale Mode: Auto-fill and jump to payment step
+    useEffect(() => {
+        if (quickSale && open) {
+            // Auto-fill DTE as BOLETA
+            setDteData((prev) => ({ ...prev, type: 'BOLETA' }));
+
+            // Auto-fill Delivery as IMMEDIATE
+            setDeliveryData((prev) => ({ ...prev, type: 'IMMEDIATE' }));
+
+            // Jump to payment step (last step)
+            setStep(totalSteps);
+        }
+    }, [quickSale, open, totalSteps]);
+
     // Treasury accounts for validation
     const { accounts } = useTreasuryAccounts({
         context: terminalId ? 'POS' : 'GENERAL',
         terminalId
     })
 
-    const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
-    const totalSteps = (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0);
 
     // Map internal step to components
     const renderStep = () => {
@@ -185,15 +203,15 @@ export function SalesCheckoutWizard({
         }
         currentStepNum++;
 
-        // Step: Payment
-        if (step === currentStepNum) {
-            return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} />
-        }
-        currentStepNum++;
-
         // Step: Delivery
         if (!isOnlyService && step === currentStepNum) {
             return <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
+        }
+        if (!isOnlyService) currentStepNum++;
+
+        // Step: Payment (LAST STEP)
+        if (step === currentStepNum) {
+            return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} />
         }
 
         return null;
@@ -262,8 +280,14 @@ export function SalesCheckoutWizard({
         }
         currentStepNum++;
 
+        // Delivery validation (now before payment)
+        if (!isOnlyService && step === currentStepNum) {
+            // Delivery step has no specific validation currently
+            return true
+        }
+        if (!isOnlyService) currentStepNum++;
 
-        // Payment validation
+        // Payment validation (LAST STEP)
         if (step === currentStepNum) {
             // Check if payment method is selected
             if (!paymentData.method) {

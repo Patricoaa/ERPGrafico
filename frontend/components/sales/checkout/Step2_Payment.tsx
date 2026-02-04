@@ -129,15 +129,13 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                     </div>
                 </div>
 
-                <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10 flex justify-between items-center h-24 cursor-pointer hover:bg-blue-500/10 transition-colors"
-                    onClick={openAmountModal}>
+                <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10 flex justify-between items-center h-24">
                     <div>
                         <Label className="text-[10px] font-bold uppercase text-muted-foreground">Monto Recibido</Label>
                         <p className="text-xl font-bold text-blue-600">
                             {Number(paymentData.amount || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                         </p>
                     </div>
-                    <Settings className="h-4 w-4 text-blue-400" />
                 </div>
 
                 {paymentData.amount > 0 && (
