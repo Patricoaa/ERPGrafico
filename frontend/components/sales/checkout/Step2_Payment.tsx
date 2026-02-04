@@ -278,7 +278,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-2 w-full">
-                                    {[1000, 2000, 5000, 10000, 20000].map(val => (
+                                    {[50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => (
                                         <Button
                                             key={val}
                                             variant="outline"

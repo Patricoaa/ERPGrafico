@@ -79,16 +79,17 @@ export function SalesCheckoutWizard({
 
     const [paymentData, setPaymentData] = useState({
         method: '',
-        amount: initialTotal,
+        amount: 0,
         transactionNumber: '',
         treasuryAccountId: null,
         isPending: false
     })
 
     // Sync payment amount when total changes
-    useEffect(() => {
-        setPaymentData(prev => ({ ...prev, amount: currentTotal }));
-    }, [currentTotal]);
+    // Sync payment amount when total changes - REMOVED to defaulting to 0
+    // useEffect(() => {
+    //    setPaymentData(prev => ({ ...prev, amount: currentTotal }));
+    // }, [currentTotal]);
 
     const [deliveryData, setDeliveryData] = useState<any>({
         type: 'IMMEDIATE',
