@@ -38,16 +38,6 @@ export function NumpadModal({
             title={title}
             description={description}
             size="sm"
-            footer={
-                <div className="flex justify-end gap-2 w-full">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={onConfirm}>
-                        Confirmar
-                    </Button>
-                </div>
-            }
         >
             <div className="flex flex-col items-center gap-2 py-4">
                 {(maxValue !== undefined && maxValue !== Infinity) && (
@@ -66,7 +56,8 @@ export function NumpadModal({
                     onConfirm={onConfirm}
                     onClose={() => onOpenChange(false)}
                     allowDecimal={allowDecimal}
-                    className="border-none shadow-none p-0"
+                    className="border-none shadow-none p-0 w-full max-w-none"
+                    confirmLabel="CONFIRMAR"
                 />
             </div>
         </BaseModal>
