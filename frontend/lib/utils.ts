@@ -119,7 +119,7 @@ export function translatePaymentMethod(method: string): string {
 
 export function formatCurrency(amount: number | string | null | undefined): string {
   if (amount === null || amount === undefined) return '$0'
-  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+  const numericAmount = Math.round(typeof amount === 'string' ? parseFloat(amount) : amount)
   return new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',

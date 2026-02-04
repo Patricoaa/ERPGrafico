@@ -567,7 +567,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                                             <FormItem>
                                                                 <FormLabel className="text-xs uppercase font-bold text-muted-foreground">Cantidad</FormLabel>
                                                                 <FormControl>
-                                                                    <Input type="number" step="any" placeholder="0.00" {...field} />
+                                                                    <Input type="number" step="1" placeholder="0" {...field} />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>

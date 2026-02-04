@@ -41,7 +41,7 @@ import { saleOrderActions } from "@/lib/actions/sale-actions"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
-import { cn, translateStatus } from "@/lib/utils"
+import { cn, translateStatus, formatCurrency } from "@/lib/utils"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { getHubStatuses, getNoteHubStatuses } from "@/lib/order-status-utils"
@@ -880,13 +880,13 @@ export function OrderCommandCenter({
                                     <div className="flex items-center justify-between text-[11px] font-bold">
                                         <span className="text-muted-foreground">PAGADO</span>
                                         <span className="text-green-500">
-                                            {Number((activeDoc.total || 0) - (activeDoc.pending_amount || 0)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                            {formatCurrency((activeDoc.total || 0) - (activeDoc.pending_amount || 0))}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between text-[11px] font-bold">
                                         <span className="text-muted-foreground">PENDIENTE</span>
                                         <span className={cn(parseFloat(activeDoc.pending_amount || '0') > 0 ? "text-orange-500" : "text-muted-foreground/30")}>
-                                            {Number(activeDoc.pending_amount || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                            {formatCurrency(activeDoc.pending_amount || 0)}
                                         </span>
                                     </div>
                                     {hasPendingTransactions && (

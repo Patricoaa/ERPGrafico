@@ -34,7 +34,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 
 interface BankStatementLine {
     id: number
@@ -598,14 +598,14 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                         <div>
                             <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Bancos ({selectedLines.length})</p>
                             <p className="text-lg font-black font-mono">
-                                ${selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0).toLocaleString('es-CL')}
+                                {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
                             </p>
                         </div>
                         <div className="h-8 w-px bg-border" />
                         <div>
                             <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Sistema ({selectedPayments.length})</p>
                             <p className="text-lg font-black font-mono">
-                                ${selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0).toLocaleString('es-CL')}
+                                {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
                             </p>
                         </div>
                         <div className="h-8 w-px bg-border" />
@@ -617,7 +617,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                 const diff = lineTotal - payTotal
                                 return (
                                     <p className={cn("text-lg font-black font-mono", Math.abs(diff) < 1 ? "text-emerald-500" : "text-amber-500")}>
-                                        ${Math.abs(diff).toLocaleString('es-CL')}
+                                        {formatCurrency(Math.abs(diff))}
                                     </p>
                                 )
                             })()}
@@ -744,7 +744,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                                         "text-[15px] font-black font-mono tracking-tight",
                                                         isCredit ? "text-emerald-600" : "text-red-500"
                                                     )}>
-                                                        ${amount.toLocaleString('es-CL')}
+                                                        {formatCurrency(amount)}
                                                     </div>
                                                 </div>
                                                 <div className={cn(
@@ -841,7 +841,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-[15px] font-black font-mono tracking-tight text-foreground/90">
-                                                    ${Math.abs(parseFloat(payment.amount)).toLocaleString('es-CL')}
+                                                    {formatCurrency(Math.abs(parseFloat(payment.amount)))}
                                                 </div>
                                                 <div className="text-[9px] font-bold uppercase text-muted-foreground/50 mt-0.5">
                                                     {payment.payment_method_display || 'Transferencia'}
@@ -870,7 +870,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                     <div className="p-6 space-y-6">
                         <div className="bg-muted/50 rounded-xl p-4 flex justify-between items-center border">
                             <span className="text-xs font-bold uppercase text-muted-foreground opacity-60">Diferencia Neta</span>
-                            <span className="text-xl font-black font-mono text-amber-600">${parseFloat(diffDialog.amount).toLocaleString('es-CL')}</span>
+                            <span className="text-xl font-black font-mono text-amber-600">{formatCurrency(diffDialog.amount)}</span>
                         </div>
 
                         <div className="grid gap-4">

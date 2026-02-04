@@ -13,6 +13,7 @@ import api from "@/lib/api"
 import { BOMFormDialog } from "@/components/production/BOMFormDialog"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { formatCurrency } from "@/lib/utils"
 
 interface BOM {
     id: number
@@ -128,7 +129,7 @@ export default function BOMsPage() {
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("total_cost")) || 0
                 return <div className="text-right font-mono">
-                    ${amount.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatCurrency(amount)}
                 </div>
             },
         },

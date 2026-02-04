@@ -4,6 +4,7 @@ import React from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Numpad } from "@/components/ui/numpad"
 import { Button } from "@/components/ui/button"
+import { formatCurrency } from "@/lib/utils"
 
 interface NumpadModalProps {
     open: boolean
@@ -56,7 +57,7 @@ export function NumpadModal({
                 )}
                 {netValue !== undefined && (
                     <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">
-                        Valor Neto: {typeof netValue === 'number' ? `$${netValue.toLocaleString('es-CL')}` : netValue}
+                        Valor Neto: {typeof netValue === 'number' ? formatCurrency(netValue) : netValue}
                     </div>
                 )}
                 <Numpad

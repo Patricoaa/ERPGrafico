@@ -28,7 +28,7 @@ import { Plus, Trash2, Save, Loader2, Info, Workflow } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
@@ -43,7 +43,7 @@ const bomSchema = z.object({
         component_code: z.string().optional(), // For display
         component_name: z.string().optional(), // For display
         component_cost: z.number().optional(), // For display
-        quantity: z.coerce.number().min(0.0001, "Cantidad debe ser mayor a 0"),
+        quantity: z.coerce.number().min(1, "Cantidad debe ser mayor a 0"),
         uom: z.string().min(1, "Unidad requerida"), // UoM ID as string - REQUIRED
         uom_name: z.string().optional(), // For display
         notes: z.string().optional()
@@ -423,7 +423,7 @@ export function BOMFormDialog({
                                                             render={({ field }) => (
                                                                 <FormItem>
                                                                     <FormControl>
-                                                                        <Input type="number" step="0.0001" {...field} className={cn(FORM_STYLES.input, "h-8")} />
+                                                                        <Input type="number" step="1" {...field} className={cn(FORM_STYLES.input, "h-8")} />
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
@@ -498,8 +498,8 @@ export function BOMFormDialog({
                                                         />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <div className="text-right font-mono text-sm text-muted-foreground">
-                                                            ${(form.watch(`lines.${index}.component_cost`) || 0).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        <div className="text-[10px] text-muted-foreground font-mono">
+                                                            {formatCurrency(form.watch(`lines.${index}.component_cost`) || 0)}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>

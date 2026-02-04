@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
 import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { translateStatus, translatePaymentMethod, translateReceivingStatus } from "@/lib/utils"
+import { translateStatus, translatePaymentMethod, translateReceivingStatus, formatCurrency } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { PaymentForm } from "@/components/forms/PaymentForm"
@@ -295,7 +295,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <CardContent className="p-3">
                                                             <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Monto</div>
                                                             <div className={`font-black text-sm ${data.payment_type === 'INBOUND' ? 'text-green-600' : 'text-red-700'}`}>
-                                                                ${Number(data.amount).toLocaleString()}
+                                                                {formatCurrency(data.amount)}
                                                             </div>
                                                         </CardContent>
                                                     </Card>
@@ -349,7 +349,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                 {currentType === 'inventory' ? 'Cantidad' : 'Total'}
                                                             </div>
                                                             <div className={`font-bold text-base truncate ${currentType === 'inventory' ? ((Number(data.quantity) || 0) > 0 ? 'text-green-600' : 'text-red-600') : ''}`}>
-                                                                {currentType === 'inventory' ? Math.round(Math.abs(Number(data.quantity) || 0)) : `$${Number(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + (Number(i.debit) || 0), 0) : (data.total || 0)).toLocaleString()}`}
+                                                                {currentType === 'inventory' ? Math.round(Math.abs(Number(data.quantity) || 0)) : formatCurrency(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + (Number(i.debit) || 0), 0) : (data.total || 0))}
                                                             </div>
                                                         </CardContent>
                                                     </Card>
@@ -567,11 +567,11 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                             <div className="space-y-1">
                                                                 <div className="flex justify-between text-xs">
                                                                     <span className="text-muted-foreground">Pagado:</span>
-                                                                    <span className="font-bold text-emerald-600">${Number(data.total_paid).toLocaleString()}</span>
+                                                                    <span className="font-bold text-emerald-600">{formatCurrency(data.total_paid)}</span>
                                                                 </div>
                                                                 <div className="flex justify-between text-xs">
                                                                     <span className="text-muted-foreground">Pendiente:</span>
-                                                                    <span className="font-bold text-red-600">${Number(data.pending_amount).toLocaleString()}</span>
+                                                                    <span className="font-bold text-red-600">{formatCurrency(data.pending_amount)}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -601,10 +601,10 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                             </TableCell>
                                                                             <TableCell className="text-xs italic text-muted-foreground">{item.label}</TableCell>
                                                                             <TableCell className="text-right text-sm">
-                                                                                {Number(item.debit) > 0 ? `$${Number(item.debit).toLocaleString()}` : '-'}
+                                                                                {Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}
                                                                             </TableCell>
                                                                             <TableCell className="text-right text-sm">
-                                                                                {Number(item.credit) > 0 ? `$${Number(item.credit).toLocaleString()}` : '-'}
+                                                                                {Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}
                                                                             </TableCell>
                                                                         </TableRow>
                                                                     ))}
@@ -619,13 +619,13 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                             <div className="flex flex-col items-end">
                                                                                 <span className="text-[9px] uppercase text-muted-foreground font-semibold">Total Debe</span>
                                                                                 <span className="font-bold text-base text-blue-600">
-                                                                                    ${(data.items || []).reduce((acc: number, i: any) => acc + Number(i.debit), 0).toLocaleString()}
+                                                                                    {formatCurrency((data.items || []).reduce((acc: number, i: any) => acc + Number(i.debit), 0))}
                                                                                 </span>
                                                                             </div>
                                                                             <div className="flex flex-col items-end">
                                                                                 <span className="text-[9px] uppercase text-muted-foreground font-semibold">Total Haber</span>
                                                                                 <span className="font-bold text-base text-emerald-600">
-                                                                                    ${(data.items || []).reduce((acc: number, i: any) => acc + Number(i.credit), 0).toLocaleString()}
+                                                                                    {formatCurrency((data.items || []).reduce((acc: number, i: any) => acc + Number(i.credit), 0))}
                                                                                 </span>
                                                                             </div>
                                                                         </div>
@@ -654,8 +654,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                                 </div>
                                                                             </TableCell>
                                                                             <TableCell className="text-center text-sm">{Math.round(parseFloat(item.quantity || 0))}</TableCell>
-                                                                            <TableCell className="text-right text-sm">${Number(item.unit_price || item.unit_cost).toLocaleString()}</TableCell>
-                                                                            <TableCell className="text-right font-bold text-sm">${Number(item.subtotal).toLocaleString()}</TableCell>
+                                                                            <TableCell className="text-right text-sm">{formatCurrency(item.unit_price || item.unit_cost)}</TableCell>
+                                                                            <TableCell className="text-right font-bold text-sm">{formatCurrency(item.subtotal)}</TableCell>
                                                                         </TableRow>
                                                                     ))}
                                                                     {(!data.lines && !data.items) && (
@@ -671,15 +671,15 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                 <div className="w-64 space-y-2">
                                                                     <div className="flex justify-between text-sm">
                                                                         <span className="text-muted-foreground">Neto</span>
-                                                                        <span>${Number(data.total_net).toLocaleString()}</span>
+                                                                        <span>{formatCurrency(data.total_net)}</span>
                                                                     </div>
                                                                     <div className="flex justify-between text-sm">
                                                                         <span className="text-muted-foreground">IVA (19%)</span>
-                                                                        <span>${Number(data.total_tax).toLocaleString()}</span>
+                                                                        <span>{formatCurrency(data.total_tax)}</span>
                                                                     </div>
                                                                     <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
                                                                         <span>Total</span>
-                                                                        <span>${Number(data.total).toLocaleString()}</span>
+                                                                        <span>{formatCurrency(data.total)}</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -792,7 +792,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                             )}
                                                                         </TableCell>
                                                                         <TableCell className="text-right font-bold text-emerald-600">
-                                                                            ${Number(pay.amount).toLocaleString()}
+                                                                            {formatCurrency(pay.amount)}
                                                                         </TableCell>
                                                                         <TableCell className="text-right">
                                                                             <div className="flex justify-end gap-1">

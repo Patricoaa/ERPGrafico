@@ -22,6 +22,7 @@ import {
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
+import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -425,7 +426,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono">
-                            ${parseFloat(statement.opening_balance).toLocaleString('es-CL')}
+                            {formatCurrency(statement.opening_balance)}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                             <Calendar className="h-2.5 w-2.5" />
@@ -441,11 +442,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono">
-                            ${parseFloat(statement.closing_balance).toLocaleString('es-CL')}
+                            {formatCurrency(statement.closing_balance)}
                         </div>
                         <p className={`text-[10px] font-medium mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                             {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
-                            {netMovement >= 0 ? 'Excedente' : 'Déficit'}: ${Math.abs(netMovement).toLocaleString('es-CL')}
+                            {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
                         </p>
                     </CardContent>
                 </Card>
@@ -457,7 +458,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono text-red-600/80">
-                            ${totalDebits.toLocaleString('es-CL')}
+                            {formatCurrency(totalDebits)}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
                             {statement.lines.filter(l => parseFloat(l.debit) > 0).length} cargos detectados
@@ -472,7 +473,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono text-emerald-600/80">
-                            ${totalCredits.toLocaleString('es-CL')}
+                            {formatCurrency(totalCredits)}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
                             {statement.lines.filter(l => parseFloat(l.credit) > 0).length} abonos detectados

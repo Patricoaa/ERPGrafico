@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Wallet, AlertCircle, Building2 } from "lucide-react"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 
 interface PaymentDialogProps {
@@ -126,14 +126,14 @@ export function PaymentDialog({
                         <div className="flex justify-between items-center relative z-10">
                             <div>
                                 <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/70 mb-1">Monto de la Orden</p>
-                                <p className="text-sm font-bold text-muted-foreground opacity-80">${Math.round(total).toLocaleString()}</p>
+                                <p className="text-sm font-bold text-muted-foreground opacity-80">{formatCurrency(total)}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/70 mb-1">
                                     {isRefund ? "Total a Reembolsar" : "Saldo Pendiente"}
                                 </p>
                                 <p className="text-4xl font-black text-primary tracking-tighter drop-shadow-sm">
-                                    ${Math.round(pendingAmount).toLocaleString()}
+                                    {formatCurrency(pendingAmount)}
                                 </p>
                             </div>
                         </div>
@@ -327,7 +327,7 @@ export function PaymentDialog({
                                         type="number"
                                         step="1"
                                         value={amount}
-                                        onChange={(e) => setAmount(Math.ceil(parseFloat(e.target.value) || 0).toString())}
+                                        onChange={(e) => setAmount(Math.round(parseFloat(e.target.value) || 0).toString())}
                                         className="pl-14 text-4xl font-black h-20 rounded-2xl border-2 focus-visible:ring-offset-0 transition-all bg-background/50 backdrop-blur-sm shadow-sm"
                                         autoFocus
                                         onFocus={(e) => e.target.select()}
@@ -346,14 +346,14 @@ export function PaymentDialog({
                                         </span>
                                     </div>
                                     <span className="font-black text-2xl text-emerald-600 dark:text-emerald-400 tracking-tighter">
-                                        ${Math.round(change).toLocaleString()}
+                                        {formatCurrency(change)}
                                     </span>
                                 </div>
                             ) : parseFloat(amount) < pendingAmount ? (
                                 <div className="space-y-2">
                                     <Label className="text-xs font-bold uppercase text-orange-600">Deuda Pendiente</Label>
                                     <div className="h-10 flex items-center px-3 rounded-md border border-orange-200 bg-orange-50 text-orange-700 font-bold">
-                                        {(pendingAmount - parseFloat(amount)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                        {formatCurrency(pendingAmount - parseFloat(amount))}
                                     </div>
                                 </div>
                             ) : null}

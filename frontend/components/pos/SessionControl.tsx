@@ -29,6 +29,8 @@ import api from "@/lib/api"
 import { POSReport } from "@/components/pos/POSReport"
 import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
 import { forwardRef, useImperativeHandle } from "react"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { cn, translateStatus, formatCurrency } from "@/lib/utils"
 
 interface POSTerminal {
     id: number
@@ -264,7 +266,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
             if (difference !== 0) {
                 const diffType = difference > 0 ? "sobrante" : "faltante"
-                toast.warning(`Caja cerrada con ${diffType} de $${Math.abs(difference).toLocaleString()}`)
+                toast.warning(`Caja cerrada con ${diffType} de ${formatCurrency(Math.abs(difference))}`)
             } else {
                 toast.success("Caja cerrada correctamente - Cuadra perfecto!")
             }
@@ -320,7 +322,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         // Restriction: Cannot withdraw more than available
         const isOutflow = ["PARTNER_WITHDRAWAL", "THEFT", "OTHER_OUT"].includes(moveType)
         if (isOutflow && amount > currentSession.expected_cash) {
-            toast.error(`Monto insuficiente en caja. Máximo disponible: $${currentSession.expected_cash.toLocaleString('es-CL')}`)
+            toast.error(`Monto insuficiente en caja. Máximo disponible: ${formatCurrency(currentSession.expected_cash)}`)
             return
         }
 
@@ -600,31 +602,31 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <span className="text-muted-foreground flex items-center gap-1">
                                         <Banknote className="h-3 w-3" /> Fondo Inicial
                                     </span>
-                                    <span>${currentSession.opening_balance.toLocaleString()}</span>
+                                    <span>{formatCurrency(currentSession.opening_balance)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground flex items-center gap-1">
                                         <Banknote className="h-3 w-3" /> Ventas Efectivo
                                     </span>
-                                    <span>${currentSession.total_cash_sales.toLocaleString()}</span>
+                                    <span>{formatCurrency(currentSession.total_cash_sales)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground flex items-center gap-1">
                                         <CreditCard className="h-3 w-3" /> Ventas Tarjeta
                                     </span>
-                                    <span>${currentSession.total_card_sales.toLocaleString()}</span>
+                                    <span>{formatCurrency(currentSession.total_card_sales)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground flex items-center gap-1">
                                         <ArrowRightLeft className="h-3 w-3" /> Ventas Transferencia
                                     </span>
-                                    <span>${currentSession.total_transfer_sales.toLocaleString()}</span>
+                                    <span>{formatCurrency(currentSession.total_transfer_sales)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground flex items-center gap-1">
                                         <FileText className="h-3 w-3" /> Ventas Crédito
                                     </span>
-                                    <span>${currentSession.total_credit_sales.toLocaleString()}</span>
+                                    <span>{formatCurrency(currentSession.total_credit_sales)}</span>
                                 </div>
                                 {(currentSession.total_other_cash_inflow > 0 || currentSession.total_other_cash_outflow > 0) && (
                                     <>
@@ -633,20 +635,20 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                             <span className="text-muted-foreground flex items-center gap-1">
                                                 <ArrowRightLeft className="h-3 w-3" /> Otros Ingresos
                                             </span>
-                                            <span className="text-emerald-600">+${currentSession.total_other_cash_inflow.toLocaleString()}</span>
+                                            <span className="text-emerald-600">+{formatCurrency(currentSession.total_other_cash_inflow)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground flex items-center gap-1">
                                                 <ArrowRightLeft className="h-3 w-3" /> Otros Egresos
                                             </span>
-                                            <span className="text-red-600">-${currentSession.total_other_cash_outflow.toLocaleString()}</span>
+                                            <span className="text-red-600">-{formatCurrency(currentSession.total_other_cash_outflow)}</span>
                                         </div>
                                     </>
                                 )}
                                 <div className="border-t pt-2 flex justify-between font-semibold">
                                     <span>Efectivo Esperado</span>
                                     <span className="text-primary">
-                                        ${currentSession.expected_cash.toLocaleString()}
+                                        {formatCurrency(currentSession.expected_cash)}
                                     </span>
                                 </div>
                             </CardContent>
@@ -666,7 +668,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     ? 'text-emerald-600'
                                     : 'text-red-600'
                                     }`}>
-                                    Diferencia: ${(parseFloat(actualCash) - currentSession.expected_cash).toLocaleString()}
+                                    Diferencia: {formatCurrency(parseFloat(actualCash) - currentSession.expected_cash)}
                                     {parseFloat(actualCash) > currentSession.expected_cash ? ' (Sobrante)' : ' (Faltante)'}
                                 </p>
                             )}
@@ -741,7 +743,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             <div className="flex justify-between items-center">
                                 <Label>Monto ($)</Label>
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                    Disponible: ${currentSession.expected_cash.toLocaleString('es-CL')}
+                                    Disponible: {formatCurrency(currentSession.expected_cash)}
                                 </span>
                             </div>
                             <Input
