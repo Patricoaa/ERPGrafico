@@ -81,11 +81,13 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="flex-1 justify-between"
+                        className="flex-1 justify-between overflow-hidden"
                     >
-                        {selectedAccount
-                            ? `${selectedAccount.code} - ${selectedAccount.name}`
-                            : placeholder}
+                        <span className="truncate">
+                            {selectedAccount
+                                ? `${selectedAccount.code} - ${selectedAccount.name}`
+                                : placeholder}
+                        </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>

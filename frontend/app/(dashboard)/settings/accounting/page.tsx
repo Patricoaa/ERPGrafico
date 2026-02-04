@@ -247,8 +247,12 @@ export default function AccountingSettingsPage() {
 
                                         <Separator className="my-2" />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <AccountField form={form} name="default_service_revenue_account" label="Servicios (Ingreso)" accountType="INCOME" />
-                                            <AccountField form={form} name="default_subscription_revenue_account" label="Suscripciones (Ingreso)" accountType="INCOME" />
+                                            <div className="min-w-0">
+                                                <AccountField form={form} name="default_service_revenue_account" label="Servicios (Ingreso)" accountType="INCOME" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <AccountField form={form} name="default_subscription_revenue_account" label="Suscripciones (Ingreso)" accountType="INCOME" />
+                                            </div>
                                         </div>
 
                                         <Separator className="my-2" />
@@ -268,14 +272,22 @@ export default function AccountingSettingsPage() {
                                         <Separator className="my-2" />
                                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Costo de Ventas (COGS)</p>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <AccountField form={form} name="merchandise_cogs_account" label="Mercaderías" accountType="EXPENSE" />
-                                            <AccountField form={form} name="manufactured_cogs_account" label="Producción" accountType="EXPENSE" />
+                                            <div className="min-w-0">
+                                                <AccountField form={form} name="merchandise_cogs_account" label="Mercaderías" accountType="EXPENSE" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <AccountField form={form} name="manufactured_cogs_account" label="Producción" accountType="EXPENSE" />
+                                            </div>
                                         </div>
 
                                         <Separator className="my-2" />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <AccountField form={form} name="default_service_expense_account" label="Gastos Servicios" accountType="EXPENSE" />
-                                            <AccountField form={form} name="default_subscription_expense_account" label="Gastos Suscrip." accountType="EXPENSE" />
+                                            <div className="min-w-0">
+                                                <AccountField form={form} name="default_service_expense_account" label="Gastos Servicios" accountType="EXPENSE" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <AccountField form={form} name="default_subscription_expense_account" label="Gastos Suscrip." accountType="EXPENSE" />
+                                            </div>
                                         </div>
 
                                         <Separator className="my-2" />
@@ -339,12 +351,20 @@ export default function AccountingSettingsPage() {
                                             <div className="space-y-4">
                                                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Cuentas Puente y Ajustes</p>
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <AccountField form={form} name="stock_input_account" label="Recepciones" accountType="LIABILITY" />
-                                                    <AccountField form={form} name="stock_output_account" label="Despachos" accountType="ASSET" />
+                                                    <div className="min-w-0">
+                                                        <AccountField form={form} name="stock_input_account" label="Recepciones" accountType="LIABILITY" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <AccountField form={form} name="stock_output_account" label="Despachos" accountType="ASSET" />
+                                                    </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <AccountField form={form} name="adjustment_income_account" label="Sobrantes" accountType="INCOME" />
-                                                    <AccountField form={form} name="adjustment_expense_account" label="Mermas" accountType="EXPENSE" />
+                                                    <div className="min-w-0">
+                                                        <AccountField form={form} name="adjustment_income_account" label="Sobrantes" accountType="INCOME" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <AccountField form={form} name="adjustment_expense_account" label="Mermas" accountType="EXPENSE" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
