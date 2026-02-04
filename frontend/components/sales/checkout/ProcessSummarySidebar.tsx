@@ -52,14 +52,13 @@ export function ProcessSummarySidebar({
         steps.push({ id: 'mfg', label: 'Fabricación', icon: Paintbrush })
     }
 
-    steps.push(
-        { id: 'dte', label: 'Documento', icon: FileText },
-        { id: 'payment', label: 'Pago', icon: CreditCard }
-    )
+    steps.push({ id: 'dte', label: 'Documento', icon: FileText })
 
     if (totalSteps > (hasManufacturing ? 4 : 3)) {
         steps.push({ id: 'delivery', label: 'Entrega', icon: ShoppingBag })
     }
+
+    steps.push({ id: 'payment', label: 'Pago', icon: CreditCard })
 
     return (
         <div className="w-64 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">

@@ -151,10 +151,10 @@ export function SalesCheckoutWizard({
     useEffect(() => {
         if (quickSale && open) {
             // Auto-fill DTE as BOLETA
-            setDteData((prev) => ({ ...prev, type: 'BOLETA' }));
+            setDteData((prev: any) => ({ ...prev, type: 'BOLETA' }));
 
             // Auto-fill Delivery as IMMEDIATE
-            setDeliveryData((prev) => ({ ...prev, type: 'IMMEDIATE' }));
+            setDeliveryData((prev: any) => ({ ...prev, type: 'IMMEDIATE' }));
 
             // Jump to payment step (last step)
             setStep(totalSteps);
@@ -493,12 +493,12 @@ export function SalesCheckoutWizard({
                     customerName={selectedCustomerName}
                     hasManufacturing={hasManufacturing}
                     dteType={step > (hasManufacturing ? 2 : 1) ? dteData.type : undefined}
-                    paymentData={step > (hasManufacturing ? 3 : 2) ? {
+                    paymentData={step > (hasManufacturing ? 4 : 3) ? {
                         method: paymentData.method,
                         amount: paymentData.amount,
                         creditAssigned: paymentData.amount < currentTotal ? currentTotal - paymentData.amount : 0
                     } : undefined}
-                    deliveryData={step > (hasManufacturing ? 4 : 3) ? deliveryData : undefined}
+                    deliveryData={step > (hasManufacturing ? 3 : 2) ? deliveryData : undefined}
                 />
 
                 {/* Center - Content Area Wrapper */}

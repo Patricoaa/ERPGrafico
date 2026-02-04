@@ -46,7 +46,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
         if (isReClick) {
             openAmountModal()
         } else {
-            setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
+            setTempAmount((paymentData.amount || 0).toString())
             setIsAmountModalOpen(true)
         }
     }
@@ -62,7 +62,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
     }
 
     const openAmountModal = () => {
-        setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
+        setTempAmount((paymentData.amount || 0).toString())
         setIsAmountModalOpen(true)
     }
 
