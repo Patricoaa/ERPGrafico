@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useForm, UseFormReturn } from "react-hook-form"
+import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
@@ -37,6 +37,8 @@ const accountingSchema = z.object({
     adjustment_expense_account: z.string().nullable(),
     initial_inventory_account: z.string().nullable(),
     revaluation_account: z.string().nullable(),
+    stock_input_account: z.string().nullable(),
+    stock_output_account: z.string().nullable(),
 
     // Reconciliation
     bank_commission_account: z.string().nullable(),
@@ -53,7 +55,7 @@ const accountingSchema = z.object({
     default_subscription_revenue_account: z.string().nullable(),
     pos_cash_difference_gain_account: z.string().nullable(),
     pos_cash_difference_loss_account: z.string().nullable(),
-    pos_cash_difference_approval_threshold: z.number().default(5000),
+    pos_cash_difference_approval_threshold: z.number(),
 
     code_format: z.string(),
     asset_prefix: z.string(),
@@ -93,6 +95,8 @@ export default function AccountingSettingsPage() {
             adjustment_expense_account: null,
             initial_inventory_account: null,
             revaluation_account: null,
+            stock_input_account: null,
+            stock_output_account: null,
 
             bank_commission_account: null,
             card_commission_account: null,
@@ -126,9 +130,15 @@ export default function AccountingSettingsPage() {
                 const res = await api.get('/accounting/settings/current/')
                 const settings = res.data
                 const formattedSettings: any = {}
-                Object.keys(form.getValues()).forEach(key => {
-                    const val = settings[key]
-                    formattedSettings[key] = (val === null || val === undefined) ? (key.includes('prefix') || key === 'code_format' ? "" : null) : val.toString()
+                Object.keys(form.getValues()).forEach((key: any) => {
+                    const val = (settings as any)[key]
+                    if (val === null || val === undefined) {
+                        formattedSettings[key] = (key.includes('prefix') || key === 'code_format' || key === 'inventory_valuation_method' ? "" : null)
+                    } else if (key === 'pos_cash_difference_approval_threshold') {
+                        formattedSettings[key] = parseInt(val.toString()) || 0
+                    } else {
+                        formattedSettings[key] = val.toString()
+                    }
                 })
                 form.reset(formattedSettings)
             } catch (error: any) {
@@ -484,8 +494,8 @@ export default function AccountingSettingsPage() {
 }
 
 interface AccountFieldProps {
-    form: UseFormReturn<AccountingFormValues>
-    name: keyof AccountingFormValues
+    form: any
+    name: string
     label: string
     accountType: string
 }
@@ -501,7 +511,7 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
                     <FormControl>
                         <AccountSelector
                             value={field.value as string}
-                            onChange={field.onChange}
+                            onChange={(val) => field.onChange(val)}
                             accountType={accountType}
                         />
                     </FormControl>

@@ -13,6 +13,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import api from "@/lib/api"
+import { useAccountingAccounts } from "@/hooks/useAccountingAccounts"
 
 interface AccountSelectorProps {
     value?: string | number | null
@@ -25,46 +26,34 @@ interface AccountSelectorProps {
 export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
+    const { accounts: allAccounts, loading: accountsLoading } = useAccountingAccounts(!showAll)
     const [accounts, setAccounts] = useState<any[]>([])
     const [filteredAccounts, setFilteredAccounts] = useState<any[]>([])
-    const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedAccount, setSelectedAccount] = useState<any>(null)
 
     useEffect(() => {
-        const fetchAccounts = async () => {
-            setLoading(true)
-            try {
-                let url = `/accounting/accounts/${showAll ? '' : '?is_leaf=true'}`
-                const res = await api.get(url)
-                const allAccounts = res.data.results || res.data
+        if (!allAccounts) return
 
-                // Always filter by is_selectable (Structural accounts shouldn't be picked)
-                const selectableAccounts = allAccounts.filter((a: any) => a.is_selectable !== false)
+        // Always filter by is_selectable (Structural accounts shouldn't be picked)
+        const selectableAccounts = allAccounts.filter((a: any) => a.is_selectable !== false)
 
-                // Filter by type if provided
-                const filteredByType = accountType
-                    ? selectableAccounts.filter((a: any) => {
-                        if (Array.isArray(accountType)) return accountType.includes(a.account_type)
-                        return a.account_type === accountType
-                    })
-                    : selectableAccounts
+        // Filter by type if provided
+        const filteredByType = accountType
+            ? selectableAccounts.filter((a: any) => {
+                if (Array.isArray(accountType)) return accountType.includes(a.account_type)
+                return a.account_type === accountType
+            })
+            : selectableAccounts
 
-                setAccounts(filteredByType)
-                setFilteredAccounts(filteredByType)
+        setAccounts(filteredByType)
+        setFilteredAccounts(filteredByType)
 
-                if (value) {
-                    const found = allAccounts.find((a: any) => a.id.toString() === value.toString())
-                    setSelectedAccount(found)
-                }
-            } catch (error) {
-                console.error("Error fetching accounts", error)
-            } finally {
-                setLoading(false)
-            }
+        if (value) {
+            const found = allAccounts.find((a: any) => a.id.toString() === value.toString())
+            setSelectedAccount(found)
         }
-        fetchAccounts()
-    }, [accountType, value])
+    }, [allAccounts, accountType, value])
 
     const handleSelect = (account: any) => {
         setSelectedAccount(account)
@@ -112,7 +101,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                             />
                         </div>
                         <div className="max-h-[200px] overflow-y-auto space-y-1">
-                            {loading ? (
+                            {accountsLoading ? (
                                 <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                             ) : filteredAccounts.length === 0 ? (
                                 <div className="p-4 text-sm text-center">No se encontraron cuentas.</div>
