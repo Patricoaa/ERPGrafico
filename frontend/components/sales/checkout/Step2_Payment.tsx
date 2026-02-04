@@ -222,7 +222,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                     ) : null}
                 </div>
 
-                {(paymentData.amount > 0 && (paymentData.method === 'CARD' || paymentData.method === 'TRANSFER')) && (
+                {(paymentData.amount > 0 && paymentData.method === 'TRANSFER') && (
                     <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground border border-dashed">
                         <span className="font-semibold uppercase">{paymentData.method === 'CARD' ? 'Tarjeta' : 'Transferencia'}:</span>
                         {paymentData.isPending ? (
@@ -253,39 +253,56 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                     <div className="space-y-4 py-4">
                         <div className="space-y-4">
                             <Label htmlFor="modal-amount">Monto</Label>
-                            <div className="grid grid-cols-3 gap-2 mb-4">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs h-9 font-bold"
-                                    onClick={() => setTempAmount(total.toString())}
-                                >
-                                    Exacto
-                                </Button>
-                                {[1000, 5000, 10000, 20000].map(val => (
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="text-4xl font-black tracking-tight text-primary">
+                                    ${Number(tempAmount || 0).toLocaleString('es-CL')}
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2 w-full">
+                                    {[10, 50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => (
+                                        <Button
+                                            key={val}
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-xs h-10 font-bold"
+                                            onClick={() => {
+                                                const current = parseFloat(tempAmount) || 0;
+                                                setTempAmount((current + val).toString());
+                                            }}
+                                        >
+                                            +${val.toLocaleString('es-CL')}
+                                        </Button>
+                                    ))}
                                     <Button
-                                        key={val}
                                         variant="outline"
                                         size="sm"
-                                        className="text-xs h-9 font-bold"
-                                        onClick={() => setTempAmount(val.toString())}
+                                        className="text-xs h-10 font-bold border-primary text-primary"
+                                        onClick={() => setTempAmount(total.toString())}
                                     >
-                                        ${val.toLocaleString('es-CL')}
+                                        Exacto (${total.toLocaleString('es-CL')})
                                     </Button>
-                                ))}
-                            </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs h-10 font-bold border-destructive text-destructive col-span-2"
+                                        onClick={() => setTempAmount("0")}
+                                    >
+                                        Borrar Todo
+                                    </Button>
+                                </div>
 
-                            <div className="flex justify-center">
                                 <Numpad
                                     value={tempAmount}
                                     onChange={setTempAmount}
                                     onConfirm={handleAmountConfirm}
+                                    onClose={() => setIsAmountModalOpen(false)}
+                                    allowDecimal={false}
                                     className="border-none shadow-none p-0"
                                 />
                             </div>
                         </div>
 
-                        {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
+                        {paymentData.method === 'TRANSFER' && (
                             <>
                                 <div className="space-y-2">
                                     <Label htmlFor="modal-tx" className="flex items-center justify-between">

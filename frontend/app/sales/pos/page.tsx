@@ -44,6 +44,7 @@ import { DraftCartsList } from "@/components/pos/DraftCartsList"
 import { Edit2, Save, Clock, LayoutGrid, FileText, ChevronDown, Keyboard } from "lucide-react"
 import { ScannerFeedback, ScannerFeedbackHandle } from "@/components/pos/ScannerFeedback"
 import { Numpad } from "@/components/ui/numpad"
+import { NumpadModal } from "@/components/pos/NumpadModal"
 
 interface Product {
     id: number
@@ -152,27 +153,6 @@ export default function POSPage() {
     const scannerFeedbackRef = useRef<ScannerFeedbackHandle>(null)
     const searchInputRef = useRef<HTMLInputElement>(null)
 
-    // Keyboard Shortcuts
-    useEffect(() => {
-        const handleGlobalKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'F1') {
-                e.preventDefault()
-                searchInputRef.current?.focus()
-            }
-            if (e.key === 'F12') {
-                e.preventDefault()
-                const confirmButton = document.querySelector('button[id="confirm-sale-btn"]') as HTMLButtonElement
-                confirmButton?.click()
-            }
-            if (e.key === 'Escape') {
-                if (document.activeElement === searchInputRef.current) {
-                    setSearchTerm("")
-                }
-            }
-        }
-        window.addEventListener('keydown', handleGlobalKeyDown)
-        return () => window.removeEventListener('keydown', handleGlobalKeyDown)
-    }, [])
 
     const openNumpad = (id: string, field: 'qty' | 'price', initialValue: number) => {
         setNumpadTarget({ id, field })
@@ -1351,17 +1331,18 @@ export default function POSPage() {
                 )
             }
 
-            {numpadOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <Numpad
-                        value={numpadValue}
-                        onChange={setNumpadValue}
-                        onConfirm={handleNumpadConfirm}
-                        onClose={() => setNumpadOpen(false)}
-                        className="scale-125"
-                    />
-                </div>
-            )}
+            <NumpadModal
+                open={numpadOpen}
+                onOpenChange={setNumpadOpen}
+                value={numpadValue}
+                onChange={setNumpadValue}
+                onConfirm={handleNumpadConfirm}
+                title={numpadTarget?.field === 'qty' ? "Editar Cantidad" : "Editar Precio"}
+                description={numpadTarget?.field === 'qty' ? "Ingrese la cantidad deseada." : "Ingrese el nuevo precio unitario (bruto)."}
+                allowDecimal={false}
+                maxValue={numpadTarget?.field === 'qty' ? (numpadTarget.id ? limits[`cart_${numpadTarget.id}`] : undefined) : undefined}
+                netValue={numpadTarget?.field === 'price' ? formatCurrency(PricingUtils.grossToNet(parseFloat(numpadValue) || 0)) : undefined}
+            />
 
             <ScannerFeedback ref={scannerFeedbackRef} />
         </div >
