@@ -463,6 +463,12 @@ class DraftCart(models.Model):
         help_text=_("Estructura JSON con los items del carrito")
     )
     
+    wizard_state = models.JSONField(
+        _("Estado del Wizard"),
+        null=True, blank=True,
+        help_text=_("Estado actual del wizard de ventas (paso, datos de DTE, pago, etc.)")
+    )
+    
     total_net = models.DecimalField(
         _("Total Neto"),
         max_digits=12,

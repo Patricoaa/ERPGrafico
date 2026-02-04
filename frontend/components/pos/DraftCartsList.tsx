@@ -17,8 +17,20 @@ import {
     ShoppingCart,
     Trash2,
     Loader2,
-    RefreshCw
+    RefreshCw,
+    ClipboardCheck,
+    AlertCircle
 } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface DraftCart {
     id: number
@@ -35,6 +47,12 @@ interface DraftCart {
     created_at: string
     updated_at: string
     pos_session: number
+    wizard_state?: {
+        step: number
+        dteData: any
+        paymentData: any
+        deliveryData: any
+    } | null
 }
 
 interface DraftCartsListProps {
@@ -56,6 +74,8 @@ export function DraftCartsList({
     const [loading, setLoading] = useState(false)
     const [internalOpen, setInternalOpen] = useState(false)
     const [deletingId, setDeletingId] = useState<number | null>(null)
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+    const [confirmDeleteName, setConfirmDeleteName] = useState("")
 
     const isControlled = externalOpen !== undefined
     const open = isControlled ? externalOpen : internalOpen
@@ -196,6 +216,14 @@ export function DraftCartsList({
                                                 {formatCurrency(draft.total_gross)}
                                             </Badge>
                                         </div>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {draft.wizard_state && (
+                                                <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 gap-1 text-[10px] items-center h-5">
+                                                    <ClipboardCheck className="h-3 w-3" />
+                                                    Venta en curso (Paso {draft.wizard_state.step})
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </CardHeader>
                                     <CardContent className="pt-0">
                                         {draft.customer_name && (
@@ -218,7 +246,10 @@ export function DraftCartsList({
                                                 Cargar
                                             </Button>
                                             <Button
-                                                onClick={() => handleDeleteDraft(draft.id, draft.name)}
+                                                onClick={() => {
+                                                    setConfirmDeleteId(draft.id)
+                                                    setConfirmDeleteName(draft.name)
+                                                }}
                                                 size="sm"
                                                 variant="destructive"
                                                 disabled={deletingId === draft.id}
@@ -237,6 +268,31 @@ export function DraftCartsList({
                     )}
                 </ScrollArea>
             </DialogContent>
+
+            <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Está seguro de eliminar el borrador?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción eliminará permanentemente el borrador "{confirmDeleteName}" y no se podrá deshacer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (confirmDeleteId) {
+                                    handleDeleteDraft(confirmDeleteId, confirmDeleteName)
+                                    setConfirmDeleteId(null)
+                                }
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     )
 }

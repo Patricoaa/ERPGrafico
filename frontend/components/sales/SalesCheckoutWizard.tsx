@@ -39,6 +39,11 @@ interface SalesCheckoutWizardProps {
     posSessionId?: number | null // POS session ID for cash control
     terminalId?: number // Terminal ID for filtering accounts
     quickSale?: boolean // Quick sale mode: auto-fill and jump to payment
+    initialStep?: number
+    initialDteData?: any
+    initialPaymentData?: any
+    initialDeliveryData?: any
+    onStateChange?: (state: any) => void
 }
 
 export function SalesCheckoutWizard({
@@ -53,9 +58,14 @@ export function SalesCheckoutWizard({
     channel = "POS",
     posSessionId = null,
     terminalId,
-    quickSale = false
+    quickSale = false,
+    initialStep,
+    initialDteData,
+    initialPaymentData,
+    initialDeliveryData,
+    onStateChange
 }: SalesCheckoutWizardProps) {
-    const [step, setStep] = useState(1)
+    const [step, setStep] = useState(initialStep || 1)
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
 
@@ -69,7 +79,7 @@ export function SalesCheckoutWizard({
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
 
-    const [dteData, setDteData] = useState({
+    const [dteData, setDteData] = useState(initialDteData || {
         type: 'BOLETA',
         number: '',
         date: new Date().toISOString().split('T')[0],
@@ -77,7 +87,7 @@ export function SalesCheckoutWizard({
         isPending: false
     })
 
-    const [paymentData, setPaymentData] = useState({
+    const [paymentData, setPaymentData] = useState(initialPaymentData || {
         method: '',
         amount: 0,
         transactionNumber: '',
@@ -91,7 +101,7 @@ export function SalesCheckoutWizard({
     //    setPaymentData(prev => ({ ...prev, amount: currentTotal }));
     // }, [currentTotal]);
 
-    const [deliveryData, setDeliveryData] = useState<any>({
+    const [deliveryData, setDeliveryData] = useState<any>(initialDeliveryData || {
         type: 'IMMEDIATE',
         date: null,
         notes: ''
@@ -143,6 +153,18 @@ export function SalesCheckoutWizard({
             fetchDefaultCustomer();
         }
     }, [initialCustomerId, open]);
+
+    // Notify parent of state changes
+    useEffect(() => {
+        if (onStateChange) {
+            onStateChange({
+                step,
+                dteData,
+                paymentData,
+                deliveryData
+            })
+        }
+    }, [step, dteData, paymentData, deliveryData, onStateChange])
 
     // Calculate step information (memoized for quickSale useEffect)
     const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');

@@ -49,6 +49,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
         customer_id = request.data.get('customer_id')
         name = request.data.get('name', '')
         notes = request.data.get('notes', '')
+        wizard_state = request.data.get('wizard_state')
         
         if not pos_session_id:
             return Response(
@@ -69,7 +70,8 @@ class DraftCartViewSet(viewsets.ModelViewSet):
                 items=items,
                 customer_id=customer_id,
                 name=name,
-                notes=notes
+                notes=notes,
+                wizard_state=wizard_state
             )
             
             serializer = self.get_serializer(draft)
@@ -89,6 +91,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
         customer_id = request.data.get('customer_id')
         name = request.data.get('name', '')
         notes = request.data.get('notes', '')
+        wizard_state = request.data.get('wizard_state')
         
         if not pos_session_id:
             return Response(
@@ -104,6 +107,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
                 customer_id=customer_id,
                 name=name,
                 notes=notes,
+                wizard_state=wizard_state,
                 draft_id=int(pk)
             )
             

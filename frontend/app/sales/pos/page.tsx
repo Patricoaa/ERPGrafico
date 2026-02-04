@@ -149,6 +149,7 @@ export default function POSPage() {
     const [numpadOpen, setNumpadOpen] = useState(false)
     const [numpadValue, setNumpadValue] = useState("0")
     const [numpadTarget, setNumpadTarget] = useState<{ id: string, field: 'qty' | 'price' } | null>(null)
+    const [wizardState, setWizardState] = useState<any>(null)
 
     const sessionControlRef = useRef<SessionControlHandle>(null)
     const scannerFeedbackRef = useRef<ScannerFeedbackHandle>(null)
@@ -777,7 +778,8 @@ export default function POSPage() {
                 name: autoSaveName
                     ? `Auto-guardado ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`
                     : draftName || `Borrador ${new Date().toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`,
-                notes: ""
+                notes: "",
+                wizard_state: wizardState
             }
 
             let response
@@ -815,6 +817,7 @@ export default function POSPage() {
             // Load draft metadata
             setCurrentDraftId(draft.id)
             setDraftName(draft.name)
+            setWizardState(draft.wizard_state || null)
             setLastSaved(new Date(draft.updated_at))
 
             toast.success(`Borrador "${draft.name}" cargado`)
@@ -824,16 +827,16 @@ export default function POSPage() {
         }
     }
 
-    // Auto-save every 30 seconds
+    // Reactive auto-save with debounce
     useEffect(() => {
         if (!currentSession?.id || items.length === 0) return
 
         const timer = setTimeout(() => {
             saveDraft(false, true)
-        }, 30000) // 30 seconds
+        }, 2000) // 2 seconds debounce
 
         return () => clearTimeout(timer)
-    }, [items, currentSession, selectedCustomerId])
+    }, [items, selectedCustomerId, wizardState, currentSession])
 
 
     const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1391,12 +1394,26 @@ export default function POSPage() {
                         posSessionId={currentSession?.id}
                         terminalId={currentSession?.terminal}
                         quickSale={quickSaleMode}
-                        onComplete={() => {
+                        initialStep={wizardState?.step}
+                        initialDteData={wizardState?.dteData}
+                        initialPaymentData={wizardState?.paymentData}
+                        initialDeliveryData={wizardState?.deliveryData}
+                        onStateChange={setWizardState}
+                        onComplete={async () => {
+                            // Delete draft if it exists
+                            if (currentDraftId) {
+                                try {
+                                    await api.delete(`/sales/draft-carts/${currentDraftId}/?pos_session_id=${currentSession.id}`)
+                                } catch (error) {
+                                    console.error("Error deleting draft after sale:", error)
+                                }
+                            }
                             setItems([])
                             setCurrentDraftId(null)
                             setDraftName("")
                             setLastSaved(null)
                             setSelectedCustomerId(null)
+                            setWizardState(null)
                         }}
                     />
                 )

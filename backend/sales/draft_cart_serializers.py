@@ -41,6 +41,7 @@ class DraftCartSerializer(serializers.ModelSerializer):
             'customer',
             'customer_name',
             'items',
+            'wizard_state',
             'total_net',
             'total_gross',
             'item_count',

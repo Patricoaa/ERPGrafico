@@ -16,9 +16,8 @@ class DraftCartService:
         pos_session_id: int,
         user,
         items: List[Dict[str, Any]],
-        customer_id: Optional[int] = None,
-        name: str = "",
         notes: str = "",
+        wizard_state: Optional[Dict[str, Any]] = None,
         draft_id: Optional[int] = None
     ) -> DraftCart:
         """
@@ -65,6 +64,7 @@ class DraftCartService:
             draft.customer_id = customer_id
             draft.name = name or draft.name
             draft.notes = notes
+            draft.wizard_state = wizard_state
             draft.last_modified_by = user
         else:
             # Crear nuevo borrador
@@ -79,6 +79,7 @@ class DraftCartService:
                 name=name,
                 notes=notes,
                 items=items,
+                wizard_state=wizard_state,
                 total_net=total_net,
                 total_gross=total_gross
             )
