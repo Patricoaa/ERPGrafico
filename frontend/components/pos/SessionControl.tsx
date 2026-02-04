@@ -311,8 +311,16 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     const handleRegisterManualMovement = async () => {
         if (!currentSession) return
-        if (parseFloat(moveAmount) <= 0) {
+        const amount = parseFloat(moveAmount)
+        if (amount <= 0) {
             toast.error("El monto debe ser mayor a cero")
+            return
+        }
+
+        // Restriction: Cannot withdraw more than available
+        const isOutflow = ["PARTNER_WITHDRAWAL", "THEFT", "OTHER_OUT"].includes(moveType)
+        if (isOutflow && amount > currentSession.expected_cash) {
+            toast.error(`Monto insuficiente en caja. Máximo disponible: $${currentSession.expected_cash.toLocaleString('es-CL')}`)
             return
         }
 
@@ -730,7 +738,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Monto ($)</Label>
+                            <div className="flex justify-between items-center">
+                                <Label>Monto ($)</Label>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                    Disponible: ${currentSession.expected_cash.toLocaleString('es-CL')}
+                                </span>
+                            </div>
                             <Input
                                 type="number"
                                 value={moveAmount}

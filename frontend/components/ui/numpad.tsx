@@ -12,6 +12,7 @@ interface NumpadProps {
     onClose?: () => void
     className?: string
     allowDecimal?: boolean
+    hideDisplay?: boolean
 }
 
 export function Numpad({
@@ -20,7 +21,8 @@ export function Numpad({
     onConfirm,
     onClose,
     className,
-    allowDecimal = true
+    allowDecimal = true,
+    hideDisplay = false
 }: NumpadProps) {
     const handleNumber = (n: string) => {
         if (n === "." && value.includes(".")) return
@@ -79,16 +81,13 @@ export function Numpad({
 
     return (
         <div className={cn("grid grid-cols-3 gap-2 p-2 bg-background border rounded-xl shadow-xl w-full max-w-[280px]", className)}>
-            <div className="col-span-3 flex justify-between items-center mb-1">
-                <div className="text-2xl font-black tracking-tight text-primary truncate px-2">
-                    {value}
+            {!hideDisplay && (
+                <div className="col-span-3 flex justify-between items-center mb-1">
+                    <div className="text-2xl font-black tracking-tight text-primary truncate px-2">
+                        {value}
+                    </div>
                 </div>
-                {onClose && (
-                    <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-                        <X className="h-4 w-4" />
-                    </Button>
-                )}
-            </div>
+            )}
 
             {keys.map((key, idx) => (
                 key !== "" ? (
@@ -113,20 +112,11 @@ export function Numpad({
 
             <Button
                 variant="destructive"
-                className="h-14 font-bold col-span-1 active:scale-95 transition-transform"
+                className="h-14 font-bold col-span-2 active:scale-95 transition-transform"
                 onClick={handleClear}
             >
-                C
+                C (Limpiar)
             </Button>
-
-            {onConfirm && (
-                <Button
-                    className="h-14 font-bold col-span-2 text-lg active:scale-95 transition-transform"
-                    onClick={onConfirm}
-                >
-                    OK
-                </Button>
-            )}
         </div>
     )
 }

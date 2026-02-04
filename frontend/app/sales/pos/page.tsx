@@ -892,7 +892,7 @@ export default function POSPage() {
                                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         ref={searchInputRef}
-                                        placeholder="Buscar por nombre o código... [F1]"
+                                        placeholder="Buscar por nombre o código..."
                                         className="pl-8 h-12 text-lg"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -1288,7 +1288,7 @@ export default function POSPage() {
                                     onClick={handleConfirm}
                                 >
                                     <ShoppingCart className="mr-2 h-6 w-6" />
-                                    {loading ? "Procesando..." : "Confirmar Venta [F12]"}
+                                    {loading ? "Procesando..." : "Confirmar Venta"}
                                 </Button>
                             </div>
                         </CardContent>

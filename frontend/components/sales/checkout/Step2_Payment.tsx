@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Banknote, CreditCard, Building2, ClipboardList, Wallet, AlertCircle } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 
@@ -43,12 +44,17 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
     const [tempIsPending, setTempIsPending] = useState(false)
 
     const handleMethodChange = (val: string) => {
+        const isReClick = paymentData.method === val
         setPaymentData({ ...paymentData, method: val })
-        setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
-        setTempTx(paymentData.transactionNumber || "")
-        setTempAccount(paymentData.treasuryAccountId || "")
-        setTempIsPending(paymentData.isPending || false)
-        setIsAmountModalOpen(true)
+        if (isReClick) {
+            openAmountModal()
+        } else {
+            setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
+            setTempTx(paymentData.transactionNumber || "")
+            setTempAccount(paymentData.treasuryAccountId || "")
+            setTempIsPending(paymentData.isPending || false)
+            setIsAmountModalOpen(true)
+        }
     }
 
     const handleAmountConfirm = () => {
@@ -134,14 +140,45 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                 </p>
             </div>
             <Label className="text-sm font-semibold"></Label>
-            <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex justify-between items-center">
-                <div>
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Total a Cobrar</Label>
-                    <p className="text-2xl font-bold text-primary">
-                        {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                    </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex justify-between items-center h-24">
+                    <div>
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground">Total a Cobrar</Label>
+                        <p className="text-xl font-bold text-primary">
+                            {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                        </p>
+                    </div>
                 </div>
-                <Wallet className="h-8 w-8 text-primary/20" />
+
+                <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10 flex justify-between items-center h-24">
+                    <div>
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground">Monto Recibido</Label>
+                        <p className="text-xl font-bold text-blue-600">
+                            {Number(paymentData.amount || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                        </p>
+                    </div>
+                </div>
+
+                {paymentData.amount > 0 && (
+                    <div className={cn(
+                        "p-4 rounded-xl border flex justify-between items-center h-24 shadow-sm transition-all animate-in zoom-in-95 duration-200",
+                        paymentData.amount >= total
+                            ? "bg-emerald-500/5 border-emerald-500/10"
+                            : "bg-orange-500/5 border-orange-500/10"
+                    )}>
+                        <div>
+                            <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                                {paymentData.amount >= total ? "Vuelto" : "Crédito Asignado"}
+                            </Label>
+                            <p className={cn(
+                                "text-xl font-bold",
+                                paymentData.amount >= total ? "text-emerald-600" : "text-orange-600"
+                            )}>
+                                {Math.abs(paymentData.amount - total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {accounts.length === 0 && (
@@ -162,28 +199,37 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                 <RadioGroup
                     value={paymentData.method}
                     onValueChange={handleMethodChange}
-                    className="grid grid-cols-3 gap-4"
+                    className="grid grid-cols-1 gap-4"
                 >
                     {methods.map((m) => (
                         <div key={m.id} className="relative group">
                             <Label
                                 htmlFor={`method-${m.id}`}
-                                className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5' : ''} ${!m.hasAccounts ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                className={`flex items-center gap-6 rounded-2xl border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-md scale-[1.01]' : ''} ${!m.hasAccounts ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
                                 onClick={(e) => {
                                     if (!m.hasAccounts) {
                                         e.preventDefault()
                                         return
                                     }
+                                    if (paymentData.method === m.id) {
+                                        openAmountModal()
+                                    }
                                 }}
                             >
                                 <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts} />
-                                <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
-                                    <m.icon className="h-5 w-5" />
+                                <div className={`p-4 rounded-xl bg-background border shadow-sm ${m.color}`}>
+                                    <m.icon className="h-8 w-8" />
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium">{m.label}</span>
+                                <div className="flex flex-col flex-1">
+                                    <span className="text-xl font-black uppercase tracking-tighter">{m.label}</span>
                                     {!m.hasAccounts && (
-                                        <span className="text-[8px] font-bold text-destructive uppercase">Sin Configurar</span>
+                                        <span className="text-[10px] font-black text-destructive uppercase tracking-widest">Sin Configurar</span>
+                                    )}
+                                    {m.id === 'TRANSFER' && paymentData.method === 'TRANSFER' && paymentData.transactionNumber && (
+                                        <div className="mt-2 text-sm font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-100 self-start flex items-center gap-2">
+                                            <ClipboardList className="h-4 w-4" />
+                                            N° OP: {paymentData.transactionNumber}
+                                        </div>
                                     )}
                                 </div>
                             </Label>
@@ -192,55 +238,6 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                 </RadioGroup>
             </div>
 
-            <div className="space-y-4 animate-in fade-in duration-300">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="pay-amount" className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Monto Recibido</Label>
-                        <Input
-                            id="pay-amount"
-                            type="number"
-                            value={paymentData.amount}
-                            readOnly
-                            onClick={openAmountModal}
-                            className="cursor-pointer hover:bg-muted/50"
-                        />
-                    </div>
-                    {paymentData.amount > total && paymentData.method === 'CASH' ? (
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase text-emerald-600">Vuelto</Label>
-                            <div className="h-10 flex items-center px-3 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold">
-                                {(paymentData.amount - total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                            </div>
-                        </div>
-                    ) : paymentData.amount < total ? (
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase text-orange-600">Crédito Asignado</Label>
-                            <div className="h-10 flex items-center px-3 rounded-md border border-orange-200 bg-orange-50 text-orange-700 font-bold">
-                                {(total - paymentData.amount).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                            </div>
-                        </div>
-                    ) : null}
-                </div>
-
-                {(paymentData.amount > 0 && paymentData.method === 'TRANSFER') && (
-                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground border border-dashed">
-                        <span className="font-semibold uppercase">{paymentData.method === 'CARD' ? 'Tarjeta' : 'Transferencia'}:</span>
-                        {paymentData.isPending ? (
-                            <span className="text-amber-600 font-bold">Pendiente de registro</span>
-                        ) : (
-                            <>
-                                <span>Tx: {paymentData.transactionNumber || "---"}</span>
-                                {paymentData.treasuryAccountId && (
-                                    <span>• Cuenta: {filteredAccounts.find(a => a.id.toString() === paymentData.treasuryAccountId)?.name}</span>
-                                )}
-                            </>
-                        )}
-                        <Button variant="ghost" size="sm" className="h-auto p-1 ml-auto text-primary" onClick={openAmountModal}>
-                            Editar
-                        </Button>
-                    </div>
-                )}
-            </div>
 
             <Dialog open={isAmountModalOpen} onOpenChange={setIsAmountModalOpen}>
                 <DialogContent className="sm:max-w-md">
@@ -254,7 +251,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                         <div className="space-y-4">
                             <Label htmlFor="modal-amount">Monto</Label>
                             <div className="flex flex-col items-center gap-4">
-                                <div className="text-4xl font-black tracking-tight text-primary">
+                                <div className="text-4xl font-black tracking-tight text-blue-600 bg-blue-50 px-6 py-2 rounded-2xl border-2 border-blue-100 shadow-sm">
                                     ${Number(tempAmount || 0).toLocaleString('es-CL')}
                                 </div>
 
@@ -297,6 +294,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                                     onConfirm={handleAmountConfirm}
                                     onClose={() => setIsAmountModalOpen(false)}
                                     allowDecimal={false}
+                                    hideDisplay={true}
                                     className="border-none shadow-none p-0"
                                 />
                             </div>

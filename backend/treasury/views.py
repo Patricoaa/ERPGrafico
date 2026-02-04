@@ -1149,6 +1149,12 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if not config:
                 return Response({'error': 'Tipo de movimiento inválido'}, status=status.HTTP_400_BAD_REQUEST)
             
+            # Restriction: Cannot withdraw more than what is available in cash
+            if not config['is_inflow'] and amount > session.expected_cash:
+                return Response({
+                    'error': f'Saldo insuficiente en efectivo. Máximo disponible para retiro: ${session.expected_cash:,.0f}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             target_account = config['account']
             if not target_account:
                 return Response({'error': f'Cuenta contable no configurada para {config["label"]}'}, status=status.HTTP_400_BAD_REQUEST)
