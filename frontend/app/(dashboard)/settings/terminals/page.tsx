@@ -15,12 +15,14 @@ interface Terminal {
     code: string
     location: string
     is_active: boolean
-    default_treasury_account: number
-    default_treasury_account_name: string
-    allowed_payment_methods: string[]
+    default_treasury_account: number | null
+    default_treasury_account_name?: string
+    allowed_treasury_accounts?: any[]  // Will be populated by backend
+    allowed_payment_methods: string[]  // Computed
     serial_number: string
     ip_address: string | null
 }
+
 
 export default function TerminalsPage() {
     const [terminals, setTerminals] = useState<Terminal[]>([])

@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, Check } from "lucide-react"
 
 interface Terminal {
     id: number
@@ -17,11 +18,17 @@ interface Terminal {
     code: string
     location: string
     is_active: boolean
-    default_treasury_account: number
-    allowed_payment_methods: string[]
+    default_treasury_account: number | null  // Now nullable
+    default_treasury_account_name?: string
+    default_treasury_account_code?: string
+    allowed_treasury_accounts: TreasuryAccount[]  // ManyToMany (read)
+    allowed_payment_methods: string[]  // Computed (read-only)
     serial_number: string
     ip_address: string | null
+    created_at?: string
+    updated_at?: string
 }
+
 
 interface TreasuryAccount {
     id: number
@@ -50,12 +57,8 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
     const [location, setLocation] = useState("")
     const [serialNumber, setSerialNumber] = useState("")
     const [ipAddress, setIpAddress] = useState("")
-    const [defaultTreasuryAccount, setDefaultTreasuryAccount] = useState<string>("")
-    const [paymentMethods, setPaymentMethods] = useState<{ cash: boolean, card: boolean, transfer: boolean }>({
-        cash: true,
-        card: false,
-        transfer: false
-    })
+    const [selectedAccountIds, setSelectedAccountIds] = useState<number[]>([])  // ManyToMany selection
+    const [defaultTreasuryAccount, setDefaultTreasuryAccount] = useState<string>("")  // Still nullable
 
     useEffect(() => {
         if (open) {
@@ -68,12 +71,13 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                 setLocation(terminal.location || "")
                 setSerialNumber(terminal.serial_number || "")
                 setIpAddress(terminal.ip_address || "")
-                setDefaultTreasuryAccount(terminal.default_treasury_account.toString())
-                setPaymentMethods({
-                    cash: terminal.allowed_payment_methods.includes('CASH'),
-                    card: terminal.allowed_payment_methods.includes('CARD'),
-                    transfer: terminal.allowed_payment_methods.includes('TRANSFER')
-                })
+
+                // Extract IDs from allowed_treasury_accounts
+                const allowedIds = terminal.allowed_treasury_accounts?.map(acc => acc.id) || []
+                setSelectedAccountIds(allowedIds)
+
+                // Set default account (may be null)
+                setDefaultTreasuryAccount(terminal.default_treasury_account?.toString() || "")
             } else {
                 // Create mode - reset form
                 setName("")
@@ -81,8 +85,8 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                 setLocation("")
                 setSerialNumber("")
                 setIpAddress("")
+                setSelectedAccountIds([])
                 setDefaultTreasuryAccount("")
-                setPaymentMethods({ cash: true, card: false, transfer: false })
             }
         }
     }, [open, terminal])
@@ -97,23 +101,37 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
         }
     }
 
+    const toggleAccountSelection = (accountId: number) => {
+        setSelectedAccountIds(prev => {
+            if (prev.includes(accountId)) {
+                // Deselecting - check if it's the default
+                if (defaultTreasuryAccount === accountId.toString()) {
+                    setDefaultTreasuryAccount("")  // Clear default if deselected
+                }
+                return prev.filter(id => id !== accountId)
+            } else {
+                return [...prev, accountId]
+            }
+        })
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
         // Validation
-        if (!name || !code || !defaultTreasuryAccount) {
-            toast.error("Complete los campos obligatorios")
+        if (!name || !code) {
+            toast.error("Complete los campos obligatorios (Nombre y Código)")
             return
         }
 
-        // Build allowed_payment_methods array
-        const allowedMethods: string[] = []
-        if (paymentMethods.cash) allowedMethods.push('CASH')
-        if (paymentMethods.card) allowedMethods.push('CARD')
-        if (paymentMethods.transfer) allowedMethods.push('TRANSFER')
+        if (selectedAccountIds.length === 0) {
+            toast.error("Seleccione al menos una cuenta de tesorería")
+            return
+        }
 
-        if (allowedMethods.length === 0) {
-            toast.error("Seleccione al menos un método de pago")
+        // Validate default account is in selected accounts
+        if (defaultTreasuryAccount && !selectedAccountIds.includes(parseInt(defaultTreasuryAccount))) {
+            toast.error("La cuenta predeterminada debe estar entre las cuentas seleccionadas")
             return
         }
 
@@ -123,8 +141,8 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
             location,
             serial_number: serialNumber,
             ip_address: ipAddress || null,
-            default_treasury_account: parseInt(defaultTreasuryAccount),
-            allowed_payment_methods: allowedMethods,
+            allowed_treasury_account_ids: selectedAccountIds,  // Write field (IDs)
+            default_treasury_account: defaultTreasuryAccount ? parseInt(defaultTreasuryAccount) : null,
             is_active: true
         }
 
@@ -153,8 +171,8 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                     toast.error(`Código: ${errors.code[0]}`)
                 } else if (errors.default_treasury_account) {
                     toast.error(`${errors.default_treasury_account}`)
-                } else if (errors.allowed_payment_methods) {
-                    toast.error(`${errors.allowed_payment_methods}`)
+                } else if (errors.allowed_treasury_account_ids) {
+                    toast.error(`${errors.allowed_treasury_account_ids}`)
                 } else {
                     toast.error("Error al guardar terminal")
                 }
@@ -166,21 +184,23 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
         }
     }
 
-    // Filter treasury accounts compatible with selected payment methods
-    const compatibleAccounts = treasuryAccounts.filter(account => {
-        if (paymentMethods.cash && !account.allows_cash) return false
-        if (paymentMethods.card && !account.allows_card) return false
-        if (paymentMethods.transfer && !account.allows_transfer) return false
-        return true
-    })
+    // Get payment methods for visual display based on selected accounts
+    const derivedPaymentMethods = treasuryAccounts
+        .filter(acc => selectedAccountIds.includes(acc.id))
+        .reduce((methods, acc) => {
+            if (acc.allows_cash && !methods.includes('Efectivo')) methods.push('Efectivo')
+            if (acc.allows_card && !methods.includes('Tarjeta')) methods.push('Tarjeta')
+            if (acc.allows_transfer && !methods.includes('Transferencia')) methods.push('Transferencia')
+            return methods
+        }, [] as string[])
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{terminal ? "Editar Terminal" : "Nuevo Terminal"}</DialogTitle>
                     <DialogDescription>
-                        Configure un terminal de punto de venta y sus métodos de pago permitidos
+                        Configure un terminal y asigne las cuentas de tesorería que puede utilizar
                     </DialogDescription>
                 </DialogHeader>
 
@@ -223,78 +243,98 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                         />
                     </div>
 
+                    {/* Multi-select Treasury Accounts */}
                     <div className="space-y-2">
                         <Label>
-                            Métodos de Pago Permitidos <span className="text-destructive">*</span>
+                            Cuentas de Tesorería Permitidas <span className="text-destructive">*</span>
                         </Label>
-                        <div className="flex gap-4">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="cash"
-                                    checked={paymentMethods.cash}
-                                    onCheckedChange={(checked) =>
-                                        setPaymentMethods({ ...paymentMethods, cash: checked as boolean })
-                                    }
-                                />
-                                <label htmlFor="cash" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Efectivo
-                                </label>
-                            </div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                            Seleccione las cuentas que este terminal puede utilizar
+                        </p>
+                        <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+                            {treasuryAccounts.length === 0 ? (
+                                <p className="text-sm text-center text-muted-foreground py-4">
+                                    No hay cuentas disponibles
+                                </p>
+                            ) : (
+                                treasuryAccounts.map((account) => (
+                                    <div
+                                        key={account.id}
+                                        className="flex items-center space-x-2 p-2 hover:bg-accent rounded cursor-pointer"
+                                        onClick={() => toggleAccountSelection(account.id)}
+                                    >
+                                        <Checkbox
+                                            id={`account-${account.id}`}
+                                            checked={selectedAccountIds.includes(account.id)}
+                                            onCheckedChange={() => toggleAccountSelection(account.id)}
+                                        />
+                                        <label
+                                            htmlFor={`account-${account.id}`}
+                                            className="flex-1 text-sm font-medium leading-none cursor-pointer"
+                                        >
+                                            {account.name}
+                                            <span className="text-xs text-muted-foreground ml-2">
+                                                ({account.account_type})
+                                            </span>
+                                        </label>
+                                        <div className="flex gap-1">
+                                            {account.allows_cash && <Badge variant="outline" className="text-[10px] px-1">Efectivo</Badge>}
+                                            {account.allows_card && <Badge variant="outline" className="text-[10px] px-1">Tarjeta</Badge>}
+                                            {account.allows_transfer && <Badge variant="outline" className="text-[10px] px-1">Transf</Badge>}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        {selectedAccountIds.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                                {selectedAccountIds.length} cuenta(s) seleccionada(s)
+                            </p>
+                        )}
+                    </div>
 
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="card"
-                                    checked={paymentMethods.card}
-                                    onCheckedChange={(checked) =>
-                                        setPaymentMethods({ ...paymentMethods, card: checked as boolean })
-                                    }
-                                />
-                                <label htmlFor="card" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Tarjeta
-                                </label>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="transfer"
-                                    checked={paymentMethods.transfer}
-                                    onCheckedChange={(checked) =>
-                                        setPaymentMethods({ ...paymentMethods, transfer: checked as boolean })
-                                    }
-                                />
-                                <label htmlFor="transfer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Transferencia
-                                </label>
+                    {/* Computed Payment Methods Display */}
+                    {derivedPaymentMethods.length > 0 && (
+                        <div className="bg-muted/50 border rounded-lg p-3 space-y-2">
+                            <Label className="text-xs font-semibold">Métodos de Pago Disponibles (Auto-calculado):</Label>
+                            <div className="flex gap-2 flex-wrap">
+                                {derivedPaymentMethods.map(method => (
+                                    <Badge key={method} variant="secondary" className="text-xs">
+                                        <Check className="h-3 w-3 mr-1" />
+                                        {method}
+                                    </Badge>
+                                ))}
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    <div className="space-y-2">
-                        <Label htmlFor="treasuryAccount">
-                            Cuenta de Tesorería <span className="text-destructive">*</span>
-                        </Label>
-                        <Select value={defaultTreasuryAccount} onValueChange={setDefaultTreasuryAccount}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar cuenta..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {compatibleAccounts.length === 0 ? (
-                                    <div className="p-4 text-sm text-center text-muted-foreground">
-                                        No hay cuentas compatibles con los métodos seleccionados
-                                    </div>
-                                ) : (
-                                    compatibleAccounts.map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.account_type})
-                                        </SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                            Solo se muestran cuentas compatibles con los métodos de pago seleccionados
-                        </p>
-                    </div>
+                    {/* Default Account Selection (Optional) */}
+                    {selectedAccountIds.length > 0 && (
+                        <div className="space-y-2">
+                            <Label htmlFor="defaultAccount">
+                                Cuenta Predeterminada (Opcional)
+                            </Label>
+                            <Select value={defaultTreasuryAccount} onValueChange={setDefaultTreasuryAccount}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Ninguna (el cajero elige al iniciar sesión)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">Ninguna</SelectItem>
+                                    {treasuryAccounts
+                                        .filter(acc => selectedAccountIds.includes(acc.id))
+                                        .map((account) => (
+                                            <SelectItem key={account.id} value={account.id.toString()}>
+                                                {account.name} ({account.account_type})
+                                            </SelectItem>
+                                        ))
+                                    }
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                                Se mostrará por defecto al iniciar sesión en este terminal
+                            </p>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
