@@ -104,7 +104,21 @@ class CashMovementViewSet(viewsets.ModelViewSet):
     filterset_fields = ['movement_type', 'status', 'from_account', 'to_account', 'pos_session']
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        from .services import TreasuryService
+        
+        # Validar y crear mediante servicio para asegurar contabilidad
+        data = serializer.validated_data
+        movement = TreasuryService.create_cash_movement(
+            movement_type=data.get('movement_type'),
+            amount=data.get('amount'),
+            created_by=self.request.user,
+            from_account=data.get('from_account'),
+            to_account=data.get('to_account'),
+            pos_session=data.get('pos_session'),
+            notes=data.get('notes', ''),
+            date=data.get('date')
+        )
+        return movement
 
 
 class CashDifferenceViewSet(viewsets.ModelViewSet):
@@ -860,23 +874,10 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if fund_source_id:
                 try:
                     fund_source = TreasuryAccount.objects.get(id=fund_source_id)
-                    
-                    # NOTE: We assume fund_source.account (Accounting Account) holds the "Book Balance"
-                    # If TreasuryAccount does not have a comprehensive .balance property, we use the Accounting Account balance.
                     book_balance = fund_source.account.balance
-                    
                     diff = opening_balance - book_balance
                     
-                    if diff == 0:
-                        # "Si es igual ningun movimiento ni asiento contable deberpia provocarse."
-                        pass
-                        
-                    elif diff != 0:
-                         # "Si es menor(mayor) debería registrarse una diferencia de POS."
-                         # Since CashDifference is tied to Audit which is tied to Closing, we interpret this as a CashMovement acting as adjustment.
-                         # OR we create a CashDifference but we need a 'dummy' or 'opening' audit? 
-                         # Let's use CashMovement with type ADJUSTMENT as a cleaner approach for "Opening Difference".
-                        
+                    if diff != 0:
                         justify_reason = request.data.get('justify_reason', 'UNKNOWN')
                         justify_target_id = request.data.get('justify_target_id')
                         
@@ -886,98 +887,39 @@ class POSSessionViewSet(viewsets.ModelViewSet):
 
                         pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal and session.terminal.default_treasury_account else None)
                         
-                        # Correct logic:
-                        # diff < 0 (Faltante): Money "disappeared" from POS. From POS to None/Target.
-                        # diff > 0 (Sobrante): Money "appeared" in POS. From Source/None to POS.
-                        if diff < 0:
+                        from_account = None
+                        to_account = None
+                        movement_type = 'ADJUSTMENT' # Generic adjustment for opening
+
+                        if diff < 0: # Deficit
                             movement_type = 'WITHDRAWAL'
                             from_account = pos_treasury_obj
-                            to_account = None
                             if justify_reason == 'TRANSFER' and justify_target_id:
-                                try:
-                                    to_account = TreasuryAccount.objects.get(id=justify_target_id)
+                                try: to_account = TreasuryAccount.objects.get(id=justify_target_id)
                                 except: pass
-                        else:
+                        else: # Surplus
                             movement_type = 'DEPOSIT'
-                            from_account = fund_source if justify_reason == 'TRANSFER' else None
                             to_account = pos_treasury_obj
+                            if justify_reason == 'TRANSFER':
+                                from_account = fund_source
 
-                        movement = CashMovement.objects.create(
+                        TreasuryService.create_cash_movement(
                             movement_type=movement_type,
+                            amount=abs(diff),
+                            created_by=request.user,
                             from_account=from_account,
                             to_account=to_account,
-                            amount=abs(diff),
                             pos_session=session,
-                            created_by=request.user,
-                            notes=f"{notes} ({justify_reason})"
+                            notes=f"{notes} ({justify_reason})",
+                            justify_reason=justify_reason,
+                            journal_entry_desc=f"Ajuste de Apertura POS ({justify_reason}) - Sesión #{session.id}"
                         )
-
-                        # Accounting logic for opening differences and transfers
-                        from accounting.models import AccountingSettings, JournalEntry, JournalItem
-                        from accounting.services import JournalEntryService
-                        
-                        settings = AccountingSettings.objects.first()
-                        pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal and session.terminal.default_treasury_account else None)
-                        treasury_account = pos_treasury_obj.account if pos_treasury_obj else None
-                        
-                        adjustment_account = None
-                        if justify_reason == 'TRANSFER':
-                            # In opening, diff < 0 means deficit (money went somewhere), diff > 0 means surplus (money came from somewhere)
-                            if diff < 0:
-                                adjustment_account = to_account.account if to_account else None
-                            else:
-                                adjustment_account = from_account.account if from_account else None
-                        else:
-                            # Use robust fallbacks for specific reason accounts
-                            if diff > 0: # Surplus
-                                adjustment_account = (
-                                    (settings.pos_tip_account if justify_reason == 'TIP' else None) or
-                                    (settings.pos_rounding_adjustment_account if justify_reason == 'ROUNDING' else None) or
-                                    (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
-                                    (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
-                                    settings.pos_cash_difference_gain_account
-                                )
-                            else: # Deficit
-                                adjustment_account = (
-                                    (settings.pos_theft_account if justify_reason == 'THEFT' else None) or
-                                    (settings.pos_partner_withdrawal_account if justify_reason == 'PARTNER_WITHDRAWAL' else None) or
-                                    (settings.pos_rounding_adjustment_account if justify_reason == 'ROUNDING' else None) or
-                                    (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
-                                    (settings.pos_cashback_error_account if justify_reason == 'CASHBACK' else None) or
-                                    (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
-                                    settings.pos_cash_difference_loss_account
-                                )
-
-                        if treasury_account and adjustment_account:
-                            abs_diff = abs(diff)
-                            entry = JournalEntry.objects.create(
-                                date=timezone.now().date(),
-                                description=f"Ajuste de Apertura POS ({justify_reason}) - Sesión #{session.id}",
-                                reference=f"POS-OPEN-DIFF-{session.id}",
-                                state=JournalEntry.State.DRAFT
-                            )
-                            if diff > 0:
-                                # Surplus: Debit POS, Credit Gain/Source
-                                JournalItem.objects.create(entry=entry, account=treasury_account, debit=abs_diff, credit=0)
-                                JournalItem.objects.create(entry=entry, account=adjustment_account, debit=0, credit=abs_diff)
-                            else:
-                                # Deficit: Debit Loss/Target, Credit POS
-                                JournalItem.objects.create(entry=entry, account=adjustment_account, debit=abs_diff, credit=0)
-                                JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_diff)
-                            
-                            JournalEntryService.post_entry(entry)
-                            # Link the movement to the entry
-                            movement.journal_entry = entry
-                            movement.save()
                              
                 except TreasuryAccount.DoesNotExist:
-                    # Fail silently or warn?
                     print(f"WARNING: Fund source {fund_source_id} not found")
                 except Exception as e:
                     print(f"ERROR processing fund source: {e}")
 
-
-            from .serializers import POSSessionSerializer
             return Response(POSSessionSerializer(session).data, status=status.HTTP_201_CREATED)
         
         except Exception as e:
@@ -1016,18 +958,15 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             
             # Handle Cash Differences (Accounting Adjustment or Approval Workflow)
             if difference != 0:
-                from accounting.models import AccountingSettings, JournalEntry, JournalItem
-                from accounting.services import JournalEntryService
-
+                from accounting.models import AccountingSettings
                 settings = AccountingSettings.objects.first()
                 threshold = settings.pos_cash_difference_approval_threshold if settings else Decimal('5000')
                 justify_reason = request.data.get('justify_reason', 'UNKNOWN')
                 justify_target_id = request.data.get('justify_target_id')
                 
-                # Check if it should be pending approval
                 requires_approval = abs(difference) > threshold
                 
-                # Create the CashDifference record for traceability (Permanent)
+                # Create the CashDifference record for traceability
                 diff_record = CashDifference.objects.create(
                     pos_session_audit=audit,
                     amount=difference,
@@ -1041,87 +980,40 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 if requires_approval:
                     audit.requires_approval = True
                     audit.save()
-                    print(f"INFO: Difference {difference} exceeds threshold {threshold}. Approval required.")
                 else:
-                    # Automatic adjustment for small differences
-                    if not settings:
-                        print("WARNING: No AccountingSettings found for POS adjustment")
-                    else:
-                        # Determine accounting accounts
-                        pos_treasury_acc = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
-                        treasury_account_acc = pos_treasury_acc.account if pos_treasury_acc else None
-                        
-                        adjustment_account = None
+                    # Automatic adjustment via TreasuryService
+                    pos_treasury_acc = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
+                    from_account = None
+                    to_account = None
+                    
+                    if difference < 0: # Deficit
+                        from_account = pos_treasury_acc
                         if justify_reason == 'TRANSFER' and justify_target_id:
-                            try:
-                                target_obj = TreasuryAccount.objects.get(id=justify_target_id)
-                                adjustment_account = target_obj.account
+                            try: to_account = TreasuryAccount.objects.get(id=justify_target_id)
                             except: pass
-                        else:
-                            # Standard mapping
-                            if difference > 0: # GAIN
-                                if justify_reason == 'TIP': adjustment_account = settings.pos_tip_account
-                                elif justify_reason == 'ROUNDING': adjustment_account = settings.pos_rounding_adjustment_account
-                                elif justify_reason == 'COUNTING_ERROR': adjustment_account = settings.pos_counting_error_account
-                                elif justify_reason == 'SYSTEM_ERROR': adjustment_account = settings.pos_system_error_account
-                                else: adjustment_account = settings.pos_cash_difference_gain_account
-                            else: # LOSS
-                                if justify_reason == 'THEFT': adjustment_account = settings.pos_theft_account
-                                elif justify_reason == 'PARTNER_WITHDRAWAL': adjustment_account = settings.pos_partner_withdrawal_account
-                                elif justify_reason == 'ROUNDING': adjustment_account = settings.pos_rounding_adjustment_account
-                                elif justify_reason == 'COUNTING_ERROR': adjustment_account = settings.pos_counting_error_account
-                                elif justify_reason == 'CASHBACK': adjustment_account = settings.pos_cashback_error_account
-                                elif justify_reason == 'SYSTEM_ERROR': adjustment_account = settings.pos_system_error_account
-                                else: adjustment_account = settings.pos_cash_difference_loss_account
+                    else: # Surplus
+                        to_account = pos_treasury_acc
+                        if justify_reason == 'TRANSFER' and justify_target_id:
+                            try: from_account = TreasuryAccount.objects.get(id=justify_target_id)
+                            except: pass
 
-                        if treasury_account_acc and adjustment_account:
-                            abs_diff = abs(difference)
-                            entry = JournalEntry.objects.create(
-                                date=timezone.now().date(),
-                                description=f"{'Sobrante' if difference > 0 else 'Faltante'} de Caja ({justify_reason}) - Sesión #{session.id}",
-                                reference=f"POS-DIFF-{session.id}",
-                                state=JournalEntry.State.DRAFT
-                            )
-                            if difference > 0:
-                                JournalItem.objects.create(entry=entry, account=treasury_account_acc, debit=abs_diff, credit=0)
-                                JournalItem.objects.create(entry=entry, account=adjustment_account, debit=0, credit=abs_diff)
-                            else:
-                                JournalItem.objects.create(entry=entry, account=adjustment_account, debit=abs_diff, credit=0)
-                                JournalItem.objects.create(entry=entry, account=treasury_account_acc, debit=0, credit=abs_diff)
-                            
-                            JournalEntryService.post_entry(entry)
-                            
-                            # Link both records to the same journal entry
-                            audit.journal_entry = entry
-                            audit.save()
-                            
-                            diff_record.journal_entry = entry
-                            diff_record.save()
-                            
-                            # If it was a TRANSFER, also record the physical move
-                            if justify_reason == 'TRANSFER' and justify_target_id:
-                                try:
-                                    target_obj = TreasuryAccount.objects.get(id=justify_target_id)
-                                    from_acc = None
-                                    to_acc = None
-                                    if difference < 0: # Deficit -> money out to target
-                                        from_acc = pos_treasury_acc
-                                        to_acc = target_obj
-                                    else: # Surplus -> money in from target
-                                        from_acc = target_obj
-                                        to_acc = pos_treasury_acc
-                                        
-                                    CashMovement.objects.create(
-                                        movement_type='TRANSFER',
-                                        from_account=from_acc,
-                                        to_account=to_acc,
-                                        amount=abs_diff,
-                                        pos_session=session,
-                                        created_by=request.user,
-                                        notes=f"Traspaso de ajuste (Cierre Sesión #{session.id})",
-                                        journal_entry=entry
-                                    )
-                                except: pass
+                    movement = TreasuryService.create_cash_movement(
+                        movement_type='TRANSFER' if justify_reason == 'TRANSFER' else ('WITHDRAWAL' if difference < 0 else 'DEPOSIT'),
+                        amount=abs(difference),
+                        created_by=request.user,
+                        from_account=from_account,
+                        to_account=to_account,
+                        pos_session=session,
+                        notes=f"Ajuste al Cierre: {notes or 'Sin observaciones'}",
+                        justify_reason=justify_reason,
+                        journal_entry_desc=f"{'Sobrante' if difference > 0 else 'Faltante'} de Caja ({justify_reason}) - Sesión #{session.id}"
+                    )
+                    
+                    if movement.journal_entry:
+                        audit.journal_entry = movement.journal_entry
+                        audit.save()
+                        diff_record.journal_entry = movement.journal_entry
+                        diff_record.save()
 
             # New: Track Physical Cash Deposit (Withdrawal from POS to safe/bank)
             withdrawal_amount = request.data.get('withdrawal_amount')
@@ -1135,41 +1027,17 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 try:
                     to_account = TreasuryAccount.objects.get(id=cash_destination_id)
                     pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
-                    movement = CashMovement.objects.create(
+                    
+                    TreasuryService.create_cash_movement(
                         movement_type='DEPOSIT',
                         from_account=pos_treasury_obj,
                         to_account=to_account,
                         amount=withdrawal_amount,
                         pos_session=session,
                         created_by=request.user,
-                        notes=f"Depósito de cierre sesión #{session.id}"
+                        notes=f"Depósito de cierre sesión #{session.id}",
+                        journal_entry_desc=f"Depósito de Cierre POS - Sesión #{session.id}"
                     )
-                    
-                    # Accounting logic for deposit (transfer POS -> Destination)
-                    from accounting.models import JournalEntry, JournalItem
-                    from accounting.services import JournalEntryService
-                    
-                    from_acc = pos_treasury_obj.account if pos_treasury_obj else None
-                    to_acc = to_account.account if to_account else None
-                    
-                    if from_acc and to_acc:
-                        entry = JournalEntry.objects.create(
-                            date=timezone.now().date(),
-                            description=f"Depósito de Cierre POS - Sesión #{session.id}",
-                            reference=f"POS-DEP-{session.id}",
-                            state=JournalEntry.State.DRAFT
-                        )
-                        JournalItem.objects.create(entry=entry, account=to_acc, debit=withdrawal_amount, credit=0)
-                        JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=withdrawal_amount)
-                        JournalEntryService.post_entry(entry)
-                        
-                        movement.journal_entry = entry
-                        movement.save()
-                    # No need to update 'current_balance' as it's not denormalized on account yet/anymore
-                    # But if we did migrate balance logic, we would do it here.
-                    # For now, TreasuryAccount doesn't have a 'current_balance' field in my new model definition
-                    # (only accounting balance via ledger, unless I add it). 
-                    # User said "separados cuentas" so let's stick to standard behavior.
                 except TreasuryAccount.DoesNotExist:
                     print(f"WARNING: TreasuryAccount {cash_destination_id} not found for deposit")
 
@@ -1393,57 +1261,33 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                  return Response({'error': 'No se pudo determinar la cuenta de tesorería para esta sesión'}, status=status.HTTP_400_BAD_REQUEST)
 
             with transaction.atomic():
-                # Create Journal Entry
-                entry = JournalEntry.objects.create(
-                    date=timezone.now().date(),
-                    description=f"Movimiento Manual POS ({config['label']}) - {notes}",
-                    reference=f"POS-MAN-{session.id}",
-                    state=JournalEntry.State.DRAFT
-                )
-                
-                if config['is_inflow']:
-                    # Debit Cash, Credit Target
-                    JournalItem.objects.create(entry=entry, account=treasury_account, debit=amount, credit=0)
-                    JournalItem.objects.create(entry=entry, account=target_account, debit=0, credit=amount, label=notes)
-                    session.total_other_cash_inflow += amount
-                else:
-                    # Debit Target, Credit Cash
-                    JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0, label=notes)
-                    JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=amount)
-                    session.total_other_cash_outflow += amount
-                
-                entry.save()
-                JournalEntryService.post_entry(entry)
-                
-                # Determine from/to based on flow
-                from_acc = None
-                to_acc = None
-                
-                # Resolve the CURRENT session treasury account object (not just accounting account)
                 session_treasury_obj = session.treasury_account or session.terminal.default_treasury_account
+                from_account = None
+                to_account = None
+                is_inflow = move_type in ['OTHER_IN', 'TIP']
                 
-                if config['is_inflow']:
-                     to_acc = session_treasury_obj
-                     # from_acc is None for manual OTHER_IN unless we want to map it? usually None.
+                if is_inflow:
+                    to_account = session_treasury_obj
+                    session.total_other_cash_inflow += amount
                 elif move_type == 'TRANSFER':
-                     from_acc = session_treasury_obj
-                     to_acc = TreasuryAccount.objects.get(id=request.data.get('target_account_id'))
-                else:
-                     # Outflow (Expense/Withdrawal)
-                     from_acc = session_treasury_obj
-                     
-                
-                CashMovement.objects.create(
-                    movement_type='TRANSFER' if move_type == 'TRANSFER' else ('DEPOSIT' if config['is_inflow'] else 'WITHDRAWAL'),
-                    from_account=from_acc,
-                    to_account=to_acc,
+                    from_account = session_treasury_obj
+                    to_account = TreasuryAccount.objects.get(id=request.data.get('target_account_id'))
+                    session.total_other_cash_outflow += amount
+                else: # Outflow
+                    from_account = session_treasury_obj
+                    session.total_other_cash_outflow += amount
+
+                movement = TreasuryService.create_cash_movement(
+                    movement_type='TRANSFER' if move_type == 'TRANSFER' else ('DEPOSIT' if is_inflow else 'WITHDRAWAL'),
                     amount=amount,
-                    pos_session=session,
                     created_by=request.user,
-                    notes=notes or config['label'],
-                    journal_entry=entry # Link it!
+                    from_account=from_account,
+                    to_account=to_account,
+                    pos_session=session,
+                    notes=notes,
+                    justify_reason=move_type,
+                    journal_entry_desc=f"Movimiento Manual POS ({move_type}) - {notes}"
                 )
-                
                 session.save()
             
             from .serializers import POSSessionSerializer

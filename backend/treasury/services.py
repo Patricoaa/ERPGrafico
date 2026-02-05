@@ -1,12 +1,103 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Payment
-from accounting.models import JournalEntry, JournalItem, Account, AccountType
+from .models import Payment, CashMovement, TreasuryAccount, POSSession
+from accounting.models import JournalEntry, JournalItem, Account, AccountType, AccountingSettings
 from accounting.services import JournalEntryService
 from decimal import Decimal
 
 class TreasuryService:
+    @staticmethod
+    @transaction.atomic
+    def create_cash_movement(movement_type, amount, created_by, from_account=None, to_account=None, 
+                             pos_session=None, notes='', justify_reason='UNKNOWN', 
+                             date=None, journal_entry_desc=None):
+        """
+        Creates a CashMovement record and its corresponding Journal Entry.
+        """
+        if amount < 0:
+            raise ValidationError("El monto no puede ser negativo.")
+        
+        if not date:
+            date = timezone.now()
+
+        # 1. Create the Movement record
+        movement = CashMovement.objects.create(
+            movement_type=movement_type,
+            amount=amount,
+            from_account=from_account,
+            to_account=to_account,
+            pos_session=pos_session,
+            created_by=created_by,
+            notes=notes,
+            date=date
+        )
+
+        # 2. Accounting Logic
+        settings = AccountingSettings.objects.first()
+        if not settings:
+             # If no settings, we can't do accounting reliably. 
+             # For some movements (like internal transfers between non-accounting containers if they existed), we might skip.
+             # But here all TreasuryAccounts should have an Account.
+             return movement
+
+        from_acc = from_account.account if from_account else None
+        to_acc = to_account.account if to_account else None
+
+        # Determine Journal Entry Description
+        if not journal_entry_desc:
+            type_display = dict(CashMovement.Type.choices).get(movement_type, movement_type)
+            journal_entry_desc = f"{type_display}: {notes}" if notes else type_display
+
+        # Only create entry if we have at least one side with an accounting account
+        # or if it's a specific type that requires it (e.g. Adjustments)
+        if from_acc or to_acc:
+            entry = JournalEntry.objects.create(
+                date=date.date(),
+                description=journal_entry_desc,
+                reference=f"MOVE-{movement.id}",
+                state=JournalEntry.State.DRAFT
+            )
+
+            # Case A: Transfer between two accounting accounts
+            if from_acc and to_acc:
+                JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=amount)
+                JournalItem.objects.create(entry=entry, account=to_acc, debit=amount, credit=0)
+            
+            # Case B: Withdrawal/Outflow (Money leaves an account to 'Exterior' or specific reason)
+            elif from_acc and not to_acc:
+                # Determine target account based on justify_reason
+                target_account = (
+                    (settings.pos_theft_account if justify_reason == 'THEFT' else None) or
+                    (settings.pos_partner_withdrawal_account if justify_reason == 'PARTNER_WITHDRAWAL' else None) or
+                    (settings.pos_rounding_adjustment_account if justify_reason == 'ROUNDING' else None) or
+                    (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
+                    (settings.pos_cashback_error_account if justify_reason == 'CASHBACK' else None) or
+                    (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
+                    settings.pos_cash_difference_loss_account
+                )
+                JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=amount)
+                JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0)
+
+            # Case C: Deposit/Inflow (Money enters an account from 'Exterior' or specific reason)
+            elif to_acc and not from_acc:
+                # Determine source account based on justify_reason
+                source_account = (
+                    (settings.pos_tip_account if justify_reason == 'TIP' else None) or
+                    (settings.pos_rounding_adjustment_account if justify_reason == 'ROUNDING' else None) or
+                    (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
+                    (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
+                    settings.pos_cash_difference_gain_account
+                )
+                JournalItem.objects.create(entry=entry, account=source_account, debit=0, credit=amount)
+                JournalItem.objects.create(entry=entry, account=to_acc, debit=amount, credit=0)
+
+            JournalEntryService.post_entry(entry)
+            movement.journal_entry = entry
+            movement.save()
+
+        return movement
+
     @staticmethod
     @transaction.atomic
     def register_payment(amount: Decimal, payment_type, payment_method=Payment.Method.CASH, 

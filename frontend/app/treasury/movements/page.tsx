@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency, translateStatus } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { ArrowRight, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, History as HistoryIcon, User as UserIcon, Monitor as TerminalIcon } from "lucide-react"
+import { ArrowRight, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, History as HistoryIcon, User as UserIcon, Monitor as TerminalIcon, Plus } from "lucide-react"
+import { CashMovementModal } from "@/components/treasury/CashMovementModal"
+import { Button } from "@/components/ui/button"
 
 interface CashMovement {
     id: number
@@ -35,6 +37,7 @@ interface CashMovement {
 export default function CashMovementsPage() {
     const [movements, setMovements] = useState<CashMovement[]>([])
     const [loading, setLoading] = useState(true)
+    const [modalOpen, setModalOpen] = useState(false)
 
     const fetchMovements = async () => {
         setLoading(true)
@@ -173,7 +176,17 @@ export default function CashMovementsPage() {
                         Historial completo de depósitos, retiros y traslados físicos de dinero.
                     </p>
                 </div>
+                <Button onClick={() => setModalOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nuevo Movimiento
+                </Button>
             </div>
+
+            <CashMovementModal
+                open={modalOpen}
+                onOpenChange={setModalOpen}
+                onSuccess={fetchMovements}
+            />
 
             <DataTable
                 columns={columns}
@@ -194,6 +207,6 @@ export default function CashMovementsPage() {
                     },
                 ]}
             />
-        </div>
+        </div >
     )
 }
