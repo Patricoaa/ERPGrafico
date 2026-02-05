@@ -4,24 +4,10 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Settings, MapPin, Power, PowerOff } from "lucide-react"
+import { Plus, Settings, MapPin, Power, PowerOff, Trash2 } from "lucide-react"
 import api from "@/lib/api"
-import { TerminalFormDialog } from "@/components/settings/TerminalFormDialog"
+import { TerminalFormDialog, Terminal } from "@/components/settings/TerminalFormDialog"
 import { toast } from "sonner"
-
-interface Terminal {
-    id: number
-    name: string
-    code: string
-    location: string
-    is_active: boolean
-    default_treasury_account: number | null
-    default_treasury_account_name?: string
-    allowed_treasury_accounts?: any[]  // Will be populated by backend
-    allowed_payment_methods: string[]  // Computed
-    serial_number: string
-    ip_address: string | null
-}
 
 
 export default function TerminalsPage() {
@@ -66,6 +52,22 @@ export default function TerminalsPage() {
             fetchTerminals()
         } catch (error) {
             toast.error("Error al actualizar terminal")
+        }
+    }
+
+    const handleDelete = async (terminal: Terminal) => {
+        if (!confirm(`¿Está seguro que desea eliminar el terminal "${terminal.name}"?`)) {
+            return
+        }
+
+        try {
+            await api.delete(`/treasury/pos-terminals/${terminal.id}/`)
+            toast.success("Terminal eliminado correctamente")
+            fetchTerminals()
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.error || "Error al eliminar terminal"
+            toast.error(errorMsg)
+            console.error(error)
         }
     }
 
@@ -182,6 +184,14 @@ export default function TerminalsPage() {
                                         onClick={() => handleToggleActive(terminal)}
                                     >
                                         {terminal.is_active ? "Desactivar" : "Activar"}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-destructive hover:bg-destructive/10"
+                                        onClick={() => handleDelete(terminal)}
+                                    >
+                                        <Trash2 className="h-3 w-3" />
                                     </Button>
                                 </div>
                             </CardContent>

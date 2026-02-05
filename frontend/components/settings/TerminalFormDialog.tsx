@@ -12,7 +12,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Check } from "lucide-react"
 
-interface Terminal {
+export interface Terminal {
     id: number
     name: string
     code: string
@@ -30,7 +30,7 @@ interface Terminal {
 }
 
 
-interface TreasuryAccount {
+export interface TreasuryAccount {
     id: number
     name: string
     code: string

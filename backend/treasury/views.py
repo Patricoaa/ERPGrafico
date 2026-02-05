@@ -54,6 +54,19 @@ class POSTerminalViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_active=True)
         
         return qs.order_by('code')
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Custom destroy to handle protected terminals (with sessions).
+        """
+        from django.db.models.deletion import ProtectedError
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response({
+                "error": "No se puede eliminar el terminal porque tiene sesiones asociadas.",
+                "detail": "Para deshabilitar el terminal, use la opción 'Desactivar' en su lugar."
+            }, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['get'])
     def available_accounts(self, request, pk=None):
