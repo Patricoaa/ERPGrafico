@@ -296,6 +296,28 @@ class TreasuryAccount(models.Model):
     def __str__(self):
         return f"{self.name} ({self.currency})"
 
+    def clean(self):
+        """
+        Validation Logic:
+        1. Ensure Cash accounts have a unique accounting account.
+           No other TreasuryAccount (Cash or Bank) should share the same ledger account if it's a Cash box.
+        """
+        from django.core.exceptions import ValidationError
+        
+        if self.account_type == self.Type.CASH and self.account:
+            # Check if any other TreasuryAccount uses this same account
+            duplicates = TreasuryAccount.objects.filter(account=self.account).exclude(id=self.id)
+            if duplicates.exists():
+                dup_names = ", ".join([t.name for t in duplicates])
+                raise ValidationError({
+                    'account': _(f"La cuenta contable '{self.account.code}' ya está en uso por: {dup_names}. "
+                                 "Las cuentas de tipo Efectivo deben tener una cuenta contable exclusiva.")
+                })
+                
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     @property
     def current_balance(self):
         """

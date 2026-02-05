@@ -910,13 +910,31 @@ class Command(BaseCommand):
         
         manager_user = User.objects.get(username='gerente')
 
-        # 1. Create Physical Treasury Accounts (replacing CashContainers)
+        # 1. Create Physical Treasury Accounts with UNIQUE Accounting Accounts
+        
+        # Helper to get/create specific cash account
+        cash_parent = accounts['cash'].parent if accounts['cash'].parent else accounts['cash']
+        
+        def get_create_cash_account(code, name):
+            acc, _ = Account.objects.get_or_create(
+                code=code,
+                defaults={
+                    'name': name,
+                    'account_type': AccountType.ASSET, # or LIQUIDITY
+                    'parent': cash_parent,
+                    'is_reconcilable': True
+                }
+            )
+            return acc
+
+        # Safe Account (1.1.01.01 - reusing main cash or creating specific)
+        acc_safe = get_create_cash_account('1.1.01.11', "Efectivo Caja Fuerte")
         safe, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-FUERTE",
             defaults={
                 'name': "Caja Fuerte Principal",
                 'currency': "CLP",
-                'account': accounts['cash'],
+                'account': acc_safe,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
                 'is_physical': True,
@@ -925,12 +943,14 @@ class Command(BaseCommand):
             }
         )
 
+        # Till 1 Account
+        acc_till1 = get_create_cash_account('1.1.01.12', "Efectivo Caja POS 01")
         till1, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-POS-01",
             defaults={
                 'name': "Gaveta POS 01",
                 'currency': "CLP",
-                'account': accounts['cash'],
+                'account': acc_till1,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
                 'is_physical': True,
@@ -938,12 +958,14 @@ class Command(BaseCommand):
             }
         )
 
+        # Petty Cash Account
+        acc_petty = get_create_cash_account('1.1.01.13', "Efectivo Caja Chica")
         petty, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-CHICA",
             defaults={
                 'name': "Caja Chica Administración",
                 'currency': "CLP",
-                'account': accounts['cash'],
+                'account': acc_petty,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
                 'is_physical': True,
@@ -966,12 +988,14 @@ class Command(BaseCommand):
             }
         )
 
+        # Workshop Till Account
+        acc_workshop = get_create_cash_account('1.1.01.14', "Efectivo Caja Taller")
         caja01, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-TALLER",
             defaults={
                 'name': "Caja Taller", 
                 'currency': "CLP", 
-                'account': accounts['cash'], 
+                'account': acc_workshop, 
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
                 'is_physical': True,
@@ -992,12 +1016,14 @@ class Command(BaseCommand):
             }
         )
 
+        # Reception Till Account
+        acc_reception = get_create_cash_account('1.1.01.15', "Efectivo Caja Recepción")
         recepcion, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-REC",
             defaults={
                 'name': "Caja Recepción Local",
                 'currency': "CLP",
-                'account': Account.objects.get(code='1.1.01.04'),
+                'account': acc_reception,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
                 'is_physical': True,

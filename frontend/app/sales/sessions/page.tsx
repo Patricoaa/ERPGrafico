@@ -29,6 +29,7 @@ interface POSSession {
     id: number
     id_display: string
     user_name: string
+    treasury_account: number // Added for SessionCloseModal
     treasury_account_name: string
     opened_at: string
     closed_at: string | null

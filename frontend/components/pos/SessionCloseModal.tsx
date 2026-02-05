@@ -24,6 +24,7 @@ import { FORM_STYLES } from "@/lib/styles"
 interface POSSession {
     id: number
     terminal_name?: string
+    treasury_account: number // Added for default destination logic
     treasury_account_name: string
     opening_balance: number
     total_cash_sales: number
@@ -70,14 +71,19 @@ export function SessionCloseModal({
         setWithdrawalAmount(actualCash)
     }, [actualCash])
 
-    // Pre-populate expected cash when modal opens
+    // Pre-populate expected cash and default treasury account when modal opens
     useEffect(() => {
         if (open && session) {
             setActualCash(session.expected_cash.toString())
             setCloseNotes("")
             setJustifyReason("")
             setJustifyTargetId(null)
-            setCashDestinationId(null)
+            // Default destination: same treasury account as session (leave in till/safe)
+            if (session.treasury_account) {
+                setCashDestinationId(session.treasury_account.toString())
+            } else {
+                setCashDestinationId(null)
+            }
         }
     }, [open, session])
 
