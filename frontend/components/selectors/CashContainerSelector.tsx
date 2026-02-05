@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Loader2, Vault, Wallet, Coins, Calculator } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, Vault, Wallet, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,17 +14,17 @@ import api from "@/lib/api"
 interface CashContainer {
     id: number
     name: string
-    container_type: string
-    container_type_display: string
-    current_balance: string
-    is_active: boolean
+    account_type: string
+    location: string
+    current_balance?: string
+    is_physical: boolean
 }
 
 interface CashContainerSelectorProps {
     value?: string | number | null
     onChange: (value: string | null) => void
     placeholder?: string
-    type?: string // Filter by type
+    type?: string // Filter by account_type (BANK or CASH)
     disabled?: boolean
 }
 
@@ -38,11 +38,11 @@ export function CashContainerSelector({ value, onChange, placeholder = "Seleccio
         const fetchContainers = async () => {
             setLoading(true)
             try {
-                const res = await api.get('/treasury/cash-containers/?is_active=true')
+                const res = await api.get('/treasury/accounts/?is_physical=true')
                 let results = res.data.results || res.data
 
                 if (type) {
-                    results = results.filter((c: any) => c.container_type === type)
+                    results = results.filter((c: any) => c.account_type === type)
                 }
 
                 setContainers(results)
@@ -54,7 +54,7 @@ export function CashContainerSelector({ value, onChange, placeholder = "Seleccio
                     setSelectedContainer(null)
                 }
             } catch (error) {
-                console.error("Error fetching cash containers", error)
+                console.error("Error fetching physical cash containers", error)
             } finally {
                 setLoading(false)
             }
@@ -81,12 +81,11 @@ export function CashContainerSelector({ value, onChange, placeholder = "Seleccio
         setOpen(false)
     }
 
-    const getIcon = (type: string) => {
+    const getIcon = (type: string, isPhysical: boolean) => {
+        if (isPhysical) return <Vault className="h-4 w-4" />
         switch (type) {
-            case 'SAFE': return <Vault className="h-4 w-4" />
-            case 'PETTY_CASH': return <Wallet className="h-4 w-4" />
-            case 'CHANGE_FUND': return <Coins className="h-4 w-4" />
-            case 'TILL': return <Calculator className="h-4 w-4" />
+            case 'BANK': return <CreditCard className="h-4 w-4" />
+            case 'CASH': return <Wallet className="h-4 w-4" />
             default: return <Wallet className="h-4 w-4" />
         }
     }
@@ -103,7 +102,7 @@ export function CashContainerSelector({ value, onChange, placeholder = "Seleccio
                 >
                     {selectedContainer ? (
                         <div className="flex items-center gap-2 truncate">
-                            {getIcon(selectedContainer.container_type)}
+                            {getIcon(selectedContainer.account_type, selectedContainer.is_physical)}
                             <span>{selectedContainer.name}</span>
                         </div>
                     ) : (
@@ -136,14 +135,16 @@ export function CashContainerSelector({ value, onChange, placeholder = "Seleccio
                                 />
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        {getIcon(c.container_type)}
+                                        {getIcon(c.account_type, c.is_physical)}
                                         <span className="font-medium">{c.name}</span>
                                     </div>
-                                    <span className="text-[10px] text-muted-foreground">{c.container_type_display}</span>
+                                    <span className="text-[10px] text-muted-foreground">{c.location || c.account_type}</span>
                                 </div>
-                                <span className="ml-auto text-xs font-bold text-emerald-600">
-                                    ${parseFloat(c.current_balance).toLocaleString()}
-                                </span>
+                                {c.current_balance && (
+                                    <span className="ml-auto text-xs font-bold text-emerald-600">
+                                        ${parseFloat(c.current_balance).toLocaleString()}
+                                    </span>
+                                )}
                             </div>
                         ))
                     )}
