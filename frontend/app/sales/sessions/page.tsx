@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { POSReport } from "@/components/pos/POSReport"
+import { SessionCloseModal } from "@/components/pos/SessionCloseModal"
 
 interface POSSession {
     id: number
@@ -35,7 +36,16 @@ interface POSSession {
     status_display: string
     start_amount: number
     current_cash?: number
-    expected_cash?: number
+    expected_cash: number  // Required for SessionCloseModal
+    // Additional fields for SessionCloseModal
+    terminal_name?: string
+    opening_balance: number
+    total_cash_sales: number
+    total_card_sales: number
+    total_transfer_sales: number
+    total_credit_sales: number
+    total_other_cash_inflow: number
+    total_other_cash_outflow: number
 }
 
 export default function POSSessionsPage() {
@@ -51,9 +61,7 @@ export default function POSSessionsPage() {
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
-    // Close session form states
-    const [actualCash, setActualCash] = useState<string>("0")
-    const [closeNotes, setCloseNotes] = useState<string>("")
+    // Close dialog state - modal manages its own form state
 
     useEffect(() => {
         fetchSessions()
@@ -84,47 +92,22 @@ export default function POSSessionsPage() {
         }
     }
 
-    const handleOpenCloseDialog = (session: POSSession) => {
-        setSelectedSession(session)
-        setActualCash((session.expected_cash || 0).toString())
-        setCloseNotes("")
-        setCloseDialogOpen(true)
-    }
 
-    const handleCloseSession = async () => {
+
+    const handleCloseSuccess = async (audit: any) => {
+        // Fetch summary for Z Report
         if (!selectedSession) return
 
-        setSubmitting(true)
         try {
-            const response = await api.post(`/treasury/pos-sessions/${selectedSession.id}/close_session/`, {
-                actual_cash: parseFloat(actualCash) || 0,
-                notes: closeNotes
-            })
-
-            const audit = response.data.audit
-            const difference = parseFloat(audit.difference)
-
-            if (difference !== 0) {
-                const diffType = difference > 0 ? "sobrante" : "faltante"
-                toast.warning(`Caja cerrada con ${diffType} de $${Math.abs(difference).toLocaleString()}`)
-            } else {
-                toast.success("Caja cerrada correctamente")
-            }
-
-            // Immediately fetch summary for Z Report
             const summaryResponse = await api.get(`/treasury/pos-sessions/${selectedSession.id}/summary/`)
             setReportData(summaryResponse.data)
             setReportType("Z")
-
-            setCloseDialogOpen(false)
             setReportDialogOpen(true)
 
             // Refresh list
             fetchSessions()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al cerrar caja")
-        } finally {
-            setSubmitting(false)
+        } catch (error) {
+            console.error("Error fetching Z report:", error)
         }
     }
 
@@ -203,7 +186,10 @@ export default function POSSessionsPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleOpenCloseDialog(session)}
+                                    onClick={() => {
+                                        setSelectedSession(session)
+                                        setCloseDialogOpen(true)
+                                    }}
                                     title="Cerrar Caja"
                                     className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
                                 >
@@ -298,85 +284,15 @@ export default function POSSessionsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Session Closing Dialog */}
-            <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Calculator className="h-5 w-5" />
-                            Cierre de Caja / Arqueo
-                        </DialogTitle>
-                        <DialogDescription>
-                            Cuente el efectivo en caja y registre el monto para la Sesión #{selectedSession?.id}.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {selectedSession && (
-                        <div className="space-y-4 py-4">
-                            <Card className="bg-muted/30">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium">Resumen del Sistema</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground flex items-center gap-1">
-                                            <Banknote className="h-3 w-3" /> Fondo Inicial
-                                        </span>
-                                        <span className="font-mono font-medium">${(selectedSession.start_amount || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between border-t border-dashed pt-2">
-                                        <span className="text-muted-foreground">Efectivo Esperado (Ventas + Fondo)</span>
-                                        <span className="text-primary font-bold font-mono">
-                                            ${(selectedSession.expected_cash || 0).toLocaleString()}
-                                        </span>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="actual-cash">Efectivo Contado ($)</Label>
-                                <Input
-                                    id="actual-cash"
-                                    type="number"
-                                    value={actualCash}
-                                    onChange={(e) => setActualCash(e.target.value)}
-                                    className="text-lg font-bold font-mono"
-                                />
-                                {selectedSession.expected_cash !== undefined && (
-                                    <p className={`text-sm font-medium ${parseFloat(actualCash) > selectedSession.expected_cash
-                                        ? 'text-emerald-600'
-                                        : parseFloat(actualCash) < selectedSession.expected_cash ? 'text-red-600' : 'text-emerald-600'
-                                        }`}>
-                                        Diferencia: ${(parseFloat(actualCash) - selectedSession.expected_cash).toLocaleString()}
-                                        {parseFloat(actualCash) > selectedSession.expected_cash ? ' (Sobrante)' : parseFloat(actualCash) < selectedSession.expected_cash ? ' (Faltante)' : ' (Cuadrado)'}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="close-notes">Notas (opcional)</Label>
-                                <Textarea
-                                    id="close-notes"
-                                    value={closeNotes}
-                                    onChange={(e) => setCloseNotes(e.target.value)}
-                                    placeholder="Observaciones del arqueo..."
-                                    rows={2}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleCloseSession} disabled={submitting}>
-                            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Procesar Cierre
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Session Close Modal - Using shared component */}
+            {selectedSession && (
+                <SessionCloseModal
+                    open={closeDialogOpen}
+                    onOpenChange={setCloseDialogOpen}
+                    session={selectedSession}
+                    onSuccess={handleCloseSuccess}
+                />
+            )}
         </div>
     )
 }
