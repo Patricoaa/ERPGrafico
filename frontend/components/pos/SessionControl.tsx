@@ -599,16 +599,24 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                             <SelectContent>
                                                                 {diff < 0 ? (
                                                                     <>
-                                                                        <SelectItem value="THEFT">Faltante Turno Anterior (Robo)</SelectItem>
+                                                                        <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
+                                                                        <SelectItem value="TRANSFER">Transferencia Enviada (No Reg.)</SelectItem>
+                                                                        <SelectItem value="THEFT">Robo / Faltante</SelectItem>
                                                                         <SelectItem value="COUNTING_ERROR">Error de Conteo</SelectItem>
-                                                                        <SelectItem value="TRANSFER">Transferencia enviada (No Reg.)</SelectItem>
+                                                                        <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                                        <SelectItem value="CASHBACK">Vuelto Incorrecto</SelectItem>
                                                                         <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
+                                                                        <SelectItem value="OTHER_OUT">Otro Egreso (Varios)</SelectItem>
                                                                     </>
                                                                 ) : (
                                                                     <>
-                                                                        <SelectItem value="UNKNOWN">Ingreso No Identificado</SelectItem>
-                                                                        <SelectItem value="TRANSFER">Transferencia recibida (No Reg.)</SelectItem>
+                                                                        <SelectItem value="TRANSFER">Transferencia Recibida (No Reg.)</SelectItem>
                                                                         <SelectItem value="COUNTING_ERROR">Error de Conteo / Sobrante</SelectItem>
+                                                                        <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                                        <SelectItem value="TIP">Propina</SelectItem>
+                                                                        <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
+                                                                        <SelectItem value="OTHER_IN">Otro Ingreso (Varios)</SelectItem>
+                                                                        <SelectItem value="UNKNOWN">Desconocido</SelectItem>
                                                                     </>
                                                                 )}
                                                             </SelectContent>
@@ -933,24 +941,30 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         <div className="space-y-3">
                                             <Label>Justificar Diferencia</Label>
                                             <Select value={justifyReason} onValueChange={setJustifyReason}>
-                                                <SelectTrigger>
+                                                <SelectTrigger className={cn(FORM_STYLES.input)}>
                                                     <SelectValue placeholder="Seleccione razón..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {diff < 0 ? (
                                                         <>
+                                                            <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
+                                                            <SelectItem value="TRANSFER">Transferencia Enviada (No Reg.)</SelectItem>
                                                             <SelectItem value="THEFT">Robo / Pérdida</SelectItem>
                                                             <SelectItem value="COUNTING_ERROR">Error de Conteo</SelectItem>
-                                                            <SelectItem value="TRANSFER">Transferencia Enviada (No Reg.)</SelectItem>
-                                                            <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
                                                             <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                            <SelectItem value="CASHBACK">Vuelto Incorrecto</SelectItem>
+                                                            <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
+                                                            <SelectItem value="OTHER_OUT">Otro Egreso (Varios)</SelectItem>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <SelectItem value="UNKNOWN">Sobrante No Identificado</SelectItem>
                                                             <SelectItem value="TRANSFER">Transferencia Recibida (No Reg.)</SelectItem>
+                                                            <SelectItem value="COUNTING_ERROR">Error de Conteo / Sobrante</SelectItem>
                                                             <SelectItem value="ROUNDING">Redondeo</SelectItem>
                                                             <SelectItem value="TIP">Propina</SelectItem>
+                                                            <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
+                                                            <SelectItem value="OTHER_IN">Otro Ingreso (Varios)</SelectItem>
+                                                            <SelectItem value="UNKNOWN">Desconocido</SelectItem>
                                                         </>
                                                     )}
                                                 </SelectContent>
@@ -1016,6 +1030,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
                                     <SelectItem value="TRANSFER">Transferencia a otra caja</SelectItem>
                                     <SelectItem value="THEFT">Robo / Pérdida</SelectItem>
+                                    <SelectItem value="TIP">Propina (Ingreso)</SelectItem>
+                                    <SelectItem value="ROUNDING">Redondeo</SelectItem>
                                     <SelectItem value="OTHER_IN">Otro Ingreso (Varios)</SelectItem>
                                     <SelectItem value="OTHER_OUT">Otro Egreso (Gastos Varios)</SelectItem>
                                 </SelectContent>

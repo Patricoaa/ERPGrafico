@@ -1214,6 +1214,8 @@ class CashDifference(models.Model):
         SYSTEM_ERROR = 'SYSTEM_ERROR', _('Error del Sistema')
         TRANSFER = 'TRANSFER', _('Transferencia')
         PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio')
+        OTHER_IN = 'OTHER_IN', _('Otro Ingreso')
+        OTHER_OUT = 'OTHER_OUT', _('Otro Egreso')
         UNKNOWN = 'UNKNOWN', _('Desconocido')
 
     class Status(models.TextChoices):

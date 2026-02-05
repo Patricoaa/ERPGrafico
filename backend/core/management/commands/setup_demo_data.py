@@ -275,12 +275,23 @@ class Command(BaseCommand):
             settings.pos_cash_difference_approval_threshold = Decimal('5000') # $5.000 CLP
             self.stdout.write("  ✓ Umbral de aprobación de diferencias POS configurado ($5.000)")
 
-            # NUEVO: Mapeo de movimientos de caja POS hardcodeados
-            settings.pos_partner_withdrawal_account = Account.objects.filter(code='3.1.03').first()
+            # NUEVO: Mapeo de movimientos de caja POS hardcodeados y motivos especializados
+            settings.pos_partner_withdrawal_account = Account.objects.filter(code='3.1.01.03').first() # Using specialized withdrawal if exists
+            if not settings.pos_partner_withdrawal_account:
+                settings.pos_partner_withdrawal_account = Account.objects.filter(code='3.1.03').first()
+                
             settings.pos_theft_account = Account.objects.filter(code='5.2.14').first()
             settings.pos_other_inflow_account = Account.objects.filter(code='4.2.05').first()
             settings.pos_other_outflow_account = Account.objects.filter(code='5.2.15').first()
-            self.stdout.write("  ✓ Mapeos de movimientos manuales de caja POS configurados")
+            
+            # Specialized POS Accounts
+            settings.pos_tip_account = Account.objects.filter(code='4.2.06').first()
+            settings.pos_cashback_error_account = Account.objects.filter(code='5.2.16').first()
+            settings.pos_counting_error_account = Account.objects.filter(code='5.2.17').first()
+            settings.pos_system_error_account = Account.objects.filter(code='5.2.17').first()
+            settings.pos_rounding_adjustment_account = Account.objects.filter(code='5.2.16').first()
+            
+            self.stdout.write("  ✓ Mapeos de motivos y movimientos manuales de caja POS configurados")
 
             settings.save()
             self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")

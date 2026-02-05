@@ -901,7 +901,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                                     from_account = TreasuryAccount.objects.get(id=justify_target_id)
                                 except: pass
 
-                        CashMovement.objects.create(
+                        movement = CashMovement.objects.create(
                             movement_type=movement_type,
                             from_account=from_account,
                             to_account=to_account,
@@ -910,6 +910,56 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                             created_by=request.user,
                             notes=f"{notes} ({justify_reason})"
                         )
+
+                        # Accounting logic for opening differences and transfers
+                        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+                        from accounting.services import JournalEntryService
+                        
+                        settings = AccountingSettings.objects.first()
+                        treasury_account = session.terminal.default_treasury_account.account if session.terminal and session.terminal.default_treasury_account else None
+                        
+                        adjustment_account = None
+                        if justify_reason == 'TRANSFER':
+                            # In opening, diff < 0 means deficit (money went somewhere), diff > 0 means surplus (money came from somewhere)
+                            if diff < 0:
+                                adjustment_account = to_account.account if to_account else None
+                            else:
+                                adjustment_account = from_account.account if from_account else None
+                        else:
+                            if diff > 0: # Surplus
+                                if justify_reason == 'TIP': adjustment_account = settings.pos_tip_account
+                                elif justify_reason == 'ROUNDING': adjustment_account = settings.pos_rounding_adjustment_account
+                                elif justify_reason == 'COUNTING_ERROR': adjustment_account = settings.pos_counting_error_account
+                                elif justify_reason == 'SYSTEM_ERROR': adjustment_account = settings.pos_system_error_account
+                                else: adjustment_account = settings.pos_cash_difference_gain_account
+                            else: # Deficit
+                                if justify_reason == 'THEFT': adjustment_account = settings.pos_theft_account
+                                elif justify_reason == 'PARTNER_WITHDRAWAL': adjustment_account = settings.pos_partner_withdrawal_account
+                                elif justify_reason == 'ROUNDING': adjustment_account = settings.pos_rounding_adjustment_account
+                                elif justify_reason == 'COUNTING_ERROR': adjustment_account = settings.pos_counting_error_account
+                                elif justify_reason == 'CASHBACK': adjustment_account = settings.pos_cashback_error_account
+                                elif justify_reason == 'SYSTEM_ERROR': adjustment_account = settings.pos_system_error_account
+                                else: adjustment_account = settings.pos_cash_difference_loss_account
+
+                        if treasury_account and adjustment_account:
+                            abs_diff = abs(diff)
+                            entry = JournalEntry.objects.create(
+                                date=timezone.now().date(),
+                                description=f"Ajuste de Apertura POS ({justify_reason}) - Sesión #{session.id}",
+                                reference=f"POS-OPEN-DIFF-{session.id}",
+                                state=JournalEntry.State.DRAFT
+                            )
+                            if diff > 0:
+                                JournalItem.objects.create(entry=entry, account=treasury_account, debit=abs_diff, credit=0)
+                                JournalItem.objects.create(entry=entry, account=adjustment_account, debit=0, credit=abs_diff)
+                            else:
+                                JournalItem.objects.create(entry=entry, account=adjustment_account, debit=abs_diff, credit=0)
+                                JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_diff)
+                            
+                            JournalEntryService.post_entry(entry)
+                            # Link the movement to the entry
+                            movement.journal_entry = entry
+                            movement.save()
                              
                 except TreasuryAccount.DoesNotExist:
                     # Fail silently or warn?
@@ -1063,15 +1113,37 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             cash_destination_id = request.data.get('cash_destination_id')
             if withdrawal_amount > 0 and cash_destination_id:
                 try:
-                    to_account = TreasuryAccount.objects.get(id=cash_destination_id)
+                    pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
                     movement = CashMovement.objects.create(
                         movement_type='DEPOSIT',
+                        from_account=pos_treasury_obj,
                         to_account=to_account,
                         amount=withdrawal_amount,
                         pos_session=session,
                         created_by=request.user,
                         notes=f"Depósito de cierre sesión #{session.id}"
                     )
+                    
+                    # Accounting logic for deposit (transfer POS -> Destination)
+                    from accounting.models import JournalEntry, JournalItem
+                    from accounting.services import JournalEntryService
+                    
+                    from_acc = pos_treasury_obj.account if pos_treasury_obj else None
+                    to_acc = to_account.account if to_account else None
+                    
+                    if from_acc and to_acc:
+                        entry = JournalEntry.objects.create(
+                            date=timezone.now().date(),
+                            description=f"Depósito de Cierre POS - Sesión #{session.id}",
+                            reference=f"POS-DEP-{session.id}",
+                            state=JournalEntry.State.DRAFT
+                        )
+                        JournalItem.objects.create(entry=entry, account=to_acc, debit=withdrawal_amount, credit=0)
+                        JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=withdrawal_amount)
+                        JournalEntryService.post_entry(entry)
+                        
+                        movement.journal_entry = entry
+                        movement.save()
                     # No need to update 'current_balance' as it's not denormalized on account yet/anymore
                     # But if we did migrate balance logic, we would do it here.
                     # For now, TreasuryAccount doesn't have a 'current_balance' field in my new model definition
@@ -1253,6 +1325,18 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         'is_inflow': False,
                         'label': 'Robo / Pérdida'
                     },
+                    'TIP': {
+                        'account': settings.pos_tip_account,
+                        'is_inflow': True,
+                        'label': 'Propina'
+                    },
+                    'ROUNDING': {
+                        # We use the specific POS rounding account if available
+                        'account': settings.pos_rounding_adjustment_account or settings.rounding_adjustment_account,
+                        'is_inflow': False, # Manual rounding usually implies a small loss/discount but could be inflow.
+                        # For simplification in manual register, we assume outflow (discount/small deficit).
+                        'label': 'Redondeo'
+                    },
                     'OTHER_IN': {
                         'account': settings.pos_other_inflow_account,
                         'is_inflow': True,
@@ -1339,7 +1423,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                     amount=amount,
                     pos_session=session,
                     created_by=request.user,
-                    notes=notes or config['label']
+                    notes=notes or config['label'],
+                    journal_entry=entry # Link it!
                 )
                 
                 session.save()
