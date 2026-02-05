@@ -61,18 +61,7 @@ export default function TreasuryPage() {
                     </Card>
                 </Link>
 
-                <Link href="/treasury/containers">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-l-slate-600">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Contenedores Físicos</CardTitle>
-                            <Vault className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Cajas Fuertes</div>
-                            <p className="text-xs text-muted-foreground">Gestión de custodia de efectivo</p>
-                        </CardContent>
-                    </Card>
-                </Link>
+
 
                 <Link href="/treasury/movements">
                     <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-l-emerald-600">

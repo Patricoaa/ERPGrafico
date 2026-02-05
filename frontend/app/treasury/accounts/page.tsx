@@ -48,6 +48,7 @@ interface TreasuryAccount {
     custodian: number | null
     custodian_name?: string
     is_physical: boolean
+    current_balance?: number
 }
 
 export default function TreasuryAccountsPage() {
@@ -118,15 +119,33 @@ export default function TreasuryAccountsPage() {
         },
         {
             accessorKey: "account_type",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" />
-            ),
+            header: "Tipo",
             cell: ({ row }) => {
-                const type = row.getValue("account_type") as string
+                const types = {
+                    BANK: "Banco",
+                    CASH: "Caja Efectivo"
+                }
                 return (
                     <div className="flex items-center gap-2">
-                        {type === 'BANK' ? <Building2 className="h-4 w-4 text-blue-500" /> : <Banknote className="h-4 w-4 text-green-500" />}
-                        {type === 'BANK' ? 'Banco' : 'Caja'}
+                        {row.getValue("account_type") === 'BANK' ? <Building2 className="h-4 w-4 text-blue-500" /> : <Banknote className="h-4 w-4 text-green-500" />}
+                        {types[row.getValue("account_type") as keyof typeof types] || row.getValue("account_type")}
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "current_balance",
+            header: ({ column }) => (
+                <div className="text-right">Saldo</div>
+            ),
+            cell: ({ row }) => {
+                const balance = parseFloat(row.getValue("current_balance") || "0")
+                return (
+                    <div className={`text-right font-medium ${balance < 0 ? "text-red-500" : ""}`}>
+                        {new Intl.NumberFormat("es-CL", {
+                            style: "currency",
+                            currency: row.original.currency
+                        }).format(balance)}
                     </div>
                 )
             },

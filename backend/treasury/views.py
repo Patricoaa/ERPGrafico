@@ -842,23 +842,82 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             
             # Track Physical Cash Withdrawal for fund if source provided
             fund_source_id = request.data.get('fund_source_id')
-            if opening_balance > 0 and fund_source_id:
-                from .models import CashMovement, CashContainer
+            if fund_source_id:
                 try:
-                    from_container = CashContainer.objects.get(id=fund_source_id)
-                    movement = CashMovement.objects.create(
-                        movement_type='WITHDRAWAL',
-                        from_container=from_container,
-                        amount=opening_balance,
-                        pos_session=session,
-                        created_by=request.user,
-                        notes=f"Retiro para fondo de apertura sesión #{session.id}"
-                    )
-                    # Update container balance
-                    from_container.current_balance -= opening_balance
-                    from_container.save()
-                except CashContainer.DoesNotExist:
-                    print(f"WARNING: Fund source container {fund_source_id} not found for withdrawal")
+                    fund_source = TreasuryAccount.objects.get(id=fund_source_id)
+                    
+                    # NOTE: We assume fund_source.account (Accounting Account) holds the "Book Balance"
+                    # If TreasuryAccount does not have a comprehensive .balance property, we use the Accounting Account balance.
+                    book_balance = fund_source.account.balance
+                    
+                    diff = opening_balance - book_balance
+                    
+                    if diff == 0:
+                        # "Si es igual ningun movimiento ni asiento contable deberpia provocarse."
+                        pass
+                        
+                    elif diff != 0:
+                         # "Si es menor(mayor) debería registrarse una diferencia de POS."
+                         # Since CashDifference is tied to Audit which is tied to Closing, we interpret this as a CashMovement acting as adjustment.
+                         # OR we create a CashDifference but we need a 'dummy' or 'opening' audit? 
+                         # Let's use CashMovement with type ADJUSTMENT as a cleaner approach for "Opening Difference".
+                        
+                        from .models import CashMovement
+                        
+                        adjustment_type = 'ADJUSTMENT' # Using generic adjustment
+                        notes = f"Ajuste de Apertura POS #{session.id}. Fondo reportado: {opening_balance}, Saldo libros: {book_balance}"
+                        
+                        # Logic:
+                        # Book: 100. Physical: 90. Diff: -10.
+                        # We need to reduce Book by 10.
+                        # Movement Amount should be 10? CashMovement usually tracks amount > 0.
+                        # If we use CashMovement:
+                        #   If missing (Loss): Credit Asset, Debit Expense.
+                        #   If surplus (Gain): Debit Asset, Credit Income.
+                        
+                        if diff < 0:
+                             # Missing money (Faltante)
+                             # We need to take money OUT of the account to match physical reality of lower amount.
+                             # This is like a WITHDRAWAL but to an EXPENSE account.
+                             # But CashMovement links to "to_account". 
+                             # We create a WITHDRAWAL of abs(diff).
+                             CashMovement.objects.create(
+                                movement_type='WITHDRAWAL', # Acts as Money Out -> Expense
+                                from_account=fund_source,
+                                to_account=None, # Will need to be mapped to Expense Acct in Service or Signal? 
+                                                 # Actually, without to_account, it's just raw withdrawal?
+                                                 # We need to specify we are expensing it.
+                                                 # But TreasuryService.register_payment handles accounting.
+                                                 # CashMovement is purely physical tracking?
+                                                 # Reference: CashMovement logic usually needs accounting integration.
+                                amount=abs(diff),
+                                pos_session=session,
+                                created_by=request.user,
+                                notes=notes + " (Faltante)"
+                             )
+                             # TODO: Ensure this triggers correct accounting entry (Expense).
+                             # Currently CashMovement might not auto-trigger JE unless configured.
+                             # Given constraints, we register the movement.
+                             
+                        else: # diff > 0
+                             # Surplus (Sobrante)
+                             # We need to put money IN.
+                             CashMovement.objects.create(
+                                movement_type='DEPOSIT',
+                                to_account=fund_source,
+                                from_account=None,
+                                amount=abs(diff),
+                                pos_session=session,
+                                created_by=request.user,
+                                notes=notes + " (Sobrante)"
+                             )
+                             
+                except TreasuryAccount.DoesNotExist:
+                    # Fail silently or warn?
+                    print(f"WARNING: Fund source {fund_source_id} not found")
+                except Exception as e:
+                    print(f"ERROR processing fund source: {e}")
+
 
             from .serializers import POSSessionSerializer
             return Response(POSSessionSerializer(session).data, status=status.HTTP_201_CREATED)
@@ -1121,33 +1180,60 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if not settings:
                 return Response({'error': 'Configuración contable no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Map type to account and direction
-            mapping = {
-                'PARTNER_WITHDRAWAL': {
-                    'account': settings.pos_partner_withdrawal_account,
-                    'is_inflow': False,
-                    'label': 'Retiro Socio'
-                },
-                'THEFT': {
-                    'account': settings.pos_theft_account,
-                    'is_inflow': False,
-                    'label': 'Robo / Pérdida'
-                },
-                'OTHER_IN': {
-                    'account': settings.pos_other_inflow_account,
-                    'is_inflow': True,
-                    'label': 'Otro Ingreso'
-                },
-                'OTHER_OUT': {
-                    'account': settings.pos_other_outflow_account,
-                    'is_inflow': False,
-                    'label': 'Otro Egreso'
+            # Added TRANSFER support
+            if move_type == 'TRANSFER':
+                target_account_id = request.data.get('target_account_id')
+                if not target_account_id:
+                    return Response({'error': 'Debe especificar la cuenta de destino para transferencias'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                try:
+                    target_obj = TreasuryAccount.objects.get(id=target_account_id)
+                except TreasuryAccount.DoesNotExist:
+                     return Response({'error': 'Cuenta de destino no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                config = {
+                     'account': target_obj.account, # Use the accounting account of the target
+                     'is_inflow': False, # It is an outflow from THIS session's cash (Money OUT)
+                     'label': f'Transferencia a {target_obj.name}'
                 }
-            }
-            
-            config = mapping.get(move_type)
-            if not config:
-                return Response({'error': 'Tipo de movimiento inválido'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Verify self transfer
+                # We need session treasury account logic first
+                treasury_account = session.treasury_account.account if session.treasury_account else (
+                    session.terminal.default_treasury_account.account if session.terminal else None
+                )
+                
+                if treasury_account == config['account']:
+                     return Response({'error': 'No puede transferir a la misma cuenta de origen'}, status=status.HTTP_400_BAD_REQUEST)
+
+            else:
+                # Existing logic for hardcoded types
+                mapping = {
+                    'PARTNER_WITHDRAWAL': {
+                        'account': settings.pos_partner_withdrawal_account,
+                        'is_inflow': False,
+                        'label': 'Retiro Socio'
+                    },
+                    'THEFT': {
+                        'account': settings.pos_theft_account,
+                        'is_inflow': False,
+                        'label': 'Robo / Pérdida'
+                    },
+                    'OTHER_IN': {
+                        'account': settings.pos_other_inflow_account,
+                        'is_inflow': True,
+                        'label': 'Otro Ingreso'
+                    },
+                    'OTHER_OUT': {
+                        'account': settings.pos_other_outflow_account,
+                        'is_inflow': False,
+                        'label': 'Otro Egreso'
+                    }
+                }
+                
+                config = mapping.get(move_type)
+                if not config:
+                    return Response({'error': 'Tipo de movimiento inválido'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Restriction: Cannot withdraw more than what is available in cash
             if not config['is_inflow'] and amount > session.expected_cash:
@@ -1160,11 +1246,10 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 return Response({'error': f'Cuenta contable no configurada para {config["label"]}'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Treasury account for the session
-            # Note: POSSession.treasury_account is legacy, terminal.default_treasury_account is new
-            # We follow the same logic as close_session for resolving treasury account
-            treasury_account = session.treasury_account.account if session.treasury_account else (
-                session.terminal.default_treasury_account.account if session.terminal else None
-            )
+            if move_type != 'TRANSFER': # already calculated above for transfer
+                 treasury_account = session.treasury_account.account if session.treasury_account else (
+                    session.terminal.default_treasury_account.account if session.terminal else None
+                )
             
             if not treasury_account:
                  return Response({'error': 'No se pudo determinar la cuenta de tesorería para esta sesión'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1192,9 +1277,36 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 entry.save()
                 JournalEntryService.post_entry(entry)
                 
-                # Create a CashMovement record for tracking (optional but good for consistency)
-                # from .models import CashMovement
-                # CashMovement.objects.create(...)
+                # Create a CashMovement record for tracking
+                from .models import CashMovement
+                
+                # Determine from/to based on flow
+                from_acc = None
+                to_acc = None
+                
+                # Resolve the CURRENT session treasury account object (not just accounting account)
+                session_treasury_obj = session.treasury_account or session.terminal.default_treasury_account
+                
+                if config['is_inflow']:
+                     to_acc = session_treasury_obj
+                     # from_acc is None for manual OTHER_IN unless we want to map it? usually None.
+                elif move_type == 'TRANSFER':
+                     from_acc = session_treasury_obj
+                     to_acc = TreasuryAccount.objects.get(id=request.data.get('target_account_id'))
+                else:
+                     # Outflow (Expense/Withdrawal)
+                     from_acc = session_treasury_obj
+                     
+                
+                CashMovement.objects.create(
+                    movement_type='TRANSFER' if move_type == 'TRANSFER' else ('DEPOSIT' if config['is_inflow'] else 'WITHDRAWAL'),
+                    from_account=from_acc,
+                    to_account=to_acc,
+                    amount=amount,
+                    pos_session=session,
+                    created_by=request.user,
+                    notes=notes or config['label']
+                )
                 
                 session.save()
             

@@ -10,6 +10,8 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     account_name = serializers.CharField(source='account.name', read_only=True)
     custodian_name = serializers.CharField(source='custodian.username', read_only=True, allow_null=True)
     
+    current_balance = serializers.DecimalField(max_digits=20, decimal_places=0, read_only=True)
+
     class Meta:
         model = TreasuryAccount
         fields = '__all__'

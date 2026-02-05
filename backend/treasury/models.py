@@ -296,6 +296,16 @@ class TreasuryAccount(models.Model):
     def __str__(self):
         return f"{self.name} ({self.currency})"
 
+    @property
+    def current_balance(self):
+        """
+        Returns the accounting balance of the linked account.
+        If no account is linked, returns 0.
+        """
+        if self.account:
+            return self.account.balance
+        return 0
+
 
 class POSTerminal(models.Model):
     """

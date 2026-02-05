@@ -102,6 +102,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [moveType, setMoveType] = useState<string>("PARTNER_WITHDRAWAL")
     const [moveAmount, setMoveAmount] = useState<string>("0")
     const [moveNotes, setMoveNotes] = useState<string>("")
+    const [transferTargetId, setTransferTargetId] = useState<string | null>(null)
 
     const [submitting, setSubmitting] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
@@ -115,7 +116,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             }
         }
     }))
-
     // Fetch current session on mount (or shared session)
     useEffect(() => {
         const storedSharedId = localStorage.getItem('shared_pos_session_id')
@@ -327,12 +327,18 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             return
         }
 
+        if (moveType === 'TRANSFER' && !transferTargetId) {
+            toast.error("Debe seleccionar una cuenta de destino")
+            return
+        }
+
         setSubmitting(true)
         try {
             const response = await api.post(`/treasury/pos-sessions/${currentSession.id}/register_manual_movement/`, {
                 type: moveType,
                 amount: parseFloat(moveAmount),
-                notes: moveNotes
+                notes: moveNotes,
+                target_account_id: transferTargetId ? parseInt(transferTargetId) : null
             })
 
             setCurrentSession(response.data.session)
@@ -340,6 +346,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             setMoveDialogOpen(false)
             setMoveAmount("0")
             setMoveNotes("")
+            setTransferTargetId(null)
             toast.success(response.data.message)
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al registrar movimiento")
@@ -733,12 +740,27 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
+                                    <SelectItem value="TRANSFER">Transferencia a otra caja</SelectItem>
                                     <SelectItem value="THEFT">Robo / Pérdida</SelectItem>
                                     <SelectItem value="OTHER_IN">Otro Ingreso (Varios)</SelectItem>
                                     <SelectItem value="OTHER_OUT">Otro Egreso (Gastos Varios)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {moveType === 'TRANSFER' && (
+                            <div className="space-y-2">
+                                <Label>Cuenta de Destino</Label>
+                                <CashContainerSelector
+                                    value={transferTargetId}
+                                    onChange={setTransferTargetId}
+                                    placeholder="Seleccione caja destino"
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                    El dinero saldrá de esta caja hacia la seleccionada.
+                                </p>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
