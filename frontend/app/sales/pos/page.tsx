@@ -920,6 +920,7 @@ export default function POSPage() {
                     <SessionControl
                         ref={sessionControlRef}
                         onSessionChange={setCurrentSession}
+                        session={currentSession}
                         hideSessionInfo={true}
                     />
                 </div>
@@ -942,7 +943,7 @@ export default function POSPage() {
                             </CardHeader>
                             <CardContent className="flex justify-center pb-8">
                                 {/* Use a specific ID to target the header control or just guide user */}
-                                <SessionControl onSessionChange={setCurrentSession} />
+                                <SessionControl onSessionChange={setCurrentSession} session={currentSession} />
                             </CardContent>
                         </Card>
                     </div>

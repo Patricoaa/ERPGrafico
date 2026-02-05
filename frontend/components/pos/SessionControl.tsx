@@ -74,15 +74,16 @@ interface POSSession {
 interface SessionControlProps {
     onSessionChange?: (session: POSSession | null) => void
     hideSessionInfo?: boolean
+    session?: POSSession | null
 }
 
 export interface SessionControlHandle {
     showXReport: () => void
 }
 
-export const SessionControl = forwardRef<SessionControlHandle, SessionControlProps>(({ onSessionChange, hideSessionInfo = false }, ref) => {
-    const [currentSession, setCurrentSession] = useState<POSSession | null>(null)
-    const [loading, setLoading] = useState(true)
+export const SessionControl = forwardRef<SessionControlHandle, SessionControlProps>(({ onSessionChange, hideSessionInfo = false, session }, ref) => {
+    const [currentSession, setCurrentSession] = useState<POSSession | null>(session || null)
+    const [loading, setLoading] = useState(!session)
     const [openDialogOpen, setOpenDialogOpen] = useState(false)
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
     const [reportDialogOpen, setReportDialogOpen] = useState(false)
@@ -137,6 +138,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // Fetch current session on mount (or shared session)
     useEffect(() => {
         const storedSharedId = localStorage.getItem('shared_pos_session_id')
+        if (session !== undefined) {
+            setCurrentSession(session)
+            setLoading(false)
+            return
+        }
+
         if (storedSharedId) {
             fetchSharedSession(parseInt(storedSharedId))
         } else {
@@ -166,7 +173,14 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
         window.addEventListener("keydown", handleKeyDown)
         return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [openDialogOpen, closeDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals])
+    }, [openDialogOpen, closeDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals, session])
+
+    // Sync state when session prop changes (controlled mode)
+    useEffect(() => {
+        if (session !== undefined) {
+            setCurrentSession(session)
+        }
+    }, [session])
 
     const fetchSharedSession = async (id: number) => {
         try {
