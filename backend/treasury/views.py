@@ -1,16 +1,18 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db import transaction
+from django.utils import timezone
 from .models import (Payment, TreasuryAccount, BankStatement, BankStatementLine, 
                      ReconciliationRule, POSTerminal, CashMovement, 
-                     CashDifference)
+                     CashDifference, POSSession, POSSessionAudit)
 from .serializers import (
     PaymentSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
     BankStatementLineSerializer, ReconciliationRuleSerializer,
-    BankStatementLineSerializer, ReconciliationRuleSerializer,
     POSTerminalSerializer,
-    CashMovementSerializer, CashDifferenceSerializer
+    CashMovementSerializer, CashDifferenceSerializer,
+    POSSessionSerializer, POSSessionAuditSerializer
 )
 from .services import TreasuryService
 from .reconciliation_service import ReconciliationService
@@ -777,8 +779,6 @@ class CardBillingViewSet(viewsets.ViewSet):
 
 class POSSessionViewSet(viewsets.ModelViewSet):
     """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
-    from .models import POSSession
-    from .serializers import POSSessionSerializer
     
     queryset = POSSession.objects.all().select_related('treasury_account', 'user', 'closed_by')
     serializer_class = POSSessionSerializer
@@ -788,14 +788,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     def current(self, request):
         """Get the current open session for the requesting user"""
         try:
-            from .models import POSSession
-            session = POSSession.objects.filter(
-                user=request.user,
-                status='OPEN'
-            ).select_related('treasury_account').first()
-            
             if session:
-                from .serializers import POSSessionSerializer
                 return Response(POSSessionSerializer(session).data)
             return Response({'session': None})
         except Exception as e:
@@ -805,7 +798,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     def open_session(self, request):
         """Open a new POS session (Abrir Caja)"""
         try:
-            from .models import POSSession, POSTerminal
             from decimal import Decimal
             
             terminal_id = request.data.get('terminal_id')
@@ -885,8 +877,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                          # OR we create a CashDifference but we need a 'dummy' or 'opening' audit? 
                          # Let's use CashMovement with type ADJUSTMENT as a cleaner approach for "Opening Difference".
                         
-                        from .models import CashMovement
-                        
                         justify_reason = request.data.get('justify_reason', 'UNKNOWN')
                         justify_target_id = request.data.get('justify_target_id')
                         
@@ -894,25 +884,23 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         if request.data.get('notes'):
                             notes += f" - {request.data.get('notes')}"
 
-                        to_account = None
-                        from_account = fund_source
+                        pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal and session.terminal.default_treasury_account else None)
                         
+                        # Correct logic:
+                        # diff < 0 (Faltante): Money "disappeared" from POS. From POS to None/Target.
+                        # diff > 0 (Sobrante): Money "appeared" in POS. From Source/None to POS.
                         if diff < 0:
-                            # Faltante: Money out from fund_source
                             movement_type = 'WITHDRAWAL'
+                            from_account = pos_treasury_obj
+                            to_account = None
                             if justify_reason == 'TRANSFER' and justify_target_id:
                                 try:
                                     to_account = TreasuryAccount.objects.get(id=justify_target_id)
                                 except: pass
                         else:
-                            # Sobrante: Money in to fund_source
                             movement_type = 'DEPOSIT'
-                            from_account = None
-                            to_account = fund_source
-                            if justify_reason == 'TRANSFER' and justify_target_id:
-                                try:
-                                    from_account = TreasuryAccount.objects.get(id=justify_target_id)
-                                except: pass
+                            from_account = fund_source if justify_reason == 'TRANSFER' else None
+                            to_account = pos_treasury_obj
 
                         movement = CashMovement.objects.create(
                             movement_type=movement_type,
@@ -929,7 +917,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         from accounting.services import JournalEntryService
                         
                         settings = AccountingSettings.objects.first()
-                        treasury_account = session.terminal.default_treasury_account.account if session.terminal and session.terminal.default_treasury_account else None
+                        pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal and session.terminal.default_treasury_account else None)
+                        treasury_account = pos_treasury_obj.account if pos_treasury_obj else None
                         
                         adjustment_account = None
                         if justify_reason == 'TRANSFER':
@@ -939,20 +928,25 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                             else:
                                 adjustment_account = from_account.account if from_account else None
                         else:
+                            # Use robust fallbacks for specific reason accounts
                             if diff > 0: # Surplus
-                                if justify_reason == 'TIP': adjustment_account = settings.pos_tip_account
-                                elif justify_reason == 'ROUNDING': adjustment_account = settings.pos_rounding_adjustment_account
-                                elif justify_reason == 'COUNTING_ERROR': adjustment_account = settings.pos_counting_error_account
-                                elif justify_reason == 'SYSTEM_ERROR': adjustment_account = settings.pos_system_error_account
-                                else: adjustment_account = settings.pos_cash_difference_gain_account
+                                adjustment_account = (
+                                    (settings.pos_tip_account if justify_reason == 'TIP' else None) or
+                                    (settings.pos_rounding_adjustment_account if justify_reason == 'ROUNDING' else None) or
+                                    (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
+                                    (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
+                                    settings.pos_cash_difference_gain_account
+                                )
                             else: # Deficit
-                                if justify_reason == 'THEFT': adjustment_account = settings.pos_theft_account
-                                elif justify_reason == 'PARTNER_WITHDRAWAL': adjustment_account = settings.pos_partner_withdrawal_account
-                                elif justify_reason == 'ROUNDING': adjustment_account = settings.pos_rounding_adjustment_account
-                                elif justify_reason == 'COUNTING_ERROR': adjustment_account = settings.pos_counting_error_account
-                                elif justify_reason == 'CASHBACK': adjustment_account = settings.pos_cashback_error_account
-                                elif justify_reason == 'SYSTEM_ERROR': adjustment_account = settings.pos_system_error_account
-                                else: adjustment_account = settings.pos_cash_difference_loss_account
+                                adjustment_account = (
+                                    (settings.pos_theft_account if justify_reason == 'THEFT' else None) or
+                                    (settings.pos_partner_withdrawal_account if justify_reason == 'PARTNER_WITHDRAWAL' else None) or
+                                    (settings.pos_rounding_adjustment_account if justify_reason == 'ROUNDING' else None) or
+                                    (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
+                                    (settings.pos_cashback_error_account if justify_reason == 'CASHBACK' else None) or
+                                    (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
+                                    settings.pos_cash_difference_loss_account
+                                )
 
                         if treasury_account and adjustment_account:
                             abs_diff = abs(diff)
@@ -963,9 +957,11 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                                 state=JournalEntry.State.DRAFT
                             )
                             if diff > 0:
+                                # Surplus: Debit POS, Credit Gain/Source
                                 JournalItem.objects.create(entry=entry, account=treasury_account, debit=abs_diff, credit=0)
                                 JournalItem.objects.create(entry=entry, account=adjustment_account, debit=0, credit=abs_diff)
                             else:
+                                # Deficit: Debit Loss/Target, Credit POS
                                 JournalItem.objects.create(entry=entry, account=adjustment_account, debit=abs_diff, credit=0)
                                 JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_diff)
                             
@@ -993,7 +989,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     def close_session(self, request, pk=None):
         """Close a POS session with cash audit (Cierre de Caja / Arqueo)"""
         try:
-            from .models import POSSession, POSSessionAudit
             from decimal import Decimal
             from django.utils import timezone
             
@@ -1023,7 +1018,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if difference != 0:
                 from accounting.models import AccountingSettings, JournalEntry, JournalItem
                 from accounting.services import JournalEntryService
-                from .models import CashDifference, TreasuryAccount
 
                 settings = AccountingSettings.objects.first()
                 threshold = settings.pos_cash_difference_approval_threshold if settings else Decimal('5000')
@@ -1108,7 +1102,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                             if justify_reason == 'TRANSFER' and justify_target_id:
                                 try:
                                     target_obj = TreasuryAccount.objects.get(id=justify_target_id)
-                                    from .models import CashMovement
                                     from_acc = None
                                     to_acc = None
                                     if difference < 0: # Deficit -> money out to target
@@ -1140,6 +1133,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             cash_destination_id = request.data.get('cash_destination_id')
             if withdrawal_amount > 0 and cash_destination_id:
                 try:
+                    to_account = TreasuryAccount.objects.get(id=cash_destination_id)
                     pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
                     movement = CashMovement.objects.create(
                         movement_type='DEPOSIT',
@@ -1189,7 +1183,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             session.closed_by = request.user
             session.save()
             
-            from .serializers import POSSessionSerializer, POSSessionAuditSerializer
             return Response({
                 'session': POSSessionSerializer(session).data,
                 'audit': POSSessionAuditSerializer(audit).data,
@@ -1421,9 +1414,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 
                 entry.save()
                 JournalEntryService.post_entry(entry)
-                
-                # Create a CashMovement record for tracking
-                from .models import CashMovement
                 
                 # Determine from/to based on flow
                 from_acc = None
