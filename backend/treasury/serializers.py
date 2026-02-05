@@ -43,12 +43,20 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         read_only=True,
         allow_null=True
     )
+    default_treasury_account_balance = serializers.DecimalField(
+        source='default_treasury_account.current_balance',
+        max_digits=20,
+        decimal_places=0,
+        read_only=True,
+        allow_null=True
+    )
     
     class Meta:
         model = POSTerminal
         fields = [
             'id', 'name', 'code', 'location', 'is_active',
-            'default_treasury_account', 'default_treasury_account_name', 'default_treasury_account_code',
+            'default_treasury_account', 'default_treasury_account_name', 
+            'default_treasury_account_code', 'default_treasury_account_balance',
             'allowed_treasury_accounts',  # Read (full objects)
             'allowed_treasury_account_ids',  # Write (only IDs)
             'allowed_payment_methods',  # Computed from accounts

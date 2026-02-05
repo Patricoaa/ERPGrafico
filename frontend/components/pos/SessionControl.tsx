@@ -23,14 +23,20 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Lock, Unlock, Calculator, Banknote, CreditCard, ArrowRightLeft, FileText, Users, LogOut } from "lucide-react"
+import {
+    Loader2, Lock, Unlock, Calculator, Banknote,
+    CreditCard, ArrowRightLeft, FileText, Users, LogOut,
+    Vault, AlertTriangle
+} from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { POSReport } from "@/components/pos/POSReport"
 import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
 import { forwardRef, useImperativeHandle } from "react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { cn, translateStatus, formatCurrency } from "@/lib/utils"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface POSTerminal {
     id: number
@@ -40,6 +46,7 @@ interface POSTerminal {
     is_active: boolean
     default_treasury_account: number
     default_treasury_account_name: string
+    default_treasury_account_balance: number
     allowed_payment_methods: string[]
 }
 
@@ -89,14 +96,25 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [selectedTerminalId, setSelectedTerminalId] = useState<string>("")
     const [openingBalance, setOpeningBalance] = useState<string>("0")
     const [fundSourceId, setFundSourceId] = useState<string | null>(null)
+    const [openingJustifyReason, setOpeningJustifyReason] = useState<string>("")
+    const [openingJustifyTargetId, setOpeningJustifyTargetId] = useState<string | null>(null)
 
     // Shared session selection
     const [selectedSharedSessionId, setSelectedSharedSessionId] = useState<string>("")
 
     // Close session form state
     const [actualCash, setActualCash] = useState<string>("0")
+    const [withdrawalAmount, setWithdrawalAmount] = useState<string>("0")
     const [closeNotes, setCloseNotes] = useState<string>("")
     const [cashDestinationId, setCashDestinationId] = useState<string | null>(null)
+    const [justifyReason, setJustifyReason] = useState<string>("")
+    const [justifyTargetId, setJustifyTargetId] = useState<string | null>(null)
+    const [isJustifying, setIsJustifying] = useState(false)
+
+    // Sync withdrawalAmount with actualCash by default
+    useEffect(() => {
+        setWithdrawalAmount(actualCash)
+    }, [actualCash])
 
     // Manual movement state
     const [moveType, setMoveType] = useState<string>("PARTNER_WITHDRAWAL")
@@ -194,6 +212,51 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }, [openDialogOpen])
 
+    // Autofill Opening Balance and Fund Source from Terminal Default
+    useEffect(() => {
+        if (openDialogOpen && selectedTerminalId) {
+            const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
+            if (terminal) {
+                if (terminal.default_treasury_account_balance !== undefined) {
+                    setOpeningBalance(terminal.default_treasury_account_balance.toString())
+                }
+                if (terminal.default_treasury_account) {
+                    setFundSourceId(terminal.default_treasury_account.toString())
+                }
+            }
+        }
+    }, [openDialogOpen, selectedTerminalId, terminals])
+
+    // Autofill Destination from Terminal Default
+    useEffect(() => {
+        if (closeDialogOpen && currentSession && terminals.length > 0) {
+            const currentTerminal = terminals.find(t => t.id === currentSession.terminal)
+            if (currentTerminal && currentTerminal.default_treasury_account) {
+                // Note: default_treasury_account is the ID
+                setCashDestinationId(currentTerminal.default_treasury_account.toString())
+            }
+        }
+    }, [closeDialogOpen, currentSession, terminals])
+
+    // Autofill Opening Balance from Fund Source
+    useEffect(() => {
+        const fetchAccountBalance = async () => {
+            if (!fundSourceId) return
+            try {
+                const response = await api.get(`/treasury/accounts/${fundSourceId}/`)
+                // Autofill only if balance is 0 or user hasn't typed?
+                // Requirement: "should load modal of initial fund equal to treasury account"
+                // So we overwrite.
+                if (response.data && response.data.current_balance !== undefined) {
+                    setOpeningBalance(response.data.current_balance.toString())
+                }
+            } catch (error) {
+                console.error("Error fetching account balance:", error)
+            }
+        }
+        fetchAccountBalance()
+    }, [fundSourceId])
+
     const handleOpenSession = async () => {
         if (!selectedTerminalId) {
             toast.error("Debe seleccionar un terminal")
@@ -205,7 +268,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             const response = await api.post('/treasury/pos-sessions/open_session/', {
                 terminal_id: parseInt(selectedTerminalId),
                 opening_balance: parseFloat(openingBalance) || 0,
-                fund_source_id: fundSourceId ? parseInt(fundSourceId) : null
+                fund_source_id: fundSourceId ? parseInt(fundSourceId) : null,
+                justify_reason: openingJustifyReason,
+                justify_target_id: openingJustifyTargetId ? parseInt(openingJustifyTargetId) : null
             })
 
             setCurrentSession(response.data)
@@ -251,6 +316,35 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         fetchCurrentSession()
     }
 
+    const handleJustifyDifference = async () => {
+        if (!currentSession) return
+
+        const actual = parseFloat(actualCash) || 0
+        const expected = currentSession.expected_cash
+        const diff = actual - expected
+
+        if (diff === 0) return
+
+        setIsJustifying(true)
+        try {
+            const response = await api.post(`/treasury/pos-sessions/${currentSession.id}/register_manual_movement/`, {
+                type: justifyReason,
+                amount: Math.abs(diff),
+                notes: `Ajuste al Cierre: ${closeNotes || 'Sin observaciones'}`,
+                target_account_id: justifyReason === 'TRANSFER' ? justifyTargetId : null
+            })
+
+            setCurrentSession(response.data.session)
+            onSessionChange?.(response.data.session)
+            toast.success("Diferencia justificada correctamente")
+            // Don't close dialog, just update session so diff disappears
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al justificar")
+        } finally {
+            setIsJustifying(false)
+        }
+    }
+
     const handleCloseSession = async () => {
         if (!currentSession) return
 
@@ -258,10 +352,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         try {
             const response = await api.post(`/treasury/pos-sessions/${currentSession.id}/close_session/`, {
                 actual_cash: parseFloat(actualCash) || 0,
+                withdrawal_amount: parseFloat(withdrawalAmount) || 0,
                 notes: closeNotes,
                 cash_destination_id: cashDestinationId ? parseInt(cashDestinationId) : null
             })
 
+            // ... (rest of logic) ...
             const audit = response.data.audit
             const difference = parseFloat(audit.difference)
 
@@ -377,116 +473,204 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     Abrir Caja
                 </Button>
 
-                <Dialog open={openDialogOpen} onOpenChange={setOpenDialogOpen}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                                <Unlock className="h-5 w-5" />
-                                Gestión de Caja
-                            </DialogTitle>
-                            <DialogDescription>
-                                Abra una nueva caja o únase a una existente.
-                            </DialogDescription>
-                        </DialogHeader>
+                <BaseModal
+                    open={openDialogOpen}
+                    onOpenChange={setOpenDialogOpen}
+                    title="Apertura de Caja"
+                    description="Seleccione un terminal y verifique el fondo inicial."
+                    size="xl"
+                    footer={
+                        <div className="flex w-full gap-2 sm:justify-end">
+                            <Button variant="outline" onClick={() => setOpenDialogOpen(false)}>
+                                Cancelar
+                            </Button>
+                            {(() => {
+                                const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
+                                const expected = terminal?.default_treasury_account_balance || 0
+                                const actual = parseFloat(openingBalance) || 0
+                                const diff = actual - expected
+                                const hasDiff = selectedTerminalId && diff !== 0
 
-                        <Tabs defaultValue="new" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="new">Nueva Caja</TabsTrigger>
-                                <TabsTrigger value="join">Unirse a Caja</TabsTrigger>
-                            </TabsList>
+                                return (
+                                    <Button
+                                        onClick={handleOpenSession}
+                                        disabled={submitting || (hasDiff && !openingJustifyReason)}
+                                    >
+                                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Abrir Caja
+                                    </Button>
+                                )
+                            })()}
+                        </div>
+                    }
+                >
+                    <Tabs defaultValue="new" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-6">
+                            <TabsTrigger value="new">Nueva Sesión</TabsTrigger>
+                            <TabsTrigger value="shared" onClick={fetchAvailableSessions}>Compartir Sesión Existente</TabsTrigger>
+                        </TabsList>
 
-                            <TabsContent value="new" className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label>Seleccionar Terminal POS</Label>
-                                    <Select value={selectedTerminalId} onValueChange={setSelectedTerminalId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Seleccione un terminal..." />
+                        <TabsContent value="new" className="space-y-6">
+                            {(() => {
+                                const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
+                                const expected = terminal?.default_treasury_account_balance || 0
+                                const actual = parseFloat(openingBalance) || 0
+                                const diff = actual - expected
+                                const hasDiff = selectedTerminalId && diff !== 0
+
+                                return (
+                                    <div className={`grid gap-6 ${hasDiff ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
+                                        {/* Col 1: Configuración */}
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className={FORM_STYLES.label}>Seleccionar Terminal POS</Label>
+                                                <Select value={selectedTerminalId} onValueChange={setSelectedTerminalId}>
+                                                    <SelectTrigger className={cn(FORM_STYLES.input)}>
+                                                        <SelectValue placeholder="Seleccione un terminal..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {terminals.map(t => (
+                                                            <SelectItem key={t.id} value={t.id.toString()}>
+                                                                {t.name} ({t.code})
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {terminal && (
+                                                <Card className={cn("bg-muted/30", FORM_STYLES.card)}>
+                                                    <CardContent className="pt-4 space-y-2 text-sm">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">Cuenta Base:</span>
+                                                            <span className="font-medium">{terminal.default_treasury_account_name}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">Saldo en Libros:</span>
+                                                            <span className="font-mono font-bold text-primary">{formatCurrency(expected)}</span>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            )}
+                                        </div>
+
+                                        {/* Col 2: Conteo Físico */}
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className={FORM_STYLES.label}>Fondo Inicial contado ($)</Label>
+                                                <Input
+                                                    type="number"
+                                                    value={openingBalance}
+                                                    onChange={(e) => setOpeningBalance(e.target.value)}
+                                                    className={cn("text-3xl font-black h-16 text-right font-mono tracking-tight", FORM_STYLES.input)}
+                                                    placeholder="0"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Ingrese el monto físico real que hay en la gaveta.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Col 3: Diferencia de Apertura (Conditional) */}
+                                        {hasDiff && (
+                                            <Card className="h-full border-l-4 border-l-amber-500 shadow-sm">
+                                                <CardHeader className="bg-amber-50 dark:bg-amber-950/20 pb-3">
+                                                    <CardTitle className="text-amber-700 dark:text-amber-400 flex items-center gap-2 text-sm">
+                                                        <AlertTriangle className="h-4 w-4" />
+                                                        Diferencia en Apertura
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="space-y-4 pt-4">
+                                                    <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/10 rounded-lg">
+                                                        <div className="text-[10px] text-amber-600 dark:text-amber-500 font-bold uppercase mb-1">
+                                                            {diff > 0 ? 'SOBRANTE' : 'FALTANTE'}
+                                                        </div>
+                                                        <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                                                            {formatCurrency(Math.abs(diff))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-3">
+                                                        <Label className="text-xs font-bold">Justificar Diferencia</Label>
+                                                        <Select value={openingJustifyReason} onValueChange={setOpeningJustifyReason}>
+                                                            <SelectTrigger className="h-9">
+                                                                <SelectValue placeholder="Seleccione razón..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {diff < 0 ? (
+                                                                    <>
+                                                                        <SelectItem value="THEFT">Faltante Turno Anterior (Robo)</SelectItem>
+                                                                        <SelectItem value="COUNTING_ERROR">Error de Conteo</SelectItem>
+                                                                        <SelectItem value="TRANSFER">Transferencia enviada (No Reg.)</SelectItem>
+                                                                        <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <SelectItem value="UNKNOWN">Ingreso No Identificado</SelectItem>
+                                                                        <SelectItem value="TRANSFER">Transferencia recibida (No Reg.)</SelectItem>
+                                                                        <SelectItem value="COUNTING_ERROR">Error de Conteo / Sobrante</SelectItem>
+                                                                    </>
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+
+                                                        {openingJustifyReason === 'TRANSFER' && (
+                                                            <div className="space-y-2 border-l-2 pl-3 border-amber-200">
+                                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">
+                                                                    {diff < 0 ? '¿Hacia qué cuenta?' : '¿Desde qué cuenta?'}
+                                                                </Label>
+                                                                <CashContainerSelector
+                                                                    value={openingJustifyTargetId}
+                                                                    onChange={setOpeningJustifyTargetId}
+                                                                    placeholder="Seleccione cuenta..."
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        <div className="bg-amber-50 dark:bg-amber-950/30 p-2 rounded text-[10px] text-amber-800 dark:text-amber-300 italic">
+                                                            Se registrará un ajuste de caja automático para cuadrar el saldo contable con el físico reportado.
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </div>
+                                )
+                            })()}
+                        </TabsContent>
+
+                        <TabsContent value="shared" className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label className={FORM_STYLES.label}>Cajas Activas Disponibles</Label>
+                                {availableSessions.length === 0 ? (
+                                    <div className="p-4 border border-dashed rounded-xl text-center text-muted-foreground bg-muted/20">
+                                        No hay cajas abiertas en este momento.
+                                    </div>
+                                ) : (
+                                    <Select value={selectedSharedSessionId} onValueChange={setSelectedSharedSessionId}>
+                                        <SelectTrigger className={cn(FORM_STYLES.input)}>
+                                            <SelectValue placeholder="Seleccione una sesión abierta..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {terminals.length === 0 ? (
-                                                <div className="p-4 text-sm text-center text-muted-foreground">
-                                                    No hay terminales activos disponibles
-                                                </div>
-                                            ) : (
-                                                terminals.map((terminal) => (
-                                                    <SelectItem key={terminal.id} value={terminal.id.toString()}>
-                                                        <div className="flex flex-col">
-                                                            <span>{terminal.name}</span>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {terminal.code} • {terminal.default_treasury_account_name}
-                                                            </span>
-                                                        </div>
-                                                    </SelectItem>
-                                                ))
-                                            )}
+                                            {availableSessions.map((session) => (
+                                                <SelectItem key={session.id} value={session.id.toString()}>
+                                                    {session.treasury_account_name} - {session.user_name} (Abierta: {new Date(session.opened_at).toLocaleTimeString()})
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Fondo Inicial ($)</Label>
-                                    <Input
-                                        type="number"
-                                        value={openingBalance}
-                                        onChange={(e) => setOpeningBalance(e.target.value)}
-                                        placeholder="0"
-                                    />
-                                </div>
-
-                                {parseFloat(openingBalance) > 0 && (
-                                    <div className="space-y-2">
-                                        <Label>Origen de Fondo de Apertura</Label>
-                                        <CashContainerSelector
-                                            value={fundSourceId}
-                                            onChange={setFundSourceId}
-                                            placeholder="¿De dónde sale el efectivo?"
-                                        />
-                                        <p className="text-[10px] text-muted-foreground italic">
-                                            Recomendado para trazabilidad física si retira dinero de una caja fuerte.
-                                        </p>
-                                    </div>
                                 )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Puede unirse a una caja abierta por otro usuario para realizar ventas en su turno (modo compartido).
+                            </p>
 
-                                <Button onClick={handleOpenSession} disabled={submitting} className="w-full mt-4">
-                                    {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Abrir Turno Personal
-                                </Button>
-                            </TabsContent>
-
-                            <TabsContent value="join" className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label>Cajas Activas Disponibles</Label>
-                                    {availableSessions.length === 0 ? (
-                                        <div className="p-4 border rounded-md text-center text-muted-foreground bg-muted/20">
-                                            No hay cajas abiertas en este momento.
-                                        </div>
-                                    ) : (
-                                        <Select value={selectedSharedSessionId} onValueChange={setSelectedSharedSessionId}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione una sesión abierta..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {availableSessions.map((session) => (
-                                                    <SelectItem key={session.id} value={session.id.toString()}>
-                                                        {session.treasury_account_name} - {session.user_name} (Abierta: {new Date(session.opened_at).toLocaleTimeString()})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                    Puede unirse a una caja abierta por otro usuario para realizar ventas en su turno (modo compartido).
-                                </p>
-
-                                <Button onClick={handleJoinSession} disabled={!selectedSharedSessionId} className="w-full mt-4" variant="secondary">
-                                    <Users className="mr-2 h-4 w-4" />
-                                    Usar Esta Caja
-                                </Button>
-                            </TabsContent>
-                        </Tabs>
-                    </DialogContent>
-                </Dialog>
+                            <Button onClick={handleJoinSession} disabled={!selectedSharedSessionId} className="w-full mt-4" variant="secondary">
+                                <Users className="mr-2 h-4 w-4" />
+                                Usar Esta Caja
+                            </Button>
+                        </TabsContent>
+                    </Tabs>
+                </BaseModal>
             </>
         )
     }
@@ -587,137 +771,227 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Calculator className="h-5 w-5" />
-                            Cierre de Caja / Arqueo
-                        </DialogTitle>
-                        <DialogDescription>
-                            Cuente el efectivo en caja y registre el monto.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-4">
-                        {/* Session Summary */}
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm">Resumen de la Sesión</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground flex items-center gap-1">
-                                        <Banknote className="h-3 w-3" /> Fondo Inicial
-                                    </span>
-                                    <span>{formatCurrency(currentSession.opening_balance)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground flex items-center gap-1">
-                                        <Banknote className="h-3 w-3" /> Ventas Efectivo
-                                    </span>
-                                    <span>{formatCurrency(currentSession.total_cash_sales)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground flex items-center gap-1">
-                                        <CreditCard className="h-3 w-3" /> Ventas Tarjeta
-                                    </span>
-                                    <span>{formatCurrency(currentSession.total_card_sales)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground flex items-center gap-1">
-                                        <ArrowRightLeft className="h-3 w-3" /> Ventas Transferencia
-                                    </span>
-                                    <span>{formatCurrency(currentSession.total_transfer_sales)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground flex items-center gap-1">
-                                        <FileText className="h-3 w-3" /> Ventas Crédito
-                                    </span>
-                                    <span>{formatCurrency(currentSession.total_credit_sales)}</span>
-                                </div>
-                                {(currentSession.total_other_cash_inflow > 0 || currentSession.total_other_cash_outflow > 0) && (
-                                    <>
-                                        <div className="border-t my-2" />
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground flex items-center gap-1">
-                                                <ArrowRightLeft className="h-3 w-3" /> Otros Ingresos
-                                            </span>
-                                            <span className="text-emerald-600">+{formatCurrency(currentSession.total_other_cash_inflow)}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground flex items-center gap-1">
-                                                <ArrowRightLeft className="h-3 w-3" /> Otros Egresos
-                                            </span>
-                                            <span className="text-red-600">-{formatCurrency(currentSession.total_other_cash_outflow)}</span>
-                                        </div>
-                                    </>
-                                )}
-                                <div className="border-t pt-2 flex justify-between font-semibold">
-                                    <span>Efectivo Esperado</span>
-                                    <span className="text-primary">
-                                        {formatCurrency(currentSession.expected_cash)}
-                                    </span>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Actual Cash Input */}
-                        <div className="space-y-2">
-                            <Label>Efectivo Contado ($)</Label>
-                            <Input
-                                type="number"
-                                value={actualCash}
-                                onChange={(e) => setActualCash(e.target.value)}
-                                className="text-lg font-semibold"
-                            />
-                            {parseFloat(actualCash) !== currentSession.expected_cash && (
-                                <p className={`text-sm font-medium ${parseFloat(actualCash) > currentSession.expected_cash
-                                    ? 'text-emerald-600'
-                                    : 'text-red-600'
-                                    }`}>
-                                    Diferencia: {formatCurrency(parseFloat(actualCash) - currentSession.expected_cash)}
-                                    {parseFloat(actualCash) > currentSession.expected_cash ? ' (Sobrante)' : ' (Faltante)'}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Notas (opcional)</Label>
-                            <Textarea
-                                value={closeNotes}
-                                onChange={(e) => setCloseNotes(e.target.value)}
-                                placeholder="Observaciones del arqueo..."
-                                rows={2}
-                            />
-                        </div>
-
-                        {parseFloat(actualCash) > 0 && (
-                            <div className="space-y-2 border-t pt-4">
-                                <Label>Destino del Efectivo Contado</Label>
-                                <CashContainerSelector
-                                    value={cashDestinationId}
-                                    onChange={setCashDestinationId}
-                                    placeholder="¿Dónde depositará el dinero?"
-                                />
-                                <p className="text-[10px] text-muted-foreground italic">
-                                    El saldo del contenedor seleccionado aumentará automáticamente.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter>
+            <BaseModal
+                open={closeDialogOpen}
+                onOpenChange={setCloseDialogOpen}
+                title={`Cierre de Caja - ${currentSession.terminal_name}`}
+                description="Verifique los montos y confirme el cierre."
+                size="xl"
+                footer={
+                    <div className="flex w-full gap-2 sm:justify-end">
                         <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>
                             Cancelar
                         </Button>
-                        <Button onClick={handleCloseSession} disabled={submitting}>
-                            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Cerrar Caja
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        {(() => {
+                            const actual = parseFloat(actualCash) || 0
+                            const expected = currentSession.expected_cash
+                            const diff = actual - expected
+                            const hasDiff = diff !== 0
+
+                            return (
+                                <Button
+                                    onClick={handleCloseSession}
+                                    disabled={submitting || (hasDiff && !justifyReason)}
+                                >
+                                    {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Cerrar Caja
+                                </Button>
+                            )
+                        })()}
+                    </div>
+                }
+            >
+                {(() => {
+                    const actual = parseFloat(actualCash) || 0
+                    const expected = currentSession.expected_cash
+                    const diff = actual - expected
+                    const hasDiff = diff !== 0
+
+                    return (
+                        <div className={`grid gap-6 ${hasDiff ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
+                            {/* Col 1: Resumen */}
+                            <Card className={cn("h-full", FORM_STYLES.card)}>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className={FORM_STYLES.label}>
+                                        Resumen de Sesión
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4 pt-4">
+                                    <div className="space-y-2">
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between py-1 border-b border-dashed">
+                                                <span>Fondo Inicial</span>
+                                                <span className="font-mono">{formatCurrency(currentSession.opening_balance)}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-dashed">
+                                                <span>Ventas Efectivo</span>
+                                                <span className="font-mono text-emerald-600">+{formatCurrency(currentSession.total_cash_sales)}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-dashed text-muted-foreground">
+                                                <span>Ventas Tarjeta</span>
+                                                <span className="font-mono">{formatCurrency(currentSession.total_card_sales)}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-dashed text-muted-foreground">
+                                                <span>Ventas Transferencia</span>
+                                                <span className="font-mono">{formatCurrency(currentSession.total_transfer_sales)}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-dashed text-muted-foreground">
+                                                <span>Ventas Crédito</span>
+                                                <span className="font-mono">{formatCurrency(currentSession.total_credit_sales)}</span>
+                                            </div>
+
+                                            {(currentSession.total_other_cash_inflow > 0 || currentSession.total_other_cash_outflow > 0) && (
+                                                <div className="flex justify-between py-1 border-b border-dashed">
+                                                    <span>Movimientos Manuales</span>
+                                                    <div className="text-right font-mono">
+                                                        {currentSession.total_other_cash_inflow > 0 && <span className="text-emerald-600 block">+{formatCurrency(currentSession.total_other_cash_inflow)}</span>}
+                                                        {currentSession.total_other_cash_outflow > 0 && <span className="text-red-600 block">-{formatCurrency(currentSession.total_other_cash_outflow)}</span>}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="pt-4 border-t mt-auto">
+                                        <div className="flex justify-between items-center text-lg font-bold">
+                                            <span>Esperado en Caja</span>
+                                            <span className="text-primary">{formatCurrency(expected)}</span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Col 2: Arqueo */}
+                            <div className="space-y-6 py-2">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label className={FORM_STYLES.label}>Efectivo Contado Real ($)</Label>
+                                        <Input
+                                            type="number"
+                                            value={actualCash}
+                                            onChange={(e) => setActualCash(e.target.value)}
+                                            className={cn("text-3xl font-black h-16 text-right font-mono tracking-tight", FORM_STYLES.input)}
+                                            placeholder="0"
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-4">
+                                        <div className="space-y-2 flex-1">
+                                            <Label className={FORM_STYLES.label}>Monto a Retirar/Depositar</Label>
+                                            <Input
+                                                type="number"
+                                                value={withdrawalAmount}
+                                                onChange={(e) => setWithdrawalAmount(e.target.value)}
+                                                className={cn("font-bold", FORM_STYLES.input)}
+                                                placeholder="0"
+                                            />
+                                            <p className="text-[10px] text-muted-foreground italic">
+                                                Diferencia queda como fondo para el siguiente turno.
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2 flex-[1.5]">
+                                            <Label className={FORM_STYLES.label}>Destino del Efectivo</Label>
+                                            <CashContainerSelector
+                                                value={cashDestinationId}
+                                                onChange={setCashDestinationId}
+                                                placeholder="Seleccione destino..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className={FORM_STYLES.label}>Notas de Cierre</Label>
+                                        <Textarea
+                                            value={closeNotes}
+                                            onChange={(e) => setCloseNotes(e.target.value)}
+                                            placeholder="Observaciones..."
+                                            rows={3}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Col 3: Diferencias (Conditional) */}
+                            {hasDiff && (
+                                <Card className="h-full border-l-4 border-l-amber-500 shadow-sm">
+                                    <CardHeader className="bg-amber-50 dark:bg-amber-950/20 pb-3">
+                                        <CardTitle className="text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                                            <AlertTriangle className="h-5 w-5" />
+                                            Diferencia Detectada
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4 pt-6">
+                                        <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/10 rounded-lg">
+                                            <div className="text-sm text-amber-600 dark:text-amber-500 font-medium mb-1">
+                                                {diff > 0 ? 'SOBRANTE' : 'FALTANTE'}
+                                            </div>
+                                            <div className="text-3xl font-bold text-amber-700 dark:text-amber-400">
+                                                {formatCurrency(Math.abs(diff))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <Label>Justificar Diferencia</Label>
+                                            <Select value={justifyReason} onValueChange={setJustifyReason}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione razón..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {diff < 0 ? (
+                                                        <>
+                                                            <SelectItem value="THEFT">Robo / Pérdida</SelectItem>
+                                                            <SelectItem value="COUNTING_ERROR">Error de Conteo</SelectItem>
+                                                            <SelectItem value="TRANSFER">Transferencia Enviada (No Reg.)</SelectItem>
+                                                            <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
+                                                            <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <SelectItem value="UNKNOWN">Sobrante No Identificado</SelectItem>
+                                                            <SelectItem value="TRANSFER">Transferencia Recibida (No Reg.)</SelectItem>
+                                                            <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                            <SelectItem value="TIP">Propina</SelectItem>
+                                                        </>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+
+                                            {justifyReason === 'TRANSFER' && (
+                                                <div className="space-y-2 border-l-2 pl-3 border-mute text-sm">
+                                                    <Label className="text-xs">
+                                                        {diff < 0 ? '¿A dónde se envió?' : '¿De dónde se recibió?'}
+                                                    </Label>
+                                                    <CashContainerSelector
+                                                        value={justifyTargetId}
+                                                        onChange={setJustifyTargetId}
+                                                        placeholder="Seleccione cuenta..."
+                                                    />
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        Se registrará una transferencia entre cajas.
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            <Button
+                                                onClick={handleJustifyDifference}
+                                                variant="secondary"
+                                                className="w-full"
+                                                disabled={isJustifying}
+                                            >
+                                                {isJustifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                Registrar Justificación
+                                            </Button>
+                                            <p className="text-xs text-muted-foreground text-center">
+                                                Al registrar, se actualizará el saldo esperado y la diferencia desaparecerá.
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+                    )
+                })()}
+            </BaseModal>
 
             <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
                 <DialogContent className="sm:max-w-md">
@@ -733,9 +1007,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Motivo del Movimiento</Label>
+                            <Label className={FORM_STYLES.label}>Motivo del Movimiento</Label>
                             <Select value={moveType} onValueChange={setMoveType}>
-                                <SelectTrigger>
+                                <SelectTrigger className={cn(FORM_STYLES.input)}>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -750,7 +1024,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                         {moveType === 'TRANSFER' && (
                             <div className="space-y-2">
-                                <Label>Cuenta de Destino</Label>
+                                <Label className={FORM_STYLES.label}>Cuenta de Destino</Label>
                                 <CashContainerSelector
                                     value={transferTargetId}
                                     onChange={setTransferTargetId}
@@ -764,8 +1038,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <Label>Monto ($)</Label>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                <Label className={FORM_STYLES.label}>Monto ($)</Label>
+                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                                     Disponible: {formatCurrency(currentSession.expected_cash)}
                                 </span>
                             </div>
@@ -774,12 +1048,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 value={moveAmount}
                                 onChange={(e) => setMoveAmount(e.target.value)}
                                 placeholder="0"
-                                className="text-lg font-semibold"
+                                className={cn("text-lg font-black h-12 text-right font-mono", FORM_STYLES.input)}
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Descripción / Notas</Label>
+                            <Label className={FORM_STYLES.label}>Descripción / Notas</Label>
                             <Textarea
                                 value={moveNotes}
                                 onChange={(e) => setMoveNotes(e.target.value)}

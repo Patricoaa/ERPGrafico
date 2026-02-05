@@ -533,6 +533,37 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta Otros Egresos POS"),
         help_text=_("Cuenta para otros egresos de efectivo en el POS.")
     )
+
+    pos_tip_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_tip',
+        verbose_name=_("Cuenta Propinas POS"),
+        help_text=_("Cuenta para registrar propinas recibidas en el POS.")
+    )
+    pos_cashback_error_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_cashback',
+        verbose_name=_("Cuenta Vuelto Incorrecto POS"),
+        help_text=_("Cuenta para registrar diferencias por vueltos incorrectos.")
+    )
+    pos_counting_error_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_counting',
+        verbose_name=_("Cuenta Error de Conteo POS"),
+        help_text=_("Cuenta para registrar diferencias por errores de conteo.")
+    )
+    pos_system_error_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_system_error',
+        verbose_name=_("Cuenta Error de Sistema POS"),
+        help_text=_("Cuenta para registrar diferencias por errores del sistema.")
+    )
+    pos_rounding_adjustment_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_pos_rounding',
+        verbose_name=_("Cuenta Redondeo POS"),
+        help_text=_("Cuenta para registrar diferencias por redondeo en el POS.")
+    )
     
     pos_cash_difference_approval_threshold = models.DecimalField(
         _("Umbral de Aprobación de Diferencias POS"),

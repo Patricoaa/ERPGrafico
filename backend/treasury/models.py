@@ -1212,6 +1212,8 @@ class CashDifference(models.Model):
         TIP = 'TIP', _('Propina')
         CASHBACK = 'CASHBACK', _('Vuelto Incorrecto')
         SYSTEM_ERROR = 'SYSTEM_ERROR', _('Error del Sistema')
+        TRANSFER = 'TRANSFER', _('Transferencia')
+        PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio')
         UNKNOWN = 'UNKNOWN', _('Desconocido')
 
     class Status(models.TextChoices):

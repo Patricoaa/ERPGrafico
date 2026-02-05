@@ -55,6 +55,15 @@ const accountingSchema = z.object({
     default_subscription_revenue_account: z.string().nullable(),
     pos_cash_difference_gain_account: z.string().nullable(),
     pos_cash_difference_loss_account: z.string().nullable(),
+    pos_tip_account: z.string().nullable(),
+    pos_cashback_error_account: z.string().nullable(),
+    pos_counting_error_account: z.string().nullable(),
+    pos_system_error_account: z.string().nullable(),
+    pos_rounding_adjustment_account: z.string().nullable(),
+    pos_partner_withdrawal_account: z.string().nullable(),
+    pos_theft_account: z.string().nullable(),
+    pos_other_inflow_account: z.string().nullable(),
+    pos_other_outflow_account: z.string().nullable(),
     pos_cash_difference_approval_threshold: z.number(),
 
     code_format: z.string(),
@@ -112,6 +121,15 @@ export default function AccountingSettingsPage() {
             default_subscription_revenue_account: null,
             pos_cash_difference_gain_account: null,
             pos_cash_difference_loss_account: null,
+            pos_tip_account: null,
+            pos_cashback_error_account: null,
+            pos_counting_error_account: null,
+            pos_system_error_account: null,
+            pos_rounding_adjustment_account: null,
+            pos_partner_withdrawal_account: null,
+            pos_theft_account: null,
+            pos_other_inflow_account: null,
+            pos_other_outflow_account: null,
             pos_cash_difference_approval_threshold: 5000,
 
             code_format: "X.X.XX.XXX",
@@ -320,12 +338,24 @@ export default function AccountingSettingsPage() {
 
                                             <div className="space-y-4">
                                                 <p className="text-[10px] font-bold uppercase text-emerald-600 mb-2">Punto de Venta (POS)</p>
-                                                <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ingreso)" accountType="INCOME" />
-                                                <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Gasto)" accountType="EXPENSE" />
-                                                <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro Socio (Cargo Directo)" accountType="ASSET" />
-                                                <AccountField form={form} name="pos_theft_account" label="Faltante por Robo" accountType="EXPENSE" />
-                                                <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos Varios" accountType="INCOME" />
-                                                <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos Varios" accountType="EXPENSE" />
+                                                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                                                    <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante General" accountType="INCOME" />
+                                                    <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante General" accountType="EXPENSE" />
+
+                                                    <AccountField form={form} name="pos_counting_error_account" label="Error de Conteo" accountType="EXPENSE" />
+                                                    <AccountField form={form} name="pos_theft_account" label="Robo / Faltante" accountType="EXPENSE" />
+
+                                                    <AccountField form={form} name="pos_rounding_adjustment_account" label="Redondeo POS" accountType="EXPENSE" />
+                                                    <AccountField form={form} name="pos_tip_account" label="Propinas" accountType="INCOME" />
+
+                                                    <AccountField form={form} name="pos_cashback_error_account" label="Vuelto Incorrecto" accountType="EXPENSE" />
+                                                    <AccountField form={form} name="pos_system_error_account" label="Error de Sistema" accountType="EXPENSE" />
+
+                                                    <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro Socio" accountType="ASSET" />
+                                                    <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos" accountType="INCOME" />
+
+                                                    <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos" accountType="EXPENSE" />
+                                                </div>
                                             </div>
                                         </div>
                                     </CardContent>

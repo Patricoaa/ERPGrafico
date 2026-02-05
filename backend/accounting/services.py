@@ -161,6 +161,7 @@ class AccountingService:
             ('4.2', 'Otros Ingresos', AccountType.INCOME, None, ISCategory.NON_OPERATING_REVENUE, None, None),
             ('4.2.01', 'Intereses Ganados', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.05', 'Otros Ingresos POS', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.06', 'Propinas POS', AccountType.INCOME, '4.2', None, None, None),
 
             # 5.1 Cost of Sales
             ('5.1', 'Costo de Ventas', AccountType.EXPENSE, None, ISCategory.COST_OF_SALES, None, None),
@@ -177,6 +178,8 @@ class AccountingService:
             ('5.2.06', 'Gastos Generales', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.14', 'Faltante por Robo', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.15', 'Otros Egresos POS', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.16', 'Redondeo y Vueltos POS (Ajuste)', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.17', 'Errores de Conteo y Sistema POS', AccountType.EXPENSE, '5.2', None, None, None),
         ]
         
         created_count = 0
@@ -237,6 +240,19 @@ class AccountingService:
             'default_subscription_revenue_account': '4.1.02',
             'default_prepayment_account': '1.1.02.02',
             'default_advance_payment_account': '2.1.01.02',
+            
+            # POS Mappings
+            'pos_cash_difference_gain_account': '4.2.05',
+            'pos_cash_difference_loss_account': '5.2.15',
+            'pos_theft_account': '5.2.14',
+            'pos_partner_withdrawal_account': '3.1.03',
+            'pos_other_inflow_account': '4.2.05',
+            'pos_other_outflow_account': '5.2.15',
+            'pos_tip_account': '4.2.06',
+            'pos_cashback_error_account': '5.2.16',
+            'pos_counting_error_account': '5.2.17',
+            'pos_system_error_account': '5.2.17',
+            'pos_rounding_adjustment_account': '5.2.16',
         }
 
         for field, code in mapping.items():

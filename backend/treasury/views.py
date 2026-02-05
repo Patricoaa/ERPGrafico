@@ -27,6 +27,16 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
     serializer_class = TreasuryAccountSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        
+        # Filter by physical status if requested
+        is_physical = self.request.query_params.get('is_physical')
+        if is_physical is not None:
+            qs = qs.filter(is_physical=is_physical.lower() == 'true')
+            
+        return qs
+
 
 class POSTerminalViewSet(viewsets.ModelViewSet):
     """
@@ -864,53 +874,42 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         
                         from .models import CashMovement
                         
-                        adjustment_type = 'ADJUSTMENT' # Using generic adjustment
-                        notes = f"Ajuste de Apertura POS #{session.id}. Fondo reportado: {opening_balance}, Saldo libros: {book_balance}"
+                        justify_reason = request.data.get('justify_reason', 'UNKNOWN')
+                        justify_target_id = request.data.get('justify_target_id')
                         
-                        # Logic:
-                        # Book: 100. Physical: 90. Diff: -10.
-                        # We need to reduce Book by 10.
-                        # Movement Amount should be 10? CashMovement usually tracks amount > 0.
-                        # If we use CashMovement:
-                        #   If missing (Loss): Credit Asset, Debit Expense.
-                        #   If surplus (Gain): Debit Asset, Credit Income.
+                        notes = f"Ajuste de Apertura POS #{session.id}. Fondo reportado: {opening_balance}, Saldo libros: {book_balance}"
+                        if request.data.get('notes'):
+                            notes += f" - {request.data.get('notes')}"
+
+                        to_account = None
+                        from_account = fund_source
                         
                         if diff < 0:
-                             # Missing money (Faltante)
-                             # We need to take money OUT of the account to match physical reality of lower amount.
-                             # This is like a WITHDRAWAL but to an EXPENSE account.
-                             # But CashMovement links to "to_account". 
-                             # We create a WITHDRAWAL of abs(diff).
-                             CashMovement.objects.create(
-                                movement_type='WITHDRAWAL', # Acts as Money Out -> Expense
-                                from_account=fund_source,
-                                to_account=None, # Will need to be mapped to Expense Acct in Service or Signal? 
-                                                 # Actually, without to_account, it's just raw withdrawal?
-                                                 # We need to specify we are expensing it.
-                                                 # But TreasuryService.register_payment handles accounting.
-                                                 # CashMovement is purely physical tracking?
-                                                 # Reference: CashMovement logic usually needs accounting integration.
-                                amount=abs(diff),
-                                pos_session=session,
-                                created_by=request.user,
-                                notes=notes + " (Faltante)"
-                             )
-                             # TODO: Ensure this triggers correct accounting entry (Expense).
-                             # Currently CashMovement might not auto-trigger JE unless configured.
-                             # Given constraints, we register the movement.
-                             
-                        else: # diff > 0
-                             # Surplus (Sobrante)
-                             # We need to put money IN.
-                             CashMovement.objects.create(
-                                movement_type='DEPOSIT',
-                                to_account=fund_source,
-                                from_account=None,
-                                amount=abs(diff),
-                                pos_session=session,
-                                created_by=request.user,
-                                notes=notes + " (Sobrante)"
-                             )
+                            # Faltante: Money out from fund_source
+                            movement_type = 'WITHDRAWAL'
+                            if justify_reason == 'TRANSFER' and justify_target_id:
+                                try:
+                                    to_account = TreasuryAccount.objects.get(id=justify_target_id)
+                                except: pass
+                        else:
+                            # Sobrante: Money in to fund_source
+                            movement_type = 'DEPOSIT'
+                            from_account = None
+                            to_account = fund_source
+                            if justify_reason == 'TRANSFER' and justify_target_id:
+                                try:
+                                    from_account = TreasuryAccount.objects.get(id=justify_target_id)
+                                except: pass
+
+                        CashMovement.objects.create(
+                            movement_type=movement_type,
+                            from_account=from_account,
+                            to_account=to_account,
+                            amount=abs(diff),
+                            pos_session=session,
+                            created_by=request.user,
+                            notes=f"{notes} ({justify_reason})"
+                        )
                              
                 except TreasuryAccount.DoesNotExist:
                     # Fail silently or warn?
@@ -966,10 +965,11 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 if abs(difference) > threshold:
                     # New: Workflow for large differences
                     from .models import CashDifference
+                    justify_reason = request.data.get('justify_reason', 'UNKNOWN')
                     CashDifference.objects.create(
                         pos_session_audit=audit,
                         amount=difference,
-                        reason='UNKNOWN',
+                        reason=justify_reason,
                         status='PENDING',
                         reported_by=request.user,
                         reporter_notes=notes
@@ -989,10 +989,24 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                             session.terminal.default_treasury_account.account if session.terminal else None
                         )
                         
+                        # Determine adjustment account based on reason
+                        justify_reason = request.data.get('justify_reason', 'UNKNOWN')
+                        adjustment_account = None
+                        
                         if difference > 0:
                             # GAIN (Sobrante)
-                            adjustment_account = settings.pos_cash_difference_gain_account
-                            description = f"Sobrante de Caja - Sesión #{session.id}"
+                            if justify_reason == 'TIP':
+                                adjustment_account = settings.pos_tip_account
+                            elif justify_reason == 'ROUNDING':
+                                adjustment_account = settings.pos_rounding_adjustment_account
+                            elif justify_reason == 'COUNTING_ERROR':
+                                adjustment_account = settings.pos_counting_error_account
+                            elif justify_reason == 'SYSTEM_ERROR':
+                                adjustment_account = settings.pos_system_error_account
+                            else:
+                                adjustment_account = settings.pos_cash_difference_gain_account
+                            
+                            description = f"Sobrante de Caja ({justify_reason}) - Sesión #{session.id}"
                             
                             if treasury_account and adjustment_account:
                                 entry = JournalEntry.objects.create(
@@ -1008,8 +1022,22 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                                 audit.save()
                         else:
                             # LOSS (Faltante)
-                            adjustment_account = settings.pos_cash_difference_loss_account
-                            description = f"Faltante de Caja - Sesión #{session.id}"
+                            if justify_reason == 'THEFT':
+                                adjustment_account = settings.pos_theft_account
+                            elif justify_reason == 'PARTNER_WITHDRAWAL':
+                                adjustment_account = settings.pos_partner_withdrawal_account
+                            elif justify_reason == 'ROUNDING':
+                                adjustment_account = settings.pos_rounding_adjustment_account
+                            elif justify_reason == 'COUNTING_ERROR':
+                                adjustment_account = settings.pos_counting_error_account
+                            elif justify_reason == 'CASHBACK':
+                                adjustment_account = settings.pos_cashback_error_account
+                            elif justify_reason == 'SYSTEM_ERROR':
+                                adjustment_account = settings.pos_system_error_account
+                            else:
+                                adjustment_account = settings.pos_cash_difference_loss_account
+                            
+                            description = f"Faltante de Caja ({justify_reason}) - Sesión #{session.id}"
                             abs_diff = abs(difference)
                             
                             if treasury_account and adjustment_account:
@@ -1025,15 +1053,21 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                                 audit.journal_entry = entry
                                 audit.save()
 
-            # New: Track Physical Cash Deposit
+            # New: Track Physical Cash Deposit (Withdrawal from POS to safe/bank)
+            withdrawal_amount = request.data.get('withdrawal_amount')
+            if withdrawal_amount is not None:
+                withdrawal_amount = Decimal(str(withdrawal_amount))
+            else:
+                withdrawal_amount = actual_cash
+
             cash_destination_id = request.data.get('cash_destination_id')
-            if actual_cash > 0 and cash_destination_id:
+            if withdrawal_amount > 0 and cash_destination_id:
                 try:
                     to_account = TreasuryAccount.objects.get(id=cash_destination_id)
                     movement = CashMovement.objects.create(
                         movement_type='DEPOSIT',
                         to_account=to_account,
-                        amount=actual_cash,
+                        amount=withdrawal_amount,
                         pos_session=session,
                         created_by=request.user,
                         notes=f"Depósito de cierre sesión #{session.id}"
