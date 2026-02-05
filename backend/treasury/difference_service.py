@@ -263,17 +263,34 @@ class POSDifferenceService:
         amount = difference.amount
         abs_amount = abs(amount)
         
-        if amount > 0:
-            # GAIN
-            adjustment_account = settings.pos_cash_difference_gain_account
-            description = f"Sobrante de Caja (Aprobado) - Sesión #{session.id}"
-        else:
-            # LOSS
-            adjustment_account = settings.pos_cash_difference_loss_account
-            description = f"Faltante de Caja (Aprobado) - Sesión #{session.id}"
+        # Determine adjustment account based on reason
+        reason = difference.reason
+        adjustment_account = None
+        
+        if amount > 0: # GAIN
+            if reason == 'TIP': adjustment_account = settings.pos_tip_account
+            elif reason == 'ROUNDING': adjustment_account = settings.pos_rounding_adjustment_account
+            elif reason == 'COUNTING_ERROR': adjustment_account = settings.pos_counting_error_account
+            elif reason == 'SYSTEM_ERROR': adjustment_account = settings.pos_system_error_account
+            else: adjustment_account = settings.pos_cash_difference_gain_account
+            description = f"Sobrante de Caja (Aprobado - {difference.get_reason_display()}) - Sesión #{session.id}"
+        else: # LOSS
+            if reason == 'THEFT': adjustment_account = settings.pos_theft_account
+            elif reason == 'PARTNER_WITHDRAWAL': adjustment_account = settings.pos_partner_withdrawal_account
+            elif reason == 'ROUNDING': adjustment_account = settings.pos_rounding_adjustment_account
+            elif reason == 'COUNTING_ERROR': adjustment_account = settings.pos_counting_error_account
+            elif reason == 'CASHBACK': adjustment_account = settings.pos_cashback_error_account
+            elif reason == 'SYSTEM_ERROR': adjustment_account = settings.pos_system_error_account
+            else: adjustment_account = settings.pos_cash_difference_loss_account
+            description = f"Faltante de Caja (Aprobado - {difference.get_reason_display()}) - Sesión #{session.id}"
+            
+        # Specific logic for Transfer reason
+        if reason == 'TRANSFER' and difference.transfer_target:
+             adjustment_account = difference.transfer_target.account
+             description = f"Ajuste por Traspaso de Efectivo (Aprobado) - Sesión #{session.id}"
             
         if not adjustment_account:
-            raise ValueError("Cuentas de ajuste POS no configuradas en contabilidad.")
+            raise ValueError(f"No se ha configurado la cuenta contable para el motivo '{difference.get_reason_display()}'.")
             
         # Create Journal Entry
         entry = JournalEntry.objects.create(
@@ -302,5 +319,30 @@ class POSDifferenceService:
         difference.approval_notes = notes
         difference.journal_entry = entry
         difference.save()
+        
+        # If it was a TRANSFER, also record the physical move in treasury
+        if reason == 'TRANSFER' and difference.transfer_target:
+            from .models import CashMovement
+            pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
+            
+            from_acc = None
+            to_acc = None
+            if amount < 0: # Deficit -> money out to target
+                from_acc = pos_treasury_obj
+                to_acc = difference.transfer_target
+            else: # Surplus -> money in from target
+                from_acc = difference.transfer_target
+                to_acc = pos_treasury_obj
+                
+            CashMovement.objects.create(
+                movement_type='TRANSFER',
+                from_account=from_acc,
+                to_account=to_acc,
+                amount=abs_amount,
+                pos_session=session,
+                created_by=approved_by_user,
+                notes=f"Traspaso de ajuste (Aprobada - Sesión #{session.id})",
+                journal_entry=entry
+            )
         
         return difference

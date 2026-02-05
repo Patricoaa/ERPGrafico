@@ -267,7 +267,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         try {
             const response = await api.post('/treasury/pos-sessions/open_session/', {
                 terminal_id: parseInt(selectedTerminalId),
-                opening_balance: parseFloat(openingBalance) || 0,
+                opening_balance: parseFloat(openingBalance),
                 fund_source_id: fundSourceId ? parseInt(fundSourceId) : null,
                 justify_reason: openingJustifyReason,
                 justify_target_id: openingJustifyTargetId ? parseInt(openingJustifyTargetId) : null
@@ -354,7 +354,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 actual_cash: parseFloat(actualCash) || 0,
                 withdrawal_amount: parseFloat(withdrawalAmount) || 0,
                 notes: closeNotes,
-                cash_destination_id: cashDestinationId ? parseInt(cashDestinationId) : null
+                cash_destination_id: cashDestinationId ? parseInt(cashDestinationId) : null,
+                justify_reason: justifyReason,
+                justify_target_id: justifyTargetId
             })
 
             // ... (rest of logic) ...
@@ -600,7 +602,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                                 {diff < 0 ? (
                                                                     <>
                                                                         <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
-                                                                        <SelectItem value="TRANSFER">Transferencia Enviada (No Reg.)</SelectItem>
+                                                                        <SelectItem value="TRANSFER">Traspaso Enviado (No Reg.)</SelectItem>
                                                                         <SelectItem value="THEFT">Robo / Faltante</SelectItem>
                                                                         <SelectItem value="COUNTING_ERROR">Error de Conteo</SelectItem>
                                                                         <SelectItem value="ROUNDING">Redondeo</SelectItem>
@@ -610,7 +612,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                                     </>
                                                                 ) : (
                                                                     <>
-                                                                        <SelectItem value="TRANSFER">Transferencia Recibida (No Reg.)</SelectItem>
+                                                                        <SelectItem value="TRANSFER">Traspaso Recibido (No Reg.)</SelectItem>
                                                                         <SelectItem value="COUNTING_ERROR">Error de Conteo / Sobrante</SelectItem>
                                                                         <SelectItem value="ROUNDING">Redondeo</SelectItem>
                                                                         <SelectItem value="TIP">Propina</SelectItem>
@@ -1028,7 +1030,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
-                                    <SelectItem value="TRANSFER">Transferencia a otra caja</SelectItem>
+                                    <SelectItem value="TRANSFER">Traspaso a otra caja</SelectItem>
                                     <SelectItem value="THEFT">Robo / Pérdida</SelectItem>
                                     <SelectItem value="TIP">Propina (Ingreso)</SelectItem>
                                     <SelectItem value="ROUNDING">Redondeo</SelectItem>

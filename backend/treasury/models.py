@@ -252,7 +252,7 @@ class TreasuryAccount(models.Model):
 
     allows_cash = models.BooleanField(_("Permite Efectivo"), default=False)
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
-    allows_transfer = models.BooleanField(_("Permite Transferencia"), default=False)
+    allows_transfer = models.BooleanField(_("Permite Traspaso"), default=False)
 
     # Physical Location Fields (Refactor from CashContainer)
     location = models.CharField(
@@ -1109,7 +1109,7 @@ class CashMovement(models.Model):
     class Type(models.TextChoices):
         DEPOSIT = 'DEPOSIT', _('Depósito')              # POS → Safe / Petty Cash
         WITHDRAWAL = 'WITHDRAWAL', _('Retiro')          # Safe → POS (Open fund)
-        TRANSFER = 'TRANSFER', _('Transferencia')       # Safe ↔ Petty Cash
+        TRANSFER = 'TRANSFER', _('Traspaso de Efectivo')       # Safe ↔ Petty Cash
         BANK_DEPOSIT = 'BANK_DEPOSIT', _('Depósito Bancario')  # Safe → Bank
         ADJUSTMENT = 'ADJUSTMENT', _('Ajuste')          # Manual correction
 
@@ -1212,7 +1212,7 @@ class CashDifference(models.Model):
         TIP = 'TIP', _('Propina')
         CASHBACK = 'CASHBACK', _('Vuelto Incorrecto')
         SYSTEM_ERROR = 'SYSTEM_ERROR', _('Error del Sistema')
-        TRANSFER = 'TRANSFER', _('Transferencia')
+        TRANSFER = 'TRANSFER', _('Traspaso de Efectivo')
         PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio')
         OTHER_IN = 'OTHER_IN', _('Otro Ingreso')
         OTHER_OUT = 'OTHER_OUT', _('Otro Egreso')
@@ -1244,6 +1244,14 @@ class CashDifference(models.Model):
         max_length=20,
         choices=Reason.choices,
         default=Reason.UNKNOWN
+    )
+
+    transfer_target = models.ForeignKey(
+        'TreasuryAccount',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Cuenta de Destino (Traspaso)")
     )
 
     status = models.CharField(
