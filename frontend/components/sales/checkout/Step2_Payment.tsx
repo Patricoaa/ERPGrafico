@@ -76,12 +76,19 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
     }, [accounts, paymentData.method])
 
     useEffect(() => {
-        if (filteredAccounts.length === 1 && paymentData.treasuryAccountId !== filteredAccounts[0].id.toString()) {
-            setPaymentData({ ...paymentData, treasuryAccountId: filteredAccounts[0].id.toString() })
+        // Auto-select: If only one candidate, select it. 
+        // Improvement: If multiple candidates and current selection is empty/invalid, pick the first one as default.
+        if (filteredAccounts.length >= 1) {
+            const currentId = paymentData.treasuryAccountId;
+            const isValid = filteredAccounts.some(acc => acc.id.toString() === currentId);
+
+            if (!isValid) {
+                setPaymentData({ ...paymentData, treasuryAccountId: filteredAccounts[0].id.toString() });
+            }
         } else if (filteredAccounts.length === 0 && paymentData.treasuryAccountId) {
-            setPaymentData({ ...paymentData, treasuryAccountId: null })
+            setPaymentData({ ...paymentData, treasuryAccountId: null });
         }
-    }, [filteredAccounts, paymentData, setPaymentData])
+    }, [filteredAccounts, paymentData.treasuryAccountId, setPaymentData])
 
     const methods = [
         {
@@ -208,18 +215,20 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                                     </div>
                                 </div>
 
-                                {m.id === 'TRANSFER' && paymentData.method === 'TRANSFER' && (
+                                {paymentData.method === m.id && (
                                     <div className="mt-2 space-y-3 pt-3 border-t w-full animate-in fade-in slide-in-from-top-2" onClick={(e) => e.stopPropagation()}>
-                                        <div className="space-y-1">
-                                            <Label className="text-[10px] font-bold uppercase text-muted-foreground">N° Operación / Folio</Label>
-                                            <Input
-                                                className="bg-background h-9"
-                                                placeholder="Ej: 123456"
-                                                value={paymentData.transactionNumber || ""}
-                                                onChange={(e) => setPaymentData({ ...paymentData, transactionNumber: e.target.value })}
-                                                disabled={paymentData.isPending}
-                                            />
-                                        </div>
+                                        {m.id === 'TRANSFER' && (
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">N° Operación / Folio</Label>
+                                                <Input
+                                                    className="bg-background h-9"
+                                                    placeholder="Ej: 123456"
+                                                    value={paymentData.transactionNumber || ""}
+                                                    onChange={(e) => setPaymentData({ ...paymentData, transactionNumber: e.target.value })}
+                                                    disabled={paymentData.isPending}
+                                                />
+                                            </div>
+                                        )}
 
                                         {filteredAccounts.length > 1 && (
                                             <div className="space-y-1">
@@ -236,22 +245,24 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                                             </div>
                                         )}
 
-                                        <div className="flex items-center space-x-2 pt-1">
-                                            <Checkbox
-                                                id="card-pending"
-                                                checked={paymentData.isPending || false}
-                                                onCheckedChange={(checked) => {
-                                                    setPaymentData({
-                                                        ...paymentData,
-                                                        isPending: !!checked,
-                                                        transactionNumber: checked ? "" : paymentData.transactionNumber
-                                                    })
-                                                }}
-                                            />
-                                            <Label htmlFor="card-pending" className="text-xs cursor-pointer font-medium leading-none">
-                                                Pendiente (Ingresar luego)
-                                            </Label>
-                                        </div>
+                                        {m.id === 'TRANSFER' && (
+                                            <div className="flex items-center space-x-2 pt-1">
+                                                <Checkbox
+                                                    id="card-pending"
+                                                    checked={paymentData.isPending || false}
+                                                    onCheckedChange={(checked) => {
+                                                        setPaymentData({
+                                                            ...paymentData,
+                                                            isPending: !!checked,
+                                                            transactionNumber: checked ? "" : paymentData.transactionNumber
+                                                        })
+                                                    }}
+                                                />
+                                                <Label htmlFor="card-pending" className="text-xs cursor-pointer font-medium leading-none">
+                                                    Pendiente (Ingresar luego)
+                                                </Label>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </Label>

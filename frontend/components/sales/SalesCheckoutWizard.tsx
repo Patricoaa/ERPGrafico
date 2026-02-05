@@ -443,6 +443,9 @@ export function SalesCheckoutWizard({
                 formData.append('pos_session_id', posSessionId.toString())
             }
 
+            if (process.env.NODE_ENV === 'development') {
+                console.log('POS Checkout Payload:', Object.fromEntries(formData.entries()))
+            }
             await api.post('/billing/invoices/pos_checkout/', formData)
 
             toast.success("Venta procesada correctamente")

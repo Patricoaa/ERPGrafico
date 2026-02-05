@@ -1392,7 +1392,7 @@ export default function POSPage() {
                         orderLines={items}
                         total={total_gross_sum}
                         posSessionId={currentSession?.id}
-                        terminalId={currentSession?.terminal}
+                        terminalId={currentSession?.terminal?.id}
                         quickSale={quickSaleMode}
                         initialStep={wizardState?.step}
                         initialDteData={wizardState?.dteData}

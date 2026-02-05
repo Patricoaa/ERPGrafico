@@ -35,9 +35,29 @@ class TreasuryService:
                  pass
         
         if not treasury_account and not card_provider_id:
-         # ELIMINATED FALLBACKS: We no longer guess the account. 
-         # The user MUST provide one or have a default set in the frontend/service call.
-         raise ValidationError(f"Debe seleccionar una cuenta de tesorería (Caja o Banco) o un proveedor de tarjetas para procesar un pago de tipo {payment_method}.")
+            # FALLBACK: If pos_session_id is provided, try to use terminal's default account
+            if pos_session_id:
+                from .models import POSSession
+                try:
+                    session = POSSession.objects.select_related('terminal__default_treasury_account').get(pk=pos_session_id)
+                    if session.terminal and session.terminal.default_treasury_account:
+                        default_acc = session.terminal.default_treasury_account
+                        # Verify the default account supports the requested method
+                        supports_method = False
+                        if payment_method == Payment.Method.CASH and default_acc.allows_cash: supports_method = True
+                        elif payment_method == Payment.Method.CARD and default_acc.allows_card: supports_method = True
+                        elif payment_method == Payment.Method.TRANSFER and default_acc.allows_transfer: supports_method = True
+                        
+                        if supports_method:
+                            treasury_account = default_acc
+                            treasury_account_id = treasury_account.id
+                except POSSession.DoesNotExist:
+                    pass
+
+            if not treasury_account:
+                # ELIMINATED FALLBACKS: We no longer guess the account. 
+                # The user MUST provide one or have a default set in the frontend/service call.
+                raise ValidationError(f"Debe seleccionar una cuenta de tesorería (Caja o Banco) o un proveedor de tarjetas para procesar un pago de tipo {payment_method}.")
              
         # Resolve Financial Account from Treasury Account
         financial_account = treasury_account.account if treasury_account else None

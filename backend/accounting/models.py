@@ -104,6 +104,21 @@ class Account(models.Model):
         return self.credit_total - self.debit_total
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        code_changed = False
+        old_parent_id = None
+        old_type = None
+
+        if not is_new:
+            old_instance = Account.objects.get(pk=self.pk)
+            old_parent_id = old_instance.parent_id
+            old_type = old_instance.account_type
+            
+            # If parent or type changed, we need to regenerate the code
+            if self.parent_id != old_parent_id or self.account_type != old_type:
+                self.code = "" # Trigger regeneration below
+                code_changed = True
+
         if not self.code:
             from .models import AccountingSettings
             settings = AccountingSettings.objects.first()
@@ -111,6 +126,8 @@ class Account(models.Model):
                 prefix = ""
                 if self.parent:
                     prefix = self.parent.code + "."
+                    # Ensure type matches parent
+                    self.account_type = self.parent.account_type
                 else:
                     if self.account_type == AccountType.ASSET: prefix = settings.asset_prefix
                     elif self.account_type == AccountType.LIABILITY: prefix = settings.liability_prefix
@@ -130,8 +147,17 @@ class Account(models.Model):
                         self.code = prefix + "1"
                 else:
                     self.code = prefix + "1"
+                
+                code_changed = True
         
         super().save(*args, **kwargs)
+
+        # If code changed for an existing account, cascade to children
+        if not is_new and code_changed:
+            for child in self.children.all():
+                child.code = "" # Trigger regeneration in child.save()
+                child.account_type = self.account_type
+                child.save()
 
 class JournalEntry(models.Model):
     class State(models.TextChoices):
