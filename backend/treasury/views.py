@@ -986,7 +986,14 @@ class POSSessionViewSet(viewsets.ModelViewSet):
 
         # Check if already audited (partial close state)
         if hasattr(session, 'audit'):
-             return Response({'error': 'La sesión ya tiene un arqueo registrado. Verifique si ya fue cerrada.'}, status=400)
+             if session.status != 'CLOSED':
+                 # If session is still OPEN but has audit, it means a previous close attempt failed.
+                 # Delete the partial audit to allow retry.
+                 session.audit.delete()
+                 # Refresh session to clear the cached reverse property
+                 session.refresh_from_db()
+             else:
+                 return Response({'error': 'La sesión ya tiene un arqueo registrado. Verifique si ya fue cerrada.'}, status=400)
 
         if session.status == 'CLOSED':
             return Response({'error': 'Esta sesión ya está cerrada'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1091,22 +1098,22 @@ class POSSessionViewSet(viewsets.ModelViewSet):
 
             cash_destination_id = request.data.get('cash_destination_id')
             if withdrawal_amount > 0 and cash_destination_id:
-                try:
-                    to_account = TreasuryAccount.objects.get(id=cash_destination_id)
-                    pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
-                    
-                    TreasuryService.create_cash_movement(
-                        movement_type='DEPOSIT',
-                        from_account=pos_treasury_obj,
-                        to_account=to_account,
-                        amount=withdrawal_amount,
-                        pos_session=session,
-                        created_by=request.user,
-                        notes=f"Depósito de cierre sesión #{session.id}",
-                        journal_entry_desc=f"Depósito de Cierre POS - Sesión #{session.id}"
-                    )
-                except TreasuryAccount.DoesNotExist:
-                    print(f"WARNING: TreasuryAccount {cash_destination_id} not found for deposit")
+                # Get destination account (will raise DoesNotExist if not found, which propagates to user)
+                to_account = TreasuryAccount.objects.get(id=cash_destination_id)
+                pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
+                
+                # TreasuryService validates sufficient funds automatically
+                TreasuryService.create_cash_movement(
+                    movement_type='TRANSFER',  # Corrected: This is a transfer between accounts, not a deposit
+                    from_account=pos_treasury_obj,
+                    to_account=to_account,
+                    amount=withdrawal_amount,
+                    justify_reason='RETIREMENT',  # Mark as end-of-session cash retirement
+                    pos_session=session,
+                    created_by=request.user,
+                    notes=f"Retiro de cierre sesión #{session.id}",
+                    journal_entry_desc=f"Retiro de Cierre POS - Sesión #{session.id}"
+                )
 
             # Clean up draft carts for this session
             from sales.draft_cart_service import DraftCartService
@@ -1125,6 +1132,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             })
         
         except ValidationError as e:
+            # Explicitly catch validation errors (like insufficient funds) and return 400
+            # FORCE ROLLBACK to prevent the audit from being committed if the movement fails
+            transaction.set_rollback(True)
             return Response({'error': str(e.message) if hasattr(e, 'message') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
         except Exception as e:
