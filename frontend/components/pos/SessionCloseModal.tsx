@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Calculator, Banknote, Vault, AlertTriangle } from "lucide-react"
+import { Loader2, Calculator, Banknote, Vault, AlertTriangle, ArrowRightLeft } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Numpad } from "@/components/ui/numpad"
@@ -84,7 +84,6 @@ export function SessionCloseModal({
     // Pre-populate expected cash and default treasury account when modal opens
     useEffect(() => {
         if (open && session) {
-            setActualCash(session.expected_cash.toString())
             setCloseNotes("")
             setJustifyReason("")
             setJustifyTargetId(null)
@@ -294,12 +293,61 @@ export function SessionCloseModal({
                     </div>
                 )
 
-            case 3: // Withdrawal (Optional)
+            case 3: // Decision Step
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center">
-                            <h3 className="font-bold text-lg">Retiro de Efectivo</h3>
-                            <p className="text-sm text-muted-foreground">¿Desea retirar dinero de la caja?</p>
+                            <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+                                <ArrowRightLeft className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <h3 className="font-bold text-lg">Retiro o Traspaso</h3>
+                            <p className="text-sm text-muted-foreground">
+                                ¿Desea realizar un retiro de efectivo o traspaso de dinero a otra caja antes de cerrar?
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3">
+                            <Button
+                                variant="outline"
+                                className="h-20 flex flex-col items-center justify-center border-2 hover:border-primary hover:bg-primary/5 group"
+                                onClick={() => setStep(4)}
+                            >
+                                <span className="font-bold">Sí, realizar retiro/traspaso</span>
+                                <span className="text-xs text-muted-foreground">Configurar monto y destino</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="h-20 flex flex-col items-center justify-center border-2 hover:border-emerald-500 hover:bg-emerald-500/5 group"
+                                onClick={() => {
+                                    setWithdrawalAmount("0")
+                                    // Use a timeout to ensure state is updated before call
+                                    setTimeout(handleCloseSession, 50)
+                                }}
+                                disabled={submitting}
+                            >
+                                {submitting ? (
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        <span className="font-bold">No, cerrar sin retirar</span>
+                                        <span className="text-xs text-muted-foreground">Finaliza la sesión ahora</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button variant="ghost" onClick={handlePrev} className="w-full">Volver al Resumen</Button>
+                        </div>
+                    </div>
+                )
+
+            case 4: // Withdrawal (Optional Step)
+                return (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="text-center">
+                            <h3 className="font-bold text-lg">Configurar Retiro</h3>
+                            <p className="text-sm text-muted-foreground">Ingrese el monto y el destino para el retiro</p>
                         </div>
 
                         <div className="p-4 bg-muted/20 rounded-xl space-y-4">

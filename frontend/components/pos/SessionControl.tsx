@@ -273,14 +273,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }, [moveDialogOpen])
 
-    // Autofill Opening Balance and Fund Source from Terminal Default
+    // Autofill Fund Source from Terminal Default (Keep balance at 0 as requested)
     useEffect(() => {
         if (openDialogOpen && selectedTerminalId) {
             const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
             if (terminal) {
-                if (terminal.default_treasury_account_balance !== undefined) {
-                    setOpeningBalance(terminal.default_treasury_account_balance.toString())
-                }
                 if (terminal.default_treasury_account) {
                     setFundSourceId(terminal.default_treasury_account.toString())
                 }
@@ -291,24 +288,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // Removed: Autofill Destination from Terminal Default
     // No longer needed - SessionCloseModal handles its own state and autofill logic
 
-    // Autofill Opening Balance from Fund Source
-    useEffect(() => {
-        const fetchAccountBalance = async () => {
-            if (!fundSourceId) return
-            try {
-                const response = await api.get(`/treasury/accounts/${fundSourceId}/`)
-                // Autofill only if balance is 0 or user hasn't typed?
-                // Requirement: "should load modal of initial fund equal to treasury account"
-                // So we overwrite.
-                if (response.data && response.data.current_balance !== undefined) {
-                    setOpeningBalance(response.data.current_balance.toString())
-                }
-            } catch (error) {
-                console.error("Error fetching account balance:", error)
-            }
-        }
-        fetchAccountBalance()
-    }, [fundSourceId])
+    // Removed: Autofill Opening Balance from Fund Source (User wants start at 0)
 
     const handleOpenSession = async () => {
         if (!selectedTerminalId) {
@@ -823,49 +803,45 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             </Badge>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {moveType === 'TRANSFER' && (
-                                <div className="space-y-2">
-                                    <Label className={FORM_STYLES.label}>
-                                        {moveImpact === 'IN' ? 'Cuenta de Origen (¿De dónde viene?)' : 'Cuenta de Destino (¿A dónde va?)'}
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                        {moveImpact === 'IN' ? 'Origen (¿De dónde viene?)' : 'Destino (¿A dónde va?)'}
                                     </Label>
                                     <CashContainerSelector
                                         value={transferTargetId}
                                         onChange={setTransferTargetId}
-                                        placeholder={moveImpact === 'IN' ? "Seleccione caja origen" : "Seleccione caja destino"}
+                                        placeholder={moveImpact === 'IN' ? "Seleccione origen" : "Seleccione destino"}
                                     />
                                 </div>
                             )}
 
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Monto</Label>
-                                <div className="flex justify-center">
-                                    <div className="w-full max-w-sm bg-muted/30 p-4 rounded-xl">
-                                        <div className="text-right mb-4">
-                                            <div className="text-3xl font-black font-mono tracking-tight text-primary">
-                                                {formatCurrency(parseFloat(moveAmount) || 0)}
-                                            </div>
-                                        </div>
-                                        <Numpad
-                                            value={moveAmount}
-                                            onChange={setMoveAmount}
-                                            hideDisplay={true}
-                                            allowDecimal={true}
-                                            className="w-full max-w-full shadow-none border-0 p-0"
-                                            onConfirm={() => setMoveWizardStep(4)}
-                                            confirmLabel="Continuar"
-                                        />
+                            <div className="bg-muted/30 p-3 rounded-xl border border-primary/10 shadow-inner">
+                                <div className="text-right mb-2">
+                                    <div className="text-xs font-bold uppercase text-muted-foreground opacity-70">Monto</div>
+                                    <div className="text-3xl font-black font-mono tracking-tight text-primary">
+                                        {formatCurrency(parseFloat(moveAmount) || 0)}
                                     </div>
                                 </div>
+                                <Numpad
+                                    value={moveAmount}
+                                    onChange={setMoveAmount}
+                                    hideDisplay={true}
+                                    allowDecimal={true}
+                                    className="w-full max-w-full shadow-none border-0 p-0"
+                                    onConfirm={() => setMoveWizardStep(4)}
+                                    confirmLabel="Continuar"
+                                />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Descripción / Notas</Label>
+                            <div className="space-y-1">
                                 <Textarea
                                     value={moveNotes}
                                     onChange={(e) => setMoveNotes(e.target.value)}
                                     placeholder="Especifique el motivo..."
-                                    rows={2}
+                                    className="min-h-[40px] h-[40px] resize-none py-2 text-sm"
+                                    rows={1}
                                 />
                             </div>
                         </div>
