@@ -1428,7 +1428,7 @@ export default function POSPage() {
                         orderLines={items}
                         total={total_gross_sum}
                         posSessionId={currentSession?.id}
-                        terminalId={currentSession?.terminal?.id}
+                        terminalId={currentSession?.terminal}
                         quickSale={quickSaleMode}
                         initialStep={wizardState?.step}
                         initialDteData={wizardState?.dteData}
@@ -1450,6 +1450,9 @@ export default function POSPage() {
                             setLastSaved(null)
                             setSelectedCustomerId(null)
                             setWizardState(null)
+
+                            // Refresh session data to sync totals
+                            sessionControlRef.current?.refreshSession()
                         }}
                     />
                 )

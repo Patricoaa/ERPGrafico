@@ -135,8 +135,8 @@ export function POSVariantSelectorModal({
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                         </div>
                     ) : (
-                        <ScrollArea className="h-[50vh] pr-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                        <ScrollArea className="h-[60vh] pr-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 pt-2 px-1">
                                 {variants.map((v) => {
                                     const limit = variantLimits[v.id]
                                     const max = limit !== undefined ? limit : (v.manufacturable_quantity ?? v.current_stock ?? Infinity)
@@ -148,12 +148,12 @@ export function POSVariantSelectorModal({
                                             key={v.id}
                                             onClick={() => isAvailable && handleSelect(v)}
                                             className={cn(
-                                                "relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer",
+                                                "relative flex items-center gap-6 p-6 rounded-3xl border-2 transition-all cursor-pointer h-full",
                                                 !isAvailable ? "opacity-50 grayscale pointer-events-none bg-muted/20 border-dashed" : "border-muted bg-card hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
                                             )}
                                         >
                                             {/* Variant Image or Placeholder */}
-                                            <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                            <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner">
                                                 {v.image || product.image ? (
                                                     <img
                                                         src={v.image || product.image || ""}
@@ -161,39 +161,39 @@ export function POSVariantSelectorModal({
                                                         className="w-full h-full object-cover"
                                                     />
                                                 ) : (
-                                                    <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
+                                                    <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
                                                 )}
                                             </div>
 
                                             {/* Info */}
                                             <div className="flex-1 min-w-0">
-                                                <h4 className="font-bold text-sm truncate">
+                                                <h4 className="font-black text-lg md:text-xl leading-tight truncate">
                                                     {v.variant_display_name || v.name}
                                                 </h4>
-                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                <div className="flex flex-wrap gap-1.5 mt-2">
                                                     {v.attribute_values_data?.map((av) => (
-                                                        <Badge key={av.id} variant="outline" className="text-[9px] py-0 h-4 bg-background">
+                                                        <Badge key={av.id} variant="outline" className="text-[10px] font-bold py-0.5 px-2 h-5 bg-background border-muted-foreground/20">
                                                             {av.value}
                                                         </Badge>
                                                     ))}
                                                 </div>
-                                                <div className="mt-2 flex items-center justify-between">
-                                                    <span className="text-primary font-bold">
+                                                <div className="mt-4 flex items-center justify-between">
+                                                    <span className="text-primary font-black text-lg md:text-xl">
                                                         {formatCurrency(Number(v.sale_price_gross) || PricingUtils.netToGross(Number(v.sale_price)))}
                                                     </span>
 
                                                     {v.has_active_bom ? (
-                                                        <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
-                                                            {limit !== undefined ? limit : (v.manufacturable_quantity || 0)} fab.
+                                                        <Badge variant={max > 0 ? "success" : "destructive"} className="text-[11px] font-black h-6 px-3">
+                                                            {limit !== undefined ? limit : (v.manufacturable_quantity || 0)} FAB.
                                                         </Badge>
                                                     ) : (
                                                         (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]">
-                                                                Disponible
+                                                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[11px] font-black h-6 px-3">
+                                                                DISPONIBLE
                                                             </Badge>
                                                         ) : (
-                                                            <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
-                                                                {limit !== undefined ? limit : v.current_stock} stock
+                                                            <Badge variant={max > 0 ? "success" : "destructive"} className="text-[11px] font-black h-6 px-3">
+                                                                {limit !== undefined ? limit : v.current_stock} STOCK
                                                             </Badge>
                                                         )
                                                     )}

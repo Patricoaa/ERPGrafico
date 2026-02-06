@@ -81,6 +81,7 @@ interface SessionControlProps {
 
 export interface SessionControlHandle {
     showXReport: () => void
+    refreshSession: () => Promise<void>
 }
 
 export const SessionControl = forwardRef<SessionControlHandle, SessionControlProps>(({ onSessionChange, hideSessionInfo = false, session }, ref) => {
@@ -183,6 +184,14 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 handleShowXReport()
             } else {
                 toast.error("No hay una sesión activa para generar el reporte")
+            }
+        },
+        refreshSession: async () => {
+            const storedSharedId = localStorage.getItem('shared_pos_session_id')
+            if (storedSharedId) {
+                await fetchSharedSession(parseInt(storedSharedId))
+            } else {
+                await fetchCurrentSession()
             }
         }
     }))

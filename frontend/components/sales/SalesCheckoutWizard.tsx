@@ -516,30 +516,32 @@ export function SalesCheckoutWizard({
         >
             <div className="flex flex-1 overflow-hidden h-full">
                 {/* Left Sidebar - Process Summary */}
-                <ProcessSummarySidebar
-                    currentStep={step}
-                    totalSteps={totalSteps}
-                    customerName={selectedCustomerName}
-                    hasManufacturing={hasManufacturing}
-                    dteType={step > (hasManufacturing ? 2 : 1) ? dteData.type : undefined}
-                    paymentData={step > (hasManufacturing ? 4 : 3) ? {
-                        method: paymentData.method,
-                        amount: paymentData.amount,
-                        creditAssigned: paymentData.amount < currentTotal ? currentTotal - paymentData.amount : 0
-                    } : undefined}
-                    deliveryData={step > (hasManufacturing ? 3 : 2) ? deliveryData : undefined}
-                />
+                <div className="hidden md:block">
+                    <ProcessSummarySidebar
+                        currentStep={step}
+                        totalSteps={totalSteps}
+                        customerName={selectedCustomerName}
+                        hasManufacturing={hasManufacturing}
+                        dteType={step > (hasManufacturing ? 2 : 1) ? dteData.type : undefined}
+                        paymentData={step > (hasManufacturing ? 4 : 3) ? {
+                            method: paymentData.method,
+                            amount: paymentData.amount,
+                            creditAssigned: paymentData.amount < currentTotal ? currentTotal - paymentData.amount : 0
+                        } : undefined}
+                        deliveryData={step > (hasManufacturing ? 3 : 2) ? deliveryData : undefined}
+                    />
+                </div>
 
                 {/* Center - Content Area Wrapper */}
-                <div className="flex-1 flex flex-col min-w-0">
+                <div className="flex-1 flex flex-col min-w-0 bg-muted/10">
                     {/* Scrollable Content */}
-                    <div className="flex-1 p-6 overflow-y-auto">
+                    <div className="flex-1 p-4 md:p-6 overflow-y-auto">
                         {renderStep()}
                     </div>
                 </div>
 
                 {/* Right Sidebar - Product Summary */}
-                <div className="w-80 border-l hidden lg:block overflow-y-auto">
+                <div className="w-80 border-l hidden xl:block overflow-y-auto bg-card">
                     <OrderSummaryCard
                         orderLines={currentOrderLines}
                         total={currentTotal}
