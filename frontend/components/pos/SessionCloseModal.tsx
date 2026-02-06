@@ -245,6 +245,9 @@ export function SessionCloseModal({
                                                         <SelectItem value="THEFT">Faltante / Pérdida</SelectItem>
                                                     )}
                                                     <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
+
+                                                    <SelectItem value="TRANSFER">Traspaso (Dinero retirado)</SelectItem>
+
                                                     {accountingSettings?.pos_rounding_adjustment_account && (
                                                         <SelectItem value="ROUNDING">Redondeo</SelectItem>
                                                     )}
@@ -252,6 +255,7 @@ export function SessionCloseModal({
                                             ) : (
                                                 <>
                                                     <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
+                                                    <SelectItem value="TRANSFER">Traspaso (Dinero ingresado)</SelectItem>
                                                     {accountingSettings?.pos_tip_account && (
                                                         <SelectItem value="TIP">Propina</SelectItem>
                                                     )}
@@ -263,6 +267,21 @@ export function SessionCloseModal({
                                         </SelectContent>
                                     </Select>
                                 </div>
+
+                                {/* Dynamic selector for Transfer justification */}
+                                {justifyReason === 'TRANSFER' && (
+                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                                        <Label className="text-xs">
+                                            {diff < 0 ? 'Cuenta de Destino (¿A dónde se llevó el dinero?)' : 'Cuenta de Origen (¿De dónde vino el dinero?)'}
+                                        </Label>
+                                        <CashContainerSelector
+                                            value={justifyTargetId}
+                                            onChange={setJustifyTargetId}
+                                            placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
+                                            excludeId={session.treasury_account}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="text-center p-6 bg-emerald-50 text-emerald-700 rounded-xl">

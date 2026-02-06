@@ -26,9 +26,10 @@ interface CashContainerSelectorProps {
     placeholder?: string
     type?: string // Filter by account_type (BANK or CASH)
     disabled?: boolean
+    excludeId?: number
 }
 
-export function CashContainerSelector({ value, onChange, placeholder = "Seleccionar contenedor...", type, disabled }: CashContainerSelectorProps) {
+export function CashContainerSelector({ value, onChange, placeholder = "Seleccionar contenedor...", type, disabled, excludeId }: CashContainerSelectorProps) {
     const [open, setOpen] = useState(false)
     const [containers, setContainers] = useState<CashContainer[]>([])
     const [loading, setLoading] = useState(false)
@@ -43,6 +44,10 @@ export function CashContainerSelector({ value, onChange, placeholder = "Seleccio
 
                 if (type) {
                     results = results.filter((c: any) => c.account_type === type)
+                }
+
+                if (excludeId) {
+                    results = results.filter((c: any) => c.id !== excludeId)
                 }
 
                 setContainers(results)
@@ -63,7 +68,7 @@ export function CashContainerSelector({ value, onChange, placeholder = "Seleccio
         if (open || value) {
             fetchContainers()
         }
-    }, [open, type])
+    }, [open, type, excludeId])
 
     // Sync if value changes externally
     useEffect(() => {

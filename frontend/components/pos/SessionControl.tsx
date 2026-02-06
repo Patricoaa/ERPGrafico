@@ -473,9 +473,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 variant="outline"
                                 className="h-32 flex flex-col items-center justify-center gap-3 border-2 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 group transition-all"
                                 onClick={() => {
-                                    // If only 1 terminal, auto-select it and skip to step 3
-                                    if (terminals.length === 1) {
-                                        setSelectedTerminalId(terminals[0].id.toString())
+                                    // Filter active terminals (those generally available) against those ALREADY in a session (busy)
+                                    const availableTerminals = terminals.filter(t => !availableSessions.some(s => s.terminal === t.id))
+
+                                    // If only 1 terminal available, auto-select it and skip to step 3
+                                    if (availableTerminals.length === 1) {
+                                        setSelectedTerminalId(availableTerminals[0].id.toString())
                                         setWizardStep(3)
                                     } else {
                                         setWizardStep(2)
@@ -523,7 +526,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             <h3 className="font-bold">Seleccione Terminal POS</h3>
                         </div>
                         <div className="grid gap-2 max-h-[300px] overflow-y-auto">
-                            {terminals.map(t => (
+                            {terminals.filter(t => !availableSessions.some(s => s.terminal === t.id)).map(t => (
                                 <Button
                                     key={t.id}
                                     variant={selectedTerminalId === t.id.toString() ? "default" : "outline"}

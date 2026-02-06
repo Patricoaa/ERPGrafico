@@ -126,7 +126,7 @@ export default function POSPage() {
     const [categories, setCategories] = useState<Category[]>([])
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([])
-    const [currentSession, setCurrentSession] = useState<any>(null)
+    const [currentSession, setCurrentSession] = useState<any>(undefined)
     const [variantModalOpen, setVariantModalOpen] = useState(false)
     const [activeParentProduct, setActiveParentProduct] = useState<Product | null>(null)
     const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null)
@@ -962,7 +962,7 @@ export default function POSPage() {
             </div>
 
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
-                {(!currentSession || currentSession.status !== 'OPEN') && (
+                {currentSession !== undefined && (!currentSession || currentSession.status !== 'OPEN') && (
                     <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
                         <Card className="w-full max-w-md shadow-2xl border-primary/20 animate-in fade-in zoom-in duration-300">
                             <CardHeader className="text-center pb-2">
@@ -972,7 +972,7 @@ export default function POSPage() {
                                 <CardTitle className="text-2xl">Caja Cerrada</CardTitle>
                                 <div className="space-y-1">
                                     <p className="text-muted-foreground">
-                                        Debe abrir una sesión de caja para realizar ventas.
+                                        be abrir una sesión de caja para realizar ventas.
                                     </p>
                                 </div>
                             </CardHeader>
