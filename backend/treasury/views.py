@@ -967,16 +967,21 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=True, methods=['post'])
+    @transaction.atomic
     def close_session(self, request, pk=None):
         """Close a POS session with cash audit (Cierre de Caja / Arqueo)"""
+        session = self.get_object()
+
+        # Check if already audited (partial close state)
+        if hasattr(session, 'audit'):
+             return Response({'error': 'La sesión ya tiene un arqueo registrado. Verifique si ya fue cerrada.'}, status=400)
+
+        if session.status == 'CLOSED':
+            return Response({'error': 'Esta sesión ya está cerrada'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             from decimal import Decimal
             from django.utils import timezone
-            
-            session = self.get_object()
-            
-            if session.status == 'CLOSED':
-                return Response({'error': 'Esta sesión ya está cerrada'}, status=status.HTTP_400_BAD_REQUEST)
             
             actual_cash = Decimal(str(request.data.get('actual_cash', '0')))
             notes = request.data.get('notes', '')
