@@ -90,6 +90,7 @@ export interface POSSession {
     expected_cash: number
     total_other_cash_inflow: number
     total_other_cash_outflow: number
+    cash_movements?: any[]
 }
 
 export interface StockLimits {

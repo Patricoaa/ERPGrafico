@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 interface POSReportProps {
     data: {
         session_id: number
+        treasury_account_id?: number
         opening_balance: number
         total_cash_sales: number
         total_card_sales: number
@@ -16,6 +17,19 @@ interface POSReportProps {
         total_credit_sales: number
         total_sales: number
         expected_cash: number
+        total_manual_inflow?: number
+        total_manual_outflow?: number
+        manual_movements?: Array<{
+            id: number
+            amount: string | number
+            movement_type: string
+            movement_type_display: string
+            notes: string
+            created_at: string
+            justify_reason?: string
+            to_account?: number
+            from_account?: number
+        }>
         sales_by_category?: Array<{ name: string, value: number }>
         generated_at?: string
         user_name?: string
@@ -48,6 +62,51 @@ export function POSReport({ data, title = "Informe de Caja", type = "X" }: POSRe
             </div>
 
             <Separator className="my-2" />
+
+            {data.manual_movements && data.manual_movements.length > 0 && (
+                <>
+                    <div className="space-y-1 mb-2">
+                        <p className="font-semibold text-xs uppercase text-muted-foreground mb-1">Movimientos de Caja</p>
+                        {data.manual_movements.map((move) => {
+                            const isInflow = move.movement_type === 'DEPOSIT' ||
+                                (data.treasury_account_id && move.to_account === data.treasury_account_id) ||
+                                (move.movement_type === 'TRANSFER' && move.justify_reason !== 'TRANSFER_OUT' && !move.from_account);
+
+                            // Movement serializer has from_account and to_account too.
+
+                            const amount = Number(move.amount);
+                            const label = move.justify_reason ? move.justify_reason.replace(/_/g, ' ') : move.movement_type_display;
+
+                            return (
+                                <div key={move.id} className="flex justify-between text-xs">
+                                    <div className="flex flex-col">
+                                        <span className="capitalize">{label.toLowerCase()}</span>
+                                        {move.notes && <span className="text-[10px] text-muted-foreground line-clamp-1">{move.notes}</span>}
+                                    </div>
+                                    <span className={isInflow ? "text-green-600" : "text-red-600"}>
+                                        {isInflow ? "+" : "-"}{formatCurrency(amount)}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <div className="space-y-1 text-xs border-t pt-1 border-dashed">
+                        {data.total_manual_inflow !== undefined && data.total_manual_inflow > 0 && (
+                            <div className="flex justify-between">
+                                <span>Total Otros Ingresos</span>
+                                <span className="text-green-600">+{formatCurrency(data.total_manual_inflow)}</span>
+                            </div>
+                        )}
+                        {data.total_manual_outflow !== undefined && data.total_manual_outflow > 0 && (
+                            <div className="flex justify-between">
+                                <span>Total Otros Egresos</span>
+                                <span className="text-red-600">-{formatCurrency(data.total_manual_outflow)}</span>
+                            </div>
+                        )}
+                    </div>
+                    <Separator className="my-2" />
+                </>
+            )}
 
             <div className="space-y-1">
                 <p className="font-semibold text-xs uppercase text-muted-foreground mb-1">Desglose por Medios de Pago</p>

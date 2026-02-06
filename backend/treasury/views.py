@@ -1153,6 +1153,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             # Basic totals from the session model (denormalized for performance)
             totals = {
                 'session_id': session.id,
+                'treasury_account_id': session.treasury_account_id or (session.terminal.default_treasury_account_id if session.terminal else None),
                 'opening_balance': session.opening_balance,
                 'total_cash_sales': session.total_cash_sales,
                 'total_card_sales': session.total_card_sales,
@@ -1217,8 +1218,16 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             ]
             category_data.sort(key=lambda x: x['value'], reverse=True)
             
+            # Manual Movements
+            from .serializers import CashMovementSerializer
+            manual_movements = session.cash_movements.all().order_by('-created_at')
+            manual_movements_data = CashMovementSerializer(manual_movements, many=True).data
+            
             return Response({
                 **totals,
+                'total_manual_inflow': session.total_other_cash_inflow,
+                'total_manual_outflow': session.total_other_cash_outflow,
+                'manual_movements': manual_movements_data,
                 'sales_by_category': category_data
             })
         except Exception as e:

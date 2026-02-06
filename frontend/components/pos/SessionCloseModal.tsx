@@ -41,6 +41,7 @@ interface POSSession {
     expected_cash: number
     total_other_cash_inflow: number
     total_other_cash_outflow: number
+    cash_movements?: any[]
 }
 
 interface POSSessionAudit {
@@ -203,6 +204,10 @@ export function SessionCloseModal({
                     total_credit_sales: session.total_credit_sales,
                     total_sales: session.total_cash_sales + session.total_card_sales + session.total_transfer_sales + session.total_credit_sales,
                     expected_cash: session.expected_cash,
+                    total_manual_inflow: session.total_other_cash_inflow,
+                    total_manual_outflow: session.total_other_cash_outflow,
+                    manual_movements: session.cash_movements,
+                    treasury_account_id: session.treasury_account,
                 }
 
                 return (

@@ -260,6 +260,7 @@ class POSSessionSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     expected_cash = serializers.DecimalField(read_only=True, max_digits=12, decimal_places=2)
     closed_by_name = serializers.CharField(source='closed_by.username', read_only=True, allow_null=True)
+    cash_movements = CashMovementSerializer(many=True, read_only=True)
     
     class Meta:
         from .models import POSSession
