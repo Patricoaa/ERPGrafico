@@ -430,7 +430,291 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         )
     }
 
-    // If no session, show "Open Session" button
+    // Open Session Wizard State
+    const [wizardStep, setWizardStep] = useState<number>(1)
+    // 1: Mode Selection (Review context)
+    // 2: Terminal Selection (if multiple)
+    // 3: Initial Fund (Numpad)
+    // 4: Confirmation
+
+    useEffect(() => {
+        if (openDialogOpen) {
+            setWizardStep(1)
+            fetchAvailableSessions()
+            fetchTerminals()
+        }
+    }, [openDialogOpen])
+
+    // ... (keep existing effects for fetching logic)
+
+    const handleNextStep = () => {
+        setWizardStep(prev => prev + 1)
+    }
+
+    const handlePrevStep = () => {
+        setWizardStep(prev => prev - 1)
+    }
+
+    const renderWizardStep = () => {
+        switch (wizardStep) {
+            case 1: // Context / Actions
+                return (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="text-center space-y-2 mb-6">
+                            <h3 className="text-lg font-bold">Bienvenido al POS</h3>
+                            <p className="text-sm text-muted-foreground">¿Qué desea realizar hoy?</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Button
+                                variant="outline"
+                                className="h-32 flex flex-col items-center justify-center gap-3 border-2 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 group transition-all"
+                                onClick={() => {
+                                    // If only 1 terminal, auto-select it and skip to step 3
+                                    if (terminals.length === 1) {
+                                        setSelectedTerminalId(terminals[0].id.toString())
+                                        setWizardStep(3)
+                                    } else {
+                                        setWizardStep(2)
+                                    }
+                                }}
+                            >
+                                <div className="p-3 rounded-full bg-emerald-100 text-emerald-600 group-hover:scale-110 transition-transform">
+                                    <Unlock className="h-6 w-6" />
+                                </div>
+                                <div className="text-center">
+                                    <span className="font-bold text-lg block">Abrir Nueva Caja</span>
+                                    <span className="text-xs text-muted-foreground">Iniciar turno en un terminal</span>
+                                </div>
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                className="h-32 flex flex-col items-center justify-center gap-3 border-2 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 group transition-all"
+                                disabled={availableSessions.length === 0}
+                                onClick={() => setWizardStep(10)} // 10 is Join Session Flow
+                            >
+                                <div className="p-3 rounded-full bg-blue-100 text-blue-600 group-hover:scale-110 transition-transform">
+                                    <Users className="h-6 w-6" />
+                                </div>
+                                <div className="text-center">
+                                    <span className="font-bold text-lg block">Unirse a Caja</span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {availableSessions.length > 0
+                                            ? `${availableSessions.length} cajas disponibles`
+                                            : "No hay cajas activas"}
+                                    </span>
+                                </div>
+                            </Button>
+                        </div>
+                    </div>
+                )
+
+            case 2: // Terminal Selection
+                return (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="text-center mb-4">
+                            <h3 className="font-bold">Seleccione Terminal POS</h3>
+                        </div>
+                        <div className="grid gap-2 max-h-[300px] overflow-y-auto">
+                            {terminals.map(t => (
+                                <Button
+                                    key={t.id}
+                                    variant={selectedTerminalId === t.id.toString() ? "default" : "outline"}
+                                    className={cn(
+                                        "justify-start h-auto py-3 px-4",
+                                        selectedTerminalId === t.id.toString() && "border-primary"
+                                    )}
+                                    onClick={() => {
+                                        setSelectedTerminalId(t.id.toString())
+                                        handleNextStep() // Auto advance on selection
+                                    }}
+                                >
+                                    <div className="text-left">
+                                        <div className="font-bold">{t.name}</div>
+                                        <div className="text-xs opacity-70">{t.location}</div>
+                                    </div>
+                                    {t.default_treasury_account_balance > 0 && (
+                                        <Badge variant="secondary" className="ml-auto">
+                                            Base: {formatCurrency(t.default_treasury_account_balance)}
+                                        </Badge>
+                                    )}
+                                </Button>
+                            ))}
+                        </div>
+                        <Button variant="ghost" onClick={handlePrevStep} className="w-full">Volver</Button>
+                    </div>
+                )
+
+            case 3: // Initial Fund (Numpad)
+                const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
+                return (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="text-center space-y-1">
+                            <h3 className="font-bold text-lg">{terminal?.name}</h3>
+                            <p className="text-sm text-muted-foreground">Ingrese el fondo inicial en caja</p>
+                        </div>
+
+                        <div className="flex justify-center">
+                            <div className="w-full max-w-sm bg-muted/30 p-4 rounded-xl">
+                                <div className="text-right mb-4">
+                                    <div className="text-xs font-bold uppercase text-muted-foreground">Monto Ingresado</div>
+                                    <div className="text-3xl font-black font-mono tracking-tight text-primary">
+                                        {formatCurrency(parseFloat(openingBalance) || 0)}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                                        <Button
+                                            key={n}
+                                            variant="outline"
+                                            className="h-14 text-xl font-bold"
+                                            onClick={() => setOpeningBalance(prev => prev === "0" ? n.toString() : prev + n)}
+                                        >
+                                            {n}
+                                        </Button>
+                                    ))}
+                                    <Button
+                                        variant="ghost"
+                                        className="h-14 text-red-500 font-bold"
+                                        onClick={() => setOpeningBalance("0")}
+                                    >C</Button>
+                                    <Button
+                                        variant="outline"
+                                        className="h-14 text-xl font-bold"
+                                        onClick={() => setOpeningBalance(prev => prev === "0" ? "0" : prev + "0")}
+                                    >0</Button>
+                                    <Button
+                                        variant="ghost"
+                                        className="h-14"
+                                        onClick={() => setOpeningBalance(prev => prev.slice(0, -1) || "0")}
+                                    >
+                                        ⌫
+                                    </Button>
+                                </div>
+
+                                {terminal && terminal.default_treasury_account_balance > 0 && (
+                                    <Button
+                                        className="w-full mt-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                                        onClick={() => setOpeningBalance(terminal.default_treasury_account_balance.toString())}
+                                    >
+                                        Usar Base Predefinida ({formatCurrency(terminal.default_treasury_account_balance)})
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={handlePrevStep} className="flex-1">Atrás</Button>
+                            <Button onClick={handleNextStep} className="flex-1">Continuar</Button>
+                        </div>
+                    </div>
+                )
+
+            case 4: // Confirmation & Justification
+                const term = terminals.find(t => t.id === parseInt(selectedTerminalId))
+                const expected = term?.default_treasury_account_balance || 0
+                const actual = parseFloat(openingBalance) || 0
+                const diff = actual - expected
+                const hasDiff = diff !== 0
+
+                return (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="text-center">
+                            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                <Unlock className="h-6 w-6 text-primary" />
+                            </div>
+                            <h3 className="font-bold text-xl">Confirmar Apertura</h3>
+                            <p className="text-muted-foreground">{term?.name}</p>
+                        </div>
+
+                        <div className="bg-card border rounded-xl p-4 space-y-3 shadow-sm">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Fondo en Sistema:</span>
+                                <span className="font-medium">{formatCurrency(expected)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
+                                <span>Fondo Contado:</span>
+                                <span className="text-primary">{formatCurrency(actual)}</span>
+                            </div>
+                        </div>
+
+                        {hasDiff && (
+                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 space-y-3">
+                                <div className="flex items-center gap-2 text-amber-700 font-bold">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <span>Se detectó una diferencia</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span>{diff > 0 ? "Sobrante" : "Faltante"}:</span>
+                                    <span className="font-bold">{formatCurrency(Math.abs(diff))}</span>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Motivo</Label>
+                                    <Select value={openingJustifyReason} onValueChange={setOpeningJustifyReason}>
+                                        <SelectTrigger className="bg-white dark:bg-black/20 h-9">
+                                            <SelectValue placeholder="Seleccione motivo..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="ROUNDING">Redondeo anterior</SelectItem>
+                                            <SelectItem value="COUNTING_ERROR">Error de conteo</SelectItem>
+                                            <SelectItem value="OTHER_IN">Ajuste de entrada</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex gap-2">
+                            <Button variant="ghost" onClick={handlePrevStep} className="flex-1">Corregir</Button>
+                            <Button
+                                onClick={handleOpenSession}
+                                className="flex-[2]"
+                                disabled={submitting || (hasDiff && !openingJustifyReason)}
+                            >
+                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Confirmar Apertura
+                            </Button>
+                        </div>
+                    </div>
+                )
+
+            case 10: // Shared Session Selection
+                return (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="text-center mb-4">
+                            <h3 className="font-bold">Unirse a Caja Existente</h3>
+                            <p className="text-sm text-muted-foreground">Seleccione una caja activa para operar</p>
+                        </div>
+                        <div className="grid gap-2">
+                            {availableSessions.map((session) => (
+                                <Button
+                                    key={session.id}
+                                    variant={selectedSharedSessionId === session.id.toString() ? "default" : "outline"}
+                                    className="justify-start h-auto py-3 px-4"
+                                    onClick={() => setSelectedSharedSessionId(session.id.toString())}
+                                >
+                                    <div className="text-left w-full">
+                                        <div className="font-bold flex justify-between">
+                                            <span>{session.treasury_account_name}</span>
+                                            <Badge variant="outline" className="text-[10px] h-5">{session.user_name}</Badge>
+                                        </div>
+                                        <div className="text-xs opacity-70 mt-1">Abierta: {new Date(session.opened_at).toLocaleTimeString()}</div>
+                                    </div>
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                            <Button variant="ghost" onClick={() => setWizardStep(1)} className="flex-1">Volver</Button>
+                            <Button onClick={handleJoinSession} disabled={!selectedSharedSessionId} className="flex-1">Unirse</Button>
+                        </div>
+                    </div>
+                )
+
+            default: return null
+        }
+    }
+
     if (!currentSession) {
         return (
             <>
@@ -443,244 +727,21 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     Abrir Caja
                 </Button>
 
-                <BaseModal
-                    open={openDialogOpen}
-                    onOpenChange={setOpenDialogOpen}
-                    title="Apertura de Caja"
-                    description="Seleccione un terminal y verifique el fondo inicial."
-                    size="xl"
-                    footer={
-                        <div className="flex w-full items-center justify-between">
-                            <div className="flex gap-2">
-                                {(() => {
-                                    const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
-                                    const expected = terminal?.default_treasury_account_balance || 0
-                                    const actual = parseFloat(openingBalance) || 0
-                                    if (terminal && actual !== expected) {
-                                        return (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setOpeningBalance(expected.toString())}
-                                                className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                                            >
-                                                <Calculator className="mr-2 h-4 w-4" />
-                                                Cuadra Perfecto
-                                            </Button>
-                                        )
-                                    }
-                                    return null
-                                })()}
-                            </div>
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => setOpenDialogOpen(false)}>
-                                    Cancelar
-                                </Button>
-                                {(() => {
-                                    const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
-                                    const expected = terminal?.default_treasury_account_balance || 0
-                                    const actual = parseFloat(openingBalance) || 0
-                                    const diff = actual - expected
-                                    const hasDiff = !!selectedTerminalId && diff !== 0
-
-                                    return (
-                                        <Button
-                                            onClick={handleOpenSession}
-                                            disabled={submitting || (hasDiff && !openingJustifyReason)}
-                                        >
-                                            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Abrir Caja (Enter)
-                                        </Button>
-                                    )
-                                })()}
-                            </div>
-                        </div>
-                    }
-                >
-                    <Tabs defaultValue="new" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-6">
-                            <TabsTrigger value="new">Nueva Sesión</TabsTrigger>
-                            <TabsTrigger value="shared" onClick={fetchAvailableSessions}>Compartir Sesión Existente</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="new" className="space-y-6">
-                            {(() => {
-                                const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
-                                const expected = terminal?.default_treasury_account_balance || 0
-                                const actual = parseFloat(openingBalance) || 0
-                                const diff = actual - expected
-                                const hasDiff = selectedTerminalId && diff !== 0
-
-                                return (
-                                    <div className={`grid gap-6 ${hasDiff ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
-                                        {/* Col 1: Configuración */}
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label className={FORM_STYLES.label}>Seleccionar Terminal POS</Label>
-                                                <Select value={selectedTerminalId} onValueChange={setSelectedTerminalId}>
-                                                    <SelectTrigger className={cn(FORM_STYLES.input)}>
-                                                        <SelectValue placeholder="Seleccione un terminal..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {terminals.map(t => (
-                                                            <SelectItem key={t.id} value={t.id.toString()}>
-                                                                {t.name} ({t.code})
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            {terminal && (
-                                                <Card className={cn("bg-muted/30", FORM_STYLES.card)}>
-                                                    <CardContent className="pt-4 space-y-2 text-sm">
-                                                        <div className="flex justify-between">
-                                                            <span className="text-muted-foreground">Cuenta Base:</span>
-                                                            <span className="font-medium">{terminal.default_treasury_account_name}</span>
-                                                        </div>
-                                                        <div className="flex justify-between">
-                                                            <span className="text-muted-foreground">Saldo en Libros:</span>
-                                                            <span className="font-mono font-bold text-primary">{formatCurrency(expected)}</span>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            )}
-                                        </div>
-
-                                        {/* Col 2: Conteo Físico */}
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label className={FORM_STYLES.label}>Fondo Inicial contado ($)</Label>
-                                                <Input
-                                                    type="number"
-                                                    value={openingBalance}
-                                                    onChange={(e) => setOpeningBalance(e.target.value)}
-                                                    className={cn("text-3xl font-black h-16 text-right font-mono tracking-tight", FORM_STYLES.input)}
-                                                    placeholder="0"
-                                                />
-                                                <p className="text-xs text-muted-foreground">
-                                                    Ingrese el monto físico real que hay en la gaveta.
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Col 3: Diferencia de Apertura (Conditional) */}
-                                        {hasDiff && (
-                                            <Card className="h-full border-l-4 border-l-amber-500 shadow-sm">
-                                                <CardHeader className="bg-amber-50 dark:bg-amber-950/20 pb-3">
-                                                    <CardTitle className="text-amber-700 dark:text-amber-400 flex items-center gap-2 text-sm">
-                                                        <AlertTriangle className="h-4 w-4" />
-                                                        Diferencia en Apertura
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="space-y-4 pt-4">
-                                                    <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/10 rounded-lg">
-                                                        <div className="text-[10px] text-amber-600 dark:text-amber-500 font-bold uppercase mb-1">
-                                                            {diff > 0 ? 'SOBRANTE' : 'FALTANTE'}
-                                                        </div>
-                                                        <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">
-                                                            {formatCurrency(Math.abs(diff))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-3">
-                                                        <Label className="text-xs font-bold">Justificar Diferencia</Label>
-                                                        <Select value={openingJustifyReason} onValueChange={setOpeningJustifyReason}>
-                                                            <SelectTrigger className="h-9">
-                                                                <SelectValue placeholder="Seleccione razón..." />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {diff < 0 ? (
-                                                                    <>
-                                                                        <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
-                                                                        <SelectItem value="TRANSFER">Traspaso Enviado (No Reg.)</SelectItem>
-                                                                        <SelectItem value="THEFT">Robo / Faltante</SelectItem>
-                                                                        <SelectItem value="COUNTING_ERROR">Error de Conteo</SelectItem>
-                                                                        <SelectItem value="ROUNDING">Redondeo</SelectItem>
-                                                                        <SelectItem value="CASHBACK">Vuelto Incorrecto</SelectItem>
-                                                                        <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
-                                                                        <SelectItem value="OTHER_OUT">Otro Egreso (Varios)</SelectItem>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <SelectItem value="TRANSFER">Traspaso Recibido (No Reg.)</SelectItem>
-                                                                        <SelectItem value="COUNTING_ERROR">Error de Conteo / Sobrante</SelectItem>
-                                                                        <SelectItem value="ROUNDING">Redondeo</SelectItem>
-                                                                        <SelectItem value="TIP">Propina</SelectItem>
-                                                                        <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
-                                                                        <SelectItem value="OTHER_IN">Otro Ingreso (Varios)</SelectItem>
-                                                                        <SelectItem value="UNKNOWN">Desconocido</SelectItem>
-                                                                    </>
-                                                                )}
-                                                            </SelectContent>
-                                                        </Select>
-
-                                                        {openingJustifyReason === 'TRANSFER' && (
-                                                            <div className="space-y-2 border-l-2 pl-3 border-amber-200">
-                                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">
-                                                                    {diff < 0 ? '¿Hacia qué cuenta?' : '¿Desde qué cuenta?'}
-                                                                </Label>
-                                                                <CashContainerSelector
-                                                                    value={openingJustifyTargetId}
-                                                                    onChange={setOpeningJustifyTargetId}
-                                                                    placeholder="Seleccione cuenta..."
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        <div className="bg-amber-50 dark:bg-amber-950/30 p-2 rounded text-[10px] text-amber-800 dark:text-amber-300 italic">
-                                                            Se registrará un ajuste de caja automático para cuadrar el saldo contable con el físico reportado.
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </div>
-                                )
-                            })()}
-                        </TabsContent>
-
-                        <TabsContent value="shared" className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Cajas Activas Disponibles</Label>
-                                {availableSessions.length === 0 ? (
-                                    <div className="p-4 border border-dashed rounded-xl text-center text-muted-foreground bg-muted/20">
-                                        No hay cajas abiertas en este momento.
-                                    </div>
-                                ) : (
-                                    <Select value={selectedSharedSessionId} onValueChange={setSelectedSharedSessionId}>
-                                        <SelectTrigger className={cn(FORM_STYLES.input)}>
-                                            <SelectValue placeholder="Seleccione una sesión abierta..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {availableSessions.map((session) => (
-                                                <SelectItem key={session.id} value={session.id.toString()}>
-                                                    {session.treasury_account_name} - {session.user_name} (Abierta: {new Date(session.opened_at).toLocaleTimeString()})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                Puede unirse a una caja abierta por otro usuario para realizar ventas en su turno (modo compartido).
-                            </p>
-
-                            <Button onClick={handleJoinSession} disabled={!selectedSharedSessionId} className="w-full mt-4" variant="secondary">
-                                <Users className="mr-2 h-4 w-4" />
-                                Usar Esta Caja
-                            </Button>
-                        </TabsContent>
-                    </Tabs>
-                </BaseModal>
+                <Dialog open={openDialogOpen} onOpenChange={setOpenDialogOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        {renderWizardStep()}
+                    </DialogContent>
+                </Dialog>
             </>
         )
     }
 
-    // Session is active - show status and close button
+    // Keep existing return for Active Session...
     return (
         <>
             <div className="flex items-center gap-2">
                 {!hideSessionInfo && (
+
                     <>
                         <Badge variant={isSharedSession ? "secondary" : "outline"} className={`gap-1 px-3 py-1.5 ${isSharedSession ? 'bg-blue-100 text-blue-800 border-blue-200' : 'border-emerald-500 text-emerald-600'}`}>
                             <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-blue-500' : 'bg-emerald-500'} animate-pulse`} />

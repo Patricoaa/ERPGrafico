@@ -14,6 +14,8 @@ interface NumpadProps {
     allowDecimal?: boolean
     hideDisplay?: boolean
     confirmLabel?: string
+    onExactAmount?: () => void
+    exactAmountLabel?: string
 }
 
 export function Numpad({
@@ -24,7 +26,9 @@ export function Numpad({
     className,
     allowDecimal = true,
     hideDisplay = false,
-    confirmLabel = "OK"
+    confirmLabel = "OK",
+    onExactAmount,
+    exactAmountLabel
 }: NumpadProps) {
     const handleNumber = (n: string) => {
         if (n === "." && value.includes(".")) return
@@ -138,6 +142,16 @@ export function Numpad({
                     </Button>
                 )}
             </div>
+
+            {onExactAmount && (
+                <Button
+                    variant="outline"
+                    className="w-full h-12 font-bold text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 border-emerald-200 mb-2"
+                    onClick={onExactAmount}
+                >
+                    {exactAmountLabel || "MONTO EXACTO"}
+                </Button>
+            )}
 
             {onConfirm && (
                 <Button
