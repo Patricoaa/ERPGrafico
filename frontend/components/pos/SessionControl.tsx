@@ -103,6 +103,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [openingJustifyTargetId, setOpeningJustifyTargetId] = useState<string | null>(null)
     const [accountingSettings, setAccountingSettings] = useState<any>(null)
 
+    // Fund validation for session opening
+    const [openingSelectedAccount, setOpeningSelectedAccount] = useState<any>(null)
+    const [openingInsufficientFunds, setOpeningInsufficientFunds] = useState(false)
+
     // Shared session selection
     const [selectedSharedSessionId, setSelectedSharedSessionId] = useState<string>("")
 
@@ -136,8 +140,42 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             api.get('/accounting/settings/current/')
                 .then(res => setAccountingSettings(res.data))
                 .catch(err => console.error("Failed to load accounting settings", err))
+            // Reset validation states
+            setOpeningSelectedAccount(null)
+            setOpeningInsufficientFunds(false)
         }
     }, [openDialogOpen])
+
+    // Fetch selected account for transfer validation during opening
+    useEffect(() => {
+        if (openingJustifyTargetId && openingJustifyReason === 'TRANSFER' && selectedTerminalId) {
+            const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
+            const expected = terminal?.default_treasury_account_balance || 0
+            const actual = parseFloat(openingBalance) || 0
+            const diff = actual - expected
+
+            api.get(`/treasury/accounts/${openingJustifyTargetId}/`)
+                .then(res => {
+                    setOpeningSelectedAccount(res.data)
+                    // Validate only for surplus (diff > 0 = money coming IN)
+                    if (diff > 0 && res.data.current_balance !== undefined) {
+                        const available = res.data.current_balance
+                        const needed = Math.abs(diff)
+                        setOpeningInsufficientFunds(available < needed)
+                    } else {
+                        setOpeningInsufficientFunds(false)
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to load account", err)
+                    setOpeningSelectedAccount(null)
+                    setOpeningInsufficientFunds(false)
+                })
+        } else {
+            setOpeningSelectedAccount(null)
+            setOpeningInsufficientFunds(false)
+        }
+    }, [openingJustifyTargetId, openingJustifyReason, selectedTerminalId, openingBalance, terminals])
 
     useImperativeHandle(ref, () => ({
         showXReport: () => {
@@ -672,7 +710,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                                 {/* Dynamic selector for Transfer justification */}
                                 {openingJustifyReason === 'TRANSFER' && (
-                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                                         <Label className="text-xs">
                                             {diff < 0 ? 'Cuenta de Destino (¿A dónde se fue?)' : 'Cuenta de Origen (¿De dónde vino?)'}
                                         </Label>
@@ -682,6 +720,23 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                             placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
                                             excludeId={term?.default_treasury_account}
                                         />
+
+                                        {/* Insufficient funds warning */}
+                                        {openingInsufficientFunds && openingSelectedAccount && (
+                                            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3 space-y-1">
+                                                <div className="flex items-start gap-2">
+                                                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                                                    <div className="text-sm text-red-700 dark:text-red-300">
+                                                        <div className="font-bold">Fondos Insuficientes</div>
+                                                        <div className="text-xs mt-1 space-y-0.5">
+                                                            <div>Disponible en {openingSelectedAccount.name}: {formatCurrency(openingSelectedAccount.current_balance || 0)}</div>
+                                                            <div>Necesario: {formatCurrency(Math.abs(diff))}</div>
+                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - (openingSelectedAccount.current_balance || 0))}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -692,7 +747,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             <Button
                                 onClick={handleOpenSession}
                                 className="flex-[2]"
-                                disabled={submitting || (hasDiff && !openingJustifyReason)}
+                                disabled={
+                                    submitting ||
+                                    (hasDiff && !openingJustifyReason) ||
+                                    (openingJustifyReason === 'TRANSFER' && !openingJustifyTargetId) ||
+                                    openingInsufficientFunds
+                                }
                             >
                                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Confirmar Apertura

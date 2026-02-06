@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,12 +15,13 @@ import {
     Loader2,
     AlertCircle,
     Banknote,
-    Calculator
+    Calculator,
+    AlertTriangle
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 
 interface CashMovementModalProps {
     open: boolean
@@ -38,12 +39,40 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
     const [notes, setNotes] = useState("")
     const [submitting, setSubmitting] = useState(false)
 
+    // Fund validation states
+    const [selectedFromAccount, setSelectedFromAccount] = useState<any>(null)
+    const [insufficientFunds, setInsufficientFunds] = useState(false)
+
     const handleReset = () => {
         setAmount("")
         setFromId("")
         setToId("")
         setNotes("")
+        setSelectedFromAccount(null)
+        setInsufficientFunds(false)
     }
+
+    // Fetch selected account for transfer/withdrawal validation
+    useEffect(() => {
+        if (fromId && (type === 'TRANSFER' || type === 'WITHDRAWAL')) {
+            api.get(`/treasury/accounts/${fromId}/`)
+                .then(res => {
+                    setSelectedFromAccount(res.data)
+                    // Validate if account has sufficient funds
+                    const needed = parseFloat(amount) || 0
+                    const available = res.data.current_balance || 0
+                    setInsufficientFunds(needed > 0 && available < needed)
+                })
+                .catch(err => {
+                    console.error("Failed to load account", err)
+                    setSelectedFromAccount(null)
+                    setInsufficientFunds(false)
+                })
+        } else {
+            setSelectedFromAccount(null)
+            setInsufficientFunds(false)
+        }
+    }, [fromId, type, amount])
 
     const handleSubmit = async () => {
         if (!amount || parseFloat(amount) <= 0) {
@@ -100,7 +129,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={submitting}>
+                    <Button onClick={handleSubmit} disabled={submitting || insufficientFunds}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Registrar Movimiento (Enter)
                     </Button>
@@ -169,6 +198,23 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                 />
                             </div>
                         </div>
+
+                        {/* Insufficient funds warning */}
+                        {insufficientFunds && selectedFromAccount && (
+                            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                                <div className="flex items-start gap-2">
+                                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                                    <div className="text-sm text-red-700 dark:text-red-300">
+                                        <div className="font-bold">Fondos Insuficientes</div>
+                                        <div className="text-xs mt-1 space-y-0.5">
+                                            <div>Disponible en {selectedFromAccount.name}: {formatCurrency(selectedFromAccount.current_balance || 0)}</div>
+                                            <div>Necesario: {formatCurrency(parseFloat(amount) || 0)}</div>
+                                            <div className="font-semibold">Faltante: {formatCurrency((parseFloat(amount) || 0) - (selectedFromAccount.current_balance || 0))}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Notes */}
                         <div className="space-y-2">

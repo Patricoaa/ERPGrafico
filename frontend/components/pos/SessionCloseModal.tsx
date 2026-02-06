@@ -72,6 +72,10 @@ export function SessionCloseModal({
     const [justifyTargetId, setJustifyTargetId] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
 
+    // Fund validation states
+    const [selectedAccount, setSelectedAccount] = useState<any>(null)
+    const [insufficientFunds, setInsufficientFunds] = useState(false)
+
     // Sync withdrawalAmount with actualCash by default
     useEffect(() => {
         setWithdrawalAmount(actualCash)
@@ -87,6 +91,8 @@ export function SessionCloseModal({
             setCloseNotes("")
             setJustifyReason("")
             setJustifyTargetId(null)
+            setSelectedAccount(null)
+            setInsufficientFunds(false)
             setStep(1) // Reset to step 1
             // Default destination: same treasury account as session (leave in till/safe)
             if (session.treasury_account) {
@@ -105,6 +111,32 @@ export function SessionCloseModal({
                 .catch(err => console.error("Failed to load accounting settings", err))
         }
     }, [open])
+
+    // Fetch selected account details when justifyTargetId changes
+    useEffect(() => {
+        if (justifyTargetId && justifyReason === 'TRANSFER') {
+            api.get(`/treasury/accounts/${justifyTargetId}/`)
+                .then(res => {
+                    setSelectedAccount(res.data)
+                    // Validate funds for surplus (diff > 0 = money coming IN, source account needs money)
+                    if (diff > 0 && res.data.current_balance !== undefined) {
+                        const available = res.data.current_balance
+                        const needed = Math.abs(diff)
+                        setInsufficientFunds(available < needed)
+                    } else {
+                        setInsufficientFunds(false)
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to load account details", err)
+                    setSelectedAccount(null)
+                    setInsufficientFunds(false)
+                })
+        } else {
+            setSelectedAccount(null)
+            setInsufficientFunds(false)
+        }
+    }, [justifyTargetId, justifyReason, diff])
 
     const handleNext = () => setStep(p => p + 1)
     const handlePrev = () => setStep(p => p - 1)
@@ -265,7 +297,7 @@ export function SessionCloseModal({
 
                                 {/* Dynamic selector for Transfer justification */}
                                 {justifyReason === 'TRANSFER' && (
-                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                                         <Label className="text-xs">
                                             {diff < 0 ? 'Cuenta de Destino (¿A dónde se llevó el dinero?)' : 'Cuenta de Origen (¿De dónde vino el dinero?)'}
                                         </Label>
@@ -276,6 +308,23 @@ export function SessionCloseModal({
                                             excludeId={session.treasury_account}
                                             type="CASH"
                                         />
+
+                                        {/* Insufficient funds warning */}
+                                        {insufficientFunds && selectedAccount && (
+                                            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3 space-y-1">
+                                                <div className="flex items-start gap-2">
+                                                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                                                    <div className="text-sm text-red-700 dark:text-red-300">
+                                                        <div className="font-bold">Fondos Insuficientes</div>
+                                                        <div className="text-xs mt-1 space-y-0.5">
+                                                            <div>Disponible en {selectedAccount.name}: {formatCurrency(selectedAccount.current_balance || 0)}</div>
+                                                            <div>Necesario: {formatCurrency(Math.abs(diff))}</div>
+                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - (selectedAccount.current_balance || 0))}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -289,7 +338,17 @@ export function SessionCloseModal({
 
                         <div className="flex gap-2">
                             <Button variant="ghost" onClick={handlePrev}>Modificar Conteo</Button>
-                            <Button className="flex-1" onClick={handleNext} disabled={hasDiff && !justifyReason}>Siguiente</Button>
+                            <Button
+                                className="flex-1"
+                                onClick={handleNext}
+                                disabled={
+                                    (hasDiff && !justifyReason) ||
+                                    (justifyReason === 'TRANSFER' && !justifyTargetId) ||
+                                    insufficientFunds
+                                }
+                            >
+                                Siguiente
+                            </Button>
                         </div>
                     </div>
                 )

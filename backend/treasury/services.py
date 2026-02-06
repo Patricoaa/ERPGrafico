@@ -73,6 +73,15 @@ class TreasuryService:
                 if from_acc != to_acc:
                     JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=amount)
                     JournalItem.objects.create(entry=entry, account=to_acc, debit=amount, credit=0)
+                else:
+                    # WARNING: Both treasury accounts use the same accounting account
+                    # This is a configuration issue - multiple physical locations shouldn't share the same ledger account
+                    import sys
+                    print(f"WARNING: Traspaso entre cuentas de tesorería que comparten la misma cuenta contable ({from_acc.code} - {from_acc.name})", file=sys.stderr)
+                    print(f"  Origen: {from_account.name if from_account else 'N/A'}", file=sys.stderr)
+                    print(f"  Destino: {to_account.name if to_account else 'N/A'}", file=sys.stderr)
+                    print(f"  Solución: Asignar cuentas contables separadas a cada caja física para rastrear movimientos.", file=sys.stderr)
+                    # Don't create duplicate accounting entries, but keep the movement record
             
             # Case B: Withdrawal/Outflow (Money leaves an account to 'Exterior' or specific reason)
             elif from_acc and not to_acc:
