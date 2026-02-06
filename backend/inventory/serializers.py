@@ -122,6 +122,7 @@ class ProductSerializer(serializers.ModelSerializer):
     
     # Variants fields
     variants = serializers.SerializerMethodField()
+    variants_count = serializers.IntegerField(read_only=True)
     attribute_values_data = ProductAttributeValueSerializer(source='attribute_values', many=True, read_only=True)
     
     current_stock = serializers.SerializerMethodField()
@@ -169,7 +170,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'payment_day_type', 'payment_day', 'payment_interval_days',
             'attachments',
             # Variant Fields
-            'has_variants', 'parent_template', 'attribute_values', 'attribute_values_data',
+            'has_variants', 'variants_count', 'parent_template', 'attribute_values', 'attribute_values_data',
             'variant_display_name', 'variants',
             # BOM validation fields
             'has_active_bom', 'active_bom_id', 'requires_bom_validation'

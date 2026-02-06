@@ -69,6 +69,13 @@ export function SalesCheckoutWizard({
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
 
+    // Sync order lines when opening the wizard
+    useEffect(() => {
+        if (open) {
+            setCurrentOrderLines(initialOrderLines)
+        }
+    }, [open, initialOrderLines])
+
     // Recalculate total if currentOrderLines changes (Gross total including 19% tax)
     const currentTotal = currentOrderLines.reduce((acc: number, line: any) => {
         if (line.total_gross !== undefined) return acc + line.total_gross;

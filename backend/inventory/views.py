@@ -31,7 +31,7 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
     search_fields = ['name', 'internal_code', 'code']
 
     def get_queryset(self):
-        from django.db.models import Sum
+        from django.db.models import Sum, Count
         queryset = Product.objects.select_related(
             'category', 'uom', 'sale_uom', 'purchase_uom', 
             'receiving_warehouse', 'preferred_supplier', 'subscription_supplier'
@@ -43,7 +43,8 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             'reordering_rules',
             'attachments'
         ).annotate(
-            annotated_current_stock=Sum('stock_moves__quantity')
+            annotated_current_stock=Sum('stock_moves__quantity'),
+            variants_count=Count('variants')
         )
         
         # If it's a detail request (requesting a single object by ID), 
