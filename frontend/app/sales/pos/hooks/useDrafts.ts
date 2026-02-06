@@ -31,7 +31,15 @@ export function useDrafts() {
         setIsLoading(true)
         try {
             const res = await api.get(`/sales/pos-drafts/?pos_session_id=${currentSession.id}`)
-            setDrafts(res.data.results || res.data)
+            const list = res.data.results || res.data
+            setDrafts(list)
+
+            // Sync currentDraftId: if it's set but not in the list, it's stale
+            if (currentDraftId && !list.find((d: any) => d.id === currentDraftId)) {
+                console.warn(`Current draft ${currentDraftId} not found in list, clearing state`)
+                setCurrentDraftId(null)
+                setWizardState(null)
+            }
         } catch (error) {
             console.error("Error fetching drafts:", error)
             toast.error("Error al cargar borradores")
@@ -105,9 +113,10 @@ export function useDrafts() {
 
     // Load a draft into cart
     const loadDraft = useCallback(async (draftId: number) => {
+        if (!currentSession?.id) return
         setIsLoading(true)
         try {
-            const res = await api.get(`/sales/pos-drafts/${draftId}/`)
+            const res = await api.get(`/sales/pos-drafts/${draftId}/?pos_session_id=${currentSession.id}`)
             const draft = res.data
 
             // Reconstruct cart items from draft
@@ -145,13 +154,21 @@ export function useDrafts() {
             }
 
             toast.success(`Borrador cargado: ${draft.name}`)
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error loading draft:", error)
-            toast.error("Error al cargar borrador")
+            if (error.response?.status === 404) {
+                toast.error("El borrador ya no existe en el servidor o no pertenece a esta sesión")
+                setCurrentDraftId(null)
+                setWizardState(null)
+                fetchDrafts() // Refresh list
+            } else {
+                toast.error("Error al cargar borrador")
+            }
+            throw error // Re-throw so caller (DraftCartsList) doesn't show success
         } finally {
             setIsLoading(false)
         }
-    }, [setItems, setSelectedCustomerId, setCurrentDraftId, setWizardState])
+    }, [setItems, setSelectedCustomerId, setCurrentDraftId, setWizardState, currentSession, fetchDrafts])
 
     // Delete a draft
     const deleteDraft = useCallback(async (draftId: number) => {

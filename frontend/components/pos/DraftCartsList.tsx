@@ -92,7 +92,8 @@ export function DraftCartsList({
         setLoading(true)
         try {
             const response = await api.get(`/sales/pos-drafts/?pos_session_id=${posSessionId}`)
-            setDrafts(response.data)
+            const data = response.data.results || response.data
+            setDrafts(Array.isArray(data) ? data : [])
         } catch (error: any) {
             console.error("Error al cargar borradores:", error)
             toast.error("Error al cargar los borradores")
@@ -109,11 +110,11 @@ export function DraftCartsList({
 
     const handleLoadDraft = async (draft: DraftCart) => {
         try {
-            onLoadDraft(draft)
+            await onLoadDraft(draft)
             setOpen(false)
-            toast.success(`Borrador "${draft.name}" cargado`)
+            // The hook or page already shows success toast
         } catch (error) {
-            toast.error("Error al cargar el borrador")
+            // Already handled by the hook/page
         }
     }
 
@@ -128,7 +129,13 @@ export function DraftCartsList({
             onDraftDeleted?.()
         } catch (error: any) {
             console.error("Error al eliminar borrador:", error)
-            toast.error("Error al eliminar el borrador")
+            if (error.response?.status === 404) {
+                toast.info("El borrador ya no existía en el servidor")
+                await fetchDrafts()
+                onDraftDeleted?.()
+            } else {
+                toast.error("Error al eliminar el borrador")
+            }
         } finally {
             setDeletingId(null)
         }
