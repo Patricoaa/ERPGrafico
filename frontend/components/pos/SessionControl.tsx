@@ -101,6 +101,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [fundSourceId, setFundSourceId] = useState<string | null>(null)
     const [openingJustifyReason, setOpeningJustifyReason] = useState<string>("")
     const [openingJustifyTargetId, setOpeningJustifyTargetId] = useState<string | null>(null)
+    const [accountingSettings, setAccountingSettings] = useState<any>(null)
 
     // Shared session selection
     const [selectedSharedSessionId, setSelectedSharedSessionId] = useState<string>("")
@@ -131,6 +132,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             setWizardStep(1)
             fetchAvailableSessions()
             fetchTerminals()
+            // Fetch accounting settings for justification logic
+            api.get('/accounting/settings/current/')
+                .then(res => setAccountingSettings(res.data))
+                .catch(err => console.error("Failed to load accounting settings", err))
         }
     }, [openDialogOpen])
 
@@ -632,18 +637,53 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <span className="font-bold">{formatCurrency(Math.abs(diff))}</span>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-xs">Motivo</Label>
+                                    <Label className="text-xs">Motivo (Requerido)</Label>
                                     <Select value={openingJustifyReason} onValueChange={setOpeningJustifyReason}>
                                         <SelectTrigger className="bg-white dark:bg-black/20 h-9">
                                             <SelectValue placeholder="Seleccione motivo..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="ROUNDING">Redondeo anterior</SelectItem>
-                                            <SelectItem value="COUNTING_ERROR">Error de conteo</SelectItem>
-                                            <SelectItem value="OTHER_IN">Ajuste de entrada</SelectItem>
+                                            {diff < 0 ? (
+                                                <>
+                                                    <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase bg-muted/50">Motivos de Faltante (Menos dinero del esperado)</div>
+                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
+                                                    <SelectItem value="TRANSFER">Traspaso (Dinero enviado a otra caja)</SelectItem>
+                                                    {accountingSettings?.pos_partner_withdrawal_account && (
+                                                        <SelectItem value="PARTNER_WITHDRAWAL">Retiro Socio</SelectItem>
+                                                    )}
+                                                    {accountingSettings?.pos_theft_account && (
+                                                        <SelectItem value="THEFT">Faltante / Robo</SelectItem>
+                                                    )}
+                                                    <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase bg-muted/50">Motivos de Sobrante (Más dinero del esperado)</div>
+                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
+                                                    <SelectItem value="TIP">Propina</SelectItem>
+                                                    <SelectItem value="TRANSFER">Traspaso (Dinero recibido de otra caja)</SelectItem>
+                                                    <SelectItem value="OTHER_IN">Otro Ingreso</SelectItem>
+                                                    <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
+                                                </>
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>
+
+                                {/* Dynamic selector for Transfer justification */}
+                                {openingJustifyReason === 'TRANSFER' && (
+                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                                        <Label className="text-xs">
+                                            {diff < 0 ? 'Cuenta de Destino (¿A dónde se fue?)' : 'Cuenta de Origen (¿De dónde vino?)'}
+                                        </Label>
+                                        <CashContainerSelector
+                                            value={openingJustifyTargetId}
+                                            onChange={setOpeningJustifyTargetId}
+                                            placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
+                                            excludeId={term?.default_treasury_account}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
 

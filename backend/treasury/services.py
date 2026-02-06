@@ -74,10 +74,13 @@ class TreasuryService:
                     (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
                     (settings.pos_cashback_error_account if justify_reason == 'CASHBACK' else None) or
                     (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
+                    (settings.pos_other_outflow_account if justify_reason == 'OTHER_OUT' else None) or
                     settings.pos_cash_difference_loss_account
                 )
-                JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=amount)
-                JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0)
+                
+                if from_acc != target_account:
+                    JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=amount)
+                    JournalItem.objects.create(entry=entry, account=target_account, debit=amount, credit=0)
 
             # Case C: Deposit/Inflow (Money enters an account from 'Exterior' or specific reason)
             elif to_acc and not from_acc:
@@ -87,10 +90,13 @@ class TreasuryService:
                     (settings.pos_rounding_adjustment_account if justify_reason == 'ROUNDING' else None) or
                     (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
                     (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
+                    (settings.pos_other_inflow_account if justify_reason == 'OTHER_IN' else None) or
                     settings.pos_cash_difference_gain_account
                 )
-                JournalItem.objects.create(entry=entry, account=source_account, debit=0, credit=amount)
-                JournalItem.objects.create(entry=entry, account=to_acc, debit=amount, credit=0)
+
+                if to_acc != source_account:
+                    JournalItem.objects.create(entry=entry, account=source_account, debit=0, credit=amount)
+                    JournalItem.objects.create(entry=entry, account=to_acc, debit=amount, credit=0)
 
             JournalEntryService.post_entry(entry)
             movement.journal_entry = entry

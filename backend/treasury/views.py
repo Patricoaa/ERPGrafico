@@ -874,7 +874,16 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             fund_source_id = request.data.get('fund_source_id')
             if fund_source_id:
                 try:
+                    from accounting.models import AccountingSettings
+                    settings = AccountingSettings.objects.first()
                     fund_source = TreasuryAccount.objects.get(id=fund_source_id)
+                    
+                    # book_balance = fund_source.account.balance # This might be inaccurate if multiple sessions use it
+                    # For opening, we trust the opening_balance declared by user as the "new reality"
+                    # If they say they have X, but the fund source had Y, we must adjust the source or declare a move.
+                    # Actually, the requirement "Alinea los ajustes de movimiento de apertura caja" 
+                    # refers to the justifying of the difference between what WAS in the source vs what IS in the POS.
+                    
                     book_balance = fund_source.account.balance
                     diff = opening_balance - book_balance
                     
@@ -882,27 +891,56 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         justify_reason = request.data.get('justify_reason', 'UNKNOWN')
                         justify_target_id = request.data.get('justify_target_id')
                         
-                        notes = f"Ajuste de Apertura POS #{session.id}. Fondo reportado: {opening_balance}, Saldo libros: {book_balance}"
-                        if request.data.get('notes'):
-                            notes += f" - {request.data.get('notes')}"
-
                         pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal and session.terminal.default_treasury_account else None)
                         
                         from_account = None
                         to_account = None
-                        movement_type = 'ADJUSTMENT' # Generic adjustment for opening
+                        movement_type = 'ADJUSTMENT'
 
-                        if diff < 0: # Deficit
-                            movement_type = 'WITHDRAWAL'
-                            from_account = pos_treasury_obj
-                            if justify_reason == 'TRANSFER' and justify_target_id:
-                                try: to_account = TreasuryAccount.objects.get(id=justify_target_id)
-                                except: pass
-                        else: # Surplus
-                            movement_type = 'DEPOSIT'
-                            to_account = pos_treasury_obj
-                            if justify_reason == 'TRANSFER':
+                        # Mapping logic aligned with register_manual_movement
+                        if justify_reason == 'TRANSFER':
+                            # If surplus (diff > 0), it's a transfer FROM fund_source TO pos
+                            # If deficit (diff < 0), it's a transfer FROM pos TO somewhere else (justify_target_id)
+                            if diff > 0:
                                 from_account = fund_source
+                                to_account = pos_treasury_obj
+                                movement_type = 'TRANSFER'
+                                label = f"Traspaso (Apertura) desde {fund_source.name}"
+                            else:
+                                from_account = pos_treasury_obj
+                                if justify_target_id:
+                                    try: to_account = TreasuryAccount.objects.get(id=justify_target_id)
+                                    except: pass
+                                movement_type = 'TRANSFER'
+                                label = f"Traspaso (Apertura) a {to_account.name if to_account else 'Cuenta desconocida'}"
+                        else:
+                            # Use accounting settings for other reasons
+                            # Pass None for the reason side, TreasuryService handles mapping by reason
+                            label_map = {
+                                'PARTNER_WITHDRAWAL': 'Retiro Socio',
+                                'THEFT': 'Robo / Pérdida',
+                                'TIP': 'Propina',
+                                'ROUNDING': 'Redondeo',
+                                'OTHER_IN': 'Otro Ingreso',
+                                'OTHER_OUT': 'Otro Egreso',
+                                'COUNTING_ERROR': 'Error de Conteo',
+                                'SYSTEM_ERROR': 'Error de Sistema',
+                                'CASHBACK': 'Vuelto Incorrecto'
+                            }
+                            label = label_map.get(justify_reason, justify_reason)
+                            
+                            if diff > 0: # Surplus: Move from Reason (External/None) to POS
+                                from_account = None 
+                                to_account = pos_treasury_obj
+                                movement_type = 'DEPOSIT'
+                            else: # Deficit: Move from POS to Reason (External/None)
+                                from_account = pos_treasury_obj
+                                to_account = None
+                                movement_type = 'WITHDRAWAL'
+
+                        notes = f"Ajuste de Apertura POS #{session.id}. Fondo: {opening_balance}, Libros: {book_balance}. Motivo: {label}"
+                        if request.data.get('notes'):
+                            notes += f" - {request.data.get('notes')}"
 
                         TreasuryService.create_cash_movement(
                             movement_type=movement_type,
@@ -911,11 +949,11 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                             from_account=from_account,
                             to_account=to_account,
                             pos_session=session,
-                            notes=f"{notes} ({justify_reason})",
+                            notes=notes,
                             justify_reason=justify_reason,
-                            journal_entry_desc=f"Ajuste de Apertura POS ({justify_reason}) - Sesión #{session.id}"
+                            journal_entry_desc=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}"
                         )
-                             
+                                 
                 except TreasuryAccount.DoesNotExist:
                     print(f"WARNING: Fund source {fund_source_id} not found")
                 except Exception as e:
@@ -987,16 +1025,26 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                     from_account = None
                     to_account = None
                     
-                    if difference < 0: # Deficit
-                        from_account = pos_treasury_acc
-                        if justify_reason == 'TRANSFER' and justify_target_id:
-                            try: to_account = TreasuryAccount.objects.get(id=justify_target_id)
-                            except: pass
-                    else: # Surplus
-                        to_account = pos_treasury_acc
-                        if justify_reason == 'TRANSFER' and justify_target_id:
-                            try: from_account = TreasuryAccount.objects.get(id=justify_target_id)
-                            except: pass
+                    # For TRANSFER, explicitly set both sides
+                    if justify_reason == 'TRANSFER':
+                        if difference < 0:  # Deficit: POS -> Target
+                            from_account = pos_treasury_acc
+                            if justify_target_id:
+                                try: to_account = TreasuryAccount.objects.get(id=justify_target_id)
+                                except: pass
+                        else:  # Surplus: Target -> POS
+                            to_account = pos_treasury_acc
+                            if justify_target_id:
+                                try: from_account = TreasuryAccount.objects.get(id=justify_target_id)
+                                except: pass
+                    else:
+                        # For other reasons, let TreasuryService resolve by justify_reason
+                        if difference < 0:  # Deficit: POS -> Reason (None)
+                            from_account = pos_treasury_acc
+                            to_account = None
+                        else:  # Surplus: Reason (None) -> POS
+                            from_account = None
+                            to_account = pos_treasury_acc
 
                     movement = TreasuryService.create_cash_movement(
                         movement_type='TRANSFER' if justify_reason == 'TRANSFER' else ('WITHDRAWAL' if difference < 0 else 'DEPOSIT'),
