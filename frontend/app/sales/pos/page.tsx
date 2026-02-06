@@ -77,7 +77,18 @@ export default function POSPage() {
 }
 
 function POSPageContent() {
-    const { currentSession, selectedCustomerId, setSelectedCustomerId, items, totals, loading, bomCache, componentCache, uoms } = usePOS()
+    const {
+        currentSession,
+        setCurrentSession,
+        selectedCustomerId,
+        setSelectedCustomerId,
+        items,
+        totals,
+        loading,
+        bomCache,
+        componentCache,
+        uoms
+    } = usePOS()
 
     // Products management
     const {
@@ -327,11 +338,11 @@ function POSPageContent() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    {/* Session Control */}
+                    {/* Session Control - Updates session state on open/close */}
                     <SessionControl
                         ref={sessionControlRef}
-                        onSessionChange={() => { }}
-                        session={currentSession}
+                        onSessionChange={setCurrentSession}
+                        session={currentSession ?? undefined}
                         hideSessionInfo={true}
                     />
                 </div>
@@ -355,7 +366,10 @@ function POSPageContent() {
                                 </div>
                             </CardHeader>
                             <CardContent className="flex justify-center pb-8">
-                                <SessionControl onSessionChange={() => { }} session={currentSession} />
+                                <SessionControl
+                                    onSessionChange={setCurrentSession}
+                                    session={currentSession ?? undefined}
+                                />
                             </CardContent>
                         </Card>
                     </div>
@@ -450,6 +464,7 @@ function POSPageContent() {
                 onOpenChange={setDraftsListOpen}
                 posSessionId={currentSession?.id || null}
                 onLoadDraft={handleLoadDraft}
+                showTrigger={false}
             />
 
             <NumpadModal

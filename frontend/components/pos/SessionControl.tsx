@@ -39,6 +39,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { cn, translateStatus, formatCurrency } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
+import type { POSSession } from "@/types/pos"
 
 interface POSTerminal {
     id: number
@@ -50,27 +51,6 @@ interface POSTerminal {
     default_treasury_account_name: string
     default_treasury_account_balance: number
     allowed_payment_methods: string[]
-}
-
-interface POSSession {
-    id: number
-    terminal: number
-    terminal_name?: string
-    treasury_account: number
-    treasury_account_name: string
-    user: number
-    user_name: string
-    status: string
-    status_display: string
-    opened_at: string
-    opening_balance: number
-    total_cash_sales: number
-    total_card_sales: number
-    total_transfer_sales: number
-    total_credit_sales: number
-    expected_cash: number
-    total_other_cash_inflow: number
-    total_other_cash_outflow: number
 }
 
 interface SessionControlProps {
@@ -244,6 +224,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     useEffect(() => {
         if (session !== undefined) {
             setCurrentSession(session)
+            // If we now have an active session, clear any stale report modal
+            if (session && session.status === 'OPEN') {
+                setReportDialogOpen(false)
+            }
         }
     }, [session])
 
@@ -362,6 +346,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             onSessionChange?.(response.data)
             setIsSharedSession(false)
             setOpenDialogOpen(false)
+            setReportDialogOpen(false)
             toast.success("Caja abierta correctamente")
             // Clear any stale shared session
             localStorage.removeItem('shared_pos_session_id')
@@ -386,6 +371,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             onSessionChange?.(session)
             setIsSharedSession(true)
             setOpenDialogOpen(false)
+            setReportDialogOpen(false)
             toast.success(`Unido a la sesión de ${session.user_name}`)
         }
     }
