@@ -241,7 +241,7 @@ export function SessionCloseModal({
                                 <div className="flex justify-center">
                                     <div className="w-full bg-muted/30 p-4 rounded-xl">
                                         <div className="text-right mb-4">
-                                            <div className="text-xs font-bold uppercase text-muted-foreground">Monto Contado</div>
+                                            <div className="text-xs font-bold uppercase text-muted-foreground">Efectivo Contado</div>
                                             <div className="text-3xl font-black font-mono tracking-tight text-primary">
                                                 {formatCurrency(parseFloat(actualCash) || 0)}
                                             </div>
@@ -275,11 +275,11 @@ export function SessionCloseModal({
 
                         <div className="bg-card border rounded-xl p-4 space-y-3 shadow-sm">
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Fondo en Sistema:</span>
+                                <span className="text-muted-foreground">Efectivo Esperado (Sistema):</span>
                                 <span className="font-medium">{formatCurrency(expected)}</span>
                             </div>
                             <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
-                                <span>Fondo Contado:</span>
+                                <span>Efectivo Contado (Real):</span>
                                 <span className="text-primary">{formatCurrency(actual)}</span>
                             </div>
                         </div>
