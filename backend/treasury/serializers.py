@@ -250,6 +250,20 @@ class CardTransactionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CashMovementSerializer(serializers.ModelSerializer):
+    """Serializer for Cash Movements"""
+    movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
+    to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+
+    class Meta:
+        model = CashMovement
+        fields = '__all__'
+        read_only_fields = ['created_by', 'created_at', 'updated_at']
+
+
 class POSSessionSerializer(serializers.ModelSerializer):
     """Serializer for POS Sessions"""
     from .models import POSSession
@@ -277,23 +291,6 @@ class POSSessionAuditSerializer(serializers.ModelSerializer):
     class Meta:
         model = POSSessionAudit
         fields = '__all__'
-
-
-
-
-
-class CashMovementSerializer(serializers.ModelSerializer):
-    """Serializer for Cash Movements"""
-    movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
-    to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
-    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
-
-    class Meta:
-        model = CashMovement
-        fields = '__all__'
-        read_only_fields = ['created_by', 'created_at', 'updated_at']
 
 
 class CashDifferenceSerializer(serializers.ModelSerializer):
