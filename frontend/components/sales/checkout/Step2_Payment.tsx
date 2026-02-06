@@ -76,19 +76,23 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
     }, [accounts, paymentData.method])
 
     useEffect(() => {
-        // Auto-select: If only one candidate, select it. 
-        // Improvement: If multiple candidates and current selection is empty/invalid, pick the first one as default.
+        // Auto-select: If there is at least one candidate account
         if (filteredAccounts.length >= 1) {
-            const currentId = paymentData.treasuryAccountId;
+            const currentId = paymentData.treasuryAccountId?.toString();
             const isValid = filteredAccounts.some(acc => acc.id.toString() === currentId);
 
+            // If current selection is not valid for this method, pick the first one
             if (!isValid) {
-                setPaymentData({ ...paymentData, treasuryAccountId: filteredAccounts[0].id.toString() });
+                setPaymentData({
+                    ...paymentData,
+                    treasuryAccountId: filteredAccounts[0].id.toString()
+                });
             }
         } else if (filteredAccounts.length === 0 && paymentData.treasuryAccountId) {
+            // No valid accounts for this method, clear selection
             setPaymentData({ ...paymentData, treasuryAccountId: null });
         }
-    }, [filteredAccounts, paymentData.treasuryAccountId, setPaymentData])
+    }, [filteredAccounts, paymentData.method, setPaymentData]) // Added paymentData.method to dependencies to re-run on method change
 
     const methods = [
         {

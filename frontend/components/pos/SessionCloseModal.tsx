@@ -85,6 +85,12 @@ export function SessionCloseModal({
 
     const [accountingSettings, setAccountingSettings] = useState<any>(null)
 
+    // Derived values for validation and display
+    const actual = parseFloat(actualCash) || 0
+    const expected = session.expected_cash
+    const diff = actual - expected
+    const hasDiff = diff !== 0
+
     // Pre-populate expected cash and default treasury account when modal opens
     useEffect(() => {
         if (open && session) {
@@ -183,11 +189,6 @@ export function SessionCloseModal({
             setSubmitting(false)
         }
     }
-
-    const actual = parseFloat(actualCash) || 0
-    const expected = session.expected_cash
-    const diff = actual - expected
-    const hasDiff = diff !== 0
 
     const renderStep = () => {
         switch (step) {

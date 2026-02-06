@@ -334,10 +334,13 @@ export function SalesCheckoutWizard({
                     toast.error(`El método ${paymentData.method} no tiene una cuenta de tesorería asociada.`)
                     return false
                 }
-                if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
+
+                // Requirement: Always need a treasury account if amount > 0 and method is not CREDIT
+                if (!paymentData.treasuryAccountId) {
                     toast.error("Debe seleccionar una cuenta de destino.")
                     return false
                 }
+
                 if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
                     toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
                     return false
