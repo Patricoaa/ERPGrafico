@@ -3,11 +3,12 @@
 // POS Context
 // Centralized state management for the POS system
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache } from '@/types/pos'
 import { toast } from 'sonner'
 import * as CartUtils from '@/lib/pos/cart-utils'
 import * as Validation from '@/lib/pos/validation'
+import api from '@/lib/api'
 
 interface POSContextValue {
     // Session
@@ -66,6 +67,23 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Cart State
     const [items, setItems] = useState<CartItem[]>([])
     const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
+
+    // Fetch default customer on mount
+    useEffect(() => {
+        const fetchDefaultCustomer = async () => {
+            try {
+                const response = await api.get('/contacts/?is_default_customer=true')
+                const results = response.data.results || response.data
+                const defaultCustomer = results.find((c: any) => c.is_default_customer)
+                if (defaultCustomer) {
+                    setSelectedCustomerId(defaultCustomer.id)
+                }
+            } catch (error) {
+                console.error("Error fetching default customer:", error)
+            }
+        }
+        fetchDefaultCustomer()
+    }, [])
 
     // Caches
     const [bomCache, setBomCache] = useState<BOMCache>({})

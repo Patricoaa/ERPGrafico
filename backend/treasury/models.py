@@ -1134,6 +1134,8 @@ class CashMovement(models.Model):
         TRANSFER = 'TRANSFER', _('Traspaso de Efectivo')       # Safe ↔ Petty Cash
         BANK_DEPOSIT = 'BANK_DEPOSIT', _('Depósito Bancario')  # Safe → Bank
         ADJUSTMENT = 'ADJUSTMENT', _('Ajuste')          # Manual correction
+        SALE = 'SALE', _('Venta')                       # Cash In from Sales
+        EXPENSE = 'EXPENSE', _('Gasto/Compra')          # Cash Out for Purchases/Expenses
 
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')

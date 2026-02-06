@@ -413,6 +413,64 @@ class TreasuryService:
             except POSSession.DoesNotExist:
                 pass  # Session not found or closed, ignore
         
+        # 4. Create CashMovement for physical tracking if payment method is CASH
+        if payment_method == Payment.Method.CASH and payment_type != Payment.Method.CREDIT:
+             # Determine Movement Type
+             cm_type = None
+             if payment_type == Payment.Type.INBOUND:
+                 cm_type = CashMovement.Type.SALE
+             elif payment_type == Payment.Type.OUTBOUND:
+                 cm_type = CashMovement.Type.EXPENSE
+             
+             if cm_type:
+                # Resolve User (Creator) - We don't have request.user here easily. 
+                # We use the POS Session User if available, OR the first admin user as fallback if context is missing.
+                # Ideally, services should receive 'user' in signature, but refactoring that is large.
+                # Since 'created_by' is required, we do a best-effort resolution.
+                
+                cm_user = None
+                if pos_session_id:
+                     try:
+                         if 'POSSession' not in locals(): from .models import POSSession
+                         session_obj = POSSession.objects.get(id=pos_session_id)
+                         cm_user = session_obj.user
+                     except:
+                         pass
+                
+                if not cm_user:
+                     # Fallback: user from partner contact if it was internal? No.
+                     # Fallback: System/Admin user
+                     from django.contrib.auth import get_user_model
+                     User = get_user_model()
+                     cm_user = User.objects.filter(is_superuser=True).first()
+                
+                # Determine Accounts for CashMovement (Physical Flow)
+                # SALE (Inbound): Exterior -> Treasury Account
+                # EXPENSE (Outbound): Treasury Account -> Exterior
+                
+                cm_from = None
+                cm_to = None
+                
+                if cm_type == CashMovement.Type.SALE:
+                    # Money comes IN to the Treasury Account
+                     cm_to = payment.treasury_account
+                else: 
+                     # Money goes OUT from the Treasury Account
+                     cm_from = payment.treasury_account
+
+                # Create the movement
+                CashMovement.objects.create(
+                    movement_type=cm_type,
+                    amount=amount,
+                    from_account=cm_from,
+                    to_account=cm_to,
+                    pos_session_id=pos_session_id,  # Link to session if available
+                    journal_entry=entry,  # Link to the SAME accounting entry
+                    created_by=cm_user,
+                    date=date if isinstance(date, timezone.datetime) else timezone.datetime.combine(date, timezone.datetime.min.time(), tzinfo=timezone.get_current_timezone()),
+                    notes=f"Auto-generado desde Pago {payment.reference or payment.id}"
+                )
+
         return payment
 
     @staticmethod

@@ -221,13 +221,13 @@ export function SessionCloseModal({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Left Column: Report context */}
-                            <div className="hidden md:block border rounded-xl overflow-hidden bg-white">
-                                <POSReport
-                                    data={reportData}
-                                    type="Z"
-                                    title="Resumen del Sistema"
-                                />
-                            </div>
+
+                            <POSReport
+                                data={reportData}
+                                type="Z"
+                                title="Resumen del Sistema"
+                            />
+
 
                             {/* Right Column: Counter */}
                             <div className="space-y-4">
