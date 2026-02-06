@@ -10,6 +10,7 @@ export interface TreasuryAccount {
     allows_card: boolean
     allows_transfer: boolean
     currency: string
+    current_balance?: number
 }
 
 export type PaymentContext = 'POS' | 'GENERAL'

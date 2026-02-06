@@ -108,9 +108,14 @@ class TreasuryService:
                     JournalItem.objects.create(entry=entry, account=source_account, debit=0, credit=amount)
                     JournalItem.objects.create(entry=entry, account=to_acc, debit=amount, credit=0)
 
-            JournalEntryService.post_entry(entry)
-            movement.journal_entry = entry
-            movement.save()
+            # Only post if the entry has items (prevent empty journal entry error)
+            if entry.items.exists():
+                JournalEntryService.post_entry(entry)
+                movement.journal_entry = entry
+                movement.save()
+            else:
+                # Delete the empty entry to avoid orphan records
+                entry.delete()
 
         return movement
 

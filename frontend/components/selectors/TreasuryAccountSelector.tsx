@@ -108,8 +108,17 @@ export function TreasuryAccountSelector({
                                         selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
                                     )}
                                 />
-                                {account.name}
-                                <span className="ml-auto text-xs text-muted-foreground">{account.account_type}</span>
+                                <div className="flex flex-col flex-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-medium">{account.name}</span>
+                                        <span className="text-xs text-muted-foreground ml-2">{account.account_type}</span>
+                                    </div>
+                                    {account.current_balance !== undefined && account.current_balance !== null && (
+                                        <span className="text-xs text-muted-foreground">
+                                            Disponible: ${Number(account.current_balance).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         ))
                     )}
