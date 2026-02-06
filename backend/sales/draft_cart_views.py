@@ -33,7 +33,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     
     def create(self, request):
         """
-        POST /api/sales/draft-carts/ - Guardar nuevo borrador
+        POST /api/sales/pos-drafts/ - Guardar nuevo borrador
         
         Body:
         {
@@ -84,7 +84,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     
     def update(self, request, pk=None):
         """
-        PUT/PATCH /api/sales/draft-carts/{id}/ - Actualizar borrador existente
+        PUT/PATCH /api/sales/pos-drafts/{id}/ - Actualizar borrador existente
         """
         pos_session_id = request.data.get('pos_session_id')
         items = request.data.get('items', [])
@@ -121,7 +121,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     
     def destroy(self, request, pk=None):
         """
-        DELETE /api/sales/draft-carts/{id}/ - Eliminar borrador
+        DELETE /api/sales/pos-drafts/{id}/ - Eliminar borrador
         """
         pos_session_id = request.query_params.get('pos_session_id')
         
@@ -146,7 +146,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def restore(self, request, pk=None):
         """
-        POST /api/sales/draft-carts/{id}/restore/ - Restaurar borrador al carrito activo
+        POST /api/sales/pos-drafts/{id}/restore/ - Restaurar borrador al carrito activo
         
         Returns:
             Datos completos del borrador para cargar en el carrito

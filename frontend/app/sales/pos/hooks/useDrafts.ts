@@ -8,7 +8,7 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 
 export function useDrafts() {
-    const { items, setItems, selectedCustomerId, setSelectedCustomerId } = usePOS()
+    const { items, setItems, selectedCustomerId, setSelectedCustomerId, currentSession } = usePOS()
 
     const [drafts, setDrafts] = useState<DraftCart[]>([])
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -17,9 +17,10 @@ export function useDrafts() {
 
     // Fetch all drafts
     const fetchDrafts = useCallback(async () => {
+        if (!currentSession?.id) return
         setIsLoading(true)
         try {
-            const res = await api.get('/sales/pos-drafts/')
+            const res = await api.get(`/sales/pos-drafts/?pos_session_id=${currentSession.id}`)
             setDrafts(res.data.results || res.data)
         } catch (error) {
             console.error("Error fetching drafts:", error)
@@ -39,6 +40,7 @@ export function useDrafts() {
         setIsSaving(true)
         try {
             const draftData = {
+                pos_session_id: currentSession?.id,
                 name: name || `Borrador ${new Date().toLocaleString()}`,
                 items: items.map(item => ({
                     product_id: item.id,
@@ -116,8 +118,9 @@ export function useDrafts() {
 
     // Delete a draft
     const deleteDraft = useCallback(async (draftId: number) => {
+        if (!currentSession?.id) return
         try {
-            await api.delete(`/sales/pos-drafts/${draftId}/`)
+            await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${currentSession.id}`)
             toast.success("Borrador eliminado")
             await fetchDrafts()
         } catch (error) {

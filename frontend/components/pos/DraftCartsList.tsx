@@ -91,7 +91,7 @@ export function DraftCartsList({
 
         setLoading(true)
         try {
-            const response = await api.get(`/sales/draft-carts/?pos_session_id=${posSessionId}`)
+            const response = await api.get(`/sales/pos-drafts/?pos_session_id=${posSessionId}`)
             setDrafts(response.data)
         } catch (error: any) {
             console.error("Error al cargar borradores:", error)
@@ -122,7 +122,7 @@ export function DraftCartsList({
 
         setDeletingId(draftId)
         try {
-            await api.delete(`/sales/draft-carts/${draftId}/?pos_session_id=${posSessionId}`)
+            await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${posSessionId}`)
             toast.success(`Borrador "${draftName}" eliminado`)
             await fetchDrafts()
             onDraftDeleted?.()
