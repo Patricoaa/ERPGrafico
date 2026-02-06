@@ -235,33 +235,33 @@ export function SessionCloseModal({
                                             <SelectValue placeholder="Seleccione motivo..." />
                                         </SelectTrigger>
                                         <SelectContent>
-
                                             {diff < 0 ? (
                                                 <>
+                                                    <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase bg-muted/50">Motivos de Salida (Faltante)</div>
+                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
+                                                    <SelectItem value="CASHBACK">Vuelto Incorrecto</SelectItem>
+                                                    <SelectItem value="TRANSFER">Traspaso (Dinero retirado)</SelectItem>
                                                     {accountingSettings?.pos_partner_withdrawal_account && (
                                                         <SelectItem value="PARTNER_WITHDRAWAL">Retiro Socio</SelectItem>
                                                     )}
                                                     {accountingSettings?.pos_theft_account && (
-                                                        <SelectItem value="THEFT">Faltante / Pérdida</SelectItem>
+                                                        <SelectItem value="THEFT">Faltante / Robo</SelectItem>
                                                     )}
-                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
-
-                                                    <SelectItem value="TRANSFER">Traspaso (Dinero retirado)</SelectItem>
-
                                                     {accountingSettings?.pos_rounding_adjustment_account && (
                                                         <SelectItem value="ROUNDING">Redondeo</SelectItem>
                                                     )}
+                                                    <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
                                                 </>
                                             ) : (
                                                 <>
+                                                    <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase bg-muted/50">Motivos de Ingreso (Sobrante)</div>
                                                     <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
+                                                    <SelectItem value="TIP">Propina</SelectItem>
                                                     <SelectItem value="TRANSFER">Traspaso (Dinero ingresado)</SelectItem>
-                                                    {accountingSettings?.pos_tip_account && (
-                                                        <SelectItem value="TIP">Propina</SelectItem>
-                                                    )}
                                                     {accountingSettings?.pos_rounding_adjustment_account && (
                                                         <SelectItem value="ROUNDING">Redondeo</SelectItem>
                                                     )}
+                                                    <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
                                                 </>
                                             )}
                                         </SelectContent>
@@ -307,18 +307,24 @@ export function SessionCloseModal({
                         </div>
 
                         <div className="p-4 bg-muted/20 rounded-xl space-y-4">
-                            <div className="space-y-2">
-                                <Label>Monto a Retirar</Label>
-                                <Input
-                                    type="number"
-                                    value={withdrawalAmount}
-                                    onChange={(e) => setWithdrawalAmount(e.target.value)}
-                                    className="font-mono text-lg font-bold"
-                                />
-                                <div className="flex gap-2 justify-end">
-                                    <Button size="sm" variant="outline" onClick={() => setWithdrawalAmount("0")}>Nada</Button>
-                                    <Button size="sm" variant="outline" onClick={() => setWithdrawalAmount(actualCash)}>Todo ({formatCurrency(actual)})</Button>
+                            <div className="space-y-4">
+                                <div className="text-right">
+                                    <div className="text-xs font-bold uppercase text-muted-foreground">Monto a Retirar</div>
+                                    <div className="text-3xl font-black font-mono tracking-tight text-primary">
+                                        {formatCurrency(parseFloat(withdrawalAmount) || 0)}
+                                    </div>
                                 </div>
+                                <Numpad
+                                    value={withdrawalAmount}
+                                    onChange={setWithdrawalAmount}
+                                    hideDisplay={true}
+                                    allowDecimal={true}
+                                    className="w-full max-w-full shadow-none border-0 p-0"
+                                    onConfirm={handleCloseSession}
+                                    confirmLabel="Finalizar Cierre"
+                                    onExactAmount={() => setWithdrawalAmount(actualCash)}
+                                    exactAmountLabel={`Retirar Todo (${formatCurrency(actual)})`}
+                                />
                             </div>
 
                             <div className="space-y-2">

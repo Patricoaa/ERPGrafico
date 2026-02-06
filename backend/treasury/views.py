@@ -1202,7 +1202,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                      return Response({'error': 'No puede transferir a la misma cuenta de origen'}, status=status.HTTP_400_BAD_REQUEST)
 
             else:
-                # Existing logic for hardcoded types
+                # Expanded labels and accounts for all reason types
                 mapping = {
                     'PARTNER_WITHDRAWAL': {
                         'account': settings.pos_partner_withdrawal_account,
@@ -1220,10 +1220,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         'label': 'Propina'
                     },
                     'ROUNDING': {
-                        # We use the specific POS rounding account if available
                         'account': settings.pos_rounding_adjustment_account or settings.rounding_adjustment_account,
-                        'is_inflow': False, # Manual rounding usually implies a small loss/discount but could be inflow.
-                        # For simplification in manual register, we assume outflow (discount/small deficit).
+                        'is_inflow': False,
                         'label': 'Redondeo'
                     },
                     'OTHER_IN': {
@@ -1235,12 +1233,32 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         'account': settings.pos_other_outflow_account,
                         'is_inflow': False,
                         'label': 'Otro Egreso'
+                    },
+                    'COUNTING_ERROR': {
+                        'account': settings.pos_counting_error_account,
+                        'is_inflow': False, # Default to outflow for manual register if not specified
+                        'label': 'Error de Conteo'
+                    },
+                    'SYSTEM_ERROR': {
+                        'account': settings.pos_system_error_account,
+                        'is_inflow': False,
+                        'label': 'Error de Sistema'
+                    },
+                    'CASHBACK': {
+                        'account': settings.pos_cashback_error_account,
+                        'is_inflow': False,
+                        'label': 'Vuelto Incorrecto'
                     }
                 }
                 
                 config = mapping.get(move_type)
                 if not config:
                     return Response({'error': 'Tipo de movimiento inválido'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Allow frontend to override inflow/outflow for generic types like COUNTING_ERROR
+                is_inflow_forced = request.data.get('is_inflow')
+                if is_inflow_forced is not None:
+                    config['is_inflow'] = str(is_inflow_forced).lower() == 'true'
             
             # Restriction: Cannot withdraw more than what is available in cash
             if not config['is_inflow'] and amount > session.expected_cash:
@@ -1253,10 +1271,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 return Response({'error': f'Cuenta contable no configurada para {config["label"]}'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Treasury account for the session
-            if move_type != 'TRANSFER': # already calculated above for transfer
-                 treasury_account = session.treasury_account.account if session.treasury_account else (
-                    session.terminal.default_treasury_account.account if session.terminal else None
-                )
+            treasury_account = session.treasury_account.account if session.treasury_account else (
+                session.terminal.default_treasury_account.account if session.terminal else None
+            )
             
             if not treasury_account:
                  return Response({'error': 'No se pudo determinar la cuenta de tesorería para esta sesión'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1265,7 +1282,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 session_treasury_obj = session.treasury_account or session.terminal.default_treasury_account
                 from_account = None
                 to_account = None
-                is_inflow = move_type in ['OTHER_IN', 'TIP']
+                is_inflow = config['is_inflow']
                 
                 if is_inflow:
                     to_account = session_treasury_obj
