@@ -271,14 +271,17 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
-    component_code = serializers.CharField(source='component.code', read_only=True)
-    component_name = serializers.CharField(source='component.name', read_only=True)
-    component_cost = serializers.DecimalField(source='component.cost_price', read_only=True, max_digits=12, decimal_places=2)
-    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    component_stock = serializers.SerializerMethodField()
     
     class Meta:
         model = BillOfMaterialsLine
-        fields = ['id', 'component', 'component_code', 'component_name', 'component_cost', 'quantity', 'uom', 'uom_name', 'notes']
+        fields = ['id', 'component', 'component_code', 'component_name', 'component_cost', 'component_stock', 'quantity', 'uom', 'uom_name', 'notes']
+
+    def get_component_stock(self, obj):
+        # Use annotated stock if available on the component (from prefetched queryset)
+        if hasattr(obj.component, 'annotated_current_stock'):
+            return float(obj.component.annotated_current_stock or 0.0)
+        return float(obj.component.qty_on_hand)
 
     def validate(self, data):
         component = data.get('component')

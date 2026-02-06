@@ -574,6 +574,8 @@ class Product(models.Model):
 
     def has_active_bom(self):
         """Check if this product has an active BOM assigned."""
+        if hasattr(self, '_prefetched_objects_cache') and 'boms' in self._prefetched_objects_cache:
+            return any(bom.active for bom in self.boms.all())
         return self.boms.filter(active=True).exists()
 
     @property
@@ -706,20 +708,26 @@ class Product(models.Model):
         from production.models import BillOfMaterials
         from inventory.services import UoMService
         from decimal import Decimal
-        active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
+
+        # Use prefetched BOMs if available
+        if hasattr(self, '_prefetched_objects_cache') and 'boms' in self._prefetched_objects_cache:
+            active_bom = next((bom for bom in self.boms.all() if bom.active), None)
+        else:
+            active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
+
         if not active_bom:
             return Decimal('0.00')
         
         total_bom_cost = Decimal('0.00')
-        for line in active_bom.lines.all():
+        # Use prefetched lines if available
+        lines = active_bom.lines.all()
+        for line in lines:
             qty = line.quantity
             # Convert quantity from BOM Line UoM to Component Base UoM if they differ
             if line.uom and line.component.uom and line.uom != line.component.uom:
                 try:
                     qty = UoMService.convert_quantity(line.quantity, line.uom, line.component.uom)
                 except Exception:
-                    # In case of error (e.g. incompatible categories), use original quantity
-                    # but properly we should probably log this or handle it.
                     pass
 
             # Use component's cost_price (weighted average)
@@ -739,7 +747,10 @@ class Product(models.Model):
         
         # Get active BOM
         from production.models import BillOfMaterials
-        active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
+        if hasattr(self, '_prefetched_objects_cache') and 'boms' in self._prefetched_objects_cache:
+            active_bom = next((bom for bom in self.boms.all() if bom.active), None)
+        else:
+            active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
         
         # If no active BOM, treat as "Available" (no constraints)
         if not active_bom or not active_bom.lines.exists():
@@ -757,8 +768,12 @@ class Product(models.Model):
                 continue
             
             # Get component's current stock (in Base UoM)
-            component_stock = component.stock_moves.aggregate(total=Sum('quantity'))['total'] or 0.0
-            component_stock = float(component_stock)
+            # Use annotated stock if available on the component
+            if hasattr(component, 'annotated_current_stock'):
+                component_stock = float(component.annotated_current_stock or 0.0)
+            else:
+                component_stock = component.stock_moves.aggregate(total=Sum('quantity'))['total'] or 0.0
+                component_stock = float(component_stock)
             
             # Unit Conversion Logic using UoMService
             # We need to express "required_qty" (which is in line.uom) into Component Base UoM
@@ -769,6 +784,7 @@ class Product(models.Model):
                     try:
                         from inventory.services import UoMService
                         from decimal import Decimal
+                        from django.core.exceptions import ValidationError
                         required_qty_in_base = float(
                             UoMService.convert_quantity(
                                 Decimal(str(required_qty)),
@@ -776,7 +792,7 @@ class Product(models.Model):
                                 component.uom
                             )
                         )
-                    except ValidationError:
+                    except (ValidationError, ValueError):
                         # Incompatible categories, skip this component
                         continue
             
@@ -800,6 +816,10 @@ class Product(models.Model):
     @property
     def qty_on_hand(self):
         """Current physical stock (sum of all moves)."""
+        if hasattr(self, 'annotated_current_stock'):
+            from decimal import Decimal
+            return Decimal(str(self.annotated_current_stock or 0.0))
+            
         from django.db.models import Sum
         from decimal import Decimal
         return self.stock_moves.aggregate(total=Sum('quantity'))['total'] or Decimal('0.0')

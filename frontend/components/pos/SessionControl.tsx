@@ -139,9 +139,15 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         } else {
             fetchCurrentSession()
         }
-        fetchTerminals()
+    }, [session]) // Removed all other dependencies to prevent re-initialization
 
-        // Keyboard shortcuts
+    // Fetch terminals on mount (separate from session initialization)
+    useEffect(() => {
+        fetchTerminals()
+    }, [])
+
+    // Keyboard shortcuts
+    useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                 // Determine which action to trigger based on open dialogs
@@ -162,7 +168,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
         window.addEventListener("keydown", handleKeyDown)
         return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [openDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals, session])
+    }, [openDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals])
 
     // Sync state when session prop changes (controlled mode)
     useEffect(() => {

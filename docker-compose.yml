@@ -93,7 +93,7 @@ services:
       - NEXT_OTEL_FETCH_DISABLED=1
       - TURBO_CACHE_DIR=/tmp/.turbo
       - TURBO_DATABASE_DIR=/tmp/turbo-db
-      - NODE_OPTIONS=--max-old-space-size=2048
+      - NODE_OPTIONS=--max-old-space-size=3072
     deploy:
       resources:
         limits:

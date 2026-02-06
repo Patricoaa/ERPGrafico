@@ -31,7 +31,20 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
     search_fields = ['name', 'internal_code', 'code']
 
     def get_queryset(self):
-        queryset = Product.objects.all()
+        from django.db.models import Sum
+        queryset = Product.objects.select_related(
+            'category', 'uom', 'sale_uom', 'purchase_uom', 
+            'receiving_warehouse', 'preferred_supplier', 'subscription_supplier'
+        ).prefetch_related(
+            'attribute_values', 
+            'attribute_values__attribute',
+            'allowed_sale_uoms',
+            'product_custom_fields',
+            'reordering_rules',
+            'attachments'
+        ).annotate(
+            annotated_current_stock=Sum('stock_moves__quantity')
+        )
         
         # If it's a detail request (requesting a single object by ID), 
         # we MUST return the full queryset to avoid 404s on archived products.
@@ -62,6 +75,28 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         exclude_variant_templates = self.request.query_params.get('exclude_variant_templates', 'false') == 'true'
         if exclude_variant_templates:
             queryset = queryset.filter(has_variants=False)
+
+        from django.db.models import Prefetch, Sum
+        from production.models import BillOfMaterials, BillOfMaterialsLine
+        from inventory.models import Product
+        
+        bom_queryset = BillOfMaterials.objects.filter(active=True).prefetch_related(
+            Prefetch(
+                'lines',
+                queryset=BillOfMaterialsLine.objects.select_related('uom').prefetch_related(
+                    Prefetch(
+                        'component',
+                        queryset=Product.objects.annotate(
+                            annotated_current_stock=Sum('stock_moves__quantity')
+                        ).select_related('uom')
+                    )
+                )
+            )
+        )
+
+        queryset = queryset.prefetch_related(
+            Prefetch('boms', queryset=bom_queryset)
+        )
 
         return queryset
 

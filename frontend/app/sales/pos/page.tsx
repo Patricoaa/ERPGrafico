@@ -188,14 +188,41 @@ export default function POSPage() {
 
 
     useEffect(() => {
-        // ... (fetchData implementation unchanged)
         const fetchData = async () => {
             setLoading(true)
 
             // Fetch Products
             try {
                 const res = await api.get('/inventory/products/?can_be_sold=true&parent_template__isnull=true')
-                setProducts(res.data.results || res.data)
+                const fetchedProducts = res.data.results || res.data
+                setProducts(fetchedProducts)
+
+                // Populate BOM Cache and Component Cache from preloaded data
+                const newBomCache: Record<number, BOM> = {}
+                const newComponentCache: Record<number, { stock: number, uom: number }> = {}
+
+                fetchedProducts.forEach((p: any) => {
+                    if (p.boms && p.boms.length > 0) {
+                        const activeBom = p.boms.find((b: any) => b.active)
+                        if (activeBom) {
+                            newBomCache[p.id] = activeBom
+                            // Also pre-cache component stock from BOM lines to avoid future lookups
+                            activeBom.lines?.forEach((line: any) => {
+                                if (line.component && line.component_stock !== undefined) {
+                                    newComponentCache[line.component] = {
+                                        stock: line.component_stock,
+                                        uom: line.uom // Use line.uom or component base uom?
+                                        // Wait, component_stock is in base UoM. 
+                                        // The fetchComponentData needs the component's base UoM.
+                                    }
+                                }
+                            })
+                        }
+                    }
+                })
+                setBomCache(prev => ({ ...prev, ...newBomCache }))
+                setComponentCache(prev => ({ ...prev, ...newComponentCache }))
+
             } catch (error) {
                 console.error("Failed to fetch products", error)
                 toast.error("Error al cargar productos")
@@ -219,8 +246,6 @@ export default function POSPage() {
                 console.error("Failed to fetch UoMs", error)
                 setUoMs([])
             }
-
-
 
             setLoading(false)
         }
@@ -289,6 +314,16 @@ export default function POSPage() {
 
     const fetchBOM = async (productId: number): Promise<BOM | null> => {
         if (bomCache[productId]) return bomCache[productId]
+
+        // Try to find it in the preloaded products List
+        const product = products.find(p => p.id === productId) as any
+        if (product && product.boms && product.boms.length > 0) {
+            const activeBom = product.boms.find((b: any) => b.active)
+            if (activeBom) {
+                setBomCache(prev => ({ ...prev, [productId]: activeBom }))
+                return activeBom
+            }
+        }
 
         try {
             const res = await api.get(`/production/boms/?product_id=${productId}&active=true`)
