@@ -378,6 +378,7 @@ export function SessionCloseModal({
                                     onChange={setCashDestinationId}
                                     placeholder="Seleccione destino..."
                                     type="CASH"
+                                    excludeId={session.treasury_account}
                                 />
                             </div>
                         </div>

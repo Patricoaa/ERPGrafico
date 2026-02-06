@@ -37,6 +37,11 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet):
         if is_physical is not None:
             qs = qs.filter(is_physical=is_physical.lower() == 'true')
             
+        # Filter to exclude specific account (e.g., current POS account)
+        exclude_id = self.request.query_params.get('exclude_id')
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+            
         return qs
 
 
@@ -982,6 +987,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         try:
             from decimal import Decimal
             from django.utils import timezone
+            from django.core.exceptions import ValidationError
             
             actual_cash = Decimal(str(request.data.get('actual_cash', '0')))
             notes = request.data.get('notes', '')
@@ -1074,7 +1080,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if withdrawal_amount is not None:
                 withdrawal_amount = Decimal(str(withdrawal_amount))
             else:
-                withdrawal_amount = actual_cash
+                withdrawal_amount = Decimal('0')
 
             cash_destination_id = request.data.get('cash_destination_id')
             if withdrawal_amount > 0 and cash_destination_id:
@@ -1110,6 +1116,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 'audit': POSSessionAuditSerializer(audit).data,
                 'message': 'Caja cerrada correctamente'
             })
+        
+        except ValidationError as e:
+            return Response({'error': str(e.message) if hasattr(e, 'message') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
         except Exception as e:
             import traceback
