@@ -11,13 +11,13 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency, translateStatus } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { ArrowRight, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, History as HistoryIcon, User as UserIcon, Monitor as TerminalIcon, Plus } from "lucide-react"
+import { ArrowRight, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, History as HistoryIcon, User as UserIcon, Monitor as TerminalIcon, Plus, ShoppingCart, Receipt } from "lucide-react"
 import { CashMovementModal } from "@/components/treasury/CashMovementModal"
 import { Button } from "@/components/ui/button"
 
 interface CashMovement {
     id: number
-    movement_type: 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER' | 'BANK_DEPOSIT' | 'ADJUSTMENT'
+    movement_type: 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER' | 'BANK_DEPOSIT' | 'ADJUSTMENT' | 'SALE' | 'EXPENSE'
     movement_type_display: string
     date: string
     amount: string
@@ -88,6 +88,8 @@ export default function CashMovementsPage() {
                     'TRANSFER': <ArrowLeftRight className="h-4 w-4 text-blue-600" />,
                     'BANK_DEPOSIT': <ArrowRight className="h-4 w-4 text-slate-600" />,
                     'ADJUSTMENT': <HistoryIcon className="h-4 w-4 text-purple-600" />,
+                    'SALE': <ShoppingCart className="h-4 w-4 text-emerald-600" />,
+                    'EXPENSE': <Receipt className="h-4 w-4 text-rose-600" />,
                 }
                 return (
                     <div className="flex items-center gap-2">
@@ -200,8 +202,10 @@ export default function CashMovementsPage() {
                         options: [
                             { label: "Depósito", value: "DEPOSIT" },
                             { label: "Retiro", value: "WITHDRAWAL" },
-                            { label: "Transferencia", value: "TRANSFER" },
+                            { label: "Traspaso", value: "TRANSFER" },
                             { label: "Dep. Bancario", value: "BANK_DEPOSIT" },
+                            { label: "Venta (POS)", value: "SALE" },
+                            { label: "Gasto/Compra (OC)", value: "EXPENSE" },
                             { label: "Ajuste", value: "ADJUSTMENT" },
                         ],
                     },
