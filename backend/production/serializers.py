@@ -271,6 +271,10 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
+    component_name = serializers.CharField(source='component.name', read_only=True)
+    component_code = serializers.CharField(source='component.code', read_only=True)
+    component_cost = serializers.DecimalField(source='component.cost_price', max_digits=12, decimal_places=0, read_only=True)
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
     component_stock = serializers.SerializerMethodField()
     
     class Meta:
