@@ -28,6 +28,12 @@ interface POSContextValue {
     selectedCustomerId: number | null
     setSelectedCustomerId: (id: number | null) => void
 
+    // Draft & Wizard State
+    currentDraftId: number | null
+    setCurrentDraftId: (id: number | null) => void
+    wizardState: any | null
+    setWizardState: (state: any | null) => void
+
     // Caches
     bomCache: BOMCache
     componentCache: ComponentCache
@@ -67,6 +73,10 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Cart State
     const [items, setItems] = useState<CartItem[]>([])
     const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
+
+    // Draft & Wizard State
+    const [currentDraftId, setCurrentDraftId] = useState<number | null>(null)
+    const [wizardState, setWizardState] = useState<any | null>(null)
 
     // Fetch default customer on mount
     useEffect(() => {
@@ -140,6 +150,12 @@ export function POSProvider({ children }: { children: ReactNode }) {
         items,
         selectedCustomerId,
         setSelectedCustomerId,
+
+        // Draft & Wizard State
+        currentDraftId,
+        setCurrentDraftId,
+        wizardState,
+        setWizardState,
 
         // Caches
         bomCache,

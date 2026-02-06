@@ -8,7 +8,17 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 
 export function useDrafts() {
-    const { items, setItems, selectedCustomerId, setSelectedCustomerId, currentSession } = usePOS()
+    const {
+        items,
+        setItems,
+        selectedCustomerId,
+        setSelectedCustomerId,
+        currentSession,
+        currentDraftId,
+        setCurrentDraftId,
+        wizardState,
+        setWizardState
+    } = usePOS()
 
     const [drafts, setDrafts] = useState<DraftCart[]>([])
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -37,11 +47,10 @@ export function useDrafts() {
             return
         }
 
-        setIsSaving(true)
         try {
-            const draftData = {
+            const draftData: any = {
                 pos_session_id: currentSession?.id,
-                name: name || `Borrador ${new Date().toLocaleString()}`,
+                name: name || (currentDraftId ? undefined : `Borrador ${new Date().toLocaleString()}`),
                 items: items.map(item => ({
                     product_id: item.id,
                     quantity: item.qty,
@@ -50,15 +59,28 @@ export function useDrafts() {
                     unit_price_gross: item.unit_price_gross,
                     manufacturing_data: item.manufacturing_data
                 })),
-                customer_id: selectedCustomerId
+                customer_id: selectedCustomerId,
+                wizard_state: wizardState
             }
 
-            const res = await api.post('/sales/pos-drafts/', draftData)
-            setLastSaved(new Date())
-            toast.success("Borrador guardado")
+            let res;
+            if (currentDraftId) {
+                // Update existing
+                res = await api.put(`/sales/pos-drafts/${currentDraftId}/`, draftData)
+                // toast.success("Borrador actualizado") // Auto-save might be too noisy
+            } else {
+                // Create new
+                res = await api.post('/sales/pos-drafts/', draftData)
+                setCurrentDraftId(res.data.id)
+                toast.success("Borrador guardado")
+            }
 
-            // Refresh drafts list
-            await fetchDrafts()
+            setLastSaved(new Date())
+
+            // Refresh drafts list without full loading indicator
+            api.get(`/sales/pos-drafts/?pos_session_id=${currentSession?.id}`).then(r => {
+                setDrafts(r.data.results || r.data)
+            })
 
             return res.data
         } catch (error: any) {
@@ -67,7 +89,7 @@ export function useDrafts() {
         } finally {
             setIsSaving(false)
         }
-    }, [items, selectedCustomerId, fetchDrafts])
+    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId])
 
     // Load a draft into cart
     const loadDraft = useCallback(async (draftId: number) => {
@@ -103,6 +125,9 @@ export function useDrafts() {
             const loadedItems = (await Promise.all(itemPromises)).filter(Boolean) as CartItem[]
 
             setItems(loadedItems)
+            setCurrentDraftId(draft.id)
+            setWizardState(draft.wizard_state)
+
             if (draft.customer_id) {
                 setSelectedCustomerId(draft.customer_id)
             }
@@ -114,7 +139,7 @@ export function useDrafts() {
         } finally {
             setIsLoading(false)
         }
-    }, [setItems, setSelectedCustomerId])
+    }, [setItems, setSelectedCustomerId, setCurrentDraftId, setWizardState])
 
     // Delete a draft
     const deleteDraft = useCallback(async (draftId: number) => {

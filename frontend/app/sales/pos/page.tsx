@@ -87,7 +87,11 @@ function POSPageContent() {
         loading,
         bomCache,
         componentCache,
-        uoms
+        uoms,
+        currentDraftId,
+        setCurrentDraftId,
+        wizardState,
+        setWizardState
     } = usePOS()
 
     // Products management
@@ -143,8 +147,6 @@ function POSPageContent() {
         field: 'qty' | 'price'
         initialValue: number
     } | null>(null)
-    const [currentDraftId, setCurrentDraftId] = useState<number | null>(null)
-    const [wizardState, setWizardState] = useState<any>(null)
     const [numpadValue, setNumpadValue] = useState("0")
 
     // Auto-save drafts
@@ -285,7 +287,6 @@ function POSPageContent() {
     // Draft handlers
     const handleLoadDraft = async (draft: any) => {
         await loadDraft(draft.id)
-        setCurrentDraftId(draft.id)
         setDraftsListOpen(false)
     }
 
