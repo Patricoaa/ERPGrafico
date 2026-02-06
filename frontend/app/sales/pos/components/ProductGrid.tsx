@@ -1,0 +1,178 @@
+"use client"
+
+// ProductGrid Component
+// Grid display of products with availability indicators
+
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { DynamicIcon } from '@/components/ui/dynamic-icon'
+import { cn } from '@/lib/utils'
+import { formatCurrency } from '@/lib/currency'
+import { PricingUtils } from '@/lib/pricing'
+import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
+import { Product, Category, StockLimits } from '@/types/pos'
+import { memo } from 'react'
+
+interface ProductGridProps {
+    products: Product[]
+    categories: Category[]
+    limits: StockLimits
+    onProductClick: (product: Product) => void
+}
+
+function ProductGridComponent({
+    products,
+    categories,
+    limits,
+    onProductClick
+}: ProductGridProps) {
+    const { isTouchPOS, isSmallScreen } = useDeviceContext()
+
+    if (products.length === 0) {
+        return (
+            <div className="col-span-full text-center py-10 text-muted-foreground">
+                No se encontraron productos.
+            </div>
+        )
+    }
+
+    // Adaptive grid columns based on device
+    const gridCols = isTouchPOS
+        ? "grid-cols-3"  // Tablet: 3 columns for better touch targets
+        : isSmallScreen
+            ? "grid-cols-2"  // Mobile: 2 columns
+            : "grid-cols-2 lg:grid-cols-4"  // Desktop: 2-4 columns
+
+    return (
+        <div className={cn("grid gap-4", gridCols)}>
+            {products.map(product => {
+                const categoryId = typeof product.category === 'object'
+                    ? product.category?.id
+                    : product.category
+                const catData = categories.find(c => Number(c.id) === Number(categoryId))
+                const categoryIcon = (typeof product.category === 'object'
+                    ? product.category?.icon
+                    : catData?.icon) || null
+
+                // Determine if product is disabled
+                const isStorableNoStock = product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0
+                const isManufacturableZero = product.product_type === 'MANUFACTURABLE'
+                    && product.manufacturable_quantity === 0
+                    && product.has_bom
+                const isDisabled = isStorableNoStock || isManufacturableZero
+
+                return (
+                    <Card
+                        key={product.id}
+                        className={cn(
+                            "cursor-pointer hover:border-primary transition-all active:scale-95 relative flex flex-col overflow-hidden group",
+                            // Touch-optimized tappable area
+                            isTouchPOS && "min-h-[140px]",
+                            isDisabled && "opacity-50 pointer-events-none grayscale-[0.5]"
+                        )}
+                        onClick={() => onProductClick(product)}
+                    >
+                        <div className={cn(
+                            "aspect-square bg-muted/50 flex items-center justify-center relative",
+                            // Larger image area for touch devices
+                            isTouchPOS && "min-h-[120px]"
+                        )}>
+                            {product.image ? (
+                                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <DynamicIcon
+                                    name={categoryIcon || "Package"}
+                                    className="h-10 w-10 text-muted-foreground/30 group-hover:scale-110 transition-transform"
+                                />
+                            )}
+
+                            {/* Stock/Availability Badge */}
+                            {product.product_type === 'STORABLE' && (
+                                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
+                                    <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.current_stock ?? 0) > 0
+                                        ? 'bg-green-500'
+                                        : 'bg-red-500'
+                                        }`} />
+                                    {limits[`prod_${product.id}`] ?? product.current_stock ?? 0}
+                                </div>
+                            )}
+
+                            {product.product_type === 'MANUFACTURABLE' && (
+                                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
+                                    <div className={`h-2 w-2 rounded-full ${(() => {
+                                        const limit = limits[`prod_${product.id}`]
+                                        const max = limit !== undefined ? limit : (product.manufacturable_quantity ?? Infinity)
+                                        return max > 0 ? 'bg-blue-500' : 'bg-red-500'
+                                    })()}`} />
+                                    {(() => {
+                                        const limit = limits[`prod_${product.id}`]
+                                        const max = limit !== undefined ? limit : product.manufacturable_quantity
+                                        if (max === null || max === undefined || max > 999999) return 'Disponible'
+                                        return `${max} fab.`
+                                    })()}
+                                </div>
+                            )}
+
+                            {(product.product_type === 'SERVICE' ||
+                                product.product_type === 'SUBSCRIPTION' ||
+                                product.product_type === 'CONSUMABLE') && (
+                                    <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
+                                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                                        Disponible
+                                    </div>
+                                )}
+                        </div>
+
+                        <CardContent className={cn(
+                            "p-2 text-center flex-1 flex flex-col justify-center",
+                            isTouchPOS && "p-3"  // More padding for touch
+                        )}>
+                            <div className={cn(
+                                "font-bold line-clamp-2",
+                                isTouchPOS ? "text-base" : "text-sm"  // Larger font for touch
+                            )}>
+                                {product.name}
+                            </div>
+                            <div className={cn(
+                                "text-primary font-semibold mt-1",
+                                isTouchPOS ? "text-lg" : "text-base"
+                            )}>
+                                {product.is_dynamic_pricing ? (
+                                    <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50">
+                                        Precio Dinámico
+                                    </Badge>
+                                ) : (
+                                    <>
+                                        {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}
+                                        <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
+                                    </>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-1 mt-1">
+                                {product.internal_code && (
+                                    <Badge variant="outline" className="text-[9px] h-3.5 px-1 font-normal opacity-70 uppercase">
+                                        {product.internal_code}
+                                    </Badge>
+                                )}
+                                {product.code && product.code !== product.internal_code && (
+                                    <Badge variant="secondary" className="text-[9px] h-3.5 px-1 font-normal opacity-70 uppercase">
+                                        {product.code}
+                                    </Badge>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            })}
+        </div>
+    )
+}
+
+// 🚀 Memoize to prevent unnecessary re-renders when products/limits haven't changed
+export const ProductGrid = memo(ProductGridComponent, (prevProps, nextProps) => {
+    return (
+        prevProps.products === nextProps.products &&
+        prevProps.limits === nextProps.limits &&
+        prevProps.onProductClick === nextProps.onProductClick
+    )
+})

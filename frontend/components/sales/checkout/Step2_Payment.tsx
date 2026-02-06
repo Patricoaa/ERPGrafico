@@ -22,7 +22,6 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog"
-import { ModalSelector } from "@/components/ui/ModalSelector"
 
 
 interface Step2_PaymentProps {
@@ -238,18 +237,15 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                                         {filteredAccounts.length > 1 && (
                                             <div className="space-y-1">
                                                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Cuenta Destino</Label>
-                                                <ModalSelector
-                                                    title="Seleccionar Cuenta de Tesorería"
-                                                    triggerClassName="h-10 text-xs"
-                                                    options={filteredAccounts.map(acc => ({
-                                                        id: acc.id,
-                                                        label: acc.name,
-                                                        description: `Balance: ${acc.current_balance || '0'}`
-                                                    }))}
+                                                <select
+                                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
                                                     value={paymentData.treasuryAccountId || ""}
-                                                    onChange={(id: string | number) => setPaymentData({ ...paymentData, treasuryAccountId: id })}
-                                                    placeholder="Seleccionar cuenta..."
-                                                />
+                                                    onChange={(e) => setPaymentData({ ...paymentData, treasuryAccountId: e.target.value })}
+                                                >
+                                                    {filteredAccounts.map((acc) => (
+                                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                         )}
 

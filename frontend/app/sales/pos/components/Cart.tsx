@@ -1,0 +1,192 @@
+"use client"
+
+// Cart Component
+// Shopping cart display with totals and actions
+
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table'
+import { ShoppingCart, Zap, Clock } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { CartItem } from './CartItem'
+import { formatCurrency } from '@/lib/currency'
+import { useDeviceContext } from '@/hooks/useDeviceContext'
+import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
+
+interface CartProps {
+    items: CartItemType[]
+    products: Product[]
+    uoms: UoM[]
+    limits: Record<string, number>
+    totals: {
+        total_gross: number
+        total_net: number
+        total_tax: number
+    }
+    loading: boolean
+    currentDraftId?: number | null
+    lastSaved?: Date | null
+    saving?: boolean
+    canQuickSale: { allowed: boolean, reason: string }
+    onItemQuantityChange: (cartItemId: string, qty: number | string) => void
+    onItemUomChange: (cartItemId: string, uomId: number, uomName: string) => void
+    onItemPriceChange: (cartItemId: string, priceGross: number) => void
+    onItemRemove: (cartItemId: string) => void
+    onOpenNumpad: (cartItemId: string, field: 'qty' | 'price', currentValue: number) => void
+    onQuickSale: () => void
+    onConfirmSale: () => void
+}
+
+export function Cart({
+    items,
+    products,
+    uoms,
+    limits,
+    totals,
+    loading,
+    currentDraftId,
+    lastSaved,
+    saving,
+    canQuickSale,
+    onItemQuantityChange,
+    onItemUomChange,
+    onItemPriceChange,
+    onItemRemove,
+    onOpenNumpad,
+    onQuickSale,
+    onConfirmSale
+}: CartProps) {
+    const { isTouchPOS } = useDeviceContext()
+    return (
+        <Card className="flex-1 flex flex-col overflow-hidden border">
+            <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="p-4 px-6 border-b font-medium bg-muted/50 flex justify-between items-center">
+                    <span>Resumen de Venta</span>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        {items.length} items
+                    </span>
+                </div>
+
+                {/* Items List */}
+                <div className="flex-1 overflow-auto">
+                    <Table>
+                        <TableHeader className="bg-muted/30 sticky top-0 z-10">
+                            <TableRow className="hover:bg-transparent border-b">
+                                <TableHead className="w-[25%] text-xs py-2">Producto</TableHead>
+                                <TableHead className="w-[15%] text-xs py-2 text-center">Cant.</TableHead>
+                                <TableHead className="w-[15%] text-xs py-2 text-center">Unidad</TableHead>
+                                <TableHead className="w-[15%] text-xs py-2 text-right">Precio Unit.</TableHead>
+                                <TableHead className="w-[20%] text-xs py-2 text-right">Total</TableHead>
+                                <TableHead className="w-[10%] py-2"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {items.map((item) => {
+                                const originalProduct = products.find(p => p.id === item.id)
+                                const maxQty = limits[`cart_${item.cartItemId}`]
+
+                                return (
+                                    <CartItem
+                                        key={item.cartItemId}
+                                        item={item}
+                                        originalProduct={originalProduct}
+                                        uoms={uoms}
+                                        maxQty={maxQty}
+                                        onQuantityChange={onItemQuantityChange}
+                                        onUomChange={onItemUomChange}
+                                        onPriceChange={onItemPriceChange}
+                                        onRemove={onItemRemove}
+                                        onOpenNumpad={onOpenNumpad}
+                                    />
+                                )
+                            })}
+                            {items.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-xs italic">
+                                        Carrito vacío
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+
+                {/* Footer with Totals and Actions */}
+                <div className="p-4 bg-muted/20 border-t space-y-4">
+                    {/* Status Bar */}
+                    <div className="flex justify-between items-center px-1 min-h-[16px]">
+                        <div>
+                            {currentDraftId && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 bg-background font-normal text-muted-foreground uppercase tracking-widest border-muted-foreground/20">
+                                    Modo Borrador
+                                </Badge>
+                            )}
+                        </div>
+                        {lastSaved && (
+                            <div className="flex items-center text-[10px] text-muted-foreground gap-1 opacity-70">
+                                <Clock className="h-3 w-3" />
+                                <span>
+                                    {saving ? "Guardando..." : `Actualizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Quick Sale Button */}
+                    <Button
+                        variant="outline"
+                        className={cn(
+                            "w-full font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all",
+                            isTouchPOS ? "h-14 text-base" : "h-12 text-sm"
+                        )}
+                        disabled={loading || items.length === 0 || !canQuickSale.allowed}
+                        onClick={onQuickSale}
+                        title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
+                    >
+                        <Zap className={cn(
+                            "mr-2",
+                            isTouchPOS ? "h-6 w-6" : "h-5 w-5"
+                        )} />
+                        {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
+                    </Button>
+
+                    {/* Totals */}
+                    <div className="space-y-1">
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>Neto</span>
+                            <span>{formatCurrency(totals.total_net)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>IVA (19%)</span>
+                            <span>{formatCurrency(totals.total_tax)}</span>
+                        </div>
+                        <div className="flex justify-between text-xl font-bold pt-2 border-t">
+                            <span>Total</span>
+                            <span>{formatCurrency(totals.total_gross)}</span>
+                        </div>
+                    </div>
+
+                    {/* Confirm Sale Button */}
+                    <Button
+                        id="confirm-sale-btn"
+                        className={cn(
+                            "w-full shadow-lg font-black uppercase tracking-tight",
+                            isTouchPOS ? "h-20 text-2xl" : "h-16 text-xl"
+                        )}
+                        size="lg"
+                        disabled={loading || items.length === 0}
+                        onClick={onConfirmSale}
+                    >
+                        <ShoppingCart className={cn(
+                            "mr-2",
+                            isTouchPOS ? "h-8 w-8" : "h-6 w-6"
+                        )} />
+                        {loading ? "Procesando..." : "Confirmar Venta"}
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}

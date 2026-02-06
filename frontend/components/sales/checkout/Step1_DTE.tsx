@@ -9,7 +9,6 @@ import { useFolioValidation } from "@/hooks/useFolioValidation"
 import { useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ModalSelector } from "@/components/ui/ModalSelector"
 
 interface Step1_DTEProps {
     dteData: any
@@ -41,17 +40,30 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false }: Step1_DTE
                 </p>
             </div>
             <div className="space-y-4">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">Tipo de Documento</Label>
-                <ModalSelector
-                    title="Seleccionar Tipo de Documento"
-                    options={[
-                        { id: 'BOLETA', label: 'Boleta Electrónica', description: 'Folio auto-generado', icon: <Receipt className="h-5 w-5" /> },
-                        { id: 'FACTURA', label: 'Factura Electrónica', description: 'Requiere folio manual', icon: <FileText className="h-5 w-5" /> }
-                    ]}
+                <RadioGroup
                     value={dteData.type}
-                    onChange={(val) => setDteData({ ...dteData, type: val })}
-                    placeholder="Seleccionar tipo..."
-                />
+                    onValueChange={(val) => setDteData({ ...dteData, type: val })}
+                    className="grid grid-cols-2 gap-4"
+                >
+                    <Label
+                        htmlFor="type-boleta"
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'BOLETA' ? 'border-primary' : ''}`}
+                    >
+                        <RadioGroupItem value="BOLETA" id="type-boleta" className="sr-only" />
+                        <Receipt className="mb-3 h-6 w-6" />
+                        <span className="text-sm font-medium">Boleta Electrónica</span>
+                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Folio auto-generado</span>
+                    </Label>
+                    <Label
+                        htmlFor="type-factura"
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA' ? 'border-primary' : ''}`}
+                    >
+                        <RadioGroupItem value="FACTURA" id="type-factura" className="sr-only" />
+                        <FileText className="mb-3 h-6 w-6" />
+                        <span className="text-sm font-medium">Factura Electrónica</span>
+                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Requiere folio manual</span>
+                    </Label>
+                </RadioGroup>
             </div>
 
             {dteData.type === 'FACTURA' && (
