@@ -127,6 +127,37 @@ class CashMovementViewSet(viewsets.ModelViewSet):
         return movement
 
 
+    @action(detail=True, methods=['post'])
+    def link_to_payment(self, request, pk=None):
+        """
+        Vincula este movimiento de efectivo a un pago existente.
+        """
+        movement = self.get_object()
+        payment_id = request.data.get('payment_id')
+        
+        if not payment_id:
+            return Response(
+                {'error': 'payment_id es requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            payment, movement = TreasuryService.link_payment_to_cash_movement(
+                payment_id=payment_id,
+                cash_movement_id=movement.id
+            )
+            return Response({
+                'message': 'Vinculación exitosa',
+                'payment': PaymentSerializer(payment).data,
+                'movement': CashMovementSerializer(movement).data
+            })
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 class CashDifferenceViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing cash differences that require supervisor approval.
@@ -1414,3 +1445,100 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             import traceback
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CashFlowViewSet(viewsets.ViewSet):
+    """
+    Vista consolidada de flujos de efectivo.
+    Combina Payments y CashMovements en una sola vista filtrable.
+    """
+    
+    def list(self, request):
+        """
+        Lista consolidada de flujos de efectivo.
+        Query params:
+        - flow_type: 'all', 'third_party', 'internal' (default: 'third_party')
+        - date_from, date_to, treasury_account
+        """
+        from datetime import datetime
+        from django.db.models import Q
+        from .serializers import CashFlowSerializer
+        
+        flow_type = request.query_params.get('flow_type', 'third_party')
+        date_from_str = request.query_params.get('date_from')
+        date_to_str = request.query_params.get('date_to')
+        treasury_account_id = request.query_params.get('treasury_account')
+        
+        date_from = datetime.fromisoformat(date_from_str).date() if date_from_str else None
+        date_to = datetime.fromisoformat(date_to_str).date() if date_to_str else None
+        
+        results = []
+        
+        # Payments (third-party flows)
+        if flow_type in ['all', 'third_party']:
+            payments_query = Payment.objects.select_related('treasury_account', 'contact', 'invoice__contact')
+            
+            if date_from:
+                payments_query = payments_query.filter(date__gte=date_from)
+            if date_to:
+                payments_query = payments_query.filter(date__lte=date_to)
+            if treasury_account_id:
+                payments_query = payments_query.filter(treasury_account_id=treasury_account_id)
+            
+            for payment in payments_query:
+                partner_name = None
+                if payment.contact:
+                    partner_name = payment.contact.name
+                elif payment.invoice and payment.invoice.contact:
+                    partner_name = payment.invoice.contact.name
+                    
+                results.append({
+                    'id': payment.id,
+                    'source': 'PAYMENT',
+                    'type': payment.get_payment_type_display(),
+                    'date': payment.date,
+                    'amount': payment.amount,
+                    'description': payment.reference or f"Pago {payment.display_id}",
+                    'treasury_account_name': payment.treasury_account.name if payment.treasury_account else 'N/A',
+                    'partner_name': partner_name,
+                    'reference': payment.display_id,
+                    'is_internal': False
+                })
+        
+        # CashMovements (excluding those linked to payments)
+        if flow_type in ['all', 'internal']:
+            movements_query = CashMovement.objects.filter(payment__isnull=True).select_related('from_account', 'to_account')
+            
+            if date_from:
+                movements_query = movements_query.filter(date__gte=date_from)
+            if date_to:
+                movements_query = movements_query.filter(date__lte=date_to)
+            if treasury_account_id:
+                movements_query = movements_query.filter(
+                    Q(from_account_id=treasury_account_id) | Q(to_account_id=treasury_account_id)
+                )
+            
+            if flow_type == 'internal':
+                movements_query = movements_query.filter(movement_type=CashMovement.Type.TRANSFER)
+            
+            for movement in movements_query:
+                is_internal = movement.movement_type == CashMovement.Type.TRANSFER
+                treasury_name = (movement.from_account.name if movement.from_account 
+                               else movement.to_account.name if movement.to_account else 'N/A')
+                
+                results.append({
+                    'id': movement.id,
+                    'source': 'CASH_MOVEMENT',
+                    'type': movement.get_movement_type_display(),
+                    'date': movement.date.date() if hasattr(movement.date, 'date') else movement.date,
+                    'amount': movement.amount,
+                    'description': movement.notes or f"Movimiento {movement.id}",
+                    'treasury_account_name': treasury_name,
+                    'partner_name': None,
+                    'reference': f"MOV-{movement.id}",
+                    'is_internal': is_internal
+                })
+        
+        results.sort(key=lambda x: x['date'], reverse=True)
+        serializer = CashFlowSerializer(results, many=True)
+        return Response(serializer.data)

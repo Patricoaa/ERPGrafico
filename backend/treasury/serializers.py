@@ -103,6 +103,10 @@ class PaymentSerializer(serializers.ModelSerializer):
     # Reconciliation data
     reconciled_by_name = serializers.CharField(source='reconciled_by.username', read_only=True, allow_null=True)
     bank_statement_info = serializers.SerializerMethodField()
+    
+    # Cash Movement linking
+    cash_movement_id = serializers.IntegerField(source='cash_movement.id', read_only=True, allow_null=True)
+    cash_movement_type = serializers.CharField(source='cash_movement.get_movement_type_display', read_only=True, allow_null=True)
 
     class Meta:
         model = Payment
@@ -257,6 +261,11 @@ class CashMovementSerializer(serializers.ModelSerializer):
     from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
     to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    
+    # Payment linking
+    payment_id = serializers.IntegerField(source='payment.id', read_only=True, allow_null=True)
+    payment_reference = serializers.CharField(source='payment.reference', read_only=True, allow_null=True)
+    payment_display_id = serializers.CharField(source='payment.display_id', read_only=True, allow_null=True)
 
     class Meta:
         model = CashMovement
@@ -306,3 +315,20 @@ class CashDifferenceSerializer(serializers.ModelSerializer):
         model = CashDifference
         fields = '__all__'
         read_only_fields = ['reported_by', 'reported_at', 'approved_by', 'approved_at', 'journal_entry']
+
+
+class CashFlowSerializer(serializers.Serializer):
+    """
+    Serializer unificado para vista de flujo de efectivo.
+    Combina Payments y CashMovements relevantes.
+    """
+    id = serializers.IntegerField()
+    source = serializers.ChoiceField(choices=['PAYMENT', 'CASH_MOVEMENT'])
+    type = serializers.CharField()  # payment_type o movement_type
+    date = serializers.DateField()
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    description = serializers.CharField()
+    treasury_account_name = serializers.CharField()
+    partner_name = serializers.CharField(allow_null=True)
+    reference = serializers.CharField()
+    is_internal = serializers.BooleanField()  # True para traspasos

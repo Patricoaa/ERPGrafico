@@ -61,6 +61,19 @@ export default function TreasuryPage() {
                     </Card>
                 </Link>
 
+                <Link href="/treasury/cash-flow">
+                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-l-teal-600">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Flujo de Efectivo</CardTitle>
+                            <Vault className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">Vista Consolidada</div>
+                            <p className="text-xs text-muted-foreground">Todos los flujos unificados</p>
+                        </CardContent>
+                    </Card>
+                </Link>
+
 
 
                 <Link href="/treasury/movements">

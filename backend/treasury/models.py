@@ -160,6 +160,17 @@ class Payment(models.Model):
         related_name='payments',
         verbose_name=_("Sesión de Caja")
     )
+    
+    # Optional link to physical cash movement
+    cash_movement = models.OneToOneField(
+        'CashMovement',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='linked_payment',
+        verbose_name=_("Movimiento de Efectivo Asociado"),
+        help_text=_("Vincula este pago a un movimiento físico de efectivo")
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -1197,6 +1208,17 @@ class CashMovement(models.Model):
         blank=True,
         related_name='cash_movement',
         verbose_name=_("Asiento Contable")
+    )
+    
+    # Optional link to payment transaction
+    payment = models.OneToOneField(
+        'Payment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='linked_cash_movement',
+        verbose_name=_("Pago Asociado"),
+        help_text=_("Vincula este movimiento a un pago a terceros")
     )
 
     # Audit

@@ -5,7 +5,7 @@ from .views import (
     BankStatementViewSet, BankStatementLineViewSet,
     ReconciliationRuleViewSet, ReconciliationReportsViewSet,
     CardBillingViewSet, POSSessionViewSet, 
-    CashMovementViewSet, CashDifferenceViewSet
+    CashMovementViewSet, CashDifferenceViewSet, CashFlowViewSet
 )
 
 
@@ -21,7 +21,8 @@ router.register(r'statement-lines', BankStatementLineViewSet)
 router.register(r'reconciliation-rules', ReconciliationRuleViewSet)
 router.register(r'reconciliation-reports', ReconciliationReportsViewSet, basename='reconciliation-reports')
 router.register(r'card-billing', CardBillingViewSet, basename='card-billing')
-router.register(r'pos-sessions', POSSessionViewSet, basename='pos-sessions')
+router.register(r'sessions', POSSessionViewSet, basename='possession')
+router.register(r'cash-flow', CashFlowViewSet, basename='cashflow')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -11,7 +11,7 @@ class TreasuryService:
     @transaction.atomic
     def create_cash_movement(movement_type, amount, created_by, from_account=None, to_account=None, 
                              pos_session=None, notes='', justify_reason='UNKNOWN', 
-                             date=None, journal_entry_desc=None):
+                             date=None, journal_entry_desc=None, link_to_payment_id=None):
         """
         Creates a CashMovement record and its corresponding Journal Entry.
         """
@@ -41,6 +41,21 @@ class TreasuryService:
             notes=notes,
             date=date
         )
+
+        # Link to Payment if requested
+        if link_to_payment_id:
+            try:
+                payment = Payment.objects.get(pk=link_to_payment_id)
+                if payment.cash_movement:
+                    raise ValidationError(
+                        "Este pago ya está vinculado a otro movimiento de efectivo"
+                    )
+                payment.cash_movement = movement
+                payment.save()
+                movement.payment = payment
+                movement.save()
+            except Payment.DoesNotExist:
+                pass  # Ignorar si no existe
 
         # 2. Accounting Logic
         settings = AccountingSettings.objects.first()
@@ -458,8 +473,8 @@ class TreasuryService:
                      # Money goes OUT from the Treasury Account
                      cm_from = payment.treasury_account
 
-                # Create the movement
-                CashMovement.objects.create(
+                # Create the movement and link it to payment
+                cash_movement = CashMovement.objects.create(
                     movement_type=cm_type,
                     amount=amount,
                     from_account=cm_from,
@@ -468,8 +483,13 @@ class TreasuryService:
                     journal_entry=entry,  # Link to the SAME accounting entry
                     created_by=cm_user,
                     date=date if isinstance(date, timezone.datetime) else timezone.datetime.combine(date, timezone.datetime.min.time(), tzinfo=timezone.get_current_timezone()),
-                    notes=f"Auto-generado desde Pago {payment.reference or payment.id}"
+                    notes=f"Auto-generado desde Pago {payment.reference or payment.id}",
+                    payment=payment  # Bidirectional link
                 )
+                
+                # Link payment to movement
+                payment.cash_movement = cash_movement
+                payment.save()
 
         return payment
 
@@ -528,3 +548,29 @@ class TreasuryService:
         # actually reverse_entry marks original as CANCELLED.
         
         return payment
+
+    @staticmethod
+    @transaction.atomic
+    def link_payment_to_cash_movement(payment_id, cash_movement_id):
+        """
+        Vincula un pago existente con un movimiento de efectivo existente.
+        Valida que ambos sean compatibles (mismo monto, fecha similar, etc.)
+        """
+        payment = Payment.objects.get(pk=payment_id)
+        movement = CashMovement.objects.get(pk=cash_movement_id)
+        
+        # Validaciones
+        if payment.cash_movement:
+            raise ValidationError("El pago ya está vinculado a un movimiento")
+        if movement.payment:
+            raise ValidationError("El movimiento ya está vinculado a un pago")
+        if payment.amount != movement.amount:
+            raise ValidationError(f"Los montos no coinciden: Pago ${payment.amount}, Movimiento ${movement.amount}")
+        
+        # Vincular
+        payment.cash_movement = movement
+        payment.save()
+        movement.payment = payment
+        movement.save()
+        
+        return (payment, movement)
