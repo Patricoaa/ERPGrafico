@@ -32,6 +32,7 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { POSReport } from "@/components/pos/POSReport"
 import { SessionCloseModal } from "@/components/pos/SessionCloseModal"
+import { Numpad } from "@/components/ui/numpad"
 import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
 import { forwardRef, useImperativeHandle } from "react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -116,6 +117,21 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [submitting, setSubmitting] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
 
+    // Open Session Wizard State
+    const [wizardStep, setWizardStep] = useState<number>(1)
+    // 1: Mode Selection (Review context)
+    // 2: Terminal Selection (if multiple)
+    // 3: Initial Fund (Numpad)
+    // 4: Confirmation
+
+    useEffect(() => {
+        if (openDialogOpen) {
+            setWizardStep(1)
+            fetchAvailableSessions()
+            fetchTerminals()
+        }
+    }, [openDialogOpen])
+
     useImperativeHandle(ref, () => ({
         showXReport: () => {
             if (currentSession) {
@@ -151,7 +167,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                 // Determine which action to trigger based on open dialogs
-                if (openDialogOpen && selectedTerminalId) {
+                if (openDialogOpen && selectedTerminalId && wizardStep === 4) {
                     const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
                     const expected = terminal?.default_treasury_account_balance || 0
                     const actual = parseFloat(openingBalance) || 0
@@ -168,7 +184,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
         window.addEventListener("keydown", handleKeyDown)
         return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [openDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals])
+    }, [openDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals, wizardStep])
 
     // Sync state when session prop changes (controlled mode)
     useEffect(() => {
@@ -430,20 +446,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         )
     }
 
-    // Open Session Wizard State
-    const [wizardStep, setWizardStep] = useState<number>(1)
-    // 1: Mode Selection (Review context)
-    // 2: Terminal Selection (if multiple)
-    // 3: Initial Fund (Numpad)
-    // 4: Confirmation
 
-    useEffect(() => {
-        if (openDialogOpen) {
-            setWizardStep(1)
-            fetchAvailableSessions()
-            fetchTerminals()
-        }
-    }, [openDialogOpen])
 
     // ... (keep existing effects for fetching logic)
 
@@ -478,13 +481,16 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         setWizardStep(2)
                                     }
                                 }}
+                                disabled={terminals.filter(t => !availableSessions.some(s => s.terminal === t.id)).length === 0}
                             >
                                 <div className="p-3 rounded-full bg-emerald-100 text-emerald-600 group-hover:scale-110 transition-transform">
                                     <Unlock className="h-6 w-6" />
                                 </div>
                                 <div className="text-center">
                                     <span className="font-bold text-lg block">Abrir Nueva Caja</span>
-                                    <span className="text-xs text-muted-foreground">Iniciar turno en un terminal</span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {terminals.filter(t => !availableSessions.some(s => s.terminal === t.id)).length} terminales libres
+                                    </span>
                                 </div>
                             </Button>
 
@@ -501,7 +507,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <span className="font-bold text-lg block">Unirse a Caja</span>
                                     <span className="text-xs text-muted-foreground">
                                         {availableSessions.length > 0
-                                            ? `${availableSessions.length} cajas disponibles`
+                                            ? `${availableSessions.length} cajas activas`
                                             : "No hay cajas activas"}
                                     </span>
                                 </div>
@@ -563,44 +569,25 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         {formatCurrency(parseFloat(openingBalance) || 0)}
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                                        <Button
-                                            key={n}
-                                            variant="outline"
-                                            className="h-14 text-xl font-bold"
-                                            onClick={() => setOpeningBalance(prev => prev === "0" ? n.toString() : prev + n)}
-                                        >
-                                            {n}
-                                        </Button>
-                                    ))}
-                                    <Button
-                                        variant="ghost"
-                                        className="h-14 text-red-500 font-bold"
-                                        onClick={() => setOpeningBalance("0")}
-                                    >C</Button>
-                                    <Button
-                                        variant="outline"
-                                        className="h-14 text-xl font-bold"
-                                        onClick={() => setOpeningBalance(prev => prev === "0" ? "0" : prev + "0")}
-                                    >0</Button>
-                                    <Button
-                                        variant="ghost"
-                                        className="h-14"
-                                        onClick={() => setOpeningBalance(prev => prev.slice(0, -1) || "0")}
-                                    >
-                                        ⌫
-                                    </Button>
-                                </div>
-
-                                {terminal && terminal.default_treasury_account_balance > 0 && (
-                                    <Button
-                                        className="w-full mt-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                                        onClick={() => setOpeningBalance(terminal.default_treasury_account_balance.toString())}
-                                    >
-                                        Usar Base Predefinida ({formatCurrency(terminal.default_treasury_account_balance)})
-                                    </Button>
-                                )}
+                                <Numpad
+                                    value={openingBalance}
+                                    onChange={setOpeningBalance}
+                                    hideDisplay={true}
+                                    allowDecimal={true}
+                                    className="w-full max-w-full shadow-none border-0 p-0"
+                                    onConfirm={handleNextStep}
+                                    confirmLabel="Continuar"
+                                    onExactAmount={
+                                        (terminal && terminal.default_treasury_account_balance > 0)
+                                            ? () => setOpeningBalance(terminal.default_treasury_account_balance.toString())
+                                            : undefined
+                                    }
+                                    exactAmountLabel={
+                                        (terminal && terminal.default_treasury_account_balance > 0)
+                                            ? `Base: ${formatCurrency(terminal.default_treasury_account_balance)}`
+                                            : undefined
+                                    }
+                                />
                             </div>
                         </div>
 

@@ -802,6 +802,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     def current(self, request):
         """Get the current open session for the requesting user"""
         try:
+            session = POSSession.objects.filter(user=request.user, status='OPEN').first()
             if session:
                 return Response(POSSessionSerializer(session).data)
             return Response({'session': None})

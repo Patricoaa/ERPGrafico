@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Calculator, Banknote, Vault, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { Numpad } from "@/components/ui/numpad"
 import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { cn, formatCurrency } from "@/lib/utils"
@@ -78,6 +79,8 @@ export function SessionCloseModal({
 
     const [step, setStep] = useState(1)
 
+    const [accountingSettings, setAccountingSettings] = useState<any>(null)
+
     // Pre-populate expected cash and default treasury account when modal opens
     useEffect(() => {
         if (open && session) {
@@ -94,6 +97,15 @@ export function SessionCloseModal({
             }
         }
     }, [open, session])
+
+    // Fetch Accounting Settings
+    useEffect(() => {
+        if (open) {
+            api.get('/accounting/settings/current/')
+                .then(res => setAccountingSettings(res.data))
+                .catch(err => console.error("Failed to load accounting settings", err))
+        }
+    }, [open])
 
     const handleNext = () => setStep(p => p + 1)
     const handlePrev = () => setStep(p => p - 1)
@@ -166,43 +178,17 @@ export function SessionCloseModal({
                                         {formatCurrency(parseFloat(actualCash) || 0)}
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                                        <Button
-                                            key={n}
-                                            variant="outline"
-                                            className="h-14 text-xl font-bold"
-                                            onClick={() => setActualCash(prev => prev === "0" ? n.toString() : prev + n)}
-                                        >
-                                            {n}
-                                        </Button>
-                                    ))}
-                                    <Button
-                                        variant="ghost"
-                                        className="h-14 text-red-500 font-bold"
-                                        onClick={() => setActualCash("0")}
-                                    >C</Button>
-                                    <Button
-                                        variant="outline"
-                                        className="h-14 text-xl font-bold"
-                                        onClick={() => setActualCash(prev => prev === "0" ? "0" : prev + "0")}
-                                    >0</Button>
-                                    <Button
-                                        variant="ghost"
-                                        className="h-14"
-                                        onClick={() => setActualCash(prev => prev.slice(0, -1) || "0")}
-                                    >
-                                        ⌫
-                                    </Button>
-                                </div>
-                                <Button
-                                    className="w-full mt-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200"
-                                    variant="outline"
-                                    onClick={() => setActualCash(session.expected_cash.toString())}
-                                >
-                                    <Calculator className="mr-2 h-4 w-4" />
-                                    Monto Exacto ({formatCurrency(session.expected_cash)})
-                                </Button>
+                                <Numpad
+                                    value={actualCash}
+                                    onChange={setActualCash}
+                                    hideDisplay={true}
+                                    allowDecimal={true}
+                                    className="w-full max-w-full shadow-none border-0 p-0"
+                                    onConfirm={handleNext}
+                                    confirmLabel="Confirmar Conteo"
+                                    onExactAmount={() => setActualCash(session.expected_cash.toString())}
+                                    exactAmountLabel={`Monto Exacto (${formatCurrency(session.expected_cash)})`}
+                                />
                             </div>
                         </div>
 
@@ -249,18 +235,29 @@ export function SessionCloseModal({
                                             <SelectValue placeholder="Seleccione motivo..." />
                                         </SelectTrigger>
                                         <SelectContent>
+
                                             {diff < 0 ? (
                                                 <>
-                                                    <SelectItem value="PARTNER_WITHDRAWAL">Retiro Socio</SelectItem>
-                                                    <SelectItem value="THEFT">Faltante / Pérdida</SelectItem>
-                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo</SelectItem>
-                                                    <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                    {accountingSettings?.pos_partner_withdrawal_account && (
+                                                        <SelectItem value="PARTNER_WITHDRAWAL">Retiro Socio</SelectItem>
+                                                    )}
+                                                    {accountingSettings?.pos_theft_account && (
+                                                        <SelectItem value="THEFT">Faltante / Pérdida</SelectItem>
+                                                    )}
+                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
+                                                    {accountingSettings?.pos_rounding_adjustment_account && (
+                                                        <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                    )}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo</SelectItem>
-                                                    <SelectItem value="TIP">Propina</SelectItem>
-                                                    <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
+                                                    {accountingSettings?.pos_tip_account && (
+                                                        <SelectItem value="TIP">Propina</SelectItem>
+                                                    )}
+                                                    {accountingSettings?.pos_rounding_adjustment_account && (
+                                                        <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                    )}
                                                 </>
                                             )}
                                         </SelectContent>
@@ -311,6 +308,7 @@ export function SessionCloseModal({
                                     value={cashDestinationId}
                                     onChange={setCashDestinationId}
                                     placeholder="Seleccione destino..."
+                                    type="CASH"
                                 />
                             </div>
                         </div>
