@@ -15,11 +15,20 @@ class TreasuryService:
         """
         Creates a CashMovement record and its corresponding Journal Entry.
         """
-        if amount < 0:
-            raise ValidationError("El monto no puede ser negativo.")
+        if amount <= 0:
+            raise ValidationError("El monto debe ser mayor a cero.")
         
         if not date:
             date = timezone.now()
+
+
+        # 0. Validate Sufficient Funds for Transfers/Withdrawals from Cash Accounts
+        if from_account and from_account.account_type == TreasuryAccount.Type.CASH:
+            if movement_type in [CashMovement.Type.TRANSFER, CashMovement.Type.WITHDRAWAL]:
+                # Force refresh balance
+                current_balance = from_account.account.balance
+                if amount > current_balance:
+                    raise ValidationError(f"Fondos insuficientes en {from_account.name}. Disponible: ${current_balance:,.0f}, Solicitado: ${amount:,.0f}")
 
         # 1. Create the Movement record
         movement = CashMovement.objects.create(
@@ -61,8 +70,9 @@ class TreasuryService:
 
             # Case A: Transfer between two accounting accounts
             if from_acc and to_acc:
-                JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=amount)
-                JournalItem.objects.create(entry=entry, account=to_acc, debit=amount, credit=0)
+                if from_acc != to_acc:
+                    JournalItem.objects.create(entry=entry, account=from_acc, debit=0, credit=amount)
+                    JournalItem.objects.create(entry=entry, account=to_acc, debit=amount, credit=0)
             
             # Case B: Withdrawal/Outflow (Money leaves an account to 'Exterior' or specific reason)
             elif from_acc and not to_acc:
