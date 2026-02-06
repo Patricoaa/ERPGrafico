@@ -95,6 +95,14 @@ export function POSProvider({ children }: { children: ReactNode }) {
         fetchDefaultCustomer()
     }, [])
 
+    // Reset draft state when session changes
+    useEffect(() => {
+        if (currentSession?.id) {
+            setCurrentDraftId(null)
+            setWizardState(null)
+        }
+    }, [currentSession?.id])
+
     // Caches
     const [bomCache, setBomCache] = useState<BOMCache>({})
     const [componentCache, setComponentCache] = useState<ComponentCache>({})

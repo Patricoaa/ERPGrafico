@@ -66,8 +66,20 @@ export function useDrafts() {
             let res;
             if (currentDraftId) {
                 // Update existing
-                res = await api.put(`/sales/pos-drafts/${currentDraftId}/`, draftData)
-                // toast.success("Borrador actualizado") // Auto-save might be too noisy
+                try {
+                    res = await api.put(`/sales/pos-drafts/${currentDraftId}/`, draftData)
+                } catch (err: any) {
+                    if (err.response?.status === 404) {
+                        console.warn("Draft not found on server, falling back to new draft")
+                        setCurrentDraftId(null)
+                        // Retry as post
+                        res = await api.post('/sales/pos-drafts/', draftData)
+                        setCurrentDraftId(res.data.id)
+                        toast.success("Borrador guardado (nuevo)")
+                    } else {
+                        throw err
+                    }
+                }
             } else {
                 // Create new
                 res = await api.post('/sales/pos-drafts/', draftData)
