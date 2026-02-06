@@ -1179,26 +1179,29 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if move_type == 'TRANSFER':
                 target_account_id = request.data.get('target_account_id')
                 if not target_account_id:
-                    return Response({'error': 'Debe especificar la cuenta de destino para transferencias'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'error': 'Debe especificar la cuenta para traspasos'}, status=status.HTTP_400_BAD_REQUEST)
                 
                 try:
                     target_obj = TreasuryAccount.objects.get(id=target_account_id)
                 except TreasuryAccount.DoesNotExist:
-                     return Response({'error': 'Cuenta de destino no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
+                     return Response({'error': 'Cuenta no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
                 
+                is_inflow_forced = request.data.get('is_inflow', False)
+                if isinstance(is_inflow_forced, str):
+                    is_inflow_forced = is_inflow_forced.lower() == 'true'
+
                 config = {
                      'account': target_obj.account, # Use the accounting account of the target
-                     'is_inflow': False, # It is an outflow from THIS session's cash (Money OUT)
-                     'label': f'Traspaso a {target_obj.name}'
+                     'is_inflow': is_inflow_forced,
+                     'label': f'Traspaso {"desde" if is_inflow_forced else "a"} {target_obj.name}'
                 }
                 
                 # Verify self transfer
-                # We need session treasury account logic first
-                treasury_account = session.treasury_account.account if session.treasury_account else (
-                    session.terminal.default_treasury_account.account if session.terminal else None
+                treasury_account_obj = session.treasury_account or (
+                    session.terminal.default_treasury_account if session.terminal else None
                 )
                 
-                if treasury_account == config['account']:
+                if treasury_account_obj == target_obj:
                      return Response({'error': 'No puede transferir a la misma cuenta de origen'}, status=status.HTTP_400_BAD_REQUEST)
 
             else:
@@ -1284,13 +1287,18 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 to_account = None
                 is_inflow = config['is_inflow']
                 
-                if is_inflow:
+                if move_type == 'TRANSFER':
+                    if is_inflow:
+                        from_account = TreasuryAccount.objects.get(id=request.data.get('target_account_id'))
+                        to_account = session_treasury_obj
+                        session.total_other_cash_inflow += amount
+                    else:
+                        from_account = session_treasury_obj
+                        to_account = TreasuryAccount.objects.get(id=request.data.get('target_account_id'))
+                        session.total_other_cash_outflow += amount
+                elif is_inflow:
                     to_account = session_treasury_obj
                     session.total_other_cash_inflow += amount
-                elif move_type == 'TRANSFER':
-                    from_account = session_treasury_obj
-                    to_account = TreasuryAccount.objects.get(id=request.data.get('target_account_id'))
-                    session.total_other_cash_outflow += amount
                 else: # Outflow
                     from_account = session_treasury_obj
                     session.total_other_cash_outflow += amount

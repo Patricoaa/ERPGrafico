@@ -192,11 +192,7 @@ export function SessionCloseModal({
                             </div>
                         </div>
 
-                        <div className="flex justify-end pt-2">
-                            <Button onClick={handleNext} className="w-full">
-                                Confirmar Conteo
-                            </Button>
-                        </div>
+                        <div className="h-2" />
                     </div>
                 )
 
@@ -339,15 +335,7 @@ export function SessionCloseModal({
                         </div>
 
                         <div className="flex gap-2">
-                            <Button variant="ghost" onClick={handlePrev}>Atrás</Button>
-                            <Button
-                                onClick={handleCloseSession}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                                disabled={submitting}
-                            >
-                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Finalizar Cierre
-                            </Button>
+                            <Button variant="ghost" onClick={handlePrev} className="w-full">Atrás</Button>
                         </div>
                     </div>
                 )

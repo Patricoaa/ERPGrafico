@@ -608,8 +608,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={handlePrevStep} className="flex-1">Atrás</Button>
-                            <Button onClick={handleNextStep} className="flex-1">Continuar</Button>
+                            <Button variant="outline" onClick={handlePrevStep} className="w-full">Atrás</Button>
                         </div>
                     </div>
                 )
@@ -720,6 +719,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     const MOVEMENT_TYPES = {
         IN: [
+            { value: "TRANSFER", label: "Traspaso (Efectivo Entra)" },
             { value: "TIP", label: "Propina" },
             { value: "OTHER_IN", label: "Otro Ingreso (Varios)" },
             { value: "COUNTING_ERROR", label: "Error de Conteo (Sobrante)" },
@@ -826,11 +826,13 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         <div className="space-y-4">
                             {moveType === 'TRANSFER' && (
                                 <div className="space-y-2">
-                                    <Label className={FORM_STYLES.label}>Cuenta de Destino</Label>
+                                    <Label className={FORM_STYLES.label}>
+                                        {moveImpact === 'IN' ? 'Cuenta de Origen (¿De dónde viene?)' : 'Cuenta de Destino (¿A dónde va?)'}
+                                    </Label>
                                     <CashContainerSelector
                                         value={transferTargetId}
                                         onChange={setTransferTargetId}
-                                        placeholder="Seleccione caja destino"
+                                        placeholder={moveImpact === 'IN' ? "Seleccione caja origen" : "Seleccione caja destino"}
                                     />
                                 </div>
                             )}
@@ -869,8 +871,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => setMoveWizardStep(2)} className="flex-1">Atrás</Button>
-                            <Button onClick={() => setMoveWizardStep(4)} className="flex-1">Resumen</Button>
+                            <Button variant="outline" onClick={() => setMoveWizardStep(2)} className="w-full">Atrás</Button>
                         </div>
                     </div>
                 )
