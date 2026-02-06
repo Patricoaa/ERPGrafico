@@ -37,6 +37,11 @@ export interface UseTreasuryAccountsOptions {
      * Whether to fetch immediately on mount
      */
     enabled?: boolean
+
+    /**
+     * ID of account to exclude from results
+     */
+    excludeId?: number
 }
 
 export interface UseTreasuryAccountsReturn {
@@ -65,7 +70,7 @@ export interface UseTreasuryAccountsReturn {
  * })
  */
 export function useTreasuryAccounts(options: UseTreasuryAccountsOptions): UseTreasuryAccountsReturn {
-    const { context, terminalId, paymentMethod, enabled = true } = options
+    const { context, terminalId, paymentMethod, enabled = true, excludeId } = options
 
     const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
     const [loading, setLoading] = useState(false)
@@ -89,13 +94,17 @@ export function useTreasuryAccounts(options: UseTreasuryAccountsOptions): UseTre
             if (context === 'POS') {
                 // POS Flow: Get accounts from terminal's allowed list
                 const endpoint = `/treasury/pos-terminals/${terminalId}/available_accounts/`
-                const params = paymentMethod ? { payment_method: paymentMethod } : {}
+                const params: any = paymentMethod ? { payment_method: paymentMethod } : {}
+                if (excludeId) params.exclude_id = excludeId
 
                 const res = await api.get(endpoint, { params })
                 fetchedAccounts = res.data
             } else {
                 // GENERAL Flow: Get all accounts with enabled payment methods
-                const res = await api.get('/treasury/accounts/')
+                const params: any = {}
+                if (excludeId) params.exclude_id = excludeId
+
+                const res = await api.get('/treasury/accounts/', { params })
                 const allAccounts = res.data.results || res.data
 
                 // Filter: accounts with at least one payment method enabled

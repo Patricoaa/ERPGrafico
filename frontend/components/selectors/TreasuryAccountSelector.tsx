@@ -24,6 +24,9 @@ interface TreasuryAccountSelectorProps {
 
     // Legacy filter (optional)
     type?: 'BANK' | 'CASH'
+
+    // Exclude specific account
+    excludeId?: number
 }
 
 export function TreasuryAccountSelector({
@@ -34,7 +37,8 @@ export function TreasuryAccountSelector({
     context = 'GENERAL',
     terminalId,
     paymentMethod,
-    type
+    type,
+    excludeId
 }: TreasuryAccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [selectedAccount, setSelectedAccount] = useState<any>(null)
@@ -42,7 +46,8 @@ export function TreasuryAccountSelector({
     const { accounts, loading } = useTreasuryAccounts({
         context,
         terminalId,
-        paymentMethod
+        paymentMethod,
+        excludeId
     })
 
     // Filter by legacy type if provided (on top of hook filters)

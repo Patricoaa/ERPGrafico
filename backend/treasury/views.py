@@ -959,6 +959,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                             journal_entry_desc=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}"
                         )
                                  
+                except ValidationError as e:
+                    # Explicitly catch validation errors (like insufficient funds) and return 400
+                    return Response({'error': str(e.message) if hasattr(e, 'message') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
                 except TreasuryAccount.DoesNotExist:
                     print(f"WARNING: Fund source {fund_source_id} not found")
                 except Exception as e:

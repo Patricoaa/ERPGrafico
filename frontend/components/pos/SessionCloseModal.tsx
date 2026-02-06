@@ -22,7 +22,7 @@ import { Loader2, Calculator, Banknote, Vault, AlertTriangle, ArrowRightLeft } f
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Numpad } from "@/components/ui/numpad"
-import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { cn, formatCurrency } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
@@ -269,11 +269,12 @@ export function SessionCloseModal({
                                         <Label className="text-xs">
                                             {diff < 0 ? 'Cuenta de Destino (¿A dónde se llevó el dinero?)' : 'Cuenta de Origen (¿De dónde vino el dinero?)'}
                                         </Label>
-                                        <CashContainerSelector
+                                        <TreasuryAccountSelector
                                             value={justifyTargetId}
                                             onChange={setJustifyTargetId}
                                             placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
                                             excludeId={session.treasury_account}
+                                            paymentMethod="TRANSFER"
                                         />
                                     </div>
                                 )}
@@ -373,11 +374,11 @@ export function SessionCloseModal({
 
                             <div className="space-y-2">
                                 <Label>Destino</Label>
-                                <CashContainerSelector
+                                <TreasuryAccountSelector
                                     value={cashDestinationId}
                                     onChange={setCashDestinationId}
                                     placeholder="Seleccione destino..."
-                                    type="CASH"
+                                    paymentMethod="CASH"
                                     excludeId={session.treasury_account}
                                 />
                             </div>
