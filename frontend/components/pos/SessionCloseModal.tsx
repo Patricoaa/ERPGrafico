@@ -274,7 +274,7 @@ export function SessionCloseModal({
                                             onChange={setJustifyTargetId}
                                             placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
                                             excludeId={session.treasury_account}
-                                            paymentMethod="TRANSFER"
+                                            type="CASH"
                                         />
                                     </div>
                                 )}

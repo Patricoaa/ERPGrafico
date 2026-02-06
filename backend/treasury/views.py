@@ -816,6 +816,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'])
+    @transaction.atomic
     def open_session(self, request):
         """Open a new POS session (Abrir Caja)"""
         try:
@@ -962,6 +963,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                                  
                 except ValidationError as e:
                     # Explicitly catch validation errors (like insufficient funds) and return 400
+                    # FORCE ROLLBACK to prevent the session from being created if the movement fails
+                    transaction.set_rollback(True)
                     return Response({'error': str(e.message) if hasattr(e, 'message') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
                 except TreasuryAccount.DoesNotExist:
                     print(f"WARNING: Fund source {fund_source_id} not found")
