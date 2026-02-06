@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Reusing dev data
+    environment:
+      - POSTGRES_DB=erpgrafico
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py collectstatic --no-input &&
+             python manage.py runserver 0.0.0.0:8100"
+    ports:
+      - "8100:8100"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=1 # Debug enabled for tracebacks
+      - SECRET_KEY=staging_secret_key
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/erpgrafico
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6379/1
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: >
+      sh -c "npm run build && npm run start"
+    ports:
+      - "4000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8100/api
+      - NODE_ENV=production # Fluidity: compiled frontend
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+
+volumes:
+  postgres_data:
+    external: true
+    name: erpgrafico_postgres_data_prod

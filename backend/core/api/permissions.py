@@ -22,6 +22,25 @@ class StandardizedModelPermissions(permissions.DjangoModelPermissions):
         'DELETE': ['%(app_label)s.delete_%(model_name)s'],
     }
 
+    def has_permission(self, request, view):
+        # If the view doesn't have a queryset, DjangoModelPermissions will blow up.
+        # This happens in pure viewsets.ViewSet classes used for reports/actions.
+        if not hasattr(view, 'queryset') and not hasattr(view, 'get_queryset'):
+            return request.user and request.user.is_authenticated
+        
+        # Check if get_queryset is implemented but returns None or raises error
+        try:
+            if hasattr(view, 'get_queryset'):
+                queryset = view.get_queryset()
+                if queryset is None:
+                    return request.user and request.user.is_authenticated
+            elif getattr(view, 'queryset', None) is None:
+                return request.user and request.user.is_authenticated
+        except Exception:
+            return request.user and request.user.is_authenticated
+
+        return super().has_permission(request, view)
+
 class HasActionPermission(permissions.BasePermission):
     """
     Checks for a specific, explicit permission string required by a view.

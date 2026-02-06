@@ -78,7 +78,7 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
 
         from django.db.models import Prefetch, Sum
         from production.models import BillOfMaterials, BillOfMaterialsLine
-        from inventory.models import Product
+        
         
         bom_queryset = BillOfMaterials.objects.filter(active=True).prefetch_related(
             Prefetch(
@@ -628,7 +628,6 @@ class ReplenishmentProposalViewSet(viewsets.ModelViewSet):
         """
         Runs the replenishment planifier for all active storable products.
         """
-        from .models import Product, Warehouse
         products = Product.objects.filter(
             active=True, 
             product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE],
