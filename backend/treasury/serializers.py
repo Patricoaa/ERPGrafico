@@ -7,9 +7,15 @@ from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankState
 # from accounting.serializers import JournalEntrySerializer
 
 class BankSerializer(serializers.ModelSerializer):
+    account_executives_details = serializers.SerializerMethodField()
+    
     class Meta:
         model = Bank
-        fields = '__all__'
+        fields = ['id', 'name', 'code', 'swift_code', 'is_active', 'account_executives', 'account_executives_details', 'created_at', 'updated_at']
+    
+    def get_account_executives_details(self, obj):
+        from contacts.serializers import ContactSerializer
+        return ContactSerializer(obj.account_executives.all(), many=True).data
 
 
 class PaymentMethodSerializer(serializers.ModelSerializer):
@@ -31,7 +37,10 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TreasuryAccount
-        fields = '__all__'
+        fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_type', 
+                  'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer',
+                  'location', 'custodian', 'custodian_name', 'is_physical', 'current_balance', 
+                  'payment_methods', 'card_receivable_account']
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):

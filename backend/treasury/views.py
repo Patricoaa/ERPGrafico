@@ -125,6 +125,35 @@ class POSTerminalViewSet(viewsets.ModelViewSet):
         
         serializer = TreasuryAccountSerializer(accounts, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def allowed_payment_methods(self, request, pk=None):
+        """
+        Retorna métodos de pago permitidos para este terminal.
+        
+        Query params:
+        - operation: 'sales' or 'purchases' (optional) - filtra por tipo de operación
+        
+        Returns:
+            list[PaymentMethod]: Métodos de pago permitidos
+        """
+        terminal = self.get_object()
+        operation = request.query_params.get('operation')
+        
+        # Obtener métodos de las cuentas permitidas
+        methods = PaymentMethod.objects.filter(
+            treasury_account__in=terminal.allowed_treasury_accounts.all(),
+            is_active=True
+        )
+        
+        # Filtrar por tipo de operación
+        if operation == 'sales':
+            methods = methods.filter(allow_for_sales=True)
+        elif operation == 'purchases':
+            methods = methods.filter(allow_for_purchases=True)
+        
+        serializer = PaymentMethodSerializer(methods, many=True)
+        return Response(serializer.data)
 
 
 

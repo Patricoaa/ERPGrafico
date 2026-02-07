@@ -7,6 +7,7 @@ import { Banknote, CreditCard, Building2, ClipboardList, Wallet, AlertCircle } f
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
+import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
 
 import { useState, useMemo, useEffect } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -36,6 +37,31 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
         context: terminalId ? 'POS' : 'GENERAL',
         terminalId
     })
+
+    const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
+        terminalId,
+        operation: 'sales',
+        enabled: true
+    })
+
+    const isMethodAllowed = (methodId: string) => {
+        // If loading, assume true to avoid flickering, or false? 
+        // Better to wait or assume true if we want to be optimistic. 
+        // But for safety, if loaded and empty, false.
+        if (loadingMethods) return true
+        if (!allowedMethods.length) return false
+
+        switch (methodId) {
+            case 'CASH':
+                return allowedMethods.some(m => m.method_type === 'CASH')
+            case 'CARD':
+                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD'].includes(m.method_type))
+            case 'TRANSFER':
+                return allowedMethods.some(m => m.method_type === 'TRANSFER')
+            default:
+                return false
+        }
+    }
 
     const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
     const [tempAmount, setTempAmount] = useState("")
@@ -100,21 +126,24 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
             label: 'Efectivo',
             icon: Banknote,
             color: 'text-emerald-600',
-            hasAccounts: accounts.some(a => a.allows_cash)
+            hasAccounts: accounts.some(a => a.allows_cash),
+            isAllowed: isMethodAllowed('CASH')
         },
         {
             id: 'CARD',
             label: 'Tarjeta',
             icon: CreditCard,
             color: 'text-blue-600',
-            hasAccounts: accounts.some(a => a.allows_card)
+            hasAccounts: accounts.some(a => a.allows_card),
+            isAllowed: isMethodAllowed('CARD')
         },
         {
             id: 'TRANSFER',
             label: 'Transferencia',
             icon: Building2,
             color: 'text-purple-600',
-            hasAccounts: accounts.some(a => a.allows_transfer)
+            hasAccounts: accounts.some(a => a.allows_transfer),
+            isAllowed: isMethodAllowed('TRANSFER')
         },
     ]
 
@@ -195,9 +224,9 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                         <div key={m.id} className="relative group h-full">
                             <Label
                                 htmlFor={`method-${m.id}`}
-                                className={`flex flex-col gap-4 rounded-2xl border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full ${paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-md scale-[1.01]' : ''} ${!m.hasAccounts ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                className={`flex flex-col gap-4 rounded-2xl border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full ${paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-md scale-[1.01]' : ''} ${(!m.hasAccounts || !m.isAllowed) ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
                                 onClick={(e) => {
-                                    if (!m.hasAccounts) {
+                                    if (!m.hasAccounts || !m.isAllowed) {
                                         e.preventDefault()
                                         return
                                     }
@@ -206,14 +235,16 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                                     }
                                 }}
                             >
-                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts} />
+                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts || !m.isAllowed} />
                                 <div className="flex items-center gap-4">
                                     <div className={`p-4 rounded-xl bg-background border shadow-sm ${m.color}`}>
                                         <m.icon className="h-8 w-8" />
                                     </div>
                                     <div className="flex flex-col flex-1">
                                         <span className="text-xl font-black uppercase tracking-tighter">{m.label}</span>
-                                        {!m.hasAccounts && (
+                                        {!m.isAllowed ? (
+                                            <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">No Disponible</span>
+                                        ) : !m.hasAccounts && (
                                             <span className="text-[10px] font-black text-destructive uppercase tracking-widest">Sin Configurar</span>
                                         )}
                                     </div>

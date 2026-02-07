@@ -1026,7 +1026,8 @@ class Command(BaseCommand):
                 'name': "Banco Estado Empresa", 
                 'currency': "CLP", 
                 'account': accounts['bank'], 
-                'account_type': TreasuryAccount.Type.BANK,
+                'account_type': TreasuryAccount.Type.CHECKING,
+                'account_number': "123-45678-01",
                 'allows_cash': False,
                 'allows_card': True,
                 'allows_transfer': True
@@ -1087,7 +1088,8 @@ class Command(BaseCommand):
                 'name': "Banco de Chile (Cta Corriente)",
                 'currency': "CLP",
                 'account': Account.objects.get(code='1.1.01.03'),
-                'account_type': TreasuryAccount.Type.BANK,
+                'account_type': TreasuryAccount.Type.CHECKING,
+                'account_number': "987-65432-09",
                 'allows_cash': False,
                 'allows_card': True,
                 'allows_transfer': True
@@ -1143,7 +1145,7 @@ class Command(BaseCommand):
         )
         PaymentMethod.objects.get_or_create(
             name="Webpay / Transbank",
-            treasury_account=recepcion,
+            treasury_account=bco01,
             defaults={
                 'method_type': PaymentMethod.Type.CREDIT_CARD,
                 'allow_for_sales': True,

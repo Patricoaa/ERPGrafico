@@ -41,7 +41,7 @@ interface TreasuryAccount {
     currency: string
     account: number | null
     account_name?: string
-    account_type: 'BANK' | 'CASH'
+    account_type: 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
@@ -52,6 +52,7 @@ interface TreasuryAccount {
     current_balance?: number
     bank?: number | null
     bank_name?: string
+    account_number?: string | null
 }
 
 export default function TreasuryAccountsPage() {
@@ -129,14 +130,31 @@ export default function TreasuryAccountsPage() {
             accessorKey: "account_type",
             header: "Tipo",
             cell: ({ row }) => {
-                const types = {
-                    BANK: "Banco",
-                    CASH: "Caja Efectivo"
+                const type = row.getValue("account_type") as string
+                const labels: Record<string, string> = {
+                    'CHECKING': 'Cuenta Corriente',
+                    'CREDIT_CARD': 'Tarjeta de Crédito',
+                    'DEBIT_CARD': 'Tarjeta de Débito',
+                    'CHECKBOOK': 'Chequera',
+                    'CASH': 'Efectivo',
+                    'BANK': 'Banco' // Legacy support just in case
                 }
+
+                const getIcon = (t: string) => {
+                    switch (t) {
+                        case 'CHECKING': return <Landmark className="h-4 w-4 text-blue-500" />
+                        case 'CREDIT_CARD': return <CreditCard className="h-4 w-4 text-purple-500" />
+                        case 'DEBIT_CARD': return <CreditCard className="h-4 w-4 text-green-500" />
+                        case 'CHECKBOOK': return <List className="h-4 w-4 text-orange-500" />
+                        case 'CASH': return <Banknote className="h-4 w-4 text-emerald-500" />
+                        default: return <Building2 className="h-4 w-4 text-muted-foreground" />
+                    }
+                }
+
                 return (
                     <div className="flex items-center gap-2">
-                        {row.getValue("account_type") === 'BANK' ? <Building2 className="h-4 w-4 text-blue-500" /> : <Banknote className="h-4 w-4 text-green-500" />}
-                        {types[row.getValue("account_type") as keyof typeof types] || row.getValue("account_type")}
+                        {getIcon(type)}
+                        <span>{labels[type] || type}</span>
                     </div>
                 )
             },
@@ -270,7 +288,7 @@ export default function TreasuryAccountsPage() {
 function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boolean, onOpenChange: (o: boolean) => void, account: TreasuryAccount | null, onSuccess: () => void }) {
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState("")
-    const [type, setType] = useState<"BANK" | "CASH">("CASH")
+    const [type, setType] = useState<'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'>("CASH")
     const [currency, setCurrency] = useState("CLP")
     const [accountingAccount, setAccountingAccount] = useState<string | null>(null)
     const [allowsCash, setAllowsCash] = useState(false)
@@ -282,6 +300,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
     const [custodian, setCustodian] = useState<number | null>(null)
     const [isPhysical, setIsPhysical] = useState(false)
     const [bank, setBank] = useState<string | null>(null)
+    const [accountNumber, setAccountNumber] = useState("")
     const [banks, setBanks] = useState<any[]>([])
 
     useEffect(() => {
@@ -308,6 +327,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setCustodian(account.custodian || null)
                 setIsPhysical(account.is_physical || false)
                 setBank(account.bank ? account.bank.toString() : null)
+                setAccountNumber(account.account_number || "")
             } else {
                 setName("")
                 setType("CASH")
@@ -320,9 +340,15 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setCustodian(null)
                 setIsPhysical(false)
                 setBank(null)
+                setAccountNumber("")
             }
         }
     }, [open, account])
+
+    // Helper function to determine if account type requires bank
+    const requiresBank = (accountType: string) => {
+        return ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(accountType)
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -339,7 +365,8 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 location,
                 custodian,
                 is_physical: isPhysical,
-                bank: type === 'BANK' ? bank : null
+                bank: requiresBank(type) ? bank : null,
+                account_number: requiresBank(type) ? accountNumber : null
             }
             if (account) {
                 await api.patch(`/treasury/accounts/${account.id}/`, payload)
@@ -381,8 +408,11 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="CASH">Caja (Efectivo)</SelectItem>
-                                            <SelectItem value="BANK">Banco</SelectItem>
+                                            <SelectItem value="CHECKING">Cuenta Corriente</SelectItem>
+                                            <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
+                                            <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
+                                            <SelectItem value="CHECKBOOK">Chequera</SelectItem>
+                                            <SelectItem value="CASH">Efectivo</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -400,7 +430,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                                 </div>
                             </div>
 
-                            {type === 'BANK' && (
+                            {requiresBank(type) && (
                                 <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
                                     <Label className="text-blue-600 font-semibold flex items-center gap-1">
                                         <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
@@ -415,6 +445,20 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                </div>
+                            )}
+
+                            {requiresBank(type) && (
+                                <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
+                                    <Label className="text-blue-600 font-semibold flex items-center gap-1">
+                                        <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
+                                    </Label>
+                                    <Input
+                                        value={accountNumber}
+                                        onChange={e => setAccountNumber(e.target.value)}
+                                        placeholder="Ej: 0123456789"
+                                        className="border-blue-200 bg-blue-50/30"
+                                    />
                                 </div>
                             )}
 

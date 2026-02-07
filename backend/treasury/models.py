@@ -294,8 +294,11 @@ class TreasuryAccountManager(models.Manager):
 
 class TreasuryAccount(models.Model):
     class Type(models.TextChoices):
-        BANK = 'BANK', _('Banco')
-        CASH = 'CASH', _('Caja')
+        CHECKING = 'CHECKING', _('Cuenta Corriente')
+        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
+        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
+        CHECKBOOK = 'CHECKBOOK', _('Chequera')
+        CASH = 'CASH', _('Efectivo')
 
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
@@ -312,7 +315,7 @@ class TreasuryAccount(models.Model):
     
     account_type = models.CharField(
         _("Tipo"), 
-        max_length=10, 
+        max_length=20,  # Increased from 10 to accommodate new types
         choices=Type.choices,
         default=Type.CASH
     )
@@ -322,6 +325,13 @@ class TreasuryAccount(models.Model):
         null=True, blank=True,
         related_name='treasury_accounts',
         verbose_name=_("Banco")
+    )
+    account_number = models.CharField(
+        _("N° de Cuenta Bancaria"),
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text=_("Número de cuenta bancaria (solo para cuentas corrientes)")
     )
     allows_cash = models.BooleanField(_("Permite Efectivo"), default=False)
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
@@ -373,7 +383,10 @@ class TreasuryAccount(models.Model):
         """
         Validation Logic:
         1. Ensure Cash accounts have a unique accounting account.
-           No other TreasuryAccount (Cash or Bank) should share the same ledger account if it's a Cash box.
+        2. Validate account_number only for BANK type accounts.
+        3. CHECKING accounts require bank and account_number.
+        4. Credit/Debit cards require bank.
+        5. CASH accounts cannot have bank.
         """
         from django.core.exceptions import ValidationError
         
@@ -386,6 +399,36 @@ class TreasuryAccount(models.Model):
                     'account': _(f"La cuenta contable '{self.account.code}' ya está en uso por: {dup_names}. "
                                  "Las cuentas de tipo Efectivo deben tener una cuenta contable exclusiva.")
                 })
+        
+        # Validate CHECKING accounts
+        if self.account_type == self.Type.CHECKING:
+            if not self.bank:
+                raise ValidationError({
+                    'bank': _("Las cuentas corrientes requieren un banco asociado")
+                })
+            if not self.account_number:
+                raise ValidationError({
+                    'account_number': _("Las cuentas corrientes requieren número de cuenta")
+                })
+        
+        # Validate Credit/Debit cards
+        if self.account_type in [self.Type.CREDIT_CARD, self.Type.DEBIT_CARD]:
+            if not self.bank:
+                raise ValidationError({
+                    'bank': _("Las tarjetas requieren un banco asociado")
+                })
+        
+        # Validate CASH accounts
+        if self.account_type == self.Type.CASH and self.bank:
+            raise ValidationError({
+                'bank': _("Las cajas de efectivo no deben tener banco asociado")
+            })
+        
+        # Validate account_number only for bank-related accounts
+        if self.account_number and self.account_type not in [self.Type.CHECKING, self.Type.CREDIT_CARD, self.Type.DEBIT_CARD]:
+            raise ValidationError({
+                'account_number': _("Solo las cuentas bancarias y tarjetas pueden tener número de cuenta")
+            })
                 
     def save(self, *args, **kwargs):
         self.clean()
@@ -811,7 +854,23 @@ class Bank(models.Model):
     """Bancos institucionales"""
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
+    swift_code = models.CharField(
+        _("Código SWIFT/BIC"),
+        max_length=11,
+        blank=True,
+        null=True,
+        help_text=_("Código internacional para transferencias")
+    )
     is_active = models.BooleanField(_("Activo"), default=True)
+    
+    # Ejecutivos de cuenta
+    account_executives = models.ManyToManyField(
+        'contacts.Contact',
+        blank=True,
+        related_name='managed_banks',
+        verbose_name=_("Ejecutivos de Cuenta"),
+        help_text=_("Contactos que son ejecutivos de este banco")
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -864,8 +923,41 @@ class PaymentMethod(models.Model):
         verbose_name_plural = _("Métodos de Pago")
         ordering = ['name']
 
+    # Mapeo de compatibilidad tipo cuenta ↔ método de pago
+    TYPE_COMPATIBILITY = {
+        Type.CASH: [TreasuryAccount.Type.CASH],
+        Type.DEBIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        Type.CREDIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        Type.TRANSFER: [TreasuryAccount.Type.CHECKING],
+        Type.CHECK: [TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CHECKBOOK],
+    }
+    
     def __str__(self):
         return f"{self.name} ({self.treasury_account.name})"
+    
+    def clean(self):
+        """Validar compatibilidad entre método y tipo de cuenta"""
+        from django.core.exceptions import ValidationError
+        super().clean()
+        
+        if not self.treasury_account:
+            return
+        
+        allowed_account_types = self.TYPE_COMPATIBILITY.get(self.method_type, [])
+        if self.treasury_account.account_type not in allowed_account_types:
+            account_type_display = dict(TreasuryAccount.Type.choices).get(
+                self.treasury_account.account_type, 
+                self.treasury_account.account_type
+            )
+            method_type_display = dict(self.Type.choices).get(self.method_type, self.method_type)
+            
+            raise ValidationError({
+                'treasury_account': _(
+                    f"El método '{method_type_display}' no es compatible "
+                    f"con cuentas de tipo '{account_type_display}'. "
+                    f"Tipos permitidos: {', '.join(allowed_account_types)}"
+                )
+            })
 
 
 class CardPaymentProvider(models.Model):

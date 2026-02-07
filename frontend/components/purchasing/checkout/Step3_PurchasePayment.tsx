@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Banknote, CreditCard, Building2, Wallet, AlertCircle } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
+import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
 import { useState, useEffect, useMemo } from "react"
 import api from "@/lib/api"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -30,6 +31,27 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
     const { accounts } = useTreasuryAccounts({
         context: 'GENERAL'
     })
+
+    const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
+        operation: 'purchases',
+        enabled: true
+    })
+
+    const isMethodAllowed = (methodId: string) => {
+        if (loadingMethods) return true
+        if (!allowedMethods.length) return false
+
+        switch (methodId) {
+            case 'CASH':
+                return allowedMethods.some(m => m.method_type === 'CASH')
+            case 'CARD':
+                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD'].includes(m.method_type))
+            case 'TRANSFER':
+                return allowedMethods.some(m => m.method_type === 'TRANSFER')
+            default:
+                return false
+        }
+    }
 
     const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
     const [tempAmount, setTempAmount] = useState("")
@@ -106,21 +128,24 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
             label: 'Efectivo',
             icon: Banknote,
             color: 'text-emerald-600',
-            hasAccounts: accounts.some(a => a.allows_cash)
+            hasAccounts: accounts.some(a => a.allows_cash),
+            isAllowed: isMethodAllowed('CASH')
         },
         {
             id: 'CARD',
             label: 'Tarjeta',
             icon: CreditCard,
             color: 'text-blue-600',
-            hasAccounts: accounts.some(a => a.allows_card)
+            hasAccounts: accounts.some(a => a.allows_card),
+            isAllowed: isMethodAllowed('CARD')
         },
         {
             id: 'TRANSFER',
             label: 'Transferencia',
             icon: Building2,
             color: 'text-purple-600',
-            hasAccounts: accounts.some(a => a.allows_transfer)
+            hasAccounts: accounts.some(a => a.allows_transfer),
+            isAllowed: isMethodAllowed('TRANSFER')
         }
     ]
 
@@ -169,21 +194,23 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                         <div key={m.id} className="relative group">
                             <Label
                                 htmlFor={`method-${m.id}`}
-                                className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5' : ''} ${!m.hasAccounts ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5' : ''} ${(!m.hasAccounts || !m.isAllowed) ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
                                 onClick={(e) => {
-                                    if (!m.hasAccounts) {
+                                    if (!m.hasAccounts || !m.isAllowed) {
                                         e.preventDefault()
                                         return
                                     }
                                 }}
                             >
-                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts} />
+                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts || !m.isAllowed} />
                                 <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
                                     <m.icon className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-medium">{m.label}</span>
-                                    {!m.hasAccounts && (
+                                    {!m.isAllowed ? (
+                                        <span className="text-[8px] font-bold text-rose-500 uppercase">No Disponible</span>
+                                    ) : !m.hasAccounts && (
                                         <span className="text-[8px] font-bold text-destructive uppercase">Sin Configurar</span>
                                     )}
                                 </div>

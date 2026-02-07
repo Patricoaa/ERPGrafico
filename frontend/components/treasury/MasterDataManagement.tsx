@@ -26,6 +26,7 @@ interface Bank {
     id: number
     name: string
     code: string | null
+    swift_code?: string | null
     is_active: boolean
 }
 
@@ -140,12 +141,14 @@ export function BankManagement() {
 function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
     const [name, setName] = useState("")
     const [code, setCode] = useState("")
+    const [swiftCode, setSwiftCode] = useState("")
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         if (open) {
             setName(bank?.name || "")
             setCode(bank?.code || "")
+            setSwiftCode(bank?.swift_code || "")
         }
     }, [open, bank])
 
@@ -153,7 +156,7 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
         e.preventDefault()
         setLoading(true)
         try {
-            const payload = { name, code }
+            const payload = { name, code, swift_code: swiftCode }
             if (bank) {
                 await api.patch(`/treasury/banks/${bank.id}/`, payload)
                 toast.success("Banco actualizado")
@@ -185,8 +188,19 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
                             <Input id="bank-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Banco de Chile" required />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="bank-code">Código (BIC/SWIFT/Alias)</Label>
+                            <Label htmlFor="bank-code">Código (Alias)</Label>
                             <Input id="bank-code" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: BCHILE" />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="bank-swift">Código SWIFT/BIC</Label>
+                            <Input
+                                id="bank-swift"
+                                value={swiftCode}
+                                onChange={e => setSwiftCode(e.target.value)}
+                                placeholder="Ej: BCHICLRM"
+                                maxLength={11}
+                            />
+                            <p className="text-xs text-muted-foreground">Código internacional para transferencias</p>
                         </div>
                     </div>
                     <DialogFooter>

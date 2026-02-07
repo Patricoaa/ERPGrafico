@@ -7,6 +7,8 @@ import { Banknote, CreditCard, Building2, Wallet, AlertCircle, ShieldCheck } fro
 import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useEffect, useMemo } from "react"
 import api from "@/lib/api"
+import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
+import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -33,20 +35,30 @@ export function Step4_Payment({
     data,
     setData
 }: Step4_PaymentProps) {
-    const [accounts, setAccounts] = useState<any[]>([])
+    const { accounts } = useTreasuryAccounts({
+        context: 'GENERAL'
+    })
 
-    useEffect(() => {
-        const fetchAccounts = async () => {
-            try {
-                const response = await api.get('/treasury/accounts/')
-                const results = response.data.results || response.data
-                setAccounts(results)
-            } catch (error) {
-                console.error("Failed to fetch treasury accounts", error)
-            }
+    const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
+        operation: 'sales', // Assuming refunds use same methods as sales
+        enabled: true
+    })
+
+    const isMethodAllowed = (methodId: string) => {
+        if (loadingMethods) return true
+        if (!allowedMethods.length) return false
+
+        switch (methodId) {
+            case 'CASH':
+                return allowedMethods.some(m => m.method_type === 'CASH')
+            case 'CARD':
+                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD'].includes(m.method_type))
+            case 'TRANSFER':
+                return allowedMethods.some(m => m.method_type === 'TRANSFER')
+            default:
+                return false
         }
-        fetchAccounts()
-    }, [])
+    }
 
     const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
     const [tempAmount, setTempAmount] = useState("")
@@ -131,21 +143,24 @@ export function Step4_Payment({
             label: 'Efectivo',
             icon: Banknote,
             color: 'text-emerald-600',
-            hasAccounts: accounts.some(a => a.allows_cash)
+            hasAccounts: accounts.some(a => a.allows_cash),
+            isAllowed: isMethodAllowed('CASH')
         },
         {
             id: 'CARD',
             label: 'Tarjeta',
             icon: CreditCard,
             color: 'text-blue-600',
-            hasAccounts: accounts.some(a => a.allows_card)
+            hasAccounts: accounts.some(a => a.allows_card),
+            isAllowed: isMethodAllowed('CARD')
         },
         {
             id: 'TRANSFER',
             label: 'Transferencia',
             icon: Building2,
             color: 'text-purple-600',
-            hasAccounts: accounts.some(a => a.allows_transfer)
+            hasAccounts: accounts.some(a => a.allows_transfer),
+            isAllowed: isMethodAllowed('TRANSFER')
         },
     ]
 
@@ -205,15 +220,17 @@ export function Step4_Payment({
                         <div key={m.id} className="relative group">
                             <Label
                                 htmlFor={`method-${m.id}`}
-                                className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-20 ${formData.method === m.id ? 'border-primary bg-primary/5' : ''} ${!m.hasAccounts ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-20 ${formData.method === m.id ? 'border-primary bg-primary/5' : ''} ${(!m.hasAccounts || !m.isAllowed) ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
                             >
-                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts} />
+                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts || !m.isAllowed} />
                                 <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
                                     <m.icon className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-xs font-black uppercase tracking-tight">{m.label}</span>
-                                    {!m.hasAccounts && (
+                                    {!m.isAllowed ? (
+                                        <span className="text-[8px] font-bold text-rose-500 uppercase">No Disponible</span>
+                                    ) : !m.hasAccounts && (
                                         <span className="text-[8px] font-bold text-destructive uppercase">Sin Configurar</span>
                                     )}
                                 </div>
