@@ -110,7 +110,6 @@ class TreasuryService:
                     (settings.pos_cashback_error_account if justify_reason == 'CASHBACK' else None) or
                     (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
                     (settings.pos_other_outflow_account if justify_reason == 'OTHER_OUT' else None) or
-                    (settings.default_expense_account if justify_reason == 'EXPENSE' else None) or
                     settings.pos_cash_difference_loss_account
                 )
                 
@@ -127,7 +126,6 @@ class TreasuryService:
                     (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
                     (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
                     (settings.pos_other_inflow_account if justify_reason == 'OTHER_IN' else None) or
-                    (settings.default_revenue_account if justify_reason == 'CAPITAL_CONTRIBUTION' else None) or
                     settings.pos_cash_difference_gain_account
                 )
 
@@ -551,6 +549,40 @@ class TreasuryService:
         # actually reverse_entry marks original as CANCELLED.
         
         return payment
+
+    @staticmethod
+    @transaction.atomic
+    def register_internal_transfer(from_account, to_account, amount, created_by, date=None, notes=''):
+        """
+        Registers an internal transfer between two treasury accounts.
+        Validates accounts and creates the corresponding CashMovement and Accounting Entry.
+        """
+        if from_account == to_account:
+            raise ValidationError("La cuenta de origen y destino no pueden ser la misma.")
+        
+        # Determine movement type based on account types
+        # If one is Bank and other is Cash, it's a Deposit/Withdrawal to bank
+        # If both are Cash, it's a Transfer
+        # If both are Bank, it's a Transfer
+        
+        movement_type = CashMovement.Type.TRANSFER
+        
+        if from_account.account_type == TreasuryAccount.Type.CASH and to_account.account_type == TreasuryAccount.Type.BANK:
+             movement_type = CashMovement.Type.BANK_DEPOSIT
+        elif from_account.account_type == TreasuryAccount.Type.BANK and to_account.account_type == TreasuryAccount.Type.CASH:
+             # This could also be BANK_WITHDRAWAL if we had that type, but TRANSFER is fine
+             # Actually CashMovement.Type has BANK_DEPOSIT. 
+             pass
+
+        return TreasuryService.create_cash_movement(
+            movement_type=movement_type,
+            amount=amount,
+            from_account=from_account,
+            to_account=to_account,
+            created_by=created_by,
+            notes=notes,
+            date=date
+        )
 
     @staticmethod
     @transaction.atomic

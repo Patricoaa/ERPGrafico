@@ -233,8 +233,6 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                     <SelectContent>
                                         {type === 'DEPOSIT' ? (
                                             <>
-                                                <SelectItem value="CAPITAL_CONTRIBUTION">Aporte de Capital</SelectItem>
-                                                <SelectItem value="PURCHASE_REFUND">Devolución de Compra</SelectItem>
                                                 <SelectItem value="TIP">Propina (Ingreso)</SelectItem>
                                                 <SelectItem value="COUNTING_ERROR">Error de Conteo (Sobrante)</SelectItem>
                                                 <SelectItem value="SYSTEM_ERROR">Error de Sistema (Ajuste)</SelectItem>
@@ -242,9 +240,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                             </>
                                         ) : (
                                             <>
-                                                <SelectItem value="EXPENSE">Gastos Menores / Caja Chica</SelectItem>
                                                 <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
-                                                <SelectItem value="SUPPLIER_PAYMENT">Pago a Proveedor</SelectItem>
                                                 <SelectItem value="THEFT">Robo / Pérdida</SelectItem>
                                                 <SelectItem value="ROUNDING">Redondeo</SelectItem>
                                                 <SelectItem value="CASHBACK">Vuelto Incorrecto</SelectItem>
@@ -275,26 +271,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             </div>
                         )}
 
-                        {/* Notes */}
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Observaciones Adicionales</Label>
-                            <Textarea
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Describa brevemente el motivo del movimiento..."
-                                className={cn("resize-none", FORM_STYLES.input)}
-                                rows={2}
-                            />
-                        </div>
 
-                        {/* Info Alert */}
-                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-start gap-3">
-                            <AlertCircle className="h-4 w-4 text-primary mt-0.5" />
-                            <div className="text-xs text-muted-foreground leading-relaxed">
-                                <strong>Nota Contable:</strong> Al registrar este movimiento, el sistema generará automáticamente
-                                el asiento contable correspondiente basado en el tipo de operación y las cuentas involucradas.
-                            </div>
-                        </div>
                     </div>
                 </Tabs>
             </div>

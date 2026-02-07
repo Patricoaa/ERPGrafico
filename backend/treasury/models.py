@@ -1155,14 +1155,10 @@ class CashMovement(models.Model):
 
     class JustifyReason(models.TextChoices):
         # Deposits
-        CAPITAL_CONTRIBUTION = 'CAPITAL_CONTRIBUTION', _('Aporte de Capital')
-        PURCHASE_REFUND = 'PURCHASE_REFUND', _('Devolución de Compra')
         TIP = 'TIP', _('Propina')
         
         # Withdrawals
-        EXPENSE = 'EXPENSE', _('Gasto / Caja Chica')
         PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio')
-        SUPPLIER_PAYMENT = 'SUPPLIER_PAYMENT', _('Pago a Proveedor')
         THEFT = 'THEFT', _('Robo / Faltante')
         
         # Mixed / Adjustments

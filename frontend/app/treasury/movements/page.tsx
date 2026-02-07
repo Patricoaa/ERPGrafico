@@ -215,7 +215,7 @@ export default function TreasuryMovementsPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center gap-4 space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Movimientos de Tesorería</h2>
+                <h2 className="text-3xl font-bold tracking-tight">Movimientos de Efectivo</h2>
                 <Button
                     size="icon"
                     className="rounded-full h-8 w-8"
