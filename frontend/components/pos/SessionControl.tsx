@@ -695,7 +695,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                     <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
                                                     <SelectItem value="TIP">Propina</SelectItem>
                                                     <SelectItem value="TRANSFER">Traspaso (Dinero recibido de otra caja)</SelectItem>
-                                                    <SelectItem value="OTHER_IN">Otro Ingreso</SelectItem>
+                                                    <SelectItem value="OTHER_IN">Otro Depósito</SelectItem>
                                                     <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
                                                 </>
                                             )}
@@ -796,7 +796,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         IN: [
             { value: "TRANSFER", label: "Traspaso (Efectivo Entra)" },
             { value: "TIP", label: "Propina" },
-            { value: "OTHER_IN", label: "Otro Ingreso (Varios)" },
+            { value: "OTHER_IN", label: "Otro Depósito (Varios)" },
             { value: "COUNTING_ERROR", label: "Error de Conteo (Sobrante)" },
             { value: "SYSTEM_ERROR", label: "Error de Sistema (Ajuste)" },
         ],

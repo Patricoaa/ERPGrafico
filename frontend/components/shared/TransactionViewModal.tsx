@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -14,12 +16,12 @@ import { Progress } from "@/components/ui/progress"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { AttachmentList } from "./AttachmentList"
 
-type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move'
+type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'cash_movement'
 
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation' | 'work_order' | 'sale_delivery' | 'purchase_receipt'
+    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation' | 'work_order' | 'sale_delivery' | 'purchase_receipt' | 'cash_movement'
     id: number | string
     view?: 'details' | 'history' | 'all'
 }
@@ -70,6 +72,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             else if (type === 'purchase_receipt') endpoint = `/purchasing/receipts/${currentId}/`
             else if (type === 'sale_return') endpoint = `/sales/returns/${currentId}/`
             else if (type === 'purchase_return') endpoint = `/purchasing/returns/${currentId}/`
+            else if (type === 'cash_movement') endpoint = `/treasury/cash-movements/${currentId}/`
 
             if (!endpoint) {
                 console.error(`[TransactionViewModal] No endpoint mapping for type: ${type}`)
@@ -153,6 +156,10 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             case 'sale_return':
             case 'purchase_return':
                 return { main: "Devolución de Mercadería", sub: data.display_id || `DEV-${data.number || data.id}` }
+            case 'cash_movement':
+                const moveType = data.movement_type === 'DEPOSIT' ? 'Depósito' :
+                    data.movement_type === 'WITHDRAWAL' ? 'Retiro' : 'Traspaso'
+                return { main: `${moveType} de Efectivo`, sub: `MOV-${data.id}` }
             default:
                 return { main: "Detalles de Transacción", sub: "" }
         }
@@ -187,6 +194,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         if (currentType === 'service_obligation') return <Building2 className="h-5 w-5 text-indigo-600" />
         if (currentType === 'work_order') return <ClipboardList className="h-5 w-5 text-indigo-600" />
         if (currentType === 'sale_delivery' || currentType === 'purchase_receipt') return <Package className="h-5 w-5 text-orange-600" />
+        if (currentType === 'cash_movement') return <ArrowLeft className="h-5 w-5 text-blue-600" />
         return <FileText className="h-5 w-5" />
     }
 
@@ -257,48 +265,88 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             </div>
                                         )}
 
-                                        <div className={`grid grid-cols-2 ${currentType === 'payment' ? 'lg:grid-cols-4' : 'md:grid-cols-4'} gap-4`}>
-                                            {currentType === 'payment' ? (
+                                        <div className={`grid grid-cols-2 ${currentType === 'payment' || currentType === 'cash_movement' ? 'lg:grid-cols-4' : 'md:grid-cols-4'} gap-4`}>
+                                            {currentType === 'payment' || currentType === 'cash_movement' ? (
                                                 <>
-                                                    {/* 1. Caja / Banco */}
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-3">
-                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Caja / Banco</div>
-                                                            <div className="font-bold flex items-center gap-1.5">
-                                                                {data.treasury_account_type === 'BANK' ? <Building2 className="h-3.5 w-3.5 text-blue-500" /> : <Banknote className="h-3.5 w-3.5 text-green-500" />}
-                                                                <span className="truncate text-xs">{data.journal_name}</span>
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                    {/* 2. Método de Pago */}
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-3">
-                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Método de Pago</div>
-                                                            <div className="font-bold text-xs truncate uppercase">
-                                                                {translatePaymentMethod(data.payment_method_display || data.payment_method || '-')}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                    {/* 3. N° Transacción */}
-                                                    <Card className="border-none shadow-sm bg-muted/30 relative group">
-                                                        <CardContent className="p-3">
-                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">N° de Transacción</div>
-                                                            <div className="font-bold text-xs font-mono flex items-center gap-2">
-                                                                <span className={data.transaction_number ? "" : "text-muted-foreground italic font-normal"}>
-                                                                    {data.transaction_number || 'No registrado'}
-                                                                </span>
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                    {/* 4. Monto */}
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-3">
-                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Monto</div>
-                                                            <div className={`font-black text-sm ${data.payment_type === 'INBOUND' ? 'text-green-600' : 'text-red-700'}`}>
-                                                                {formatCurrency(data.amount)}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
+                                                    {currentType === 'cash_movement' ? (
+                                                        <>
+                                                            <Card className="border-none shadow-sm bg-muted/30">
+                                                                <CardContent className="p-3">
+                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Tipo</div>
+                                                                    <Badge variant="outline" className="font-bold">
+                                                                        {data.movement_type === 'TRANSFER' ? 'Traspaso' :
+                                                                            data.movement_type === 'DEPOSIT' ? 'Depósito' : 'Retiro'}
+                                                                    </Badge>
+                                                                </CardContent>
+                                                            </Card>
+                                                            <Card className="border-none shadow-sm bg-muted/30">
+                                                                <CardContent className="p-3">
+                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Fecha</div>
+                                                                    <div className="font-bold text-sm">
+                                                                        {new Date(data.created_at).toLocaleDateString()}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-muted-foreground">
+                                                                        {new Date(data.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                            <Card className="border-none shadow-sm bg-muted/30">
+                                                                <CardContent className="p-3">
+                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Usuario</div>
+                                                                    <div className="font-bold text-xs truncate flex items-center gap-1.5">
+                                                                        <User className="h-3 w-3" />
+                                                                        {data.created_by_name || 'Sistema'}
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                            <Card className="border-none shadow-sm bg-muted/30">
+                                                                <CardContent className="p-3">
+                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Monto</div>
+                                                                    <div className={`font-black text-sm ${data.movement_type === 'DEPOSIT' || (data.movement_type === 'TRANSFER' && !data.from_account) ? 'text-green-600' : 'text-red-600'}`}>
+                                                                        {formatCurrency(data.amount)}
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Card className="border-none shadow-sm bg-muted/30">
+                                                                <CardContent className="p-3">
+                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Caja / Banco</div>
+                                                                    <div className="font-bold flex items-center gap-1.5">
+                                                                        {data.treasury_account_type === 'BANK' ? <Building2 className="h-3.5 w-3.5 text-blue-500" /> : <Banknote className="h-3.5 w-3.5 text-green-500" />}
+                                                                        <span className="truncate text-xs">{data.journal_name}</span>
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                            <Card className="border-none shadow-sm bg-muted/30">
+                                                                <CardContent className="p-3">
+                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Método de Pago</div>
+                                                                    <div className="font-bold text-xs truncate uppercase">
+                                                                        {translatePaymentMethod(data.payment_method_display || data.payment_method || '-')}
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                            <Card className="border-none shadow-sm bg-muted/30 relative group">
+                                                                <CardContent className="p-3">
+                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">N° de Transacción</div>
+                                                                    <div className="font-bold text-xs font-mono flex items-center gap-2">
+                                                                        <span className={data.transaction_number ? "" : "text-muted-foreground italic font-normal"}>
+                                                                            {data.transaction_number || 'No registrado'}
+                                                                        </span>
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                            <Card className="border-none shadow-sm bg-muted/30">
+                                                                <CardContent className="p-3">
+                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Monto</div>
+                                                                    <div className={`font-black text-sm ${data.payment_type === 'INBOUND' ? 'text-green-600' : 'text-red-700'}`}>
+                                                                        {formatCurrency(data.amount)}
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        </>
+                                                    )}
                                                 </>
                                             ) : (
                                                 <>
@@ -370,6 +418,58 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <div className="pt-2 border-t mt-4">
                                                             <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Observaciones</h4>
                                                             <p className="text-sm bg-muted p-4 rounded-xl border border-dashed italic">
+                                                                {data.notes}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : currentType === 'cash_movement' ? (
+                                                <div className="space-y-6 pt-4 border-t">
+                                                    {/* Flow Visualization */}
+                                                    <div className="bg-muted/30 p-6 rounded-xl border border-dashed flex items-center justify-between gap-4">
+                                                        <div className="flex-1 text-center">
+                                                            <div className="text-[10px] font-black text-muted-foreground uppercase mb-1">Origen</div>
+                                                            <div className="font-bold text-sm truncate px-2">
+                                                                {data.from_container_name || (data.movement_type === 'DEPOSIT' ? 'Exterior' : '-')}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex flex-col items-center flex-shrink-0 text-muted-foreground">
+                                                            <span className="text-[9px] font-mono uppercase mb-1">{data.movement_type === 'TRANSFER' ? 'TRASPASO' : data.movement_type === 'DEPOSIT' ? 'ENTRADA' : 'SALIDA'}</span>
+                                                            <div className="h-[1px] w-20 bg-border relative">
+                                                                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-t border-r border-border rotate-45 transform" />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex-1 text-center">
+                                                            <div className="text-[10px] font-black text-muted-foreground uppercase mb-1">Destino</div>
+                                                            <div className="font-bold text-sm truncate px-2">
+                                                                {data.to_container_name || (data.movement_type === 'WITHDRAWAL' ? 'Exterior' : '-')}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-8">
+                                                        <div>
+                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Motivo / Causal</h4>
+                                                            <Badge variant="secondary" className="font-bold">
+                                                                {data.motive_display || data.motive || 'General'}
+                                                            </Badge>
+                                                        </div>
+                                                        {data.pos_session && (
+                                                            <div>
+                                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Sesión POS Relacionada</h4>
+                                                                <p className="font-bold text-primary font-mono cursor-pointer hover:underline" onClick={() => navigateTo('pos_session', data.pos_session)}>
+                                                                    Sesión #{data.pos_session}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {data.notes && (
+                                                        <div>
+                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Observaciones</h4>
+                                                            <p className="text-sm italic text-muted-foreground bg-muted p-3 rounded-lg border border-dashed">
                                                                 {data.notes}
                                                             </p>
                                                         </div>
@@ -799,12 +899,11 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateTo('payment', pay.id)} title="Ver Detalle">
                                                                                     <Eye className="h-4 w-4 text-blue-600" />
                                                                                 </Button>
-                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingPayment(pay)} title="Editar">
-                                                                                    <Edit className="h-4 w-4 text-amber-600" />
-                                                                                </Button>
-                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeletePayment(pay.id)} title="Eliminar">
-                                                                                    <Trash2 className="h-4 w-4 text-red-600" />
-                                                                                </Button>
+                                                                                {pay.is_pending_registration && (
+                                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeletePayment(pay.id)} title="Eliminar Pago">
+                                                                                        <Trash2 className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                )}
                                                                             </div>
                                                                         </TableCell>
                                                                     </TableRow>
@@ -813,55 +912,32 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         </Table>
                                                     </div>
                                                 ) : (
-                                                    <div className="border border-dashed p-10 text-center rounded-2xl bg-muted/20">
-                                                        <Banknote className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                                        <p className="text-muted-foreground text-sm italic">No se registran pagos para este documento</p>
+                                                    <div className="bg-muted/50 p-6 rounded-lg text-center text-muted-foreground text-sm border border-dashed">
+                                                        No se han registrado pagos para esta transacción.
                                                     </div>
                                                 )}
                                             </div>
                                         )}
-
-                                    {/* Section 6: Notes */}
-                                    {(view === 'all' || view === 'details') && data.notes && currentType !== 'payment' && (
-                                        <div className="pt-4 border-t">
-                                            <h4 className="text-sm font-semibold text-muted-foreground mb-1 uppercase">Notas</h4>
-                                            <p className="text-sm bg-muted p-4 rounded-md">{data.notes}</p>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
-                        ) : (
-                            <div className="py-20 text-center text-muted-foreground">
-                                No se pudo cargar la información.
-                            </div>
-                        )}
+                        ) : null}
                     </div>
-
-                    {/* Activity Sidebar */}
-                    {data && mapToEntityType(currentType) && (
-                        <div className="w-72 border-l bg-muted/5 flex flex-col">
-                            <ActivitySidebar
-                                entityId={currentId}
-                                entityType={mapToEntityType(currentType)!}
-                            />
-                        </div>
-                    )}
                 </div>
             </BaseModal>
-
-            {
-                editingPayment && (
-                    <PaymentForm
-                        open={!!editingPayment}
-                        onOpenChange={(open) => !open && setEditingPayment(null)}
-                        initialData={editingPayment}
-                        onSuccess={() => {
-                            setEditingPayment(null)
-                            fetchData()
-                        }}
-                    />
-                )
-            }
+            {editingPayment && (
+                <PaymentForm
+                    open={!!editingPayment}
+                    onOpenChange={(open) => !open && setEditingPayment(null)}
+                    transactionId={editingPayment.transactionId}
+                    transactionType={editingPayment.transactionType}
+                    defaultAmount={editingPayment.amount}
+                    isReceivable={editingPayment.isReceivable}
+                    onSuccess={() => {
+                        setEditingPayment(null)
+                        fetchData()
+                    }}
+                />
+            )}
         </>
     )
 }

@@ -1,201 +1,222 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import api from "@/lib/api"
-import {
-    ColumnDef
-} from "@tanstack/react-table"
+import { useState } from "react"
 import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Badge } from "@/components/ui/badge"
-import { formatCurrency, translateStatus } from "@/lib/utils"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import { ArrowRight, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, History as HistoryIcon, User as UserIcon, Monitor as TerminalIcon, Plus, ShoppingCart, Receipt } from "lucide-react"
-import { CashMovementModal } from "@/components/treasury/CashMovementModal"
+import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
+import { Plus, ArrowRight, Eye, RefreshCw } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
+import { CashMovementModal } from "@/components/treasury/CashMovementModal"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { Badge } from "@/components/ui/badge"
 
+// Define the type for our data
 interface CashMovement {
     id: number
-    movement_type: 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER' | 'BANK_DEPOSIT' | 'ADJUSTMENT' | 'SALE' | 'EXPENSE'
+    movement_type: string
     movement_type_display: string
-    date: string
-    amount: string
-    status: string
-    status_display: string
-    from_container: number | null
-    from_container_name: string | null
-    to_container: number | null
-    to_container_name: string | null
-    pos_session: number | null
-    created_by: number
+    amount: number
+    created_at: string
     created_by_name: string
     notes: string
-    created_at: string
+    pos_session: number | null
+    from_container_name: string | null
+    to_container_name: string | null
+    // Assuming backend also returns motive or motive_display now
+    motive: string | null
+    motive_display: string | null
 }
 
-export default function CashMovementsPage() {
-    const [movements, setMovements] = useState<CashMovement[]>([])
-    const [loading, setLoading] = useState(true)
-    const [modalOpen, setModalOpen] = useState(false)
+export default function TreasuryMovementsPage() {
+    const [openModal, setOpenModal] = useState(false)
+    const [detailsOpen, setDetailsOpen] = useState(false)
+    const [selectedMovementId, setSelectedMovementId] = useState<number | string>(0)
 
-    const fetchMovements = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get('/treasury/cash-movements/')
-            setMovements(res.data.results || res.data)
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
+    const handleViewDetails = (id: number) => {
+        setSelectedMovementId(id)
+        setDetailsOpen(true)
     }
-
-    useEffect(() => {
-        fetchMovements()
-    }, [])
 
     const columns: ColumnDef<CashMovement>[] = [
         {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
-            ),
+            accessorKey: "created_at",
+            header: "Fecha",
             cell: ({ row }) => {
-                const date = new Date(row.getValue("date"))
+                const date = new Date(row.getValue("created_at"))
                 return (
                     <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                            {format(date, "dd MMM yyyy", { locale: es })}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground italic">
-                            {format(date, "HH:mm", { locale: es })}
-                        </span>
+                        <span className="font-medium text-xs">{date.toLocaleDateString()}</span>
+                        <span className="text-[10px] text-muted-foreground">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                 )
             },
         },
         {
             accessorKey: "movement_type",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo Movimiento" />
-            ),
+            header: "Tipo",
             cell: ({ row }) => {
                 const type = row.getValue("movement_type") as string
-                const iconMap: Record<string, any> = {
-                    'DEPOSIT': <ArrowDownLeft className="h-4 w-4 text-emerald-600" />,
-                    'WITHDRAWAL': <ArrowUpRight className="h-4 w-4 text-amber-600" />,
-                    'TRANSFER': <ArrowLeftRight className="h-4 w-4 text-blue-600" />,
-                    'BANK_DEPOSIT': <ArrowRight className="h-4 w-4 text-slate-600" />,
-                    'ADJUSTMENT': <HistoryIcon className="h-4 w-4 text-purple-600" />,
-                    'SALE': <ShoppingCart className="h-4 w-4 text-emerald-600" />,
-                    'EXPENSE': <Receipt className="h-4 w-4 text-rose-600" />,
-                }
+                const label = row.original.movement_type_display
+
+                let variant: "default" | "destructive" | "outline" | "secondary" = "outline"
+                if (type === 'DEPOSIT') variant = "default" // Greenish in most themes usually primary
+                if (type === 'WITHDRAWAL') variant = "destructive"
+                if (type === 'TRANSFER') variant = "secondary"
+
                 return (
-                    <div className="flex items-center gap-2">
-                        {iconMap[type]}
-                        {row.original.movement_type_display}
-                    </div>
+                    <Badge variant={variant} className="text-[10px] uppercase font-bold tracking-tight">
+                        {label}
+                    </Badge>
                 )
+            },
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
             },
         },
         {
             id: "flow",
-            header: "Flujo",
+            header: "Flujo / Detalle",
             cell: ({ row }) => {
-                const m = row.original
-                return (
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="font-medium text-muted-foreground max-w-[120px] truncate">
-                            {m.from_container_name || (m.pos_session ? `Sesión #${m.pos_session}` : 'Exterior')}
-                        </span>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground opacity-50" />
-                        <span className="font-medium max-w-[120px] truncate">
-                            {m.to_container_name || (m.pos_session ? `Sesión #${m.pos_session}` : 'Exterior')}
-                        </span>
-                    </div>
-                )
+                const m = row.original;
+                const isTransfer = m.movement_type === 'TRANSFER';
+                const isDeposit = m.movement_type === 'DEPOSIT';
+                const isWithdrawal = m.movement_type === 'WITHDRAWAL';
+
+                // Determine motive label
+                const motive = m.motive_display || m.motive || (m.notes ? "Ver notas" : null);
+
+                if (isTransfer) {
+                    return (
+                        <div className="flex items-center gap-2 text-xs">
+                            <span className="font-medium text-muted-foreground truncate max-w-[100px]" title={m.from_container_name || '?'}>
+                                {m.from_container_name || 'Desconocido'}
+                            </span>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground opacity-50 flex-shrink-0" />
+                            <span className="font-medium truncate max-w-[100px]" title={m.to_container_name || '?'}>
+                                {m.to_container_name || 'Desconocido'}
+                            </span>
+                        </div>
+                    );
+                }
+
+                if (isDeposit) {
+                    return (
+                        <div className="flex flex-col justify-center text-xs">
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[180px]">
+                                {m.to_container_name || 'Caja'}
+                            </span>
+                            {motive && (
+                                <span className="text-[10px] text-muted-foreground truncate max-w-[180px] italic">
+                                    {motive}
+                                </span>
+                            )}
+                        </div>
+                    )
+                }
+
+                if (isWithdrawal) {
+                    return (
+                        <div className="flex flex-col justify-center text-xs">
+                            <span className="font-bold text-red-700 dark:text-red-400 truncate max-w-[180px]">
+                                {m.from_container_name || 'Caja'}
+                            </span>
+                            {motive && (
+                                <span className="text-[10px] text-muted-foreground truncate max-w-[180px] italic">
+                                    {motive}
+                                </span>
+                            )}
+                        </div>
+                    )
+                }
+
+                return <span className="text-xs text-muted-foreground">-</span>
             },
         },
         {
             accessorKey: "amount",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Monto" />
-            ),
-            cell: ({ row }) => (
-                <div className="font-bold">
-                    {formatCurrency(row.getValue("amount"))}
-                </div>
-            ),
+            header: () => <div className="text-right">Monto</div>,
+            cell: ({ row }) => {
+                const amount = parseFloat(row.getValue("amount"))
+                const type = row.getValue("movement_type") as string
+                const colorClass = type === 'WITHDRAWAL' ? 'text-red-600' : 'text-emerald-600'
+
+                return <div className={`text-right font-bold font-mono ${colorClass}`}>{formatCurrency(amount)}</div>
+            },
         },
         {
             accessorKey: "pos_session",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Origen/Sesión" />
-            ),
+            header: "Sesión",
             cell: ({ row }) => {
-                const sessionId = row.getValue("pos_session")
-                if (!sessionId) return <span className="text-muted-foreground text-[10px] italic">Manual/Interno</span>
+                const session = row.getValue("pos_session")
+                if (!session) return <span className="text-muted-foreground text-[10px]">-</span>
                 return (
-                    <div className="flex items-center gap-2">
-                        <TerminalIcon className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs font-medium underline cursor-help" title="Ver sesión POS">
-                            Sesión #{String(sessionId || '')}
-                        </span>
-                    </div>
+                    <Badge variant="outline" className="font-mono text-[10px]">
+                        POS #{session}
+                    </Badge>
                 )
             },
         },
         {
             accessorKey: "created_by_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Registrado Por" />
-            ),
+            header: "Usuario",
             cell: ({ row }) => (
-                <div className="flex items-center gap-2 text-[10px]">
-                    <UserIcon className="h-3 w-3 text-muted-foreground" />
-                    {row.original.created_by_name}
-                </div>
+                <span className="text-xs text-muted-foreground truncate max-w-[100px]">
+                    {row.getValue("created_by_name")}
+                </span>
             ),
         },
         {
-            accessorKey: "notes",
-            header: "Notas/Ref",
-            cell: ({ row }) => (
-                <div className="text-[10px] text-muted-foreground italic max-w-[200px] truncate" title={row.getValue("notes")}>
-                    {row.getValue("notes") || '-'}
-                </div>
-            ),
-        },
+            id: "actions",
+            cell: ({ row }) => {
+                return (
+                    <div className="flex justify-end">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => handleViewDetails(row.original.id)}
+                            title="Ver Detalle"
+                        >
+                            <Eye className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            }
+        }
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between">
+        <div className="h-full flex flex-col p-6 space-y-4">
+            <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Trazabilidad de Efectivo</h2>
-                    <p className="text-muted-foreground">
-                        Historial completo de depósitos, retiros y traslados físicos de dinero.
-                    </p>
+                    <h2 className="text-2xl font-bold tracking-tight">Movimientos de Tesorería</h2>
+                    <p className="text-muted-foreground">Gestione el flujo de efectivo, depósitos y retiros.</p>
                 </div>
-                <Button onClick={() => setModalOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nuevo Movimiento
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="icon" onClick={() => window.location.reload()}>
+                        <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Button onClick={() => setOpenModal(true)} className="gap-2">
+                        <Plus className="h-4 w-4" /> Nuevo Movimiento
+                    </Button>
+                </div>
             </div>
 
             <CashMovementModal
-                open={modalOpen}
-                onOpenChange={setModalOpen}
-                onSuccess={fetchMovements}
+                open={openModal}
+                onOpenChange={setOpenModal}
+                onSuccess={() => {
+                    // Refetch data - DataTable handles this via context or ref prop usually, 
+                    // but standard reload works for now or if we had a refresh trigger
+                    window.location.reload()
+                }}
             />
 
             <DataTable
                 columns={columns}
-                data={movements}
-                filterColumn="notes"
-                searchPlaceholder="Buscar en notas..."
-                facetedFilters={[
+                fetchUrl="/treasury/cash-movements/"
+                searchColumn="notes" // We removed the column from view, but search might still work if backend supports it. Ideally we search by type or user.
+                facets={[
                     {
                         column: "movement_type",
                         title: "Tipo",
@@ -203,13 +224,17 @@ export default function CashMovementsPage() {
                             { label: "Depósito", value: "DEPOSIT" },
                             { label: "Retiro", value: "WITHDRAWAL" },
                             { label: "Traspaso", value: "TRANSFER" },
-                            { label: "Dep. Bancario", value: "BANK_DEPOSIT" },
-                            { label: "Venta (POS)", value: "SALE" },
-                            { label: "Gasto/Compra (OC)", value: "EXPENSE" },
-                            { label: "Ajuste", value: "ADJUSTMENT" },
                         ],
                     },
                 ]}
+            />
+
+            <TransactionViewModal
+                open={detailsOpen}
+                onOpenChange={setDetailsOpen}
+                type="cash_movement"
+                id={selectedMovementId}
+                view="details"
             />
         </div >
     )

@@ -9,6 +9,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
     ArrowLeftRight,
     ArrowDownLeft,
     ArrowUpRight,
@@ -37,6 +44,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
     const [fromId, setFromId] = useState<string>("")
     const [toId, setToId] = useState<string>("")
     const [notes, setNotes] = useState("")
+    const [motive, setMotive] = useState<string>("")
     const [submitting, setSubmitting] = useState(false)
 
     // Fund validation states
@@ -48,6 +56,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
         setFromId("")
         setToId("")
         setNotes("")
+        setMotive("")
         setSelectedFromAccount(null)
         setInsufficientFunds(false)
     }
@@ -96,6 +105,10 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
             toast.error("Debe especificar la cuenta de origen")
             return
         }
+        if ((type === 'DEPOSIT' || type === 'WITHDRAWAL') && !motive) {
+            toast.error("Debe seleccionar un motivo")
+            return
+        }
 
         setSubmitting(true)
         try {
@@ -104,7 +117,8 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                 amount: parseFloat(amount),
                 from_account: fromId || null,
                 to_account: toId || null,
-                notes: notes
+                notes: notes,
+                motive: motive // New field
             })
             toast.success("Movimiento registrado correctamente")
             handleReset()
@@ -139,18 +153,27 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
             <div className="space-y-6 py-2">
                 <Tabs value={type} onValueChange={(v) => {
                     setType(v as MovementType)
-                    if (v === 'DEPOSIT') setFromId("")
-                    if (v === 'WITHDRAWAL') setToId("")
+                    if (v === 'DEPOSIT') {
+                        setFromId("")
+                        setMotive("")
+                    }
+                    if (v === 'WITHDRAWAL') {
+                        setToId("")
+                        setMotive("")
+                    }
+                    if (v === 'TRANSFER') {
+                        setMotive("")
+                    }
                 }} className="w-full">
                     <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
                         <TabsTrigger value="TRANSFER" className="gap-2">
                             <ArrowLeftRight className="h-4 w-4" /> Traspaso
                         </TabsTrigger>
                         <TabsTrigger value="DEPOSIT" className="gap-2">
-                            <ArrowDownLeft className="h-4 w-4" /> Ingreso
+                            <ArrowDownLeft className="h-4 w-4" /> Depósito
                         </TabsTrigger>
                         <TabsTrigger value="WITHDRAWAL" className="gap-2">
-                            <ArrowUpRight className="h-4 w-4" /> Egreso
+                            <ArrowUpRight className="h-4 w-4" /> Retiro
                         </TabsTrigger>
                     </TabsList>
 
@@ -199,6 +222,34 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             </div>
                         </div>
 
+                        {/* Motive Selector (Only for Deposit/Withdrawal) */}
+                        {type !== 'TRANSFER' && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                                <Label className={FORM_STYLES.label}>Motivo</Label>
+                                <Select value={motive} onValueChange={setMotive}>
+                                    <SelectTrigger className={FORM_STYLES.input}>
+                                        <SelectValue placeholder="Seleccione motivo principal..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {type === 'DEPOSIT' ? (
+                                            <>
+                                                <SelectItem value="CAPITAL_CONTRIBUTION">Aporte de Capital</SelectItem>
+                                                <SelectItem value="PURCHASE_REFUND">Devolución de Compra</SelectItem>
+                                                <SelectItem value="OTHER_IN">Otro Depósito</SelectItem>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <SelectItem value="EXPENSE">Gastos Menores / Caja Chica</SelectItem>
+                                                <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
+                                                <SelectItem value="SUPPLIER_PAYMENT">Pago a Proveedor</SelectItem>
+                                                <SelectItem value="OTHER_OUT">Otro Retiro</SelectItem>
+                                            </>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
                         {/* Insufficient funds warning */}
                         {insufficientFunds && selectedFromAccount && (
                             <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
@@ -218,13 +269,13 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
 
                         {/* Notes */}
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Motivo / Observaciones</Label>
+                            <Label className={FORM_STYLES.label}>Observaciones Adicionales</Label>
                             <Textarea
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 placeholder="Describa brevemente el motivo del movimiento..."
                                 className={cn("resize-none", FORM_STYLES.input)}
-                                rows={3}
+                                rows={2}
                             />
                         </div>
 

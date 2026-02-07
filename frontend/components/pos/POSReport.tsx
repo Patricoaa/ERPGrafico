@@ -82,7 +82,7 @@ export function POSReport({ data, title = "Informe de Caja", type = "X" }: POSRe
                     {/* (+) Otros Ingresos */}
                     {totalInflows > 0 && (
                         <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">(+) Otros Ingresos</span>
+                            <span className="text-muted-foreground">(+) Otros Depósitos</span>
                             <span className="font-medium text-emerald-600">+{formatCurrency(totalInflows)}</span>
                         </div>
                     )}
