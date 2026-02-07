@@ -1448,12 +1448,36 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class CashFlowViewSet(viewsets.ViewSet):
+class TreasuryDashboardViewSet(viewsets.ViewSet):
     """
-    Vista consolidada de flujos de efectivo.
-    Combina Payments y CashMovements en una sola vista filtrable.
+    Vista consolidada de flujos de efectivo y gestión de tesorería.
+    Combina Payments y CashMovements en una sola vista filtrable y provee balances consolidados.
     """
     
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        Retorna estadísticas generales de tesorería (Saldos por tipo de cuenta).
+        """
+        bank_balance = sum(a.current_balance for a in TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.BANK))
+        cash_balance = sum(a.current_balance for a in TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.CASH))
+        
+        return Response({
+            'bank_total': bank_balance,
+            'cash_total': cash_balance,
+            'total_available': bank_balance + cash_balance
+        })
+
+    @action(detail=False, methods=['get'])
+    def accounts(self, request):
+        """
+        Retorna la lista de cuentas con sus saldos actuales.
+        """
+        accounts = TreasuryAccount.objects.all().order_by('account_type', 'name')
+        from .serializers import TreasuryAccountSerializer
+        serializer = TreasuryAccountSerializer(accounts, many=True)
+        return Response(serializer.data)
+
     def list(self, request):
         """
         Lista consolidada de flujos de efectivo.
@@ -1465,7 +1489,7 @@ class CashFlowViewSet(viewsets.ViewSet):
         from django.db.models import Q
         from .serializers import CashFlowSerializer
         
-        flow_type = request.query_params.get('flow_type', 'third_party')
+        flow_type = request.query_params.get('flow_type', 'all') # Change default to 'all' for dashboard
         date_from_str = request.query_params.get('date_from')
         date_to_str = request.query_params.get('date_to')
         treasury_account_id = request.query_params.get('treasury_account')
@@ -1508,7 +1532,7 @@ class CashFlowViewSet(viewsets.ViewSet):
         
         # CashMovements (excluding those linked to payments)
         if flow_type in ['all', 'internal']:
-            movements_query = CashMovement.objects.filter(payment__isnull=True).select_related('from_account', 'to_account')
+            movements_query = CashMovement.objects.filter(linked_payment__isnull=True).select_related('from_account', 'to_account')
             
             if date_from:
                 movements_query = movements_query.filter(date__gte=date_from)
@@ -1520,10 +1544,14 @@ class CashFlowViewSet(viewsets.ViewSet):
                 )
             
             if flow_type == 'internal':
-                movements_query = movements_query.filter(movement_type=CashMovement.Type.TRANSFER)
+                movements_query = movements_query.filter(movement_type__in=[
+                    CashMovement.Type.TRANSFER, 
+                    CashMovement.Type.BANK_DEPOSIT,
+                    CashMovement.Type.ADJUSTMENT
+                ])
             
             for movement in movements_query:
-                is_internal = movement.movement_type == CashMovement.Type.TRANSFER
+                is_internal = movement.movement_type in [CashMovement.Type.TRANSFER, CashMovement.Type.BANK_DEPOSIT]
                 treasury_name = (movement.from_account.name if movement.from_account 
                                else movement.to_account.name if movement.to_account else 'N/A')
                 
@@ -1541,5 +1569,39 @@ class CashFlowViewSet(viewsets.ViewSet):
                 })
         
         results.sort(key=lambda x: x['date'], reverse=True)
+        # Apply pagination if needed, but for dashboard recent 50 is fine
+        results = results[:50]
+        
         serializer = CashFlowSerializer(results, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def register_transfer(self, request):
+        """
+        Registra un traspaso interno entre cuentas.
+        """
+        from_acc_id = request.data.get('from_account_id')
+        to_acc_id = request.data.get('to_account_id')
+        amount = Decimal(str(request.data.get('amount', 0)))
+        notes = request.data.get('notes', '')
+        date_str = request.data.get('date')
+        
+        if not from_acc_id or not to_acc_id or amount <= 0:
+            return Response({'error': 'Datos incompletos'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            from_acc = TreasuryAccount.objects.get(pk=from_acc_id)
+            to_acc = TreasuryAccount.objects.get(pk=to_acc_id)
+            
+            movement = TreasuryService.register_internal_transfer(
+                from_account=from_acc,
+                to_account=to_acc,
+                amount=amount,
+                created_by=request.user,
+                notes=notes,
+                date=datetime.fromisoformat(date_str) if date_str else None
+            )
+            
+            return Response({'message': 'Traspaso registrado correctamente', 'id': movement.id})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
